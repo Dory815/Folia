@@ -301,6 +301,18 @@ public:
         return transaction;
     }
 
+    std::optional<DocumentTransaction> execute_document_set_code_block_language(
+        TextSelection selection,
+        const Command& command) {
+        auto transaction = document_set_code_block_language(
+            document_,
+            selection,
+            command.lang.value_or(std::u32string{}));
+        if (!transaction) return std::nullopt;
+        apply_document_transaction_(*transaction);
+        return transaction;
+    }
+
     std::optional<DocumentTransaction> execute_document_table_edit(
         TextSelection selection,
         DocumentTableEdit edit,
@@ -446,6 +458,9 @@ public:
         if (cmd.kind == CommandKind::InsertCodeBlock || cmd.kind == CommandKind::InsertMathBlock
             || cmd.kind == CommandKind::InsertToc || cmd.kind == CommandKind::InsertTable) {
             return execute_document_insert_atomic_block(selection_, cmd).has_value();
+        }
+        if (cmd.kind == CommandKind::SetCodeBlockLanguage) {
+            return execute_document_set_code_block_language(selection_, cmd).has_value();
         }
         if (cmd.kind == CommandKind::InsertLink || cmd.kind == CommandKind::InsertImage) {
             const auto changed = cmd.kind == CommandKind::InsertLink

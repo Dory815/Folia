@@ -33,7 +33,7 @@ using namespace boost::ut;
 
 suite editor_raw_history_tests = [] {
 
-"raw_marker_reclassification_preserves_arbitrary_ancestor_structure"_test = [] {
+"rendered_raw_selection_cannot_reach_hidden_markers_at_any_ancestor_depth"_test = [] {
     Editor editor("> - ```cpp\n>   value\n>   ```");
     const BlockNode* code = nullptr;
     walk_blocks(editor.document().root, [&](const BlockNode& block) {
@@ -50,28 +50,18 @@ suite editor_raw_history_tests = [] {
         {code_id, opening_end, TextAffinity::Downstream},
     });
 
-    reset_core_operation_counters();
-    expect(fatal(bool(editor.execute_document_delete_selection(
-        editor.selection()).has_value())));
-    const auto counters = read_core_operation_counters();
-    expect(fatal(bool(counters.full_document_parses == 0u)));
-    expect(fatal(bool(counters.full_document_serializations == 0u)));
+    const auto before = editor.markdown_utf8();
+    expect(fatal(!editor.execute_document_delete_selection(
+        editor.selection()).has_value()));
+    expect(fatal(bool(editor.markdown_utf8() == before)));
     expect(fatal(bool(editor.document().root.children.front().kind == BlockKind::BlockQuote)));
     expect(fatal(bool(editor.document().root.children.front().children.front().kind == BlockKind::List)));
-    const auto* paragraph = find_block(editor.document().root, code_id);
-    expect(fatal(bool(paragraph && paragraph->kind == BlockKind::Paragraph)));
-    expect(fatal(bool(editor.selection().active.container_id == code_id)));
+    const auto* unchanged = find_block(editor.document().root, code_id);
+    expect(fatal(bool(unchanged && unchanged->kind == BlockKind::CodeBlock)));
     expect(fatal(bool(validate_document(editor.document()).empty())));
-
-    expect(fatal(bool(editor.undo())));
-    const auto* restored = find_block(editor.document().root, code_id);
-    expect(fatal(bool(restored && restored->kind == BlockKind::CodeBlock)));
-    expect(fatal(bool(editor.redo())));
-    paragraph = find_block(editor.document().root, code_id);
-    expect(fatal(bool(paragraph && paragraph->kind == BlockKind::Paragraph)));
 };
 
-"undo_restores_adjacent_math_blocks_after_cross_block_marker_deletion"_test = [] {
+"adjacent_hidden_math_markers_do_not_form_a_rendered_selection"_test = [] {
     Editor editor("$$\na\n$$\n$$\nb\n$$");
     expect(fatal(bool(editor.document().root.children.size() == 2u)));
     if (editor.document().root.children.size() != 2u) return;
@@ -90,32 +80,20 @@ suite editor_raw_history_tests = [] {
         {second_id, 2, TextAffinity::Downstream},
     };
     editor.set_selection(before_selection);
-    expect(fatal(bool(editor.execute_document_delete_selection(editor.selection()).has_value())));
-    expect(fatal(bool(editor.document().root.children.size() == 1u)));
+    expect(fatal(!editor.execute_document_delete_selection(editor.selection()).has_value()));
+    expect(fatal(bool(editor.document().root.children.size() == 2u)));
     expect(fatal(bool(validate_document(editor.document()).empty())));
-    auto merged = build_render_model(
+    auto unchanged = build_render_model(
         editor.document(), editor.outline(), editor.symbols(), default_theme_profile());
-    expect(fatal(bool(merged.blocks.size() == 1u)));
-
-    expect(fatal(bool(editor.undo())));
+    expect(fatal(bool(unchanged.blocks.size() == 2u)));
     expect(fatal(bool(editor.markdown_utf8() == before)));
     expect(fatal(bool(editor.selection() == before_selection)));
     expect(fatal(bool(editor.document().root.children.size() == 2u)));
     expect(fatal(bool(find_block(editor.document().root, first_id) != nullptr)));
     expect(fatal(bool(find_block(editor.document().root, second_id) != nullptr)));
-    expect(fatal(bool(validate_document(editor.document()).empty())));
-    auto restored = build_render_model(
-        editor.document(), editor.outline(), editor.symbols(), default_theme_profile());
-    expect(fatal(bool(restored.blocks.size() == 2u)));
-
-    expect(fatal(bool(editor.redo())));
-    expect(fatal(bool(editor.document().root.children.size() == 1u)));
-    expect(fatal(bool(validate_document(editor.document()).empty())));
-    expect(fatal(bool(editor.undo())));
-    expect(fatal(bool(editor.markdown_utf8() == before)));
 };
 
-"raw_block_boundary_history_survives_weird_but_plausible_edits"_test = [] {
+"visible_raw_block_boundary_history_survives_weird_but_plausible_edits"_test = [] {
     struct Case {
         std::string markdown;
         bool reverse_selection = false;
@@ -144,27 +122,18 @@ suite editor_raw_history_tests = [] {
         expect(bool(raw_blocks.size() >= 2u)) << test_case.markdown;
         if (raw_blocks.size() < 2u) continue;
 
-        const auto closing = std::ranges::find(
-            raw_blocks[0]->block_source.tree().tokens,
-            BlockSourceTokenKind::ClosingMarker,
-            &BlockSourceToken::kind);
-        const auto opening = std::ranges::find(
-            raw_blocks[1]->block_source.tree().tokens,
-            BlockSourceTokenKind::OpeningMarker,
-            &BlockSourceToken::kind);
-        expect(bool(closing != raw_blocks[0]->block_source.tree().tokens.end()))
-            << test_case.markdown;
-        expect(bool(opening != raw_blocks[1]->block_source.tree().tokens.end()))
-            << test_case.markdown;
-        if (closing == raw_blocks[0]->block_source.tree().tokens.end()
-            || opening == raw_blocks[1]->block_source.tree().tokens.end()) {
-            continue;
-        }
+        const auto first_range = block_source_editable_range(raw_blocks[0]->block_source);
+        const auto second_range = block_source_editable_range(raw_blocks[1]->block_source);
 
         TextSelection boundary{
-            {raw_blocks[0]->id, closing->source_range.start, TextAffinity::Downstream},
-            {raw_blocks[1]->id, opening->source_range.end, TextAffinity::Upstream},
+            {raw_blocks[0]->id, first_range.start, TextAffinity::Downstream},
+            {raw_blocks[1]->id,
+                second_range.start + second_range.length() / 2,
+                TextAffinity::Upstream},
         };
+        if (first_range.empty() && second_range.empty()) {
+            boundary.active.source_offset = second_range.end;
+        }
         if (test_case.reverse_selection) std::swap(boundary.anchor, boundary.active);
         const auto before_markdown = editor.markdown_utf8();
         editor.set_selection(boundary);
@@ -203,7 +172,7 @@ suite editor_raw_history_tests = [] {
     }
 };
 
-"code_fence_closer_deletion_and_undo_preserve_history_and_incremental_rendering"_test = [] {
+"rendered_code_content_deletion_preserves_hidden_fence_and_history"_test = [] {
     auto exercise = [&](bool delete_as_selection, bool reverse_selection) {
         Editor editor("```cpp\n11111111\n```");
         expect(fatal(bool(editor.document().root.children.size() == 1u)));
@@ -213,19 +182,15 @@ suite editor_raw_history_tests = [] {
         const auto* code = find_block(editor.document().root, code_id);
         expect(fatal(bool(code && code->kind == BlockKind::CodeBlock)));
         if (!code || code->kind != BlockKind::CodeBlock) return;
-        const auto closing = std::ranges::find(
-            code->block_source.tree().tokens,
-            BlockSourceTokenKind::ClosingMarker,
-            &BlockSourceToken::kind);
-        expect(fatal(bool(closing != code->block_source.tree().tokens.end())));
-        if (closing == code->block_source.tree().tokens.end()) return;
+        const auto content = block_source_editable_range(code->block_source);
+        expect(fatal(bool(!content.empty())));
 
         auto original_selection = delete_as_selection
             ? TextSelection{
-                {code_id, closing->source_range.start, TextAffinity::Downstream},
-                {code_id, closing->source_range.end, TextAffinity::Upstream}}
+                {code_id, content.end - 1, TextAffinity::Downstream},
+                {code_id, content.end, TextAffinity::Upstream}}
             : TextSelection::caret(
-                {code_id, closing->source_range.end, TextAffinity::Downstream});
+                {code_id, content.end, TextAffinity::Downstream});
         if (reverse_selection) std::swap(original_selection.anchor, original_selection.active);
         editor.set_selection(original_selection);
         auto render_model = build_render_model(
@@ -273,14 +238,14 @@ suite editor_raw_history_tests = [] {
 
         const auto original_markdown = editor.markdown_utf8();
         Command backspace{.kind = CommandKind::DeleteBackward};
-        const int edit_count = delete_as_selection ? 1 : 3;
+        const int edit_count = 1;
         for (int index = 0; index < edit_count; ++index) {
             expect(fatal(bool(editor.execute_command(backspace))));
             update_render_model();
             verify();
         }
         const auto edited_markdown = editor.markdown_utf8();
-        expect(fatal(bool(edited_markdown == "```cpp\n11111111\n")));
+        expect(fatal(bool(edited_markdown == "```cpp\n1111111\n```")));
 
         for (int index = 0; index < edit_count; ++index) {
             expect(fatal(bool(editor.undo())));
@@ -303,7 +268,7 @@ suite editor_raw_history_tests = [] {
     exercise(false, false);
 };
 
-"incomplete_raw_marker_edits_restore_exact_source_and_selection"_test = [] {
+"incomplete_raw_content_edits_restore_exact_source_and_selection"_test = [] {
     const std::vector<std::string> documents{
         "```cpp\nvalue",
         "$$\nx + y",
@@ -322,14 +287,21 @@ suite editor_raw_history_tests = [] {
         expect(fatal(bool(opening != raw.block_source.tree().tokens.end()))) << markdown;
         if (opening == raw.block_source.tree().tokens.end()) continue;
 
-        auto selection = TextSelection{
+        auto hidden_selection = TextSelection{
             {raw.id, opening->source_range.end, TextAffinity::Upstream},
             {raw.id, opening->source_range.start, TextAffinity::Downstream},
         };
         const auto before = editor.markdown_utf8();
-        editor.set_selection(selection);
-        expect(fatal(bool(editor.execute_document_delete_selection(editor.selection()).has_value())))
+        editor.set_selection(hidden_selection);
+        expect(fatal(!editor.execute_document_delete_selection(editor.selection()).has_value()))
             << markdown;
+        expect(fatal(bool(editor.markdown_utf8() == before))) << markdown;
+        const auto content = block_source_editable_range(raw.block_source);
+        auto selection = TextSelection::caret({
+            raw.id, content.start, TextAffinity::Downstream});
+        editor.set_selection(selection);
+        expect(fatal(bool(editor.execute_document_insert_text(
+            editor.selection(), U"x").has_value()))) << markdown;
         expect(fatal(bool(validate_document(editor.document()).empty()))) << markdown;
         const auto after = editor.markdown_utf8();
         auto model = build_render_model(
@@ -341,9 +313,7 @@ suite editor_raw_history_tests = [] {
         expect(fatal(bool(editor.redo()))) << markdown;
         expect(fatal(bool(editor.markdown_utf8() == after))) << markdown;
         expect(fatal(bool(editor.undo()))) << markdown;
-        expect(fatal(bool(editor.execute_document_insert_text(editor.selection(), U"x").has_value())))
-            << markdown;
-        expect(fatal(bool(validate_document(editor.document()).empty()))) << markdown;
+        expect(fatal(bool(editor.markdown_utf8() == before))) << markdown;
     }
 };
 

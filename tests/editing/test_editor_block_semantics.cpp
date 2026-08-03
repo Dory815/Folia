@@ -1,6 +1,5 @@
 #include <cstddef>
 #include <random>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -40,7 +39,7 @@ suite editor_block_semantic_tests = [] {
         editor.set_selection(before);
         reset_core_operation_counters();
         auto transaction = editor.execute_document_delete_backward(editor.selection());
-        expect(fatal(bool(transaction.has_value()))) << label;
+        expect(fatal(bool(transaction.has_value()))) << label << " transaction";
         if (!transaction) return;
         const auto counters = read_core_operation_counters();
         expect(fatal(bool(counters.full_document_parses == 0u))) << label;
@@ -109,24 +108,26 @@ suite editor_block_semantic_tests = [] {
         expect(fatal(bool(transaction.has_value()))) << label;
         if (!transaction) return;
         const auto counters = read_core_operation_counters();
-        expect(fatal(bool(counters.full_document_parses == 0u))) << label;
-        expect(fatal(bool(counters.full_document_serializations == 0u))) << label;
-        expect(fatal(bool(counters.full_tree_transaction_diffs == 0u))) << label;
-        expect(fatal(bool(counters.full_document_text_projections == 0u))) << label;
-        expect(fatal(bool(counters.full_document_block_index_scans == 0u))) << label;
-        expect(fatal(bool(counters.incremental_document_block_index_repairs == 1u))) << label;
-        expect(fatal(bool(!transaction->operations.empty()))) << label;
-        expect(fatal(document_indexes_are_exact(editor.document()))) << label;
+        expect(fatal(bool(counters.full_document_parses == 0u))) << label << " parses";
+        expect(fatal(bool(counters.full_document_serializations == 0u))) << label << " serializations";
+        expect(fatal(bool(counters.full_tree_transaction_diffs == 0u))) << label << " tree diffs";
+        expect(fatal(bool(counters.full_document_text_projections == 0u))) << label << " projections";
+        expect(fatal(bool(counters.full_document_block_index_scans == 0u))) << label << " index scans";
+        expect(fatal(bool(counters.incremental_document_block_index_repairs == 1u))) << label << " index repairs";
+        expect(fatal(bool(!transaction->operations.empty()))) << label << " operations";
+        expect(fatal(document_indexes_are_exact(editor.document()))) << label << " indexes after";
         const auto after_markdown = editor.markdown_utf8();
         const auto after = editor.selection();
-        expect(fatal(bool(editor.undo()))) << label;
-        expect(fatal(bool(editor.markdown_utf8() == before_markdown))) << label;
-        expect(fatal(bool(editor.selection() == selection))) << label;
-        expect(fatal(document_indexes_are_exact(editor.document()))) << label;
-        expect(fatal(bool(editor.redo()))) << label;
-        expect(fatal(bool(editor.markdown_utf8() == after_markdown))) << label;
-        expect(fatal(bool(editor.selection() == after))) << label;
-        expect(fatal(document_indexes_are_exact(editor.document()))) << label;
+        const auto undo_succeeded = editor.undo();
+        expect(fatal(bool(undo_succeeded))) << label << " undo";
+        expect(fatal(bool(editor.markdown_utf8() == before_markdown))) << label << " undo source";
+        expect(fatal(bool(editor.selection() == selection))) << label << " undo selection";
+        expect(fatal(document_indexes_are_exact(editor.document()))) << label << " undo indexes";
+        const auto redo_succeeded = editor.redo();
+        expect(fatal(bool(redo_succeeded))) << label << " redo";
+        expect(fatal(bool(editor.markdown_utf8() == after_markdown))) << label << " redo source";
+        expect(fatal(bool(editor.selection() == after))) << label << " redo selection";
+        expect(fatal(document_indexes_are_exact(editor.document()))) << label << " redo indexes";
     };
 
     Editor paragraphs("alpha\n\nbeta\n\ngamma");
@@ -172,10 +173,12 @@ suite editor_block_semantic_tests = [] {
     Editor raw("```\nalpha\n```\n\nomega");
     const auto code_id = raw.document().root.children.front().id;
     const auto paragraph_id = raw.document().root.children.back().id;
+    const auto code_start = block_source_editable_range(
+        raw.document().root.children.front().block_source).start;
     exercise(
         raw,
         TextSelection{
-            {code_id, 2, TextAffinity::Downstream},
+            {code_id, code_start, TextAffinity::Downstream},
             {paragraph_id, 2, TextAffinity::Downstream}},
         "raw source boundary");
 };

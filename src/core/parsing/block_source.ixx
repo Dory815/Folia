@@ -38,6 +38,10 @@ struct BlockSourceTree {
     BlockSourceKind kind = BlockSourceKind::FencedCode;
     std::vector<BlockSourceToken> tokens;
     std::optional<SourceRange> info_range;
+    // The first non-whitespace token in a fenced code info string.  The full
+    // info_range remains lossless source; this narrower range lets the UI edit
+    // the syntax language without rewriting auxiliary info-string text.
+    std::optional<SourceRange> language_range;
     std::vector<SourceRange> content_ranges;
     std::vector<std::size_t> content_to_source;
     std::u32string content;
@@ -89,6 +93,20 @@ private:
     }
 };
 
+inline std::u32string block_source_line_ending(
+    const BlockSourceDocument& document) {
+    const auto& source = document.source();
+    for (const auto& token : document.tree().tokens) {
+        if (token.kind != BlockSourceTokenKind::LineBreak) continue;
+        if (token.source_range.end <= source.size()) {
+            return source.substr(
+                token.source_range.start,
+                token.source_range.length());
+        }
+    }
+    return U"\n";
+}
+
 namespace block_source_detail {
 
 inline bool horizontal_space(char32_t value) {
@@ -106,6 +124,18 @@ inline std::size_t line_ending_length(std::u32string_view source, std::size_t at
         return at + 1 < source.size() && source[at + 1] == U'\n' ? 2u : 1u;
     }
     return source[at] == U'\n' ? 1u : 0u;
+}
+
+inline std::optional<SourceRange> line_ending_before(
+    std::u32string_view source,
+    std::size_t at) {
+    if (at == 0 || at > source.size()) return std::nullopt;
+    if (source[at - 1] == U'\n') {
+        const auto start = at >= 2 && source[at - 2] == U'\r' ? at - 2 : at - 1;
+        return SourceRange{start, at};
+    }
+    if (source[at - 1] == U'\r') return SourceRange{at - 1, at};
+    return std::nullopt;
 }
 
 inline void push_token(BlockSourceTree& tree, BlockSourceTokenKind kind, std::size_t start, std::size_t end) {
@@ -187,8 +217,20 @@ inline BlockSourceTree parse_fenced(std::u32string_view source, BlockSourceKind 
     push_token(tree, BlockSourceTokenKind::OpeningMarker, 0, cursor);
     tree.info_range = SourceRange{cursor, first_end};
     push_token(tree, BlockSourceTokenKind::InfoString, cursor, first_end);
-    const auto info = trim_horizontal(source.substr(cursor, first_end - cursor));
-    if (!info.empty()) tree.language = cps_to_utf8(info);
+    auto language_start = cursor;
+    while (language_start < first_end && horizontal_space(source[language_start])) {
+        ++language_start;
+    }
+    auto language_end = language_start;
+    while (language_end < first_end && !horizontal_space(source[language_end])) {
+        ++language_end;
+    }
+    if (language_start < language_end) {
+        tree.language_range = SourceRange{language_start, language_end};
+        tree.language = cps_to_utf8(source.substr(
+            language_start,
+            language_end - language_start));
+    }
     auto content_start = first_end;
     if (opening_line_ending_length != 0) {
         push_token(
@@ -200,12 +242,27 @@ inline BlockSourceTree parse_fenced(std::u32string_view source, BlockSourceKind 
     }
 
     const auto closing = closing_fence(source, content_start, marker, marker_count);
-    const auto content_end = closing ? closing->start : source.size();
+    // For an empty block the opening line ending ends exactly at the closing
+    // marker.  It is already represented by the opening LineBreak token and
+    // must not also be mistaken for a separator belonging to the content.
+    const auto closing_separator = closing && closing->start > content_start
+        ? line_ending_before(source, closing->start)
+        : std::nullopt;
+    const auto content_end = closing_separator
+        ? closing_separator->start
+        : closing ? closing->start : source.size();
     push_token(tree, BlockSourceTokenKind::Content, content_start, content_end);
     identity_content_map(tree, {content_start, content_end});
     tree.content = std::u32string(source.substr(content_start, content_end - content_start));
     if (closing) {
         tree.complete_closing = true;
+        if (closing_separator) {
+            push_token(
+                tree,
+                BlockSourceTokenKind::LineBreak,
+                closing_separator->start,
+                closing_separator->end);
+        }
         push_token(tree, BlockSourceTokenKind::ClosingMarker, closing->start, closing->end);
         if (closing->end < source.size()) {
             push_token(tree, BlockSourceTokenKind::Error, closing->end, source.size());
@@ -256,12 +313,24 @@ inline BlockSourceTree parse_math(std::u32string_view source, BlockSourceKind ki
     if (closing_start != std::u32string_view::npos) {
         closing = SourceRange{closing_start, closing_start + closing_text.size()};
     }
-    const auto content_end = closing ? closing->start : source.size();
+    const auto closing_separator = closing && closing->start > content_start
+        ? line_ending_before(source, closing->start)
+        : std::nullopt;
+    const auto content_end = closing_separator
+        ? closing_separator->start
+        : closing ? closing->start : source.size();
     push_token(tree, BlockSourceTokenKind::Content, content_start, content_end);
     identity_content_map(tree, {content_start, content_end});
     tree.content = std::u32string(source.substr(content_start, content_end - content_start));
     if (closing) {
         tree.complete_closing = true;
+        if (closing_separator) {
+            push_token(
+                tree,
+                BlockSourceTokenKind::LineBreak,
+                closing_separator->start,
+                closing_separator->end);
+        }
         push_token(tree, BlockSourceTokenKind::ClosingMarker, closing->start, closing->end);
         if (closing->end < source.size()) {
             push_token(tree, BlockSourceTokenKind::Error, closing->end, source.size());
@@ -276,6 +345,7 @@ inline BlockSourceTree parse_indented(std::u32string_view source) {
     tree.complete_opening = true;
     tree.complete_closing = true;
     auto line_start = std::size_t{0};
+    auto content_boundary = std::size_t{0};
     while (line_start < source.size()) {
         const auto end = line_end(source, line_start);
         auto content_start = line_start;
@@ -305,14 +375,22 @@ inline BlockSourceTree parse_indented(std::u32string_view source) {
         const auto ending_length = line_ending_length(source, end);
         if (ending_length != 0) {
             push_token(tree, BlockSourceTokenKind::LineBreak, end, end + ending_length);
-            tree.content.push_back(U'\n');
-            tree.content_to_source.push_back(end);
+            if (end + ending_length < source.size()) {
+                tree.content.push_back(U'\n');
+                tree.content_to_source.push_back(end);
+                content_boundary = end + ending_length;
+            } else {
+                // The last physical ending terminates the indented code line;
+                // it is source structure, not an additional empty code line.
+                content_boundary = end;
+            }
             line_start = end + ending_length;
         } else {
+            content_boundary = end;
             line_start = end;
         }
     }
-    tree.content_to_source.push_back(source.size());
+    tree.content_to_source.push_back(content_boundary);
     return tree;
 }
 
@@ -450,6 +528,72 @@ inline std::size_t block_source_offset_for_content(
     if (document.tree().content_to_source.empty()) return 0;
     const auto index = (std::min)(content_offset, document.tree().content_to_source.size() - 1);
     return document.tree().content_to_source[index];
+}
+
+// Rendered editing keeps the original source coordinate.  These helpers only
+// describe which source boundaries are reachable through the projected block
+// content; they do not introduce a second coordinate system.
+inline SourceRange block_source_editable_range(
+    const BlockSourceDocument& document) {
+    const auto& mapping = document.tree().content_to_source;
+    if (mapping.empty()) return {0, 0};
+    return {mapping.front(), mapping.back()};
+}
+
+inline std::size_t block_source_clamp_editable_offset(
+    const BlockSourceDocument& document,
+    std::size_t source_offset) {
+    const auto& mapping = document.tree().content_to_source;
+    if (mapping.empty()) return 0;
+    if (source_offset <= mapping.front()) return mapping.front();
+    if (source_offset >= mapping.back()) return mapping.back();
+    const auto next = std::ranges::lower_bound(mapping, source_offset);
+    if (next == mapping.end()) return mapping.back();
+    if (*next == source_offset || next == mapping.begin()) return *next;
+    const auto previous = *std::prev(next);
+    return source_offset - previous <= *next - source_offset ? previous : *next;
+}
+
+inline std::optional<SourceRange> block_source_backward_delete_range(
+    const BlockSourceDocument& document,
+    std::size_t source_offset) {
+    const auto& mapping = document.tree().content_to_source;
+    if (mapping.size() < 2) return std::nullopt;
+    const auto offset = block_source_clamp_editable_offset(document, source_offset);
+    const auto current = std::ranges::lower_bound(mapping, offset);
+    if (current == mapping.end() || *current != offset || current == mapping.begin()) {
+        return std::nullopt;
+    }
+    return SourceRange{*std::prev(current), *current};
+}
+
+inline std::optional<SourceRange> block_source_forward_delete_range(
+    const BlockSourceDocument& document,
+    std::size_t source_offset) {
+    const auto& mapping = document.tree().content_to_source;
+    if (mapping.size() < 2) return std::nullopt;
+    const auto offset = block_source_clamp_editable_offset(document, source_offset);
+    const auto current = std::ranges::lower_bound(mapping, offset);
+    if (current == mapping.end() || *current != offset || std::next(current) == mapping.end()) {
+        return std::nullopt;
+    }
+    return SourceRange{*current, *std::next(current)};
+}
+
+inline std::optional<SourceRange> block_source_trailing_line_break(
+    const BlockSourceDocument& document) {
+    const auto range = block_source_editable_range(document);
+    if (range.empty() || range.end > document.source().size()) return std::nullopt;
+    if (range.end >= 2
+        && document.source()[range.end - 2] == U'\r'
+        && document.source()[range.end - 1] == U'\n') {
+        return SourceRange{range.end - 2, range.end};
+    }
+    if (document.source()[range.end - 1] == U'\r'
+        || document.source()[range.end - 1] == U'\n') {
+        return SourceRange{range.end - 1, range.end};
+    }
+    return std::nullopt;
 }
 
 } // namespace folia

@@ -77,8 +77,9 @@ suite document_input_tests = [] {
     for (const auto& marker : markers) {
         auto document = parse_document("");
         normalize_document(document);
+        const auto initial = caret(first_editable(document));
         auto [structured, at_content_start] = type_text(
-            std::move(document), caret(first_editable(document)), marker);
+            std::move(document), initial, marker);
         auto [with_content, after_content] = type_text(
             std::move(structured), at_content_start, U"content");
         auto deletion = test_edit::document_delete_backward(
@@ -118,8 +119,9 @@ suite document_input_tests = [] {
 "block_start_backspace_peels_nested_prefixes_from_inside_out"_test = [] {
     auto document = parse_document("");
     normalize_document(document);
+    const auto initial = caret(first_editable(document));
     auto [quoted, quoted_start] = type_text(
-        std::move(document), caret(first_editable(document)), U"> ");
+        std::move(document), initial, U"> ");
     auto [heading, heading_start] = type_text(
         std::move(quoted), quoted_start, U"# ");
     auto [with_content, after_content] = type_text(
@@ -195,7 +197,13 @@ suite document_input_tests = [] {
 "typed_fence_enters_auto_closed_code_without_document_reparse"_test = [] {
     auto document = parse_document("");
     normalize_document(document);
-    auto [opening, at_opening_end] = type_text(std::move(document), caret(first_editable(document)), U"```cpp");
+    const auto initial = caret(first_editable(document));
+    auto [opening, at_opening_end] = type_text(std::move(document), initial, U"```cpp");
+    expect(fatal(bool(serialize_markdown(opening) == "```cpp")))
+        << "opening=" << serialize_markdown(opening);
+    expect(fatal(bool(at_opening_end.active.source_offset == 6u)));
+    expect(fatal(bool(opening.root.children.front().kind == BlockKind::Paragraph)))
+        << "opening-kind=" << static_cast<int>(opening.root.children.front().kind);
     auto entered = test_edit::document_enter(opening, at_opening_end);
     expect(fatal(bool(entered.has_value())));
     if (!entered) return;
@@ -213,9 +221,15 @@ suite document_input_tests = [] {
     auto second_enter = test_edit::document_enter(entered->after, entered->selection_after);
     expect(fatal(bool(second_enter.has_value())));
     if (!second_enter) return;
-    expect(fatal(bool(second_enter->after.root.children.front().block_source.source() == U"```cpp\n\n```")));
-    expect(fatal(bool(second_enter->selection_after.active.source_offset == 8u)));
-    expect(fatal(bool(serialize_markdown(second_enter->after) == "```cpp\n\n```")));
+    expect(fatal(bool(second_enter->after.root.children.size() == 2u)));
+    expect(fatal(bool(second_enter->after.root.children.front().block_source.source() == U"```cpp\n```")));
+    expect(fatal(bool(second_enter->after.root.children.back().kind == BlockKind::Paragraph)));
+    expect(fatal(bool(second_enter->selection_after.active.container_id
+        == second_enter->after.root.children.back().id)));
+    expect(fatal(bool(second_enter->selection_after.active.source_offset == 0u)));
+    const auto serialized_after_exit = serialize_markdown(second_enter->after);
+    expect(fatal(bool(serialized_after_exit == "```cpp\n```\n\n")))
+        << "serialized=" << serialized_after_exit;
     expect_document_valid(second_enter->after);
 };
 

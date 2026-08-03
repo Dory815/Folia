@@ -24,11 +24,11 @@ struct CodePresentationLine {
     SourceRange range_with_ending;
 };
 
-// A terminating physical line ending closes the preceding code line; it does
-// not create another visible empty line.  A genuinely empty final code line is
-// represented by a second line ending and therefore remains visible.  Keep
-// both ranges so layout can exclude CR/LF glyphs while recursive flow retains
-// the exact source text and source-offset mapping.
+// The projected code text excludes a complete closing fence's structural line
+// ending.  A line ending that remains in this view is therefore user content:
+// when it terminates the source it creates a genuine empty editable line.
+// Keep both ranges so layout can exclude CR/LF glyphs while recursive flow
+// retains the exact source text and source-offset mapping.
 inline std::vector<CodePresentationLine> code_presentation_lines(std::u32string_view code) {
     std::vector<CodePresentationLine> lines;
     if (code.empty()) {
@@ -55,6 +55,9 @@ inline std::vector<CodePresentationLine> code_presentation_lines(std::u32string_
         }
         lines.push_back({{start, content_end}, {start, ending_end}});
         start = ending_end;
+    }
+    if (code.back() == U'\r' || code.back() == U'\n') {
+        lines.push_back({{code.size(), code.size()}, {code.size(), code.size()}});
     }
     return lines;
 }

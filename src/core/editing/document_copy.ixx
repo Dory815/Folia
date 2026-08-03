@@ -133,7 +133,27 @@ inline void truncate_owner(
         return;
     }
     if (auto* source = editable_raw_block_source(copy)) {
-        *source = source->substr(range.start, range.length());
+        const auto editable = block_source_editable_range(copy.block_source);
+        if (range.start == 0 && range.end == full_length) {
+            reparse_block_source(copy.block_source);
+            return;
+        }
+        const auto selected_start = (std::clamp)(range.start, editable.start, editable.end);
+        const auto selected_end = (std::clamp)(range.end, editable.start, editable.end);
+        auto selected = source->substr(
+            selected_start,
+            selected_end - selected_start);
+        if (copy.block_source.tree().kind == BlockSourceKind::IndentedCode) {
+            // A partial first line no longer owns the original indentation.
+            // Give the copied fragment its own structural prefix; subsequent
+            // selected lines already retain their source indentation.
+            *source = U"    " + std::move(selected);
+        } else {
+            auto wrapped = source->substr(0, editable.start);
+            wrapped += selected;
+            wrapped += source->substr(editable.end);
+            *source = std::move(wrapped);
+        }
         reparse_block_source(copy.block_source);
     }
 }

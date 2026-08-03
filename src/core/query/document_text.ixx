@@ -6,6 +6,7 @@
 export module folia.core.document_text;
 import std;
 import folia.core.ast;
+import folia.core.block_source;
 import folia.core.block_tree;
 import folia.core.document;
 import folia.core.ids;
@@ -83,6 +84,37 @@ inline std::optional<std::u32string_view> editable_block_text_view(const BlockNo
     }
 }
 
+inline std::optional<SourceRange> editable_block_source_range(const BlockNode& block) {
+    if (const auto* document = editable_inline_document(block)) {
+        return SourceRange{0, document->source.size()};
+    }
+    if (editable_raw_block_source(block)) {
+        return block_source_editable_range(block.block_source);
+    }
+    switch (block.kind) {
+        case BlockKind::Frontmatter:
+        case BlockKind::LinkDefinition:
+        case BlockKind::UnsupportedMarkup:
+        case BlockKind::ImageBlock:
+        case BlockKind::Toc:
+        case BlockKind::ThematicBreak:
+        case BlockKind::Extension:
+            return SourceRange{0, 1};
+        default:
+            return std::nullopt;
+    }
+}
+
+inline std::size_t clamp_editable_block_source_offset(
+    const BlockNode& block,
+    std::size_t source_offset) {
+    if (editable_raw_block_source(block)) {
+        return block_source_clamp_editable_offset(block.block_source, source_offset);
+    }
+    const auto range = editable_block_source_range(block).value_or(SourceRange{});
+    return (std::clamp)(source_offset, range.start, range.end);
+}
+
 inline std::optional<std::u32string> editable_block_text(const BlockNode& block) {
     auto view = editable_block_text_view(block);
     return view ? std::optional<std::u32string>{std::u32string{*view}} : std::nullopt;
@@ -92,7 +124,8 @@ inline std::optional<TextPosition> first_document_text_position(
     const EditorDocument& document) {
     auto find = [&](auto& self, const BlockNode& block) -> std::optional<TextPosition> {
         if (block.kind != BlockKind::Document && editable_block_text_view(block)) {
-            return TextPosition{block.id, 0, TextAffinity::Downstream};
+            const auto range = editable_block_source_range(block).value_or(SourceRange{});
+            return TextPosition{block.id, range.start, TextAffinity::Downstream};
         }
         for (const auto& child : block.children) {
             if (auto position = self(self, child)) return position;

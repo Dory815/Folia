@@ -37,7 +37,7 @@ suite document_container_exit_tests = [] {
     auto code = test_edit::document_enter(fenced, TextSelection::caret({fenced.root.children.front().id, code_offset, TextAffinity::Downstream}));
     expect(fatal(bool(code.has_value())));
     if (code) {
-        expect(fatal(bool(block_source_content(code->after.root.children.front().block_source) == U"one\n\ntwo\n")));
+        expect(fatal(bool(block_source_content(code->after.root.children.front().block_source) == U"one\n\ntwo")));
         expect(fatal(bool(code->selection_after.active.source_offset == code_offset + 1)));
     }
 
@@ -45,7 +45,7 @@ suite document_container_exit_tests = [] {
     auto const math_offset = block_source_offset_for_content(math.root.children.front().block_source, 1);
     auto math_break = test_edit::document_enter(math, TextSelection::caret({math.root.children.front().id, math_offset, TextAffinity::Downstream}));
     expect(fatal(bool(math_break.has_value())));
-    if (math_break) expect(fatal(bool(block_source_content(math_break->after.root.children.front().block_source) == U"a\n+b\n")));
+    if (math_break) expect(fatal(bool(block_source_content(math_break->after.root.children.front().block_source) == U"a\n+b")));
 
     auto table = parse_document("| ab |\n| --- |");
     auto& cell = table.root.children.front().children.front().children.front();

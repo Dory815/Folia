@@ -16,7 +16,7 @@ enum class CommandKind {
     SetHeading, ClearHeading,
     ToggleUnorderedList, ToggleOrderedList, ToggleTaskList, ToggleTaskCheckbox, ToggleBlockQuote,
     IndentListItem, OutdentListItem,
-    InsertCodeBlock, InsertMathInline, InsertMathBlock,
+    InsertCodeBlock, SetCodeBlockLanguage, InsertMathInline, InsertMathBlock,
     InsertTable, InsertImage, InsertLink, InsertFootnote, CreateFootnoteDefinition, InsertToc,
     MoveTableCellNext, MoveTableCellPrevious,
     InsertTableRowAbove, InsertTableRowBelow, DeleteTableRow, MoveTableRowUp, MoveTableRowDown,
@@ -32,7 +32,7 @@ struct Command {
     std::u32string text{};                 // InsertText / Paste / Extension payload
     bool extend_selection = false;         // Move*
     std::uint8_t level = 0;               // SetHeading
-    std::optional<std::u32string> lang;    // InsertCodeBlock
+    std::optional<std::u32string> lang;    // InsertCodeBlock / SetCodeBlockLanguage
     std::size_t rows = 0, cols = 0;       // InsertTable
     TableAlignment table_alignment = TableAlignment::None;
     std::size_t table_index = 0;

@@ -341,14 +341,15 @@ suite document_boundary_tests = [] {
     if (code_document.root.children.size() == 3u) {
         auto const blank_id = code_document.root.children[1].id;
         auto const code_id = code_document.root.children[0].id;
-        auto const code_length = code_document.root.children[0].block_source.source().size();
+        auto const code_end = block_source_editable_range(
+            code_document.root.children[0].block_source).end;
         auto transaction = test_edit::document_delete_backward(code_document, caret(code_document.root.children[1], 0));
         expect(fatal(bool(transaction.has_value())));
         if (transaction) {
             expect(fatal(bool(transaction->after.root.children.size() == 2u)));
             expect(fatal(bool(find_block(transaction->after.root, blank_id) == nullptr)));
             expect(fatal(bool(transaction->selection_after.active.container_id == code_id)));
-            expect(fatal(bool(transaction->selection_after.active.source_offset == code_length)));
+            expect(fatal(bool(transaction->selection_after.active.source_offset == code_end)));
             expect_document_valid(transaction->after);
         }
     }

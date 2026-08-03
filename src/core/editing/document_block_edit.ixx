@@ -307,8 +307,18 @@ inline std::optional<RecordedBlockEdit> exit_complete_raw_block_at_end(
     auto* block = block_at_path(document.root, *path);
     if (!block || (block->kind != BlockKind::CodeBlock
             && block->kind != BlockKind::MathBlock)
-        || !block->block_source.tree().complete_closing
-        || position.source_offset != block->block_source.source().size()) {
+        || !block->block_source.tree().complete_closing) {
+        return std::nullopt;
+    }
+
+    const auto editable = block_source_editable_range(block->block_source);
+    const auto after_closing = position.source_offset == block->block_source.source().size();
+    const auto at_editable_end = position.source_offset == editable.end;
+    const auto trailing_break = at_editable_end
+        ? block_source_trailing_line_break(block->block_source)
+        : std::nullopt;
+    const auto empty_content = block->block_source.tree().content.empty();
+    if (!after_closing && !(at_editable_end && (empty_content || trailing_break))) {
         return std::nullopt;
     }
 
@@ -318,8 +328,21 @@ inline std::optional<RecordedBlockEdit> exit_complete_raw_block_at_end(
     auto* parent = block_at_path(document.root, parent_path);
     if (!parent || index >= parent->children.size()) return std::nullopt;
 
-    auto paragraph = empty_paragraph(allocator, document);
     RecordedBlockEdit result;
+    if (trailing_break) {
+        auto edit = edit_block_source(
+            document,
+            position.container_id,
+            *trailing_break,
+            {},
+            allocator);
+        if (!edit) return std::nullopt;
+        append_source_operation(result.operations, std::move(*edit));
+        parent = find_block(document.root, parent->id);
+        if (!parent || index >= parent->children.size()) return std::nullopt;
+    }
+
+    auto paragraph = empty_paragraph(allocator, document);
     result.target = {paragraph.id, 0, TextAffinity::Downstream};
     DocumentTreeEdit insert;
     insert.kind = DocumentTreeEditKind::Insert;
@@ -542,7 +565,7 @@ inline std::optional<RecordedBlockEdit> join_adjacent(
     return std::nullopt;
 }
 
-inline std::optional<RecordedBlockEdit> remove_atomic(
+inline std::optional<RecordedBlockEdit> remove_direct_block(
     EditorDocument& document,
     NodeId id,
     NodeAllocator& allocator) {
@@ -552,7 +575,7 @@ inline std::optional<RecordedBlockEdit> remove_atomic(
     const auto index = parent_path.back();
     parent_path.pop_back();
     auto* parent = block_at_path(document.root, parent_path);
-    if (!parent || index >= parent->children.size() || !atomic_block(parent->children[index].kind)) {
+    if (!parent || index >= parent->children.size()) {
         return std::nullopt;
     }
 
@@ -587,6 +610,28 @@ inline std::optional<RecordedBlockEdit> remove_atomic(
         if (!insert_block(*parent, index, std::move(paragraph))) return std::nullopt;
     }
     return result;
+}
+
+inline std::optional<RecordedBlockEdit> remove_atomic(
+    EditorDocument& document,
+    NodeId id,
+    NodeAllocator& allocator) {
+    const auto* block = find_document_block(document, id);
+    if (!block || !atomic_block(block->kind)) return std::nullopt;
+    return remove_direct_block(document, id, allocator);
+}
+
+inline std::optional<RecordedBlockEdit> remove_empty_raw_block(
+    EditorDocument& document,
+    NodeId id,
+    NodeAllocator& allocator) {
+    const auto* block = find_document_block(document, id);
+    if (!block
+        || (block->kind != BlockKind::CodeBlock && block->kind != BlockKind::MathBlock)
+        || !block->block_source.tree().content.empty()) {
+        return std::nullopt;
+    }
+    return remove_direct_block(document, id, allocator);
 }
 
 inline std::optional<DocumentTreeEdit> remove_node_recorded(

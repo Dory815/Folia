@@ -195,12 +195,12 @@ suite parser_inline_tests = [] {
     if (quoted) {
         const auto* code = first_block(quoted->children, BlockKind::CodeBlock);
         expect(fatal(bool(code != nullptr)));
-        if (code) expect(fatal(bool(block_source_content(code->block_source) == U"quoted();\n")));
+        if (code) expect(fatal(bool(block_source_content(code->block_source) == U"quoted();")));
     }
     if (listed) {
         const auto* code = first_block(listed->children, BlockKind::CodeBlock);
         expect(fatal(bool(code != nullptr)));
-        if (code) expect(fatal(bool(block_source_content(code->block_source) == U"listed();\n")));
+        if (code) expect(fatal(bool(block_source_content(code->block_source) == U"listed();")));
     }
 };
 

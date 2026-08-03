@@ -198,6 +198,8 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> open_raw_block(
     if (!opening) return std::nullopt;
 
     document_edit_detail::RecordedBlockEdit result;
+    document_edit_detail::MutationRollback rollback(
+        document, result.operations, document.revision);
     result.target = TextPosition{position.container_id, 0, TextAffinity::Downstream};
     auto source_edit = document_edit_detail::edit_inline(
         document,
@@ -231,8 +233,9 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> open_raw_block(
     if (!block_source_edit) return std::nullopt;
     document_edit_detail::append_source_operation(result.operations, std::move(*block_source_edit));
     block = find_block(document.root, position.container_id);
-    if (!block || block->block_source.tree().content_to_source.empty()) return std::nullopt;
-    result.target.source_offset = block->block_source.tree().content_to_source.front();
+    if (!block) return std::nullopt;
+    result.target.source_offset = block_source_editable_range(block->block_source).start;
+    rollback.commit();
     return result;
 }
 

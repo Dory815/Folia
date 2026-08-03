@@ -264,7 +264,7 @@ suite editor_inline_tests = [] {
     expect(fatal(bool(serialize_lossless(inline_document.tree, inline_document.source)
         == inline_document.source)));
 
-    expect(fatal(bool(code_copy->block_source.source() == U"```cpp\nv")));
+    expect(fatal(bool(code_copy->block_source.source() == U"```cpp\nv\n```")));
     expect(fatal(bool(block_source_tokens_partition(code_copy->block_source))));
     expect(fatal(bool(flatten_block_source_tokens(code_copy->block_source)
         == code_copy->block_source.source())));

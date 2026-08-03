@@ -263,7 +263,7 @@ suite render_model_basic_tests = [] {
     expect(fatal(bool((m.blocks.size()) == (1u))));
     expect(fatal(bool(m.blocks[0].kind == RenderBlockKind::Code)));
     expect(fatal(bool(m.blocks[0].special().code_indented)));
-    expect(fatal(bool((m.blocks[0].special().code_text) == (std::u32string(U"**alpha**\n_beta_ $gamma$\n")))));
+    expect(fatal(bool((m.blocks[0].special().code_text) == (std::u32string(U"**alpha**\n_beta_ $gamma$")))));
     expect(fatal(bool(m.blocks[0].inline_items.empty())));
     expect(fatal(bool((m.blocks[0].source_span.source_range.start) == (0u))));
     expect(fatal(bool((m.blocks[0].source_span.source_range.end) == (m.blocks[0].special().raw_source.size()))));
@@ -321,7 +321,7 @@ suite render_model_basic_tests = [] {
         const auto code_indent = flow_indent_for(list, code->id);
         expect(fatal(bool(code_indent.has_value())));
         expect(fatal(bool(code->special().code_indented)));
-        expect(fatal(bool((code->special().code_text) == (std::u32string(U"<html>\n  <head>\n    <title>Test</title>\n  </head>\n")))));
+        expect(fatal(bool((code->special().code_text) == (std::u32string(U"<html>\n  <head>\n    <title>Test</title>\n  </head>")))));
         expect(fatal(bool((code->source_span.source_range.end) == (code->special().raw_source.size()))));
         std::size_t line_indents = 0;
         std::u32string flattened_code;
@@ -346,7 +346,7 @@ suite render_model_basic_tests = [] {
                 && item.source_span.container_id == code->id
                 && item.source_span.source_range.start == code->content_span.source_range.end;
         });
-        expect(fatal(bool(trailingBreak != list.inline_items.end())));
+        expect(fatal(bool(trailingBreak == list.inline_items.end())));
     }
     bool styled_code = false;
     for (auto const& item : list.inline_items) {

@@ -83,7 +83,8 @@ inline std::optional<std::size_t> local_position_length(const BlockNode& block) 
 
 inline std::optional<TextPosition> first_editable_position(const BlockNode& block) {
     if (local_position_length(block)) {
-        return TextPosition{block.id, 0, TextAffinity::Downstream};
+        const auto range = editable_block_source_range(block).value_or(SourceRange{});
+        return TextPosition{block.id, range.start, TextAffinity::Downstream};
     }
     for (const auto& child : block.children) {
         if (auto position = first_editable_position(child)) return position;
@@ -95,7 +96,10 @@ inline std::optional<TextPosition> last_editable_position(const BlockNode& block
     for (auto child = block.children.rbegin(); child != block.children.rend(); ++child) {
         if (auto position = last_editable_position(*child)) return position;
     }
-    if (auto length = local_position_length(block)) return TextPosition{block.id, *length, TextAffinity::Upstream};
+    if (local_position_length(block)) {
+        const auto range = editable_block_source_range(block).value_or(SourceRange{});
+        return TextPosition{block.id, range.end, TextAffinity::Upstream};
+    }
     return std::nullopt;
 }
 
@@ -250,12 +254,24 @@ inline std::optional<InsertResult> insert_text(
     const auto* raw_source = editable_raw_block_source(*block);
     if (!inline_document && !raw_source) return std::nullopt;
     const auto length = inline_document ? inline_document->source.size() : raw_source->size();
-    const auto offset = (std::min)(position.source_offset, length);
+    const auto offset = raw_source
+        ? block_source_clamp_editable_offset(block->block_source, position.source_offset)
+        : (std::min)(position.source_offset, length);
+    auto replacement = std::u32string(text);
+    if (raw_source
+        && block->block_source.tree().complete_closing
+        && block->block_source.tree().content.empty()) {
+        // Complete empty raw blocks visually own one editable content line,
+        // even though their lossless source has only the opening line ending.
+        // Materializing text must create a distinct separator before the
+        // hidden closing marker so the marker cannot become part of content.
+        replacement += block_source_line_ending(block->block_source);
+    }
     auto applied = edit_block_source(
         document,
         *block,
         {offset, offset},
-        std::u32string(text),
+        std::move(replacement),
         allocator);
     if (!applied) return std::nullopt;
     return InsertResult{offset + text.size(), TextAffinity::Downstream, std::move(applied)};

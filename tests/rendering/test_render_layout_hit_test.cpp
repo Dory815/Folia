@@ -263,11 +263,10 @@ suite render_layout_hit_test_tests = [] {
     expect(fatal(bool(math_tree.blocks.size() == 1u)));
     if (!math_tree.blocks.empty()) {
         auto const& lines = math_tree.blocks.front().children;
-        expect(fatal(bool(lines.size() == 3u)));
-        if (lines.size() == 3u) {
+        expect(fatal(bool(lines.size() == 2u)));
+        if (lines.size() == 2u) {
             expect(fatal(bool(lines[0].line.source_span.source_range == SourceRange{3, 4})));
             expect(fatal(bool(lines[1].line.source_span.source_range == SourceRange{5, 6})));
-            expect(fatal(bool(lines[2].line.source_span.source_range == SourceRange{7, 7})));
         }
     }
 };

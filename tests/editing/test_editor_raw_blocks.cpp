@@ -63,24 +63,27 @@ suite editor_raw_block_tests = [] {
     expect(fatal(bool(editor.selection() == opened_selection)));
 
     reset_core_operation_counters();
-    auto newline = editor.execute_document_enter(editor.selection());
-    expect(fatal(bool(newline.has_value())));
-    if (!newline) return;
+    auto exited = editor.execute_document_enter(editor.selection());
+    expect(fatal(bool(exited.has_value())));
+    if (!exited) return;
     counters = read_core_operation_counters();
     expect(fatal(bool(counters.full_document_parses == 0u)));
     expect(fatal(bool(counters.full_document_serializations == 0u)));
     expect(fatal(bool(counters.full_tree_transaction_diffs == 0u)));
-    expect(fatal(bool(editor.document().root.children.size() == 1u)));
-    expect(fatal(bool(editor.document().root.children.front().block_source.source() == U"```cpp\n\n```")));
-    expect(fatal(bool(editor.selection().active.source_offset == 8u)));
-    const auto newline_markdown = editor.markdown_utf8();
-    const auto newline_selection = editor.selection();
+    expect(fatal(bool(editor.document().root.children.size() == 2u)));
+    expect(fatal(bool(editor.document().root.children.front().block_source.source() == U"```cpp\n```")));
+    expect(fatal(bool(editor.document().root.children.back().kind == BlockKind::Paragraph)));
+    expect(fatal(bool(editor.selection().active.container_id
+        == editor.document().root.children.back().id)));
+    expect(fatal(bool(editor.selection().active.source_offset == 0u)));
+    const auto exited_markdown = editor.markdown_utf8();
+    const auto exited_selection = editor.selection();
     expect(fatal(bool(editor.undo())));
     expect(fatal(bool(editor.markdown_utf8() == opened_markdown)));
     expect(fatal(bool(editor.selection() == opened_selection)));
     expect(fatal(bool(editor.redo())));
-    expect(fatal(bool(editor.markdown_utf8() == newline_markdown)));
-    expect(fatal(bool(editor.selection() == newline_selection)));
+    expect(fatal(bool(editor.markdown_utf8() == exited_markdown)));
+    expect(fatal(bool(editor.selection() == exited_selection)));
 };
 
 "typed_tilde_fence_auto_closes_and_round_trips_history"_test = [] {
@@ -128,8 +131,10 @@ suite editor_raw_block_tests = [] {
         expect(fatal(bool(block && block->block_source.source() == U"```cpp\n```")));
         expect(fatal(bool(code.selection().active.source_offset == 7u)));
         expect(fatal(bool(code.execute_document_enter(code.selection()).has_value())));
-        block = find_block(code.document().root, code.selection().active.container_id);
-        expect(fatal(bool(block && block->block_source.source() == U"```cpp\n\n```")));
+        expect(fatal(bool(code.document().root.children.size() == 2u)));
+        expect(fatal(bool(code.document().root.children.front().block_source.source()
+            == U"```cpp\n```")));
+        expect(fatal(bool(code.document().root.children.back().kind == BlockKind::Paragraph)));
     }
 
     Editor math;
@@ -144,9 +149,10 @@ suite editor_raw_block_tests = [] {
         expect(fatal(bool(block && block->block_source.source() == U"$$\n$$")));
         expect(fatal(bool(math.selection().active.source_offset == 3u)));
         expect(fatal(bool(math.execute_document_enter(math.selection()).has_value())));
-        block = find_block(math.document().root, math.selection().active.container_id);
-        expect(fatal(bool(block && block->block_source.source() == U"$$\n\n$$")));
-        expect(fatal(bool(math.selection().active.source_offset == 4u)));
+        expect(fatal(bool(math.document().root.children.size() == 2u)));
+        expect(fatal(bool(math.document().root.children.front().block_source.source()
+            == U"$$\n$$")));
+        expect(fatal(bool(math.document().root.children.back().kind == BlockKind::Paragraph)));
     }
 
     Editor heading("title");
@@ -155,7 +161,7 @@ suite editor_raw_block_tests = [] {
     expect(fatal(bool(heading.markdown_utf8() == "# title")));
 };
 
-"fenced_code_info_is_editable_source_with_exact_undo_redo"_test = [] {
+"rendered_text_replacement_cannot_edit_fenced_code_info"_test = [] {
     Editor editor;
     Command insert_code;
     insert_code.kind = CommandKind::InsertCodeBlock;
@@ -169,9 +175,9 @@ suite editor_raw_block_tests = [] {
     editor.set_selection(language);
     expect(fatal(bool(editor.execute_document_insert_text(editor.selection(), U"js").has_value())));
     auto const* block = find_block(editor.document().root, code_id);
-    expect(fatal(bool(block && block->block_source.source() == U"```js\n```")));
+    expect(fatal(bool(block && block->block_source.source() == U"```cpp\njs\n```")));
     expect(fatal(bool(block && block->block_source.tree().language
-        == std::optional<std::string>{"js"})));
+        == std::optional<std::string>{"cpp"})));
     const auto after = editor.selection();
     expect(fatal(bool(editor.undo())));
     block = find_block(editor.document().root, code_id);
@@ -179,8 +185,168 @@ suite editor_raw_block_tests = [] {
     expect(fatal(bool(editor.selection() == language)));
     expect(fatal(bool(editor.redo())));
     block = find_block(editor.document().root, code_id);
-    expect(fatal(bool(block && block->block_source.source() == U"```js\n```")));
+    expect(fatal(bool(block && block->block_source.source() == U"```cpp\njs\n```")));
     expect(fatal(bool(editor.selection() == after)));
+};
+
+"code_language_command_edits_only_the_first_info_token"_test = [] {
+    Editor editor("```cpp linenums\nvalue\n```");
+    const auto code_id = editor.document().root.children.front().id;
+    const auto content_start = block_source_editable_range(
+        editor.document().root.children.front().block_source).start;
+    editor.set_selection(TextSelection::caret({
+        code_id, content_start, TextAffinity::Downstream}));
+    const auto before_selection = editor.selection();
+
+    Command command;
+    command.kind = CommandKind::SetCodeBlockLanguage;
+    command.lang = U"javascript";
+    expect(fatal(editor.execute_command(command)));
+    auto const* code = find_block(editor.document().root, code_id);
+    expect(fatal(bool(code)));
+    if (!code) return;
+    expect(fatal(code->block_source.source()
+        == U"```javascript linenums\nvalue\n```"));
+    expect(fatal(code->block_source.tree().language
+        == std::optional<std::string>{"javascript"}));
+    expect(fatal(code->block_source.source().substr(
+        code->block_source.tree().info_range->start,
+        code->block_source.tree().info_range->length())
+        == U"javascript linenums"));
+    expect(fatal(editor.selection().active.source_offset
+        == before_selection.active.source_offset + 7u));
+
+    expect(fatal(editor.undo()));
+    code = find_block(editor.document().root, code_id);
+    expect(fatal(bool(code && code->block_source.source()
+        == U"```cpp linenums\nvalue\n```")));
+    expect(fatal(editor.selection() == before_selection));
+    expect(fatal(editor.redo()));
+    code = find_block(editor.document().root, code_id);
+    expect(fatal(bool(code && code->block_source.tree().language
+        == std::optional<std::string>{"javascript"})));
+};
+
+"rendered_raw_block_navigation_never_enters_hidden_markers"_test = [] {
+    Editor editor("before\n\n```cpp\nab\n```\n\nafter");
+    const auto& before = editor.document().root.children[0];
+    const auto& code = editor.document().root.children[1];
+    const auto& after = editor.document().root.children[2];
+    const auto code_range = block_source_editable_range(code.block_source);
+
+    editor.set_selection(TextSelection::caret({
+        code.id, code_range.start, TextAffinity::Downstream}));
+    expect(fatal(editor.execute_command(Command::MoveLeft(false))));
+    expect(fatal(editor.selection().active.container_id == before.id));
+    expect(fatal(editor.selection().active.source_offset
+        == before.inline_content.source.size()));
+
+    expect(fatal(editor.execute_command(Command::MoveRight(false))));
+    expect(fatal(editor.selection().active.container_id == code.id));
+    expect(fatal(editor.selection().active.source_offset == code_range.start));
+    editor.set_selection(TextSelection::caret({
+        code.id, code_range.end, TextAffinity::Upstream}));
+    expect(fatal(editor.execute_command(Command::MoveRight(false))));
+    expect(fatal(editor.selection().active.container_id == after.id));
+    expect(fatal(editor.selection().active.source_offset == 0u));
+};
+
+"empty_raw_structures_are_deleted_as_one_reversible_tree_edit"_test = [] {
+    for (auto const& markdown : std::vector<std::string>{
+            "```\n```",
+            "$$\n$$",
+        }) {
+        Editor editor(markdown);
+        const auto& raw = editor.document().root.children.front();
+        const auto position = block_source_editable_range(raw.block_source).start;
+        editor.set_selection(TextSelection::caret({
+            raw.id, position, TextAffinity::Downstream}));
+        const auto before = editor.selection();
+        const auto deleted = raw.kind == BlockKind::CodeBlock
+            ? editor.execute_document_delete_backward(editor.selection())
+            : editor.execute_document_delete_forward(editor.selection());
+        expect(fatal(bool(deleted.has_value()))) << markdown;
+        expect(fatal(editor.document().root.children.size() == 1u)) << markdown;
+        expect(fatal(editor.document().root.children.front().kind
+            == BlockKind::Paragraph)) << markdown;
+        expect(fatal(editor.markdown_utf8().empty())) << markdown;
+        expect(fatal(editor.undo())) << markdown;
+        expect(fatal(editor.markdown_utf8() == markdown)) << markdown;
+        expect(fatal(editor.selection() == before)) << markdown;
+        expect(fatal(editor.redo())) << markdown;
+        expect(fatal(editor.document().root.children.front().kind
+            == BlockKind::Paragraph)) << markdown;
+    }
+};
+
+"enter_on_trailing_empty_raw_line_exits_and_removes_that_line"_test = [] {
+    for (auto const& test_case : std::vector<std::pair<std::string, std::string>>{
+            {"```cpp\nvalue\n\n```", "```cpp\nvalue\n```"},
+            {"$$\nx + y\n\n$$", "$$\nx + y\n$$"},
+        }) {
+        Editor editor(test_case.first);
+        const auto raw_id = editor.document().root.children.front().id;
+        const auto content_end = block_source_editable_range(
+            editor.document().root.children.front().block_source).end;
+        editor.set_selection(TextSelection::caret({
+            raw_id, content_end, TextAffinity::Downstream}));
+        expect(fatal(bool(editor.execute_document_enter(
+            editor.selection()).has_value()))) << test_case.first;
+        expect(fatal(editor.document().root.children.size() == 2u)) << test_case.first;
+        expect(fatal(editor.document().root.children.front().block_source.source()
+            == utf8_to_cps(test_case.second))) << test_case.first;
+        expect(fatal(editor.document().root.children.back().kind
+            == BlockKind::Paragraph)) << test_case.first;
+        expect(fatal(editor.selection().active.container_id
+            == editor.document().root.children.back().id)) << test_case.first;
+        expect(fatal(editor.undo())) << test_case.first;
+        expect(fatal(editor.markdown_utf8() == test_case.first)) << test_case.first;
+    }
+};
+
+"enter_on_an_empty_raw_frame_exits_without_exposing_a_delimiter"_test = [] {
+    for (auto const& markdown : std::vector<std::string>{
+            "```cpp\n```",
+            "$$\n$$",
+        }) {
+        Editor editor(markdown);
+        const auto& raw = editor.document().root.children.front();
+        const auto visible = block_source_editable_range(raw.block_source);
+        editor.set_selection(TextSelection::caret({
+            raw.id, visible.end, TextAffinity::Downstream}));
+        expect(fatal(bool(editor.execute_document_enter(editor.selection()).has_value())))
+            << markdown;
+        expect(fatal(editor.document().root.children.size() == 2u)) << markdown;
+        expect(fatal(editor.document().root.children.front().block_source.source()
+            == utf8_to_cps(markdown))) << markdown;
+        expect(fatal(editor.document().root.children.back().kind == BlockKind::Paragraph))
+            << markdown;
+    }
+};
+
+"raw_content_deletion_preserves_every_structural_delimiter"_test = [] {
+    Editor editor("```cpp\nab\n```");
+    const auto code_id = editor.document().root.children.front().id;
+    const auto mapping = editor.document().root.children.front()
+        .block_source.tree().content_to_source;
+    editor.set_selection(TextSelection::caret({
+        code_id, mapping[1], TextAffinity::Downstream}));
+    expect(fatal(bool(editor.execute_document_delete_backward(
+        editor.selection()).has_value())));
+    auto const* code = find_block(editor.document().root, code_id);
+    expect(fatal(bool(code && code->block_source.source() == U"```cpp\nb\n```")));
+    expect(fatal(bool(code && code->block_source.tree().complete_opening)));
+    expect(fatal(bool(code && code->block_source.tree().complete_closing)));
+    expect(fatal(editor.undo()));
+
+    editor.set_selection(TextSelection::caret({
+        code_id, mapping[1], TextAffinity::Downstream}));
+    expect(fatal(bool(editor.execute_document_delete_forward(
+        editor.selection()).has_value())));
+    code = find_block(editor.document().root, code_id);
+    expect(fatal(bool(code && code->block_source.source() == U"```cpp\na\n```")));
+    expect(fatal(bool(code && code->block_source.tree().complete_opening)));
+    expect(fatal(bool(code && code->block_source.tree().complete_closing)));
 };
 
 "enter_in_incomplete_fenced_code_edits_local_source_without_crashing"_test = [] {
@@ -212,8 +378,11 @@ suite editor_raw_block_tests = [] {
     expect(fatal(bool(editor.selection().active.source_offset == 3u)));
     expect(fatal(bool(editor.execute_document_enter(editor.selection()).has_value())));
     block = find_block(editor.document().root, editor.selection().active.container_id);
-    expect(fatal(bool(block && block->block_source.source() == U"$$\n\n$$")));
-    expect(fatal(bool(editor.selection().active.source_offset == 4u)));
+    expect(fatal(bool(editor.document().root.children.size() == 2u)));
+    expect(fatal(bool(block && block->kind == BlockKind::Paragraph)));
+    expect(fatal(bool(editor.document().root.children.front().block_source.source()
+        == U"$$\n$$")));
+    expect(fatal(bool(editor.selection().active.source_offset == 0u)));
 };
 
 "enter_after_a_complete_raw_block_creates_a_sibling_paragraph"_test = [] {
@@ -384,69 +553,29 @@ suite editor_raw_block_tests = [] {
     }
 };
 
-"raw_marker_edits_reclassify_one_block_without_document_reparse"_test = [] {
-    struct Case {
-        std::string markdown;
-        std::u32string opening;
-        BlockKind kind;
-    };
-    const std::vector<Case> cases{
-        {"```cpp\nvalue\n```", U"```cpp", BlockKind::CodeBlock},
-        {"$$\nvalue\n$$", U"$$", BlockKind::MathBlock},
-    };
-
-    for (const auto& test_case : cases) {
-        Editor editor(test_case.markdown);
+"rendered_raw_marker_ranges_are_inert_and_never_reclassify_the_block"_test = [] {
+    for (const auto& markdown : std::vector<std::string>{
+            "```cpp\nvalue\n```",
+            "$$\nvalue\n$$",
+        }) {
+        Editor editor(markdown);
         const auto owner_id = editor.document().root.children.front().id;
-        const auto original_selection = TextSelection{
+        const auto before = editor.markdown_utf8();
+        const auto hidden_opening_end = editor.document().root.children.front()
+            .block_source.tree().content_to_source.front();
+        editor.set_selection({
             {owner_id, 0, TextAffinity::Downstream},
-            {owner_id, test_case.opening.size(), TextAffinity::Downstream},
-        };
-        editor.set_selection(original_selection);
+            {owner_id, hidden_opening_end, TextAffinity::Downstream},
+        });
 
         reset_core_operation_counters();
-        expect(fatal(bool(editor.execute_document_delete_selection(
-            editor.selection()).has_value()))) << test_case.markdown;
-        auto counters = read_core_operation_counters();
-        expect(fatal(bool(counters.full_document_parses == 0u))) << test_case.markdown;
-        expect(fatal(bool(counters.full_document_serializations == 0u))) << test_case.markdown;
-        expect(fatal(bool(counters.full_tree_transaction_diffs == 0u))) << test_case.markdown;
-        auto const* changed = find_block(editor.document().root, owner_id);
-        expect(fatal(bool(changed && changed->kind == BlockKind::Paragraph))) << test_case.markdown;
-        const auto downgraded_source = utf8_to_cps(test_case.markdown)
-            .substr(test_case.opening.size());
-        expect(fatal(bool(changed && changed->inline_content.source
-            == downgraded_source))) << test_case.markdown;
-        expect(fatal(bool(editor.selection().active.container_id == owner_id))) << test_case.markdown;
-        expect(fatal(bool(editor.selection().active.source_offset == 0u))) << test_case.markdown;
-        expect(fatal(bool(validate_document(editor.document()).empty()))) << test_case.markdown;
-        expect(fatal(bool(editor.markdown_utf8() == cps_to_utf8(downgraded_source)))) << test_case.markdown;
-        Editor reloaded(editor.markdown_utf8());
-        expect(fatal(bool(reloaded.markdown_utf8() == editor.markdown_utf8()))) << test_case.markdown;
-        const auto downgraded_selection = editor.selection();
-
-        reset_core_operation_counters();
-        expect(fatal(bool(editor.execute_document_insert_text(
-            editor.selection(), test_case.opening).has_value()))) << test_case.markdown;
-        counters = read_core_operation_counters();
-        expect(fatal(bool(counters.full_document_parses == 0u))) << test_case.markdown;
-        expect(fatal(bool(counters.full_document_serializations == 0u))) << test_case.markdown;
-        expect(fatal(bool(counters.full_tree_transaction_diffs == 0u))) << test_case.markdown;
-        changed = find_block(editor.document().root, owner_id);
-        expect(fatal(bool(changed && changed->kind == test_case.kind))) << test_case.markdown;
-        expect(fatal(bool(changed && changed->block_source.source()
-            == utf8_to_cps(test_case.markdown)))) << test_case.markdown;
-        expect(fatal(bool(validate_document(editor.document()).empty()))) << test_case.markdown;
-        const auto restored_selection = editor.selection();
-
-        expect(fatal(bool(editor.undo()))) << test_case.markdown;
-        changed = find_block(editor.document().root, owner_id);
-        expect(fatal(bool(changed && changed->kind == BlockKind::Paragraph))) << test_case.markdown;
-        expect(fatal(bool(editor.selection() == downgraded_selection))) << test_case.markdown;
-        expect(fatal(bool(editor.redo()))) << test_case.markdown;
-        changed = find_block(editor.document().root, owner_id);
-        expect(fatal(bool(changed && changed->kind == test_case.kind))) << test_case.markdown;
-        expect(fatal(bool(editor.selection() == restored_selection))) << test_case.markdown;
+        expect(fatal(!editor.execute_document_delete_selection(
+            editor.selection()).has_value())) << markdown;
+        const auto counters = read_core_operation_counters();
+        expect(fatal(counters.full_document_parses == 0u)) << markdown;
+        expect(fatal(counters.full_document_serializations == 0u)) << markdown;
+        expect(fatal(editor.markdown_utf8() == before)) << markdown;
+        expect(fatal(validate_document(editor.document()).empty())) << markdown;
     }
 };
 
