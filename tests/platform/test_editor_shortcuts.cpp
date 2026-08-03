@@ -62,6 +62,13 @@ suite editor_shortcut_tests = [] {
     expect(!inlineMath->gesture);
     expect(editor_shortcut_input_action(inlineMath->action_id).command.kind
         == folia::CommandKind::InsertMathInline);
+    auto format = std::ranges::find(
+        bindings, std::string{"format.document"}, &EditorShortcutBinding::action_id);
+    expect(fatal(format != bindings.end()));
+    expect(format->gesture == std::optional{EditorKeyGesture{
+        EditorKey::F, false, true, true}});
+    expect(editor_shortcut_input_action(format->action_id).command.kind
+        == folia::CommandKind::FormatDocument);
     expect(!TranslateEditorKeyGesture({EditorKey::C, true}).Handled());
 };
 

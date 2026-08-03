@@ -79,7 +79,7 @@ namespace winrt::Folia::settings_ui
     winrt::hstring ShortcutActionLabel(ShortcutBinding const& binding)
     {
         if (!binding.custom_name.empty()) return winrt::to_hstring(binding.custom_name);
-        constexpr std::array<std::pair<std::string_view, std::wstring_view>, 48> labels{{
+        constexpr std::array<std::pair<std::string_view, std::wstring_view>, 49> labels{{
             {"file.open", L"Open"}, {"file.save", L"Save"},
             {"file.save_as", L"ShortcutSaveAs"}, {"file.export_pdf", L"Pdf"},
             {"search.find", L"Find"}, {"search.replace", L"Replace"},
@@ -89,6 +89,7 @@ namespace winrt::Folia::settings_ui
             {"format.strong", L"Bold"}, {"format.emphasis", L"Italic"},
             {"format.strikethrough", L"Strikethrough"},
             {"format.inline_code", L"InlineCode"},
+            {"format.document", L"FormatDocument"},
             {"block.quote", L"Quote"}, {"block.table", L"Table"},
             {"block.code", L"CodeBlock"}, {"math.inline", L"InlineMath"},
             {"math.block", L"MathBlock"}, {"insert.link", L"Link"},

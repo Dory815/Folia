@@ -123,6 +123,8 @@ namespace winrt::Folia::implementation
         CalloutNoteMenuItem().Text(Localize(L"Note"));
         CalloutTipMenuItem().Text(Localize(L"Tip"));
         CalloutWarningMenuItem().Text(Localize(L"Warning"));
+        FormatDocumentButton().Label(Localize(L"FormatDocument"));
+        tooltip(FormatDocumentButton(), L"FormatDocument");
         InsertButton().Label(Localize(L"Insert"));
         tooltip(InsertButton(), L"InsertContent");
         TableButton().Text(Localize(L"Table"));

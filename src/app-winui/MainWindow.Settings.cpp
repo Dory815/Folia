@@ -21,6 +21,7 @@ namespace winrt::Folia::implementation
         InlineBlockSeparator().Visibility(value);
         BlocksButton().Visibility(value);
         InsertButton().Visibility(value);
+        FormatDocumentButton().Visibility(value);
         SettingsSeparator().Visibility(value);
     }
 

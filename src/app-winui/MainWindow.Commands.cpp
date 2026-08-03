@@ -165,6 +165,13 @@ namespace winrt::Folia::implementation
         CalloutTipMenuItem().Click([toggleCallout](auto const&, auto const&) { toggleCallout(U"TIP"); });
         CalloutWarningMenuItem().Click([toggleCallout](auto const&, auto const&) { toggleCallout(U"WARNING"); });
 
+        FormatDocumentButton().Click([this](auto const&, auto const&)
+        {
+            folia::Command command;
+            command.kind = folia::CommandKind::FormatDocument;
+            ExecuteEditorCommand(command);
+        });
+
         TocButton().Click([this](auto const&, auto const&)
         {
             folia::Command command;

@@ -109,6 +109,10 @@ inline std::vector<EditorShortcutBinding> default_editor_shortcuts() {
         built_in_shortcut("format.emphasis", "format.emphasis", ctrl(K::I)),
         unassigned_shortcut("format.strikethrough", "format.strikethrough"),
         unassigned_shortcut("format.inline_code", "format.inline_code"),
+        built_in_shortcut(
+            "format.document",
+            "format.document",
+            EditorKeyGesture{K::F, false, true, true}),
         built_in_shortcut("block.quote", "block.quote", ctrl(K::Q)),
         built_in_shortcut("block.table", "block.table", ctrl(K::T)),
         unassigned_shortcut("block.code", "block.code"),
@@ -160,6 +164,7 @@ inline EditorInputAction editor_shortcut_input_action(std::string_view action_id
     if (action_id == "format.emphasis") return execute(folia::CommandKind::ToggleEmphasis);
     if (action_id == "format.strikethrough") return execute(folia::CommandKind::ToggleStrikethrough);
     if (action_id == "format.inline_code") return execute(folia::CommandKind::ToggleInlineCode);
+    if (action_id == "format.document") return execute(folia::CommandKind::FormatDocument);
     if (action_id == "block.quote") return execute(folia::CommandKind::ToggleBlockQuote);
     if (action_id == "block.code") return execute(folia::CommandKind::InsertCodeBlock);
     if (action_id == "block.ordered_list") return execute(folia::CommandKind::ToggleOrderedList);

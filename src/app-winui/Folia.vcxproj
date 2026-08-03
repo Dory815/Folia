@@ -270,6 +270,9 @@
     <ClCompile Include="..\core\editing\document_footnotes.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\core\editing\document_format.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\core\editing\document_input_rules.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

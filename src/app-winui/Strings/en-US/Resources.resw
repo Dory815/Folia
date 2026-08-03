@@ -20,6 +20,7 @@
   <data name="Pdf" xml:space="preserve"><value>PDF</value></data>
   <data name="PdfTooltip" xml:space="preserve"><value>Export with Windows PDF printing</value></data>
   <data name="Bold" xml:space="preserve"><value>Bold</value></data>
+  <data name="FormatDocument" xml:space="preserve"><value>Format document</value></data>
   <data name="Italic" xml:space="preserve"><value>Italic</value></data>
   <data name="Strike" xml:space="preserve"><value>Strike</value></data>
   <data name="Strikethrough" xml:space="preserve"><value>Strikethrough</value></data>

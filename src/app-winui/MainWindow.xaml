@@ -76,6 +76,13 @@
                     LabelPosition="Collapsed"
                     ToolTipService.ToolTip="Toggle outline"/>
             </CommandBar.Content>
+            <CommandBar.SecondaryCommands>
+                <AppBarButton
+                    x:Name="FormatDocumentButton"
+                    Icon="Edit"
+                    Label="Format document"
+                    ToolTipService.ToolTip="Format Markdown source"/>
+            </CommandBar.SecondaryCommands>
             <AppBarButton x:Name="OpenButton" Icon="OpenFile" Label="Open" ToolTipService.ToolTip="Open a Markdown document"/>
             <AppBarButton x:Name="SaveButton" Icon="Save" Label="Save" ToolTipService.ToolTip="Save the current document"/>
             <AppBarButton x:Name="ExportPdfButton" Icon="Print" Label="PDF" ToolTipService.ToolTip="Export with Windows PDF printing"/>

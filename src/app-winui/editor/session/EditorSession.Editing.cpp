@@ -2,6 +2,7 @@
 #include "editor/session/EditorSession.h"
 
 import folia.core.serializer;
+import folia.core.document_format;
 import folia.core.utf;
 
 namespace winrt::Folia
@@ -30,7 +31,10 @@ namespace winrt::Folia
             folia::SerializedMarkdownProjection projection;
         };
 
-        bool ExecuteSourceCommand(folia::SourceEditor& editor, folia::Command const& command)
+        bool ExecuteSourceCommand(
+            folia::SourceEditor& editor,
+            folia::Command const& command,
+            folia::MarkdownDialect const& dialect)
         {
             using folia::CommandKind;
             switch (command.kind)
@@ -54,6 +58,14 @@ namespace winrt::Folia
                 case CommandKind::MoveDocumentEnd: editor.move_document_end(command.extend_selection); return true;
                 case CommandKind::IndentListItem: return editor.indent();
                 case CommandKind::OutdentListItem: return editor.outdent();
+                case CommandKind::FormatDocument:
+                {
+                    auto formatted = folia::format_markdown_source(
+                        editor.source(), editor.selection(), dialect);
+                    if (formatted.source == editor.source()) return false;
+                    return editor.replace_document(
+                        std::move(formatted.source), formatted.selection);
+                }
                 default: return false;
             }
         }
@@ -125,7 +137,8 @@ namespace winrt::Folia
         if (core_->sourceEditor)
         {
             auto previousRevision = core_->sourceEditor->revision();
-            if (!ExecuteSourceCommand(*core_->sourceEditor, command)) return false;
+            if (!ExecuteSourceCommand(
+                *core_->sourceEditor, command, core_->editor.dialect())) return false;
             if (core_->sourceEditor->revision() == previousRevision) return true;
             ++revision_;
             core_->characterCount = core_->sourceEditor->source().size();

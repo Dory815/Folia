@@ -20,6 +20,7 @@
   <data name="Pdf" xml:space="preserve"><value>PDF</value></data>
   <data name="PdfTooltip" xml:space="preserve"><value>使用 Windows PDF 打印导出</value></data>
   <data name="Bold" xml:space="preserve"><value>粗体</value></data>
+  <data name="FormatDocument" xml:space="preserve"><value>格式化文档</value></data>
   <data name="Italic" xml:space="preserve"><value>斜体</value></data>
   <data name="Strike" xml:space="preserve"><value>删除线</value></data>
   <data name="Strikethrough" xml:space="preserve"><value>删除线</value></data>
