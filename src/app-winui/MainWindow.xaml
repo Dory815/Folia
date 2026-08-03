@@ -262,6 +262,20 @@
                 </Grid>
             </NavigationView>
             <Canvas
+                x:Name="CodeBlockOverlay"
+                IsHitTestVisible="False"
+                Canvas.ZIndex="19">
+                <ComboBox
+                    x:Name="CodeLanguageComboBox"
+                    Height="30"
+                    MinWidth="96"
+                    IsEditable="True"
+                    IsTextSearchEnabled="True"
+                    MaxDropDownHeight="320"
+                    Padding="8,0"
+                    Visibility="Collapsed"/>
+            </Canvas>
+            <Canvas
                 x:Name="EditorOverlay"
                 IsHitTestVisible="False"
                 Canvas.ZIndex="20">

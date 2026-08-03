@@ -7,6 +7,7 @@
 #include "editor/interaction/EditorPointerController.h"
 #include "editor/interaction/EditorKeyboardController.h"
 #include "editor/interaction/EditorLatexCompletionController.h"
+#include "editor/interaction/EditorCodeLanguageController.h"
 #include "editor/interaction/EditorDocumentController.h"
 #include "editor/interaction/EditorSidebarController.h"
 #include "settings/AppSettings.h"
@@ -72,6 +73,7 @@ namespace winrt::Folia::implementation
         winrt::Folia::EditorPointerController pointerController;
         winrt::Folia::EditorKeyboardController keyboardController;
         winrt::Folia::EditorLatexCompletionController latexCompletionController;
+        winrt::Folia::EditorCodeLanguageController codeLanguageController;
         winrt::Folia::EditorDocumentController documentController;
         winrt::Folia::EditorSidebarController sidebarController;
         winrt::Microsoft::UI::Xaml::Controls::Flyout footnoteFlyout{ nullptr };

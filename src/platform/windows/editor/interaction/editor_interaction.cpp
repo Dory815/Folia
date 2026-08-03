@@ -122,6 +122,19 @@ namespace folia::platform::editor
         mathHits.clear();
         taskCheckboxHits.clear();
         footnoteHits.clear();
+        rawBlocks.clear();
+    }
+
+    std::optional<EditorVisualRawBlock> EditorInteractionMap::RawBlockFor(
+        folia::NodeId owner) const
+    {
+        auto found = std::find_if(rawBlocks.rbegin(), rawBlocks.rend(), [&](auto const& block)
+        {
+            return block.contentStart.container_id == owner;
+        });
+        return found == rawBlocks.rend()
+            ? std::nullopt
+            : std::optional<EditorVisualRawBlock>{*found};
     }
 
     void EditorInteractionMap::AddBlockLines(std::size_t blockIndex)

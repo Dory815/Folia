@@ -8,42 +8,38 @@ namespace winrt::Folia
 {
     DisplayInlineText BuildCodeBlockText(folia::RenderBlock const& block, folia::TextPosition caret, TreeSitterHighlighter& highlighter)
     {
+        (void)caret;
         DisplayInlineText display;
         auto const& special = block.special();
+        const auto contentStart = special.content_to_source.empty()
+            ? block.content_span.source_range.start
+            : special.content_to_source.front();
+        // The header row is generated presentation chrome. It reserves space
+        // for the editable language selector without entering Markdown source,
+        // selection, copying, or saving.
+        AppendGeneratedText(
+            display,
+            U"\u200B\n",
+            {block.id, contentStart, folia::TextAffinity::Downstream},
+            folia::InlineStyle::plain(),
+            EditorDisplayPositionKind::Generated);
+        const auto codeDisplayStart = static_cast<std::uint32_t>(
+            folia::utf16_len(display.text));
         // An indented code block has no user-visible delimiter. Its leading
         // indentation is structural Markdown syntax and must stay hidden even
         // while the block owns the caret. content_to_source keeps every
         // displayed boundary in the one authoritative source coordinate.
-        auto editingRawFence = caret.container_id == block.id && !special.code_indented;
         auto code = special.code_text;
-        if (!editingRawFence)
-        {
-            // The final physical line ending terminates the last code line;
-            // it does not introduce another presentation line.  Use the same
-            // LF/CRLF/CR-aware projection as the core render model instead of
-            // removing just '\n' (which left a visible DirectWrite line for
-            // CRLF documents).
-            auto const lines = folia::code_presentation_lines(code);
-            if (!lines.empty()) code.resize(lines.back().content_range.end);
-        }
-        if (editingRawFence)
-        {
-            AppendSourceText(
-                display,
-                special.raw_source,
-                {block.id, {0, special.raw_source.size()}},
-                folia::InlineStyle::plain(),
-                false);
-        }
-        else
-        {
-            AppendProjectedSourceText(
-                display,
-                code,
-                block.id,
-                special.content_to_source,
-                folia::InlineStyle::plain());
-        }
+        // The block-source projection already excludes the separator line
+        // ending immediately before a closing fence. Any remaining terminal
+        // line ending belongs to the user's code and denotes a real empty row.
+        // Fences, info strings and indentation stay hidden in rendered mode.
+        AppendProjectedSourceText(
+            display,
+            code,
+            block.id,
+            special.content_to_source,
+            folia::InlineStyle::plain());
         if (special.language && !code.empty())
         {
             auto highlights = highlighter.Highlight(*special.language, folia::cps_to_utf8(code));
@@ -51,16 +47,10 @@ namespace winrt::Folia
             {
                 auto start = (std::min)(static_cast<std::size_t>(highlight.start), code.size());
                 auto end = (std::min)(start + static_cast<std::size_t>(highlight.length), code.size());
-                auto displayStart = editingRawFence
-                    ? static_cast<std::uint32_t>(folia::char_index_to_utf16(
-                        special.raw_source,
-                        special.content_to_source.empty() ? start : special.content_to_source[start]))
-                    : static_cast<std::uint32_t>(folia::char_index_to_utf16(code, start));
-                auto displayEnd = editingRawFence
-                    ? static_cast<std::uint32_t>(folia::char_index_to_utf16(
-                        special.raw_source,
-                        special.content_to_source.empty() ? end : special.content_to_source[end]))
-                    : static_cast<std::uint32_t>(folia::char_index_to_utf16(code, end));
+                auto displayStart = codeDisplayStart + static_cast<std::uint32_t>(
+                    folia::char_index_to_utf16(code, start));
+                auto displayEnd = codeDisplayStart + static_cast<std::uint32_t>(
+                    folia::char_index_to_utf16(code, end));
                 if (displayStart < displayEnd)
                 {
                     display.ranges.push_back(InlineStyleRange{
@@ -73,11 +63,9 @@ namespace winrt::Folia
                 }
             }
         }
-        const auto endpoint = editingRawFence
-            ? special.raw_source.size()
-            : (special.content_to_source.empty()
-                ? code.size()
-                : special.content_to_source[(std::min)(code.size(), special.content_to_source.size() - 1)]);
+        const auto endpoint = special.content_to_source.empty()
+            ? code.size()
+            : special.content_to_source[(std::min)(code.size(), special.content_to_source.size() - 1)];
         if (display.text.empty())
         {
             AppendGeneratedText(
@@ -109,15 +97,15 @@ namespace winrt::Folia
         auto editing = caret.container_id == block.id;
         if (!svgSupported)
         {
-            const auto endpoint = editing
-                ? special.raw_source.size()
-                : special.content_to_source.empty()
-                    ? special.tex.size()
-                    : special.content_to_source.back();
-            if (editing)
-                AppendSourceText(display, special.raw_source, {block.id, {0, endpoint}}, folia::InlineStyle::plain(), false);
-            else
-                AppendProjectedSourceText(display, special.tex, block.id, special.content_to_source, folia::InlineStyle::plain());
+            const auto endpoint = special.content_to_source.empty()
+                ? special.tex.size()
+                : special.content_to_source.back();
+            AppendProjectedSourceText(
+                display,
+                special.tex,
+                block.id,
+                special.content_to_source,
+                folia::InlineStyle::plain());
             if (display.text.empty())
             {
                 AppendGeneratedText(
@@ -154,12 +142,12 @@ namespace winrt::Folia
         display.pendingMath = !rawMath || !math;
         if (editing)
         {
-            AppendSourceText(
+            AppendProjectedSourceText(
                 display,
-                special.raw_source,
-                {block.id, {0, special.raw_source.size()}},
-                folia::InlineStyle::plain(),
-                false);
+                special.tex,
+                block.id,
+                special.content_to_source,
+                folia::InlineStyle::plain());
             // The preview is rendered below this editable source as its own
             // non-interactive visual block. It must never enter the source
             // display mapping or become a caret target.
@@ -183,11 +171,9 @@ namespace winrt::Folia
         {
             AppendMathFragments(display, *math, span, false, folia::InlineStyle::plain());
         }
-        const auto endpoint = editing
-            ? special.raw_source.size()
-            : special.content_to_source.empty()
-                ? special.tex.size()
-                : special.content_to_source.back();
+        const auto endpoint = special.content_to_source.empty()
+            ? special.tex.size()
+            : special.content_to_source.back();
         if (display.text.empty())
         {
             AppendGeneratedText(

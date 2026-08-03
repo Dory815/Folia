@@ -407,11 +407,11 @@ namespace winrt::Folia
         {
             auto indentColumns = parentIndentColumns + nested.flow_local_indent_columns;
             auto decorated = nested.kind == folia::RenderBlockKind::Code
+                || nested.kind == folia::RenderBlockKind::Math
                 || nested.kind == folia::RenderBlockKind::Quote
                 || nested.kind == folia::RenderBlockKind::Callout
                 || nested.kind == folia::RenderBlockKind::Footnote;
-            if (decorated && !(root && (nested.kind == folia::RenderBlockKind::Code
-                || nested.kind == folia::RenderBlockKind::Footnote)))
+            if (decorated && !(root && nested.kind == folia::RenderBlockKind::Footnote))
             {
                 auto range = displayRange(nested);
                 if (range)
@@ -422,18 +422,60 @@ namespace winrt::Folia
                     if (contentLeft && accumulateRange(*range, top, bottom))
                     {
                         auto left = (std::clamp)(*contentLeft, origin.x, documentRight);
-                        auto rect = D2D1::RectF(left, top - 4.0f, documentRight, bottom + 4.0f);
+                        auto rawBlock = nested.kind == folia::RenderBlockKind::Code
+                            || nested.kind == folia::RenderBlockKind::Math;
+                        auto rect = D2D1::RectF(
+                            left,
+                            rawBlock ? top : top - 4.0f,
+                            documentRight,
+                            rawBlock ? bottom + 6.0f : bottom + 4.0f);
                         auto calloutPalette = calloutBrushes(nested.special().callout_kind);
                         auto brush = nested.kind == folia::RenderBlockKind::Callout
                             ? calloutPalette.first
                             : nested.kind == folia::RenderBlockKind::Code
                                 ? resources.panelBrush.Get()
                                 : resources.nestedQuoteBrush.Get();
-                        if (nested.kind == folia::RenderBlockKind::Callout)
+                        if (rawBlock || nested.kind == folia::RenderBlockKind::Callout)
                         {
                             resources.d2dContext->FillRoundedRectangle(
                                 D2D1::RoundedRect(rect, 6.0f, 6.0f),
                                 brush);
+                        }
+                        if (rawBlock)
+                        {
+                            resources.d2dContext->DrawRoundedRectangle(
+                                D2D1::RoundedRect(rect, 6.0f, 6.0f),
+                                resources.mutedBrush.Get(),
+                                1.0f);
+                            auto headerBottom = nested.kind == folia::RenderBlockKind::Code
+                                ? (std::min)(rect.bottom, rect.top + styleSheet.code.lineHeight)
+                                : rect.top;
+                            if (nested.kind == folia::RenderBlockKind::Code)
+                            {
+                                auto label = winrt::to_hstring(
+                                    nested.special().language.value_or("text"));
+                                resources.d2dContext->DrawTextW(
+                                    label.c_str(),
+                                    static_cast<UINT32>(label.size()),
+                                    resources.codeFormat.Get(),
+                                    D2D1::RectF(left + 8.0f, rect.top, rect.right - 8.0f, headerBottom),
+                                    resources.mutedBrush.Get(),
+                                    D2D1_DRAW_TEXT_OPTIONS_CLIP);
+                            }
+                            if (!printMode)
+                            {
+                                interactionMap.rawBlocks.push_back({
+                                    rect,
+                                    D2D1::RectF(left, rect.top, rect.right, headerBottom),
+                                    {nested.id, nested.content_span.source_range.start, folia::TextAffinity::Downstream},
+                                    nested.kind == folia::RenderBlockKind::Code
+                                        ? folia::platform::editor::EditorRawBlockKind::Code
+                                        : folia::platform::editor::EditorRawBlockKind::Math,
+                                    nested.special().language,
+                                    nested.kind == folia::RenderBlockKind::Code
+                                        && !nested.special().code_indented,
+                                });
+                            }
                         }
                         else
                         {

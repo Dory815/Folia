@@ -227,6 +227,47 @@ suite editor_raw_block_tests = [] {
         == std::optional<std::string>{"javascript"})));
 };
 
+"code_language_command_preserves_fence_spelling_and_mermaid_semantics"_test = [] {
+    Editor editor("~~~cpp title=diagram\ngraph TD; A-->B\n~~~");
+    const auto code_id = editor.document().root.children.front().id;
+    const auto visible = block_source_editable_range(
+        editor.document().root.children.front().block_source);
+    editor.set_selection(TextSelection::caret({
+        code_id, visible.start, TextAffinity::Downstream}));
+    const auto before = editor.selection();
+
+    Command set_mermaid;
+    set_mermaid.kind = CommandKind::SetCodeBlockLanguage;
+    set_mermaid.lang = U"mermaid";
+    expect(fatal(editor.execute_command(set_mermaid)));
+    auto const* code = find_block(editor.document().root, code_id);
+    expect(fatal(bool(code)));
+    if (!code) return;
+    expect(fatal(code->block_source.source()
+        == U"~~~mermaid title=diagram\ngraph TD; A-->B\n~~~"));
+    expect(fatal(code->block_source.tree().language
+        == std::optional<std::string>{"mermaid"}));
+    expect(fatal(code->block_source.source().starts_with(U"~~~")));
+    expect(fatal(code->block_source.source().ends_with(U"~~~")));
+
+    auto rendered = build_render_model(
+        editor.document(), editor.outline(), editor.symbols(), default_theme_profile());
+    expect(fatal(rendered.blocks.size() == 1u));
+    expect(fatal(rendered.blocks.front().kind == RenderBlockKind::Code));
+    expect(fatal(rendered.blocks.front().special().language
+        == std::optional<std::string>{"mermaid"}));
+
+    expect(fatal(editor.undo()));
+    expect(fatal(editor.selection() == before));
+    code = find_block(editor.document().root, code_id);
+    expect(fatal(bool(code && code->block_source.source()
+        == U"~~~cpp title=diagram\ngraph TD; A-->B\n~~~")));
+    expect(fatal(editor.redo()));
+    code = find_block(editor.document().root, code_id);
+    expect(fatal(bool(code && code->block_source.tree().language
+        == std::optional<std::string>{"mermaid"})));
+};
+
 "rendered_raw_block_navigation_never_enters_hidden_markers"_test = [] {
     Editor editor("before\n\n```cpp\nab\n```\n\nafter");
     const auto& before = editor.document().root.children[0];
@@ -254,28 +295,32 @@ suite editor_raw_block_tests = [] {
 "empty_raw_structures_are_deleted_as_one_reversible_tree_edit"_test = [] {
     for (auto const& markdown : std::vector<std::string>{
             "```\n```",
+            "```cpp\n```",
+            "~~~\n~~~",
             "$$\n$$",
         }) {
-        Editor editor(markdown);
-        const auto& raw = editor.document().root.children.front();
-        const auto position = block_source_editable_range(raw.block_source).start;
-        editor.set_selection(TextSelection::caret({
-            raw.id, position, TextAffinity::Downstream}));
-        const auto before = editor.selection();
-        const auto deleted = raw.kind == BlockKind::CodeBlock
-            ? editor.execute_document_delete_backward(editor.selection())
-            : editor.execute_document_delete_forward(editor.selection());
-        expect(fatal(bool(deleted.has_value()))) << markdown;
-        expect(fatal(editor.document().root.children.size() == 1u)) << markdown;
-        expect(fatal(editor.document().root.children.front().kind
-            == BlockKind::Paragraph)) << markdown;
-        expect(fatal(editor.markdown_utf8().empty())) << markdown;
-        expect(fatal(editor.undo())) << markdown;
-        expect(fatal(editor.markdown_utf8() == markdown)) << markdown;
-        expect(fatal(editor.selection() == before)) << markdown;
-        expect(fatal(editor.redo())) << markdown;
-        expect(fatal(editor.document().root.children.front().kind
-            == BlockKind::Paragraph)) << markdown;
+        for (const auto delete_backward : {false, true}) {
+            Editor editor(markdown);
+            const auto& raw = editor.document().root.children.front();
+            const auto position = block_source_editable_range(raw.block_source).start;
+            editor.set_selection(TextSelection::caret({
+                raw.id, position, TextAffinity::Downstream}));
+            const auto before = editor.selection();
+            const auto deleted = delete_backward
+                ? editor.execute_document_delete_backward(editor.selection())
+                : editor.execute_document_delete_forward(editor.selection());
+            expect(fatal(bool(deleted.has_value()))) << markdown;
+            expect(fatal(editor.document().root.children.size() == 1u)) << markdown;
+            expect(fatal(editor.document().root.children.front().kind
+                == BlockKind::Paragraph)) << markdown;
+            expect(fatal(editor.markdown_utf8().empty())) << markdown;
+            expect(fatal(editor.undo())) << markdown;
+            expect(fatal(editor.markdown_utf8() == markdown)) << markdown;
+            expect(fatal(editor.selection() == before)) << markdown;
+            expect(fatal(editor.redo())) << markdown;
+            expect(fatal(editor.document().root.children.front().kind
+                == BlockKind::Paragraph)) << markdown;
+        }
     }
 };
 

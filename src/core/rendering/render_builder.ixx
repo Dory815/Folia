@@ -285,6 +285,24 @@ struct Builder {
         std::size_t indent_columns,
         std::size_t emitted_columns) {
         constexpr std::size_t content_padding_columns = 2;
+        const auto editable = block_source_editable_range(block.block_source);
+        // Reserve one generated header row for the structural code-frame
+        // language control. This is presentation-only and therefore has an
+        // empty source span; copy/save remain exactly source-backed.
+        append_generated_indent(
+            out,
+            block.id,
+            editable.start,
+            indent_columns > emitted_columns ? indent_columns - emitted_columns : 0);
+        InlineRenderItem header;
+        header.kind = InlineRenderItem::Kind::Marker;
+        header.source_span = {block.id, {editable.start, editable.start}};
+        header.ensure_special().display_text = U"\u200B\n";
+        header.ensure_special().marker_role = MarkerRole::Structural;
+        header.ensure_special().generated_boundary_affinity = TextAffinity::Downstream;
+        header.ensure_special().visibility = MarkerVisibility::Always;
+        out.push_back(std::move(header));
+        emitted_columns = 0;
         auto append_line_indent = [&](std::size_t source_offset, bool first_line) {
             auto desired = indent_columns + content_padding_columns;
             auto existing = first_line ? emitted_columns : std::size_t{0};

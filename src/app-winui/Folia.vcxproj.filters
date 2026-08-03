@@ -441,6 +441,9 @@
     <ClCompile Include="editor\interaction\EditorKeyboardController.Snippets.cpp">
       <Filter>Editor\Interaction</Filter>
     </ClCompile>
+    <ClCompile Include="editor\interaction\EditorCodeLanguageController.cpp">
+      <Filter>Editor\Interaction</Filter>
+    </ClCompile>
     <ClCompile Include="editor\interaction\EditorDocumentController.cpp">
       <Filter>Editor\Interaction</Filter>
     </ClCompile>
@@ -612,6 +615,9 @@
       <Filter>Editor\Interaction</Filter>
     </ClInclude>
     <ClInclude Include="editor\interaction\EditorKeyboardController.h">
+      <Filter>Editor\Interaction</Filter>
+    </ClInclude>
+    <ClInclude Include="editor\interaction\EditorCodeLanguageController.h">
       <Filter>Editor\Interaction</Filter>
     </ClInclude>
     <ClInclude Include="editor\interaction\EditorDocumentController.h">

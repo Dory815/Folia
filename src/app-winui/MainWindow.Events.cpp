@@ -73,6 +73,13 @@ namespace winrt::Folia::implementation
                     container, replacement, snippet);
             });
         latexCompletionController.SetEnabled(appSettings.latexSuggestionsEnabled);
+        codeLanguageController.Attach(
+            editorSession,
+            editorRenderer,
+            EditorSurface(),
+            CodeBlockOverlay(),
+            CodeLanguageComboBox(),
+            [this](folia::Command const& command) { return ExecuteEditorCommand(command); });
         pointerController.Attach(
             editorSession,
             editorRenderer,
@@ -101,6 +108,7 @@ namespace winrt::Folia::implementation
             sidebarController.Detach();
             pointerController.Detach();
             latexCompletionController.Detach();
+            codeLanguageController.Detach();
             keyboardController.Detach();
             textInputController.Detach();
             scrollController.Detach();

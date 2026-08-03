@@ -155,6 +155,7 @@
     <ClInclude Include="settings\ShortcutSettingsComponents.h" />
     <ClInclude Include="settings\LatexCommandStore.h" />
     <ClInclude Include="editor\interaction\EditorLatexCompletionController.h" />
+    <ClInclude Include="editor\interaction\EditorCodeLanguageController.h" />
     <ClInclude Include="theme\ThemeConfig.h" />
     <ClInclude Include="theme\ThemeCatalog.h" />
     <ClInclude Include="editor\session\EditorSession.h" />
@@ -534,6 +535,7 @@
     <ClCompile Include="editor\interaction\EditorKeyboardController.cpp" />
     <ClCompile Include="editor\interaction\EditorKeyboardController.Snippets.cpp" />
     <ClCompile Include="editor\interaction\EditorLatexCompletionController.cpp" />
+    <ClCompile Include="editor\interaction\EditorCodeLanguageController.cpp" />
     <ClCompile Include="editor\interaction\EditorDocumentController.cpp" />
     <ClCompile Include="storage\DocumentEncodingService.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>

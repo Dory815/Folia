@@ -86,6 +86,22 @@ export namespace folia::platform::editor
         Kind kind = Kind::Reference;
     };
 
+    enum class EditorRawBlockKind
+    {
+        Code,
+        Math,
+    };
+
+    struct EditorVisualRawBlock
+    {
+        D2D1_RECT_F rect{};
+        D2D1_RECT_F headerRect{};
+        folia::TextPosition contentStart;
+        EditorRawBlockKind kind = EditorRawBlockKind::Code;
+        std::optional<std::string> language;
+        bool languageEditable = false;
+    };
+
     enum class EditorTableActionKind
     {
         InsertRow,
@@ -113,6 +129,7 @@ export namespace folia::platform::editor
         std::optional<folia::TextPosition> HitTest(float x, float y) const;
         std::optional<folia::TextPosition> TaskCheckboxAt(float x, float y) const;
         std::optional<EditorVisualFootnoteHit> FootnoteAt(float x, float y) const;
+        std::optional<EditorVisualRawBlock> RawBlockFor(folia::NodeId owner) const;
         std::vector<D2D1_RECT_F> TextRangeBounds(folia::TextSpan span) const;
         std::optional<EditorTableAction> TableActionAt(float x, float y) const;
         std::optional<std::size_t> TableDropIndexAt(
@@ -131,6 +148,7 @@ export namespace folia::platform::editor
         std::vector<EditorVisualMathHit> mathHits;
         std::vector<EditorVisualTaskCheckboxHit> taskCheckboxHits;
         std::vector<EditorVisualFootnoteHit> footnoteHits;
+        std::vector<EditorVisualRawBlock> rawBlocks;
 
     private:
         std::optional<std::size_t> LineIndexFor(folia::TextPosition position) const;

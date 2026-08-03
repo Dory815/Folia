@@ -74,18 +74,22 @@ suite render_recursive_flow_tests = [] {
     expect(fatal(bool(flow_indent_for(model.blocks[0], rendered_code->id) == 7u)));
 
     std::u32string flattened_code;
-    std::size_t code_indents = 0;
+    std::vector<std::size_t> code_indents;
+    std::size_t generated_headers = 0;
     for (auto const& item : model.blocks[0].inline_items) {
         if (item.source_span.container_id != code_id) continue;
         if (item.kind == InlineRenderItem::Kind::Text && item.style.code) flattened_code += item.text;
         if (item.special().marker_role == MarkerRole::Structural
-            && !item.special().display_text.empty()) {
-            ++code_indents;
-            expect(fatal(bool((item.special().display_text.size()) == (9u))));
-        }
+            && item.special().display_text == U"\u200B\n") ++generated_headers;
+        if (item.special().marker_role == MarkerRole::Structural
+            && !item.special().display_text.empty()
+            && std::ranges::all_of(item.special().display_text, [](char32_t value) {
+                return value == U' ';
+            })) code_indents.push_back(item.special().display_text.size());
     }
     expect(fatal(bool(flattened_code == U"int x;")));
-    expect(fatal(bool((code_indents) == (1u))));
+    expect(fatal(bool(generated_headers == 1u)));
+    expect(fatal(bool(code_indents == std::vector<std::size_t>{7u, 9u})));
 };
 
 "nested_code_flow_omits_only_the_terminal_physical_ending"_test = [] {
@@ -114,17 +118,26 @@ suite render_recursive_flow_tests = [] {
         if (model.blocks.empty()) continue;
         std::u32string displayed_code;
         std::size_t code_indents = 0;
+        std::size_t generated_headers = 0;
         for (const auto& inline_item : model.blocks.front().inline_items) {
             if (inline_item.source_span.container_id != code_id) continue;
             if (inline_item.kind == InlineRenderItem::Kind::Text && inline_item.style.code)
                 displayed_code += inline_item.text;
             if (inline_item.special().marker_role == MarkerRole::Structural
-                && !inline_item.special().display_text.empty()) {
+                && inline_item.special().display_text == U"\u200B\n") {
+                ++generated_headers;
+            }
+            if (inline_item.special().marker_role == MarkerRole::Structural
+                && !inline_item.special().display_text.empty()
+                && std::ranges::all_of(inline_item.special().display_text, [](char32_t value) {
+                    return value == U' ';
+                })) {
                 ++code_indents;
             }
         }
         expect(fatal(bool(displayed_code == item.displayed_code)));
-        expect(fatal(bool(code_indents == item.displayed_lines)));
+        expect(fatal(bool(generated_headers == 1u)));
+        expect(fatal(bool(code_indents == item.displayed_lines + 1u)));
     }
 };
 

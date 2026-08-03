@@ -279,6 +279,7 @@ namespace winrt::Folia
                 lines = 1 + static_cast<std::size_t>(std::ranges::count(source, U'\n'));
             }
             return static_cast<float>(lines) * styleSheet.code.lineHeight
+                + styleSheet.code.lineHeight
                 + paddingTop + paddingBottom;
         }
         if (block.kind == folia::RenderBlockKind::Math)

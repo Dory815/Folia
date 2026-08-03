@@ -266,4 +266,39 @@ suite editor_interaction_tests = [] {
     expect(!interaction.TableDropIndexAt(std::nullopt, 0.0f, 0.0f, true).has_value());
 };
 
+"raw block controls are resolved by semantic owner and cleared per frame"_test = [] {
+    const auto codeOwner = NodeId{601};
+    const auto mathOwner = NodeId{602};
+    EditorInteractionMap interaction;
+    interaction.rawBlocks.push_back(EditorVisualRawBlock{
+        .rect = D2D1_RECT_F{10.0f, 20.0f, 410.0f, 140.0f},
+        .headerRect = D2D1_RECT_F{10.0f, 20.0f, 410.0f, 48.0f},
+        .contentStart = {codeOwner, 7, TextAffinity::Downstream},
+        .kind = EditorRawBlockKind::Code,
+        .language = std::string{"cpp"},
+        .languageEditable = true,
+    });
+    interaction.rawBlocks.push_back(EditorVisualRawBlock{
+        .rect = D2D1_RECT_F{10.0f, 160.0f, 410.0f, 260.0f},
+        .headerRect = D2D1_RECT_F{10.0f, 160.0f, 410.0f, 160.0f},
+        .contentStart = {mathOwner, 3, TextAffinity::Downstream},
+        .kind = EditorRawBlockKind::Math,
+    });
+
+    auto code = interaction.RawBlockFor(codeOwner);
+    auto math = interaction.RawBlockFor(mathOwner);
+    expect(fatal(code.has_value()));
+    expect(fatal(math.has_value()));
+    expect(code->kind == EditorRawBlockKind::Code);
+    expect(code->language == std::optional<std::string>{"cpp"});
+    expect(code->languageEditable);
+    expect(code->contentStart.source_offset == 7_u);
+    expect(math->kind == EditorRawBlockKind::Math);
+    expect(!interaction.RawBlockFor(NodeId{603}).has_value());
+
+    interaction.Clear();
+    expect(!interaction.RawBlockFor(codeOwner).has_value());
+    expect(!interaction.RawBlockFor(mathOwner).has_value());
+};
+
 }; // suite editor_interaction_tests

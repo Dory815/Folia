@@ -129,7 +129,9 @@ namespace winrt::Folia
                     resources.lineNumberBrush.Get(),
                     D2D1_DRAW_TEXT_OPTIONS_CLIP);
             }
-            if (prepared.code || block.block_style.background)
+            if (!prepared.code
+                && block.kind != folia::RenderBlockKind::Math
+                && block.block_style.background)
                 resources.d2dContext->FillRectangle(rect, resources.panelBrush.Get());
             documentPainter.DrawFlowDecorations(prepared.layout.Get(), origin, block, prepared.display);
             DrawInlinePresentationBackgrounds(

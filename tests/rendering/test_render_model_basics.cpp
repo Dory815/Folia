@@ -324,18 +324,30 @@ suite render_model_basic_tests = [] {
         expect(fatal(bool((code->special().code_text) == (std::u32string(U"<html>\n  <head>\n    <title>Test</title>\n  </head>")))));
         expect(fatal(bool((code->source_span.source_range.end) == (code->special().raw_source.size()))));
         std::size_t line_indents = 0;
+        std::size_t generated_headers = 0;
         std::u32string flattened_code;
         for (auto const& item : list.inline_items) {
             if (item.source_span.container_id != code->id) continue;
+            if (item.kind == InlineRenderItem::Kind::Marker
+                && item.special().marker_role == MarkerRole::Structural
+                && item.special().display_text == U"\u200B\n") {
+                ++generated_headers;
+                expect(fatal(bool(item.source_span.source_range.empty())));
+                expect(fatal(bool(item.source_span.source_range.start
+                    == code->content_span.source_range.start)));
+                continue;
+            }
             if (item.special().marker_role == MarkerRole::Structural && !item.special().display_text.empty()
                 && std::all_of(item.special().display_text.begin(), item.special().display_text.end(), [](char32_t value) { return value == U' '; })) {
                 ++line_indents;
-                expect(fatal(bool(item.special().display_text.size() == code_indent.value_or(0) + 2u)));
             } else if (item.kind == InlineRenderItem::Kind::Text && item.style.code) {
                 flattened_code += item.text;
             }
         }
-        expect(fatal(bool(line_indents == code->special().line_count)));
+        // One indentation belongs to the presentation-only language header;
+        // every other indentation belongs to a visible code row.
+        expect(fatal(bool(generated_headers == 1u)));
+        expect(fatal(bool(line_indents == code->special().line_count + 1u)));
         const auto presentation_lines = code_presentation_lines(code->special().code_text);
         const auto presentation_end = presentation_lines.empty()
             ? std::size_t{0}

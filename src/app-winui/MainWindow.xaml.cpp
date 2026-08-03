@@ -411,6 +411,7 @@ namespace winrt::Folia::implementation
             auto frame = editorSession.RenderFrame();
             frame.snippetPlaceholders = snippetPlaceholders;
             editorRenderer.Render(frame);
+            codeLanguageController.Refresh();
             scrollController.Sync();
         }
         catch (winrt::hresult_error const& error)
