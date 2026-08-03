@@ -159,6 +159,45 @@ suite editor_interaction_tests = [] {
     expect(goalX >= 30.0f);
 };
 
+"table text range geometry preserves partial source selections"_test = [] {
+    constexpr auto length = std::size_t{10};
+    const auto owner = NodeId{505};
+    EditorInteractionMap interaction;
+    interaction.blocks.push_back(EditorVisualBlock{
+        .rect = D2D1_RECT_F{20.0f, 30.0f, 420.0f, 90.0f},
+        .sourceSpan = {owner, {0, length}},
+    });
+
+    EditorVisualTable table;
+    table.rect = D2D1_RECT_F{20.0f, 30.0f, 420.0f, 90.0f};
+    table.sourceSpans = {{owner, {0, length}}};
+    table.rowCount = 1;
+    table.columnCount = 1;
+    table.rowBoundaries = {30.0f, 90.0f};
+    table.columnBoundaries = {20.0f, 420.0f};
+    table.cells.push_back(EditorVisualTableCell{
+        .rect = table.rect,
+        .textOrigin = D2D1_POINT_2F{30.0f, 40.0f},
+        .textWidth = 380.0f,
+        .sourceSpan = {owner, {0, length}},
+        .text = U"alpha beta",
+        .displayToSource = IdentityMapping(owner, length),
+        .layout = MakeLayout(L"alpha beta", 380.0f),
+    });
+    interaction.tables.push_back(std::move(table));
+    interaction.AddTableCellLines(0, 0, 0);
+
+    auto const whole = interaction.TextRangeBounds({owner, {0, length}});
+    auto const partial = interaction.TextRangeBounds({owner, {2, 5}});
+    expect(fatal(!whole.empty()));
+    expect(fatal(!partial.empty()));
+    if (whole.empty() || partial.empty()) return;
+    expect(partial.front().left > whole.front().left);
+    expect(partial.front().right < whole.front().right);
+    expect(partial.front().top == whole.front().top);
+    expect(partial.front().bottom == whole.front().bottom);
+};
+
 "table hit policy returns semantic actions without renderer ownership"_test = [] {
     const auto owner = NodeId{503};
     EditorInteractionMap interaction;

@@ -265,6 +265,12 @@ namespace winrt::Folia
     {
         if (!renderer_ || !surface_) return;
         surface_.Focus(winrt::Microsoft::UI::Xaml::FocusState::Pointer);
+        // A double tap replaces the in-flight drag selection.  Touchpads and
+        // some mouse stacks can deliver the gesture before the final release;
+        // if that release completes the old drag, it collapses the
+        // authoritative source selection after the word was already painted.
+        selectionDrag_.Cancel();
+        surface_.ReleasePointerCaptures();
         auto point = args.GetPosition(surface_);
         auto hit = renderer_->HitTest(static_cast<float>(point.X), static_cast<float>(point.Y));
         if (hit && SelectWordAt(*hit))

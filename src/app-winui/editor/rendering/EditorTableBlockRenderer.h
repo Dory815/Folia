@@ -23,6 +23,8 @@ namespace winrt::Folia
     using folia::platform::editor::EditorVisualTable;
     using folia::platform::editor::EditorVisualTableCell;
 
+    class EditorDocumentPainter;
+
     struct EditorTableBlockRenderer
     {
         struct PreparedTable
@@ -63,13 +65,13 @@ namespace winrt::Folia
         static void Paint(
             folia::RenderBlock const& block,
             PreparedTable const& prepared,
-            folia::TextSelection selection,
             float documentLeft,
             float top,
             float scrollOffset,
             EditorRenderResources& resources,
             EditorStyleSheet const& styleSheet,
             EditorInteractionMap& interactionMap,
+            EditorDocumentPainter& documentPainter,
             EditorInlineImageRenderer& inlineImageRenderer,
             EditorDrawMath const& drawMath,
             EditorDrawMathFallback const& drawMathFallback,

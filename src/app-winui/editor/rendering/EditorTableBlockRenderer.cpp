@@ -4,6 +4,7 @@ import folia.core.render_model;
 import folia.core.types;
 
 #include "editor/rendering/EditorContentPreparation.h"
+#include "editor/rendering/EditorDocumentPainter.h"
 #include "editor/rendering/EditorTableBlockRenderer.h"
 
 namespace winrt::Folia
@@ -156,13 +157,13 @@ namespace winrt::Folia
     void EditorTableBlockRenderer::Paint(
         folia::RenderBlock const& block,
         PreparedTable const& prepared,
-        folia::TextSelection selection,
         float documentLeft,
         float top,
         float scrollOffset,
         EditorRenderResources& resources,
         EditorStyleSheet const& styleSheet,
         EditorInteractionMap& interactionMap,
+        EditorDocumentPainter& documentPainter,
         EditorInlineImageRenderer& inlineImageRenderer,
         EditorDrawMath const& drawMath,
         EditorDrawMathFallback const& drawMathFallback,
@@ -204,14 +205,6 @@ namespace winrt::Folia
                 cell.layout.Get(),
                 cell.textOrigin,
                 display.ranges);
-            if (!selection.is_caret() && selection.anchor.container_id == cell.sourceSpan.container_id
-                && selection.active.container_id == cell.sourceSpan.container_id)
-            {
-                auto start = (std::min)(selection.anchor.source_offset, selection.active.source_offset);
-                auto end = (std::max)(selection.anchor.source_offset, selection.active.source_offset);
-                if (start < cell.sourceSpan.source_range.end && cell.sourceSpan.source_range.start < end)
-                    resources.d2dContext->FillRectangle(cell.rect, resources.selectionBrush.Get());
-            }
             if (cell.layout)
             {
                 for (auto const& range : display.ranges)
@@ -228,6 +221,10 @@ namespace winrt::Folia
                         resources.d2dContext->FillRoundedRectangle(D2D1::RoundedRect(D2D1::RectF(metric.left - 3.0f, metric.top + 2.0f, metric.left + metric.width + 3.0f, metric.top + metric.height - 1.0f), 4.0f, 4.0f), resources.panelBrush.Get());
                     }
                 }
+                documentPainter.DrawSelection(
+                    cell.layout.Get(),
+                    cell.textOrigin,
+                    cell.displayToSource);
                 resources.d2dContext->DrawTextLayout(cell.textOrigin, cell.layout.Get(), resources.textBrush.Get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
                 for (auto const& overlay : display.footnoteOverlays)
                 {

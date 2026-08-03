@@ -261,6 +261,10 @@ suite editor_paste_tests = [] {
     if (table_fragments.size() != 4u) return;
     table_source.set_selection({
         {table_fragments.front().container_id, 0, TextAffinity::Downstream},
+        {table_fragments.front().container_id, 1, TextAffinity::Upstream}});
+    expect(fatal(bool(table_source.selected_markdown_cps() == U"a")));
+    table_source.set_selection({
+        {table_fragments.front().container_id, 0, TextAffinity::Downstream},
         {table_fragments.back().container_id, 1, TextAffinity::Upstream}});
     const auto table_fragment = table_source.selected_markdown_cps();
     Editor table_target;
