@@ -34,9 +34,10 @@ the user did not change.
   syntax, and temporarily incomplete editing states.
 - **Native editing** — WYSIWYG and monospaced source modes, line numbers and
   outline navigation, transactional history, semantic copy/paste, configurable
-  context-aware shortcuts/snippets, LaTeX completion, and regular-expression
-  find/replace are implemented in native C++. Rendered-mode search operates on
-  visible text while source mode searches the exact Markdown buffer.
+  context-aware shortcuts/snippets, explicit one-step Markdown source
+  formatting, LaTeX completion, and regular-expression find/replace are
+  implemented in native C++. Rendered-mode search operates on visible text
+  while source mode searches the exact Markdown buffer.
 - **Rich rendering** — MathJax, Mermaid, Tree-sitter syntax highlighting,
   native SVG, animated GIFs, Windows image codecs (PNG, JPEG, BMP, TIFF, ICO,
   and installed WebP/HEIF codecs), tables, footnotes, callouts, and recursively

@@ -20,6 +20,16 @@ reparse the full document to restore selection.
 
 Inline formatting is a CST query followed by one block-local source edit. Existing formatting is identified from complete CST delimiter ranges, so removing `_`/`__`, variable-length code spans, math, and nested formatting preserves the exact source spelling instead of comparing against hard-coded marker text.
 
+Whole-document source formatting is a separate explicit command implemented by
+`editing/document_format.ixx`; it is not part of ordinary serialization or
+Save. The formatter traverses the same unified block tree, canonicalizes only
+block-level presentation metadata, records reversible payload operations, and
+keeps every inline source, incomplete CST, raw code/math block, and HTML syntax
+island exact. Source mode uses the same formatter only when commanded, maps its
+flat selection through serializer projections, and records the replacement as
+one source-editor history transaction. The canonical result must be
+idempotent.
+
 Callout titles are ordinary `CalloutTitle` block nodes: when present they are the first child of the `Callout`, own their own `InlineDocument`, source coordinate, and node identity, and participate in the same recursive traversal, clipboard, history, rendering, and validation paths as every other editable child. The Callout container owns only structural metadata; it has no editable side document.
 
 Some large files are intentionally cohesive:

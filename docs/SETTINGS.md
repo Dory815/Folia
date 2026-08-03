@@ -29,6 +29,8 @@ Shortcut bindings are resolved deterministically by editor context. A Code or Ma
 
 The page shows built-in and custom actions in one list. A row menu changes or clears a binding; custom actions can also be edited, reset, or removed. Adding or editing a custom action opens a focused dialog for its name, scope, gesture, and insertion template.
 
+`Format document` is available in both rendered and source modes and defaults to `Shift+Alt+F`. It is an explicit operation and one undo step: ordinary Save remains character-exact. Formatting canonicalizes block markers, list delimiters, table separators, recursive container prefixes, and inter-block spacing through the unified block tree. It deliberately leaves inline Markdown spelling, incomplete inline CST states, fenced code/math source, and HTML syntax islands unchanged. Running it twice is idempotent.
+
 Templates may expand to multiple lines, but the Settings field is deliberately a single-line literal. It first decodes `\\` as a backslash, `\n` as a newline, `\r` as carriage return, and `\t` as a tab; unknown or dangling escapes are rejected. The decoded source then uses a deterministic subset of VS Code snippet syntax:
 
 - `$1`, `${1}`, and later numbered markers define the order visited by Tab; `$0` is the final caret stop.
