@@ -122,7 +122,8 @@ WinUI 工程入口是 [Folia.vcxproj](src/app-winui/Folia.vcxproj)。快捷键�
 LaTeX 补全和运行时选项见 [设置文档](docs/SETTINGS.md)；主题字段与外部
 Assets 根目录见 [主题文档](docs/THEMES.md)。
 [MarkText 交互参考](docs/MARKTEXT_REFERENCE.md) 只记录行为语义参考，不改变
-折笺的原生架构。
+折笺的原生架构；[表格交互规范](docs/TABLE_INTERACTION.md) 明确定义了线性文本
+选择与显式行列结构操作之间的边界。
 
 ## 项目状态
 

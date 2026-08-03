@@ -73,6 +73,8 @@ Markdown source
 See the [source layout](src/README.md), [core layout](src/core/README.md),
 [Windows platform layer](src/platform/README.md), and
 [WinUI application layer](src/app-winui/README.md) for ownership boundaries.
+The [table interaction contract](docs/TABLE_INTERACTION.md) defines the exact
+boundary between linear text selection and explicit row/column operations.
 
 ## Build from source
 
