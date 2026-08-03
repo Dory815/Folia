@@ -48,6 +48,177 @@ suite editor_table_property_tests = [] {
     expect(fatal(bool(editor.has_undo() == had_undo)));
 };
 
+"tab_from_the_final_cell_appends_one_reversible_row"_test = [] {
+    Editor editor("| A | B |\n| --- | --- |\n| 1 | 2 |");
+    const auto& table = editor.document().root.children.front();
+    const auto last_id = table.children.back().children.back().id;
+    const auto before = TextSelection::caret(
+        {last_id, 1, TextAffinity::Downstream});
+    editor.set_selection(before);
+
+    auto transaction = editor.execute_document_table_edit(
+        editor.selection(), DocumentTableEdit::MoveCellNext);
+    expect(fatal(bool(transaction.has_value())));
+    if (!transaction) return;
+    expect(fatal(bool(!transaction->operations.empty())));
+    expect(fatal(bool(editor.document().root.children.front().children.size() == 3u)));
+    const auto& appended = editor.document().root.children.front().children.back();
+    expect(fatal(bool(appended.children.size() == 2u)));
+    expect(fatal(bool(editor.selection().active.container_id
+        == appended.children.front().id)));
+    expect(fatal(bool(editor.selection().active.source_offset == 0u)));
+
+    expect(fatal(bool(editor.undo())));
+    expect(fatal(bool(editor.document().root.children.front().children.size() == 2u)));
+    expect(fatal(bool(editor.selection() == before)));
+    expect(fatal(bool(editor.redo())));
+    expect(fatal(bool(editor.document().root.children.front().children.size() == 3u)));
+};
+
+"table_structure_commands_reject_cross_cell_text_ranges"_test = [] {
+    Editor editor("| aa | bb |\n| --- | --- |\n| cc | dd |");
+    const auto fragments = document_text_fragments(editor.document());
+    expect(fatal(bool(fragments.size() == 4u)));
+    if (fragments.size() != 4) return;
+    const TextSelection cross_cell{
+        {fragments[0].container_id, 1, TextAffinity::Downstream},
+        {fragments[1].container_id, 1, TextAffinity::Upstream}};
+    editor.set_selection(cross_cell);
+    const auto before = editor.markdown_utf8();
+    const auto revision = editor.revision();
+    expect(fatal(!editor.execute_document_table_edit(
+        editor.selection(), DocumentTableEdit::InsertRowBelow).has_value()));
+    expect(fatal(bool(editor.markdown_utf8() == before)));
+    expect(fatal(bool(editor.revision() == revision)));
+    expect(fatal(bool(editor.selection() == cross_cell)));
+
+    const TextSelection same_cell{
+        {fragments[0].container_id, 0, TextAffinity::Downstream},
+        {fragments[0].container_id, 1, TextAffinity::Upstream}};
+    editor.set_selection(same_cell);
+    expect(fatal(bool(editor.execute_document_table_edit(
+        editor.selection(), DocumentTableEdit::InsertRowBelow).has_value())));
+};
+
+"cross_cell_text_selection_is_row_major_reversible_and_structure_preserving"_test = [] {
+    Editor editor("| aa | bb |\n| --- | --- |\n| cc | dd |");
+    const auto fragments = document_text_fragments(editor.document());
+    expect(fatal(bool(fragments.size() == 4u)));
+    if (fragments.size() != 4) return;
+
+    const TextSelection forward{
+        {fragments[0].container_id, 1, TextAffinity::Downstream},
+        {fragments[3].container_id, 1, TextAffinity::Upstream}};
+    const TextSelection reverse{forward.active, forward.anchor};
+    editor.set_selection(forward);
+    expect(fatal(bool(editor.selected_markdown_cps() == U"a\tbb\ncc\td")));
+    editor.set_selection(reverse);
+    expect(fatal(bool(editor.selected_markdown_cps() == U"a\tbb\ncc\td")));
+
+    editor.set_selection(forward);
+    const auto before = editor.markdown_utf8();
+    reset_core_operation_counters();
+    auto deletion = editor.execute_document_delete_selection(editor.selection());
+    expect(fatal(bool(deletion.has_value())));
+    if (!deletion) return;
+    auto const counters = read_core_operation_counters();
+    expect(fatal(bool(counters.full_document_parses == 0u)));
+    expect(fatal(bool(counters.full_document_serializations == 0u)));
+    expect(fatal(bool(counters.full_tree_transaction_diffs == 0u)));
+    auto const& edited = editor.document().root.children.front();
+    expect(fatal(bool(edited.kind == BlockKind::Table)));
+    expect(fatal(bool(edited.children.size() == 2u)));
+    expect(fatal(bool(edited.children[0].children.size() == 2u)));
+    expect(fatal(bool(edited.children[1].children.size() == 2u)));
+    expect(fatal(bool(edited.children[0].children[0].inline_content.source == U"a")));
+    expect(fatal(bool(edited.children[0].children[1].inline_content.source.empty())));
+    expect(fatal(bool(edited.children[1].children[0].inline_content.source.empty())));
+    expect(fatal(bool(edited.children[1].children[1].inline_content.source == U"d")));
+    expect(fatal(bool(validate_document(editor.document()).empty())));
+
+    const auto after = editor.markdown_utf8();
+    const auto after_selection = editor.selection();
+    expect(fatal(bool(editor.undo())));
+    expect(fatal(bool(editor.markdown_utf8() == before)));
+    expect(fatal(bool(editor.selection() == forward)));
+    expect(fatal(bool(editor.redo())));
+    expect(fatal(bool(editor.markdown_utf8() == after)));
+    expect(fatal(bool(editor.selection() == after_selection)));
+};
+
+"table_boundaries_prevent_cross_block_text_delete_from_removing_cells"_test = [] {
+    Editor editor(
+        "lead\n\n| aa | bb |\n| --- | --- |\n| cc | dd |\n\ntrail");
+    const auto fragments = document_text_fragments(editor.document());
+    expect(fatal(bool(fragments.size() == 6u)));
+    if (fragments.size() != 6) return;
+    const TextSelection before{
+        {fragments[0].container_id, 2, TextAffinity::Downstream},
+        {fragments[2].container_id, 1, TextAffinity::Upstream}};
+    editor.set_selection(before);
+    expect(fatal(bool(editor.selected_markdown_cps() == U"ad\naa\tb")));
+    const auto before_markdown = editor.markdown_utf8();
+
+    auto deletion = editor.execute_document_delete_selection(editor.selection());
+    expect(fatal(bool(deletion.has_value())));
+    if (!deletion) return;
+    expect(fatal(bool(editor.document().root.children.size() == 3u)));
+    auto const& table = editor.document().root.children[1];
+    expect(fatal(bool(table.kind == BlockKind::Table)));
+    expect(fatal(bool(table.children.size() == 2u)));
+    expect(fatal(bool(table.children[0].children.size() == 2u)));
+    expect(fatal(bool(table.children[1].children.size() == 2u)));
+    expect(fatal(bool(editor.document().root.children[0].inline_content.source == U"le")));
+    expect(fatal(bool(table.children[0].children[0].inline_content.source.empty())));
+    expect(fatal(bool(table.children[0].children[1].inline_content.source == U"b")));
+    expect(fatal(bool(table.children[1].children[0].inline_content.source == U"cc")));
+    expect(fatal(bool(table.children[1].children[1].inline_content.source == U"dd")));
+    expect(fatal(bool(editor.document().root.children[2].inline_content.source == U"trail")));
+    expect(fatal(bool(validate_document(editor.document()).empty())));
+
+    expect(fatal(bool(editor.undo())));
+    expect(fatal(bool(editor.markdown_utf8() == before_markdown)));
+    expect(fatal(bool(editor.selection() == before)));
+};
+
+"cross_cell_selection_replacement_is_one_source_transaction"_test = [] {
+    Editor editor("| aa | bb |\n| --- | --- |\n| cc | dd |");
+    const auto fragments = document_text_fragments(editor.document());
+    expect(fatal(bool(fragments.size() == 4u)));
+    if (fragments.size() != 4) return;
+    const TextSelection selection{
+        {fragments[0].container_id, 1, TextAffinity::Downstream},
+        {fragments[3].container_id, 1, TextAffinity::Upstream}};
+    editor.set_selection(selection);
+    const auto before = editor.markdown_utf8();
+
+    auto replacement = editor.execute_document_insert_text(editor.selection(), U"X");
+    expect(fatal(bool(replacement.has_value())));
+    if (!replacement) return;
+    auto const& table = editor.document().root.children.front();
+    expect(fatal(bool(table.children.size() == 2u)));
+    expect(fatal(bool(table.children[0].children.size() == 2u)));
+    expect(fatal(bool(table.children[1].children.size() == 2u)));
+    expect(fatal(bool(table.children[0].children[0].inline_content.source == U"aX")));
+    expect(fatal(bool(table.children[0].children[1].inline_content.source.empty())));
+    expect(fatal(bool(table.children[1].children[0].inline_content.source.empty())));
+    expect(fatal(bool(table.children[1].children[1].inline_content.source == U"d")));
+    expect(fatal(bool(editor.selection().is_caret())));
+    expect(fatal(bool(editor.selection().active.container_id
+        == fragments[0].container_id)));
+    expect(fatal(bool(editor.selection().active.source_offset == 2u)));
+    expect(fatal(bool(validate_document(editor.document()).empty())));
+
+    const auto after = editor.markdown_utf8();
+    const auto after_selection = editor.selection();
+    expect(fatal(bool(editor.undo())));
+    expect(fatal(bool(editor.markdown_utf8() == before)));
+    expect(fatal(bool(editor.selection() == selection)));
+    expect(fatal(bool(editor.redo())));
+    expect(fatal(bool(editor.markdown_utf8() == after)));
+    expect(fatal(bool(editor.selection() == after_selection)));
+};
+
 "table_structure_edits_record_rows_columns_and_payloads"_test = [] {
     struct Case {
         DocumentTableEdit edit;

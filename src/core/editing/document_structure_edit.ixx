@@ -12,6 +12,7 @@ import folia.core.inline_document;
 import folia.core.inline_parser;
 import folia.core.inline_source_edit;
 import folia.core.text_edit;
+import folia.core.table_selection;
 import folia.core.utf;
 import folia.core.document_edit_support;
 import folia.core.document_input_rules;
@@ -635,21 +636,19 @@ inline std::optional<DocumentTransaction> document_edit_table(
     std::size_t argument = 0) {
     const auto revision_before = document.revision;
     auto& after = document;
-    auto path = block_path(after.root, selection.active.container_id);
-    if (!path || path->size() < 2) return std::nullopt;
-    while (!path->empty() && block_at_path(after.root, *path)->kind != BlockKind::TableCell) path->pop_back();
-    if (path->size() < 2) return std::nullopt;
-    const auto cell_id = block_at_path(after.root, *path)->id;
-    auto row_path = *path;
-    const auto column = row_path.back();
-    row_path.pop_back();
-    auto table_path = row_path;
-    const auto row_index = table_path.back();
-    table_path.pop_back();
-    auto* table = block_at_path(after.root, table_path);
+    // A text range inside one cell still has an unambiguous structural target.
+    // A cross-cell range does not: row/column commands must come from an
+    // explicit handle that first collapses the selection to its source cell.
+    auto const target_cell = document_table_edit_target(after, selection);
+    if (!target_cell) return std::nullopt;
+    const auto cell_id = target_cell->cell_id;
+    const auto column = target_cell->column;
+    const auto row_index = target_cell->row;
+    auto* table = find_block(after.root, target_cell->table_id);
     if (!table || table->kind != BlockKind::Table || table->children.empty()) return std::nullopt;
     document_edit_detail::NodeAllocator allocator(after);
     const auto column_count = table->children.front().children.size();
+    if (column_count == 0) return std::nullopt;
     const auto header_rows = table->children.front().table_special().table_header_row
         ? std::size_t{1}
         : std::size_t{0};
@@ -722,8 +721,18 @@ inline std::optional<DocumentTransaction> document_edit_table(
         case DocumentTableEdit::MoveCellNext: {
             if (column + 1 < table->children[row_index].children.size()) target_id = table->children[row_index].children[column + 1].id;
             else if (row_index + 1 < table->children.size()) target_id = table->children[row_index + 1].children.front().id;
-            else return std::nullopt;
-            changed = false;
+            else {
+                // Match the established desktop-table convention: Tab from
+                // the final cell appends a row and enters its first cell.
+                auto row = make_row();
+                target_id = row.children.front().id;
+                if (!insert_node(table->id, table->children.size(), std::move(row))) {
+                    return std::nullopt;
+                }
+            }
+            // Navigation is selection-only; appending the terminal row is a
+            // real tree transaction and therefore participates in history.
+            changed = !operations.empty();
             break;
         }
         case DocumentTableEdit::MoveCellPrevious: {

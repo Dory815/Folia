@@ -315,6 +315,9 @@
     <ClCompile Include="..\core\query\document_text.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\core\query\table_selection.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\core\query\document_content_context.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

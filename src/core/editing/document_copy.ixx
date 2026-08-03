@@ -8,6 +8,7 @@ import folia.core.document;
 import folia.core.document_text;
 import folia.core.inline_parser;
 import folia.core.serializer;
+import folia.core.table_selection;
 import folia.core.text_edit;
 
 export namespace folia {
@@ -144,11 +145,6 @@ inline std::optional<BlockNode> slice_block(
     const auto span = descendant_fragment_span(block, selection);
     if (!span || !intersects_selection(*span, selection)) return std::nullopt;
 
-    // MarkText's table selection semantics copy a table as a unit whenever a
-    // cross-cell/cross-block range intersects it. A same-cell selection takes
-    // the exact source substring through the same-owner fast path below.
-    if (block.kind == BlockKind::Table) return block;
-
     BlockNode copy = block;
     copy.children.clear();
     bool has_selected_owner = false;
@@ -198,6 +194,37 @@ inline std::optional<std::u32string> document_selected_markdown(
             *ordered, ordered->start_index);
         if (!text) return std::nullopt;
         return std::u32string{text->substr(range.start, range.length())};
+    }
+
+    // Any range that crosses a table is an ordinary row-major text range, not
+    // an implicit request to copy the whole table. Tabs preserve cell
+    // boundaries and newlines preserve row/block boundaries without
+    // manufacturing a second table-selection model.
+    if (auto slices = document_table_barrier_text_slices(document, selection);
+        slices && slices->size() > 1) {
+        std::u32string result;
+        for (std::size_t index = 0; index < slices->size(); ++index) {
+            auto const& slice = (*slices)[index];
+            if (index > 0) {
+                auto const previous = document_table_cell_address(
+                    document, (*slices)[index - 1].container_id);
+                auto const current = document_table_cell_address(
+                    document, slice.container_id);
+                result.push_back(previous && current
+                        && previous->table_id == current->table_id
+                        && previous->row == current->row
+                    ? U'\t' : U'\n');
+            }
+            auto const* owner = find_document_block(document, slice.container_id);
+            auto source = owner ? editable_block_text_view(*owner) : std::nullopt;
+            if (!source || !slice.source_range.valid_for(source->size())) {
+                return std::nullopt;
+            }
+            result.append(source->substr(
+                slice.source_range.start,
+                slice.source_range.length()));
+        }
+        return result;
     }
 
     BlockVec selected;

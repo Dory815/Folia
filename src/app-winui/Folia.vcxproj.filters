@@ -210,6 +210,9 @@
     <ClCompile Include="..\core\query\document_text.ixx">
       <Filter>Core Modules\Query</Filter>
     </ClCompile>
+    <ClCompile Include="..\core\query\table_selection.ixx">
+      <Filter>Core Modules\Query</Filter>
+    </ClCompile>
     <ClCompile Include="..\core\query\document_content_context.ixx">
       <Filter>Core Modules\Query</Filter>
     </ClCompile>

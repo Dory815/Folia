@@ -4,6 +4,7 @@ import folia.core.ast;
 import folia.core.block_tree;
 import folia.core.document;
 import folia.core.document_text;
+import folia.core.table_selection;
 import folia.core.inline_cst;
 import folia.core.inline_document;
 import folia.core.inline_parser;
@@ -407,6 +408,42 @@ inline std::optional<DocumentTransaction> document_delete_selection(EditorDocume
         return source_transaction_with_block_reparse(
             after, std::move(*source_edit), selection, target,
             revision_before, DocumentTransactionReason::Delete);
+    }
+
+    if (auto slices = document_table_barrier_text_slices(after, selection);
+        slices && slices->size() > 1) {
+        // A cross-cell text selection never implies a structural table edit.
+        // Erase only the selected block-local source ranges and leave the
+        // rectangular row/cell tree intact.  Explicit table handles are the
+        // sole route to deleting rows or columns.
+        std::vector<DocumentOperation> operations;
+        document_edit_detail::MutationRollback rollback(
+            after, operations, revision_before);
+        for (auto const& slice : *slices) {
+            if (slice.source_range.empty()) continue;
+            auto source_edit = document_edit_detail::erase_text(
+                after,
+                slice.container_id,
+                slice.source_range,
+                allocator);
+            if (!source_edit) return std::nullopt;
+            document_edit_detail::append_source_operation(
+                operations, std::move(*source_edit));
+        }
+        if (operations.empty()) return std::nullopt;
+        ++after.revision;
+        auto const target = TextPosition{
+            slices->front().container_id,
+            slices->front().source_range.start,
+            TextAffinity::Downstream};
+        rollback.commit();
+        return make_recorded_document_transaction(
+            std::move(operations),
+            selection,
+            TextSelection::caret(target),
+            revision_before,
+            after.revision,
+            DocumentTransactionReason::Delete);
     }
 
     const auto& order = after.cached_editable_order;

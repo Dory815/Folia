@@ -233,6 +233,11 @@ suite editor_interaction_tests = [] {
     expect(deleteColumn.has_value());
     expect(deleteColumn->kind == EditorTableActionKind::DeleteColumn);
     expect(deleteColumn->index == 0_u);
+
+    // Cell interiors always belong to text hit-testing. Structural actions
+    // are available only in the explicit margins and boundary handles.
+    expect(!interaction.TableActionAt(50.0f, 25.0f).has_value());
+    expect(!interaction.TableActionAt(150.0f, 75.0f).has_value());
 };
 
 "table drop policy stays within the source table and tolerates incomplete geometry"_test = [] {

@@ -267,13 +267,7 @@ suite editor_paste_tests = [] {
         {table_fragments.front().container_id, 0, TextAffinity::Downstream},
         {table_fragments.back().container_id, 1, TextAffinity::Upstream}});
     const auto table_fragment = table_source.selected_markdown_cps();
-    Editor table_target;
-    table_target.set_selection(caret(first_text(table_target), 0));
-    expect(fatal(bool(table_target.execute_document_paste_text(
-        table_target.selection(), table_fragment).has_value())));
-    expect(fatal(bool(table_target.document().root.children.size() == 1u)));
-    expect(fatal(bool(table_target.document().root.children.front().kind == BlockKind::Table)));
-    expect(fatal(bool(validate_document(table_target.document()).empty())));
+    expect(fatal(bool(table_fragment == U"a\tb\nc\td")));
 };
 
 "paste_over_cross_block_selection_is_one_exact_history_transaction"_test = [] {
