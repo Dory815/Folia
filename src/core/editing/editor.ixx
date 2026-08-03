@@ -395,6 +395,12 @@ public:
             selection_ = *selection;
             return true;
         }
+        if (cmd.kind == CommandKind::FormatDocument) {
+            auto transaction = document_format_markdown(document_, selection_);
+            if (!transaction) return false;
+            apply_document_transaction_(*transaction);
+            return true;
+        }
         if (cmd.kind == CommandKind::ToggleCallout
             || cmd.kind == CommandKind::InsertFootnote
             || cmd.kind == CommandKind::CreateFootnoteDefinition) {

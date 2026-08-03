@@ -297,6 +297,15 @@ public:
         return replace_with_selection_(range, std::move(replacement), SourceSelection::caret(target));
     }
 
+    bool replace_document(std::u32string replacement, SourceSelection selection_after) {
+        selection_after.anchor = (std::min)(selection_after.anchor, replacement.size());
+        selection_after.active = (std::min)(selection_after.active, replacement.size());
+        return replace_with_selection_(
+            {0, source_.size()},
+            std::move(replacement),
+            selection_after);
+    }
+
     bool replace_all(std::span<const SourceReplacement> replacements) {
         if (replacements.empty()) return false;
         auto ordered = std::vector<SourceReplacement>(replacements.begin(), replacements.end());

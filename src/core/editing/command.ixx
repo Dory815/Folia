@@ -12,7 +12,7 @@ enum class CommandKind {
     MoveLeft, MoveRight, MoveUp, MoveDown,
     MoveLineStart, MoveLineEnd, MoveDocumentStart, MoveDocumentEnd,
     MovePageUp, MovePageDown, SelectAll,
-    ToggleStrong, ToggleEmphasis, ToggleStrikethrough, ToggleInlineCode,
+    ToggleStrong, ToggleEmphasis, ToggleStrikethrough, ToggleInlineCode, FormatDocument,
     SetHeading, ClearHeading,
     ToggleUnorderedList, ToggleOrderedList, ToggleTaskList, ToggleTaskCheckbox, ToggleBlockQuote,
     IndentListItem, OutdentListItem,

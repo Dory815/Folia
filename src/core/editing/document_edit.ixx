@@ -8,3 +8,4 @@ export import folia.core.document_structure_edit;
 export import folia.core.document_copy;
 export import folia.core.document_paste;
 export import folia.core.document_footnotes;
+export import folia.core.document_format;

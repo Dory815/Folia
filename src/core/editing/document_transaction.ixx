@@ -44,10 +44,16 @@ struct DocumentTransaction {
 namespace document_transaction_detail {
 
 inline BlockNode payload_shell(const BlockNode& source) {
-    auto shell = source;
-    shell.children.clear();
-    shell.inline_content = {};
-    shell.block_source = {};
+    // Build the shell directly. Copying a node and clearing its content first
+    // transiently duplicates the entire descendant tree and all block-local
+    // source, which is especially costly for document-wide metadata edits.
+    BlockNode shell;
+    shell.id = source.id;
+    shell.kind = source.kind;
+    shell.separator_before = source.separator_before;
+    shell.payload = source.payload
+        ? std::make_unique<BlockNodeSpecial>(*source.payload)
+        : nullptr;
     return shell;
 }
 
