@@ -83,6 +83,42 @@ suite document_reload_tests = [] {
     expect(!state.PendingVersion().has_value());
 };
 
+"file versions distinguish missing files and atomic replacements"_test = [] {
+    auto root = std::filesystem::temp_directory_path()
+        / ("folia-version-"
+            + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    std::filesystem::create_directories(root);
+    auto target = root / "target.md";
+    auto replacement = root / "replacement.md";
+    expect(!query_watched_file_version(target).exists);
+    { std::ofstream(target) << "same"; }
+    auto original = query_watched_file_version(target);
+    expect(original.exists);
+    expect(original.size == 4_u);
+    { std::ofstream(replacement) << "same"; }
+    std::filesystem::remove(target);
+    std::filesystem::rename(replacement, target);
+    auto replaced = query_watched_file_version(target);
+    expect(replaced.exists);
+    expect(replaced != original);
+    std::filesystem::remove_all(root);
+};
+
+"accepting a conflict resets the baseline and keeping it does not"_test = [] {
+    DocumentReloadState state;
+    auto original = fingerprint_document_content("original");
+    auto local = fingerprint_document_content("local");
+    auto external = fingerprint_document_content("external");
+    state.Reset(version(1), original);
+    expect(state.Observe(version(2), local) == DocumentReloadAction::Prompt);
+    state.KeepPending();
+    expect(state.LocallyModified(local));
+    expect(state.Observe(version(3), local) == DocumentReloadAction::Prompt);
+    state.Accept(version(3), external);
+    expect(!state.LocallyModified(external));
+    expect(state.LocallyModified(local));
+};
+
 "file monitor filters sibling changes and stops deterministically"_test = [] {
     auto root = std::filesystem::temp_directory_path()
         / ("folia-reload-"

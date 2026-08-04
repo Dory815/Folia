@@ -153,7 +153,7 @@ struct FileChangeMonitor::Impl {
     }
 
     void Run() noexcept {
-        std::array<std::byte, 32 * 1024> buffer{};
+        alignas(FILE_NOTIFY_INFORMATION) std::array<std::byte, 32 * 1024> buffer{};
         while (running.load(std::memory_order_acquire)) {
             ResetEvent(changedEvent);
             DWORD ignored = 0;
