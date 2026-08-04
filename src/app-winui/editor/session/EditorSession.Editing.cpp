@@ -132,6 +132,56 @@ namespace winrt::Folia
         return IsSourceMode() ? ExitSourceMode() : EnterSourceMode();
     }
 
+    EditorReloadViewState EditorSession::CaptureReloadViewState() const
+    {
+        EditorReloadViewState state;
+        state.sourceMode = IsSourceMode();
+        if (core_->sourceEditor)
+        {
+            auto selection = core_->sourceEditor->selection();
+            state.anchor = selection.anchor;
+            state.active = selection.active;
+            state.anchorAffinity = selection.anchor_affinity;
+            state.activeAffinity = selection.active_affinity;
+            return state;
+        }
+
+        SerializedSourceProjection projection(
+            folia::serialize_markdown_projection(core_->editor.document()));
+        auto selection = core_->editor.selection();
+        state.anchor = projection.SourceOffset(selection.anchor);
+        state.active = projection.SourceOffset(selection.active);
+        state.anchorAffinity = selection.anchor.affinity;
+        state.activeAffinity = selection.active.affinity;
+        return state;
+    }
+
+    void EditorSession::RestoreReloadViewState(EditorReloadViewState const& state)
+    {
+        if (state.sourceMode)
+        {
+            EnterSourceMode();
+            auto length = core_->sourceEditor->source().size();
+            core_->sourceEditor->set_selection({
+                (std::min)(state.anchor, length),
+                (std::min)(state.active, length),
+                state.anchorAffinity,
+                state.activeAffinity,
+            });
+            return;
+        }
+
+        SerializedSourceProjection projection(
+            folia::serialize_markdown_projection(core_->editor.document()));
+        auto anchor = projection.Position(state.anchor, state.anchorAffinity);
+        auto active = projection.Position(state.active, state.activeAffinity);
+        if (core_->editor.editable_source(anchor.container_id)
+            && core_->editor.editable_source(active.container_id))
+        {
+            core_->editor.set_selection({anchor, active});
+        }
+    }
+
     bool EditorSession::ExecuteCommand(folia::Command const& command)
     {
         if (core_->sourceEditor)

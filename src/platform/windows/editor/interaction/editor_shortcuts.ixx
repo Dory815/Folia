@@ -96,6 +96,7 @@ inline std::vector<EditorShortcutBinding> default_editor_shortcuts() {
         built_in_shortcut("file.save", "file.save", ctrl(K::S)),
         unassigned_shortcut("file.save_as", "file.save_as"),
         unassigned_shortcut("file.export_pdf", "file.export_pdf"),
+        built_in_shortcut("file.reload", "file.reload", EditorKeyGesture{K::F5}),
         built_in_shortcut("search.find", "search.find", ctrl(K::F)),
         built_in_shortcut("search.replace", "search.replace", ctrl(K::H)),
         built_in_shortcut("edit.copy", "edit.copy", ctrl(K::C)),

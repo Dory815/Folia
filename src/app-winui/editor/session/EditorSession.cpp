@@ -29,12 +29,14 @@ namespace winrt::Folia
         winrt::hstring const& text,
         DocumentEncoding encoding,
         std::vector<DocumentEncodingCandidate> encodingCandidates,
-        LoadProgress progress)
+        LoadProgress progress,
+        bool encodingExplicit)
     {
         file_ = file;
         text_ = text;
         encoding_ = std::move(encoding);
         encodingCandidates_ = std::move(encodingCandidates);
+        encodingExplicit_ = encodingExplicit;
         ++revision_;
         RebuildCore(std::move(progress));
     }
@@ -233,6 +235,12 @@ namespace winrt::Folia
         encoding_ = std::move(encoding);
         encodingCandidates_.clear();
         encodingCandidates_.push_back({ encoding_.name, 100 });
+        encodingExplicit_ = true;
+    }
+
+    bool EditorSession::EncodingWasExplicit() const
+    {
+        return encodingExplicit_;
     }
 
     winrt::hstring EditorSession::DisplayName() const

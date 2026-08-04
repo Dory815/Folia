@@ -14,7 +14,7 @@
     <Grid
         x:Name="Root"
         KeyboardAcceleratorPlacementMode="Hidden"
-        RowDefinitions="40,Auto,Auto,*,Auto">
+        RowDefinitions="40,Auto,Auto,Auto,*,Auto">
         <Grid.Resources>
             <SolidColorBrush x:Key="FoliaShellBackgroundBrush" Color="#121419"/>
             <SolidColorBrush x:Key="FoliaShellLayerBrush" Color="#191C23"/>
@@ -84,6 +84,7 @@
                     ToolTipService.ToolTip="Format Markdown source"/>
             </CommandBar.SecondaryCommands>
             <AppBarButton x:Name="OpenButton" Icon="OpenFile" Label="Open" ToolTipService.ToolTip="Open a Markdown document"/>
+            <AppBarButton x:Name="ReloadButton" Icon="Refresh" Label="Reload" ToolTipService.ToolTip="Reload the current document"/>
             <AppBarButton x:Name="SaveButton" Icon="Save" Label="Save" ToolTipService.ToolTip="Save the current document"/>
             <AppBarButton x:Name="ExportPdfButton" Icon="Print" Label="PDF" ToolTipService.ToolTip="Export with Windows PDF printing"/>
             <AppBarSeparator x:Name="FileFormatSeparator"/>
@@ -138,9 +139,24 @@
                 ToolTipService.ToolTip="Settings"/>
         </CommandBar>
 
+        <InfoBar
+            x:Name="ExternalChangeInfoBar"
+            Grid.Row="2"
+            IsClosable="False"
+            IsOpen="False"
+            Severity="Warning"
+            Title="The file changed on disk">
+            <InfoBar.Content>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="ReloadExternalButton" Content="Reload"/>
+                    <Button x:Name="KeepLocalButton" Content="Keep local changes"/>
+                </StackPanel>
+            </InfoBar.Content>
+        </InfoBar>
+
         <Border
             x:Name="FindReplaceBar"
-            Grid.Row="2"
+            Grid.Row="3"
             Padding="10,8"
             Background="{ThemeResource FoliaShellLayerBrush}"
             BorderBrush="{ThemeResource FoliaShellBorderBrush}"
@@ -198,7 +214,7 @@
             </Grid>
         </Border>
 
-        <Grid x:Name="WorkspaceHost" Grid.Row="3">
+        <Grid x:Name="WorkspaceHost" Grid.Row="4">
             <NavigationView
                 x:Name="DocumentNavigation"
                 AlwaysShowHeader="False"
@@ -342,7 +358,7 @@
 
         <Grid
             x:Name="StatusBar"
-            Grid.Row="4"
+            Grid.Row="5"
             MinHeight="32"
             Padding="10,3,8,3"
             Background="{ThemeResource FoliaShellLayerBrush}"

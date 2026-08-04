@@ -45,7 +45,8 @@ namespace winrt::Folia
         SetProgress setProgress,
         DocumentChanged documentChanged,
         Render render,
-        WindowHandle windowHandle)
+        WindowHandle windowHandle,
+        SetExternalChange setExternalChange)
     {
         Detach();
         state_->session = &session;
@@ -57,10 +58,13 @@ namespace winrt::Folia
         state_->documentChanged = std::move(documentChanged);
         state_->render = std::move(render);
         state_->windowHandle = std::move(windowHandle);
+        state_->setExternalChange = std::move(setExternalChange);
+        state_->dispatcher = winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread();
     }
 
     void EditorDocumentController::Detach()
     {
+        StopWatching(state_);
         state_->cancelRequested = true;
         state_->pdfExporting = false;
         if (state_->pdfWork) state_->pdfWork->stop.request_stop();
@@ -80,6 +84,8 @@ namespace winrt::Folia
         state_->documentChanged = {};
         state_->render = {};
         state_->windowHandle = {};
+        state_->setExternalChange = {};
+        state_->dispatcher = nullptr;
     }
 
     void EditorDocumentController::OpenDocument()
@@ -248,7 +254,12 @@ namespace winrt::Folia
         {
             if (!Active(state, generation) || !state->session->HasFile()) co_return;
             co_await LoadDocumentAsync(
-                state, generation, state->session->File(), std::move(encoding));
+                state,
+                generation,
+                state->session->File(),
+                std::move(encoding),
+                LoadReason::EncodingReopen,
+                true);
         }
         catch (winrt::hresult_error const& error)
         {
@@ -273,17 +284,56 @@ namespace winrt::Folia
         std::shared_ptr<State> state,
         std::uint64_t generation,
         winrt::Windows::Storage::StorageFile file,
-        std::optional<std::string> requestedEncoding)
+        std::optional<std::string> requestedEncoding,
+        LoadReason reason,
+        bool preserveView)
     {
         if (!Active(state, generation) || !file) co_return;
+        auto loadTicket = state->loadSerial.fetch_add(1) + 1;
+        state->documentLoading.store(true, std::memory_order_release);
+        struct LoadingGuard
+        {
+            std::atomic_bool* loading;
+            std::atomic_uint64_t* serial;
+            std::uint64_t ticket;
+
+            ~LoadingGuard()
+            {
+                if (serial->load(std::memory_order_acquire) == ticket)
+                    loading->store(false, std::memory_order_release);
+            }
+        } loadingGuard{ &state->documentLoading, &state->loadSerial, loadTicket };
+        auto viewState = preserveView
+            ? std::optional{state->session->CaptureReloadViewState()}
+            : std::nullopt;
+        auto scrollOffset = preserveView && state->renderer
+            ? state->renderer->ScrollOffset()
+            : 0.0f;
         if (state->setStatus) state->setStatus(LocalizeFormat(L"StatusReadingFile", { file.Name() }));
         if (state->setProgress) state->setProgress(true, std::nullopt, false);
-        auto buffer = co_await winrt::Windows::Storage::FileIO::ReadBufferAsync(file);
-        if (!Active(state, generation)) co_return;
-        winrt::Windows::Storage::Streams::DataReader reader =
-            winrt::Windows::Storage::Streams::DataReader::FromBuffer(buffer);
-        std::vector<std::uint8_t> bytes(buffer.Length());
-        reader.ReadBytes(bytes);
+        std::vector<std::uint8_t> bytes;
+        folia::platform::reload::WatchedFileVersion readVersion;
+        for (std::size_t attempt = 0; attempt < 5; ++attempt)
+        {
+            readVersion = folia::platform::reload::query_watched_file_version(
+                std::filesystem::path(file.Path().c_str()));
+            if (!readVersion.exists) throw std::runtime_error("document no longer exists");
+            auto buffer = co_await winrt::Windows::Storage::FileIO::ReadBufferAsync(file);
+            if (!Active(state, generation) || state->loadSerial.load() != loadTicket) co_return;
+            auto afterRead = folia::platform::reload::query_watched_file_version(
+                std::filesystem::path(file.Path().c_str()));
+            if (afterRead == readVersion)
+            {
+                winrt::Windows::Storage::Streams::DataReader reader =
+                    winrt::Windows::Storage::Streams::DataReader::FromBuffer(buffer);
+                bytes.resize(buffer.Length());
+                reader.ReadBytes(bytes);
+                break;
+            }
+            if (attempt == 4) throw std::runtime_error("document kept changing while it was read");
+            co_await winrt::resume_after(std::chrono::milliseconds(100));
+            if (!Active(state, generation) || state->loadSerial.load() != loadTicket) co_return;
+        }
         if (state->setStatus) state->setStatus(LocalizeFormat(L"StatusParsingFile", { file.Name() }));
         if (state->setProgress) state->setProgress(true, 0.0, false);
         auto dispatcher = winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread();
@@ -292,6 +342,7 @@ namespace winrt::Folia
         winrt::apartment_context uiContext;
         std::exception_ptr loadFailure;
         std::optional<EditorSession> loaded;
+        folia::platform::reload::DocumentContentFingerprint loadedFingerprint;
         co_await winrt::resume_background();
         try
         {
@@ -300,6 +351,7 @@ namespace winrt::Folia
                 requestedEncoding
                     ? std::optional<std::string_view>{ *requestedEncoding }
                     : std::nullopt);
+            loadedFingerprint = folia::platform::reload::fingerprint_document_content(decoded.utf8);
             loaded.emplace();
             loaded->Open(
                 file,
@@ -329,7 +381,8 @@ namespace winrt::Folia
                         || !state->setProgress) return;
                     state->setProgress(true, static_cast<double>(percent) / 100.0, false);
                 });
-            });
+            }, requestedEncoding.has_value());
+            if (viewState) loaded->RestoreReloadViewState(*viewState);
         }
         catch (...)
         {
@@ -337,18 +390,29 @@ namespace winrt::Folia
         }
         progressActive->store(false);
         co_await uiContext;
-        if (!Active(state, generation)) co_return;
+        if (!Active(state, generation) || state->loadSerial.load() != loadTicket) co_return;
         if (loadFailure) std::rethrow_exception(loadFailure);
+        auto versionAfterParse = folia::platform::reload::query_watched_file_version(
+            std::filesystem::path(file.Path().c_str()));
         *state->session = std::move(*loaded);
         if (state->renderer)
         {
             state->renderer->ResetDocumentCaches();
-            state->renderer->SetScrollOffset(0.0f);
+            state->renderer->SetScrollOffset(scrollOffset);
         }
         if (state->textInput) state->textInput->NotifyTextChanged();
         if (state->documentChanged) state->documentChanged();
         if (state->setProgress) state->setProgress(false, std::nullopt, false);
-        if (state->setStatus) state->setStatus(LocalizeFormat(L"StatusOpenedFile", { file.Name() }));
+        if (reason == LoadReason::ExternalReload)
+            state->reloadState.Accept(readVersion, loadedFingerprint);
+        else
+            state->reloadState.Reset(readVersion, loadedFingerprint);
+        if (state->setExternalChange) state->setExternalChange(false, false);
+        StartWatching(state, generation);
+        if (versionAfterParse != readVersion) QueueReloadCheck(state, generation);
+        if (state->setStatus) state->setStatus(LocalizeFormat(
+            reason == LoadReason::ExternalReload ? L"StatusReloadedFile" : L"StatusOpenedFile",
+            { file.Name() }));
     }
 
     winrt::fire_and_forget EditorDocumentController::SaveDocumentWithEncodingAsync(
@@ -364,11 +428,14 @@ namespace winrt::Folia
             auto text = state->session->TextUtf8();
             winrt::apartment_context uiContext;
             std::exception_ptr writeFailure;
+            folia::platform::reload::WatchedFileVersion savedVersion;
             co_await winrt::resume_background();
             try
             {
                 auto bytes = DocumentEncodingService::Encode(text, encoding);
                 co_await WriteBytesAsync(file, std::move(bytes));
+                savedVersion = folia::platform::reload::query_watched_file_version(
+                    std::filesystem::path(file.Path().c_str()));
             }
             catch (...)
             {
@@ -378,6 +445,7 @@ namespace winrt::Folia
             if (writeFailure) std::rethrow_exception(writeFailure);
             if (!Active(state, generation)) co_return;
             state->session->SetEncoding(std::move(encoding));
+            MarkCurrentDocumentSaved(state, savedVersion, text);
             if (state->documentChanged) state->documentChanged();
             if (state->setStatus) state->setStatus(LocalizeFormat(L"StatusSavedFile", { file.Name() }));
         }
@@ -409,11 +477,14 @@ namespace winrt::Folia
             auto encoding = state->session->Encoding();
             winrt::apartment_context uiContext;
             std::exception_ptr writeFailure;
+            folia::platform::reload::WatchedFileVersion savedVersion;
             co_await winrt::resume_background();
             try
             {
                 auto bytes = DocumentEncodingService::Encode(text, encoding);
                 co_await WriteBytesAsync(file, std::move(bytes));
+                savedVersion = folia::platform::reload::query_watched_file_version(
+                    std::filesystem::path(file.Path().c_str()));
             }
             catch (...)
             {
@@ -422,6 +493,7 @@ namespace winrt::Folia
             co_await uiContext;
             if (writeFailure) std::rethrow_exception(writeFailure);
             if (!Active(state, generation)) co_return;
+            MarkCurrentDocumentSaved(state, savedVersion, text);
             if (state->setStatus) state->setStatus(LocalizeFormat(L"StatusSavedFile", { file.Name() }));
         }
         catch (winrt::hresult_error const& error)
@@ -460,11 +532,14 @@ namespace winrt::Folia
             auto encoding = state->session->Encoding();
             winrt::apartment_context uiContext;
             std::exception_ptr writeFailure;
+            folia::platform::reload::WatchedFileVersion savedVersion;
             co_await winrt::resume_background();
             try
             {
                 auto bytes = DocumentEncodingService::Encode(text, encoding);
                 co_await WriteBytesAsync(file, std::move(bytes));
+                savedVersion = folia::platform::reload::query_watched_file_version(
+                    std::filesystem::path(file.Path().c_str()));
             }
             catch (...)
             {
@@ -474,6 +549,8 @@ namespace winrt::Folia
             if (writeFailure) std::rethrow_exception(writeFailure);
             if (!Active(state, generation)) co_return;
             state->session->SaveAs(file);
+            MarkCurrentDocumentSaved(state, savedVersion, text);
+            StartWatching(state, generation);
             if (state->documentChanged) state->documentChanged();
             if (state->setStatus) state->setStatus(LocalizeFormat(L"StatusSavedFile", { file.Name() }));
         }

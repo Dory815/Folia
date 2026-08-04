@@ -36,7 +36,18 @@ namespace winrt::Folia::implementation
                     RenderEditorSurface();
             },
             [this] { RenderEditorSurface(); },
-            [this] { return WindowHandle(); });
+            [this] { return WindowHandle(); },
+            [this](bool visible, bool fileDeleted)
+            {
+                ExternalChangeInfoBar().Title(Localize(
+                    fileDeleted ? L"ExternalFileDeletedTitle" : L"ExternalFileChangedTitle"));
+                ExternalChangeInfoBar().Message(Localize(
+                    fileDeleted ? L"ExternalFileDeletedMessage" : L"ExternalFileChangedMessage"));
+                ReloadExternalButton().Visibility(fileDeleted
+                    ? Microsoft::UI::Xaml::Visibility::Collapsed
+                    : Microsoft::UI::Xaml::Visibility::Visible);
+                ExternalChangeInfoBar().IsOpen(visible);
+            });
         keyboardController.Attach(
             editorSession,
             editorRenderer,
@@ -51,6 +62,7 @@ namespace winrt::Folia::implementation
                 else if (action == "file.save") documentController.SaveDocument();
                 else if (action == "file.save_as") documentController.SaveDocumentAs();
                 else if (action == "file.export_pdf") documentController.ExportPdf();
+                else if (action == "file.reload") documentController.ReloadDocument();
                 else if (action == "search.find") ShowFindBar(false);
                 else if (action == "search.replace") ShowFindBar(true);
                 else if (action == "insert.image") documentController.InsertImage();

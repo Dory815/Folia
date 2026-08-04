@@ -2,6 +2,8 @@
 
 #include "editor/interaction/EditorDocumentController.h"
 
+import folia.platform.document_reload;
+
 namespace winrt::Folia
 {
     namespace detail
@@ -29,6 +31,15 @@ namespace winrt::Folia
         DocumentChanged documentChanged;
         Render render;
         WindowHandle windowHandle;
+        SetExternalChange setExternalChange;
+        winrt::Microsoft::UI::Dispatching::DispatcherQueue dispatcher{ nullptr };
+        folia::platform::reload::FileChangeMonitor fileMonitor;
+        folia::platform::reload::DocumentReloadState reloadState;
+        std::filesystem::path watchedPath;
+        std::atomic_uint64_t watchSerial = 0;
+        std::atomic_uint64_t reloadDebounceSerial = 0;
+        std::atomic_uint64_t loadSerial = 0;
+        std::atomic_bool documentLoading = false;
         std::atomic_bool cancelRequested = false;
         std::atomic_bool pdfExporting = false;
         std::filesystem::path pdfOutputPath;

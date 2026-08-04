@@ -4,6 +4,8 @@
 #include "editor/rendering/EditorSurfaceRenderer.h"
 #include "editor/interaction/EditorTextInputController.h"
 
+import folia.platform.document_reload;
+
 namespace winrt::Folia
 {
     struct EditorDocumentController
@@ -17,6 +19,7 @@ namespace winrt::Folia
         using DocumentChanged = std::function<void()>;
         using Render = std::function<void()>;
         using WindowHandle = std::function<HWND()>;
+        using SetExternalChange = std::function<void(bool visible, bool fileDeleted)>;
 
         EditorDocumentController();
         ~EditorDocumentController();
@@ -32,7 +35,8 @@ namespace winrt::Folia
             SetProgress setProgress,
             DocumentChanged documentChanged,
             Render render,
-            WindowHandle windowHandle);
+            WindowHandle windowHandle,
+            SetExternalChange setExternalChange);
         void Detach();
         void OpenDocument();
         void OpenDocumentPath(winrt::hstring const& path);
@@ -40,6 +44,9 @@ namespace winrt::Folia
         void SaveDocumentWithEncoding(DocumentEncoding encoding);
         void SaveDocument();
         void SaveDocumentAs();
+        void ReloadDocument();
+        void AcceptExternalReload();
+        void KeepLocalVersion();
         void ExportPdf();
         void CancelOperation();
         void InsertImage();
@@ -50,6 +57,7 @@ namespace winrt::Folia
 
     private:
         struct State;
+        enum class LoadReason { Open, EncodingReopen, ExternalReload };
         static bool Active(std::shared_ptr<State> const& state, std::uint64_t generation);
         static winrt::fire_and_forget OpenDocumentAsync(std::shared_ptr<State> state, std::uint64_t generation);
         static winrt::fire_and_forget OpenDocumentPathAsync(
@@ -68,7 +76,26 @@ namespace winrt::Folia
             std::shared_ptr<State> state,
             std::uint64_t generation,
             winrt::Windows::Storage::StorageFile file,
-            std::optional<std::string> requestedEncoding = std::nullopt);
+            std::optional<std::string> requestedEncoding = std::nullopt,
+            LoadReason reason = LoadReason::Open,
+            bool preserveView = false);
+        static void StartWatching(std::shared_ptr<State> const& state, std::uint64_t generation);
+        static void StopWatching(std::shared_ptr<State> const& state);
+        static void QueueReloadCheck(std::shared_ptr<State> const& state, std::uint64_t generation);
+        static winrt::fire_and_forget DebounceReloadCheckAsync(
+            std::shared_ptr<State> state,
+            std::uint64_t generation,
+            std::uint64_t debounceTicket);
+        static void EvaluateReload(std::shared_ptr<State> const& state, std::uint64_t generation, bool manual);
+        static void BeginPendingReload(std::shared_ptr<State> const& state, std::uint64_t generation);
+        static winrt::fire_and_forget ReloadPendingAsync(
+            std::shared_ptr<State> state,
+            std::uint64_t generation,
+            std::optional<std::string> requestedEncoding);
+        static void MarkCurrentDocumentSaved(
+            std::shared_ptr<State> const& state,
+            folia::platform::reload::WatchedFileVersion version,
+            std::string_view source);
         static winrt::fire_and_forget SaveDocumentAsync(std::shared_ptr<State> state, std::uint64_t generation);
         static winrt::fire_and_forget SaveDocumentAsAsync(std::shared_ptr<State> state, std::uint64_t generation);
         static winrt::fire_and_forget ExportPdfAsync(std::shared_ptr<State> state, std::uint64_t generation);

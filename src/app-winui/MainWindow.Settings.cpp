@@ -11,6 +11,7 @@ namespace winrt::Folia::implementation
             : Microsoft::UI::Xaml::Visibility::Collapsed;
         SidebarToggleButton().Visibility(value);
         OpenButton().Visibility(value);
+        ReloadButton().Visibility(value);
         SaveButton().Visibility(value);
         ExportPdfButton().Visibility(value);
         FileFormatSeparator().Visibility(value);

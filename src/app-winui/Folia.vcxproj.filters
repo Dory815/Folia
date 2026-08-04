@@ -105,6 +105,12 @@
     <ClCompile Include="..\platform\windows\editor\interaction\editor_shortcuts.ixx">
       <Filter>Platform Modules\Windows Editor</Filter>
     </ClCompile>
+    <ClCompile Include="..\platform\windows\storage\document_reload.ixx">
+      <Filter>Platform Modules\Windows Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\platform\windows\storage\document_reload.cpp">
+      <Filter>Platform Modules\Windows Editor</Filter>
+    </ClCompile>
     <ClCompile Include="..\platform\windows\editor\interaction\editor_selection_drag_model.ixx">
       <Filter>Platform Modules\Windows Editor</Filter>
     </ClCompile>
@@ -445,6 +451,9 @@
       <Filter>Editor\Interaction</Filter>
     </ClCompile>
     <ClCompile Include="editor\interaction\EditorDocumentController.cpp">
+      <Filter>Editor\Interaction</Filter>
+    </ClCompile>
+    <ClCompile Include="editor\interaction\EditorDocumentController.Reload.cpp">
       <Filter>Editor\Interaction</Filter>
     </ClCompile>
     <ClCompile Include="editor\interaction\EditorDocumentController.Pdf.cpp">

@@ -90,4 +90,21 @@ suite editor_shortcut_settings_tests = [] {
     expect(conflictModel.Bindings()[0] == before);
 };
 
+"reload is a configurable global F5 shortcut"_test = [] {
+    auto defaults = default_editor_shortcuts();
+    auto reload = std::ranges::find(defaults, std::string{"file.reload"},
+        &EditorShortcutBinding::id);
+    expect(fatal(reload != defaults.end()));
+    if (reload == defaults.end()) return;
+    expect(reload->action_id == "file.reload");
+    expect(reload->scope == EditorShortcutScope::Global);
+    expect(reload->gesture == std::optional{
+        EditorKeyGesture{EditorKey::F5, false, false, false}});
+    expect(resolve_editor_shortcut(
+        defaults,
+        EditorKeyGesture{EditorKey::F5, false, false, false},
+        EditorShortcutScope::Math) == std::optional{
+            static_cast<std::size_t>(std::distance(defaults.begin(), reload))});
+};
+
 };

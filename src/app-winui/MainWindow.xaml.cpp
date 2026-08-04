@@ -95,6 +95,8 @@ namespace winrt::Folia::implementation
         tooltip(SidebarToggleButton(), L"ToggleOutline");
         OpenButton().Label(Localize(L"Open"));
         tooltip(OpenButton(), L"OpenTooltip");
+        ReloadButton().Label(Localize(L"Reload"));
+        tooltip(ReloadButton(), L"ReloadTooltip");
         SaveButton().Label(Localize(L"Save"));
         tooltip(SaveButton(), L"SaveTooltip");
         ExportPdfButton().Label(Localize(L"Pdf"));
@@ -127,6 +129,8 @@ namespace winrt::Folia::implementation
         tooltip(FormatDocumentButton(), L"FormatDocument");
         InsertButton().Label(Localize(L"Insert"));
         tooltip(InsertButton(), L"InsertContent");
+        ReloadExternalButton().Content(winrt::box_value(Localize(L"Reload")));
+        KeepLocalButton().Content(winrt::box_value(Localize(L"KeepLocalChanges")));
         TableButton().Text(Localize(L"Table"));
         InlineMathButton().Text(Localize(L"InlineMath"));
         LinkButton().Text(Localize(L"Link"));
@@ -367,6 +371,7 @@ namespace winrt::Folia::implementation
             ? Microsoft::UI::Xaml::Visibility::Visible
             : Microsoft::UI::Xaml::Visibility::Collapsed);
         OpenButton().IsEnabled(!active);
+        ReloadButton().IsEnabled(!active);
         ExportPdfButton().IsEnabled(!active);
         SettingsButton().IsEnabled(!active);
     }

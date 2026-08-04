@@ -15,6 +15,8 @@
   <data name="ToggleOutline" xml:space="preserve"><value>Toggle outline</value></data>
   <data name="Open" xml:space="preserve"><value>Open</value></data>
   <data name="OpenTooltip" xml:space="preserve"><value>Open a Markdown document</value></data>
+  <data name="Reload" xml:space="preserve"><value>Reload</value></data>
+  <data name="ReloadTooltip" xml:space="preserve"><value>Reload the current document from disk (F5)</value></data>
   <data name="Save" xml:space="preserve"><value>Save</value></data>
   <data name="SaveTooltip" xml:space="preserve"><value>Save the current document</value></data>
   <data name="Pdf" xml:space="preserve"><value>PDF</value></data>
@@ -78,6 +80,14 @@
   <data name="StatusReadingFile" xml:space="preserve"><value>Reading {0}…</value></data>
   <data name="StatusParsingFile" xml:space="preserve"><value>Parsing {0}…</value></data>
   <data name="StatusOpenedFile" xml:space="preserve"><value>Opened {0}</value></data>
+  <data name="StatusReloadedFile" xml:space="preserve"><value>Reloaded {0}</value></data>
+  <data name="StatusReloadFailed" xml:space="preserve"><value>Reload failed: {0}</value></data>
+  <data name="StatusKeptLocalChanges" xml:space="preserve"><value>Kept local changes</value></data>
+  <data name="ExternalFileChangedTitle" xml:space="preserve"><value>The file changed on disk</value></data>
+  <data name="ExternalFileChangedMessage" xml:space="preserve"><value>Reloading would replace your unsaved changes.</value></data>
+  <data name="ExternalFileDeletedTitle" xml:space="preserve"><value>The file was deleted or renamed</value></data>
+  <data name="ExternalFileDeletedMessage" xml:space="preserve"><value>Your local document remains open. Use Save As to create a new copy, or keep editing.</value></data>
+  <data name="KeepLocalChanges" xml:space="preserve"><value>Keep local changes</value></data>
   <data name="StatusOpenFailed" xml:space="preserve"><value>Open failed: {0}</value></data>
   <data name="StatusSavedFile" xml:space="preserve"><value>Saved {0}</value></data>
   <data name="StatusSaveFailed" xml:space="preserve"><value>Save failed: {0}</value></data>

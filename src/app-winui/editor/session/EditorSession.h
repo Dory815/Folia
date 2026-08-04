@@ -33,6 +33,15 @@ namespace winrt::Folia
         std::size_t caret = 0;
     };
 
+    struct EditorReloadViewState
+    {
+        std::size_t anchor = 0;
+        std::size_t active = 0;
+        folia::TextAffinity anchorAffinity = folia::TextAffinity::Downstream;
+        folia::TextAffinity activeAffinity = folia::TextAffinity::Downstream;
+        bool sourceMode = false;
+    };
+
     namespace detail
     {
         struct EditorSessionCore
@@ -73,7 +82,8 @@ namespace winrt::Folia
             winrt::hstring const& text,
             DocumentEncoding encoding,
             std::vector<DocumentEncodingCandidate> encodingCandidates,
-            LoadProgress progress = {});
+            LoadProgress progress = {},
+            bool encodingExplicit = false);
         void SaveAs(winrt::Windows::Storage::StorageFile const& file);
         void SetText(winrt::hstring const& text);
         void SetTheme(folia::ThemeProfile const& theme);
@@ -94,6 +104,9 @@ namespace winrt::Folia
         DocumentEncoding const& Encoding() const;
         std::span<DocumentEncodingCandidate const> EncodingCandidates() const;
         void SetEncoding(DocumentEncoding encoding);
+        bool EncodingWasExplicit() const;
+        EditorReloadViewState CaptureReloadViewState() const;
+        void RestoreReloadViewState(EditorReloadViewState const& state);
         winrt::hstring DisplayName() const;
         winrt::hstring Path() const;
         uint64_t Revision() const;
@@ -147,6 +160,7 @@ namespace winrt::Folia
         winrt::hstring text_;
         DocumentEncoding encoding_;
         std::vector<DocumentEncodingCandidate> encodingCandidates_;
+        bool encodingExplicit_ = false;
         uint64_t revision_ = 0;
         std::unique_ptr<detail::EditorSessionCore> core_;
     };

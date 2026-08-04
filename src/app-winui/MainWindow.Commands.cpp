@@ -12,6 +12,11 @@ namespace winrt::Folia::implementation
             documentController.OpenDocument();
         });
 
+        ReloadButton().Click([this](auto const&, auto const&)
+        {
+            documentController.ReloadDocument();
+        });
+
         SaveButton().Click([this](auto const&, auto const&)
         {
             documentController.SaveDocument();
@@ -25,6 +30,16 @@ namespace winrt::Folia::implementation
         CancelOperationButton().Click([this](auto const&, auto const&)
         {
             documentController.CancelOperation();
+        });
+
+        ReloadExternalButton().Click([this](auto const&, auto const&)
+        {
+            documentController.AcceptExternalReload();
+        });
+
+        KeepLocalButton().Click([this](auto const&, auto const&)
+        {
+            documentController.KeepLocalVersion();
         });
 
         SettingsButton().Click([this](auto const&, auto const&)

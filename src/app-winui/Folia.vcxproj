@@ -355,6 +355,12 @@
     <ClCompile Include="..\platform\windows\editor\interaction\editor_shortcuts.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\platform\windows\storage\document_reload.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\platform\windows\storage\document_reload.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\platform\windows\editor\interaction\editor_shortcut_settings.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -537,6 +543,7 @@
     <ClCompile Include="editor\interaction\EditorLatexCompletionController.cpp" />
     <ClCompile Include="editor\interaction\EditorCodeLanguageController.cpp" />
     <ClCompile Include="editor\interaction\EditorDocumentController.cpp" />
+    <ClCompile Include="editor\interaction\EditorDocumentController.Reload.cpp" />
     <ClCompile Include="storage\DocumentEncodingService.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
