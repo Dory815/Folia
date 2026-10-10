@@ -76,7 +76,10 @@ does not prove the entire parser mechanism. Function/symbol debug tags are not
 proof of executable identity or function-body equivalence. Font queries are not
 an exhaustive G3 resolver/delimiter/extension comparison. There is no accepted
 native scene, SVG renderer, raster comparison or production switch here.
-Only three full prerequisite source files have native acceptance; 243 inventory
+At this oracle's initial freeze, three prerequisite source files had native
+acceptance and 243 inventory entries were unreviewed. Subsequent P4/P5 acceptance
+is recorded separately in `numeric-acceptance.md` (four reviewed source files,
+242 pending); it does not expand this corpus's parser/layout coverage. All remaining inventory
 entries remain unreviewed, and non-relative/external dependencies still require
 their own source-to-target disposition. Full G0 and later waves remain pending.
 

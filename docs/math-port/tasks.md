@@ -4,8 +4,8 @@ No packet is complete because an agent says it is. Root checks source fidelity,
 independently runs the frozen tests, reviews the diff and records acceptance.
 Agents must not modify architecture, scope, root contracts, the oracle, frozen
 fixtures, build files, production integration or another packet's files.
-The rejected prototype is archived. Revision-1 primitive contracts and frozen
-fixtures permit only P1, P2 and P3a implementation submissions. These are not
+The rejected prototype is archived. Revision-1 primitive contracts govern
+P1, P2 and P3a; `numeric-contracts.md` separately freezes P4/P5. These are not
 acceptance of the dependency closure or permission for broader dispatch.
 
 ## Packet template required before dispatch
@@ -37,9 +37,10 @@ AST discovery never approves behavior, targets, exclusions or acceptance.
 
 ## Current dispatch: reference evidence, not renderer implementation
 
-Root has reviewed and accepted three complete upstream primitives only:
-Attributes, BBox and PrioritizedList. The other 243 inventory entries are still
-unreviewed. Broad parser/layout implementation packets remain undispatched;
+Root has reviewed and accepted Attributes, BBox, PrioritizedList and lengths
+(with the explicit table/API host adaptations in `numeric-contracts.md`), plus
+the separate native Number formatting host helper. The other 242 inventory
+entries are still unreviewed. Broad parser/layout implementation packets remain undispatched;
 agents cannot fill missing prerequisites with a substitute architecture.
 
 The following Luna assignments own **one proposal file each**, never frozen
@@ -151,6 +152,24 @@ source method coverage before accepting G2's configuration prerequisite.
 Wave 1 must pass before broader parser/layout tasks are dispatched. These tasks
 are intentionally limited to primitives whose interfaces and complete behavior
 can be independently verified; no agent is told simply to “implement TeX”.
+
+### P4/P5: exact numeric formatting and lengths
+
+Root froze the exports, native host adaptations and source obligations in
+`numeric-contracts.md` and generated `tests/math/reference_numeric.cpp` before
+dispatch. `math_layout` owns only `src/math/util/js_number.ixx` and P4 evidence;
+`math_fonts` owns only `src/math/util/lengths.ixx` and P5 evidence. The helper
+adapts Number formatting, while lengths preserves the four source functions,
+all tables, prefix regex behavior and Unicode whitespace. It imports the
+accepted helper rather than implementing a second formatter. Agents cannot
+modify fixtures, oracle, contracts, build or production files, and cannot build
+in shared output or commit. Acceptance evidence is `evidence/numeric-acceptance.md`.
+
+`tex_parser` separately owns only `evidence/e7-options-identity-cases.json`:
+read-only Options source/probe proposals covering every export, recursive
+values, identities, descriptors, symbols and merge behavior. This does not
+authorize Options implementation or freeze its native value contract. Root
+must still resolve and test that contract before issuing P3b.
 
 ## Wave 2 — semantic tree and configuration infrastructure
 

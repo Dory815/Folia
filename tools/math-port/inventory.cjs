@@ -101,5 +101,5 @@ if (process.argv.includes('--check')) {
   fs.mkdirSync(path.dirname(manifestPath), {recursive: true});
   fs.writeFileSync(manifestPath, serialized);
 }
-console.log(`${files.size} upstream files, ${packages.length} TeX packages, ${unresolved.length} unresolved imports`);
+console.log(`${files.size} upstream files, ${packages.length} TeX packages, ${unresolved.length} unresolved relative imports; external imports still require review`);
 if (unresolved.length) process.exitCode = 1;

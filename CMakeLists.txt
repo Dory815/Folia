@@ -94,7 +94,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/attributes.ixx
     src/math/util/constants.ixx
     src/math/util/bbox.ixx
-    src/math/util/prioritized_list.ixx)
+    src/math/util/prioritized_list.ixx
+    src/math/util/js_number.ixx
+    src/math/util/lengths.ixx)
 
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
