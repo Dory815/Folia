@@ -106,6 +106,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/leaf_host.ixx
     src/math/core/mml_tree/leaf_defaults.ixx
     src/math/core/mml_tree/script_defaults.ixx
+    src/math/core/mml_tree/operator_dictionary.ixx
     src/math/core/mml_tree/mml_nodes/msubsup.ixx
     src/math/core/mml_tree/mml_nodes/munderover.ixx
     src/math/core/mml_tree/mml_nodes/mrow.ixx
@@ -130,6 +131,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/option_types.ixx
     src/math/util/options.ixx)
 target_sources(folia_math PRIVATE
+    src/math/core/mml_tree/operator_dictionary_data.cpp
+    src/math/core/mml_tree/operator_dictionary.cpp
+    src/math/core/mml_tree/mml_node_host.cpp
     src/math/util/string.cpp
     src/math/core/mml_tree/mml_nodes/msubsup_bindings.cpp
     src/math/core/mml_tree/mml_nodes/msubsup.cpp

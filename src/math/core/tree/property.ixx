@@ -39,6 +39,7 @@ struct PropertyStorage {
     std::vector<std::pair<std::string, Property>> entries;
     std::shared_ptr<PropertyStorage> prototype;
     bool objectPrototype = true;
+    bool arrayPrototype = false;
     bool array = false;
     std::vector<Property> arrayValues;
     std::vector<bool> arrayPresent;
@@ -79,7 +80,8 @@ class PropertyList {
                 if(auto i=arrayIndex(name);i&&*i<p->arrayValues.size()&&p->arrayPresent[*i])return p->arrayValues[*i];
             }
             ordinary = p->objectPrototype;
-            if(!p->prototype&&p->array&&ordinary){
+            if(!p->prototype&&p->arrayPrototype&&ordinary){
+                if(name=="length")return 0;
                 if(name=="constructor")return BuiltinProperty::arrayConstructor;
                 if(name=="toString")return BuiltinProperty::arrayToString;
                 if(name=="join")return BuiltinProperty::arrayJoin;
@@ -91,7 +93,7 @@ class PropertyList {
             value.value = storage->prototype;
             return value;
         }
-        if(name=="__proto__"&&storage->array)return BuiltinProperty::arrayPrototype;
+        if(name=="__proto__"&&storage->arrayPrototype)return BuiltinProperty::arrayPrototype;
         return builtin(name);
     }
     static std::optional<std::uint32_t> arrayIndex(std::string_view key) {
@@ -136,6 +138,11 @@ public:
         for (auto p = storage_; p; p = p->prototype)
         {
             for (const auto& [key, value] : p->entries) if (key == name) return true;
+            if(p->array){
+                if(name=="length")return true;
+                if(auto i=arrayIndex(name);i&&*i<p->arrayValues.size()&&p->arrayPresent[*i])return true;
+            }
+            if(!p->prototype&&p->objectPrototype&&p->arrayPrototype&&(name=="length"||name=="join"||name=="toString"||name=="constructor"))return true;
             ordinary = p->objectPrototype;
         }
         return ordinary && !builtin(name).missing();
@@ -174,12 +181,19 @@ public:
                         if (p == storage_) throw std::invalid_argument("Cyclic __proto__ value");
                     storage_->prototype = *parent;
                     storage_->objectPrototype = true;
+                    storage_->arrayPrototype = false;
                 } else if (value.value == Property::Value(BuiltinProperty::prototype)) {
                     storage_->prototype.reset();
                     storage_->objectPrototype = true;
+                    storage_->arrayPrototype = false;
+                } else if (value.value == Property::Value(BuiltinProperty::arrayPrototype)) {
+                    storage_->prototype.reset();
+                    storage_->objectPrototype = true;
+                    storage_->arrayPrototype = true;
                 } else if (std::holds_alternative<PropertyNull>(value.value)) {
                     storage_->prototype.reset();
                     storage_->objectPrototype = false;
+                    storage_->arrayPrototype = false;
                 }
                 return;
             }
@@ -214,7 +228,7 @@ class PropertyArray {
     std::shared_ptr<PropertyStorage> storage_=std::make_shared<PropertyStorage>();
     explicit PropertyArray(std::shared_ptr<PropertyStorage> storage):storage_(std::move(storage)){}
 public:
-    PropertyArray(){storage_->array=true;}
+    PropertyArray(){storage_->array=true;storage_->arrayPrototype=true;}
     PropertyArray(std::initializer_list<Property> values):PropertyArray(){for(const auto& p:values)push(p);}
     static std::optional<PropertyArray> array(const Property& p){
         if(auto v=std::get_if<std::shared_ptr<PropertyStorage>>(&p.value);v&&*v&&(*v)->array)return PropertyArray(*v);return {};

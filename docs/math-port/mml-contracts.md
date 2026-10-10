@@ -39,9 +39,10 @@ prototype conversion behavior. General Options objects remain in their own
 accepted Context graph, never silently cast to PropertyList.
 
 AttributeList is the existing PropertyList graph. Root's attributeTuple builds
-a shared two-slot record (0=origin string, 1=Property), and unpackAttribute reads
-it. This replaces scoped two-element JS arrays/destructuring with a typed record,
-not a new object model. Inherited lists still use assignment/prototype semantics
+a shared two-slot PropertyArray (0=origin string, 1=Property), and unpackAttribute
+reads that actual array. P11 replaces the former typed-record adaptation with
+array tags/slots in the SAME PropertyStorage graph; there is no record fallback.
+Inherited lists still use assignment/prototype semantics
 and own-key ordering, including __proto__ assignment. Foreign iterator/getter
 behavior is not part of this native tuple binding. Missing/corrupt bindings raise
 TypeError. No parser-produced origin/value may be discarded or normalized.

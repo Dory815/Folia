@@ -50,8 +50,9 @@ inline std::u16string text(std::string_view bytes){
 inline std::u16string string(const Property&);
 inline double number(const Property&);
 inline Property get(const Property&,std::string_view);
+std::vector<Property>& activeArrays();
 inline std::u16string arrayString(Property receiver){
-    static thread_local std::vector<Property> active;
+    auto& active=activeArrays();
     if(std::find(active.begin(),active.end(),receiver)!=active.end())return {};
     struct Reset{std::vector<Property>& active;std::size_t size;~Reset(){active.resize(size);}} reset{active,active.size()};
     auto length=[](const Property& p){auto n=number(get(p,"length"));return std::isnan(n)||n<=0?std::size_t(0):static_cast<std::size_t>(std::min(std::floor(n),9007199254740991.0));};
@@ -110,7 +111,7 @@ inline std::u16string string(const Property& input){
 }
 // Property access used by source indexed operator/range and ordinary tables.
 // Typed arrays expose standard numeric slots/length and bound intrinsics;
-// arbitrary descriptors/iterator overrides/named array writes are not bindings.
+// arbitrary descriptors, evaluated functions and iterator overrides are not bindings.
 inline Property get(const Property& value,std::string_view key){
     if(value.missing()||std::holds_alternative<PropertyNull>(value.value))typeError("Cannot read property of null or undefined");
     if(auto object=PropertyList::record(value))return object->get(key);
@@ -130,7 +131,7 @@ inline Property get(const Property& value,std::string_view key){
     }else if(auto builtin=std::get_if<BuiltinProperty>(&value.value)){
         if(numeric)return Missing{};
         if(*builtin==BuiltinProperty::prototype)return key=="__proto__"?Property(PropertyNull{}):PropertyList{}.get(key);
-        if(*builtin==BuiltinProperty::arrayPrototype)return get(Property(PropertyArray{}),key);
+        if(*builtin==BuiltinProperty::arrayPrototype)return key=="__proto__"?Property(BuiltinProperty::prototype):get(Property(PropertyArray{}),key);
         if(key=="prototype"&&*builtin==BuiltinProperty::constructor)return BuiltinProperty::prototype;
         if(key=="prototype"&&*builtin==BuiltinProperty::arrayConstructor)return BuiltinProperty::arrayPrototype;
         if(key=="length"){
