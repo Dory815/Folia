@@ -29,6 +29,9 @@ struct MmlClassInfo {
     std::optional<PropertyList> defaults;
     std::function<std::optional<PropertyList>()> defaultsBinding;
     std::optional<PropertyList> getDefaults()const{return defaultsBinding?defaultsBinding():defaults;}
+    // Captured constructor static binding; Munder inherits the parent's array,
+    // Mover owns another one. Replacement is live, captured handles stay live.
+    std::function<std::shared_ptr<std::vector<Property>>()> accentsBinding;
 };
 struct TeXClasses { static constexpr int ORD=0,OP=1,BIN=2,REL=3,OPEN=4,CLOSE=5,PUNCT=6,INNER=7,NONE=-1; };
 inline constexpr TeXClasses TEXCLASS;
@@ -131,6 +134,11 @@ public:
     MmlNode* mError(std::string message,ErrorOptions options,bool shortError=false)override;
 protected:
     PropertyList constructorDefaults()const;
+    std::shared_ptr<std::vector<Property>> constructorAccents()const {
+        if(!constructorInfo_||!constructorInfo_->accentsBinding)
+            throw Error("TypeError",u"Constructor has no ACCENTS binding");
+        return constructorInfo_->accentsBinding();
+    }
     void initializeTexClass(std::optional<double> value){texclass_=value;}
     virtual void updateTeXclass(MmlNode*);
     virtual void getPrevClass(MmlNode*);
