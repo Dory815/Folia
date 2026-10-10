@@ -91,6 +91,10 @@ target_compile_features(folia_math PUBLIC cxx_std_23)
 set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/tree/property.ixx
+    src/math/core/tree/factory_types.ixx
+    src/math/core/tree/factory.ixx
+    src/math/core/tree/node_factory.ixx
+    src/math/core/tree/wrapper_factory.ixx
     src/math/core/mml_tree/attributes.ixx
     src/math/util/constants.ixx
     src/math/util/bbox.ixx

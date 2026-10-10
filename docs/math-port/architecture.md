@@ -3,7 +3,8 @@
 Status: architecture specification; complete native renderer is not accepted.
 Prerequisite utilities have local acceptance recorded in
 `evidence/primitive-acceptance.md`, `evidence/numeric-acceptance.md` and
-`evidence/options-acceptance.md`; this does not pass a full renderer gate.
+`evidence/options-acceptance.md` and `evidence/factory-acceptance.md`; this
+does not pass a full renderer gate.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
 
