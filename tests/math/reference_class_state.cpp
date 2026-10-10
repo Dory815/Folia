@@ -15,6 +15,10 @@ std::vector<Property> inputs(){return {Property(Missing{}),Property(PropertyNull
 Property outcome(unsigned id){switch(id){case 0:return "";case 1:return "thinmathspace";case 2:return "mediummathspace";case 3:return "thickmathspace";default:return Missing{};}}
 }
 suite math_port_class_state_tests=[] {
+"math_port_class_state_base_storage_identity_and_initial_null"_test=[] {
+F f(classes());auto*n=f.create("math");expect(n->texClass()==Property(PropertyNull{}));expect(n->prevClass()==Property(PropertyNull{}));
+auto values=inputs();for(const auto&v:values){n->setTexClass(v);n->setPrevClass(v);expect(same(n->texClass(),v));expect(same(n->prevClass(),v));}
+};
 "math_port_class_state_raw_roundtrip_nullish_selection"_test=[] {
 F f(classes());auto*n=f.create("raw");auto*prev=f.create("raw");auto values=inputs();
 const std::array<bool,29> selected={false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true};

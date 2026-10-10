@@ -43,6 +43,10 @@ const out=['// Generated root CJS raw-class matrix; native results never generat
 'Property outcome(unsigned id){switch(id){case 0:return "";case 1:return "thinmathspace";case 2:return "mediummathspace";case 3:return "thickmathspace";default:return Missing{};}}',
 '}','suite math_port_class_state_tests=[] {'];
 let assertions=0,cases=0;const emit=x=>out.push(x),eq=(v,e)=>{assertions++;emit('expect(bool(('+e+')=='+JSON.stringify(v)+'));');},begin=n=>{cases++;emit('"math_port_class_state_'+n+'"_test=[] {');},end=()=>emit('};');
+begin('base_storage_identity_and_initial_null');
+{const f=factory(),n=f.create('math');assert.equal(n.texClass,null);assert.equal(n.prevClass,null);emit('F f(classes());auto*n=f.create("math");expect(n->texClass()==Property(PropertyNull{}));expect(n->prevClass()==Property(PropertyNull{}));');assertions+=2;
+for(const v of values){n.texClass=v;n.prevClass=v;assert.ok(Object.is(n.texClass,v)&&Object.is(n.prevClass,v));}
+emit('auto values=inputs();for(const auto&v:values){n->setTexClass(v);n->setPrevClass(v);expect(same(n->texClass(),v));expect(same(n->prevClass(),v));}');assertions+=2*values.length;end();}
 begin('raw_roundtrip_nullish_selection');
 emit('F f(classes());auto*n=f.create("raw");auto*prev=f.create("raw");auto values=inputs();');
 emit('const std::array<bool,'+values.length+'> selected={'+values.map(v=>{const {f,n}=fresh(),prev=f.create('raw');n.current=v;return n.setTeXclass(prev)===n;}).join(',')+'};');
