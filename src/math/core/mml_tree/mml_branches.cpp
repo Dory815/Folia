@@ -15,7 +15,7 @@ MmlNode* child_zero(AbstractMmlNode& node) {
     return node.childNodes->empty() ? nullptr : node.childNodes->front();
 }
 
-MmlNode& required_child_zero(AbstractMmlNode& node, std::string_view member) {
+MmlNode& required_child_zero(const AbstractMmlNode& node, std::string_view member) {
     if (!node.childNodes) host::typeError("Cannot read properties of null (reading '0')");
     if (node.childNodes->empty()) {
         const std::string message = "Cannot read properties of undefined (reading '" +
@@ -100,12 +100,12 @@ std::any AbstractMmlTokenNode::walkTree(
 
 bool AbstractMmlLayoutNode::isSpacelike() const {
     tree::TreeCallGuard<MmlNode> guard;
-    return required_child_zero(*const_cast<AbstractMmlLayoutNode*>(this), "isSpacelike").isSpacelike();
+    return required_child_zero(*this, "isSpacelike").isSpacelike();
 }
 
 bool AbstractMmlLayoutNode::isEmbellished() const {
     tree::TreeCallGuard<MmlNode> guard;
-    return required_child_zero(*const_cast<AbstractMmlLayoutNode*>(this), "isEmbellished").isEmbellished();
+    return required_child_zero(*this, "isEmbellished").isEmbellished();
 }
 
 double AbstractMmlLayoutNode::arity() const {
@@ -131,7 +131,7 @@ MmlNode* AbstractMmlLayoutNode::setTeXclass(MmlNode* previous) {
 
 bool AbstractMmlBaseNode::isEmbellished() const {
     tree::TreeCallGuard<MmlNode> guard;
-    return required_child_zero(*const_cast<AbstractMmlBaseNode*>(this), "isEmbellished").isEmbellished();
+    return required_child_zero(*this, "isEmbellished").isEmbellished();
 }
 
 MmlNode* AbstractMmlBaseNode::core() {
