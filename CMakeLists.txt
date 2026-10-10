@@ -103,6 +103,10 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_node_host.ixx
     src/math/core/mml_tree/mml_node.ixx
     src/math/core/mml_tree/class_binding.ixx
+    src/math/core/mml_tree/arithmetic_host.ixx
+    src/math/core/mml_tree/mml_nodes/mfrac.ixx
+    src/math/core/mml_tree/mml_nodes/msqrt.ixx
+    src/math/core/mml_tree/mml_nodes/mroot.ixx
     src/math/core/mml_tree/leaf_host.ixx
     src/math/core/mml_tree/mo_patterns.ixx
     src/math/core/mml_tree/mo_types.ixx
@@ -135,6 +139,12 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/option_types.ixx
     src/math/util/options.ixx)
   target_sources(folia_math PRIVATE
+    src/math/core/mml_tree/mml_nodes/mfrac_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mfrac.cpp
+    src/math/core/mml_tree/mml_nodes/msqrt_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/msqrt.cpp
+    src/math/core/mml_tree/mml_nodes/mroot_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mroot.cpp
     src/math/core/mml_tree/mo_pattern_data.cpp
     src/math/core/mml_tree/mo_patterns.cpp
     src/math/core/mml_tree/mml_nodes/mo_bindings.cpp

@@ -429,6 +429,28 @@ Required function-intrinsic metadata is an explicit host binding. Evidence:
 evidence/p12c-mo-acceptance.md. Local source acceptance is 26/246; full G0–G7,
 the full MML factory and all production integration remain unfinished.
 
+### P13: fraction and radical semantic nodes
+
+Root froze arithmetic-contracts.md, three class interfaces, arithmetic_host,
+generated binding/default files and arithmetic-oracle.cjs before dispatch.
+AST inventory has 21 total members in mfrac/msqrt/mroot.ts (16 executable).
+The six agent-owned methods are split by source node; constant getters,
+defaults and radical field phases remain root-owned. Initial actual-CJS
+fixture has 13,501 assertions/7 cases and 1,440 raw inheritance rows, plus
+array/attribute mutation, alias, malformed-state and iteration evidence.
+Root extends coverage gaps, reviews every method, runs core regression and
+compiling/assertion-failing mutants. No geometry, parsing or production wiring.
+
+| Agent | Only CPP | Only evidence |
+| --- | --- | --- |
+| tex_parser | mml_nodes/mfrac.cpp | evidence/p13-mfrac.md |
+| math_layout | mml_nodes/msqrt.cpp | evidence/p13-msqrt.md |
+| math_fonts | mml_nodes/mroot.cpp | evidence/p13-mroot.md |
+
+No builds/commits/shared edits or changed oracle expectations by agents.
+Root also audits existing addInheritedAttributes own-spread semantics before
+acceptance; do not work around a shared-host regression in a new node.
+
 ## Wave 3 — base/AMS input and complete font services
 
 P11 is locally accepted under operator-contracts.md revision 2. Root froze the
