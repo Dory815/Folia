@@ -35,6 +35,48 @@ and initialized globals. Nested literal callbacks remain inside their enclosing
 member hash and need separate manual method correspondence where applicable.
 AST discovery never approves behavior, targets, exclusions or acceptance.
 
+## Current dispatch: reference evidence, not renderer implementation
+
+Root has reviewed and accepted three complete upstream primitives only:
+Attributes, BBox and PrioritizedList. The other 243 inventory entries are still
+unreviewed. Broad parser/layout implementation packets remain undispatched;
+agents cannot fill missing prerequisites with a substitute architecture.
+
+The following Luna assignments own **one proposal file each**, never frozen
+expectations. All use upstream commit
+`fb987178c2d279a99b0db5ea02e751691703955e` and the unchanged production profile.
+
+| Agent | Only writable file under `docs/math-port/evidence/` | Exact package responsibility |
+| --- | --- | --- |
+| `tex_parser` | `e4-input-corpus-proposals.json` | base, action, ams, amscd, bbox, begingroup, boldsymbol, braket, bussproofs, cancel, cases, centernot, color |
+| `math_layout` | `e5-layout-corpus-proposals.json` | colortbl, configmacros, empheq, enclose, extpfeil, fontsizev3, gensymb, html, mathtools, mhchem, newcommand, physics, setoptions |
+| `math_fonts` | `e6-font-text-corpus-proposals.json` | bbm, bboldx, dsfont, noundefined, tagformat, texhtml, textcomp, textmacros, unicode, units, upgreek, verb |
+
+Each proposal supplies bounded TeX input, display/em/width options, complete
+render outcome classification, concrete source methods/lines/hashes and the
+reason that particular branch is exercised. Parser validity and render success
+are separate facts. An unconfigured API option or disabled HTML guard is a
+policy witness, not positive feature coverage. A rendered warning caused by
+missing font data is a dependency defect, not a disabled syntax feature.
+State-changing cases must reset state or explicitly describe a session test.
+Every proposal records known uncovered behavior.
+
+Permitted inspection is read-only source analysis and small fresh-process
+queries through the unchanged root oracle. Agents may not edit native code,
+contracts, scope, corpus, golden results, comparator, build or app integration;
+may not build in shared output directories or commit; and may not silently
+remove packages, suppress errors, add fallbacks or change the production profile.
+
+**Root acceptance:** independently verify cited hashes, execute the complete
+ordered corpus, reject incorrect result classifications, inspect intended
+semantic witnesses, and freeze requests/results independently. Root owns
+`reference-corpus.json`, `evidence/reference-golden.json` and all five
+`tools/math-port/reference-*.cjs` files. The tools must prove observer neutrality
+against a fresh uninstrumented profile and detect deliberately corrupted
+semantic/layout/SVG representations. Detailed acceptance and gaps are in
+`evidence/reference-oracle-acceptance.md`. These assignments authorize evidence
+collection only; they do not pass a native implementation gate.
+
 ## Wave 0 — reference and contracts (root)
 
 **Owned files:** this directory, `tools/math-port/*`, the future public API and
