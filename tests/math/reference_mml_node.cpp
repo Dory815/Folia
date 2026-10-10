@@ -1766,7 +1766,7 @@ expect(bool(result.keys()==std::vector<std::string>{"x"}));
 expect(prop(m::unpackAttribute(result.get("x")).second,Property(7.0)));
 PropertyList strange;strange.setOwn("__proto__",8);auto pro=dynamic_cast<Plain*>(b)->addInheritedAttributes({},strange);
 expect(bool(pro.keys()==std::vector<std::string>{}));
-expect(bool((std::get<std::string>(PropertyList::object(pro.get("__proto__")).value().get("0").value))=="plain"));
+expect(bool((std::get<std::string>(folia::math::PropertyArray::array(pro.get("__proto__")).value().get(0).value))=="plain"));
 };
 "math_port_mml_node_token_text_identity_walk_and_presence"_test=[] {F f(classes());
 auto*t=dynamic_cast<Token*>(f.create("token"));auto*x=dynamic_cast<m::TextNode*>(f.create("text"));x->setText(units({97,55296}));auto*y=dynamic_cast<VText*>(f.create("vtext"));y->setText(units({55357,56832}));auto*rich=dynamic_cast<Rich*>(f.create("rich"));rich->textContent=[] {return u"<b>";};t->setChildren(children({x,y,f.create("leaf"),rich}));

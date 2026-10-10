@@ -47,12 +47,40 @@ inline std::u16string text(std::string_view bytes){
         }i+=n;
     }return out;
 }
+inline std::u16string string(const Property&);
+inline double number(const Property&);
+inline Property get(const Property&,std::string_view);
+inline std::u16string arrayString(Property receiver){
+    static thread_local std::vector<Property> active;
+    if(std::find(active.begin(),active.end(),receiver)!=active.end())return {};
+    struct Reset{std::vector<Property>& active;std::size_t size;~Reset(){active.resize(size);}} reset{active,active.size()};
+    auto length=[](const Property& p){auto n=number(get(p,"length"));return std::isnan(n)||n<=0?std::size_t(0):static_cast<std::size_t>(std::min(std::floor(n),9007199254740991.0));};
+    struct Frame{Property receiver;std::size_t length,index=0;};
+    std::vector<Frame> frames{{receiver,length(receiver)}};active.push_back(receiver);std::u16string out;
+    while(!frames.empty()){
+        auto& f=frames.back();if(f.index==f.length){frames.pop_back();active.pop_back();continue;}
+        const auto i=f.index++;if(i)out.push_back(u',');auto value=get(f.receiver,std::to_string(i));
+        if(value.missing()||std::holds_alternative<PropertyNull>(value.value))continue;
+        if(auto nested=PropertyArray::array(value);nested&&get(value,"toString")==Property(BuiltinProperty::arrayToString)&&get(value,"join")==Property(BuiltinProperty::arrayJoin)){
+            if(std::find(active.begin(),active.end(),value)!=active.end())continue;
+            frames.push_back({value,nested->size()});active.push_back(value);
+        }else out+=string(value);
+    }return out;
+}
 inline Property primitive(const Property& p,bool stringHint){
-    auto object=PropertyList::object(p);if(!object)return p;
+    if(p==Property(BuiltinProperty::arrayPrototype))return "";
+    auto object=PropertyList::record(p);if(!object)return p;
     for(auto key:stringHint?std::array{"toString","valueOf"}:std::array{"valueOf","toString"}){
         auto method=object->get(key);auto fn=std::get_if<BuiltinProperty>(&method.value);if(!fn)continue;
         switch(*fn){
-        case BuiltinProperty::toString:return "[object Object]";
+        case BuiltinProperty::toString:return PropertyArray::array(p)?"[object Array]":"[object Object]";
+        case BuiltinProperty::arrayToString:{
+            auto join=object->get("join");
+            if(join==Property(BuiltinProperty::arrayJoin))return debugText(arrayString(p));
+            if(join==Property(BuiltinProperty::toString)||!std::holds_alternative<BuiltinProperty>(join.value))return PropertyArray::array(p)?"[object Array]":"[object Object]";
+            typeError("Unbound native array join callback");
+        }
+        case BuiltinProperty::arrayJoin:return debugText(arrayString(p));
         case BuiltinProperty::hasOwnProperty:return object->hasOwn("undefined");
         case BuiltinProperty::propertyIsEnumerable:return object->hasOwn("undefined");
         case BuiltinProperty::isPrototypeOf:return false;
@@ -72,9 +100,54 @@ inline std::u16string string(const Property& input){
     if(auto s=std::get_if<std::string>(&p.value))return text(*s);
     if(auto b=std::get_if<BuiltinProperty>(&p.value)){
         if(*b==BuiltinProperty::prototype)return u"[object Object]";
+        if(*b==BuiltinProperty::arrayPrototype)return u"";
+        if(*b==BuiltinProperty::arrayConstructor)return u"function Array() { [native code] }";
+        if(*b==BuiltinProperty::arrayToString)return u"function toString() { [native code] }";
+        if(*b==BuiltinProperty::arrayJoin)return u"function join() { [native code] }";
         constexpr std::array<std::string_view,11> names={"Object","__defineGetter__","__defineSetter__","hasOwnProperty","__lookupGetter__","__lookupSetter__","isPrototypeOf","propertyIsEnumerable","toString","valueOf","toLocaleString"};
         return text("function "+std::string(names[static_cast<std::size_t>(*b)])+"() { [native code] }");
     }typeError("Unbound native string conversion");
+}
+// Property access used by source indexed operator/range and ordinary tables.
+// Typed arrays expose standard numeric slots/length and bound intrinsics;
+// arbitrary descriptors/iterator overrides/named array writes are not bindings.
+inline Property get(const Property& value,std::string_view key){
+    if(value.missing()||std::holds_alternative<PropertyNull>(value.value))typeError("Cannot read property of null or undefined");
+    if(auto object=PropertyList::record(value))return object->get(key);
+    std::uint32_t index=0;auto [end,error]=std::from_chars(key.data(),key.data()+key.size(),index);
+    bool numeric=!key.empty()&&(key.size()==1||key.front()!='0')&&error==std::errc{}&&end==key.data()+key.size()&&index!=0xFFFFFFFFU;
+    if(auto array=PropertyArray::array(value)){
+        if(numeric)return array->get(index);
+        if(key=="length")return static_cast<double>(array->size());
+        if(key=="constructor")return BuiltinProperty::arrayConstructor;
+        if(key=="toString")return BuiltinProperty::arrayToString;
+        if(key=="join")return BuiltinProperty::arrayJoin;
+        if(key=="__proto__")return BuiltinProperty::arrayPrototype;
+    }else if(auto textValue=std::get_if<std::string>(&value.value)){
+        auto units=text(*textValue);
+        if(key=="length")return static_cast<double>(units.size());
+        if(numeric)return index<units.size()?Property(debugText(std::u16string(1,units[index]))):Property(Missing{});
+    }else if(auto builtin=std::get_if<BuiltinProperty>(&value.value)){
+        if(numeric)return Missing{};
+        if(*builtin==BuiltinProperty::prototype)return key=="__proto__"?Property(PropertyNull{}):PropertyList{}.get(key);
+        if(*builtin==BuiltinProperty::arrayPrototype)return get(Property(PropertyArray{}),key);
+        if(key=="prototype"&&*builtin==BuiltinProperty::constructor)return BuiltinProperty::prototype;
+        if(key=="prototype"&&*builtin==BuiltinProperty::arrayConstructor)return BuiltinProperty::arrayPrototype;
+        if(key=="length"){
+            switch(*builtin){
+            case BuiltinProperty::defineGetter:case BuiltinProperty::defineSetter:return 2;
+            case BuiltinProperty::constructor:case BuiltinProperty::arrayConstructor:case BuiltinProperty::arrayJoin:
+            case BuiltinProperty::hasOwnProperty:case BuiltinProperty::lookupGetter:case BuiltinProperty::lookupSetter:
+            case BuiltinProperty::isPrototypeOf:case BuiltinProperty::propertyIsEnumerable:return 1;
+            default:return 0;
+            }
+        }
+        if(key=="name"){
+            auto name=string(value);auto start=name.find(u' ')+1;auto stop=name.find(u'(',start);return debugText(name.substr(start,stop-start));
+        }
+    }else if(numeric)return Missing{};
+    if(numeric)return Missing{};
+    return PropertyList{}.get(key);
 }
 inline double number(const Property& input){
     auto p=primitive(input,false);

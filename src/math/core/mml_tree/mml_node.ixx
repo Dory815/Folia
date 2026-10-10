@@ -38,7 +38,7 @@ inline constexpr TeXClasses TEXCLASS;
 inline constexpr std::array<std::string_view,8> TEXCLASSNAMES={"ORD","OP","BIN","REL","OPEN","CLOSE","PUNCT","INNER"};
 extern std::vector<Property> MATHVARIANTS;
 extern std::vector<std::string> indentAttributes;
-// Native two-slot tuple records preserve the existing PropertyList identity graph.
+// Native two-slot array tuples preserve the same scalar/object/array Property graph.
 Property attributeTuple(std::string origin,Property value);
 std::pair<std::string,Property> unpackAttribute(const Property& value);
 
