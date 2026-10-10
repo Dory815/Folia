@@ -346,6 +346,19 @@ unfinished; 24/246 local source acceptances do not establish a complete port.
 
 ## Wave 3 — base/AMS input and complete font services
 
+P11 is locally accepted under operator-contracts.md revision 2. Root froze the
+pristine graph/interfaces and initial source expectations in f027581, then
+constrained one agent to OPDEF/getRange and two to read-only reviews. All six
+OperatorDictionary exports are mapped in p11-members.json. The final fixture
+has 13,578 assertions/nine cases, including every initial graph edge/operator
+key/range boundary and the full Unicode range domain with empty form tables.
+All 21 compiling mutants fail unchanged assertions; full core regressions pass.
+Root corrected array has/prototype services and owns the shared-array MML tuple
+bridge. LinebreakVisitor startup mutation remains separate. 25/246 local source
+acceptances do not pass renderer gates. Next mo audit is read-only; no
+implementation dispatch is allowed before root freezes its own raw-class,
+constructor static, regex and getter-side-effect interfaces and independent tests.
+
 TeX packets follow upstream BaseConfiguration/BaseMappings/BaseMethods/
 BaseItems and AMS counterparts, with PostFilter ordering tested separately.
 Other agents can implement font data generation and FontData resolver methods

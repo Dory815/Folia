@@ -907,10 +907,10 @@
       "proposed_target": "src/math/core/mml_tree/operator_dictionary.ixx",
       "proposed_module": "folia.math.core.mml_tree.operator_dictionary",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed all six exports in evidence/p11-members.json under operator-contracts.md. Pristine pinned CJS graph preserves 129 nodes, 1252 table keys, 37 definition arrays, standard prototypes and aliases; OPDEF/getRange preserve Missing-only defaults, full-text/prototype-aware truthy ordered lookup, UTF16 code points, live range slots, upper/lower break order and row identity. Objects/arrays share one native PropertyStorage graph; native sparse slots/prototype/coercion services and actual MML provenance arrays have explicit typed host boundaries, not a JS VM. Root acceptance: 13578 assertions/nine cases, complete Unicode range domain with empty form tables, 21 compiling/failing focused mutants after full baseline and full core suite; evidence/operator-acceptance.md. LinebreakVisitor startup writes, MmlMo, complete registry/parser/layout/scene/SVG and Folia integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "operator_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
