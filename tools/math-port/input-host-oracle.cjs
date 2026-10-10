@@ -25,24 +25,30 @@ for(const exponent of [51,52,53,54,63,64,1022,1023,1024,1100])for(const delta of
  for(const [prefix,radix]of [['0x',16],['0o',8],['0b',2]])numbers.push(prefix+n.toString(radix));
 }
 numbers.push('0x'+'0'.repeat(1500)+'20000000000001','00000000000000001','-0000.000e9999','000.e-9999');
+numbers.push('0.'+'0'.repeat(600)+'1e600','1'+'0'.repeat(600)+'e-600',
+ '-0.'+'0'.repeat(600)+'1e1000','-1'+'0'.repeat(600)+'e-1000',
+ '1e'+'9'.repeat(500),'-1e-'+'9'.repeat(500));
 for(let i=0;i<400;i++){let digits='';for(let j=0,n=1+random()%100;j<n;j++)digits+=random()%10;const cut=random()%(digits.length+1);numbers.push((random()%2?'-':'+')+digits.slice(0,cut)+'.'+digits.slice(cut)+'e'+(Number(random()%1401)-700));}
 for(const [prefix,radix]of [['0x',16],['0o',8],['0b',2]])for(let i=0;i<100;i++){let digits='';for(let j=0,n=1+random()%1200;j<n;j++)digits+='0123456789abcdef'[random()%radix];numbers.push(prefix+digits);}
-out.push('"math_port_input_host_number"_test=[] {');
-for(const s of numbers){out.push(`expect(exact(ni::number(${units(s)}),${bits(Number(s))}));`);assertions++;}
-out.push('};');counts.number=numbers.length;
+for(let start=0;start<numbers.length;start+=24){out.push(`"math_port_input_host_number_${start}"_test=[] {`);
+ for(const s of numbers.slice(start,start+24)){out.push(`expect(exact(ni::number(${units(s)}),${bits(Number(s))}));`);assertions++;}
+ out.push('};');
+}counts.number=numbers.length;
 const ints=['',' ','-0','-0junk','+12px','-12.9','0x10','-0x10','0Xff','0b11','0o11','08','010','123e4','zZ','Infinity','0x','0xg','1_2','9007199254740993','9007199254740995','-9'.repeat(2),'9'.repeat(500)];
+ints.push('0'.repeat(1500)+'9007199254740993!', '-0'.replace('0','0'.repeat(1500))+'!', '0x'+'0'.repeat(1500)+'20000000000001!');
 for(const exponent of [52,53,54,63,64,1023,1024])for(const delta of [-1n,0n,1n,2n,3n]){
  const n=(1n<<BigInt(exponent))+delta;
  ints.push(n.toString(10),'0x'+n.toString(16),n.toString(8));
 }
 for(const c of ws)ints.push(String.fromCharCode(c)+'-012junk');
 for(const c of [0,133,6158,8203,55296])ints.push(String.fromCharCode(c)+'12');
-out.push('"math_port_input_host_parseInt"_test=[] {');
+const integerLines=[];
 const radixName={0:'Automatic',8:'Octal',10:'Decimal',16:'Hex'};
-for(const s of ints)for(const radix of [0,8,10,16]){out.push(`expect(exact(ni::parseInt(${units(s)},ni::IntegerRadix::${radixName[radix]}),${bits(parseInt(s,radix))}));`);assertions++;}
-for(let i=0;i<300;i++){const radix=[8,10,16][random()%3];let digits='';for(let j=0,n=1+random()%1000;j<n;j++)digits+='0123456789abcdef'[random()%radix];const s=(random()%2?'-':'')+digits+'!';out.push(`expect(exact(ni::parseInt(${units(s)},ni::IntegerRadix::${radixName[radix]}),${bits(parseInt(s,radix))}));`);assertions++;}
-out.push('for(int r:{-1,2,36,37}){bool rejected=false;try{(void)ni::parseInt(u"12",static_cast<ni::IntegerRadix>(r));}catch(const std::invalid_argument&){rejected=true;}expect(rejected);}');assertions+=4;
-out.push('};');counts.parseInt=ints.length*4+300;
+for(const s of ints)for(const radix of [0,8,10,16]){integerLines.push(`expect(exact(ni::parseInt(${units(s)},ni::IntegerRadix::${radixName[radix]}),${bits(parseInt(s,radix))}));`);assertions++;}
+for(let i=0;i<300;i++){const radix=[8,10,16][random()%3];let digits='';for(let j=0,n=1+random()%1000;j<n;j++)digits+='0123456789abcdef'[random()%radix];const s=(random()%2?'-':'')+digits+'!';integerLines.push(`expect(exact(ni::parseInt(${units(s)},ni::IntegerRadix::${radixName[radix]}),${bits(parseInt(s,radix))}));`);assertions++;}
+for(let start=0;start<integerLines.length;start+=24){out.push(`"math_port_input_host_parseInt_${start}"_test=[] {`,...integerLines.slice(start,start+24),'};');}
+out.push('"math_port_input_host_parseInt_native_radix_bound"_test=[] {for(int r:{-1,2,36,37}){bool rejected=false;try{(void)ni::parseInt(u"12",static_cast<ni::IntegerRadix>(r));}catch(const std::invalid_argument&){rejected=true;}expect(rejected);}};');assertions+=4;
+counts.parseInt=ints.length*4+300;
 const strings=['','a','a\0b','\uD800','\uDC00','\uD800\uDC00','\uD800x\uDC00','\uDC00\uD800','\uD800\uD800\uDC00','\uDBFF\uDFFF','e\u0301','a😀中'];
 for(let i=0;i<100;i++){let s='';for(let j=0,n=random()%20;j<n;j++)s+=String.fromCharCode(random()%65536);strings.push(s);}
 out.push('"math_port_input_host_utf16_iteration_encoding"_test=[] {');

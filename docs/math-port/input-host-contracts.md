@@ -10,7 +10,8 @@ not introduce a second dynamic value graph.
 Pinned MathJax 4.1.3, commit fb987178c2d279a99b0db5ea02e751691703955e:
 MmlNode.ts texSpacing compares raw scriptlevel values with zero; MmlNodes/mstyle.ts
 uses parseInt for relative scriptlevel; TextNode stores UTF-16 strings;
-common/SVG mo wrappers use codePointAt; textmacros/TextParser uses Array.from.
+common/SVG mo wrappers and TexParser use codePointAt; util/string.ts
+unicodeChars and common scriptbase use Array.from.
 E11 records these dependencies. No algorithm from the rejected prototype is
 permitted. This packet implements string primitives only; object-to-primitive
 conversion and Property/Options adapters require a separately reviewed caller
@@ -79,3 +80,14 @@ radix/rounding, surrogate iteration, invalid UTF-8 and offset errors fail.
 No numeric tolerance, implementation-derived expected limit, copied heuristic,
 or test change to fit native output is accepted. Root then runs the core suite
 and records gaps and provenance. This packet cannot pass G1–G7 by itself.
+
+## Reviewed caller obligation before MML implementation
+
+`MmlMaction.nextToggleSelection` passes attributes.selection to parseInt without
+an actual string conversion (the TS cast is erased); its default is the number
+1 and the enabled action/toggle path consumes it. Root's disposition is to
+preserve that path through an explicitly reviewed value-to-string adapter in
+the MML contract, using the accepted Number formatter and this string parser.
+No interaction/package exclusion is authorized. Raw scriptlevel relational
+conversion and mstyle's toString likewise need their own typed caller rules.
+The present string-only helper is not acceptance of any of these adapters.

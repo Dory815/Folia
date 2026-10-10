@@ -35,7 +35,7 @@ and initialized globals. Nested literal callbacks remain inside their enclosing
 member hash and need separate manual method correspondence where applicable.
 AST discovery never approves behavior, targets, exclusions or acceptance.
 
-## Current dispatch: reference evidence, not renderer implementation
+## Accepted prerequisites and initial evidence packets
 
 Root has locally accepted ten of 246 inventory entries: Attributes, BBox,
 PrioritizedList, lengths, Options and five generic Tree files. The separate
@@ -43,7 +43,7 @@ native Number formatting helper is a host adaptation. The other 236 inventory
 entries are still unreviewed. Broad parser/layout implementation packets remain undispatched;
 agents cannot fill missing prerequisites with a substitute architecture.
 
-The following Luna assignments own **one proposal file each**, never frozen
+The initial Luna assignments owned **one proposal file each**, never frozen
 expectations. All use upstream commit
 `fb987178c2d279a99b0db5ea02e751691703955e` and the unchanged production profile.
 
@@ -249,7 +249,7 @@ custom AST as a shortcut.
 
 Root freezes `input-host-contracts.md` revision 1, `utf16_types.ixx` and
 `input-host-oracle.cjs`/`reference_input_host.cpp` before dispatch. The oracle
-uses actual Node 24.13.0 operations, with 3,793 frozen assertions, bit-exact
+uses actual Node 24.13.0 operations, with 3,811 frozen assertions, bit-exact
 binary64 comparisons and deterministic generated inputs. This is a host
 prerequisite; MmlNode.ts and every concrete mathematical node remain unaccepted.
 
@@ -257,7 +257,7 @@ prerequisite; MmlNode.ts and every concrete mathematical node remain unaccepted.
 | --- | --- | --- |
 | math_layout | util/js_numeric_input.ixx; evidence/p8a-numeric-input.md | Number(string), scoped parseInt(string, radix), grammar/whitespace/prefix/error/rounding |
 | tex_parser | util/utf16.ixx; evidence/p8a-utf16.md | UTF-16 indexing/iteration; strict UTF-8 decoding and diagnostic byte-offset map; UTF-8 encoding boundary |
-| math_fonts | evidence/e11-mml-host-usage.md | Read-only actual CJS MML state/caller audit; no implementation authority |
+| math_fonts | evidence/e11-mml-host-usage.md; evidence/p8a-host-review.md (separate sequential assignments) | Read-only actual CJS MML state/caller audit and independent host-contract review; no implementation authority |
 
 Root owns interfaces, expected results, CMake, mutation tests, independent
 source review, builds, commits and acceptance. No agent may edit these files,

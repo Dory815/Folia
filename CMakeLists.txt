@@ -104,6 +104,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/bbox.ixx
     src/math/util/prioritized_list.ixx
     src/math/util/js_number.ixx
+    src/math/util/js_numeric_input.ixx
+    src/math/util/utf16_types.ixx
+    src/math/util/utf16.ixx
     src/math/util/lengths.ixx
     src/math/util/option_types.ixx
     src/math/util/options.ixx)
