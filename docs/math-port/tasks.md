@@ -421,6 +421,14 @@ fixtures to close gaps and requires compiling/assertion-failing mutants. Neither
 agent completion nor initial fixtures alone establishes Mo or renderer parity.
 No partial production MmlFactory registration or backend switch is authorized.
 
+Root accepted P12c after source-by-source review and corrections, final
+actual-CJS fixtures (23,577/14, 538/50 and 74/14 assertions/cases), complete
+core regression and 33 compiling/assertion-failing isolated mutants. All 32
+source members have individual reviewed mappings in evidence/p12-mo-members.json.
+Required function-intrinsic metadata is an explicit host binding. Evidence:
+evidence/p12c-mo-acceptance.md. Local source acceptance is 26/246; full G0–G7,
+the full MML factory and all production integration remain unfinished.
+
 ## Wave 3 — base/AMS input and complete font services
 
 P11 is locally accepted under operator-contracts.md revision 2. Root froze the

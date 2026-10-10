@@ -643,9 +643,9 @@
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mo",
       "owner": "semantics_util",
       "disposition": "port_with_host_adaptation",
-      "adaptation_reason": "P12b root-reviewed five pristine no-flags UTF-16 regex languages as exact compiled native callbacks with source metadata/ranges/bounds. Actual constructor static lookup/replacement, defaults/aliases and the other 27 source members remain unaccepted and require separate frozen bindings/method fixtures. Evidence: mo-pattern-contracts.md and evidence/p12b-pattern-acceptance.md. No general JS regex VM or partial MML registry.",
-      "port_status": "in_progress_pattern_prerequisites",
-      "acceptance": "not_verified",
+      "adaptation_reason": "Root-reviewed all 32 source members in mo.ixx/mo_bindings.cpp plus disjoint lookup/class/script CPP files. Native actual-constructor live statics, raw null/Missing fields, array/string keys/iterators, precise default pattern services and required intrinsic-function metadata bind the raw-TeX profile; no evaluated JS/regex VM or partial production registry. Actual-CJS fixtures, full core regression and 33 compiling/assertion-failing mutants passed. Evidence: mo-contracts.md, evidence/p12-mo-members.json and evidence/p12c-mo-acceptance.md. Full G0-G7 remain closed.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/MmlTree/MmlNodes/mrow.ts",

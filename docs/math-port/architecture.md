@@ -11,8 +11,9 @@ Prerequisite utilities have local acceptance recorded in
 `evidence/script-acceptance.md` and the operator dictionary in
 `evidence/operator-acceptance.md`, with the raw class-state boundary correction
 in `evidence/p12-class-state-acceptance.md` and five default Mo regex services
-in `evidence/p12b-pattern-acceptance.md` (partial Mo prerequisites only); this
-does not pass a full renderer gate.
+in `evidence/p12b-pattern-acceptance.md`, followed by complete MmlMo semantic
+node acceptance in `evidence/p12c-mo-acceptance.md`; this does not pass a full
+renderer gate. Local source acceptance is 26/246, with full G0–G7 still closed.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
 

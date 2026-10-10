@@ -81,6 +81,14 @@ Accent methods only evaluate getText when the optional argument is omitted;
 explicit empty text is preserved. Do not repair source quirks or add sample
 special cases.
 
+Root review also binds native-function prototype metadata when malformed form
+names address Object.prototype functions: actual function prototype/constructor
+and call/apply/bind/toString identities, name/length/prototype and restricted
+caller/arguments access. This is a typed metadata binding, not JS execution.
+Snapshot the complete accent child tuple before callbacks; evaluate the
+attributes receiver before reading a definition value; complete all prime
+mapping reads before coercion; preserve right-associative class-write order.
+
 ## Required verification
 
 Root actual-CJS fixtures cover every source member, pristine static aliases and
