@@ -34,7 +34,7 @@ function begin(name){cases++;emit(q('math_port_leaf_'+name)+'_test=[] {F f(class
 function text(f,s){return f.create('text').setText(s);}function input(f,k,s,a={}){return f.create(k,a,[text(f,s)]);}
 {
  const f=begin('defaults_traits_and_constructor_fields');
- for(const [k,C,name]of entries){const n=f.create(k);emit('{auto*n=f.create('+q(k)+');');eq(n.kind,'n->kind()');eq(n.isToken,'n->isToken()');eq(n.isInferred,'n->isInferred()');eq(!!n.notParent,'n->notParent()');eq(n.arity,'n->arity()');eq(n.linebreakContainer,'n->linebreakContainer()');eq(n.linebreakAlign,'n->linebreakAlign()');eq(n.isEmpty,'n->isEmpty()');eq(n.isSpacelike,'n->isSpacelike()');pp(n.texClass??null,'n->texClass()?Property(*n->texClass()):Property(PropertyNull{})');list(Object.keys(C.defaults),'m::'+name+'::defaults().keys()');for(const key of Object.keys(C.defaults))pp(C.defaults[key],'m::'+name+'::defaults().getOwn('+q(key)+')');eq(n.childNodes.length,'count(n)');if(n.arity<0)eq(n.childNodes[0].kind,'at(n,0)->kind()');emit('}');}end();
+ for(const [k,C,name]of entries){const n=f.create(k);emit('{auto*n=f.create('+q(k)+');');eq(n.kind,'n->kind()');eq(n.isToken,'n->isToken()');eq(n.isInferred,'n->isInferred()');eq(!!n.notParent,'n->notParent()');eq(n.arity,'n->arity()');eq(n.linebreakContainer,'n->linebreakContainer()');eq(n.linebreakAlign,'n->linebreakAlign()');eq(n.isEmpty,'n->isEmpty()');eq(n.isSpacelike,'n->isSpacelike()');pp(n.texClass,'n->texClass()');list(Object.keys(C.defaults),'m::'+name+'::defaults().keys()');for(const key of Object.keys(C.defaults))pp(C.defaults[key],'m::'+name+'::defaults().getOwn('+q(key)+')');eq(n.childNodes.length,'count(n)');if(n.arity<0)eq(n.childNodes[0].kind,'at(n,0)->kind()');emit('}');}end();
 }
 {
  begin('utf16_pattern_full_unit_domain');
@@ -50,14 +50,14 @@ function text(f,s){return f.create('text').setText(s);}function input(f,k,s,a={}
 }
 {
  const f=begin('row_delimiter_nullish_and_class_transfer');for(const value of [undefined,null,false,'',0,'(']){const r=f.create('mrow'),a=f.create('probe'),prev=f.create('probe');a.texClass=2;prev.texClass=3;r.setChildren([a]);r.setProperty('open',value);const result=r.setTeXclass(prev);
- emit('{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",'+p(value)+');auto*result=r->setTeXclass(prev);');eq(result===r,'result==r');pp(r.texClass,'r->texClass()?Property(*r->texClass()):Property(PropertyNull{})');pp(r.prevClass,'r->prevClass()?Property(*r->prevClass()):Property(PropertyNull{})');pp(a.prevClass,'a->prevClass()?Property(*a->prevClass()):Property(PropertyNull{})');emit('}');}end();
+ emit('{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",'+p(value)+');auto*result=r->setTeXclass(prev);');eq(result===r,'result==r');pp(r.texClass,'r->texClass()');pp(r.prevClass,'r->prevClass()');pp(a.prevClass,'a->prevClass()');emit('}');}end();
 }
 {
  const f=begin('inferred_join_capture_cycle_and_utf16'),r=f.create('inferredMrow'),x=text(f,'a\ud800');r.childNodes=[x,null,r];emit('auto*r=f.create("inferredMrow");auto*x=text(f,units({97,55296}));r->childNodes=children({x,nullptr,r});');assertions++;emit('expect(bool(h::text(r->toString())=='+u(r.toString())+'));');end();
 }
 {
  const f=begin('mi_italic_and_auto_operator');for(const word of ['x','sin','abc2','2x','a-b','a\n','😀','a\u0300','a\u1abf','\ud800\ud800']){const n=input(f,'mi',word);n.setInheritedAttributes();const result=n.setTeXclass(null);
- emit('{auto*n=create(f,"mi",{},children({text(f,'+u(word)+')}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);');pp(n.attributes.get('mathvariant'),'n->attributes()->get("mathvariant")');pp(n.attributes.getInherited('mathvariant'),'n->attributes()->getInherited("mathvariant")');pp(n.getProperty('autoOP'),'n->getProperty("autoOP")');eq(n.texClass,'n->texClass().value_or(-99)');eq(result===n,'result==n');emit('}');}
+ emit('{auto*n=create(f,"mi",{},children({text(f,'+u(word)+')}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);');pp(n.attributes.get('mathvariant'),'n->attributes()->get("mathvariant")');pp(n.attributes.getInherited('mathvariant'),'n->attributes()->getInherited("mathvariant")');pp(n.getProperty('autoOP'),'n->getProperty("autoOP")');pp(n.texClass,'n->texClass()');eq(result===n,'result==n');emit('}');}
  const n=input(f,'mi','x',{mathvariant:'bold'});n.setInheritedAttributes();emit('auto*n=create(f,"mi",PropertyList{{"mathvariant","bold"}},children({text(f,u"x")}));n->setInheritedAttributes();');pp(n.attributes.get('mathvariant'),'n->attributes()->get("mathvariant")');pp(n.attributes.getInherited('mathvariant'),'n->attributes()->getInherited("mathvariant")');end();
 }
 {
@@ -90,7 +90,7 @@ function text(f,s){return f.create('text').setText(s);}function input(f,k,s,a={}
  const f=begin('source_field_phase_after_virtual_super_hooks'),trace=[];let sets=0;
  class Trace extends modules.mi.MmlMi{setChildren(c){trace.push(this.texClass);return super.setChildren(c);}set texClass(v){sets++;super.texClass=v;}get texClass(){return super.texClass;}}
  f.setNodeClass('mi',Trace);const n=f.create('mi');
- emit('struct Trace:m::MmlMi{using MmlMi::MmlMi;static std::vector<Property>& trace(){static std::vector<Property> v;return v;}static int& sets(){static int v=0;return v;}void setChildren(m::Children c)override{trace().push_back(texClass()?Property(*texClass()):Property(PropertyNull{}));MmlMi::setChildren(c);}void setTexClass(std::optional<double> v)override{++sets();MmlMi::setTexClass(v);}};f.setNodeClass("mi",m::classBinding<Trace>());auto*n=f.create("mi");');eq(trace.length,'Trace::trace().size()');trace.forEach((v,i)=>pp(v,'Trace::trace()['+i+']'));eq(sets,'Trace::sets()');eq(n.texClass,'n->texClass().value_or(-99)');end();
+ emit('struct Trace:m::MmlMi{using MmlMi::MmlMi;static std::vector<Property>& trace(){static std::vector<Property> v;return v;}static int& sets(){static int v=0;return v;}void setChildren(m::Children c)override{trace().push_back(texClass());MmlMi::setChildren(c);}void setTexClass(Property v)override{++sets();MmlMi::setTexClass(v);}};f.setNodeClass("mi",m::classBinding<Trace>());auto*n=f.create("mi");');eq(trace.length,'Trace::trace().size()');trace.forEach((v,i)=>pp(v,'Trace::trace()['+i+']'));eq(sets,'Trace::sets()');pp(n.texClass,'n->texClass()');end();
 }
 {
  const f=begin('row_last_search_reads_replaced_array');
@@ -106,10 +106,10 @@ function text(f,s){return f.create('text').setText(s);}function input(f,k,s,a={}
 }
 {
  const f=begin('row_live_class_iteration_and_current_first_child'),r=f.create('mrow'),a=f.create('probe'),late=f.create('probe'),replacement=f.create('probe');a.texClass=2;late.texClass=3;replacement.texClass=1;const original=[a];r.childNodes=original;a.onClass=()=>{original.push(late);r.childNodes=[replacement];};const result=r.setTeXclass(null);
- emit('auto*r=f.create("mrow");auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*late=f.create("probe");auto*replacement=f.create("probe");a->setTexClass(2);late->setTexClass(3);replacement->setTexClass(1);auto original=children({a});r->childNodes=original;a->onClass=[&](m::MmlNode*){original->push_back(late);r->childNodes=children({replacement});};auto*result=r->setTeXclass(nullptr);');eq(result===late,'result==late');eq(r.texClass,'r->texClass().value_or(-99)');eq(r.childNodes[0]===replacement,'at(r,0)==replacement');end();
+ emit('auto*r=f.create("mrow");auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*late=f.create("probe");auto*replacement=f.create("probe");a->setTexClass(2);late->setTexClass(3);replacement->setTexClass(1);auto original=children({a});r->childNodes=original;a->onClass=[&](m::MmlNode*){original->push_back(late);r->childNodes=children({replacement});};auto*result=r->setTeXclass(nullptr);');eq(result===late,'result==late');pp(r.texClass,'r->texClass()');eq(r.childNodes[0]===replacement,'at(r,0)==replacement');end();
 }
 {
- const f=begin('mi_tuple_and_property_presence');for(const key of ['autoOP','texClass'])for(const value of [null,false,0,'']){const n=input(f,'mi','sin');n.setProperty(key,value);n.setTeXclass(null);emit('{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty('+q(key)+','+p(value)+');n->setTeXclass(nullptr);');eq(n.texClass,'n->texClass().value_or(-99)');pp(n.getProperty('autoOP'),'n->getProperty("autoOP")');emit('}');}
+ const f=begin('mi_tuple_and_property_presence');for(const key of ['autoOP','texClass'])for(const value of [null,false,0,'']){const n=input(f,'mi','sin');n.setProperty(key,value);n.setTeXclass(null);emit('{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty('+q(key)+','+p(value)+');n->setTeXclass(nullptr);');pp(n.texClass,'n->texClass()');pp(n.getProperty('autoOP'),'n->getProperty("autoOP")');emit('}');}
  const n=input(f,'mi','x');n.setInheritedAttributes({mathvariant:['mstyle','']});emit('auto*n=create(f,"mi",{},children({text(f,u"x")}));n->setInheritedAttributes(PropertyList{{"mathvariant",m::attributeTuple("mstyle","")}});');pp(n.attributes.get('mathvariant'),'n->attributes()->get("mathvariant")');end();
 }
 {
@@ -119,7 +119,7 @@ function text(f,s){return f.create('text').setText(s);}function input(f,k,s,a={}
  const f=begin('mi_operator_assignment_uses_virtual_setter');let sets=0;
  class Observe extends modules.mi.MmlMi{get texClass(){return super.texClass;}set texClass(v){sets++;super.texClass=v;}}
  f.setNodeClass('mi',Observe);const n=input(f,'mi','sin');n.setTeXclass(null);
- emit('struct Observe:m::MmlMi{using MmlMi::MmlMi;static int& sets(){static int n=0;return n;}void setTexClass(std::optional<double> v)override{++sets();MmlMi::setTexClass(v);}};f.setNodeClass("mi",m::classBinding<Observe>());auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setTeXclass(nullptr);');eq(sets,'Observe::sets()');eq(n.texClass,'n->texClass().value_or(-99)');end();
+ emit('struct Observe:m::MmlMi{using MmlMi::MmlMi;static int& sets(){static int n=0;return n;}void setTexClass(Property v)override{++sets();MmlMi::setTexClass(v);}};f.setNodeClass("mi",m::classBinding<Observe>());auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setTeXclass(nullptr);');eq(sets,'Observe::sets()');pp(n.texClass,'n->texClass()');end();
 }
 {
  const f=begin('math_each_attributes_access_is_virtual');
