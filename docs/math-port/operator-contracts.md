@@ -1,4 +1,4 @@
-# P11 operator dictionary — root contract revision 1
+# P11 operator dictionary — root contract revision 2
 
 Root owns declarations, shared Property graph, array/primitive host services,
 pristine data generation, locks, oracle, tests, builds, mutations and acceptance.
@@ -16,6 +16,10 @@ wiring or scope changes. Report interface gaps instead of inventing repairs.
 PropertyArray and PropertyList use the SAME PropertyStorage references in
 Property. Array tags, slots, holes, length, own keys and shallow spread preserve
 identity and missing-versus-own-undefined. Mixed prototype edges reject cycles.
+Implicit Array/Object prototype identities have consistent parents and setters;
+array-own slots and inherited slots agree across get, has and hasOwn. The native
+coercion traversal's per-thread state is owned by mml_node_host.cpp, avoiding
+MSVC's nontrivial local TLS linkage across imported inline module functions.
 Attribute provenance tuples now use these actual two-slot arrays; no old-record
 fallback. Existing inherited __proto__ tuple behavior must remain, including
 prototype identity. No copied property-object bridge or alternate semantic tree.
@@ -56,3 +60,9 @@ defaults/null/freshness, inherited names and Unicode range domain. Add live
 mutations/malformed records and host/provenance regressions. Require compiling
 mutations failing unchanged assertions and full core suite. Startup mutation
 remains LinebreakVisitor-owned; this packet cannot accept the whole visitor.
+
+The full 0..0x10FFFF range-domain comparison uses empty form dictionaries;
+all pristine operator keys, pristine range boundaries and table priority are
+independently compared. This does not claim a full-domain pristine lookup.
+Mutation runs first require the full immutable baseline; each compiling mutant
+then runs its relevant immutable case. Record the case pattern with its result.
