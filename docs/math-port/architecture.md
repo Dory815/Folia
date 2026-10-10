@@ -1,6 +1,8 @@
 # Native MathJax 4 port: architecture and release gates
 
-Status: architecture specification; native implementation is not accepted.
+Status: architecture specification; complete native renderer is not accepted.
+The first three prerequisite classes have local acceptance recorded in
+`evidence/primitive-acceptance.md`; this does not pass a full renderer gate.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
 

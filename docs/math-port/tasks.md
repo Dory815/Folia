@@ -25,6 +25,16 @@ If a prerequisite or interface is missing, the agent reports that fact. It must
 not invent a replacement tree, registry, fallback, formula or model to keep
 coding. Root resolves the dependency before work resumes.
 
+Root-owned member discovery uses `tools/math-port/member-ledger.cjs`, with the
+same TypeScript 5.9.3 parser declared in the pinned MathJax development manifest.
+Install it in ignored output with `npm install --prefix build/math-port-tooling
+--no-save --package-lock=false --ignore-scripts typescript@5.9.3`. Pass upstream
+`ts/...` paths; `--summary` prints counts, otherwise it emits member hashes and
+pending target/review fields. It inventories class members, module functions
+and initialized globals. Nested literal callbacks remain inside their enclosing
+member hash and need separate manual method correspondence where applicable.
+AST discovery never approves behavior, targets, exclusions or acceptance.
+
 ## Wave 0 — reference and contracts (root)
 
 **Owned files:** this directory, `tools/math-port/*`, the future public API and
