@@ -14,17 +14,15 @@ namespace winrt::Folia
         return static_cast<bool>(context);
     }
 
-    bool EditorSvgPainter::PaintDocument(
-        ID2D1SvgDocument* document,
+    bool EditorSvgPainter::PaintDrawing(
+        ID2D1CommandList* drawing,
         float width,
         float height,
         D2D1_POINT_2F origin,
         float intrinsicWidth,
         float intrinsicHeight) const
     {
-        if (!context || !document || width <= 0.0f || height <= 0.0f) return false;
-        if (origin.x + width < 0.0f || origin.y + height < 0.0f
-            || origin.x > resources.surfaceWidthDip || origin.y > resources.surfaceHeightDip) return true;
+        if (!context || !drawing || width <= 0.0f || height <= 0.0f) return false;
         if (intrinsicWidth <= 0.0f) intrinsicWidth = width;
         if (intrinsicHeight <= 0.0f) intrinsicHeight = height;
         D2D1_MATRIX_3X2_F transform{};
@@ -36,7 +34,7 @@ namespace winrt::Folia
             scale
             * D2D1::Matrix3x2F::Translation(origin.x, origin.y)
             * transform);
-        context->DrawSvgDocument(document);
+        context->DrawImage(drawing);
         context->SetTransform(transform);
         return true;
     }
@@ -51,15 +49,17 @@ namespace winrt::Folia
         float intrinsicHeight) const
     {
         if (!context || renderId == 0 || source.empty() || width <= 0.0f || height <= 0.0f) return false;
+        if (origin.x + width < 0.0f || origin.y + height < 0.0f
+            || origin.x > resources.surfaceWidthDip || origin.y > resources.surfaceHeightDip) return true;
         if (intrinsicWidth <= 0.0f) intrinsicWidth = width;
         if (intrinsicHeight <= 0.0f) intrinsicHeight = height;
-        auto document = cache.FindOrCreateSvgDocument(
+        auto drawing = cache.FindOrCreateSvgDrawing(
             context.Get(),
             renderId,
             source,
             intrinsicWidth,
             intrinsicHeight);
-        return PaintDocument(
-            document.Get(), width, height, origin, intrinsicWidth, intrinsicHeight);
+        return PaintDrawing(
+            drawing.Get(), width, height, origin, intrinsicWidth, intrinsicHeight);
     }
 }

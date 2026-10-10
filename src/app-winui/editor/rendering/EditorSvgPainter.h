@@ -19,8 +19,8 @@ namespace winrt::Folia
             float intrinsicHeight = 0.0f) const;
 
     private:
-        bool PaintDocument(
-            ID2D1SvgDocument* document,
+        bool PaintDrawing(
+            ID2D1CommandList* drawing,
             float width,
             float height,
             D2D1_POINT_2F origin,

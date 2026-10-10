@@ -48,17 +48,15 @@ namespace winrt::Folia
         textLayoutBytes = 0;
     }
 
-    void EditorRenderCache::ClearSvgDocuments()
+    void EditorRenderCache::ClearSvgDrawings()
     {
-        svgDocuments.clear();
-        svgDocumentOrder.clear();
-        svgDocumentBytes = 0;
+        svgDrawings.Clear();
     }
 
     void EditorRenderCache::ClearDeviceResources()
     {
         ClearTextLayouts();
-        ClearSvgDocuments();
+        ClearSvgDrawings();
         rasterImages.clear();
         for (auto const& [key, pending] : pendingGifImages) pending.decode->Cancel();
         pendingGifImages.clear();

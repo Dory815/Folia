@@ -23,7 +23,7 @@ namespace winrt::Folia
         ++themeRevision;
         styleSheet = CreateEditorStyleSheet(themeProfile);
         renderCache.ClearTextLayouts();
-        renderCache.ClearSvgDocuments();
+        renderCache.ClearSvgDrawings();
         resources.RebuildTextFormats(styleSheet);
         resources.ResetBrushes();
         ClearPreparedDocument();
@@ -39,7 +39,7 @@ namespace winrt::Folia
         if (mathJax.Enabled() == enabled) return;
         mathJax.SetEnabled(enabled);
         ++embeddedGeneration;
-        renderCache.ClearSvgDocuments();
+        renderCache.ClearSvgDrawings();
         ClearPreparedDocument();
         Invalidate();
     }
@@ -54,7 +54,7 @@ namespace winrt::Folia
         mathJax.Clear();
         treeSitter.Clear();
         renderCache.ClearTextLayouts();
-        renderCache.ClearSvgDocuments();
+        renderCache.ClearSvgDrawings();
         ClearPreparedDocument();
     }
 

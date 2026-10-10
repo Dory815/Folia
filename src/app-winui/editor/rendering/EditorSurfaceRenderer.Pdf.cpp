@@ -65,7 +65,7 @@ namespace winrt::Folia
             pdfExportState->path = path;
             pdfExportState->title = title;
             renderCache.ClearTextLayouts();
-            renderCache.ClearSvgDocuments();
+            renderCache.ClearSvgDrawings();
             resources.RebuildTextFormats(styleSheet);
             resources.ResetBrushes();
             resources.EnsureFrameResources(styleSheet);
@@ -301,7 +301,7 @@ namespace winrt::Folia
             finishStep();
             pdfExportState.reset();
             renderCache.ClearTextLayouts();
-            renderCache.ClearSvgDocuments();
+            renderCache.ClearSvgDrawings();
             ClearPreparedDocument();
             Invalidate();
             return {EditorPdfExportResult::Completed, completed, completed};
@@ -311,7 +311,7 @@ namespace winrt::Folia
             finishStep();
             pdfExportState.reset();
             renderCache.ClearTextLayouts();
-            renderCache.ClearSvgDocuments();
+            renderCache.ClearSvgDrawings();
             ClearPreparedDocument();
             Invalidate();
             throw;
@@ -323,7 +323,7 @@ namespace winrt::Folia
         if (!pdfExportState) return;
         pdfExportState.reset();
         renderCache.ClearTextLayouts();
-        renderCache.ClearSvgDocuments();
+        renderCache.ClearSvgDrawings();
         ClearPreparedDocument();
         Invalidate();
     }

@@ -337,6 +337,9 @@
     <ClCompile Include="..\platform\windows\editor\layout\editor_display_mapping.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\platform\windows\editor\rendering\editor_svg_drawing.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\platform\windows\editor\layout\editor_block_spacing.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
