@@ -18,7 +18,9 @@ function mask(fn){let s='';for(let i=0;i<65536;i+=4){let n=0;for(let j=0;j<4;j++
 for(const [i,s]of specs.entries()){
  begin(s.name+'_metadata');emit('const auto&spec=m::moPatternSpec(m::MoPattern::'+s.name+');');
  expect('spec.source=='+u(M[s.name].source));expect('spec.flags==std::string_view("")');
- expect('spec.minimum=='+s.minimum);expect(s.maximum===undefined?'!spec.maximum':'spec.maximum==std::optional<std::size_t>('+s.maximum+')');end();
+ expect('spec.minimum=='+s.minimum);expect(s.maximum===undefined?'!spec.maximum':'spec.maximum==std::optional<std::size_t>('+s.maximum+')');
+ emit('std::vector<std::pair<unsigned,unsigned>> ranges;for(const auto&r:spec.units)ranges.emplace_back(r.first,r.last);');
+ expect('(ranges==std::vector<std::pair<unsigned,unsigned>>{'+s.ranges.map(([a,b])=>'{'+a+','+b+'}').join(',')+'})');end();
  begin(s.name+'_complete_utf16_domain');emit('constexpr auto kind=m::MoPattern::'+s.name+';');
  const first=s.ranges[0][0],a=String.fromCharCode(first);
  const variants=[['std::u16string(1,c)',c=>c],['std::u16string(2,c)',c=>c+c],['std::u16string(3,c)',c=>c+c+c],
@@ -31,7 +33,7 @@ for(const [i,s]of specs.entries()){
  let product='';for(const x of members)for(const y of members)for(const tail of ['',String.fromCharCode(first),'\n','\r\n','\u2028','\u2029','\0'])product+=observed(i,String.fromCharCode(x,y)+tail)?'1':'0';
  emit('constexpr auto kind=m::MoPattern::'+s.name+';const std::vector<unsigned> members={'+members.join(',')+'};std::string product;for(auto x:members)for(auto y:members)for(const auto&tail:std::vector<std::u16string>{u"",'+u(a)+',u"\\n",u"\\r\\n",'+u('\u2028')+','+u('\u2029')+',units({0})})product+=m::matchMoPattern(kind,units({x,y})+tail)?\'1\':\'0\';');
  expect('product=='+runs(product));
- const samples=['',a,a+a,a+a+a,a.repeat(512),a.repeat(4096),a+'\n',a+'\r',a+'\r\n',a+'\u2028',a+'\u2029','\n'+a,'\r'+a,'\0'+a,a+'\0',a+'x'+a,'abc','aA','Aa','aa','zZ','Az9','alpha','ALPHA','áá','ＡＡ','KK','İİ','ßß','²²','\u2032\u2033','\ud800','\udfff','\ud800\udc00','😀','\ud800'+a,a+'\udc00','^','→','→←','^\u0301','"\u2018','\u00aa\u208e'];
+ const samples=['',a,a+a,a+a+a,a.repeat(512),a.repeat(4096),a+'\n',a+'\r',a+'\r\n',a+'\u2028',a+'\u2029','\n'+a,'\r'+a,'\0'+a,a+'\0',a+'x'+a,'abc','aA','Aa','aa','zZ','Az9','alpha','ALPHA','áá','ＡＡ','KK','İİ','ßß','²²','\u2032\u2033','\ud800','\udfff','\ud800\udc00','😀','\ud800'+a,a+'\udc00','^','→','→←','^\u0301','"\u2018','\u00aa\u208e',' '+a+a,a+a+' ','\t'+a+a,a+a+'\t','\n'+a+a,a+a+'\n','\r\n'+a+a,a+a+'\r\n'];
  emit('struct Row{std::u16string text;bool wanted;};const Row samples[]={');
  for(const text of samples)emit('{'+u(text)+','+observed(i,text)+'},');
  emit('};auto first=m::makeMoPattern(kind);auto second=m::makeMoPattern(kind);');expect('bool(first)');expect('bool(second)');

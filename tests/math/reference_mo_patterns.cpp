@@ -12,6 +12,8 @@ expect(bool(spec.source==units({94,91,34,39,42,96,170,176,178,45,180,185,186,821
 expect(bool(spec.flags==std::string_view("")));
 expect(bool(spec.minimum==1));
 expect(bool(!spec.maximum));
+std::vector<std::pair<unsigned,unsigned>> ranges;for(const auto&r:spec.units)ranges.emplace_back(r.first,r.last);
+expect(bool((ranges==std::vector<std::pair<unsigned,unsigned>>{{34,34},{39,39},{42,42},{96,96},{170,170},{176,176},{178,180},{185,186},{8216,8223},{8242,8247},{8279,8279},{8304,8305},{8308,8334}})));
 };
 "math_port_mo_pattern_pseudoScripts_complete_utf16_domain"_test=[] {
 constexpr auto kind=m::MoPattern::pseudoScripts;
@@ -69,6 +71,14 @@ struct Row{std::u16string text;bool wanted;};const Row samples[]={
 {units({94,769}),false},
 {units({34,8216}),true},
 {units({170,8334}),true},
+{units({32,34,34}),false},
+{units({34,34,32}),false},
+{units({9,34,34}),false},
+{units({34,34,9}),false},
+{units({10,34,34}),false},
+{units({34,34,10}),false},
+{units({13,10,34,34}),false},
+{units({34,34,13,10}),false},
 };auto first=m::makeMoPattern(kind);auto second=m::makeMoPattern(kind);
 expect(bool(bool(first)));
 expect(bool(bool(second)));
@@ -81,6 +91,8 @@ expect(bool(spec.source==units({94,91,34,39,8216,45,8223,93,43,36})));
 expect(bool(spec.flags==std::string_view("")));
 expect(bool(spec.minimum==1));
 expect(bool(!spec.maximum));
+std::vector<std::pair<unsigned,unsigned>> ranges;for(const auto&r:spec.units)ranges.emplace_back(r.first,r.last);
+expect(bool((ranges==std::vector<std::pair<unsigned,unsigned>>{{34,34},{39,39},{8216,8223}})));
 };
 "math_port_mo_pattern_primes_complete_utf16_domain"_test=[] {
 constexpr auto kind=m::MoPattern::primes;
@@ -138,6 +150,14 @@ struct Row{std::u16string text;bool wanted;};const Row samples[]={
 {units({94,769}),false},
 {units({34,8216}),true},
 {units({170,8334}),false},
+{units({32,34,34}),false},
+{units({34,34,32}),false},
+{units({9,34,34}),false},
+{units({34,34,9}),false},
+{units({10,34,34}),false},
+{units({34,34,10}),false},
+{units({13,10,34,34}),false},
+{units({34,34,13,10}),false},
 };auto first=m::makeMoPattern(kind);auto second=m::makeMoPattern(kind);
 expect(bool(bool(first)));
 expect(bool(bool(second)));
@@ -150,6 +170,8 @@ expect(bool(spec.source==units({94,91,97,45,122,65,45,90,93,123,50,44,125,36})))
 expect(bool(spec.flags==std::string_view("")));
 expect(bool(spec.minimum==2));
 expect(bool(!spec.maximum));
+std::vector<std::pair<unsigned,unsigned>> ranges;for(const auto&r:spec.units)ranges.emplace_back(r.first,r.last);
+expect(bool((ranges==std::vector<std::pair<unsigned,unsigned>>{{65,90},{97,122}})));
 };
 "math_port_mo_pattern_opPattern_complete_utf16_domain"_test=[] {
 constexpr auto kind=m::MoPattern::opPattern;
@@ -207,6 +229,14 @@ struct Row{std::u16string text;bool wanted;};const Row samples[]={
 {units({94,769}),false},
 {units({34,8216}),false},
 {units({170,8334}),false},
+{units({32,65,65}),false},
+{units({65,65,32}),false},
+{units({9,65,65}),false},
+{units({65,65,9}),false},
+{units({10,65,65}),false},
+{units({65,65,10}),false},
+{units({13,10,65,65}),false},
+{units({65,65,13,10}),false},
 };auto first=m::makeMoPattern(kind);auto second=m::makeMoPattern(kind);
 expect(bool(bool(first)));
 expect(bool(bool(second)));
@@ -219,6 +249,8 @@ expect(bool(spec.source==units({94,91,180,769,714,96,768,715,168,776,126,771,732
 expect(bool(spec.flags==std::string_view("")));
 expect(bool(spec.minimum==1));
 expect(bool(spec.maximum==std::optional<std::size_t>(1)));
+std::vector<std::pair<unsigned,unsigned>> ranges;for(const auto&r:spec.units)ranges.emplace_back(r.first,r.last);
+expect(bool((ranges==std::vector<std::pair<unsigned,unsigned>>{{94,94},{96,96},{126,126},{168,168},{175,175},{180,180},{710,711},{713,715},{728,730},{732,732},{768,772},{774,776},{778,778},{780,780},{8400,8401},{8406,8407},{8411,8412},{8417,8417}})));
 };
 "math_port_mo_pattern_mathaccents_complete_utf16_domain"_test=[] {
 constexpr auto kind=m::MoPattern::mathaccents;
@@ -276,6 +308,14 @@ struct Row{std::u16string text;bool wanted;};const Row samples[]={
 {units({94,769}),false},
 {units({34,8216}),false},
 {units({170,8334}),false},
+{units({32,94,94}),false},
+{units({94,94,32}),false},
+{units({9,94,94}),false},
+{units({94,94,9}),false},
+{units({10,94,94}),false},
+{units({94,94,10}),false},
+{units({13,10,94,94}),false},
+{units({94,94,13,10}),false},
 };auto first=m::makeMoPattern(kind);auto second=m::makeMoPattern(kind);
 expect(bool(bool(first)));
 expect(bool(bool(second)));
@@ -288,6 +328,8 @@ expect(bool(spec.source==units({94,91,8592,8594,8596,9180,9181,9182,9183,93,36})
 expect(bool(spec.flags==std::string_view("")));
 expect(bool(spec.minimum==1));
 expect(bool(spec.maximum==std::optional<std::size_t>(1)));
+std::vector<std::pair<unsigned,unsigned>> ranges;for(const auto&r:spec.units)ranges.emplace_back(r.first,r.last);
+expect(bool((ranges==std::vector<std::pair<unsigned,unsigned>>{{8592,8592},{8594,8594},{8596,8596},{9180,9183}})));
 };
 "math_port_mo_pattern_mathaccentsWithWidth_complete_utf16_domain"_test=[] {
 constexpr auto kind=m::MoPattern::mathaccentsWithWidth;
@@ -345,6 +387,14 @@ struct Row{std::u16string text;bool wanted;};const Row samples[]={
 {units({94,769}),false},
 {units({34,8216}),false},
 {units({170,8334}),false},
+{units({32,8592,8592}),false},
+{units({8592,8592,32}),false},
+{units({9,8592,8592}),false},
+{units({8592,8592,9}),false},
+{units({10,8592,8592}),false},
+{units({8592,8592,10}),false},
+{units({13,10,8592,8592}),false},
+{units({8592,8592,13,10}),false},
 };auto first=m::makeMoPattern(kind);auto second=m::makeMoPattern(kind);
 expect(bool(bool(first)));
 expect(bool(bool(second)));
