@@ -31,6 +31,7 @@ add_executable(MutationTests "${slash(path.join(root,'tests/main.cpp'))}" "refer
 set_target_properties(MutationTests PROPERTIES CXX_MODULE_STD ON CXX_SCAN_FOR_MODULES ON)
 target_include_directories(MutationTests PRIVATE "${slash(path.join(root,'tests'))}")
 target_link_libraries(MutationTests PRIVATE math Boost::ut_module)
+target_link_options(MutationTests PRIVATE /STACK:16777216)
 `);
 fs.writeFileSync(path.join(work,'build.cmd'),`@echo off
 setlocal
@@ -48,9 +49,9 @@ function run(name){const p=cp.spawnSync(path.join(work,'bin/MutationTests.exe'),
 build('baseline');assert.equal(run('baseline').status,0,'Baseline must pass');console.log('MML node baseline compiles and passes.');
 const normal='core/mml_tree/mml_node.cpp',branches='core/mml_tree/mml_branches.cpp',empty='core/mml_tree/mml_empty.cpp';
 const mutations=[
- {name:'spacing-signs-lost',file:normal,edits:[['{{ 0,-1, 2, 3, 0, 0, 0, 1}}','{{ 0, 1, 2, 3, 0, 0, 0, 1}}']]},
- {name:'spacing-virtual-class-bypassed',file:normal,edits:[['const double current = texClass().value_or(0);','const double current = texclass_.value_or(0);']]},
- {name:'spacing-invalid-column-short-circuits',file:normal,edits:[['const auto column = class_index(normalized, TEXSPACE[*row].size());','const auto column = class_index(normalized, TEXSPACE[*row].size()); if (!column) return Missing{};']]},
+ {name:'spacing-signs-lost',file:normal,edits:[['PropertyArray{ 0,-1, 2, 3, 0, 0, 0, 1}','PropertyArray{ 0, 1, 2, 3, 0, 0, 0, 1}']]},
+ {name:'spacing-virtual-class-bypassed',file:normal,edits:[['const Property rawCurrent = texClass();','const Property rawCurrent = texclass_;']]},
+ {name:'spacing-invalid-column-short-circuits',file:normal,edits:[['const Property space = host::get(row, columnKey);','const Property space = host::get(row, columnKey); if (space.missing()) return Missing{};']]},
  {name:'copy-id-preserved-by-default',file:normal,edits:[['if (name != "id" || keepIds)', 'if (true)']]},
  {name:'copy-keepIds-forwarded-to-children',file:normal,edits:[['copied->appendChild(child->copy());','copied->appendChild(child->copy(keepIds));']]},
  {name:'copy-attributes-discarded',file:normal,edits:[['target->set(name, sourceAttributes.getOwn(name));','/* copied attribute lost */']]},
@@ -65,7 +66,7 @@ const mutations=[
  {name:'base-script-array-retargeted',file:branches,edits:[['for (MmlNode* const child : scripts) {','for (std::size_t i=1;i<childNodes->size();++i) { MmlNode* const child=(*childNodes)[i];']]},
  {name:'text-debug-calls-virtual-getter',file:empty,edits:[['host::debugText(text_)','host::debugText(getText())']]},
  {name:'xml-copy-retains-adaptor',file:empty,edits:[['return result->setXML(clone);','return result->setXML(clone,adaptor_);']]},
- {name:'empty-class-becomes-ord',file:empty,edits:[['AbstractMmlEmptyNode::texClass() const { return TEXCLASS.NONE; }','AbstractMmlEmptyNode::texClass() const { return TEXCLASS.ORD; }']]},
+ {name:'empty-class-becomes-ord',file:empty,edits:[['AbstractMmlEmptyNode::texClass() { return TEXCLASS.NONE; }','AbstractMmlEmptyNode::texClass() { return TEXCLASS.ORD; }']]},
  {name:'native-budget-premature-limit',file:'core/tree/node_types.ixx',edits:[['limit=512;','limit=511;']]},
  {name:'token-walk-includes-text-empty',file:branches,edits:[['if (auto* const child = dynamic_cast<AbstractMmlNode*>((*children)[index])) {\n            child->walkTree(visit, data);','if (auto* const child = (*children)[index]) {\n            child->walkTree(visit, data);']]}
 ];
