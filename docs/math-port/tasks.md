@@ -392,7 +392,13 @@ Needed changes return to root. This packet ports the five known no-flags UTF-16
 predicates through compiled callbacks, not a generic JS regex VM. Default source
 patterns, bounds and data stay exact; later Mo live static/constructor services
 remain a separate root-frozen packet. No partial Mo registration or broader
-gate acceptance follows from this prerequisite.
+gate acceptance follows from this prerequisite. Root locally accepted the
+service in evidence/p12b-pattern-acceptance.md: final 1,136 assertions/16 cases,
+2,342,369 source queries, all 22 compiling/assertion-failing mutants and the
+complete core suite. Root added range metadata and multiletter whitespace
+coverage after read-only review. Five of 32 Mo members are mapped prerequisites;
+the remaining 27 are unaccepted. Complete Mo still requires root-owned live
+static/constructor bindings and node-method fixtures before dispatch.
 
 ## Wave 3 — base/AMS input and complete font services
 

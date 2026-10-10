@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "typescript": "5.9.3",
-  "status": "unreviewed_member_inventory",
+  "status": "partial_pattern_prerequisite_review_not_Mo_acceptance",
   "files": [
     {
       "source": "ts/core/MmlTree/MmlNodes/mo.ts",
@@ -48,8 +48,9 @@
           "line": 92,
           "end_line": 105,
           "member_sha256": "9113d1ff00cacc03f093cf9ac417c8385b86f21abafa2ca8b7973140ccf23cc4",
-          "target": null,
-          "review": "unreviewed"
+          "target": "src/math/core/mml_tree/mo_pattern_data.cpp:specs[0]",
+          "review": "root_review_passed_default_pattern_binding",
+          "mapping": "Exact no-flags UTF-16 source-class language compiled through mo_patterns.ixx/.cpp; full Mo live constructor/static binding remains unimplemented. See evidence/p12b-pattern-acceptance.md."
         },
         {
           "owner": "MmlMo",
@@ -59,8 +60,9 @@
           "line": 110,
           "end_line": 116,
           "member_sha256": "8c87147adaf04001fcee8019cfae871898d735d6cd80b90500897ed15d062398",
-          "target": null,
-          "review": "unreviewed"
+          "target": "src/math/core/mml_tree/mo_pattern_data.cpp:specs[1]",
+          "review": "root_review_passed_default_pattern_binding",
+          "mapping": "Exact no-flags UTF-16 source-class language compiled through mo_patterns.ixx/.cpp; full Mo live constructor/static binding remains unimplemented. See evidence/p12b-pattern-acceptance.md."
         },
         {
           "owner": "MmlMo",
@@ -70,8 +72,9 @@
           "line": 121,
           "end_line": 121,
           "member_sha256": "539e2c28805ae19bc2aed2d501b5e48797e62084bf9824a47c34cf4eedd6eb59",
-          "target": null,
-          "review": "unreviewed"
+          "target": "src/math/core/mml_tree/mo_pattern_data.cpp:specs[2]",
+          "review": "root_review_passed_default_pattern_binding",
+          "mapping": "Exact no-flags UTF-16 source-class language compiled through mo_patterns.ixx/.cpp; full Mo live constructor/static binding remains unimplemented. See evidence/p12b-pattern-acceptance.md."
         },
         {
           "owner": "MmlMo",
@@ -92,8 +95,9 @@
           "line": 145,
           "end_line": 162,
           "member_sha256": "bc4368466da745a61020c0525a0a2014b7fc1491d2fb76a85ab57725c6437da0",
-          "target": null,
-          "review": "unreviewed"
+          "target": "src/math/core/mml_tree/mo_pattern_data.cpp:specs[3]",
+          "review": "root_review_passed_default_pattern_binding",
+          "mapping": "Exact no-flags UTF-16 source-class language compiled through mo_patterns.ixx/.cpp; full Mo live constructor/static binding remains unimplemented. See evidence/p12b-pattern-acceptance.md."
         },
         {
           "owner": "MmlMo",
@@ -103,8 +107,9 @@
           "line": 169,
           "end_line": 175,
           "member_sha256": "348423ef9ddf83198a02f77ce3481089743f29a65f67eae1b8f9249c51a8eaa1",
-          "target": null,
-          "review": "unreviewed"
+          "target": "src/math/core/mml_tree/mo_pattern_data.cpp:specs[4]",
+          "review": "root_review_passed_default_pattern_binding",
+          "mapping": "Exact no-flags UTF-16 source-class language compiled through mo_patterns.ixx/.cpp; full Mo live constructor/static binding remains unimplemented. See evidence/p12b-pattern-acceptance.md."
         },
         {
           "owner": "MmlMo",

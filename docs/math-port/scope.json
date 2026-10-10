@@ -642,9 +642,9 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mo.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mo",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "P12b root-reviewed five pristine no-flags UTF-16 regex languages as exact compiled native callbacks with source metadata/ranges/bounds. Actual constructor static lookup/replacement, defaults/aliases and the other 27 source members remain unaccepted and require separate frozen bindings/method fixtures. Evidence: mo-pattern-contracts.md and evidence/p12b-pattern-acceptance.md. No general JS regex VM or partial MML registry.",
+      "port_status": "in_progress_pattern_prerequisites",
       "acceptance": "not_verified",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",

@@ -10,7 +10,8 @@ Prerequisite utilities have local acceptance recorded in
 `evidence/leaf-acceptance.md` and the script-node/string packet in
 `evidence/script-acceptance.md` and the operator dictionary in
 `evidence/operator-acceptance.md`, with the raw class-state boundary correction
-in `evidence/p12-class-state-acceptance.md`; this
+in `evidence/p12-class-state-acceptance.md` and five default Mo regex services
+in `evidence/p12b-pattern-acceptance.md` (partial Mo prerequisites only); this
 does not pass a full renderer gate.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
