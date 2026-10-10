@@ -25,6 +25,7 @@ import folia.core.block_layout;
 import folia.core.hit_test;
 import folia.core.selection_geometry;
 import folia.core.selection;
+import folia.core.theme;
 
 using namespace folia;
 using namespace boost::ut;
@@ -32,6 +33,34 @@ using namespace boost::ut;
 #include "support/render_layout_test_support.hpp"
 
 suite render_recursive_flow_tests = [] {
+
+"nested_raw_blocks_reserve_source_free_vertical_padding"_test = [] {
+    const std::string source =
+        "1. before\n   \n   $$\n   x+y\n   $$\n   \n   after\n";
+    const auto parsed = parse_text(1, source);
+    const auto model = build_render_model(
+        parsed.document, parsed.outline, parsed.symbols, default_theme_profile());
+    expect(fatal(model.blocks.size() == 1u));
+    const auto& item = parsed.document.root.children[0].children[0];
+    expect(fatal(item.children.size() == 3u));
+    const auto math_id = item.children[1].id;
+    auto const* math = find_render_block(model.blocks[0], math_id);
+    expect(fatal(math != nullptr));
+    expect(math->kind == RenderBlockKind::Math);
+    std::vector<float> heights;
+    std::vector<TextAffinity> affinities;
+    for (auto const& inline_item : model.blocks[0].inline_items) {
+        if (inline_item.source_span.container_id != math_id
+            || inline_item.special().marker_role != MarkerRole::BlockSpacing) continue;
+        expect(inline_item.source_span.source_range.empty());
+        heights.push_back(inline_item.special().block_spacing_height);
+        affinities.push_back(*inline_item.special().generated_boundary_affinity);
+    }
+    expect(heights == std::vector<float>{
+        math->block_style.padding_top, math->block_style.padding_bottom});
+    expect(affinities == std::vector<TextAffinity>{
+        TextAffinity::Downstream, TextAffinity::Upstream});
+};
 
 "unified_flow_composes_list_quote_list_and_code"_test = [] {
     std::uint64_t next_id = 1;

@@ -5,6 +5,7 @@ import folia.core.image_dimension;
 import folia.core.render_model;
 import folia.core.text_edit;
 import folia.platform.editor_display_mapping;
+import folia.platform.editor_block_spacing;
 
 #include "media/MathJaxRenderer.h"
 #include "media/MermaidRenderer.h"
@@ -40,6 +41,7 @@ namespace winrt::Folia
 
     struct DisplayInlineText
     {
+        using BlockSpacingOverlay = folia::platform::editor::EditorBlockSpacing;
         struct MathOverlay
         {
             std::uint32_t displayStart = 0;
@@ -117,6 +119,7 @@ namespace winrt::Folia
         std::vector<MermaidOverlay> mermaidOverlays;
         std::vector<MermaidPreview> mermaidPreviews;
         std::vector<IndentOverlay> indentOverlays;
+        std::vector<BlockSpacingOverlay> blockSpacingOverlays;
         std::vector<TaskCheckboxOverlay> taskCheckboxOverlays;
         std::vector<FootnoteOverlay> footnoteOverlays;
         std::vector<AsyncWorkDependency> pendingMathJaxDependencies;
@@ -162,6 +165,7 @@ namespace winrt::Folia
         folia::InlineStyle style);
     void ApplyInlinePlaceholder(IDWriteTextLayout* layout, UINT32 displayStart, float width, float height, float baseline);
     void ApplyMathInlineObjects(IDWriteTextLayout* layout, std::vector<DisplayInlineText::MathOverlay> const& overlays);
+    void ApplyBlockSpacingInlineObjects(IDWriteTextLayout* layout, DisplayInlineText const& display);
     void ApplyIndentInlineObjects(IDWriteTextLayout* layout, std::vector<DisplayInlineText::IndentOverlay> const& overlays);
     void ApplyTaskCheckboxInlineObjects(IDWriteTextLayout* layout, std::vector<DisplayInlineText::TaskCheckboxOverlay> const& overlays);
     DisplayInlineText BuildMathPreviewText(DisplayInlineText::MathPreview const& preview);

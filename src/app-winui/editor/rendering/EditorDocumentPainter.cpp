@@ -357,6 +357,10 @@ namespace winrt::Folia
             {
                 if (display.displayToSource[index].container_id == nested.flow_anchor_owner_id)
                 {
+                    if (std::ranges::any_of(display.blockSpacingOverlays, [&](auto const& space) {
+                            return index >= space.displayStart
+                                && index < space.displayStart + space.displayLength;
+                        })) continue;
                     anchorStart = index;
                     break;
                 }
@@ -422,13 +426,26 @@ namespace winrt::Folia
                     if (contentLeft && accumulateRange(*range, top, bottom))
                     {
                         auto left = (std::clamp)(*contentLeft, origin.x, documentRight);
-                        auto rawBlock = nested.kind == folia::RenderBlockKind::Code
-                            || nested.kind == folia::RenderBlockKind::Math;
+                        if (nested.kind == folia::RenderBlockKind::Math)
+                        {
+                            if (!printMode)
+                            {
+                                const auto rect = D2D1::RectF(left, top, documentRight, bottom);
+                                interactionMap.rawBlocks.push_back({
+                                    rect, D2D1::RectF(left, top, documentRight, top),
+                                    {nested.id, nested.content_span.source_range.start,
+                                        folia::TextAffinity::Downstream},
+                                    folia::platform::editor::EditorRawBlockKind::Math,
+                                    std::nullopt, false});
+                            }
+                            return;
+                        }
+                        auto rawBlock = nested.kind == folia::RenderBlockKind::Code;
                         auto rect = D2D1::RectF(
                             left,
                             rawBlock ? top : top - 4.0f,
                             documentRight,
-                            rawBlock ? bottom + 6.0f : bottom + 4.0f);
+                            rawBlock ? bottom : bottom + 4.0f);
                         auto calloutPalette = calloutBrushes(nested.special().callout_kind);
                         auto brush = nested.kind == folia::RenderBlockKind::Callout
                             ? calloutPalette.first
@@ -447,9 +464,9 @@ namespace winrt::Folia
                                 D2D1::RoundedRect(rect, 6.0f, 6.0f),
                                 resources.mutedBrush.Get(),
                                 1.0f);
-                            auto headerBottom = nested.kind == folia::RenderBlockKind::Code
-                                ? (std::min)(rect.bottom, rect.top + styleSheet.code.lineHeight)
-                                : rect.top;
+                            auto headerTop = rect.top + nested.block_style.padding_top;
+                            auto headerBottom = (std::min)(
+                                rect.bottom, headerTop + styleSheet.code.lineHeight);
                             if (nested.kind == folia::RenderBlockKind::Code)
                             {
                                 auto label = winrt::to_hstring(
@@ -458,7 +475,7 @@ namespace winrt::Folia
                                     label.c_str(),
                                     static_cast<UINT32>(label.size()),
                                     resources.codeFormat.Get(),
-                                    D2D1::RectF(left + 8.0f, rect.top, rect.right - 8.0f, headerBottom),
+                                    D2D1::RectF(left + 8.0f, headerTop, rect.right - 8.0f, headerBottom),
                                     resources.mutedBrush.Get(),
                                     D2D1_DRAW_TEXT_OPTIONS_CLIP);
                             }

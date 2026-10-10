@@ -136,6 +136,7 @@ namespace winrt::Folia
             shiftOverlay(display.imageOverlays);
             shiftOverlay(display.mermaidOverlays);
             shiftOverlay(display.indentOverlays);
+            shiftOverlay(display.blockSpacingOverlays);
             shiftOverlay(display.taskCheckboxOverlays);
             shiftOverlay(display.footnoteOverlays);
 

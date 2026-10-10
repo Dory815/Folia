@@ -70,6 +70,7 @@ enum class MarkerRole {
     TaskCheckbox,
     FootnoteLabel,
     Structural,
+    BlockSpacing,
 };
 
 struct MathDiagnostic {
@@ -239,6 +240,7 @@ struct InlineRenderSemanticPayload {
 };
 
 struct InlineRenderPayload {
+    float block_spacing_height = 0.0f;
     std::u32string display_text;         // generated/normalized visual spelling
     std::optional<NodeId> marker_owner;
     MathDisplayMode display = MathDisplayMode::Inline;

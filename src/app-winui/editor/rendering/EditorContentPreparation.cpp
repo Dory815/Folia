@@ -298,6 +298,11 @@ namespace winrt::Folia
             overlay.displayStart += offset;
             target.indentOverlays.push_back(std::move(overlay));
         }
+        for (auto& overlay : source.blockSpacingOverlays)
+        {
+            overlay.displayStart += offset;
+            target.blockSpacingOverlays.push_back(std::move(overlay));
+        }
         for (auto& overlay : source.taskCheckboxOverlays)
         {
             overlay.displayStart += offset;
@@ -631,6 +636,15 @@ namespace winrt::Folia
                     markerPosition,
                     item.style,
                     EditorDisplayPositionKind::BoundaryDecoration);
+                if (item.special().marker_role == folia::MarkerRole::BlockSpacing)
+                {
+                    auto objectOffset = markerText.find(U'\uFFFC');
+                    if (objectOffset != std::u32string::npos)
+                        display.blockSpacingOverlays.push_back({
+                            displayStart + static_cast<std::uint32_t>(objectOffset),
+                            static_cast<std::uint32_t>(markerText.size() - objectOffset),
+                            item.special().block_spacing_height});
+                }
                 if (item.special().marker_role == folia::MarkerRole::FootnoteLabel)
                 {
                     auto displayLength = static_cast<std::uint32_t>(folia::utf16_len(markerText));

@@ -107,6 +107,12 @@ namespace winrt::Folia
         }
     }
 
+    void ApplyBlockSpacingInlineObjects(IDWriteTextLayout* layout, DisplayInlineText const& display)
+    {
+        folia::platform::editor::ApplyEditorBlockSpacing(
+            layout, display.text, display.blockSpacingOverlays);
+    }
+
     void ApplyInlinePlaceholder(IDWriteTextLayout* layout, UINT32 displayStart, float width, float height, float baseline)
     {
         if (!layout) return;

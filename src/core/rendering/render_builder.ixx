@@ -393,6 +393,23 @@ struct Builder {
             desired_columns > emitted_columns ? desired_columns - emitted_columns : 0);
     }
 
+    void append_flow_spacing(
+        std::vector<InlineRenderItem>& out, NodeId owner,
+        std::size_t offset, float height, bool before) {
+        if (height <= 0.0f) return;
+        InlineRenderItem space;
+        space.kind = InlineRenderItem::Kind::Marker;
+        space.source_span = {owner, {offset, offset}};
+        auto& payload = space.ensure_special();
+        payload.marker_role = MarkerRole::BlockSpacing;
+        payload.visibility = MarkerVisibility::Always;
+        payload.generated_boundary_affinity = before
+            ? TextAffinity::Downstream : TextAffinity::Upstream;
+        payload.display_text = before ? U"\uFFFC\n" : U"\n\uFFFC";
+        payload.block_spacing_height = height;
+        out.push_back(std::move(space));
+    }
+
     RenderBlock append_flow_block(
         std::vector<InlineRenderItem>& out,
         const BlockNode& block,
@@ -543,6 +560,14 @@ struct Builder {
         }
 
         auto rendered = build_block(block);
+        const auto spaced = block.kind == BlockKind::CodeBlock
+            || block.kind == BlockKind::MathBlock;
+        if (spaced && rendered.block_style.padding_top > 0.0f) {
+            if (emitted_columns > 0) append_block_break(out, owner, 0);
+            append_flow_spacing(out, owner, block_source_editable_range(block.block_source).start,
+                rendered.block_style.padding_top, true);
+            emitted_columns = 0;
+        }
         switch (block.kind) {
             case BlockKind::Paragraph:
             case BlockKind::Heading:
@@ -618,6 +643,10 @@ struct Builder {
                 break;
             default:
                 break;
+        }
+        if (spaced) {
+            append_flow_spacing(out, owner, block_source_editable_range(block.block_source).end,
+                rendered.block_style.padding_bottom, false);
         }
         rendered.flow_local_indent_columns = context.indent_columns -
             (std::min)(context.indent_columns, parent_indent_columns);

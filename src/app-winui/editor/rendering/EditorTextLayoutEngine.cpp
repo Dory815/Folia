@@ -78,6 +78,7 @@ namespace winrt::Folia
             for (auto& overlay : display.imageOverlays) if (overlay.displayStart >= position) ++overlay.displayStart;
             for (auto& overlay : display.mermaidOverlays) if (overlay.displayStart >= position) ++overlay.displayStart;
             for (auto& overlay : display.indentOverlays) if (overlay.displayStart >= position) ++overlay.displayStart;
+            for (auto& overlay : display.blockSpacingOverlays) if (overlay.displayStart >= position) ++overlay.displayStart;
             for (auto& overlay : display.taskCheckboxOverlays) if (overlay.displayStart >= position) ++overlay.displayStart;
             for (auto& overlay : display.footnoteOverlays) if (overlay.displayStart >= position) ++overlay.displayStart;
         }
@@ -139,6 +140,12 @@ namespace winrt::Folia
                 if (overlay.displayStart < start || overlay.displayStart >= end) continue;
                 overlay.displayStart -= start;
                 result.mathOverlays.push_back(std::move(overlay));
+            }
+            for (auto overlay : source.blockSpacingOverlays)
+            {
+                if (overlay.displayStart < start || overlay.displayStart >= end) continue;
+                overlay.displayStart -= start;
+                result.blockSpacingOverlays.push_back(std::move(overlay));
             }
             for (auto overlay : source.imageOverlays)
             {
@@ -303,6 +310,7 @@ namespace winrt::Folia
             auto layout = Create(ToWide(value.text), format, width);
             ApplyStyles(layout.Get(), value.ranges);
             ApplyMathInlineObjects(layout.Get(), value.mathOverlays);
+            ApplyBlockSpacingInlineObjects(layout.Get(), value);
             ApplyIndentInlineObjects(layout.Get(), value.indentOverlays);
             ApplyTaskCheckboxInlineObjects(layout.Get(), value.taskCheckboxOverlays);
             if (configure) configure(layout.Get(), value);
@@ -349,6 +357,7 @@ namespace winrt::Folia
             auto contentLayout = Create(ToWide(content.text), format, (std::max)(1.0f, width - indent.width));
             ApplyStyles(contentLayout.Get(), content.ranges);
             ApplyMathInlineObjects(contentLayout.Get(), content.mathOverlays);
+            ApplyBlockSpacingInlineObjects(contentLayout.Get(), content);
             ApplyTaskCheckboxInlineObjects(contentLayout.Get(), content.taskCheckboxOverlays);
             if (configure) configure(contentLayout.Get(), content);
             if (!contentLayout) continue;
