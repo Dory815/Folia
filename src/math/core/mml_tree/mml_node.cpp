@@ -12,19 +12,19 @@ import std;
 
 namespace folia::math::mml {
 namespace {
-constexpr std::array<std::string_view, 4> TEXSPACELENGTH = {
+const PropertyArray TEXSPACELENGTH = {
     "", "thinmathspace", "mediummathspace", "thickmathspace"
 };
-constexpr std::array<std::array<int, 8>, 8> TEXSPACE = {{
-    {{ 0,-1, 2, 3, 0, 0, 0, 1}},
-    {{-1,-1, 0, 3, 0, 0, 0, 1}},
-    {{ 2, 2, 0, 0, 2, 0, 0, 2}},
-    {{ 3, 3, 0, 0, 3, 0, 0, 3}},
-    {{ 0, 0, 0, 0, 0, 0, 0, 0}},
-    {{ 0,-1, 2, 3, 0, 0, 0, 1}},
-    {{ 1, 1, 0, 1, 1, 1, 1, 1}},
-    {{ 1,-1, 2, 3, 1, 0, 1, 1}}
-}};
+const PropertyArray TEXSPACE = {
+    PropertyArray{ 0,-1, 2, 3, 0, 0, 0, 1},
+    PropertyArray{-1,-1, 0, 3, 0, 0, 0, 1},
+    PropertyArray{ 2, 2, 0, 0, 2, 0, 0, 2},
+    PropertyArray{ 3, 3, 0, 0, 3, 0, 0, 3},
+    PropertyArray{ 0, 0, 0, 0, 0, 0, 0, 0},
+    PropertyArray{ 0,-1, 2, 3, 0, 0, 0, 1},
+    PropertyArray{ 1, 1, 0, 1, 1, 1, 1, 1},
+    PropertyArray{ 1,-1, 2, 3, 1, 0, 1, 1}
+};
 
 PropertyList class_info_defaults(const tree::FactoryClassRef<MmlNode>& nodeClass,
                                  bool required) {
@@ -44,12 +44,6 @@ MmlNode* child_at(const Children& children, std::size_t index, std::string_view 
     auto* child = (*children)[index];
     if (!child) host::typeError(operation);
     return child;
-}
-
-std::optional<std::size_t> class_index(double value, std::size_t count) {
-    if (!std::isfinite(value) || value < 0 || value >= static_cast<double>(count) ||
-        std::trunc(value) != value) return std::nullopt;
-    return static_cast<std::size_t>(value);
 }
 
 bool property_set_contains(const Property& value) {
@@ -201,10 +195,10 @@ MmlNode* AbstractMmlNode::copy(bool keepIds) {
     return copied;
 }
 
-std::optional<double> AbstractMmlNode::texClass() const { return texclass_; }
-void AbstractMmlNode::setTexClass(std::optional<double> value) { texclass_ = value; }
-std::optional<double> AbstractMmlNode::prevClass() const { return prevClass_; }
-void AbstractMmlNode::setPrevClass(std::optional<double> value) { prevClass_ = value; }
+Property AbstractMmlNode::texClass() { return texclass_; }
+void AbstractMmlNode::setTexClass(Property value) { texclass_ = std::move(value); }
+Property AbstractMmlNode::prevClass() { return prevClass_; }
+void AbstractMmlNode::setPrevClass(Property value) { prevClass_ = std::move(value); }
 Property AbstractMmlNode::prevLevel() const { return prevLevel_; }
 void AbstractMmlNode::setPrevLevel(Property value) { prevLevel_ = std::move(value); }
 std::shared_ptr<Attributes> AbstractMmlNode::attributes() const { return attributes_; }
@@ -310,7 +304,7 @@ std::optional<std::size_t> AbstractMmlNode::childPosition() {
 MmlNode* AbstractMmlNode::setTeXclass(MmlNode* previous) {
     tree::TreeCallGuard<MmlNode> guard;
     getPrevClass(previous);
-    return texClass().has_value() ? this : previous;
+    return !host::nullish(texClass()) ? this : previous;
 }
 
 void AbstractMmlNode::updateTeXclass(MmlNode* coreNode) {
@@ -319,7 +313,7 @@ void AbstractMmlNode::updateTeXclass(MmlNode* coreNode) {
         setPrevLevel(coreNode->prevLevel());
         // Right-associative TS assignment clears prevLevel before prevClass.
         coreNode->setPrevLevel(PropertyNull{});
-        coreNode->setPrevClass(std::nullopt);
+        coreNode->setPrevClass(PropertyNull{});
         setTexClass(coreNode->texClass());
     }
 }
@@ -334,15 +328,15 @@ void AbstractMmlNode::getPrevClass(MmlNode* previous) {
 }
 
 Property AbstractMmlNode::texSpacing() {
-    const double previous = prevClass().value_or(TeXClasses::NONE);
-    const double current = texClass().value_or(0);
-    const double normalized = current == 0 || std::isnan(current) ? 0 : current;
-    if (previous == TeXClasses::NONE || normalized == TeXClasses::NONE) return std::string{};
-    const auto row = class_index(previous, TEXSPACE.size());
-    if (!row) host::typeError("Invalid TeX spacing row");
-    const auto column = class_index(normalized, TEXSPACE[*row].size());
-    const std::optional<int> space = column
-        ? std::optional<int>{TEXSPACE[*row][*column]} : std::nullopt;
+    const Property firstPrevious = prevClass();
+    const Property previous = !host::nullish(firstPrevious) ? prevClass() : Property(TEXCLASS.NONE);
+    const Property rawCurrent = texClass();
+    const Property current = host::truthy(rawCurrent) ? rawCurrent : Property(TEXCLASS.ORD);
+    if (previous == Property(TEXCLASS.NONE) || current == Property(TEXCLASS.NONE)) return std::string{};
+    const auto rowKey = host::debugText(host::string(previous));
+    const Property row = host::get(TEXSPACE, rowKey);
+    const auto columnKey = host::debugText(host::string(current));
+    const Property space = host::get(row, columnKey);
     const bool previousScript = host::greaterThanZero(prevLevel());
     bool currentScript = false;
     if (!previousScript) {
@@ -350,9 +344,10 @@ Property AbstractMmlNode::texSpacing() {
         if (!attrs) host::typeError("Cannot read scriptlevel from null attributes");
         currentScript = host::greaterThanZero(attrs->get("scriptlevel"));
     }
-    if (!space) return Missing{};
-    if ((previousScript || currentScript) && *space >= 0) return std::string{};
-    return std::string(TEXSPACELENGTH[static_cast<std::size_t>(std::abs(*space))]);
+    if ((previousScript || currentScript) && host::number(space) >= 0) return std::string{};
+    const double magnitude = std::abs(host::number(space));
+    const auto lengthKey = host::debugText(host::string(magnitude));
+    return host::get(TEXSPACELENGTH, lengthKey);
 }
 
 bool AbstractMmlNode::hasSpacingAttributes() {

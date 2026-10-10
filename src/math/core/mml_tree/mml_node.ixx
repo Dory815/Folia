@@ -55,10 +55,10 @@ public:
     virtual bool isInferred() const=0;
     virtual bool notParent() const=0;
     virtual MmlNode* Parent() const=0;
-    virtual std::optional<double> texClass() const=0;
-    virtual void setTexClass(std::optional<double>)=0;
-    virtual std::optional<double> prevClass() const=0;
-    virtual void setPrevClass(std::optional<double>)=0;
+    virtual Property texClass()=0;
+    virtual void setTexClass(Property)=0;
+    virtual Property prevClass()=0;
+    virtual void setPrevClass(Property)=0;
     virtual Property prevLevel() const=0;
     virtual void setPrevLevel(Property)=0;
     virtual std::shared_ptr<Attributes> attributes() const=0;
@@ -84,7 +84,7 @@ public:
 };
 class AbstractMmlNode : public tree::AbstractNode<MmlNode,MmlNode> {
     using Generic=tree::AbstractNode<MmlNode,MmlNode>;
-    std::optional<double> texclass_,prevClass_;
+    Property texclass_=PropertyNull{},prevClass_=PropertyNull{};
     Property prevLevel_=PropertyNull{};
     std::shared_ptr<Attributes> attributes_;
     std::shared_ptr<MmlClassInfo> constructorInfo_;
@@ -100,10 +100,10 @@ public:
     void bindConstructorClass(std::shared_ptr<MmlClassInfo> info){constructorInfo_=std::move(info);}
     virtual void initializeClassFields(){}
     MmlNode* copy(bool keepIds=false) override;
-    std::optional<double> texClass()const override;
-    void setTexClass(std::optional<double>)override;
-    std::optional<double> prevClass()const override;
-    void setPrevClass(std::optional<double>)override;
+    Property texClass()override;
+    void setTexClass(Property)override;
+    Property prevClass()override;
+    void setPrevClass(Property)override;
     Property prevLevel()const override;
     void setPrevLevel(Property)override;
     std::shared_ptr<Attributes> attributes()const override;
@@ -139,7 +139,7 @@ protected:
             throw Error("TypeError",u"Constructor has no ACCENTS binding");
         return constructorInfo_->accentsBinding();
     }
-    void initializeTexClass(std::optional<double> value){texclass_=value;}
+    void initializeTexClass(Property value){texclass_=std::move(value);}
     virtual void updateTeXclass(MmlNode*);
     virtual void getPrevClass(MmlNode*);
     virtual void setChildInheritedAttributes(AttributeList,Property,Property,Property);
@@ -191,10 +191,10 @@ public:
     bool isInferred()const override;
     bool notParent()const override;
     MmlNode* Parent()const override;
-    std::optional<double> texClass()const override;
-    void setTexClass(std::optional<double>)override;
-    std::optional<double> prevClass()const override;
-    void setPrevClass(std::optional<double>)override;
+    Property texClass()override;
+    void setTexClass(Property)override;
+    Property prevClass()override;
+    void setPrevClass(Property)override;
     Property prevLevel()const override;
     void setPrevLevel(Property)override;
     std::shared_ptr<Attributes> attributes()const override;

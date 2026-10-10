@@ -17,12 +17,12 @@ bool AbstractMmlEmptyNode::isInferred() const { return false; }
 bool AbstractMmlEmptyNode::notParent() const { return false; }
 MmlNode* AbstractMmlEmptyNode::Parent() const { return parent; }
 
-std::optional<double> AbstractMmlEmptyNode::texClass() const { return TEXCLASS.NONE; }
-void AbstractMmlEmptyNode::setTexClass(std::optional<double>) {
+Property AbstractMmlEmptyNode::texClass() { return TEXCLASS.NONE; }
+void AbstractMmlEmptyNode::setTexClass(Property) {
     host::typeError("Cannot set read only texClass");
 }
-std::optional<double> AbstractMmlEmptyNode::prevClass() const { return TEXCLASS.NONE; }
-void AbstractMmlEmptyNode::setPrevClass(std::optional<double>) {
+Property AbstractMmlEmptyNode::prevClass() { return TEXCLASS.NONE; }
+void AbstractMmlEmptyNode::setPrevClass(Property) {
     host::typeError("Cannot set read only prevClass");
 }
 Property AbstractMmlEmptyNode::prevLevel() const { return 0.0; }

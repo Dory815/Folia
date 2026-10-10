@@ -115,7 +115,7 @@ MmlNode* MmlMrow::setTeXclass(MmlNode* previous) {
             if (!child) host::typeError("Cannot set TeX class on null child");
             previous = child->setTeXclass(previous);
         }
-        if (!texClass()) setTexClass(static_cast<double>(TEXCLASS.INNER));
+        if (host::nullish(texClass())) setTexClass(static_cast<double>(TEXCLASS.INNER));
         return this;
     }
 

@@ -7,7 +7,6 @@ import std;
 export namespace folia::math::mml {
 using Pattern=std::function<bool(std::u16string_view)>;
 namespace host {
-inline bool nullish(const Property& p){return p.missing()||std::holds_alternative<PropertyNull>(p.value);}
 inline bool isSpace(char16_t c){return js_input::isWhitespace(c);}
 inline std::u16string_view trimStart(std::u16string_view s){while(!s.empty()&&isSpace(s.front()))s.remove_prefix(1);return s;}
 inline std::u16string_view trim(std::u16string_view s){s=trimStart(s);while(!s.empty()&&isSpace(s.back()))s.remove_suffix(1);return s;}

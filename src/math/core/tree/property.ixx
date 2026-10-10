@@ -12,7 +12,8 @@ struct PropertyNull { bool operator==(const PropertyNull&) const = default; };
 enum class BuiltinProperty {
     constructor, defineGetter, defineSetter, hasOwnProperty, lookupGetter,
     lookupSetter, isPrototypeOf, propertyIsEnumerable, toString, valueOf,
-    toLocaleString, prototype, arrayConstructor, arrayToString, arrayJoin, arrayPrototype
+    toLocaleString, prototype, arrayConstructor, arrayToString, arrayJoin, arrayPrototype,
+    numberPrototype, numberConstructor, numberToString, numberValueOf
 };
 struct PropertyStorage;
 class PropertyList;

@@ -20,6 +20,7 @@ inline bool truthy(const Property& p){
     if(auto s=std::get_if<std::string>(&p.value))return !s->empty();
     return true;
 }
+inline bool nullish(const Property& p){return p.missing()||std::holds_alternative<PropertyNull>(p.value);}
 // Property strings and generic debug strings use lossless WTF-8 internally.
 // External UTF-8 encode/decode retains the separate strict/replacement contract.
 inline std::string debugText(std::u16string_view text){
@@ -70,6 +71,7 @@ inline std::u16string arrayString(Property receiver){
 }
 inline Property primitive(const Property& p,bool stringHint){
     if(p==Property(BuiltinProperty::arrayPrototype))return "";
+    if(p==Property(BuiltinProperty::numberPrototype))return 0;
     auto object=PropertyList::record(p);if(!object)return p;
     for(auto key:stringHint?std::array{"toString","valueOf"}:std::array{"valueOf","toString"}){
         auto method=object->get(key);auto fn=std::get_if<BuiltinProperty>(&method.value);if(!fn)continue;
@@ -105,6 +107,9 @@ inline std::u16string string(const Property& input){
         if(*b==BuiltinProperty::arrayConstructor)return u"function Array() { [native code] }";
         if(*b==BuiltinProperty::arrayToString)return u"function toString() { [native code] }";
         if(*b==BuiltinProperty::arrayJoin)return u"function join() { [native code] }";
+        if(*b==BuiltinProperty::numberConstructor)return u"function Number() { [native code] }";
+        if(*b==BuiltinProperty::numberToString)return u"function toString() { [native code] }";
+        if(*b==BuiltinProperty::numberValueOf)return u"function valueOf() { [native code] }";
         constexpr std::array<std::string_view,11> names={"Object","__defineGetter__","__defineSetter__","hasOwnProperty","__lookupGetter__","__lookupSetter__","isPrototypeOf","propertyIsEnumerable","toString","valueOf","toLocaleString"};
         return text("function "+std::string(names[static_cast<std::size_t>(*b)])+"() { [native code] }");
     }typeError("Unbound native string conversion");
@@ -128,16 +133,31 @@ inline Property get(const Property& value,std::string_view key){
         auto units=text(*textValue);
         if(key=="length")return static_cast<double>(units.size());
         if(numeric)return index<units.size()?Property(debugText(std::u16string(1,units[index]))):Property(Missing{});
+    }else if(std::holds_alternative<double>(value.value)){
+        if(numeric)return Missing{};
+        if(key=="__proto__")return BuiltinProperty::numberPrototype;
+        if(key=="constructor")return BuiltinProperty::numberConstructor;
+        if(key=="toString")return BuiltinProperty::numberToString;
+        if(key=="valueOf")return BuiltinProperty::numberValueOf;
     }else if(auto builtin=std::get_if<BuiltinProperty>(&value.value)){
         if(numeric)return Missing{};
         if(*builtin==BuiltinProperty::prototype)return key=="__proto__"?Property(PropertyNull{}):PropertyList{}.get(key);
         if(*builtin==BuiltinProperty::arrayPrototype)return key=="__proto__"?Property(BuiltinProperty::prototype):get(Property(PropertyArray{}),key);
+        if(*builtin==BuiltinProperty::numberPrototype){
+            if(key=="__proto__")return BuiltinProperty::prototype;
+            if(key=="constructor")return BuiltinProperty::numberConstructor;
+            if(key=="toString")return BuiltinProperty::numberToString;
+            if(key=="valueOf")return BuiltinProperty::numberValueOf;
+            return PropertyList{}.get(key);
+        }
         if(key=="prototype"&&*builtin==BuiltinProperty::constructor)return BuiltinProperty::prototype;
         if(key=="prototype"&&*builtin==BuiltinProperty::arrayConstructor)return BuiltinProperty::arrayPrototype;
+        if(key=="prototype"&&*builtin==BuiltinProperty::numberConstructor)return BuiltinProperty::numberPrototype;
         if(key=="length"){
             switch(*builtin){
             case BuiltinProperty::defineGetter:case BuiltinProperty::defineSetter:return 2;
             case BuiltinProperty::constructor:case BuiltinProperty::arrayConstructor:case BuiltinProperty::arrayJoin:
+            case BuiltinProperty::numberConstructor:case BuiltinProperty::numberToString:
             case BuiltinProperty::hasOwnProperty:case BuiltinProperty::lookupGetter:case BuiltinProperty::lookupSetter:
             case BuiltinProperty::isPrototypeOf:case BuiltinProperty::propertyIsEnumerable:return 1;
             default:return 0;
