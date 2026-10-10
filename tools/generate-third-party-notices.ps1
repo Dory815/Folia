@@ -49,7 +49,7 @@ Add-LicenseFile 'ICU4C 78.3 — Unicode License V3' `
     (Join-Path $Root 'build\dependencies\icu-78.3\root\LICENSE')
 Add-LicenseFile 'QuickJS — MIT License' `
     (Join-Path $Root 'src\app-winui\third_party\quickjs\LICENSE')
-Add-LicenseFile 'MathJax and MathJax NewCM font — Apache License 2.0' `
+Add-LicenseFile 'MathJax 4.1.3 and NewCM, bbm, bboldx, dsfont fonts — Apache License 2.0' `
     (Join-Path $Root 'src\app-winui\Assets\mathjax\LICENSE-MathJax.txt')
 Add-LicenseFile 'Native SVG normalizer wrapper — MIT License' `
     (Join-Path $Root 'src\app-winui\third_party\usvg-normalizer\LICENSE-MIT')

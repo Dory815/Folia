@@ -14,6 +14,7 @@
 #include <d3d11.h>
 #include <dxgi.h>
 #include <wrl/client.h>
+#include "../../src/app-winui/third_party/usvg-normalizer/include/folia_svg_normalizer.h"
 
 extern "C"
 {
@@ -74,20 +75,20 @@ struct SvgValidator
 
 struct SvgNormalizerRuntime
 {
-    using Create = void* (*)();
-    using Destroy = void (*)(void*);
-    using Normalize = std::int32_t (*)(void*, std::uint8_t const*, std::size_t, float, std::uint8_t**, std::size_t*);
-    using FreeBuffer = void (*)(std::uint8_t*, std::size_t);
+    using Create = decltype(&folia_svg_normalizer_create);
+    using Destroy = decltype(&folia_svg_normalizer_destroy);
+    using Normalize = decltype(&folia_svg_normalize);
+    using FreeBuffer = decltype(&folia_svg_buffer_destroy);
 
     HMODULE module = nullptr;
-    void* context = nullptr;
+    folia_svg_normalizer* context = nullptr;
     Destroy destroy = nullptr;
     Normalize normalize = nullptr;
     FreeBuffer freeBuffer = nullptr;
 
     SvgNormalizerRuntime()
     {
-        module = LoadLibraryW(L"../../src/app-winui/third_party/usvg-normalizer/bin/x64/folia_svg_normalizer.dll");
+        module = LoadLibraryW(L"../../build/dependencies/usvg-normalizer/release/folia_svg_normalizer.dll");
         if (!module) return;
         auto create = reinterpret_cast<Create>(GetProcAddress(module, "folia_svg_normalizer_create"));
         destroy = reinterpret_cast<Destroy>(GetProcAddress(module, "folia_svg_normalizer_destroy"));
@@ -107,7 +108,9 @@ struct SvgNormalizerRuntime
         if (!context) return false;
         std::uint8_t* data = nullptr;
         std::size_t length = 0;
-        auto status = normalize(context, reinterpret_cast<std::uint8_t const*>(source.data()), source.size(), 18.0f, &data, &length);
+        float width = 0.0f;
+        float height = 0.0f;
+        auto status = normalize(context, reinterpret_cast<std::uint8_t const*>(source.data()), source.size(), 18.0f, &data, &length, &width, &height);
         if (data && length > 0) output.assign(reinterpret_cast<char const*>(data), length);
         if (data) freeBuffer(data, length);
         return status == 0 && !output.empty();
@@ -207,6 +210,11 @@ int main()
         R"(\sum_{n=1}^{\infty}\frac{1}{n^2})",
         R"(\left(\frac{a}{b}\right))",
         R"(\mathbb{R}\times\mathfrak{g}\to\mathcal{H})",
+        R"(\mathbb{RNZabc123}+\mathbfbb{R}+\bbGamma+\bfbbalpha)",
+        R"(\setOptions[bboldx]{light=true}\mathbb{RNZabc123}\setOptions[bboldx]{light=false})",
+        R"(\mathversion{normal}\mathbbm{RNZabc123}+\mathbbmss{RNZabc123}+\mathbbmtt{RNZabc123})",
+        R"(\mathversion{bold}\mathbbm{RNZabc123}+\mathbbmss{RNZabc123}\mathversion{normal})",
+        R"(\mathds{RNZ1}+\setOptions[dsfont]{sans=true}\mathds{RNZ1}\setOptions[dsfont]{sans=false})",
         R"(\int\limits_0^\infty e^{-x^2}\,dx)",
         R"(\begin{bmatrix}a&b\\c&d\end{bmatrix})",
         R"(\widehat{f}(\xi)=\int_{-\infty}^{\infty}f(x)e^{-2\pi i x\xi}\,dx)",
@@ -255,6 +263,15 @@ int main()
                 JS_FreeValue(context, result);
                 return 16;
             }
+            if ((tex.find("\\mathbb") != std::string::npos
+                    || tex.find("\\mathds") != std::string::npos)
+                && output.find("data-c=\"211D\"") == std::string_view::npos)
+            {
+                std::cerr << "Blackboard R fell back to a plain glyph: " << tex << '\n';
+                JS_FreeCString(context, text);
+                JS_FreeValue(context, result);
+                return 17;
+            }
             auto first = output.find("<svg");
             if (first == std::string_view::npos) return 3;
             std::size_t cursor = 0;
@@ -274,7 +291,7 @@ int main()
                 if (!svgNormalizer.Process(compatible, normalized))
                 {
                     std::cerr << "SVG normalization failed at formula " << index << ", fragment " << fragment << ": " << normalized << '\n';
-                    std::ofstream("quickjs-failed.svg", std::ios::binary) << compatible;
+                    std::ofstream("../../build/tools/mathjax-bundle/quickjs-failed.svg", std::ios::binary) << compatible;
                     return 8;
                 }
                 if (index == 0 && fragment == 0)
@@ -294,7 +311,7 @@ int main()
                 if (FAILED(validation))
                 {
                     std::cerr << "D2D SVG fragment " << fragment << " failed: 0x" << std::hex << static_cast<unsigned long>(validation) << '\n';
-                    std::ofstream("quickjs-failed.svg", std::ios::binary) << normalized;
+                    std::ofstream("../../build/tools/mathjax-bundle/quickjs-failed.svg", std::ios::binary) << normalized;
                     return 6;
                 }
                 cursor = end;
@@ -319,11 +336,13 @@ int main()
         if (!text) return 12;
         auto output = std::string_view(text);
         auto hasError = output.find("data-mjx-error=") != std::string_view::npos;
-        auto hasRedError = output.find("fill=\"red\"") != std::string_view::npos
-            || output.find("stroke=\"red\"") != std::string_view::npos;
-        if (!hasError || !hasRedError)
+        // MathJax's error colors are CSS rules, which serializeXML does not
+        // inline.  Check the diagnostic and visible text in this raw SVG stage.
+        auto hasVisibleError = output.find("data-mml-node=\"merror\"") != std::string_view::npos
+            && output.find("<text") != std::string_view::npos;
+        if (!hasError || !hasVisibleError)
         {
-            std::cerr << "MathJax did not emit a visible red merror: " << output << '\n';
+            std::cerr << "MathJax did not emit a visible merror: " << output << '\n';
             JS_FreeCString(context, text);
             JS_FreeValue(context, result);
             return 13;

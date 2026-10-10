@@ -9,4 +9,6 @@ pushd "%~dp0"
 cl /nologo /MD /DNDEBUG /std:c++20 /EHsc quickjs-smoke.cpp /Fo:"%OUTPUT%\quickjs-smoke.obj" /Fe:"%OUTPUT%\quickjs-smoke.exe" "%ROOT%\build\app-winui\obj\x64\Release\quickjs\quickjs.lib" d2d1.lib d3d11.lib dxgi.lib ole32.lib /link /STACK:33554432
 if errorlevel 1 exit /b %errorlevel%
 "%OUTPUT%\quickjs-smoke.exe"
+set "RESULT=%errorlevel%"
 popd
+exit /b %RESULT%

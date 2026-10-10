@@ -2,6 +2,9 @@ const {mathjax} = require('@mathjax/src/js/mathjax.js');
 const {TeX} = require('@mathjax/src/js/input/tex.js');
 const {SVG} = require('@mathjax/src/js/output/svg.js');
 const {MathJaxNewcmFont} = require('@mathjax/mathjax-newcm-font/js/svg.js');
+const {MathJaxBboldxFontExtension} = require('@mathjax/mathjax-bboldx-font-extension/js/svg.js');
+const {MathJaxBbmFontExtension} = require('@mathjax/mathjax-bbm-font-extension/js/svg.js');
+const {MathJaxDsfontFontExtension} = require('@mathjax/mathjax-dsfont-font-extension/js/svg.js');
 const {liteAdaptor} = require('@mathjax/src/js/adaptors/liteAdaptor.js');
 const {RegisterHTMLHandler} = require('@mathjax/src/js/handlers/html.js');
 require('@mathjax/src/js/input/tex/base/BaseConfiguration.js');
@@ -69,6 +72,11 @@ const output = new SVG({
   displayOverflow: 'linebreak',
   linebreaks: {inline: true}
 });
+// The TeX packages register macros only.  Attach their complete SVG glyph data
+// explicitly because the offline runtime does not use MathJax's component loader.
+output.addExtension(MathJaxBboldxFontExtension);
+output.addExtension(MathJaxBbmFontExtension);
+output.addExtension(MathJaxDsfontFontExtension);
 const document = mathjax.document('', {InputJax: input, OutputJax: output});
 
 globalThis.FoliaMathJax = {
