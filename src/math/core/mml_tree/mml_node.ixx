@@ -10,8 +10,9 @@ import std;
 
 export namespace folia::math::mml {
 using AttributeList = PropertyList;
-using Children = tree::FactoryChildren<class MmlNode>;
-using Factory = tree::FactoryServices<class MmlNode>;
+class MmlNode;
+using Children = tree::FactoryChildren<MmlNode>;
+using Factory = tree::FactoryServices<MmlNode>;
 using Error = tree::FactoryError;
 struct MmlClassInfo { std::optional<PropertyList> defaults; };
 struct TeXClasses { static constexpr int ORD=0,OP=1,BIN=2,REL=3,OPEN=4,CLOSE=5,PUNCT=6,INNER=7,NONE=-1; };
