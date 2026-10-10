@@ -9,6 +9,7 @@ template<class T>tree::FactoryClassRef<MmlNode> classBinding(){
     auto info=std::make_shared<MmlClassInfo>();
     if constexpr(std::is_base_of_v<AbstractMmlNode,T>)info->defaultsBinding=[]()->std::optional<PropertyList>{return T::defaults();};
     if constexpr(requires{T::accents();})info->accentsBinding=[] {return T::accents();};
+    if constexpr(requires{T::template staticBinding<T>();})info->staticServices=T::template staticBinding<T>();
     result->staticData=info;
     result->construct=[info](Factory& factory,tree::FactoryArgs args){
         auto owned=std::make_unique<T>(factory);auto* node=owned.get();

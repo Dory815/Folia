@@ -105,6 +105,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/class_binding.ixx
     src/math/core/mml_tree/leaf_host.ixx
     src/math/core/mml_tree/mo_patterns.ixx
+    src/math/core/mml_tree/mo_types.ixx
+    src/math/core/mml_tree/mo_host.ixx
+    src/math/core/mml_tree/mml_nodes/mo.ixx
     src/math/core/mml_tree/leaf_defaults.ixx
     src/math/core/mml_tree/script_defaults.ixx
     src/math/core/mml_tree/operator_dictionary.ixx
@@ -134,6 +137,10 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
   target_sources(folia_math PRIVATE
     src/math/core/mml_tree/mo_pattern_data.cpp
     src/math/core/mml_tree/mo_patterns.cpp
+    src/math/core/mml_tree/mml_nodes/mo_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mo_lookup.cpp
+    src/math/core/mml_tree/mml_nodes/mo_classes.cpp
+    src/math/core/mml_tree/mml_nodes/mo_scripts.cpp
     src/math/core/mml_tree/operator_dictionary_data.cpp
     src/math/core/mml_tree/operator_dictionary.cpp
     src/math/core/mml_tree/mml_node_host.cpp

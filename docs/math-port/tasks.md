@@ -400,6 +400,27 @@ coverage after read-only review. Five of 32 Mo members are mapped prerequisites;
 the remaining 27 are unaccepted. Complete Mo still requires root-owned live
 static/constructor bindings and node-method fixtures before dispatch.
 
+### P12c: complete Mo node, disjoint source-method packets
+
+Root freezes mo-contracts.md, mo.ixx, mo_types/mo_host, generic captured
+staticServices metadata, exact generated mo_bindings.cpp and actual-CJS
+mo-oracle.cjs fixtures before dispatch. All 32 source members require individual
+mapping; the five patterns already passed P12b. Root owns all shared interfaces,
+source locks, expected values, build, mutations, scope and final acceptance.
+
+| Agent | Only source under core/mml_tree/mml_nodes | Only evidence |
+| --- | --- | --- |
+| tex_parser | mo_lookup.cpp (six named methods in mo-contracts.md) | p12c-mo-lookup.md |
+| math_layout | mo_classes.cpp (five named methods) | p12c-mo-classes.md |
+| math_fonts | mo_scripts.cpp (six named methods) | p12c-mo-scripts.md |
+
+No agent edits declarations, shared hosts, data, tests/oracles, CMake, source
+locks, scope, another packet or production; no builds/commits. Report interface
+gaps before proceeding. Root independently reviews every method, extends source
+fixtures to close gaps and requires compiling/assertion-failing mutants. Neither
+agent completion nor initial fixtures alone establishes Mo or renderer parity.
+No partial production MmlFactory registration or backend switch is authorized.
+
 ## Wave 3 — base/AMS input and complete font services
 
 P11 is locally accepted under operator-contracts.md revision 2. Root froze the
