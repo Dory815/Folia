@@ -38,8 +38,9 @@ AST discovery never approves behavior, targets, exclusions or acceptance.
 ## Current dispatch: reference evidence, not renderer implementation
 
 Root has reviewed and accepted Attributes, BBox, PrioritizedList and lengths
-(with the explicit table/API host adaptations in `numeric-contracts.md`), plus
-the separate native Number formatting host helper. The other 242 inventory
+(with the explicit table/API host adaptations in `numeric-contracts.md`), Options
+(with `options-contracts.md` host adaptations), plus the separate native Number
+formatting host helper. The other 241 inventory
 entries are still unreviewed. Broad parser/layout implementation packets remain undispatched;
 agents cannot fill missing prerequisites with a substitute architecture.
 
@@ -133,8 +134,10 @@ No SVG involved in this packet. G4 primitive gate.
 
 ### P3: PrioritizedList and Options (Luna implementation, root acceptance)
 
-Split into P3a PrioritizedList and P3b Options. Only P3a is dispatched under
-primitive-contracts.md. P3b remains pending recursive option-value contracts.
+Split into P3a PrioritizedList and P3b Options. P3a is accepted under
+primitive-contracts.md. P3b is independently accepted under the root-frozen
+options-contracts.md and evidence/options-acceptance.md, only as a configuration
+prerequisite for the specified native API.
 
 **Owned files:** `src/math/util/prioritized_list.ixx`, `options.ixx`, their
 implementation units if needed, non-frozen local tests for these utilities.
@@ -169,7 +172,30 @@ in shared output or commit. Acceptance evidence is `evidence/numeric-acceptance.
 read-only Options source/probe proposals covering every export, recursive
 values, identities, descriptors, symbols and merge behavior. This does not
 authorize Options implementation or freeze its native value contract. Root
-must still resolve and test that contract before issuing P3b.
+resolved the graph contract and generated the initial JS fixtures before P3b
+dispatch. E7 remains proposal evidence, never native implementation expectations.
+
+### P3b: recursive Options graph and composition
+
+Root owns `option_types.ixx`, private `option_storage.hpp`, source-derived oracle,
+fixtures and CMake registration. The three Luna packets had these sole files:
+
+| Agent | Implementation | Responsibility |
+| --- | --- | --- |
+| math_layout | util/option_object.cpp | Context-owned identity graph, prototypes, ordering, descriptors, accessors and array special property rules |
+| math_fonts | util/option_array.cpp | Ordinary array creation, live spread consumption, strict indexOf and mutation-aware filter |
+| tex_parser | util/options.ixx | All twelve Options.ts functions/globals through the frozen Context interface; no separate graph or parser |
+
+Each agent also owns its corresponding `evidence/p3b-*.md` ledger and cannot
+alter contracts, expected results, build files, production or other packets.
+Root rejected source evaluation-order changes and the Windows stack-overflow
+implementation. Exact getter reads were restored and internal copy/insert
+recursion became explicit traversal frames. Revision 2 records that host
+adaptation and the single-definition exported diagnostics ABI. Root accepted
+593 assertions in 21 tests, eight compiling/failing isolated mutations and a
+full core build/test; this does not accept TeX, font resolution or SVG.
+The separate E8 packet authorizes only the read-only profile-usage evidence,
+not code edits or a scope change. G0/G1–G7 remain required for later waves.
 
 ## Wave 2 — semantic tree and configuration infrastructure
 

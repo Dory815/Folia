@@ -1,6 +1,7 @@
 // Root-owned operation fixtures; native implementations never supply expected data.
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+const cp=require('node:child_process');
 const root=path.resolve(__dirname,'../..'),source='ts/util/Options.ts',hash='b810ffc09864eb8ed9295d829b229194d7e38aaac6c8f01525bc1a4b190a61e3';
 const bytes=fs.readFileSync(path.join(root,'.reference/MathJax-src',source));assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),hash);
 const npmRoot=path.join(root,'tools/mathjax-bundle/node_modules/@mathjax/src');assert.equal(require(path.join(npmRoot,'package.json')).version,'4.1.3');
@@ -150,6 +151,15 @@ const g=t.bind('g',function(){return this;},'c.function(u"receiver",[](op::Conte
 const t=new Case('deep_valid_copy');const input={};let cursor=input;for(let i=0;i<511;++i)cursor=cursor.next={};cursor.leaf=7;const copied=O.copy(input);let leaf=copied;for(let i=0;i<511;++i)leaf=leaf.next;assert.equal(leaf.leaf,7);
 out.push('auto input=c.object(),cursor=input;for(int i=0;i<511;++i){auto next=c.object();c.set(op::Value(cursor),op::Key(u"next"),op::Value(next));cursor=next;}c.set(op::Value(cursor),op::Key(u"leaf"),op::Value(7));',
 'op::Value copied;bool completed=true;try{copied=op::copy(c,op::Value(input));}catch(const op::Exception&){completed=false;}expect(completed);if(completed){expect(bool(copied!=op::Value(input)));for(int i=0;i<511;++i)copied=c.get(copied,op::Key(u"next"));',`expect(same(c.get(copied,op::Key(u"leaf")),${t.value(leaf.leaf)}));}`);count+=3;t.finish();
+}
+{
+const t=new Case('warning_utf8_sink');const messages=['𝔸','x\ud800','x\udc00','\ud800x'];
+const script=`const O=require(${JSON.stringify(path.join(npmRoot,'cjs/util/Options.js'))});for(const m of ${JSON.stringify(messages)})O.OPTIONS.optionError(m,'key');`;
+const plain=cp.spawnSync(process.execPath,['-e',script]);assert.equal(plain.status,0);
+out.push('std::ostringstream captured;struct StreamGuard {std::streambuf* old;~StreamGuard(){std::cerr.rdbuf(old);}} stream_guard{std::cerr.rdbuf(captured.rdbuf())};',
+'op::OPTIONS.warningSink=diagnostics_guard.old.warningSink;');
+for(const m of messages)out.push(`op::OPTIONS.optionError(${u(m)},u"key");`);
+out.push(`expect(bool(captured.str()==std::string{${Array.from(plain.stderr,b=>'char(0x'+b.toString(16)+')').join(',')}}));`);count++;t.finish();
 }
 out.push('"math_port_options_host_lifetime"_test=[] {','std::weak_ptr<int> weak; { op::Context c; auto owned=std::make_shared<int>(1); weak=owned; auto a=c.object(); auto b=c.object(); c.set(op::Value(a),op::Key(u"self"),op::Value(a)); c.set(op::Value(a),op::Key(u"other"),op::Value(b)); c.set(op::Value(b),op::Key(u"other"),op::Value(a)); (void)c.function(u"owned",{},std::any(owned)); owned.reset(); expect(!weak.expired()); } expect(weak.expired());',
 'op::Context a,b; bool rejected=false;try{(void)b.get(op::Value(a.object()),op::Key(u"x"));}catch(const op::Exception& e){rejected=e.name=="TypeError";}expect(rejected);',

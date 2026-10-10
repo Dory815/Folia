@@ -96,7 +96,12 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/bbox.ixx
     src/math/util/prioritized_list.ixx
     src/math/util/js_number.ixx
-    src/math/util/lengths.ixx)
+    src/math/util/lengths.ixx
+    src/math/util/option_types.ixx
+    src/math/util/options.ixx)
+target_sources(folia_math PRIVATE
+    src/math/util/option_object.cpp
+    src/math/util/option_array.cpp)
 
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
