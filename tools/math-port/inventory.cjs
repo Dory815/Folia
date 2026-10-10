@@ -11,7 +11,7 @@ const commit = cp.execFileSync('git', ['rev-parse', 'HEAD'], {cwd: sourceRoot, e
 if (commit !== expectedCommit) throw new Error(`Unexpected MathJax source commit: ${commit}`);
 const sha256 = value => crypto.createHash('sha256').update(value).digest('hex');
 const slash = value => value.replaceAll('\\', '/');
-const snake = value => value.replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/([A-Z])([A-Z][a-z])/g, '$1_$2').toLowerCase();
+const snake = value => value === 'BBox' ? 'bbox' : value.replace(/([a-z0-9])([A-Z])/g, '$1_$2').replace(/([A-Z])([A-Z][a-z])/g, '$1_$2').toLowerCase();
 const profilePath = path.join(root, 'tools/mathjax-bundle/entry.cjs');
 const profile = fs.readFileSync(profilePath, 'utf8');
 const packageArray = profile.match(/packages:\s*\[([\s\S]*?)\]/);

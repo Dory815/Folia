@@ -4772,8 +4772,8 @@
     {
       "source": "ts/util/BBox.ts",
       "source_sha256": "a4232fac0fce35a15ad05a4dbb4af0999bf04f90ec3f0fe0c594b22c5da70b5b",
-      "proposed_target": "src/math/util/b_box.ixx",
-      "proposed_module": "folia.math.util.b_box",
+      "proposed_target": "src/math/util/bbox.ixx",
+      "proposed_module": "folia.math.util.bbox",
       "owner": "semantics_util",
       "disposition": "unreviewed",
       "adaptation_reason": "",

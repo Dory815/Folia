@@ -4,9 +4,9 @@ No packet is complete because an agent says it is. Root checks source fidelity,
 independently runs the frozen tests, reviews the diff and records acceptance.
 Agents must not modify architecture, scope, root contracts, the oracle, frozen
 fixtures, build files, production integration or another packet's files.
-Currently only evidence audits and inventory have been dispatched. The rejected
-prototype is archived; the packets below are dependency-ordered and not yet
-accepted for implementation.
+The rejected prototype is archived. Revision-1 primitive contracts and frozen
+fixtures permit only P1, P2 and P3a implementation submissions. These are not
+acceptance of the dependency closure or permission for broader dispatch.
 
 ## Packet template required before dispatch
 
@@ -39,7 +39,9 @@ mutation-tested comparator. Inspect actual MathJax objects for MML attrs,
 classes, BBoxes and wrapper placements rather than recovering everything from
 rounded SVG. The comparator must also inspect complete serialized fragments.
 
-**Acceptance:** G0 and oracle mutation tests in architecture.md. No source item
+**Acceptance:** Full G0 and oracle mutation tests in architecture.md block Wave 2
+and later. A primitive packet can be implemented and locally checked after root
+reviews its own dependency slice and freezes interfaces and fixtures. No source item
 may be unreviewed. No undeclared profile reduction. All snapshots record the
 version/config/source hashes. Source discovery is not scope acceptance.
 
@@ -77,6 +79,9 @@ spacing. Exact discrete fields; frozen full-precision numerical comparison.
 No SVG involved in this packet. G4 primitive gate.
 
 ### P3: PrioritizedList and Options (Luna implementation, root acceptance)
+
+Split into P3a PrioritizedList and P3b Options. Only P3a is dispatched under
+primitive-contracts.md. P3b remains pending recursive option-value contracts.
 
 **Owned files:** `src/math/util/prioritized_list.ixx`, `options.ixx`, their
 implementation units if needed, non-frozen local tests for these utilities.
