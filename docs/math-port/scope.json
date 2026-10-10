@@ -380,7 +380,7 @@
       "proposed_module": "folia.math.core.mml_tree.mml_node",
       "owner": "semantics_util",
       "disposition": "port_with_host_adaptation",
-      "adaptation_reason": "All 111 members (85 executable) mapped and root-reviewed in evidence/p8b-members.json. Split source-method implementation preserves normal/token/layout/base/empty/Text/XML hierarchy over the one generic tree store. Typed compiled factory/UTF-16/opaque XML services, origin tuple records, readonly TEXCLASS exports, post-adoption virtual initialization and shared resource budget are explicit in mml-contracts.md. Scope excludes arbitrary erased JS invocation, sparse/custom iterator/proxy APIs; concrete MML nodes, MmlFactory and DOM/Html integration remain separate unaccepted dependencies. Root acceptance: 1081 assertions/42 cases, 20 compiling mutations, full core suite; evidence/mml-node-acceptance.md.",
+      "adaptation_reason": "All 111 members (85 executable) mapped and root-reviewed in evidence/p8b-members.json. Split source-method implementation preserves normal/token/layout/base/empty/Text/XML hierarchy over the one generic tree store. Typed compiled factory/UTF-16/opaque XML services, origin tuple records, readonly TEXCLASS exports, post-adoption virtual initialization and shared resource budget are explicit in mml-contracts.md. Scope excludes arbitrary erased JS invocation, sparse/custom iterator/proxy APIs; concrete MML nodes, MmlFactory and DOM/Html integration remain separate unaccepted dependencies. Root acceptance: 1084 assertions/43 cases, 20 compiling mutations, full core suite; evidence/mml-node-acceptance.md.",
       "port_status": "implemented",
       "acceptance": "mml_base_gate_passed_root_review",
       "dependencies": [
@@ -481,10 +481,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/math.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.math",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -529,10 +529,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/merror.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.merror",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -593,10 +593,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mi.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mi",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -626,10 +626,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mn.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mn",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -678,10 +678,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mphantom.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mphantom",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -710,10 +710,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mrow.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mrow",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -726,10 +726,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/ms.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.ms",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -742,10 +742,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mspace.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mspace",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -774,10 +774,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mstyle.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mstyle",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/Attributes.ts",
         "ts/core/MmlTree/MmlNode.ts",
@@ -841,10 +841,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mtext.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mtext",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed complete source members in evidence/p9-members.json under leaf-contracts.md. Per-file concrete subclass, source-ordered protected field phase, live copied/aliased defaults and constructor-class metadata. Typed compiled UTF-16 matcher/scalar/collection bindings preserve fixed source grammars; not a JS evaluator. Mstyle falsey notParent states normalize to caller truthiness. Root acceptance: 669 assertions/27 cases including full-unit-domain pattern/whitespace comparisons and native resource checks, 29 compiling/failing mutations, full core suite; evidence/leaf-acceptance.md. Other concrete kinds, full MML registry and downstream layout/integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"

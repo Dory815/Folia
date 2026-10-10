@@ -25,7 +25,8 @@ const out=['// Generated from actual pinned MathJax classes by leaf-oracle.cjs. 
 let assertions=0,cases=0;const emit=s=>out.push(s),q=JSON.stringify,u=s=>'units({'+Array.from({length:s.length},(_,i)=>s.charCodeAt(i)).join(',')+'})';
 const num=n=>Number.isNaN(n)?'std::numeric_limits<double>::quiet_NaN()':n===Infinity?'std::numeric_limits<double>::infinity()':Object.is(n,-0)?'-0.0':String(n)+(Number.isInteger(n)?'.0':'');
 function p(v){if(v===undefined)return 'Property(Missing{})';if(v===null)return 'Property(PropertyNull{})';if(typeof v==='boolean')return 'Property('+v+')';if(typeof v==='number')return 'Property('+num(v)+')';if(typeof v==='string')return 'Property(h::debugText('+u(v)+'))';throw Error('Unbound expected scalar');}
-function eq(v,e){assertions++;emit('expect(bool(('+e+')=='+(typeof v==='string'?q(v):typeof v==='number'?num(v):String(v))+'));');}
+function literal(s){const parts=[];for(let i=0;i<s.length;i+=2048)parts.push(q(s.slice(i,i+2048)));return parts.length?parts.join('\n'):'""';}
+function eq(v,e){assertions++;emit('expect(bool(('+e+')=='+(typeof v==='string'?literal(v):typeof v==='number'?num(v):String(v))+'));');}
 function pp(v,e){assertions++;emit('expect(prop('+e+','+p(v)+'));');}
 function list(v,e){assertions++;emit('expect(bool('+e+'==std::vector<std::string>{'+v.map(q).join(',')+'}));');}
 function throws(fn,e){let error;try{fn();}catch(x){error=x;}assert.ok(error,'Reference must throw');assertions+=2;emit('{bool caught=false;try{'+e+';}catch(const tr::FactoryError&error){caught=true;expect(bool(error.name=='+q(error.name)+'));}expect(caught);}');}
@@ -85,6 +86,75 @@ function text(f,s){return f.create('text').setText(s);}function input(f,k,s,a={}
  const f=begin('math_nested_null_options_failure_after_allocation'),parent=f.create('probe'),n=f.create('math');parent.appendChild(n);let error;class Recorded extends modules.merror.MmlMerror{constructor(...args){super(...args);error=this;}}f.setNodeClass('merror',Recorded);
  emit('auto*parent=f.create("probe");auto*n=f.create("math");parent->appendChild(n);m::MmlNode*error=nullptr;auto c=m::classBinding<m::MmlMerror>();auto original=c->construct;c->construct=[&](m::Factory&f,tr::FactoryArgs a){error=original(f,a);return error;};f.setNodeClass("merror",c);');throws(()=>n.verifyTree(), 'n->verifyTree()');eq(parent.childNodes[0]===n,'at(parent,0)==n');eq(error!==undefined,'error!=nullptr');emit('if(error){');pp(error.attributes.getExplicit('data-mjx-message'),'error->attributes()->getExplicit("data-mjx-message")');eq(error.childNodes.length,'count(error)');eq(error.childNodes[0].childNodes.length,'count(at(error,0))');emit('}');end();
 }
+{
+ const f=begin('source_field_phase_after_virtual_super_hooks'),trace=[];let sets=0;
+ class Trace extends modules.mi.MmlMi{setChildren(c){trace.push(this.texClass);return super.setChildren(c);}set texClass(v){sets++;super.texClass=v;}get texClass(){return super.texClass;}}
+ f.setNodeClass('mi',Trace);const n=f.create('mi');
+ emit('struct Trace:m::MmlMi{using MmlMi::MmlMi;static std::vector<Property>& trace(){static std::vector<Property> v;return v;}static int& sets(){static int v=0;return v;}void setChildren(m::Children c)override{trace().push_back(texClass()?Property(*texClass()):Property(PropertyNull{}));MmlMi::setChildren(c);}void setTexClass(std::optional<double> v)override{++sets();MmlMi::setTexClass(v);}};f.setNodeClass("mi",m::classBinding<Trace>());auto*n=f.create("mi");');eq(trace.length,'Trace::trace().size()');trace.forEach((v,i)=>pp(v,'Trace::trace()['+i+']'));eq(sets,'Trace::sets()');eq(n.texClass,'n->texClass().value_or(-99)');end();
+}
+{
+ const f=begin('row_last_search_reads_replaced_array');
+ class SpaceProbe extends Probe{get isSpacelike(){if(this.onSpace)this.onSpace();return super.isSpacelike;}}
+ f.setNodeClass('probe',SpaceProbe);const r=f.create('mrow'),a=f.create('probe'),b=f.create('probe'),replacement=f.create('probe');a.setProperty('space',true);b.setProperty('space',true);r.childNodes=[a,b];b.onSpace=()=>{r.childNodes=[replacement];};
+ emit('struct SpaceProbe:Probe{using Probe::Probe;std::function<void()> onSpace;bool isSpacelike()const override{if(onSpace)onSpace();return Probe::isSpacelike();}};f.setNodeClass("probe",m::classBinding<SpaceProbe>());auto*r=dynamic_cast<m::MmlMrow*>(f.create("mrow"));auto*a=f.create("probe");auto*b=dynamic_cast<SpaceProbe*>(f.create("probe"));auto*replacement=f.create("probe");a->setProperty("space",true);b->setProperty("space",true);r->childNodes=children({a,b});b->onSpace=[&]{r->childNodes=children({replacement});};');eq(r.lastNonSpace()===replacement,'r->lastNonSpace()==replacement');end();
+}
+{
+ const f=begin('row_core_uses_current_array_after_predicate');
+ class Flicker extends Probe{get isEmbellished(){if(this.callback)this.callback();return super.isEmbellished;}}
+ f.setNodeClass('probe',Flicker);const r=f.create('mrow'),a=f.create('probe'),replacement=f.create('probe');a.setProperty('embellished',true);r.childNodes=[a];a.callback=()=>{r.childNodes=[replacement];};
+ emit('struct Flicker:Probe{using Probe::Probe;std::function<void()> callback;bool isEmbellished()const override{if(callback)callback();return Probe::isEmbellished();}};f.setNodeClass("probe",m::classBinding<Flicker>());auto*r=f.create("mrow");auto*a=dynamic_cast<Flicker*>(f.create("probe"));auto*replacement=f.create("probe");a->setProperty("embellished",true);r->childNodes=children({a});a->callback=[&]{r->childNodes=children({replacement});};');eq(r.core()===replacement,'r->core()==replacement');r.childNodes=[a];a.callback=()=>{r.childNodes=[null];};emit('r->childNodes=children({a});a->callback=[&]{r->childNodes=children({nullptr});};');throws(()=>r.coreMO(),'(void)r->coreMO()');end();
+}
+{
+ const f=begin('row_live_class_iteration_and_current_first_child'),r=f.create('mrow'),a=f.create('probe'),late=f.create('probe'),replacement=f.create('probe');a.texClass=2;late.texClass=3;replacement.texClass=1;const original=[a];r.childNodes=original;a.onClass=()=>{original.push(late);r.childNodes=[replacement];};const result=r.setTeXclass(null);
+ emit('auto*r=f.create("mrow");auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*late=f.create("probe");auto*replacement=f.create("probe");a->setTexClass(2);late->setTexClass(3);replacement->setTexClass(1);auto original=children({a});r->childNodes=original;a->onClass=[&](m::MmlNode*){original->push_back(late);r->childNodes=children({replacement});};auto*result=r->setTeXclass(nullptr);');eq(result===late,'result==late');eq(r.texClass,'r->texClass().value_or(-99)');eq(r.childNodes[0]===replacement,'at(r,0)==replacement');end();
+}
+{
+ const f=begin('mi_tuple_and_property_presence');for(const key of ['autoOP','texClass'])for(const value of [null,false,0,'']){const n=input(f,'mi','sin');n.setProperty(key,value);n.setTeXclass(null);emit('{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty('+q(key)+','+p(value)+');n->setTeXclass(nullptr);');eq(n.texClass,'n->texClass().value_or(-99)');pp(n.getProperty('autoOP'),'n->getProperty("autoOP")');emit('}');}
+ const n=input(f,'mi','x');n.setInheritedAttributes({mathvariant:['mstyle','']});emit('auto*n=create(f,"mi",{},children({text(f,u"x")}));n->setInheritedAttributes(PropertyList{{"mathvariant",m::attributeTuple("mstyle","")}});');pp(n.attributes.get('mathvariant'),'n->attributes()->get("mathvariant")');end();
+}
+{
+ const f=begin('math_mode_display_is_inherited_not_explicit');for(const explicit of [false,true]){const a={mode:'display'};if(explicit)a.display='inline';const spy=f.create('probe'),n=f.create('math',a,[spy]);let level;spy.onInherit=(a,d)=>level=d;n.setInheritedAttributes();emit('{auto*spy=dynamic_cast<Probe*>(f.create("probe"));PropertyList a{{"mode","display"}};'+(explicit?'a.set("display","inline");':'')+'auto*n=create(f,"math",a,children({spy}));Property observed;spy->onInherit=[&](m::AttributeList,Property d,Property,Property){observed=d;};n->setInheritedAttributes();');pp(level,'observed');pp(n.attributes.getInherited('display'),'n->attributes()->getInherited("display")');pp(n.attributes.get('display'),'n->attributes()->get("display")');emit('}');}end();
+}
+{
+ const f=begin('mi_operator_assignment_uses_virtual_setter');let sets=0;
+ class Observe extends modules.mi.MmlMi{get texClass(){return super.texClass;}set texClass(v){sets++;super.texClass=v;}}
+ f.setNodeClass('mi',Observe);const n=input(f,'mi','sin');n.setTeXclass(null);
+ emit('struct Observe:m::MmlMi{using MmlMi::MmlMi;static int& sets(){static int n=0;return n;}void setTexClass(std::optional<double> v)override{++sets();MmlMi::setTexClass(v);}};f.setNodeClass("mi",m::classBinding<Observe>());auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setTeXclass(nullptr);');eq(sets,'Observe::sets()');eq(n.texClass,'n->texClass().value_or(-99)');end();
+}
+{
+ const f=begin('math_each_attributes_access_is_virtual');
+ const A=require(path.join(npm,'cjs/core/MmlTree/Attributes.js')).Attributes;
+ class Sequence extends modules.math.MmlMath{get attributes(){return this.sequence?this.sequence[this.cursor++]:this.saved;}set attributes(v){this.saved=v;}run(){this.setChildInheritedAttributes({},false,0,false);}}
+ f.setNodeClass('math',Sequence);const n=f.create('math');n.sequence=Array.from({length:7},()=>new A(modules.math.MmlMath.defaults,modules.math.MmlMath.defaults));n.sequence[4].set('display','block');n.cursor=0;n.run();
+ emit('struct Sequence:m::MmlMath{using MmlMath::MmlMath;std::vector<std::shared_ptr<folia::math::Attributes>> sequence;mutable std::size_t cursor=0;std::shared_ptr<folia::math::Attributes> attributes()const override{if(sequence.empty())return MmlMath::attributes();if(cursor>=sequence.size())throw tr::FactoryError("TypeError",u"sequence exhausted");return sequence[cursor++];}void run(){setChildInheritedAttributes({},false,0,false);}};f.setNodeClass("math",m::classBinding<Sequence>());auto*n=dynamic_cast<Sequence*>(f.create("math"));for(int i=0;i<7;++i)n->sequence.push_back(std::make_shared<folia::math::Attributes>(m::MmlMath::defaults(),m::MmlMath::defaults()));n->sequence[4]->set("display","block");n->cursor=0;n->run();');eq(n.cursor,'n->cursor');pp(n.sequence[5].getInherited('displaystyle'),'n->sequence[5]->getInherited("displaystyle")');end();
+}
+{
+ const f=begin('mstyle_defaults_precede_first_write_and_partial_throw');
+ class Partial extends modules.mstyle.MmlMstyle{get attributes(){if(this.armed&&++this.calls===2)throw new TypeError('second read');return this.saved;}set attributes(v){this.saved=v;}}
+ f.setNodeClass('mstyle',Partial);const n=f.create('mstyle'),saved=n.attributes;n.armed=true;n.calls=0;
+ emit('struct Partial:m::MmlMstyle{using MmlMstyle::MmlMstyle;bool armed=false;mutable int calls=0;std::shared_ptr<folia::math::Attributes> attributes()const override{if(armed&&++calls==2)throw tr::FactoryError("TypeError",u"second read");return MmlMstyle::attributes();}};f.setNodeClass("mstyle",m::classBinding<Partial>());auto*n=dynamic_cast<Partial*>(f.create("mstyle"));auto saved=n->attributes();n->armed=true;n->calls=0;');throws(()=>n.setInheritedAttributes({},undefined,undefined,undefined),'n->setInheritedAttributes({},Missing{},Missing{},Missing{})');pp(saved.getInherited('displaystyle'),'saved->getInherited("displaystyle")');eq(n.calls,'n->calls');end();
+}
+{
+ const f=begin('inferred_join_snapshots_array_and_length');
+ class Trigger extends N.TextNode{toString(){if(this.callback)this.callback();return super.toString();}}
+ f.setNodeClass('text',Trigger);const r=f.create('inferredMrow'),x=text(f,'a'),y=text(f,'b'),late=text(f,'c');const original=[x,y];r.childNodes=original;x.callback=()=>{original.push(late);r.childNodes=[];};
+ emit('struct Trigger:m::TextNode{using TextNode::TextNode;std::function<void()> callback;std::string toString()const override{if(callback)callback();return TextNode::toString();}};f.setNodeClass("text",m::classBinding<Trigger>());auto*r=f.create("inferredMrow");auto*x=dynamic_cast<Trigger*>(text(f,u"a"));auto*y=text(f,u"b");auto*late=text(f,u"c");auto original=children({x,y});r->childNodes=original;x->callback=[&]{original->push_back(late);r->childNodes=children();};');eq(r.toString(),'r->toString()');eq(r.childNodes.length,'count(r)');end();
+}
+{
+ const f=begin('mstyle_dispatches_only_literal_first_child'),n=f.create('mstyle'),a=f.create('probe'),b=f.create('probe');n.childNodes=[a,b];let calls=[0,0];a.onInherit=()=>calls[0]++;b.onInherit=()=>calls[1]++;n.setInheritedAttributes();
+ emit('auto*n=f.create("mstyle");auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));n->childNodes=children({a,b});std::array<int,2> calls{};a->onInherit=[&](m::AttributeList,Property,Property,Property){++calls[0];};b->onInherit=[&](m::AttributeList,Property,Property,Property){++calls[1];};n->setInheritedAttributes();');calls.forEach((v,i)=>eq(v,'calls['+i+']'));end();
+}
+{
+ const f=begin('newline_is_suppressed_by_break_constraints');for(const a of [{linebreak:'newline',height:0},{linebreak:'indentingnewline',width:'-1em'}]){const n=f.create('mspace',a);emit('{auto*n=dynamic_cast<m::MmlMspace*>(create(f,"mspace",PropertyList{'+Object.entries(a).map(([k,v])=>'{'+q(k)+','+p(v)+'}').join(',')+'}));');eq(n.hasNewline,'n->hasNewline()');emit('}');}end();
+}
+{
+ const f=begin('static_bindings_copy_alias_and_live_callbacks'),R=modules.mrow.MmlMrow,I=modules.mrow.MmlInferredMrow,Mi=modules.mi.MmlMi;
+ eq(R.defaults===I.defaults,'Property(m::MmlMrow::defaults())==Property(m::MmlInferredMrow::defaults())');R.defaults['p9-own']=1;emit('m::MmlMrow::defaults().set("p9-own",1);');pp(I.defaults['p9-own'],'m::MmlInferredMrow::defaults().get("p9-own")');pp(Mi.defaults['p9-own'],'m::MmlMi::defaults().get("p9-own")');delete R.defaults['p9-own'];emit('m::MmlMrow::defaults().erase("p9-own");');
+ const old=Mi.singleCharacter;Mi.singleCharacter=/^xyz$/;const n=input(f,'mi','xyz');n.setInheritedAttributes();emit('auto old=m::MmlMi::singleCharacter();m::MmlMi::singleCharacter()=[](std::u16string_view s){return s==u"xyz";};auto*n=create(f,"mi",{},children({text(f,u"xyz")}));n->setInheritedAttributes();');pp(n.attributes.get('mathvariant'),'n->attributes()->get("mathvariant")');Mi.singleCharacter=old;emit('m::MmlMi::singleCharacter()=old;');
+ modules.mspace.MmlMspace.NONSPACELIKE.push('width');const space=f.create('mspace',{width:'1em'});emit('m::MmlMspace::NONSPACELIKE().push_back("width");auto*space=dynamic_cast<m::MmlMspace*>(create(f,"mspace",PropertyList{{"width","1em"}}));');eq(space.canBreak,'space->canBreak()');modules.mspace.MmlMspace.NONSPACELIKE.pop();emit('m::MmlMspace::NONSPACELIKE().pop_back();');end();
+}
+// Native resource capacity is frozen literally; these do not probe VM stack size.
+cases++;assertions+=6;emit('"math_port_leaf_native_recursive_budget_recovery"_test=[] {F f(classes());auto*root=f.create("mrow");auto*tail=root;for(int i=1;i<512;++i){auto*next=f.create("mrow");tail->childNodes=children({next});tail=next;}expect(root->isSpacelike());tail->childNodes=children({f.create("mrow")});bool caught=false;try{(void)root->isSpacelike();}catch(const tr::FactoryError&e){caught=e.name=="RangeError";}expect(caught);expect(f.create("mrow")->isSpacelike());root=f.create("inferredMrow");tail=root;for(int i=1;i<512;++i){auto*next=f.create("inferredMrow");tail->childNodes=children({next});tail=next;}expect(bool(root->toString().size()==1024));tail->childNodes=children({f.create("inferredMrow")});caught=false;try{(void)root->toString();}catch(const tr::FactoryError&e){caught=e.name=="RangeError";}expect(caught);expect(bool(f.create("inferredMrow")->toString()=="[]"));};');
 out.push('};');const target=path.join(root,'tests/math/reference_leaf.cpp'),output=out.join('\n')+'\n';
 if(process.argv.includes('--check'))assert.equal(fs.readFileSync(target,'utf8').replaceAll('\r\n','\n'),output,'Frozen leaf fixture changed');else fs.writeFileSync(target,output);
 console.log(JSON.stringify({sources:lock.files.length,assertions,cases,mode:process.argv.includes('--check')?'check':'generate'}));

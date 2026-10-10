@@ -31,11 +31,20 @@ UTF-16 regex semantics; no wchar regex or codepoint substitution. Root's host
 functions implement those fixed grammars, whitespace, parseInt and primitive
 addition; agents must use them and cannot invent character/number shortcuts.
 There is no arbitrary RegExp parser/evaluator in the raw-TeX API.
+Pinned TS search finds no assignment to mi patterns beyond their declarations;
+MmlVisitor and mi only read them. Callable native replacements stay live; an
+empty native callback is an invalid binding TypeError, not a JS undefined regex.
+Whitespace uses the accepted numeric-input service's shared ECMAScript table.
 
 MmlError ErrorOptions distinguishes an empty map from null. Reading options
 from null throws at the source read, after any earlier error-node allocation
 and message write. A nested math verifyTree(null) must retain this behavior.
 Existing non-null option calls retain the same record identity.
+Source default parameters apply to explicit Missing as well as omitted arguments.
+Mi, Mstyle and the common superclass normalize display/level/prime at their
+declared method entry, before any writes; protected no-default methods preserve
+their incoming values. Root's partial-write witness prevents a later superclass
+normalization from masking a missing subclass entry normalization.
 
 ## Exact writable packets
 

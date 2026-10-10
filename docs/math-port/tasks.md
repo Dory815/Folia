@@ -272,8 +272,8 @@ API; they need caller evidence and separately frozen behavior before expansion.
 Root froze `mml-contracts.md`, public semantic declarations, class-default and
 tuple bindings, Property null/object support, and actual pinned-CJS expectations
 in 0b315bc before dispatch. The source has 111 inventoried members, 85 executable
-members; root independently expanded the oracle to 1,081 assertions in 42 cases
-(1,074 actual-runtime assertions plus seven explicit native resource assertions).
+members; root independently expanded the oracle to 1,084 assertions in 43 cases
+(1,077 actual-runtime assertions plus seven explicit native resource assertions).
 
 | Agent | Sole implementation/evidence files | Responsibility |
 | --- | --- | --- |
@@ -289,6 +289,31 @@ node classes/parser/layout rules or integrates production. Test-only registered
 subclasses validate the actual base methods through injected factories; they
 cannot substitute for production MML-kind implementations. No mathematical
 node gate is passed merely by compiling this hierarchy.
+
+### P9: concrete row/root/token/style nodes
+
+Root froze `leaf-contracts.md`, ten per-file module interfaces, native class
+metadata/default bindings, primitives and 610 actual-CJS assertions in commit
+5f50819 before dispatch. The source inventory has 62 members, including 39
+executable members. Exact writable packets were:
+
+| Agent | Source files under core/mml_tree/mml_nodes | Evidence |
+| --- | --- | --- |
+| math_layout | mrow.cpp; math.cpp | p9-row-math.md |
+| tex_parser | mi.cpp; mn.cpp; mtext.cpp; ms.cpp; mspace.cpp | p9-tokens.md |
+| math_fonts | mstyle.cpp; merror.cpp; mphantom.cpp | p9-style.md |
+
+Root supplies all static defaults and bindings, class_binding, leaf_host and
+all interfaces, fixtures, mutation tools, CMake and acceptance. An independent
+review is evidence only. Agents cannot register a partial MML factory or wire
+production. Root's source review and differential tests rejected bypassed
+virtual class setters, collapsed attributes getter reads, incorrect C++ enum
+qualification and Missing scalar arguments bypassing source entry defaults.
+Final fixtures currently have 669 assertions in 27 cases, including six native
+resource assertions and five entire-UTF-16-unit-domain bitset comparisons.
+Root accepted all 29 compiling/failing isolated mutations, the updated base
+suite and its twenty mutations, and the full core suite. Detailed acceptance
+is evidence/leaf-acceptance.md; no complete renderer gate is implied.
 
 ## Wave 3 — base/AMS input and complete font services
 

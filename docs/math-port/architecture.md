@@ -6,7 +6,8 @@ Prerequisite utilities have local acceptance recorded in
 `evidence/options-acceptance.md`, `evidence/factory-acceptance.md` and
 `evidence/tree-acceptance.md`, plus explicit runtime primitive adaptations in
 `evidence/input-host-acceptance.md` and MML base hierarchy acceptance in
-`evidence/mml-node-acceptance.md`; this
+`evidence/mml-node-acceptance.md`, plus the first ten concrete node files in
+`evidence/leaf-acceptance.md`; this
 does not pass a full renderer gate.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.

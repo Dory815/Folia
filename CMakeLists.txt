@@ -102,6 +102,19 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/attributes.ixx
     src/math/core/mml_tree/mml_node_host.ixx
     src/math/core/mml_tree/mml_node.ixx
+    src/math/core/mml_tree/class_binding.ixx
+    src/math/core/mml_tree/leaf_host.ixx
+    src/math/core/mml_tree/leaf_defaults.ixx
+    src/math/core/mml_tree/mml_nodes/mrow.ixx
+    src/math/core/mml_tree/mml_nodes/math.ixx
+    src/math/core/mml_tree/mml_nodes/mi.ixx
+    src/math/core/mml_tree/mml_nodes/mn.ixx
+    src/math/core/mml_tree/mml_nodes/mtext.ixx
+    src/math/core/mml_tree/mml_nodes/ms.ixx
+    src/math/core/mml_tree/mml_nodes/mspace.ixx
+    src/math/core/mml_tree/mml_nodes/mstyle.ixx
+    src/math/core/mml_tree/mml_nodes/merror.ixx
+    src/math/core/mml_tree/mml_nodes/mphantom.ixx
     src/math/util/constants.ixx
     src/math/util/bbox.ixx
     src/math/util/prioritized_list.ixx
@@ -117,6 +130,26 @@ target_sources(folia_math PRIVATE
     src/math/core/mml_tree/mml_node.cpp
     src/math/core/mml_tree/mml_branches.cpp
     src/math/core/mml_tree/mml_empty.cpp
+    src/math/core/mml_tree/mml_nodes/mrow_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mrow.cpp
+    src/math/core/mml_tree/mml_nodes/math_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/math.cpp
+    src/math/core/mml_tree/mml_nodes/mi_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mi.cpp
+    src/math/core/mml_tree/mml_nodes/mn_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mn.cpp
+    src/math/core/mml_tree/mml_nodes/mtext_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mtext.cpp
+    src/math/core/mml_tree/mml_nodes/ms_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/ms.cpp
+    src/math/core/mml_tree/mml_nodes/mspace_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mspace.cpp
+    src/math/core/mml_tree/mml_nodes/mstyle_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mstyle.cpp
+    src/math/core/mml_tree/mml_nodes/merror_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/merror.cpp
+    src/math/core/mml_tree/mml_nodes/mphantom_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mphantom.cpp
     src/math/util/option_object.cpp
     src/math/util/option_array.cpp)
 
