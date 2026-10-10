@@ -371,6 +371,29 @@ assertions, all 20 new mutants, 77 existing mutants and the final complete core
 suite. Read-only helper constness correction was verified independently. This
 does not authorize Mo dispatch until its own declarations and fixtures freeze.
 
+### P12b: exact Mo pattern prerequisites
+
+Root freezes mo-pattern-contracts.md, mo_patterns.ixx, actual source metadata
+and 971 initial assertions/16 cases before dispatch. The reference locks the
+entire 424-file compiled source package, the exact Mo TS/CJS and Node version.
+The fixture makes 2,342,329 actual source queries, including 30 entire UTF-16
+domain masks, mixed class products, malformed text and callback lifetimes.
+Root owns the data, oracle, tests, CMake, mutations and acceptance.
+
+| Agent | Sole implementation/review file | Sole evidence |
+| --- | --- | --- |
+| tex_parser | core/mml_tree/mo_patterns.cpp: matchMoPattern, makeMoPattern only | evidence/p12b-pattern-implementation.md |
+| math_layout | Read-only source/data/interface review | evidence/p12b-pattern-source-review.md |
+| math_fonts | Read-only oracle/coverage/lock review | evidence/p12b-pattern-fixture-review.md |
+
+Agents cannot change shared interfaces, generated data, tests/expectations,
+contracts, CMake, source lock, registry or production; no builds/commits.
+Needed changes return to root. This packet ports the five known no-flags UTF-16
+predicates through compiled callbacks, not a generic JS regex VM. Default source
+patterns, bounds and data stay exact; later Mo live static/constructor services
+remain a separate root-frozen packet. No partial Mo registration or broader
+gate acceptance follows from this prerequisite.
+
 ## Wave 3 — base/AMS input and complete font services
 
 P11 is locally accepted under operator-contracts.md revision 2. Root froze the
