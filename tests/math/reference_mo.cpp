@@ -23,10 +23,11 @@ bool prop(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.va
 m::Children children(std::initializer_list<m::MmlNode*>v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}
 struct Mo:m::MmlMo{using MmlMo::MmlMo;Property op(std::u16string_view s){return getOperatorDef(s);}void table(std::u16string_view s){checkOperatorTable(s);}PropertyArray forms(PropertyArray a){return handleExplicitForm(a);}void pseudo(std::u16string_view s){checkPseudoScripts(s);}void prime(std::u16string_view s){checkPrimes(s);}void accent(std::u16string_view s){checkMathAccent(s);}};
 struct Fork:Mo{using Mo::Mo;static Property&operatorTable(){static Property p=PropertyList{{"infix",PropertyList{}},{"prefix",PropertyList{}},{"postfix",PropertyList{}}};return p;}static Property&mathSpacing(){static Property p=[] {PropertyArray a;for(int i=0;i<8;++i)a.push(PropertyArray{9,8});return Property(a);}();return p;}};
-using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode> classes(){return {{"mo",m::classBinding<Mo>()},{"fork",m::classBinding<Fork>()},{"math",m::classBinding<m::MmlMath>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"mi",m::classBinding<m::MmlMi>()},{"mn",m::classBinding<m::MmlMn>()},{"mtext",m::classBinding<m::MmlMtext>()},{"ms",m::classBinding<m::MmlMs>()},{"mspace",m::classBinding<m::MmlMspace>()},{"mstyle",m::classBinding<m::MmlMstyle>()},{"merror",m::classBinding<m::MmlMerror>()},{"mphantom",m::classBinding<m::MmlMphantom>()},{"msubsup",m::classBinding<m::MmlMsubsup>()},{"msub",m::classBinding<m::MmlMsub>()},{"msup",m::classBinding<m::MmlMsup>()},{"munderover",m::classBinding<m::MmlMunderover>()},{"munder",m::classBinding<m::MmlMunder>()},{"mover",m::classBinding<m::MmlMover>()},{"text",m::classBinding<m::TextNode>()}};}
+using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassRef<m::MmlNode> absentTeXAtom(){auto c=std::make_shared<tr::FactoryClass<m::MmlNode>>();c->isInstance=[](const m::MmlNode*){return false;};return c;}tr::FactoryClassMap<m::MmlNode> classes(){return {{"TeXAtom",absentTeXAtom()},{"mo",m::classBinding<Mo>()},{"fork",m::classBinding<Fork>()},{"math",m::classBinding<m::MmlMath>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"mi",m::classBinding<m::MmlMi>()},{"mn",m::classBinding<m::MmlMn>()},{"mtext",m::classBinding<m::MmlMtext>()},{"ms",m::classBinding<m::MmlMs>()},{"mspace",m::classBinding<m::MmlMspace>()},{"mstyle",m::classBinding<m::MmlMstyle>()},{"merror",m::classBinding<m::MmlMerror>()},{"mphantom",m::classBinding<m::MmlMphantom>()},{"msubsup",m::classBinding<m::MmlMsubsup>()},{"msub",m::classBinding<m::MmlMsub>()},{"msup",m::classBinding<m::MmlMsup>()},{"munderover",m::classBinding<m::MmlMunderover>()},{"munder",m::classBinding<m::MmlMunder>()},{"mover",m::classBinding<m::MmlMover>()},{"text",m::classBinding<m::TextNode>()}};}
 m::MmlNode* create(NF&f,std::string_view kind,PropertyList a={},m::Children c=children()){return f.create(kind,std::array<std::any,2>{a,c});}
 m::MmlNode* token(NF&f,std::string_view k,std::u16string_view s,PropertyList a={}){auto*t=dynamic_cast<m::TextNode*>(f.create("text"));t->setText(std::u16string(s));return create(f,k,a,children({t}));}
 Mo* mo(NF&f,std::u16string_view s,PropertyList a={},std::string_view k="mo"){return dynamic_cast<Mo*>(token(f,k,s,a));}
+std::u16string checkedCore(Mo*n,m::MmlNode*p){try{return n->coreText(p);}catch(const m::Error&e){std::cerr<<"coreText("<<(p?p->kind():"null")<<"): "<<e.name<<": "<<h::debugText(e.message)<<"\n";throw;}}
 }
 suite math_port_mo_tests=[] {
 "math_port_mo_source_defaults_aliases_and_initialization"_test=[] {
@@ -5745,10 +5746,10 @@ expect(bool((n->isMathAccentWithWidth(std::u16string_view(u"")))==false));
 }
 {auto*n=mo(f,u"+");auto*x=token(f,"mi",u"x");auto*style=create(f,"mstyle",{},children({n}));auto*math=create(f,"math",{},children({style}));
 expect(bool((n->coreParent()==style->parent)==true));
-expect(bool((h::debugText(n->coreText(nullptr)))==""));
-expect(bool((h::debugText(n->coreText(style)))=="+"));
-expect(bool((h::debugText(n->coreText(x)))=="x"));
-expect(bool((h::debugText(n->coreText(math)))=="+"));
+expect(bool((h::debugText(checkedCore(n,nullptr)))==""));
+expect(bool((h::debugText(checkedCore(n,style)))=="+"));
+expect(bool((h::debugText(checkedCore(n,x)))=="x"));
+expect(bool((h::debugText(checkedCore(n,math)))=="+"));
 }
 };
 "math_port_mo_orphan_binary_error_and_width_accent"_test=[] {
