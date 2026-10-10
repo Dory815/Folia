@@ -1,4 +1,4 @@
-# P8b: MmlNode semantic hierarchy — revision 1
+# P8b: MmlNode semantic hierarchy — revision 2
 
 Root owns this contract, declarations, bindings, expectations, builds and
 acceptance. Source is MathJax 4.1.3 commit
@@ -21,6 +21,9 @@ Getter/setter functions replace JS properties, including read-only empty-node
 setter TypeErrors. TeX classes preserve null via optional<double>; previous level
 preserves raw Property, with PropertyNull distinct from Missing and every scalar.
 Property-valued display/level/prime arguments preserve erased-TS-cast behavior.
+Missing arguments at methods declaring defaults receive false/0/false even when
+explicitly supplied, as emitted JavaScript default parameters do. Null and other
+raw values remain unchanged. Protected methods without defaults do not normalize.
 Attributes remain shared four-layer Attributes handles, never flattened.
 
 Root extended Property with null and a typed object-handle accessor; null
@@ -42,6 +45,15 @@ not a new object model. Inherited lists still use assignment/prototype semantics
 and own-key ordering, including __proto__ assignment. Foreign iterator/getter
 behavior is not part of this native tuple binding. Missing/corrupt bindings raise
 TypeError. No parser-produced origin/value may be discarded or normalized.
+
+P9 adds root-owned constructor metadata binding without a second attribute
+store. Registered class defaults and actual-constructor defaults are distinct
+source lookups: initializeMml reads the registry, later this.constructor.defaults
+reads the captured class with a live defaults resolver. Per-kind protected field
+initializers run after the virtual superclass constructor phase, and use direct
+storage writes; semantic assignments still invoke virtual setters. ErrorOptions
+represents non-null records and null; a null options read throws after preceding
+mError allocation/message effects, as required by nested math verification.
 
 Registered class staticData carries shared MmlClassInfo with optional live
 defaults. Missing own defaults is the Object.assign empty-source case; missing

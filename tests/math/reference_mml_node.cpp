@@ -2075,5 +2075,11 @@ expect(bool((at(parent,0)->kind())=="token"));
 expect(prop(at(parent,0)->attributes()->getExplicit("data-mjx-message"),Property(Missing{})));
 }
 };
+"math_port_mml_node_explicit_undefined_inheritance_arguments_use_source_defaults"_test=[] {F f(classes());
+auto*parent=f.create("plain");auto*child=dynamic_cast<Leaf*>(f.create("leaf"));parent->appendChild(child);std::array<Property,3> seen;child->onInherit=[&](m::AttributeList,Property d,Property l,Property p){seen={d,l,p};};parent->setInheritedAttributes({},Missing{},Missing{},Missing{});
+expect(prop(seen[0],Property(false)));
+expect(prop(seen[1],Property(0.0)));
+expect(prop(seen[2],Property(false)));
+};
 "math_port_mml_node_native_budget_and_recovery"_test=[] {tr::AbstractNodeFactory<m::MmlNode> f(classes());auto*root=f.create("plain");auto*tail=root;for(std::size_t i=1;i<512;++i){auto*next=f.create("plain");tail->childNodes=children({next});next->parent=tail;tail=next;}expect(root->isEmpty());tail->childNodes=children({f.create("plain")});bool caught=false;try{(void)root->isEmpty();}catch(const tr::FactoryError&e){caught=e.name=="RangeError";}expect(caught);expect(f.create("plain")->isEmpty());auto*tokenRoot=f.create("token");tail=tokenRoot;for(std::size_t i=1;i<512;++i){auto*next=f.create(i%2?"plain":"token");tail->childNodes=children({next});next->parent=tail;tail=next;}std::size_t visits=0;tokenRoot->walkTree([&](m::MmlNode*,const std::any&){++visits;});expect(bool(visits==512));tail->childNodes=children({f.create("plain")});caught=false;try{tokenRoot->walkTree([](m::MmlNode*,const std::any&){});}catch(const tr::FactoryError&e){caught=e.name=="RangeError";}expect(caught);expect(f.create("token")->isEmpty());visits=0;f.create("token")->walkTree([&](m::MmlNode*,const std::any&){++visits;});expect(bool(visits==1));};
 };

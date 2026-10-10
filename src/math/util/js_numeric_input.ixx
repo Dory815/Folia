@@ -5,6 +5,7 @@ import std;
 
 export namespace folia::math::js_input {
 enum class IntegerRadix { Automatic = 0, Octal = 8, Decimal = 10, Hex = 16 };
+bool isWhitespace(char16_t unit);
 
 double number(std::u16string_view text);
 double parseInt(std::u16string_view text,
@@ -291,6 +292,8 @@ double number(std::u16string_view input) {
     }
     return std::numeric_limits<double>::quiet_NaN();
 }
+
+bool isWhitespace(char16_t unit){return is_space(unit);}
 
 double parseInt(std::u16string_view input, IntegerRadix requested) {
     unsigned radix = 0;

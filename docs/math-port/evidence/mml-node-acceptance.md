@@ -40,11 +40,12 @@ variant-only case; expected values were never derived from native results.
 ## Validation
 
 - Oracle --check verifies clone/package source equality and runtime resolution
-  and hashes. It reproduces 41 actual-CJS cases with 1,074 assertions.
+  and hashes. With P9's default-argument regression it reproduces 42 actual-CJS
+  cases with 1,077 assertions.
 - Seven further native assertions freeze the literal 512-call resource budget,
   overflow RangeError, shared normal/token traversal and subsequent recovery.
   They do not claim the VM has the same stack capacity.
-- Native filtered build passes all 1,081 assertions in 42 tests. The complete
+- Native filtered build passes all 1,084 assertions in 43 tests. The complete
   `cmd /c build_test.bat 2>&1` build and core suite pass.
 - `mml-node-mutation-test.cjs` passes an isolated baseline and detects all
   twenty deliberate regressions: signed spacing, virtual class dispatch,
@@ -56,6 +57,13 @@ variant-only case; expected values were never derived from native results.
   resource capacity and token walk identity. All mutations compile and exit 1
   through assertion failures. Working sources and fixtures remain byte-equal.
   Logs/results remain ignored under build/math-port-mml-node-mutations.
+
+P9's concrete-node differential tests exposed a prerequisite bug: explicit
+Missing scalar arguments did not apply source default parameters. Root repaired
+the shared method-entry boundary, froze a CJS regression and verified the whole
+core suite plus all twenty base mutations again. Constructor-default resolvers,
+post-super concrete field phases and nullable ErrorOptions extend the native
+binding for real callers; they do not change the original source-method mapping.
 
 ## Explicit host boundaries
 

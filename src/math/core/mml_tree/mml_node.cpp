@@ -366,6 +366,7 @@ bool AbstractMmlNode::hasSpacingAttributes() {
 void AbstractMmlNode::setInheritedAttributes(AttributeList inherited, Property display,
                                               Property level, Property prime) {
     tree::TreeCallGuard<MmlNode> guard;
+    host::inheritanceDefaults(display,level,prime);
     auto attrs = attributes();
     if (!attrs) host::typeError("Cannot read defaults from null attributes");
     const auto defaults = attrs->getAllDefaults();

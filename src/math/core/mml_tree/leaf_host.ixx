@@ -8,11 +8,7 @@ export namespace folia::math::mml {
 using Pattern=std::function<bool(std::u16string_view)>;
 namespace host {
 inline bool nullish(const Property& p){return p.missing()||std::holds_alternative<PropertyNull>(p.value);}
-inline bool isSpace(char16_t c){
-    switch(c){case 0x9:case 0xa:case 0xb:case 0xc:case 0xd:case 0x20:case 0xa0:case 0x1680:
-    case 0x2000:case 0x2001:case 0x2002:case 0x2003:case 0x2004:case 0x2005:case 0x2006:case 0x2007:case 0x2008:case 0x2009:case 0x200a:
-    case 0x2028:case 0x2029:case 0x202f:case 0x205f:case 0x3000:case 0xfeff:return true;default:return false;}
-}
+inline bool isSpace(char16_t c){return js_input::isWhitespace(c);}
 inline std::u16string_view trimStart(std::u16string_view s){while(!s.empty()&&isSpace(s.front()))s.remove_prefix(1);return s;}
 inline std::u16string_view trim(std::u16string_view s){s=trimStart(s);while(!s.empty()&&isSpace(s.back()))s.remove_suffix(1);return s;}
 inline bool onlySpaces(std::u16string_view s){return std::all_of(s.begin(),s.end(),isSpace);}

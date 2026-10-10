@@ -7,6 +7,11 @@ import folia.math.util.js_numeric_input;
 import folia.math.util.utf16;
 import std;
 export namespace folia::math::mml::host {
+inline void inheritanceDefaults(Property& display,Property& level,Property& prime){
+    if(display.missing())display=false;
+    if(level.missing())level=0;
+    if(prime.missing())prime=false;
+}
 [[noreturn]] inline void typeError(std::string_view message){throw tree::FactoryError("TypeError",std::u16string(message.begin(),message.end()));}
 inline bool truthy(const Property& p){
     if(p.missing()||std::holds_alternative<PropertyNull>(p.value))return false;
