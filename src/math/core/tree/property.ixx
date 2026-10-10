@@ -5,6 +5,7 @@ import std;
 
 export namespace folia::math {
 struct Missing { bool operator==(const Missing&) const = default; };
+struct PropertyNull { bool operator==(const PropertyNull&) const = default; };
 // Object.prototype values are observable on malformed attribute names, but are
 // not callable math services. Keep their identities, rather than stringify them.
 enum class BuiltinProperty {
@@ -15,11 +16,12 @@ enum class BuiltinProperty {
 struct PropertyStorage;
 class PropertyList;
 struct Property {
-    using Value = std::variant<Missing, bool, double, std::string, BuiltinProperty,
+    using Value = std::variant<Missing, PropertyNull, bool, double, std::string, BuiltinProperty,
                                std::shared_ptr<PropertyStorage>>;
     Value value = Missing{};
     Property() = default;
     Property(Missing v) : value(v) {}
+    Property(PropertyNull v) : value(v) {}
     Property(bool v) : value(v) {}
     Property(double v) : value(v) {}
     Property(int v) : value(double(v)) {}
@@ -33,6 +35,7 @@ struct Property {
 struct PropertyStorage {
     std::vector<std::pair<std::string, Property>> entries;
     std::shared_ptr<PropertyStorage> prototype;
+    bool objectPrototype = true;
 };
 
 // Copies are handles to the same dictionary, like JS object references. Own
@@ -60,8 +63,13 @@ class PropertyList {
         return Missing{};
     }
     static Property resolve(const std::shared_ptr<Storage>& storage, std::string_view name) {
+        bool ordinary = true;
         for (auto p = storage; p; p = p->prototype)
+        {
             for (const auto& [key, value] : p->entries) if (key == name) return value;
+            ordinary = p->objectPrototype;
+        }
+        if (!ordinary) return Missing{};
         if (name == "__proto__" && storage->prototype) {
             Property value;
             value.value = storage->prototype;
@@ -78,6 +86,12 @@ class PropertyList {
     }
 public:
     PropertyList() = default;
+    static std::optional<PropertyList> object(const Property& value) {
+        if (auto p = std::get_if<std::shared_ptr<Storage>>(&value.value); p && *p) {
+            PropertyList result; result.storage_ = *p; return result;
+        }
+        return {};
+    }
     PropertyList(std::initializer_list<std::pair<std::string, Property>> entries) {
         for (const auto& [key, value] : entries) setOwn(key, value);
     }
@@ -96,9 +110,13 @@ public:
         return false;
     }
     bool has(std::string_view name) const {
+        bool ordinary = true;
         for (auto p = storage_; p; p = p->prototype)
+        {
             for (const auto& [key, value] : p->entries) if (key == name) return true;
-        return !builtin(name).missing();
+            ordinary = p->objectPrototype;
+        }
+        return ordinary && !builtin(name).missing();
     }
     void setOwn(std::string_view name, Property value) {
         for (auto& [key, old] : storage_->entries) if (key == name) {
@@ -111,15 +129,24 @@ public:
         // An own data property on any layer instead allows a new own property.
         if (name == "__proto__") {
             bool data = false;
+            bool ordinary = true;
             for (auto p = storage_; p; p = p->prototype)
+            {
                 for (const auto& [key, v] : p->entries) if (key == name) data = true;
-            if (!data) {
+                ordinary = p->objectPrototype;
+            }
+            if (!data && ordinary) {
                 if (auto parent = std::get_if<std::shared_ptr<Storage>>(&value.value)) {
                     for (auto p = *parent; p; p = p->prototype)
                         if (p == storage_) throw std::invalid_argument("Cyclic __proto__ value");
                     storage_->prototype = *parent;
+                    storage_->objectPrototype = true;
                 } else if (value.value == Property::Value(BuiltinProperty::prototype)) {
                     storage_->prototype.reset();
+                    storage_->objectPrototype = true;
+                } else if (std::holds_alternative<PropertyNull>(value.value)) {
+                    storage_->prototype.reset();
+                    storage_->objectPrototype = false;
                 }
                 return;
             }
