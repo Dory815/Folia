@@ -37,10 +37,9 @@ AST discovery never approves behavior, targets, exclusions or acceptance.
 
 ## Current dispatch: reference evidence, not renderer implementation
 
-Root has reviewed and accepted Attributes, BBox, PrioritizedList and lengths
-(with the explicit table/API host adaptations in `numeric-contracts.md`), Options
-(with `options-contracts.md` host adaptations), plus the separate native Number
-formatting host helper. The other 241 inventory
+Root has locally accepted ten of 246 inventory entries: Attributes, BBox,
+PrioritizedList, lengths, Options and five generic Tree files. The separate
+native Number formatting helper is a host adaptation. The other 236 inventory
 entries are still unreviewed. Broad parser/layout implementation packets remain undispatched;
 agents cannot fill missing prerequisites with a substitute architecture.
 
@@ -245,6 +244,28 @@ Configuration/ParseOptions and Stack/StackItem/StackItemFactory. Each has exact
 file ownership. Validate semantic nodes independently of TeX first, then maps
 and stack transitions. G1/G2 infrastructure must pass; no layout may consume a
 custom AST as a shortcut.
+
+### P8a: explicit MML/input primitive host services
+
+Root freezes `input-host-contracts.md` revision 1, `utf16_types.ixx` and
+`input-host-oracle.cjs`/`reference_input_host.cpp` before dispatch. The oracle
+uses actual Node 24.13.0 operations, with 3,159 frozen assertions, bit-exact
+binary64 comparisons and deterministic generated inputs. This is a host
+prerequisite; MmlNode.ts and every concrete mathematical node remain unaccepted.
+
+| Agent | Sole writable files | Responsibility |
+| --- | --- | --- |
+| math_layout | util/js_numeric_input.ixx; evidence/p8a-numeric-input.md | Number(string), scoped parseInt(string, radix), grammar/whitespace/prefix/error/rounding |
+| tex_parser | util/utf16.ixx; evidence/p8a-utf16.md | UTF-16 indexing/iteration; strict UTF-8 decoding and diagnostic byte-offset map; UTF-8 encoding boundary |
+| math_fonts | evidence/e11-mml-host-usage.md | Read-only actual CJS MML state/caller audit; no implementation authority |
+
+Root owns interfaces, expected results, CMake, mutation tests, independent
+source review, builds, commits and acceptance. No agent may edit these files,
+introduce object coercion, an interpreter, a parser, substitute defaults, or
+wire production. A source annotation is not sufficient evidence for runtime
+types or state: root rejected E11's missing-empty-child-array claim and checked
+actual Text/XML construction. Extra radices are not in the frozen parseInt
+API; they need caller evidence and separately frozen behavior before expansion.
 
 ## Wave 3 — base/AMS input and complete font services
 
