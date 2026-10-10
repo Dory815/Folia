@@ -63,7 +63,7 @@ export namespace folia::platform::editor
 
             // Actual elapsed time and an analytic exponential response give
             // one monotonic deceleration phase independent of frame rate.
-            constexpr float responseHalfLifeSeconds = 0.075f;
+            constexpr float responseHalfLifeSeconds = 0.030f;
             auto response = 1.0f - std::exp2(-elapsed / responseHalfLifeSeconds);
             offset_ += distance * response;
             return true;

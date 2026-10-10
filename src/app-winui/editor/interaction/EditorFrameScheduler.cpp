@@ -126,14 +126,14 @@ namespace winrt::Folia
     void EditorFrameScheduler::Start()
     {
         if (!dispatchState) return;
-        dispatchState->targetFrameIntervalSeconds.store(
-            DisplayRefreshInterval(windowHandle),
-            std::memory_order_release);
         if (running)
         {
             RequestFrame();
             return;
         }
+        dispatchState->targetFrameIntervalSeconds.store(
+            DisplayRefreshInterval(windowHandle),
+            std::memory_order_release);
         running = true;
         lastFrame = std::chrono::steady_clock::now();
         generation = dispatchState->generation.fetch_add(1, std::memory_order_acq_rel) + 1;
