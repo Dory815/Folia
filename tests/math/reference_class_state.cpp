@@ -4271,6 +4271,13 @@ struct Case{unsigned previousLevel,currentLevel,currentClass,outcome;std::string
 "math_port_class_state_null_node_guards"_test=[] {
 const std::array<bool,29> selectsSelf={false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true};F f(classes());auto values=inputs();for(std::size_t i=0;i<values.size();++i){const auto&v=values[i];auto*n=fresh(f);n->current=v;n->previous=v;n->level=v;n->update(nullptr);expect(n->trace.empty());expect(same(n->current,v));expect(same(n->previous,v));expect(same(n->level,v));const auto selected=n->setTeXclass(nullptr);expect(selected==(selectsSelf[i]?n:nullptr));expect(n->trace=="c");}
 };
+"math_port_class_state_previous_node_raw_values_and_partial_failure"_test=[] {
+F f(classes());auto values=inputs();for(const auto&v:values){auto*n=fresh(f);auto*prev=fresh(f);n->current=0;prev->current=v;prev->attributes()->set("scriptlevel",v);prev->trace.clear();expect(n->setTeXclass(prev)==n);expect(same(n->previous,v));expect(same(n->level,v));expect(prev->trace=="ca");expect(n->trace=="PLc");}
+{auto*n=fresh(f);auto*prev=fresh(f);prev->current=3;prev->setAttributes(nullptr);prev->trace.clear();bool caught=false;try{n->setTeXclass(prev);}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);expect(n->previous==Property(3));expect(n->level==Property(0));
+expect(bool((prev->trace)=="ca"));
+expect(bool((n->trace)=="P"));
+}
+};
 "math_port_class_state_bound_number_intrinsics"_test=[] {
 expect(h::get(Property(8),"__proto__")==Property(folia::math::BuiltinProperty::numberPrototype));
 expect(h::get(Property(8),"constructor")==Property(folia::math::BuiltinProperty::numberConstructor));
