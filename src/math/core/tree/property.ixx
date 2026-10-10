@@ -13,7 +13,9 @@ enum class BuiltinProperty {
     constructor, defineGetter, defineSetter, hasOwnProperty, lookupGetter,
     lookupSetter, isPrototypeOf, propertyIsEnumerable, toString, valueOf,
     toLocaleString, prototype, arrayConstructor, arrayToString, arrayJoin, arrayPrototype,
-    numberPrototype, numberConstructor, numberToString, numberValueOf
+    numberPrototype, numberConstructor, numberToString, numberValueOf,
+    functionPrototype, functionConstructor, functionCall, functionApply,
+    functionBind, functionToString
 };
 struct PropertyStorage;
 class PropertyList;

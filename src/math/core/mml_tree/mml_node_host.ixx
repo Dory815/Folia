@@ -110,7 +110,15 @@ inline std::u16string string(const Property& input){
         if(*b==BuiltinProperty::numberConstructor)return u"function Number() { [native code] }";
         if(*b==BuiltinProperty::numberToString)return u"function toString() { [native code] }";
         if(*b==BuiltinProperty::numberValueOf)return u"function valueOf() { [native code] }";
+        if(*b==BuiltinProperty::numberPrototype)return u"0";
+        if(*b==BuiltinProperty::functionPrototype)return u"function () { [native code] }";
+        if(*b==BuiltinProperty::functionConstructor)return u"function Function() { [native code] }";
+        if(*b==BuiltinProperty::functionCall)return u"function call() { [native code] }";
+        if(*b==BuiltinProperty::functionApply)return u"function apply() { [native code] }";
+        if(*b==BuiltinProperty::functionBind)return u"function bind() { [native code] }";
+        if(*b==BuiltinProperty::functionToString)return u"function toString() { [native code] }";
         constexpr std::array<std::string_view,11> names={"Object","__defineGetter__","__defineSetter__","hasOwnProperty","__lookupGetter__","__lookupSetter__","isPrototypeOf","propertyIsEnumerable","toString","valueOf","toLocaleString"};
+        if(static_cast<std::size_t>(*b)>=names.size())typeError("Unbound intrinsic string metadata");
         return text("function "+std::string(names[static_cast<std::size_t>(*b)])+"() { [native code] }");
     }typeError("Unbound native string conversion");
 }
@@ -150,14 +158,28 @@ inline Property get(const Property& value,std::string_view key){
             if(key=="valueOf")return BuiltinProperty::numberValueOf;
             return PropertyList{}.get(key);
         }
+        // All remaining identities bind pristine native functions. Their
+        // string-key prototype members are observable through malformed Mo
+        // form names; they are metadata identities, never executable JS.
+        if(key=="caller"||key=="arguments")typeError("Restricted function property");
+        if(key=="__proto__")return *builtin==BuiltinProperty::functionPrototype
+            ?BuiltinProperty::prototype:BuiltinProperty::functionPrototype;
+        if(key=="constructor")return BuiltinProperty::functionConstructor;
+        if(key=="call")return BuiltinProperty::functionCall;
+        if(key=="apply")return BuiltinProperty::functionApply;
+        if(key=="bind")return BuiltinProperty::functionBind;
+        if(key=="toString")return BuiltinProperty::functionToString;
         if(key=="prototype"&&*builtin==BuiltinProperty::constructor)return BuiltinProperty::prototype;
         if(key=="prototype"&&*builtin==BuiltinProperty::arrayConstructor)return BuiltinProperty::arrayPrototype;
         if(key=="prototype"&&*builtin==BuiltinProperty::numberConstructor)return BuiltinProperty::numberPrototype;
+        if(key=="prototype"&&*builtin==BuiltinProperty::functionConstructor)return BuiltinProperty::functionPrototype;
         if(key=="length"){
             switch(*builtin){
             case BuiltinProperty::defineGetter:case BuiltinProperty::defineSetter:return 2;
+            case BuiltinProperty::functionApply:return 2;
             case BuiltinProperty::constructor:case BuiltinProperty::arrayConstructor:case BuiltinProperty::arrayJoin:
             case BuiltinProperty::numberConstructor:case BuiltinProperty::numberToString:
+            case BuiltinProperty::functionConstructor:case BuiltinProperty::functionCall:case BuiltinProperty::functionBind:
             case BuiltinProperty::hasOwnProperty:case BuiltinProperty::lookupGetter:case BuiltinProperty::lookupSetter:
             case BuiltinProperty::isPrototypeOf:case BuiltinProperty::propertyIsEnumerable:return 1;
             default:return 0;
