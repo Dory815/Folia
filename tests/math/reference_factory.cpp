@@ -165,6 +165,7 @@ expect(bool((direct.create("__proto__")->kind())=="reported-b"));
 {bool caught=false;try{(void)f.create("bind");}catch(const tr::FactoryError& e){caught=true;expect(bool(e.name=="TypeError"));}expect(caught);}
 {bool caught=false;try{(void)f.create("arguments");}catch(const tr::FactoryError& e){caught=true;expect(bool(e.name=="TypeError"));}expect(caught);}
 {bool caught=false;try{(void)f.create("caller");}catch(const tr::FactoryError& e){caught=true;expect(bool(e.name=="TypeError"));}expect(caught);}
+{bool caught=false;try{(void)f.create("prototype");}catch(const tr::FactoryError& e){caught=true;expect(bool(e.name=="TypeError"));}expect(caught);}
 expect(bool((f.create("length")->kind())=="reported-b"));
 expect(bool((f.create("name")->kind())=="reported-b"));
 writeOwn(view,"call",{});

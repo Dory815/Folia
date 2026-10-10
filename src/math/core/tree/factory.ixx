@@ -195,7 +195,8 @@ private:
     }
 
     static bool isFunctionPrototypeMember(std::string_view kind) {
-        return kind == "call" || kind == "apply" || kind == "bind" ||
+        // CJS lowers the TS arrow to a normal function, with own prototype.
+        return kind == "prototype" || kind == "call" || kind == "apply" || kind == "bind" ||
                kind == "arguments" || kind == "caller";
     }
 

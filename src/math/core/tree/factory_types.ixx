@@ -33,6 +33,11 @@ template<class Product> struct FactoryCreatorObject {
 };
 template<class Product> using FactoryCreatorView = std::shared_ptr<FactoryCreatorObject<Product>>;
 template<class Product> using FactoryChildren = std::shared_ptr<std::vector<Product*>>;
+template<class Product,class Source> class WrapperServices {
+public:
+    virtual ~WrapperServices() = default;
+    virtual Product* wrap(Source* node,FactoryArgs args={})=0;
+};
 template<class Product> class FactoryServices {
 public:
     virtual ~FactoryServices() = default;

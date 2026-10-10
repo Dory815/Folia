@@ -111,6 +111,13 @@ The arrow's length=0 and name="" remain falsy and use generic fallback; own null
 entries mask those inherited values. Arbitrary replacement prototype graphs
 remain outside this typed service.
 
+P7 compiler-output review adds one runtime witness: Folia's js/ exports resolve
+to the pinned ES5 CJS build, which lowers that arrow to a normal function. Its
+own prototype object is truthy and non-callable, so create("prototype") also
+throws after __proto__ registration. The oracle pins the resolved CJS Factory
+hash as well as TS. Preserve actual production-profile behavior rather than
+assuming the emitted callable retains every source-level arrow reflection rule.
+
 `node_factory.ixx`: export-import factory; template<class Product>
 AbstractNodeFactory derives AbstractFactory<Product>. Override raw create(kind,
 FactoryArgs) with no default argument: normalize the first two arguments

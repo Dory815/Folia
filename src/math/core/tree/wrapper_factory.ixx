@@ -10,12 +10,12 @@ import std;
 
 export namespace folia::math::tree {
 template<class Product, class Node>
-class AbstractWrapperFactory : public AbstractFactory<Product> {
+class AbstractWrapperFactory : public AbstractFactory<Product>, public WrapperServices<Product,Node> {
     using Base = AbstractFactory<Product>;
 public:
     using Base::Base;
 
-    Product* wrap(Node* node, FactoryArgs args = {}) {
+    Product* wrap(Node* node, FactoryArgs args = {}) override {
         if (!node) {
             throw options::Exception(
                 "TypeError", u"Cannot read properties of null (reading 'kind')");

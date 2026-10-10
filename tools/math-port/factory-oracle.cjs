@@ -13,6 +13,9 @@ for(const [name,hash]of Object.entries(sources)){
  assert.equal(fs.readFileSync(path.join(npmRoot,'ts/core/Tree',name+'.ts'),'utf8').replaceAll('\r\n','\n'),source.toString('utf8').replaceAll('\r\n','\n'));
 }
 const {AbstractFactory:F}=require(path.join(npmRoot,'cjs/core/Tree/Factory.js'));
+const resolvedFactory=require.resolve('@mathjax/src/js/core/Tree/Factory.js',{paths:[path.join(root,'tools/mathjax-bundle')]});
+assert.equal(fs.realpathSync(resolvedFactory),fs.realpathSync(path.join(npmRoot,'cjs/core/Tree/Factory.js')));
+assert.equal(crypto.createHash('sha256').update(fs.readFileSync(resolvedFactory)).digest('hex'),'739db2e5760c29d7bb4f1bc7baa08ff8d727f4d117522aff5ede017f812cffef');
 const {AbstractNodeFactory:NF}=require(path.join(npmRoot,'cjs/core/Tree/NodeFactory.js'));
 const {AbstractWrapperFactory:WF}=require(path.join(npmRoot,'cjs/core/Tree/WrapperFactory.js'));
 class B{constructor(factory,...args){this.factory=factory;this.args=args;}get kind(){return 'reported-b';}}
@@ -92,7 +95,7 @@ function end(){out.push('};');}
  f.setNodeClass('__proto__',D);out.push('f.setNodeClass("__proto__",d);');expect(Object.getPrototypeOf(f.node)===retained,'view->prototypeCreator==retained');f.deleteNodeClass('__proto__');out.push('f.deleteNodeClass("__proto__");');expect(f.create('__proto__').kind,'f.create("__proto__")->kind()');
  f.node.toString=undefined;out.push('writeOwn(view,"toString",{});');expect(f.create('toString').kind,'f.create("toString")->kind()');
  const direct=new NF({base:B,unknown:U});direct.node.base=undefined;out.push('tr::AbstractNodeFactory<Probe> direct(tr::FactoryClassMap<Probe>{{"base",b},{"unknown",u}});writeOwn(direct.creatorView(),"base",{});');throws(()=>direct.create('base'),'(void)direct.create("base")');direct.setNodeClass('__proto__',B);direct.deleteNodeClass('__proto__');out.push('direct.setNodeClass("__proto__",b);direct.deleteNodeClass("__proto__");');expect(direct.create('__proto__').kind,'direct.create("__proto__")->kind()');
- for(const key of ['call','apply','bind','arguments','caller'])throws(()=>f.create(key),`(void)f.create(${s(key)})`);
+ for(const key of ['call','apply','bind','arguments','caller','prototype'])throws(()=>f.create(key),`(void)f.create(${s(key)})`);
  for(const key of ['length','name'])expect(f.create(key).kind,`f.create(${s(key)})->kind()`);
  f.node.call=undefined;out.push('writeOwn(view,"call",{});');expect(f.create('call').kind,'f.create("call")->kind()');
  f.node.bad={};out.push('writeOwn(view,"bad",std::make_shared<tr::FactoryCreator<Probe>>());');throws(()=>f.create('bad'),'(void)f.create("bad")');end();
