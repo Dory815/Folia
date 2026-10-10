@@ -68,7 +68,8 @@ binding for real callers; they do not change the original source-method mapping.
 ## Explicit host boundaries
 
 The interfaces are compiled class/factory services, UTF-16 TextNode strings,
-typed nullable numeric TeX classes, PropertyList/PropertyArray shared records,
+raw Property TeX classes (P12a supersedes the initial nullable-number bridge),
+PropertyList/PropertyArray shared records,
 two-slot array origin tuples, and opaque XML handles with borrowed adaptor services.
 P11 extends that same Property graph with native sparse slots and consistent
 Array/Object prototypes; the original tuple fixture uses actual array bindings.

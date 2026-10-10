@@ -1,4 +1,4 @@
-# P8b: MmlNode semantic hierarchy — revision 2
+# P8b: MmlNode semantic hierarchy — revision 3 (P12a raw class state)
 
 Root owns this contract, declarations, bindings, expectations, builds and
 acceptance. Source is MathJax 4.1.3 commit
@@ -18,8 +18,11 @@ branches share exactly one parent/factory/child-array representation.
 texSpacing returns Property: valid strings versus source undefined after an
 invalid column index remain distinct; invalid row access raises TypeError.
 Getter/setter functions replace JS properties, including read-only empty-node
-setter TypeErrors. TeX classes preserve null via optional<double>; previous level
-preserves raw Property, with PropertyNull distinct from Missing and every scalar.
+setter TypeErrors. TeX classes and previous level preserve raw Property, with
+PropertyNull distinct from Missing and every scalar/reference. Class getters
+are non-const, allowing the source Mo getter's attribute/property side effects.
+The raw class-state contract supersedes the rejected nullable-number binding;
+see class-state-contracts.md. Each source field has exactly one native store.
 Property-valued display/level/prime arguments preserve erased-TS-cast behavior.
 Missing arguments at methods declaring defaults receive false/0/false even when
 explicitly supplied, as emitted JavaScript default parameters do. Null and other
@@ -37,6 +40,15 @@ Foreign dynamic objects must have a reviewed native binding; do not stringify
 them into plausible values. Native PropertyList objects retain their ordinary
 prototype conversion behavior. General Options objects remain in their own
 accepted Context graph, never silently cast to PropertyList.
+
+P12a spacing uses raw property keys and source array tables, including inherited
+keys and numeric `length` boxing. Four distinct bound Number intrinsics preserve
+the required prototype/constructor/toString/valueOf identities and unmodified
+Number.prototype primitive zero. This is a compiled host binding, not general
+JavaScript Number objects, mutable globals or arbitrary method execution.
+Unbound formatting methods are recorded in evidence/p12-number-boxing-review.md;
+they cannot be treated as implemented callbacks in future packets. Existing
+numeric-only class-index validation is removed rather than retained as fallback.
 
 AttributeList is the existing PropertyList graph. Root's attributeTuple builds
 a shared two-slot PropertyArray (0=origin string, 1=Property), and unpackAttribute

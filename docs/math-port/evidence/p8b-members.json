@@ -149,7 +149,7 @@
           "member_sha256": "80426cef5721dd275bc9cb827fd3007d26b5fb3cbc05a84a7ffe4a7ab4b59e06",
           "target": "src/math/core/mml_tree/mml_node.ixx:AbstractMmlNode::prevClass_",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md."
+          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
         },
         {
           "owner": "AbstractMmlNode",
@@ -221,7 +221,7 @@
           "member_sha256": "50cb00d3825abe40e4e4a4ec22d1c0ded23fa096175f649271ffa7e17f77f2c2",
           "target": "src/math/core/mml_tree/mml_node.ixx:AbstractMmlNode::texclass_",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md."
+          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
         },
         {
           "owner": "AbstractMmlNode",
@@ -257,7 +257,7 @@
           "member_sha256": "8f0fca359012fcaafca99f4c115f0a73c866d573aa07410958edf37753dd0d27",
           "target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::texClass",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source method/accessor, with typed host binding."
+          "mapping": "Source method/accessor, with typed host binding. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
         },
         {
           "owner": "AbstractMmlNode",
@@ -269,7 +269,7 @@
           "member_sha256": "07096f02a87b67a8de010f7f96e787348bad54f665569709a1fe730d7159e5ed",
           "target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::setTexClass",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source method/accessor, with typed host binding."
+          "mapping": "Source method/accessor, with typed host binding. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
         },
         {
           "owner": "AbstractMmlNode",
@@ -485,7 +485,7 @@
           "member_sha256": "b4724a590bd2e9c31856049b5070a5aa429199b11326e6e1d7e8f8c23ada5f73",
           "target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::setTeXclass",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source method/accessor, with typed host binding."
+          "mapping": "Source method/accessor, with typed host binding. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
         },
         {
           "owner": "AbstractMmlNode",
@@ -497,7 +497,7 @@
           "member_sha256": "5d9d7b931e6a13e94cf60d0facdfb3c945979757b238c4f95e9c7530b0fad613",
           "target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::updateTeXclass",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source method/accessor, with typed host binding."
+          "mapping": "Source method/accessor, with typed host binding. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
         },
         {
           "owner": "AbstractMmlNode",
@@ -509,7 +509,7 @@
           "member_sha256": "04c6c0965b1e6db8b7a4b1bc2a551c172db733d1e586e845e991acb1c86d75ba",
           "target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::getPrevClass",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source method/accessor, with typed host binding."
+          "mapping": "Source method/accessor, with typed host binding. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
         },
         {
           "owner": "AbstractMmlNode",
@@ -521,7 +521,7 @@
           "member_sha256": "98a456acef2e4e6a4653737c7e2eb66f6d21a111ecdd3f1748f6649f3692d2f8",
           "target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::texSpacing",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source method/accessor, with typed host binding."
+          "mapping": "Source method/accessor, with typed host binding. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
         },
         {
           "owner": "AbstractMmlNode",

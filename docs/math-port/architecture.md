@@ -9,7 +9,8 @@ Prerequisite utilities have local acceptance recorded in
 `evidence/mml-node-acceptance.md`, plus the first ten concrete node files in
 `evidence/leaf-acceptance.md` and the script-node/string packet in
 `evidence/script-acceptance.md` and the operator dictionary in
-`evidence/operator-acceptance.md`; this
+`evidence/operator-acceptance.md`, with the raw class-state boundary correction
+in `evidence/p12-class-state-acceptance.md`; this
 does not pass a full renderer gate.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.

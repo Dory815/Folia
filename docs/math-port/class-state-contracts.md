@@ -25,6 +25,13 @@ The private source tables keep their exact values and standard array prototypes;
 they are not publicly writable. Arbitrary JS descriptors/evaluated conversions
 remain outside the compiled host API; no JS evaluator is introduced.
 
+The numeric `length` row exposes Number.prototype through `__proto__`.
+Root binds its unmodified primitive zero, Object parent, Number constructor,
+toString and valueOf identities separately from Object/Array intrinsics.
+Number-object creation, mutable intrinsic globals and unbound formatting
+callbacks are not services offered by this API. Future callers must request a
+reviewed binding rather than silently reuse a different intrinsic identity.
+
 Freeze source-backed raw-state matrices and read/write traces before changing
 implementation. Existing MML/leaf/script fixture expectations must retain their
 source values while their native bindings switch to raw Property observations.
@@ -32,3 +39,12 @@ Require the final core suite and compiling assertion-failing mutants for null
 versus Missing, truthy normalization, strict NONE, source getter read count,
 raw transfers and read-only empty setters. Recheck existing affected mutation
 anchors rather than deleting verification that exposed an interface issue.
+
+Final source fixture: 29 raw values, 1,682 previous/current class rows, 2,523
+previous/current script-level rows, initialization/identity checks, null node
+guards, previous-node getter/write traces and partial failure, plus bound Number
+metadata. It emits 13,441 assertions in nine cases. MmlNode and NodeFactory TS
+and executable hashes are pinned; output is reproducible with --check. The
+20-mutation packet owns isolated copies and must compile before an assertion
+failure counts as detection. These requirements accept only this prerequisite,
+not Mo, a complete semantic tree, any renderer or Folia integration.

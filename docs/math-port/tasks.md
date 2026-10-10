@@ -353,7 +353,7 @@ The existing numeric optional class boundary was rejected after a real profile
 
 | Owner | Exact files | Deliverable and limit |
 | --- | --- | --- |
-| Root | mml_node.ixx/.cpp, mml_empty.cpp, mrow.cpp, property.ixx, mml_node_host.ixx, leaf_host.ixx | One raw class field, source getter order/nullish selection/spacing, narrowly bound number boxing; no parser, scene or production changes |
+| Root | mml_node.ixx/.cpp, mml_empty.cpp, mml_branches.cpp, mrow.cpp, property.ixx, mml_node_host.ixx, leaf_host.ixx | One raw class field, source getter order/nullish selection/spacing, narrowly bound number boxing; remove unnecessary getter-helper const_cast; no parser, scene or production changes |
 | Root | class-state-oracle.cjs, reference_class_state.cpp, mutation tools | Locked actual-CJS expectations, state/read traces, previous and current script-level branches; unchanged expectations for existing packets |
 | math_layout | evidence/p12-class-state-review.md only | Read-only per-method comparison; report failures to root, never repair shared source or certify acceptance |
 | math_fonts | evidence/p12-class-fixture-review.md only | Read-only coverage/lock audit; report missing branches, never change oracle values |
@@ -365,7 +365,11 @@ state, rereads, strict equality, transfers and script-level ordering. Existing
 affected packet mutation anchors must remain effective. Review reports alone
 never accept a packet. No agent may edit contracts, declarations, CMake,
 fixtures, registry or runtime wiring; no agent builds or commits. Contract
-changes return to root before dependent implementation resumes.
+changes return to root before dependent implementation resumes. Root locally
+accepted P12a in evidence/p12-class-state-acceptance.md: 13,441 source-derived
+assertions, all 20 new mutants, 77 existing mutants and the final complete core
+suite. Read-only helper constness correction was verified independently. This
+does not authorize Mo dispatch until its own declarations and fixtures freeze.
 
 ## Wave 3 — base/AMS input and complete font services
 
@@ -383,9 +387,11 @@ implementation dispatch is allowed before root freezes its own raw-class,
 constructor static, regex and getter-side-effect interfaces and independent tests.
 The read-only p12-mo-dependencies.md audit and root mo-dependency-probe.cjs show
 a real profile witness: \mmlToken{mo}{toString}/constructor retain undefined
-classes, distinct from null. The current nullable numeric MML class binding is
-therefore insufficient for Mo; root must correct that shared boundary and
-revalidate prior MML/leaf/script packets before implementation dispatch. The
+classes, distinct from null. The initial nullable numeric MML class binding was
+therefore insufficient for Mo. P12a now corrects that shared boundary to one raw
+Property state and revalidates the MML/leaf/script packets; see its acceptance
+evidence. Mo's live constructor/static/regex and getter interfaces still require
+root-owned declarations and fixtures before implementation dispatch. The
 audit is a prerequisite report, not Mo acceptance or permission to omit quirks.
 
 TeX packets follow upstream BaseConfiguration/BaseMappings/BaseMethods/
