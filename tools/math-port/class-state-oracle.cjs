@@ -2,11 +2,18 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'../..'),npm=path.join(root,'tools/mathjax-bundle/node_modules/@mathjax/src');
+assert.equal(process.version,'v24.13.0');
 const source=fs.readFileSync(path.join(root,'.reference/MathJax-src/ts/core/MmlTree/MmlNode.ts'));
 assert.equal(crypto.createHash('sha256').update(source).digest('hex'),'cc0594eb5782928412c4307637866d9f80ac147af577297edd48ee88b63b8656');
+assert.equal(fs.readFileSync(path.join(npm,'ts/core/MmlTree/MmlNode.ts'),'utf8').replaceAll('\r\n','\n'),source.toString().replaceAll('\r\n','\n'));
 const runtime=path.join(npm,'cjs/core/MmlTree/MmlNode.js');
 assert.equal(crypto.createHash('sha256').update(fs.readFileSync(runtime)).digest('hex'),'86c5eb572dcf2652c3c52a60b66c720d231e17f600cc9aeef3ace4aeafc81d45');
-const {AbstractMmlNode:N,TextNode}=require(runtime),{AbstractNodeFactory:F}=require(path.join(npm,'cjs/core/Tree/NodeFactory.js'));
+const factoryRuntime=path.join(npm,'cjs/core/Tree/NodeFactory.js');
+assert.equal(crypto.createHash('sha256').update(fs.readFileSync(factoryRuntime)).digest('hex'),'148c9a3a2e469fc464036b88deb7067cd779989a43356812d31365a84ec75c54');
+const factorySource=fs.readFileSync(path.join(root,'.reference/MathJax-src/ts/core/Tree/NodeFactory.ts'));
+assert.equal(crypto.createHash('sha256').update(factorySource).digest('hex'),'b02c5ac2cabb61755785d35def6b57f8246322c626f548df600ca81af27b4599');
+assert.equal(fs.readFileSync(path.join(npm,'ts/core/Tree/NodeFactory.ts'),'utf8').replaceAll('\r\n','\n'),factorySource.toString().replaceAll('\r\n','\n'));
+const {AbstractMmlNode:N,TextNode}=require(runtime),{AbstractNodeFactory:F}=require(factoryRuntime);
 class Raw extends N{
   get kind(){return 'raw';}
   get texClass(){if(this.enabled)this.trace+='c';return this.current;}
@@ -47,11 +54,34 @@ for(let i=0;i<values.length;i++)for(let j=0;j<values.length;j++)for(let script=0
   const {n}=fresh();n.previous=values[i];n.current=values[j];n.level=script?1:0;let result,id;try{result=n.texSpacing();id=result===undefined?4:names.indexOf(result);assert.ok(id>=0);}catch(e){assert.equal(e.name,'TypeError');id=5;}
   emit('{'+[i,j,script,id].join(',')+','+JSON.stringify(n.trace)+'},');rows++;
 }
-emit('};F f(classes());auto values=inputs();for(const auto& c:cases){auto*n=fresh(f);n->previous=values[c.prev];n->current=values[c.current];n->level=c.script;bool caught=false;Property result;try{result=n->texSpacing();}catch(const m::Error&e){caught=true;expect(e.name==std::string("TypeError"));}expect(caught==(c.outcome==5));if(!caught)expect(result==outcome(c.outcome));expect(n->trace==c.trace);}');assertions+=3*rows;end();
+emit('};F f(classes());auto values=inputs();for(const auto& c:cases){auto*n=fresh(f);n->previous=values[c.prev];n->current=values[c.current];n->level=static_cast<double>(c.script);bool caught=false;Property result;try{result=n->texSpacing();}catch(const m::Error&e){caught=true;expect(e.name==std::string("TypeError"));}expect(caught==(c.outcome==5))<<c.prev<<":"<<c.current<<":"<<c.script<<" exception";if(!caught)expect(result==outcome(c.outcome))<<c.prev<<":"<<c.current<<":"<<c.script<<" outcome";expect(n->trace==c.trace)<<c.prev<<":"<<c.current<<":"<<c.script<<" trace="<<n->trace<<" expected="<<c.trace;}');assertions+=3*rows;end();
 begin('prevclass_reread_and_current_capture');
 for(const seq of [[0,3],[null,3],[undefined,3],[0,undefined],[0,-1]]){const {n}=fresh();n.sequence=[...seq];n.current=2;let value,id;try{value=n.texSpacing();id=value===undefined?4:names.indexOf(value);}catch(e){assert.equal(e.name,'TypeError');id=5;}emit('{F f(classes());auto*n=fresh(f);n->sequence={'+seq.map(v=>'Property('+p(v)+')').join(',')+'};n->current=2;bool caught=false;Property result;try{result=n->texSpacing();}catch(const m::Error&){caught=true;}');eq(id===5,'caught');if(id!==5){assertions++;emit('expect(result==outcome('+id+'));');}eq(n.trace,'n->trace');end();}end();
 begin('raw_transfer_and_empty_readonly');
 let sourceTrace,targetTrace;for(const v of values){const {f,n:a}=fresh(),b=f.create('raw');a.current=v;a.previous=v;a.level=v;b.current=0;b.previous=0;b.level=0;b.enabled=true;b.trace='';b.update(a);assert.ok(Object.is(b.current,v)&&Object.is(b.previous,v)&&Object.is(b.level,v));assert.equal(a.previous,null);assert.equal(a.level,null);sourceTrace=a.trace;targetTrace=b.trace;}
 emit('F f(classes());auto*a=fresh(f);auto*b=fresh(f);auto values=inputs();for(const auto& v:values){a->enabled=false;b->enabled=false;a->current=v;a->previous=v;a->level=v;b->current=0;b->previous=0;b->level=0;a->trace.clear();b->trace.clear();a->enabled=true;b->enabled=true;b->update(a);expect(same(b->current,v));expect(same(b->previous,v));expect(same(b->level,v));expect(a->previous==Property(PropertyNull{}));expect(a->level==Property(PropertyNull{}));expect(a->trace=='+JSON.stringify(sourceTrace)+');expect(b->trace=='+JSON.stringify(targetTrace)+');}');assertions+=7*values.length;
 emit('auto*t=f.create("text");for(const auto& v:values){bool tc=false,pc=false;try{t->setTexClass(v);}catch(const m::Error&e){tc=e.name=="TypeError";}try{t->setPrevClass(v);}catch(const m::Error&e){pc=e.name=="TypeError";}expect(tc);expect(pc);expect(t->texClass()==Property(-1));expect(t->prevClass()==Property(-1));}');assertions+=4*values.length;end();
-emit('};');const output=out.join('\n')+'\n',target=path.join(root,'tests/math/reference_class_state.cpp');if(process.argv.includes('--check'))assert.equal(fs.readFileSync(target,'utf8').replaceAll('\r\n','\n'),output);else fs.writeFileSync(target,output);console.log(JSON.stringify({values:values.length,matrix_rows:rows,assertion_slots:assertions,cases,mode:process.argv.includes('--check')?'check':'generate'}));
+begin('raw_previous_and_current_scriptlevel_coercion');
+emit('struct Case{unsigned previousLevel,currentLevel,currentClass,outcome;std::string_view trace;};const Case cases[]={');
+let levelRows=0;
+for(let i=0;i<values.length;i++)for(let j=0;j<values.length;j++)for(const current of [1,2,99]){
+  const {n}=fresh();n.previous=0;n.current=current;n.level=values[i];n.attributes.set('scriptlevel',values[j]);n.trace='';let result,id;
+  try{result=n.texSpacing();id=result===undefined?4:names.indexOf(result);assert.ok(id>=0);}catch(e){assert.equal(e.name,'TypeError');id=5;}
+  emit('{'+[i,j,current,id].join(',')+','+JSON.stringify(n.trace)+'},');levelRows++;
+}
+emit('};F f(classes());auto values=inputs();for(const auto&c:cases){auto*n=fresh(f);n->previous=0;n->current=static_cast<double>(c.currentClass);n->level=values[c.previousLevel];n->attributes()->set("scriptlevel",values[c.currentLevel]);n->trace.clear();bool caught=false;Property result;try{result=n->texSpacing();}catch(const m::Error&e){caught=true;expect(e.name==std::string("TypeError"));}expect(caught==(c.outcome==5))<<c.previousLevel<<":"<<c.currentLevel<<":"<<c.currentClass<<" exception";if(!caught)expect(result==outcome(c.outcome))<<c.previousLevel<<":"<<c.currentLevel<<":"<<c.currentClass<<" outcome";expect(n->trace==c.trace)<<"trace="<<n->trace<<" expected="<<c.trace;}');assertions+=3*levelRows;end();
+begin('null_node_guards');
+for(const v of values){const {n}=fresh();n.current=v;n.previous=v;n.level=v;n.update(null);assert.equal(n.trace,'');assert.ok(Object.is(n.current,v)&&Object.is(n.previous,v)&&Object.is(n.level,v));assert.equal(n.setTeXclass(null)===n,v!==undefined&&v!==null);assert.equal(n.trace,'c');}
+emit('const std::array<bool,'+values.length+'> selectsSelf={'+values.map(v=>{const {n}=fresh();n.current=v;return n.setTeXclass(null)===n;}).join(',')+'};F f(classes());auto values=inputs();for(std::size_t i=0;i<values.size();++i){const auto&v=values[i];auto*n=fresh(f);n->current=v;n->previous=v;n->level=v;n->update(nullptr);expect(n->trace.empty());expect(same(n->current,v));expect(same(n->previous,v));expect(same(n->level,v));const auto selected=n->setTeXclass(nullptr);expect(selected==(selectsSelf[i]?n:nullptr));expect(n->trace=="c");}');assertions+=6*values.length;end();
+begin('bound_number_intrinsics');
+const boxes=[8,Number.prototype,Number,Number.prototype.toString,Number.prototype.valueOf];
+const boxed=['Property(8)','Property(folia::math::BuiltinProperty::numberPrototype)','Property(folia::math::BuiltinProperty::numberConstructor)','Property(folia::math::BuiltinProperty::numberToString)','Property(folia::math::BuiltinProperty::numberValueOf)'];
+const intrinsic=new Map([[Number.prototype,'numberPrototype'],[Number,'numberConstructor'],[Number.prototype.toString,'numberToString'],[Number.prototype.valueOf,'numberValueOf'],[Object.prototype,'prototype']]);
+for(let i=0;i<boxes.length;i++){
+ const keys=i<2?['__proto__','constructor','toString','valueOf','0','length']:i===2?['prototype','name','length']:['name','length'];
+ for(const key of keys){const value=boxes[i][key],expected=intrinsic.has(value)?'folia::math::BuiltinProperty::'+intrinsic.get(value):p(value);assertions++;emit('expect(h::get('+boxed[i]+','+JSON.stringify(key)+')==Property('+expected+'));');}
+}
+eq(String(Number.prototype),'h::debugText(h::string(Property(folia::math::BuiltinProperty::numberPrototype)))');
+eq(Number(Number.prototype),'h::number(Property(folia::math::BuiltinProperty::numberPrototype))');
+eq(Boolean(Number.prototype),'h::truthy(Property(folia::math::BuiltinProperty::numberPrototype))');end();
+emit('};');const output=out.join('\n')+'\n',target=path.join(root,'tests/math/reference_class_state.cpp');if(process.argv.includes('--check'))assert.equal(fs.readFileSync(target,'utf8').replaceAll('\r\n','\n'),output);else fs.writeFileSync(target,output);console.log(JSON.stringify({values:values.length,matrix_rows:rows,level_rows:levelRows,assertion_slots:assertions,cases,mode:process.argv.includes('--check')?'check':'generate'}));

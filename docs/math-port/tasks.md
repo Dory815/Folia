@@ -344,6 +344,29 @@ no dictionary/visitor implementation before root freezes its own interfaces
 and fixtures. mo, complete factory registration and all renderer gates remain
 unfinished; 24/246 local source acceptances do not establish a complete port.
 
+### P12a: root-owned class-state prerequisite, before Mo dispatch
+
+Frozen authority: class-state-contracts.md and actual-CJS fixture in 8260318.
+Root owns all implementation/interface/oracle/build changes in this packet.
+The existing numeric optional class boundary was rejected after a real profile
+`\\mmlToken{mo}{toString}` witness; no Mo implementation is authorized yet.
+
+| Owner | Exact files | Deliverable and limit |
+| --- | --- | --- |
+| Root | mml_node.ixx/.cpp, mml_empty.cpp, mrow.cpp, property.ixx, mml_node_host.ixx, leaf_host.ixx | One raw class field, source getter order/nullish selection/spacing, narrowly bound number boxing; no parser, scene or production changes |
+| Root | class-state-oracle.cjs, reference_class_state.cpp, mutation tools | Locked actual-CJS expectations, state/read traces, previous and current script-level branches; unchanged expectations for existing packets |
+| math_layout | evidence/p12-class-state-review.md only | Read-only per-method comparison; report failures to root, never repair shared source or certify acceptance |
+| math_fonts | evidence/p12-class-fixture-review.md only | Read-only coverage/lock audit; report missing branches, never change oracle values |
+| tex_parser | evidence/p12-number-boxing-review.md only | Read-only audit of bound numeric prototype services against actual Node runtime; list observed discrepancies and scope limits |
+
+Acceptance belongs to root: source review, reproducible oracle output, complete
+core regression, and compiling/assertion-failing isolated mutations for raw
+state, rereads, strict equality, transfers and script-level ordering. Existing
+affected packet mutation anchors must remain effective. Review reports alone
+never accept a packet. No agent may edit contracts, declarations, CMake,
+fixtures, registry or runtime wiring; no agent builds or commits. Contract
+changes return to root before dependent implementation resumes.
+
 ## Wave 3 — base/AMS input and complete font services
 
 P11 is locally accepted under operator-contracts.md revision 2. Root froze the
