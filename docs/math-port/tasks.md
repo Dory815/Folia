@@ -199,6 +199,26 @@ not code edits or a scope change. G0/G1–G7 remain required for later waves.
 
 ## Wave 2 — semantic tree and configuration infrastructure
 
+### P6: generic factories only
+
+Root freezes `factory-contracts.md` revision 2 and owns `factory_types.ixx`,
+the actual-JS `factory-oracle.cjs`, generated `reference_factory.cpp`, mutation
+runner, CMake, scope and acceptance. Exact packets:
+
+| Agent | Sole files | Responsibility |
+| --- | --- | --- |
+| math_layout | core/tree/factory.ixx; evidence/p6-factory.md | Generic Factory members; independent class Map and stable captured creator object |
+| tex_parser | core/tree/node_factory.ixx; core/tree/wrapper_factory.ixx; evidence/p6-factory-bridges.md | Direct node dispatch/default arguments; wrapper pointer/argument forwarding |
+| math_fonts | evidence/e9-factory-profile-usage.md | Read-only source callers, concrete registries, constructor metadata and live-view requirements |
+
+Agents cannot implement Node/Wrapper/MML bodies, modify frozen tests, build,
+commit or wire production. Root rejected merged class/creator storage, extra
+constructor/predicate validity gates, and a returned-pointer ownership gate.
+Later review retained Function.prototype inherited errors after __proto__
+registration and made owning factories immobile to preserve captured addresses.
+Acceptance is independently recorded in `evidence/factory-acceptance.md`;
+generic prerequisites do not accept any mathematical node or layout algorithm.
+
 Root issues separate packets for generic Tree factories, MmlNode semantics,
 each concrete MML node, operator dictionary, Token/TokenMap/MapHandler,
 Configuration/ParseOptions and Stack/StackItem/StackItemFactory. Each has exact
