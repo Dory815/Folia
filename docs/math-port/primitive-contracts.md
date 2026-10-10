@@ -4,7 +4,9 @@ These packets are the first implemented prerequisites, not acceptance of the
 unreviewed dependency closure or the full port. The full G0 gate still blocks
 broader implementation and production replacement. Root owns this contract,
 shared types, fixtures, comparator and build integration. Agents may not change
-them. Options is postponed until root freezes its recursive value/identity,
+them. P4/P5 numeric prerequisites are separately frozen in
+`numeric-contracts.md`; the independently accepted first packets below keep
+their original interfaces. Options is postponed until root freezes its recursive value/identity,
 descriptor, callback and symbol-key contracts; it must not use scalar Property
 as a substitute for its upstream `any` values.
 
