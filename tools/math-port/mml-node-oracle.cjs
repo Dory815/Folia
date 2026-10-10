@@ -135,6 +135,106 @@ for(const prevLevel of [null,undefined,false,true,0,1,-1,NaN,' 1 ','0x1','bad','
 {
  begin('static_defaults_and_exports');own(N.defaults,'m::AbstractMmlNode::defaults()');own(TN.defaults,'m::AbstractMmlTokenNode::defaults()');eq(LN.defaults===N.defaults,'Property(m::AbstractMmlLayoutNode::defaults())==Property(m::AbstractMmlNode::defaults())');eq(BN.defaults===N.defaults,'Property(m::AbstractMmlBaseNode::defaults())==Property(m::AbstractMmlNode::defaults())');assertions++;emit('expect(bool(m::MATHVARIANTS==std::vector<Property>{'+[...MATHVARIANTS].map(p).join(',')+'}));');list(indentAttributes,'m::indentAttributes');list(TEXCLASSNAMES,'std::vector<std::string>(m::TEXCLASSNAMES.begin(),m::TEXCLASSNAMES.end())');end();
 }
+{
+ const f=begin('null_explicit_and_empty_core_partial_state');
+ const n=f.create('plain',{displaystyle:null,scriptlevel:null});n.setInheritedAttributes({},true,3,true);
+ emit('auto*n=create(f,"plain",PropertyList{{"displaystyle",PropertyNull{}},{"scriptlevel",PropertyNull{}}});n->setInheritedAttributes({},true,3,true);');
+ pp(n.attributes.getExplicit('displaystyle'),'n->attributes()->getExplicit("displaystyle")');pp(n.attributes.getExplicit('scriptlevel'),'n->attributes()->getExplicit("scriptlevel")');
+ pp(n.attributes.getInherited('displaystyle'),'n->attributes()->getInherited("displaystyle")');pp(n.attributes.getInherited('scriptlevel'),'n->attributes()->getInherited("scriptlevel")');
+ const a=f.create('plain'),text=f.create('text');emit('auto*a=dynamic_cast<Plain*>(f.create("plain"));auto*text=f.create("text");');
+ throws(()=>a.getPrevClass(text),'a->getPrevClass(text)');opt(a.prevClass,'a->prevClass()');pp(a.prevLevel,'a->prevLevel()');
+ throws(()=>a.updateTeXclass(text),'a->updateTeXclass(text)');opt(a.prevClass,'a->prevClass()');pp(a.prevLevel,'a->prevLevel()');end();
+}
+{
+ const f=begin('live_inheritance_verify_and_base_script_snapshot');
+ const n=f.create('plain'),a=f.create('leaf'),late=f.create('leaf');n.appendChild(a);const original=n.childNodes;let seen=[];
+ a.onInherit=()=>{seen.push('a');original.push(late);n.childNodes=[];};late.onInherit=()=>seen.push('late');n.setInheritedAttributes();
+ emit('auto*n=f.create("plain");auto*a=dynamic_cast<Leaf*>(f.create("leaf"));auto*late=dynamic_cast<Leaf*>(f.create("leaf"));n->appendChild(a);auto original=n->childNodes;std::vector<std::string> seen;a->onInherit=[&](m::AttributeList,Property,Property,Property){seen.push_back("a");original->push_back(late);n->childNodes=children();};late->onInherit=[&](m::AttributeList,Property,Property,Property){seen.push_back("late");};n->setInheritedAttributes();');list(seen,'seen');
+ const pnode=f.create('plain'),v=f.create('leaf'),extra=f.create('leaf');pnode.appendChild(v);const array=pnode.childNodes;seen=[];
+ v.onVerify=()=>{seen.push('v');array.push(extra);pnode.childNodes=[];};extra.onVerify=()=>seen.push('extra');pnode.verifyTree({});
+ emit('auto*pnode=f.create("plain");auto*v=dynamic_cast<Leaf*>(f.create("leaf"));auto*extra=dynamic_cast<Leaf*>(f.create("leaf"));pnode->appendChild(v);auto array=pnode->childNodes;seen.clear();v->onVerify=[&](std::optional<PropertyList>){seen.push_back("v");array->push_back(extra);pnode->childNodes=children();};extra->onVerify=[&](std::optional<PropertyList>){seen.push_back("extra");};pnode->verifyTree(PropertyList{});');list(seen,'seen');
+ const base=f.create('base',{},[f.create('leaf'),f.create('leaf'),f.create('leaf')]),script=base.childNodes[1],third=base.childNodes[2];seen=[];
+ script.onClass=()=>{seen.push('script');base.childNodes.splice(2,1);};third.onClass=()=>seen.push('third');base.setTeXclass(null);
+ emit('auto*base=create(f,"base",{},children({f.create("leaf"),f.create("leaf"),f.create("leaf")}));auto*script=dynamic_cast<Leaf*>(at(base,1));auto*third=dynamic_cast<Leaf*>(at(base,2));seen.clear();script->onClass=[&](m::MmlNode*){seen.push_back("script");base->childNodes->erase(base->childNodes->begin()+2);};third->onClass=[&](m::MmlNode*){seen.push_back("third");};base->setTeXclass(nullptr);');list(seen,'seen');end();
+}
+{
+ const f=begin('defaults_missing_metadata_and_null_children');
+ class NoDefaults extends Plain{static defaults=undefined;}
+ f.setNodeClass('plain',NoDefaults);const n=f.create('plain');emit('f.setNodeClass("plain",cls<Plain>());auto*n=f.create("plain");');
+ eq(n.attributes.getDefaultNames().length,'n->attributes()->getDefaultNames().size()');pp(n.attributes.get('mathcolor'),'n->attributes()->get("mathcolor")');
+ class BadMath extends MathNode{static defaults=undefined;}
+ f.setNodeClass('math',BadMath);emit('f.setNodeClass("math",cls<MathNode>());');throws(()=>f.create('plain'),'(void)f.create("plain")');
+ f.setNodeClass('math',MathNode);emit('f.setNodeClass("math",cls<MathNode>(MathNode::globals()));');
+ const pnode=f.create('plain');pnode.childNodes=[null];emit('auto*pnode=dynamic_cast<Plain*>(f.create("plain"));pnode->childNodes=children({nullptr});');
+ throws(()=>pnode.copy(),'(void)pnode->copy()');throws(()=>pnode.setInheritedAttributes(),'(void)pnode->setInheritedAttributes()');throws(()=>pnode.verifyTree({}),'pnode->verifyTree(PropertyList{})');end();
+}
+{
+ const f=begin('normal_isEmpty_captures_array_identity');
+ class EmptyProbe extends Plain{get kind(){return 'emptyProbe';}get isEmpty(){if(this.onEmpty)this.onEmpty();return true;}}
+ f.setNodeClass('emptyProbe',EmptyProbe);const n=f.create('plain'),probe=f.create('emptyProbe');n.setChildren([probe,f.create('leaf')]);probe.onEmpty=()=>{n.childNodes=[];};
+ emit('struct EmptyProbe:Plain{using Plain::Plain;std::function<void()> onEmpty;std::string kind()const override{return "emptyProbe";}bool isEmpty()const override{if(onEmpty)onEmpty();return true;}};f.setNodeClass("emptyProbe",cls<EmptyProbe>(m::AbstractMmlNode::defaults()));auto*n=f.create("plain");auto*probe=dynamic_cast<EmptyProbe*>(f.create("emptyProbe"));n->setChildren(children({probe,f.create("leaf")}));probe->onEmpty=[&]{n->childNodes=children();};');
+ eq(n.isEmpty,'n->isEmpty()');eq(n.childNodes.length,'count(n)');end();
+}
+{
+ const f=begin('computed_texclass_uses_virtual_source_property');
+ class Computed extends Plain{get kind(){return 'computed';}get texClass(){return 2;}set texClass(v){}}
+ f.setNodeClass('computed',Computed);const n=f.create('computed');n.prevClass=0;
+ emit('struct Computed:Plain{using Plain::Plain;std::string kind()const override{return "computed";}std::optional<double> texClass()const override{return 2;}void setTexClass(std::optional<double>)override{}};f.setNodeClass("computed",cls<Computed>(m::AbstractMmlNode::defaults()));auto*n=f.create("computed");n->setPrevClass(0);');
+ pp(n.texSpacing(),'n->texSpacing()');eq(n.setTeXclass(null)===n,'n->setTeXclass(nullptr)==n');end();
+}
+{
+ const f=begin('layout_ignores_core_override_for_class_update');
+ class CoreOverride extends Layout{get kind(){return 'coreOverride';}core(){this.calls=(this.calls||0)+1;return this.fake;}}
+ f.setNodeClass('coreOverride',CoreOverride);const n=f.create('coreOverride');n.childNodes[0].texClass=1;n.fake=f.create('leaf');n.fake.texClass=3;
+ emit('struct CoreOverride:Layout{using Layout::Layout;m::MmlNode* fake=nullptr;int calls=0;std::string kind()const override{return "coreOverride";}m::MmlNode* core()override{++calls;return fake;}};f.setNodeClass("coreOverride",cls<CoreOverride>(m::AbstractMmlNode::defaults()));auto*n=dynamic_cast<CoreOverride*>(f.create("coreOverride"));at(n,0)->setTexClass(1);n->fake=f.create("leaf");n->fake->setTexClass(3);');
+ n.setTeXclass(null);emit('n->setTeXclass(nullptr);');opt(n.texClass,'n->texClass()');eq(n.calls||0,'n->calls');end();
+}
+{
+ const f=begin('finite_arity_null_checks_before_virtual_children');
+ class Observe extends Fixed{verifyChildren(){(this.trace||(this.trace=[])).push('verify');}setChildInheritedAttributes(){(this.trace||(this.trace=[])).push('inherit');}}
+ f.setNodeClass('fixed',Observe);const n=f.create('fixed');n.childNodes=null;
+ emit('struct Observe:Fixed{using Fixed::Fixed;std::vector<std::string> trace;void verifyChildren(PropertyList)override{trace.push_back("verify");}void setChildInheritedAttributes(m::AttributeList,Property,Property,Property)override{trace.push_back("inherit");}};f.setNodeClass("fixed",cls<Observe>(m::AbstractMmlNode::defaults()));auto*n=dynamic_cast<Observe*>(f.create("fixed"));n->childNodes.reset();');
+ throws(()=>n.verifyTree({checkArity:true}),'n->verifyTree(PropertyList{{"checkArity",true}})');list(n.trace||[],'n->trace');
+ throws(()=>n.setInheritedAttributes(),'n->setInheritedAttributes()');list(n.trace||[],'n->trace');end();
+}
+{
+ const f=begin('text_toString_raw_field_and_xml_factory_clone_order');
+ const n=f.create('vtext');n.setText('a\ud800');const string=n.toString();
+ emit('auto*n=dynamic_cast<VText*>(f.create("vtext"));n->setText(units({97,55296}));auto string=n->toString();');
+ // A lossless internal bridge: each unpaired unit must survive generic join.
+ assertions++;emit('expect(bool(h::text(string)=='+u(string)+'));');eq(n.gets||0,'n->gets');
+ const x=f.create('XML'),trace=[],adaptor={clone(o){trace.push('clone');return {};},serializeXML(){return '';}};
+ class OrderedXML extends XML{constructor(...args){trace.push('create');super(...args);}}
+ x.setXML({},adaptor);f.setNodeClass('XML',OrderedXML);x.copy();
+ emit('auto*x=dynamic_cast<m::XMLNode*>(f.create("XML"));std::vector<std::string> trace;struct OrderedAdaptor:m::XmlAdaptor{std::vector<std::string>& trace;explicit OrderedAdaptor(std::vector<std::string>& t):trace(t){}m::XmlRef clone(m::XmlRef)override{trace.push_back("clone");return std::make_shared<X>("copy");}std::string serializeXML(m::XmlRef)override{return "";}};OrderedAdaptor adaptor(trace);x->setXML(std::make_shared<X>("a"),&adaptor);auto cl=cls<m::XMLNode>();auto original=cl->construct;cl->construct=[&](m::Factory&f,tr::FactoryArgs a){trace.push_back("create");return original(f,a);};f.setNodeClass("XML",cl);(void)x->copy();');list(trace,'trace');end();
+}
+{
+ const f=begin('invalid_spacing_column_keeps_level_evaluation');const n=f.create('plain');n.prevClass=0;n.texClass=99;n.prevLevel=0;n.attributes=null;
+ emit('auto*n=f.create("plain");n->setPrevClass(0);n->setTexClass(99);n->setPrevLevel(0);n->setAttributes({});');
+ throws(()=>n.texSpacing(),'(void)n->texSpacing()');n.prevLevel=1;emit('n->setPrevLevel(1);');pp(n.texSpacing(),'n->texSpacing()');end();
+}
+{
+ const f=begin('token_excludes_overridden_empty_methods');
+ class SpyText extends Text{setInheritedAttributes(){this.inherits=(this.inherits||0)+1;}walkTree(){this.walks=(this.walks||0)+1;}}
+ f.setNodeClass('text',SpyText);const t=f.create('token'),x=f.create('text');t.setChildren([x]);t.setInheritedAttributes();t.walkTree(()=>{});
+ emit('struct SpyText:m::TextNode{using m::TextNode::TextNode;int inherits=0,walks=0;void setInheritedAttributes(m::AttributeList,Property,Property,Property)override{++inherits;}std::any walkTree(const tr::TreeVisitor<m::MmlNode>&,const std::any& d={})override{++walks;return d;}};f.setNodeClass("text",cls<SpyText>());auto*t=f.create("token");auto*x=dynamic_cast<SpyText*>(f.create("text"));t->setChildren(children({x}));t->setInheritedAttributes();t->walkTree([](m::MmlNode*,const std::any&){});');
+ eq(x.inherits||0,'x->inherits');eq(x.walks||0,'x->walks');end();
+}
+{
+ const f=begin('short_error_replacement_nulls_attributes_after_mutation');
+ class ParentProbe extends Plain{replaceChild(n,o){const r=super.replaceChild(n,o);n.attributes=null;return r;}}
+ f.setNodeClass('plain',ParentProbe);const parent=f.create('plain'),n=f.create('leaf');parent.appendChild(n);
+ emit('struct ParentProbe:Plain{using Plain::Plain;m::MmlNode* replaceChild(m::MmlNode*n,m::MmlNode*o)override{auto*r=Plain::replaceChild(n,o);n->setAttributes({});return r;}};f.setNodeClass("plain",cls<ParentProbe>(m::AbstractMmlNode::defaults()));auto*parent=f.create("plain");auto*n=f.create("leaf");parent->appendChild(n);');
+ throws(()=>n.mError('broken',{},true),'(void)n->mError("broken",{},true)');eq(parent.childNodes[0].kind,'at(parent,0)->kind()');eq(n.parent===null,'n->parent==nullptr');eq(parent.childNodes[0].attributes===null,'at(parent,0)->attributes()==nullptr');end();
+}
+{
+ const f=begin('variant_validation_without_other_error_masking');
+ for(const value of ['bad',42,true,'normal','',0,false,null]){const parent=f.create('plain'),n=f.create('token',{mathvariant:value});parent.appendChild(n);n.verifyTree({checkMathvariants:true});
+ emit('{auto*parent=f.create("plain");auto*n=create(f,"token",PropertyList{{"mathvariant",'+p(value)+'}});parent->appendChild(n);n->verifyTree(PropertyList{{"checkMathvariants",true}});');
+ eq(parent.childNodes[0].kind,'at(parent,0)->kind()');pp(parent.childNodes[0].attributes.getExplicit('data-mjx-message'),'at(parent,0)->attributes()->getExplicit("data-mjx-message")');emit('}');}end();
+}
+// Literal resource-adaptation checks are native-only, not JS stack-capacity claims.
+cases++;assertions+=7;out.push('"math_port_mml_node_native_budget_and_recovery"_test=[] {tr::AbstractNodeFactory<m::MmlNode> f(classes());auto*root=f.create("plain");auto*tail=root;for(std::size_t i=1;i<512;++i){auto*next=f.create("plain");tail->childNodes=children({next});next->parent=tail;tail=next;}expect(root->isEmpty());tail->childNodes=children({f.create("plain")});bool caught=false;try{(void)root->isEmpty();}catch(const tr::FactoryError&e){caught=e.name=="RangeError";}expect(caught);expect(f.create("plain")->isEmpty());auto*tokenRoot=f.create("token");tail=tokenRoot;for(std::size_t i=1;i<512;++i){auto*next=f.create(i%2?"plain":"token");tail->childNodes=children({next});next->parent=tail;tail=next;}std::size_t visits=0;tokenRoot->walkTree([&](m::MmlNode*,const std::any&){++visits;});expect(bool(visits==512));tail->childNodes=children({f.create("plain")});caught=false;try{tokenRoot->walkTree([](m::MmlNode*,const std::any&){});}catch(const tr::FactoryError&e){caught=e.name=="RangeError";}expect(caught);expect(f.create("token")->isEmpty());visits=0;f.create("token")->walkTree([&](m::MmlNode*,const std::any&){++visits;});expect(bool(visits==1));};');
 out.push('};');const output=out.join('\n')+'\n',target=path.join(root,'tests/math/reference_mml_node.cpp');
 if(process.argv.includes('--check'))assert.equal(fs.readFileSync(target,'utf8').replaceAll('\r\n','\n'),output,'Frozen MML fixtures changed');else fs.writeFileSync(target,output);
 console.log(JSON.stringify({source_members:111,executable_members:85,assertions,cases,mode:process.argv.includes('--check')?'check':'generate'}));

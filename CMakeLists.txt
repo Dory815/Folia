@@ -100,6 +100,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/tree/wrapper_types.ixx
     src/math/core/tree/wrapper.ixx
     src/math/core/mml_tree/attributes.ixx
+    src/math/core/mml_tree/mml_node_host.ixx
+    src/math/core/mml_tree/mml_node.ixx
     src/math/util/constants.ixx
     src/math/util/bbox.ixx
     src/math/util/prioritized_list.ixx
@@ -111,6 +113,10 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/option_types.ixx
     src/math/util/options.ixx)
 target_sources(folia_math PRIVATE
+    src/math/core/mml_tree/mml_bindings.cpp
+    src/math/core/mml_tree/mml_node.cpp
+    src/math/core/mml_tree/mml_branches.cpp
+    src/math/core/mml_tree/mml_empty.cpp
     src/math/util/option_object.cpp
     src/math/util/option_array.cpp)
 

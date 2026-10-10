@@ -267,6 +267,29 @@ types or state: root rejected E11's missing-empty-child-array claim and checked
 actual Text/XML construction. Extra radices are not in the frozen parseInt
 API; they need caller evidence and separately frozen behavior before expansion.
 
+### P8b: MmlNode semantic hierarchy
+
+Root froze `mml-contracts.md`, public semantic declarations, class-default and
+tuple bindings, Property null/object support, and actual pinned-CJS expectations
+in 0b315bc before dispatch. The source has 111 inventoried members, 85 executable
+members; root independently expanded the oracle to 1,081 assertions in 42 cases
+(1,074 actual-runtime assertions plus seven explicit native resource assertions).
+
+| Agent | Sole implementation/evidence files | Responsibility |
+| --- | --- | --- |
+| math_layout | core/mml_tree/mml_node.cpp; evidence/p8b-normal.md | Ordinary semantic node lifecycle, TeX classes, inheritance, verification/errors and policy tables |
+| tex_parser | core/mml_tree/mml_branches.cpp; evidence/p8b-branches.md | Token class-identity text/visitors, inferred-layout delegation, base/script class propagation |
+| math_fonts | core/mml_tree/mml_empty.cpp; evidence/p8b-empty.md | Empty read-only/no-op branch, lossless TextNode, opaque XML service/copy |
+
+After completing Empty, math_fonts has a separate read-only review assignment
+owning only `evidence/p8b-review.md`. Root owns all interfaces/bindings/host
+adapters, fixtures/oracle, source ledger, mutations, CMake, builds, scope,
+commits and acceptance. No agent builds, edits shared files, invents concrete
+node classes/parser/layout rules or integrates production. Test-only registered
+subclasses validate the actual base methods through injected factories; they
+cannot substitute for production MML-kind implementations. No mathematical
+node gate is passed merely by compiling this hierarchy.
+
 ## Wave 3 — base/AMS input and complete font services
 
 TeX packets follow upstream BaseConfiguration/BaseMappings/BaseMethods/
