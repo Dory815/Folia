@@ -95,6 +95,10 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/tree/factory.ixx
     src/math/core/tree/node_factory.ixx
     src/math/core/tree/wrapper_factory.ixx
+    src/math/core/tree/node_types.ixx
+    src/math/core/tree/node.ixx
+    src/math/core/tree/wrapper_types.ixx
+    src/math/core/tree/wrapper.ixx
     src/math/core/mml_tree/attributes.ixx
     src/math/util/constants.ixx
     src/math/util/bbox.ixx

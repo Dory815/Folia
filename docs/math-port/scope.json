@@ -955,10 +955,10 @@
       "proposed_target": "src/math/core/tree/node.ixx",
       "proposed_module": "folia.math.core.tree.node",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port",
+      "adaptation_reason": "Root revision-3 typed interface/storage bridge, fully adopted two-phase virtual initialization, live replaceable array handles, optional absent wrapper arrays and native callback services. Preserve pinned CJS Object.assign lowering, Array.join capture and recursive-array suppression. 512-call native resource bound is explicit; no arbitrary JS descriptor/iterator API. See tree-contracts.md and evidence/tree-acceptance.md.",
+      "port_status": "implemented",
+      "acceptance": "tree_prerequisite_gate_passed_root_review",
       "dependencies": [
         "ts/core/Tree/NodeFactory.ts"
       ],
@@ -1001,10 +1001,10 @@
       "proposed_target": "src/math/core/tree/wrapper.ixx",
       "proposed_module": "folia.math.core.tree.wrapper",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port",
+      "adaptation_reason": "Root revision-3 typed interface/storage bridge, fully adopted two-phase virtual initialization, live replaceable array handles, optional absent wrapper arrays and native callback services. Preserve pinned CJS Object.assign lowering, Array.join capture and recursive-array suppression. 512-call native resource bound is explicit; no arbitrary JS descriptor/iterator API. See tree-contracts.md and evidence/tree-acceptance.md.",
+      "port_status": "implemented",
+      "acceptance": "tree_prerequisite_gate_passed_root_review",
       "dependencies": [
         "ts/core/Tree/Node.ts",
         "ts/core/Tree/WrapperFactory.ts"
