@@ -315,6 +315,35 @@ Root accepted all 29 compiling/failing isolated mutations, the updated base
 suite and its twenty mutations, and the full core suite. Detailed acceptance
 is evidence/leaf-acceptance.md; no complete renderer gate is implied.
 
+### P10: script nodes and UTF-16 string helpers
+
+Root froze script-contracts.md, source hashes, module declarations, copied
+family statics, captured actual-constructor ACCENTS bindings and 1,270 initial
+actual-CJS assertions in commit 5240599 before dispatch.
+
+| Agent | Sole implementation | Sole ledger |
+| --- | --- | --- |
+| math_layout | mml_nodes/msubsup.cpp | evidence/p10-subsup.md |
+| math_fonts | mml_nodes/munderover.cpp | evidence/p10-underover.md |
+| tex_parser | util/string.cpp | evidence/p10-string.md |
+
+Agents cannot modify interfaces, shared host operations, data bindings, oracle,
+fixtures, CMake, scope or production; no builds/commits. Root reviewed every
+one of 43 AST-inventoried members (35 executable), corrected eager over getter
+evaluation and native numeric error formatting, and independently validated
+the final 1,689 assertions/18 cases (1,683 actual-CJS and six native resource
+assertions), all 28 compiling/failing mutations, and the complete core suite.
+Root hardened malformed-trace indexing in the test harness, and configured
+16 MiB Windows test-executor stacks after real 512-deep Debug hooks exhausted
+the default reservation; G7 must configure/verify native math worker stacks.
+evidence/script-acceptance.md records local acceptance and explicit boundaries.
+
+The separate operator-dependencies.md audit records live definition aliases,
+ordered range lookup and LinebreakVisitor module-load mutation. It authorizes
+no dictionary/visitor implementation before root freezes its own interfaces
+and fixtures. mo, complete factory registration and all renderer gates remain
+unfinished; 24/246 local source acceptances do not establish a complete port.
+
 ## Wave 3 — base/AMS input and complete font services
 
 TeX packets follow upstream BaseConfiguration/BaseMappings/BaseMethods/

@@ -105,6 +105,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/class_binding.ixx
     src/math/core/mml_tree/leaf_host.ixx
     src/math/core/mml_tree/leaf_defaults.ixx
+    src/math/core/mml_tree/script_defaults.ixx
+    src/math/core/mml_tree/mml_nodes/msubsup.ixx
+    src/math/core/mml_tree/mml_nodes/munderover.ixx
     src/math/core/mml_tree/mml_nodes/mrow.ixx
     src/math/core/mml_tree/mml_nodes/math.ixx
     src/math/core/mml_tree/mml_nodes/mi.ixx
@@ -116,6 +119,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_nodes/merror.ixx
     src/math/core/mml_tree/mml_nodes/mphantom.ixx
     src/math/util/constants.ixx
+    src/math/util/string.ixx
     src/math/util/bbox.ixx
     src/math/util/prioritized_list.ixx
     src/math/util/js_number.ixx
@@ -126,6 +130,11 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/option_types.ixx
     src/math/util/options.ixx)
 target_sources(folia_math PRIVATE
+    src/math/util/string.cpp
+    src/math/core/mml_tree/mml_nodes/msubsup_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/msubsup.cpp
+    src/math/core/mml_tree/mml_nodes/munderover_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/munderover.cpp
     src/math/core/mml_tree/mml_bindings.cpp
     src/math/core/mml_tree/mml_node.cpp
     src/math/core/mml_tree/mml_branches.cpp
@@ -225,6 +234,12 @@ target_sources(FoliaTests PRIVATE
 target_include_directories(FoliaTests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 target_link_libraries(FoliaTests PRIVATE folia_core folia_math Boost::ut_module)
+if(MSVC)
+    # Native math recursion tests must reach the explicit 512-call resource
+    # guard even with Debug variant/callback frames. App math threads must
+    # satisfy the same stack requirement before the native integration gate.
+    target_link_options(FoliaTests PRIVATE /STACK:16777216)
+endif()
 # Boost.UT parses positional test-name patterns and CLI options. For example,
 # `FoliaTests.exe "*name*"` filters by name; `-t` lists tags.
 add_test(NAME FoliaTests COMMAND FoliaTests)

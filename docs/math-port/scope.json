@@ -791,10 +791,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/msubsup.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.msubsup",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed every member in evidence/p10-members.json under script-contracts.md. Concrete script/under-over classes preserve captured arrays, actual constructor ACCENTS, source-order virtual reads, raw levels/prime and strict accent reinheritance. UTF16 string helpers use scoped numeric spans and accepted ECMA/Unicode/number services; no arbitrary JS iterator or VM stack model. Root acceptance: 1,689 assertions/18 cases (1,683 actual-CJS plus six native), 28 compiling/failing mutations and full core suite; evidence/script-acceptance.md. Windows Debug 512-deep hooks require a 16 MiB executor reservation; G7 must configure/verify Folia math-worker stacks. Complete registry, mo, parser, scene/SVG and integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -875,10 +875,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/munderover.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.munderover",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed every member in evidence/p10-members.json under script-contracts.md. Concrete script/under-over classes preserve captured arrays, actual constructor ACCENTS, source-order virtual reads, raw levels/prime and strict accent reinheritance. UTF16 string helpers use scoped numeric spans and accepted ECMA/Unicode/number services; no arbitrary JS iterator or VM stack model. Root acceptance: 1,689 assertions/18 cases (1,683 actual-CJS plus six native), 28 compiling/failing mutations and full core suite; evidence/script-acceptance.md. Windows Debug 512-deep hooks require a 16 MiB executor reservation; G7 must configure/verify Folia math-worker stacks. Complete registry, mo, parser, scene/SVG and integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -4952,10 +4952,10 @@
       "proposed_target": "src/math/util/string.ixx",
       "proposed_module": "folia.math.util.string",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-reviewed every member in evidence/p10-members.json under script-contracts.md. Concrete script/under-over classes preserve captured arrays, actual constructor ACCENTS, source-order virtual reads, raw levels/prime and strict accent reinheritance. UTF16 string helpers use scoped numeric spans and accepted ECMA/Unicode/number services; no arbitrary JS iterator or VM stack model. Root acceptance: 1,689 assertions/18 cases (1,683 actual-CJS plus six native), 28 compiling/failing mutations and full core suite; evidence/script-acceptance.md. Windows Debug 512-deep hooks require a 16 MiB executor reservation; G7 must configure/verify Folia math-worker stacks. Complete registry, mo, parser, scene/SVG and integration remain separate unaccepted dependencies.",
+      "port_status": "implemented",
+      "acceptance": "string_gate_passed_root_review",
       "dependencies": [],
       "external_imports": []
     }

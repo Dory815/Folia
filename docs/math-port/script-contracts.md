@@ -75,3 +75,10 @@ static copies/aliases, class rebinding, live callback order, partial exceptions,
 captured array replacement/mutation and inherited accent reinheritance.
 Require focused and full core builds plus compiling deliberate mutations that
 fail unchanged assertions. No acceptance based on a build or agent claim alone.
+
+Windows Debug native-hook recursion requires the test process's 16 MiB stack
+reservation to reach the shared 512-call guard before the OS stack boundary.
+The native module cannot configure its caller's stack. G7 must configure and
+verify Folia math worker stack availability; this test setting does not prove
+the existing app/thread integration. Resource recovery is tested with real
+nested hooks, not injected guard counters or reduced-depth witnesses.

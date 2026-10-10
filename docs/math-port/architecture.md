@@ -7,7 +7,8 @@ Prerequisite utilities have local acceptance recorded in
 `evidence/tree-acceptance.md`, plus explicit runtime primitive adaptations in
 `evidence/input-host-acceptance.md` and MML base hierarchy acceptance in
 `evidence/mml-node-acceptance.md`, plus the first ten concrete node files in
-`evidence/leaf-acceptance.md`; this
+`evidence/leaf-acceptance.md` and the script-node/string packet in
+`evidence/script-acceptance.md`; this
 does not pass a full renderer gate.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
@@ -215,3 +216,9 @@ test evidence. No bulk dump of hundreds of files. A rejected gate returns the
 packet for correction; it does not trigger a weaker comparator or a fallback.
 The app retains its existing single backend until G7 permits replacing it;
 there is no runtime old/new switch, compatibility path or JS fallback.
+
+Windows Debug hook recursion is validated in a 16 MiB test-process stack so
+the native 512-call guard precedes the OS stack boundary. Caller stack capacity
+is a host prerequisite, not configured by the portable math module. Before G7,
+configure and verify math worker stack availability in Folia; the test executor
+reservation does not validate existing application/thread integration.
