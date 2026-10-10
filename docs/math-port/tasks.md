@@ -219,6 +219,26 @@ registration and made owning factories immobile to preserve captured addresses.
 Acceptance is independently recorded in `evidence/factory-acceptance.md`;
 generic prerequisites do not accept any mathematical node or layout algorithm.
 
+### P7: generic tree and visitor view
+
+Root froze `tree-contracts.md` and node/wrapper interface storage before dispatch.
+The normal and empty MML branches will implement one typed interface using the
+same parent, factory and replaceable child-array storage; no alternate AST.
+
+| Agent | Sole files | Responsibility |
+| --- | --- | --- |
+| math_layout | core/tree/node.ixx; evidence/p7-node.md | Every AbstractNode/AbstractEmptyNode member and executable constructor phase |
+| tex_parser | core/tree/wrapper.ixx; evidence/p7-wrapper.md | Generic visitor, absent/present child arrays and base wrap argument policy |
+| math_fonts | evidence/e10-tree-host-usage.md | Read-only concrete MML/common/profile usage and interface review |
+
+Root owns node_types/wrapper_types, the added WrapperServices bridge, independent
+JS fixtures, mutations, builds, scope and acceptance. Revision 2 corrects TS
+spread's emitted Object.assign behavior and Array.join capture/evaluation order;
+revision 3 adds Array.join's recursive-array suppression. These contracts do
+not authorize MML stubs, Common algorithms or production wiring. Agents cannot
+edit contracts/tests, build or commit. `evidence/tree-acceptance.md` records root
+review and the 150-assertion/15-mutation local prerequisite acceptance.
+
 Root issues separate packets for generic Tree factories, MmlNode semantics,
 each concrete MML node, operator dictionary, Token/TokenMap/MapHandler,
 Configuration/ParseOptions and Stack/StackItem/StackItemFactory. Each has exact
