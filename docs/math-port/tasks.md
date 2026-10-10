@@ -358,6 +358,12 @@ bridge. LinebreakVisitor startup mutation remains separate. 25/246 local source
 acceptances do not pass renderer gates. Next mo audit is read-only; no
 implementation dispatch is allowed before root freezes its own raw-class,
 constructor static, regex and getter-side-effect interfaces and independent tests.
+The read-only p12-mo-dependencies.md audit and root mo-dependency-probe.cjs show
+a real profile witness: \mmlToken{mo}{toString}/constructor retain undefined
+classes, distinct from null. The current nullable numeric MML class binding is
+therefore insufficient for Mo; root must correct that shared boundary and
+revalidate prior MML/leaf/script packets before implementation dispatch. The
+audit is a prerequisite report, not Mo acceptance or permission to omit quirks.
 
 TeX packets follow upstream BaseConfiguration/BaseMappings/BaseMethods/
 BaseItems and AMS counterparts, with PostFilter ordering tested separately.
