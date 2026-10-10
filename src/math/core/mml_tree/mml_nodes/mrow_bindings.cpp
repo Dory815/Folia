@@ -1,0 +1,9 @@
+// Root-owned source defaults/static primitive bindings.
+module folia.math.core.mml_tree.mml_nodes.mrow;
+import folia.math.core.mml_tree.leaf_defaults;
+import folia.math.core.mml_tree.leaf_host;
+import std;
+namespace folia::math::mml {
+PropertyList& MmlMrow::defaults(){return mrowDefaults();}
+PropertyList& MmlInferredMrow::defaults(){return MmlMrow::defaults();}
+}

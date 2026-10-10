@@ -44,7 +44,7 @@ bool AbstractMmlEmptyNode::hasSpacingAttributes() { return false; }
 void AbstractMmlEmptyNode::setInheritedAttributes(AttributeList, Property, Property, Property) {}
 void AbstractMmlEmptyNode::inheritAttributesFrom(MmlNode*) {}
 void AbstractMmlEmptyNode::verifyTree(std::optional<PropertyList>) {}
-MmlNode* AbstractMmlEmptyNode::mError(std::string, PropertyList, bool) { return nullptr; }
+MmlNode* AbstractMmlEmptyNode::mError(std::string, ErrorOptions, bool) { return nullptr; }
 
 std::string TextNode::kind() const { return "text"; }
 std::u16string TextNode::getText() const { return text_; }

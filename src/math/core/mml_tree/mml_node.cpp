@@ -31,11 +31,12 @@ PropertyList class_info_defaults(const tree::FactoryClassRef<MmlNode>& nodeClass
     if (!nodeClass) host::typeError("Missing registered MML node class");
     const auto* info = std::any_cast<std::shared_ptr<MmlClassInfo>>(&nodeClass->staticData);
     if (!info || !*info) host::typeError("MML class has no native static metadata");
-    if (!(*info)->defaults) {
+    const auto defaults=(*info)->getDefaults();
+    if (!defaults) {
         if (required) host::typeError("Math node class has no defaults");
         return {};
     }
-    return *(*info)->defaults;
+    return *defaults;
 }
 
 MmlNode* child_at(const Children& children, std::size_t index, std::string_view operation) {
@@ -157,6 +158,13 @@ void AbstractMmlNode::initializeMml(tree::FactoryArgs args) {
             host::typeError("MML attributes argument has no PropertyList binding");
         }
     }
+}
+
+PropertyList AbstractMmlNode::constructorDefaults()const {
+    if(!constructorInfo_)host::typeError("Missing native constructor-class binding");
+    auto defaults=constructorInfo_->getDefaults();
+    if(!defaults)host::typeError("Constructor class has no defaults");
+    return *defaults;
 }
 
 MmlNode* AbstractMmlNode::copy(bool keepIds) {
@@ -517,7 +525,7 @@ void AbstractMmlNode::verifyChildren(PropertyList options) {
     }
 }
 
-MmlNode* AbstractMmlNode::mError(std::string message, PropertyList options, bool shortError) {
+MmlNode* AbstractMmlNode::mError(std::string message, ErrorOptions options, bool shortError) {
     if (this->parent && this->parent->isKind("merror")) return nullptr;
     auto* error = this->factory.create("merror", {});
     auto errorAttributes = error->attributes();

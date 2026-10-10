@@ -14,7 +14,22 @@ class MmlNode;
 using Children = tree::FactoryChildren<MmlNode>;
 using Factory = tree::FactoryServices<MmlNode>;
 using Error = tree::FactoryError;
-struct MmlClassInfo { std::optional<PropertyList> defaults; };
+class ErrorOptions {
+    std::optional<PropertyList> value_;
+public:
+    ErrorOptions():value_(PropertyList{}){}
+    ErrorOptions(PropertyList value):value_(std::move(value)){}
+    ErrorOptions(std::nullptr_t):value_(std::nullopt){}
+    Property get(std::string_view name)const{
+        if(!value_)throw Error("TypeError",u"Cannot read null MML error options");
+        return value_->get(name);
+    }
+};
+struct MmlClassInfo {
+    std::optional<PropertyList> defaults;
+    std::function<std::optional<PropertyList>()> defaultsBinding;
+    std::optional<PropertyList> getDefaults()const{return defaultsBinding?defaultsBinding():defaults;}
+};
 struct TeXClasses { static constexpr int ORD=0,OP=1,BIN=2,REL=3,OPEN=4,CLOSE=5,PUNCT=6,INNER=7,NONE=-1; };
 inline constexpr TeXClasses TEXCLASS;
 inline constexpr std::array<std::string_view,8> TEXCLASSNAMES={"ORD","OP","BIN","REL","OPEN","CLOSE","PUNCT","INNER"};
@@ -55,7 +70,7 @@ public:
     virtual void setInheritedAttributes(AttributeList={},Property display=false,Property level=0,Property prime=false)=0;
     virtual void inheritAttributesFrom(MmlNode*)=0;
     virtual void verifyTree(std::optional<PropertyList> options={})=0;
-    virtual MmlNode* mError(std::string message,PropertyList options,bool shortError=false)=0;
+    virtual MmlNode* mError(std::string message,ErrorOptions options,bool shortError=false)=0;
 };
 // Optional native method binding models 'textContent' in node before invocation.
 // An engaged empty callback represents a present non-callable property.
@@ -69,6 +84,7 @@ class AbstractMmlNode : public tree::AbstractNode<MmlNode,MmlNode> {
     std::optional<double> texclass_,prevClass_;
     Property prevLevel_=PropertyNull{};
     std::shared_ptr<Attributes> attributes_;
+    std::shared_ptr<MmlClassInfo> constructorInfo_;
 public:
     static PropertyList& defaults();
     static PropertyList& noInherit();
@@ -77,6 +93,9 @@ public:
     static PropertyList& verifyDefaults();
     explicit AbstractMmlNode(Factory& factory):Generic(factory){}
     void initializeMml(tree::FactoryArgs args={});
+    // Native class binding preserves this.constructor independently of registry.
+    void bindConstructorClass(std::shared_ptr<MmlClassInfo> info){constructorInfo_=std::move(info);}
+    virtual void initializeClassFields(){}
     MmlNode* copy(bool keepIds=false) override;
     std::optional<double> texClass()const override;
     void setTexClass(std::optional<double>)override;
@@ -109,8 +128,10 @@ public:
     void setInheritedAttributes(AttributeList={},Property display=false,Property level=0,Property prime=false)override;
     void inheritAttributesFrom(MmlNode*)override;
     void verifyTree(std::optional<PropertyList> options={})override;
-    MmlNode* mError(std::string message,PropertyList options,bool shortError=false)override;
+    MmlNode* mError(std::string message,ErrorOptions options,bool shortError=false)override;
 protected:
+    PropertyList constructorDefaults()const;
+    void initializeTexClass(std::optional<double> value){texclass_=value;}
     virtual void updateTeXclass(MmlNode*);
     virtual void getPrevClass(MmlNode*);
     virtual void setChildInheritedAttributes(AttributeList,Property,Property,Property);
@@ -180,7 +201,7 @@ public:
     void setInheritedAttributes(AttributeList={},Property display=false,Property level=0,Property prime=false)override;
     void inheritAttributesFrom(MmlNode*)override;
     void verifyTree(std::optional<PropertyList> options={})override;
-    MmlNode* mError(std::string,PropertyList,bool shortError=false)override;
+    MmlNode* mError(std::string,ErrorOptions,bool shortError=false)override;
 };
 class TextNode : public AbstractMmlEmptyNode {
     std::u16string text_;
