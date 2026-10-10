@@ -179,6 +179,10 @@ emit('};');
 
 emit('"math_port_priority_reference"_test = [] {');
 const list = new PrioritizedList(); emit('PrioritizedList<double> list;');
+// Checks for the deliberate C++ iterator adaptation, independently of the JS
+// value snapshots. These protect native callers of the port's range interface.
+expect('(list.end() == list.end())');
+expect('(PrioritizedList<int>::iterator{} == PrioritizedList<int>::iterator{})');
 function prioritySnapshot() {
   emit('{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }');
   const values = [...list];
@@ -191,6 +195,7 @@ function prioritySnapshot() {
 for (const [item, priority] of [[1,5],[2,5],[3,-7],[1,9],[4,0],[5,NaN],[6,Infinity],[7,-Infinity],[NaN,2]]) {
   list.add(item,priority); emit(`list.add(${num(item)}, ${num(priority)});`); prioritySnapshot();
 }
+expect('(list.end() == list.end())');
 for (const item of [1,NaN,99,2,1]) {
   list.remove(item); expect(`(&list.remove(${num(item)}) == &list)`); prioritySnapshot();
 }

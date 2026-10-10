@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "status": "inventory_unreviewed_not_release_ready",
+  "status": "scope_partially_reviewed_not_release_ready",
   "upstream": {
     "repository": "https://github.com/mathjax/MathJax-src",
     "version": "4.1.3",
@@ -301,10 +301,10 @@
       "proposed_target": "src/math/core/mml_tree/attributes.ixx",
       "proposed_module": "folia.math.core.mml_tree.attributes",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port",
+      "adaptation_reason": "Root-defined native prototype dictionaries, shared handles and scalar Property values; rest arguments use vectors. See primitive-contracts.md and evidence/primitive-acceptance.md.",
+      "port_status": "implemented",
+      "acceptance": "primitive_gate_passed_root_review",
       "dependencies": [
         "ts/core/Tree/Node.ts"
       ],
@@ -4775,10 +4775,10 @@
       "proposed_target": "src/math/util/bbox.ixx",
       "proposed_module": "folia.math.util.bbox",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port",
+      "adaptation_reason": "Static empty renamed makeEmpty for C++ signature collision; read-only metadata constants and optional constructor fields. Full equations retained. See evidence/p2-bbox.md.",
+      "port_status": "implemented",
+      "acceptance": "primitive_gate_passed_root_review",
       "dependencies": [
         "ts/util/lengths.ts"
       ],
@@ -4861,10 +4861,10 @@
       "proposed_target": "src/math/util/prioritized_list.ixx",
       "proposed_module": "folia.math.util.prioritized_list",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port",
+      "adaptation_reason": "Native mutation-aware cursor iterator, shared yielded entries and one cross-type default backing value. Identity handles replace JS generic references. See evidence/p3-prioritized-list.md.",
+      "port_status": "implemented",
+      "acceptance": "primitive_gate_passed_root_review",
       "dependencies": [],
       "external_imports": []
     },

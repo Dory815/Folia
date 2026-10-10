@@ -84,6 +84,18 @@ target_sources(folia_core PUBLIC
     FILE_SET CXX_MODULES FILES ${FOLIA_CORE_MODULE})
 target_sources(folia_core PRIVATE ${FOLIA_CORE_SOURCE})
 
+# Native math port prerequisites, independently tested before app integration.
+# Explicit file ownership: do not collect an unreviewed port through a glob.
+add_library(folia_math STATIC)
+target_compile_features(folia_math PUBLIC cxx_std_23)
+set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
+target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+    src/math/core/tree/property.ixx
+    src/math/core/mml_tree/attributes.ixx
+    src/math/util/constants.ixx
+    src/math/util/bbox.ixx
+    src/math/util/prioritized_list.ixx)
+
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
 # ---------------------------------------------------------------------------
@@ -155,7 +167,7 @@ target_sources(FoliaTests PRIVATE
     ${FOLIA_TEST_SRC})
 target_include_directories(FoliaTests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_link_libraries(FoliaTests PRIVATE folia_core Boost::ut_module)
+target_link_libraries(FoliaTests PRIVATE folia_core folia_math Boost::ut_module)
 # Boost.UT parses positional test-name patterns and CLI options. For example,
 # `FoliaTests.exe "*name*"` filters by name; `-t` lists tags.
 add_test(NAME FoliaTests COMMAND FoliaTests)

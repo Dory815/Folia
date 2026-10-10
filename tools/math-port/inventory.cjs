@@ -84,7 +84,10 @@ for (const item of files.values()) {
     for (const key of ['disposition', 'adaptation_reason', 'port_status', 'acceptance']) item[key] = previous[key];
   }
 }
-const manifest = {schema: 1, status: 'inventory_unreviewed_not_release_ready',
+const reviewed = [...files.values()].filter(item => item.disposition !== 'unreviewed').length;
+const status = reviewed === files.size ? 'scope_reviewed_not_release_ready' :
+  reviewed ? 'scope_partially_reviewed_not_release_ready' : 'inventory_unreviewed_not_release_ready';
+const manifest = {schema: 1, status,
   upstream: {repository: 'https://github.com/mathjax/MathJax-src', version: '4.1.3', commit: expectedCommit},
   profile: {file: 'tools/mathjax-bundle/entry.cjs', sha256: sha256(profile), tex_packages: packages,
     svg_options: {fontCache: 'none', exFactor: 0.5, displayOverflow: 'linebreak', linebreaks: {inline: true}}},

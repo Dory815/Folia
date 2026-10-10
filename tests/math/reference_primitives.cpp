@@ -1245,6 +1245,8 @@ expect(bool(BBox::boxSides[3].dimension == "w"));
 };
 "math_port_priority_reference"_test = [] {
 PrioritizedList<double> list;
+expect(bool((list.end() == list.end())));
+expect(bool((PrioritizedList<int>::iterator{} == PrioritizedList<int>::iterator{})));
 list.add(1.0, 5.0);
 { std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
 const std::vector<double> expectedItems{1.0};
@@ -1308,6 +1310,7 @@ const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, 5.0, 9.0, std::nume
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
+expect(bool((list.end() == list.end())));
 expect(bool((&list.remove(1.0) == &list)));
 { std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 2.0, 5.0, 7.0, std::numeric_limits<double>::quiet_NaN(), 6.0};
