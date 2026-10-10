@@ -249,7 +249,7 @@ custom AST as a shortcut.
 
 Root freezes `input-host-contracts.md` revision 1, `utf16_types.ixx` and
 `input-host-oracle.cjs`/`reference_input_host.cpp` before dispatch. The oracle
-uses actual Node 24.13.0 operations, with 3,159 frozen assertions, bit-exact
+uses actual Node 24.13.0 operations, with 3,793 frozen assertions, bit-exact
 binary64 comparisons and deterministic generated inputs. This is a host
 prerequisite; MmlNode.ts and every concrete mathematical node remain unaccepted.
 

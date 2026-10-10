@@ -20,12 +20,21 @@ const ws=[9,10,11,12,13,32,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200
 const numbers=['',' ','\0','-0','+0','-0e999999','-0e-999999','Infinity','+Infinity','-Infinity','inf','NaN','infinity','1.','.1','+.5','-.5','1e+2','1e','1e-','1_2','1n','1px','0x','0x1','0XfF','-0x1','+0x1','0o10','0b11','0b12','0o8','0x1g','0x1.2','0x1p2','0o','0b','1e309','-1e309','1e-9999','-1e-9999','2.2250738585072014e-308','2.2250738585072012e-308','4.9406564584124654e-324','2.4703282292062327e-324','2.4703282292062328e-324','1.7976931348623157e308','1.7976931348623159e308','9007199254740993','9007199254740995','1.00000000000000011102230246251565404236316680908203125','1.00000000000000011102230246251565404236316680908203126','9'.repeat(500),'-0.'+'0'.repeat(500)+'1'];
 for(const c of ws)numbers.push(String.fromCharCode(c)+'-2.5'+String.fromCharCode(c));
 for(const c of [0,133,6158,8203,55296,56320,65535])numbers.push(String.fromCharCode(c)+'1','1'+String.fromCharCode(c));
+for(const exponent of [51,52,53,54,63,64,1022,1023,1024,1100])for(const delta of [-3n,-2n,-1n,0n,1n,2n,3n]){
+ const n=(1n<<BigInt(exponent))+delta;
+ for(const [prefix,radix]of [['0x',16],['0o',8],['0b',2]])numbers.push(prefix+n.toString(radix));
+}
+numbers.push('0x'+'0'.repeat(1500)+'20000000000001','00000000000000001','-0000.000e9999','000.e-9999');
 for(let i=0;i<400;i++){let digits='';for(let j=0,n=1+random()%100;j<n;j++)digits+=random()%10;const cut=random()%(digits.length+1);numbers.push((random()%2?'-':'+')+digits.slice(0,cut)+'.'+digits.slice(cut)+'e'+(Number(random()%1401)-700));}
 for(const [prefix,radix]of [['0x',16],['0o',8],['0b',2]])for(let i=0;i<100;i++){let digits='';for(let j=0,n=1+random()%1200;j<n;j++)digits+='0123456789abcdef'[random()%radix];numbers.push(prefix+digits);}
 out.push('"math_port_input_host_number"_test=[] {');
 for(const s of numbers){out.push(`expect(exact(ni::number(${units(s)}),${bits(Number(s))}));`);assertions++;}
 out.push('};');counts.number=numbers.length;
 const ints=['',' ','-0','-0junk','+12px','-12.9','0x10','-0x10','0Xff','0b11','0o11','08','010','123e4','zZ','Infinity','0x','0xg','1_2','9007199254740993','9007199254740995','-9'.repeat(2),'9'.repeat(500)];
+for(const exponent of [52,53,54,63,64,1023,1024])for(const delta of [-1n,0n,1n,2n,3n]){
+ const n=(1n<<BigInt(exponent))+delta;
+ ints.push(n.toString(10),'0x'+n.toString(16),n.toString(8));
+}
 for(const c of ws)ints.push(String.fromCharCode(c)+'-012junk');
 for(const c of [0,133,6158,8203,55296])ints.push(String.fromCharCode(c)+'12');
 out.push('"math_port_input_host_parseInt"_test=[] {');

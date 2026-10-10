@@ -106,8 +106,9 @@ ownership, dependencies and invariants must remain traceable.
 
 1. **Input and positions.** API input is UTF-8. Parser string-index behavior
    follows upstream UTF-16 semantics; a single explicit UTF-8/UTF-16 mapping
-   converts diagnostic locations at the boundary. Mathematical token text is
-   Unicode codepoints. This is separate from, and cannot change, the editor's
+   converts diagnostic locations at the boundary. MML TextNode retains UTF-16
+   text; glyph/character iteration uses Unicode codepoints only at the source's
+   codePointAt/Array.from operations. This is separate from, and cannot change, the editor's
    authoritative block-local source selection.
 2. **Attribute values.** Missing, explicit, inherited and default values stay
    distinct. A typed value must preserve false, zero and empty strings. Style
