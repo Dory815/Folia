@@ -1389,11 +1389,8 @@ public:
     // ---- code fence / fenced math ----
     std::optional<BlockNode> try_parse_indented_code_block() {
         auto indentation_end = [&](std::size_t line_start) -> std::optional<std::size_t> {
-            if (line_start >= cps.size()) return std::nullopt;
-            if (cps[line_start] == U'\t') return line_start + 1;
-            auto cursor = line_start;
-            while (cursor < cps.size() && cursor - line_start < 4 && cps[cursor] == U' ') ++cursor;
-            if (cursor - line_start == 4) return cursor;
+            const auto indent = scan_block_indentation(cps, line_start, 4);
+            if (indent.columns >= 4) return indent.end;
             return std::nullopt;
         };
         auto start = pos;
@@ -1793,6 +1790,10 @@ public:
         while (auto marker = inspect(pos)) {
             if (marker->indent != first->indent || marker->task != first->task || marker->ordered != first->ordered) break;
             NodeId item_id = next_node_id();
+            std::size_t content_indent = 0;
+            for (auto cursor = marker->start; cursor < marker->content_start; ++cursor) {
+                content_indent += cps[cursor] == U'\t' ? 4 - content_indent % 4 : 1;
+            }
             auto item_end = marker->source_end;
             bool previous_blank = false;
             std::optional<std::size_t> trailing_blank_start;
@@ -1800,14 +1801,14 @@ public:
                 auto line_start = item_end;
                 const auto line_end = line_content_end(line_start);
                 bool blank = true;
-                std::size_t indentation = 0;
+                const auto indent = scan_block_indentation(cps, line_start);
+                const auto indentation = indent.columns;
                 for (auto cursor = line_start; cursor < line_end; ++cursor) {
-                    if (cps[cursor] == U' ' && blank) ++indentation;
-                    else if (cps[cursor] != U' ' && cps[cursor] != U'\t') blank = false;
+                    if (cps[cursor] != U' ' && cps[cursor] != U'\t') blank = false;
                 }
                 auto next_marker = inspect(line_start);
                 if (next_marker && next_marker->indent == first->indent) break;
-                if (!blank && indentation <= first->indent && previous_blank) {
+                if (!blank && indentation < content_indent && previous_blank) {
                     // A blank run before an outdented sibling is the separator
                     // between blocks, not trailing source owned by this list
                     // item. Leave it for parse_blocks so separator_before can
@@ -1815,8 +1816,8 @@ public:
                     item_end = trailing_blank_start.value_or(item_end);
                     break;
                 }
-                if (!blank && indentation <= first->indent
-                    && line_starts_interrupting_block(line_start + indentation)) {
+                if (!blank && indentation < content_indent
+                    && line_starts_interrupting_block(indent.end)) {
                     // Lazy paragraph continuations may remain unindented, but
                     // an explicit peer-level block marker ends the item even
                     // without a separating blank line. Otherwise the nested
@@ -1845,15 +1846,19 @@ public:
             };
             append_range(marker->content_start, marker->content_end);
             auto line_start = marker->source_end;
-            auto content_indent = marker->content_start - marker->start;
             while (line_start < item_end) {
                 const auto line_end = (std::min)(line_content_end(line_start), item_end);
                 offset_map.push_back(line_start > 0 ? line_start - 1 : line_start);
                 inner.push_back(U'\n');
                 inner_end_source = line_start;
-                auto content = line_start;
-                std::size_t removed = 0;
-                while (content < line_end && removed < content_indent && (cps[content] == U' ' || cps[content] == U'\t')) { ++content; ++removed; }
+                const auto indent = scan_block_indentation(cps, line_start, content_indent);
+                auto content = (std::min)(indent.end, line_end);
+                // A tab can straddle the item's content column. Its remaining
+                // columns belong to the nested block, not to the list prefix.
+                for (auto column = content_indent; column < indent.columns; ++column) {
+                    offset_map.push_back(content - 1);
+                    inner.push_back(U' ');
+                }
                 append_range(content, line_end);
                 line_start = line_end < item_end ? next_line_start(line_end) : line_end;
             }

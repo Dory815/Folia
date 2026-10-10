@@ -17,6 +17,26 @@ enum class BlockSourceKind {
     FencedMath,
 };
 
+struct BlockIndentation {
+    std::size_t end = 0;
+    std::size_t columns = 0;
+};
+
+// Source offsets remain character offsets; structural indentation uses
+// four-column tab stops, including a tab preceded by ordinary spaces.
+inline BlockIndentation scan_block_indentation(
+    std::u32string_view source, std::size_t start,
+    std::size_t maximum_columns = (std::numeric_limits<std::size_t>::max)()) {
+    BlockIndentation result{start, 0};
+    while (result.end < source.size() && result.columns < maximum_columns) {
+        if (source[result.end] == U' ') ++result.columns;
+        else if (source[result.end] == U'\t') result.columns += 4 - result.columns % 4;
+        else break;
+        ++result.end;
+    }
+    return result;
+}
+
 enum class BlockSourceTokenKind {
     OpeningMarker,
     InfoString,
@@ -348,21 +368,12 @@ inline BlockSourceTree parse_indented(std::u32string_view source) {
     auto content_boundary = std::size_t{0};
     while (line_start < source.size()) {
         const auto end = line_end(source, line_start);
-        auto content_start = line_start;
-        if (source[content_start] == U'\t') {
-            push_token(tree, BlockSourceTokenKind::Indentation, content_start, content_start + 1);
-            ++content_start;
+        const auto indent = scan_block_indentation(source, line_start, 4);
+        auto content_start = indent.end;
+        if (indent.columns >= 4 || content_start == end) {
+            push_token(tree, BlockSourceTokenKind::Indentation, line_start, content_start);
         } else {
-            auto spaces = std::size_t{0};
-            while (content_start < end && source[content_start] == U' ' && spaces < 4) {
-                ++content_start;
-                ++spaces;
-            }
-            if (spaces == 4) {
-                push_token(tree, BlockSourceTokenKind::Indentation, line_start, content_start);
-            } else if (line_start != end) {
-                content_start = line_start;
-            }
+            content_start = line_start;
         }
         if (content_start < end) {
             tree.content_ranges.push_back({content_start, end});

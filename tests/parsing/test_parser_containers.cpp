@@ -23,6 +23,41 @@ using namespace boost::ut;
 
 suite parser_container_tests = [] {
 
+"list_new_blocks_require_the_marker_content_column"_test = [] {
+    for (auto const& source : std::vector<std::string>{
+            "1. parent\n  - peer\n", "10) parent\n   - peer\n"}) {
+        const auto parsed = parse_text(1, source);
+        const auto& blocks = parsed.document.root.children;
+        expect(fatal(blocks.size() == 2u));
+        expect(blocks[0].kind == BlockKind::List);
+        expect(blocks[1].kind == BlockKind::List);
+        expect(blocks[0].list_special().ordered);
+        expect(!blocks[1].list_special().ordered);
+        expect(blocks[0].children[0].children.size() == 1u);
+    }
+    const auto nested = parse_text(1, "10) parent\n    - child\n");
+    expect(fatal(nested.document.root.children.size() == 1u));
+    expect(nested.document.root.children[0].children[0].children.size() == 2u);
+    const auto lazy = parse_text(1, "1. first\nlazy continuation\n");
+    expect(fatal(lazy.document.root.children.size() == 1u));
+    expect(lazy.document.root.children[0].children[0].children[0].inline_content.source
+        == U"first\nlazy continuation");
+};
+
+"mixed_space_tab_indented_code_preserves_source_and_content"_test = [] {
+    for (auto const& prefix : std::vector<std::string>{"\t", " \t", "  \t", "   \t", "    "}) {
+        const auto source = prefix + "foo\tbaz\t\tbim\n";
+        const auto parsed = parse_text(1, source);
+        expect(fatal(parsed.document.root.children.size() == 1u));
+        const auto& code = parsed.document.root.children[0];
+        expect(fatal(code.kind == BlockKind::CodeBlock));
+        expect(code.atomic_special().code_indented);
+        expect(code.block_source.source() == utf8_to_cps(source));
+        expect(block_source_content(code.block_source) == U"foo\tbaz\t\tbim");
+        expect(serialize_markdown(parsed.document) == source);
+    }
+};
+
 "nested_containers_retain_editable_inline_documents"_test = [] {
     const auto parsed = parse_text(1,
         "> # *heading*\n"
