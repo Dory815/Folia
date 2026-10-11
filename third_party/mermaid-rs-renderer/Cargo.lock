@@ -361,6 +361,7 @@ dependencies = [
  "clap",
  "fontdb",
  "json5",
+ "log",
  "once_cell",
  "regex",
  "resvg",
