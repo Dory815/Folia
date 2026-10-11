@@ -26,7 +26,9 @@ semantics in `evidence/p17c-mathchoice-acceptance.md`, followed by complete acti
 and MML registry/factory acceptance in `evidence/p18b-maction-acceptance.md` and
 `evidence/p18c-mml-registry-acceptance.md`, with the general Unicode lowercase
 host in `evidence/p18a-case-host-acceptance.md`, followed by complete FunctionList
-and native asynchronous host acceptance in `evidence/p19a-function-list-acceptance.md`.
+and native asynchronous host acceptance in `evidence/p19a-function-list-acceptance.md`,
+followed by the bounded native argument host in
+`evidence/p19b1-argument-expansion-acceptance.md` (no new TS source-file count).
 Local source acceptance is 51/246; the complete TeX/Common/SVG renderer and full G0–G7 are still closed.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
