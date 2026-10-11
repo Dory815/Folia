@@ -40,8 +40,9 @@ PropertyList class_info_defaults(const tree::FactoryClassRef<MmlNode>& nodeClass
 }
 
 MmlNode* child_at(const Children& children, std::size_t index, std::string_view operation) {
-    // P23f Root stub: child_at.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    if (!children) host::typeError("Cannot read properties of null (reading '0')");
+    const NodeValue child = children->get(index);
+    return child.requireNode(operation);
 }
 
 bool property_set_contains(const Property& value) {
@@ -118,8 +119,71 @@ PropertyList& AbstractMmlNode::verifyDefaults() {
 }
 
 void AbstractMmlNode::initializeMml(tree::FactoryArgs args) {
-    // P23f Root stub: AbstractMmlNode::initializeMml.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    // These are the source field-initializer values. Establish them before
+    // factory creation or virtual child hooks can observe this object.
+    prevClass_ = PropertyNull{};
+    prevLevel_ = PropertyNull{};
+    texclass_ = PropertyNull{};
+
+    Property inputAttributes = Missing{};
+    if (!args.empty() && args[0].has_value()) {
+        if (const auto* value = std::any_cast<Property>(&args[0])) {
+            inputAttributes = *value;
+        } else if (const auto* value = std::any_cast<PropertyList>(&args[0])) {
+            inputAttributes = *value;
+        } else if (std::any_cast<std::nullptr_t>(&args[0])) {
+            inputAttributes = PropertyNull{};
+        } else if (std::any_cast<PropertyNull>(&args[0])) {
+            inputAttributes = PropertyNull{};
+        } else {
+            host::typeError("Unsupported native MML constructor properties argument");
+        }
+    }
+
+    Children inputChildren = std::make_shared<tree::ChildArray<MmlNode>>();
+    if (args.size() > 1 && args[1].has_value()) {
+        if (const auto* value = std::any_cast<Children>(&args[1])) {
+            inputChildren = *value;
+        } else if (const auto* value = std::any_cast<Property>(&args[1])) {
+            if (value->missing()) {
+                inputChildren = std::make_shared<tree::ChildArray<MmlNode>>();
+            } else if (host::nullish(*value)) {
+                inputChildren.reset();
+            } else {
+                host::typeError("Unsupported native MML constructor children argument");
+            }
+        } else if (std::any_cast<std::nullptr_t>(&args[1]) ||
+                   std::any_cast<PropertyNull>(&args[1])) {
+            inputChildren.reset();
+        } else {
+            host::typeError("Unsupported native MML constructor children argument");
+        }
+    }
+
+    if (arity() < 0) {
+        MmlNode* const inferred = factory.create("inferredMrow", {});
+        Children inferredChildren = std::make_shared<tree::ChildArray<MmlNode>>();
+        inferredChildren->push_back(NodeValue(inferred));
+        this->childNodes = std::move(inferredChildren);
+        const NodeValue inferredChild = this->childNodes->get(0);
+        inferredChild.requireNodeForWrite("parent")->setParent(
+            NodeValue(static_cast<MmlNode*>(this)));
+    }
+    this->setChildren(std::move(inputChildren));
+
+    const auto nodeClass = factory.getNodeClass(this->kind());
+    PropertyList nodeDefaults = class_info_defaults(nodeClass, false);
+    const auto mathClass = factory.getNodeClass("math");
+    PropertyList mathDefaults = class_info_defaults(mathClass, false);
+    auto newAttributes = std::make_shared<Attributes>(nodeDefaults, mathDefaults);
+    this->setAttributes(std::move(newAttributes));
+
+    // The CJS Object.assign used by Attributes.setList ignores nullish input,
+    // while copying enumerable scalar/object properties for supported values.
+    const PropertyList assignedAttributes = host::objectAssign(inputAttributes);
+    const auto currentAttributes = this->attributes();
+    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'setList')");
+    currentAttributes->setList(assignedAttributes);
 }
 
 PropertyList AbstractMmlNode::constructorDefaults()const {
@@ -164,13 +228,43 @@ NodeValue AbstractMmlNode::Parent() const {
 }
 
 void AbstractMmlNode::setChildren(Children children) {
-    // P23f Root stub: AbstractMmlNode::setChildren.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    if (arity() < 0) {
+        child_at(this->childNodes, 0, "setChildren")->setChildren(std::move(children));
+        return;
+    }
+    Generic::setChildren(std::move(children));
 }
 
 NodeValue AbstractMmlNode::appendChild(NodeValue child) {
-    // P23f Root stub: AbstractMmlNode::appendChild.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    if (arity() < 0) {
+        child_at(this->childNodes, 0, "appendChild")->appendChild(child);
+        return child;
+    }
+
+    MmlNode* const input = child.requireNode("isInferred");
+    if (input->isInferred()) {
+        if (arity() == std::numeric_limits<double>::infinity()) {
+            const Children originalChildren = input->childNodes;
+            if (!originalChildren) {
+                host::typeError("Cannot read properties of null (reading 'forEach')");
+            }
+            originalChildren->forEach([&](NodeValue node, std::size_t, tree::ChildArray<MmlNode>&) {
+                Generic::appendChild(node);
+            });
+            return child;
+        }
+
+        MmlNode* const original = input;
+        MmlNode* const replacement = factory.create("mrow", {});
+        if (!replacement) host::typeError("Cannot read properties of null (reading 'setChildren')");
+        replacement->setChildren(original->childNodes);
+        replacement->setAttributes(original->attributes());
+        for (const auto& name : original->getPropertyNames()) {
+            replacement->setProperty(name, original->getProperty(name));
+        }
+        return Generic::appendChild(NodeValue(replacement));
+    }
+    return Generic::appendChild(child);
 }
 
 NodeValue AbstractMmlNode::replaceChild(NodeValue newChild, NodeValue oldChild) {

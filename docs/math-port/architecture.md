@@ -1,6 +1,11 @@
 # Native MathJax 4 port: architecture and release gates
 
 Status: architecture specification; complete native renderer is not accepted.
+Current tagged-tree migration status is recorded in
+`evidence/p23cd-generic-tree-acceptance.md` and
+`evidence/p23f-constructor-acceptance.md`. Historical dense MML acceptance below
+does not certify the new sparse path: remaining consumers are explicit stubs,
+and the complete native renderer cannot be used by Folia yet.
 Prerequisite utilities have local acceptance recorded in
 `evidence/primitive-acceptance.md`, `evidence/numeric-acceptance.md` and
 `evidence/options-acceptance.md`, `evidence/factory-acceptance.md` and
@@ -262,8 +267,12 @@ P23 fixes the sparse-child ownership and storage boundary in
 `p23-child-storage-design.md`: factory/session-owned products, borrowed tagged
 node identity, one sparse child-array store, exact alias/rebind and partial-write
 semantics. Every one of the 31 existing child consumers must migrate together;
-the dense-vector evidence does not accept Source-reachable holes. The concrete
-code contract, Source oracle/red tests and migration remain pending. No Source
+the dense-vector evidence does not accept Source-reachable holes. Generic tree
+operations and traversal now have Source acceptance; the complete real MML
+registry graph compiles, and P23f locally restores constructor/child policy
+against 88 constructor cases and 62 of the original Source299 cases, with 11
+effective compiling mutations. The remaining 237 cases, return32 and other MML
+consumers still require migration and independent acceptance. No Source
 count or engine/parser/renderer acceptance advances from this design decision.
 RegExp is separately an owned canonical Property value with real object state
 and JS operation/coercion protocols; the audited gaps and candidate mismatches
