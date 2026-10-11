@@ -16,8 +16,9 @@ node acceptance in `evidence/p12c-mo-acceptance.md` and fraction/radical semanti
 in `evidence/p13-arithmetic-acceptance.md` and table semantics in
 `evidence/p14-table-acceptance.md` and multiscripts in
 `evidence/p15a-multiscript-acceptance.md` and TeXAtom/semantics in
-`evidence/p15bc-atom-semantics-acceptance.md`; this does not pass a full renderer
-gate. Local source acceptance is 35/246, with full G0–G7 still closed.
+`evidence/p15bc-atom-semantics-acceptance.md` and the HTML semantic node in
+`evidence/p15d-html-node-acceptance.md`; this does not pass a full renderer
+gate. Local source acceptance is 36/246, with full G0–G7 still closed.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
 

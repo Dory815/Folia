@@ -80,3 +80,11 @@ host/setXML/getXML callbacks and throws, all direct parent branches/options
 identity, real token text extraction with UTF-16 and live rebinding, inherited
 copy ordering/adaptor loss, focused/full core build and compiling assertion-failing
 mutants. Agent completion is not acceptance.
+
+Final root acceptance: evidence/p15d-html-node-acceptance.md. The expanded
+actual-CJS oracle has 434 assertions/75 cases/52 source-value records, including
+omitted/default arguments, exact payload identity, fresh wrapper records,
+copy factory order, copied live text and Unicode serialization/kind witnesses.
+All seven member mappings, complete core regression and 26 compiling,
+assertion-failing mutants pass. Typed host and downstream integration limits
+above remain explicit; no full renderer gate is passed by this source packet.

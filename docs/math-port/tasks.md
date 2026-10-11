@@ -613,3 +613,14 @@ P15d is only a read-only HTML/XML host prerequisite audit. Root must freeze
 its interfaces, exact source methods, host obligations and independent fixtures
 before any implementation dispatch. Disabled texhtml defaults do not authorize
 omitting the configurable enabled path.
+
+### P15d root acceptance
+
+Root froze the HTML semantic node and its typed host calls in f7d8ce7 before
+Luna implementation. All seven source members are mapped; final actual-CJS oracle
+has 434 assertions/75 cases. Full core regression and 26 compiling/assertion-failing
+mutants pass. Evidence: evidence/p15d-html-node-acceptance.md.
+Local source acceptance is 36/246; full G0–G7 remain closed.
+Concrete DOM/texhtml parsing, HTML measurement and SVG foreignObject are still
+required separately. P16-remaining-mml-audit.md is a read-only prerequisite,
+not implementation authorization or acceptance of the remaining eight sources.
