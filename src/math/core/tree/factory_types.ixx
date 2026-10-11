@@ -1,6 +1,7 @@
 // Root-frozen native constructor-service contracts. No node/renderer algorithms.
 export module folia.math.core.tree.factory_types;
 export import folia.math.core.tree.property;
+export import folia.math.core.tree.child_array;
 export import folia.math.util.option_types;
 import std;
 
@@ -32,7 +33,7 @@ template<class Product> struct FactoryCreatorObject {
     bool prototypeAssigned = false;
 };
 template<class Product> using FactoryCreatorView = std::shared_ptr<FactoryCreatorObject<Product>>;
-template<class Product> using FactoryChildren = std::shared_ptr<std::vector<Product*>>;
+template<class Product> using FactoryChildren = std::shared_ptr<ChildArray<Product>>;
 template<class Product,class Source> class WrapperServices {
 public:
     virtual ~WrapperServices() = default;

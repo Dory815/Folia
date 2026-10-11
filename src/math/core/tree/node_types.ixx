@@ -6,11 +6,11 @@ import std;
 export namespace folia::math::tree {
 template<class Product> using TreeVisitor = std::function<void(Product*,const std::any&)>;
 template<class Product> class Node : public FactoryNode {
+    ChildValue<Product> parent_ = PropertyNull{};
 public:
     // One storage location for each field across normal and empty MML branches.
     FactoryServices<Product>& factory;
-    Product* parent = nullptr;
-    FactoryChildren<Product> childNodes = std::make_shared<std::vector<Product*>>();
+    FactoryChildren<Product> childNodes = std::make_shared<ChildArray<Product>>();
     explicit Node(FactoryServices<Product>& service) : factory(service) {}
     Node(const Node&)=delete;Node& operator=(const Node&)=delete;
     Node(Node&&)=delete;Node& operator=(Node&&)=delete;
@@ -21,10 +21,12 @@ public:
     virtual void removeProperty(std::span<const std::string> names)=0;
     virtual bool isKind(std::string_view name) const=0;
     virtual void setChildren(FactoryChildren<Product> children)=0;
-    virtual Product* appendChild(Product* child)=0;
-    virtual Product* replaceChild(Product* newChild,Product* oldChild)=0;
-    virtual Product* removeChild(Product* child)=0;
-    virtual std::optional<std::size_t> childIndex(Product* child) const=0;
+    virtual ChildValue<Product> getParent() const {return parent_;}
+    virtual void setParent(ChildValue<Product> value) {parent_=value;}
+    virtual ChildValue<Product> appendChild(ChildValue<Product> child)=0;
+    virtual ChildValue<Product> replaceChild(ChildValue<Product> newChild,ChildValue<Product> oldChild)=0;
+    virtual ChildValue<Product> removeChild(ChildValue<Product> child)=0;
+    virtual std::optional<std::size_t> childIndex(ChildValue<Product> child) const=0;
     // Generic Node ignores JS extra args; MML's optional keepIds overrides here.
     virtual Product* copy(bool keepIds=false)=0;
     virtual std::vector<Product*> findNodes(std::string_view kind)=0;
@@ -44,10 +46,10 @@ public:
 };
 // Array.join suppresses recursion into an array already being joined.
 template<class Product> class TreeJoinGuard {
-    inline static thread_local std::vector<const std::vector<Product*>*> active_;
+    inline static thread_local std::vector<const ChildArray<Product>*> active_;
     bool entered_=false;
 public:
-    explicit TreeJoinGuard(const std::vector<Product*>* array){
+    explicit TreeJoinGuard(const ChildArray<Product>* array){
         if(std::find(active_.begin(),active_.end(),array)==active_.end()){
             active_.push_back(array);entered_=true;
         }

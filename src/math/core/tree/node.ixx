@@ -30,7 +30,7 @@ public:
             this->setProperty(name, inputProperties->getOwn(name));
         }
 
-        FactoryChildren<Product> defaultChildren = std::make_shared<std::vector<Product*>>();
+        FactoryChildren<Product> defaultChildren = std::make_shared<ChildArray<Product>>();
         FactoryChildren<Product> inputChildren = std::move(defaultChildren);
         if (args.size() > 1 && args[1].has_value()) {
             const auto* children = std::any_cast<FactoryChildren<Product>>(&args[1]);
@@ -68,68 +68,33 @@ public:
     }
 
     void setChildren(FactoryChildren<Product> children) override {
-        this->childNodes = std::make_shared<std::vector<Product*>>();
-        if (!children) type_error("Cannot iterate null children");
-        for (std::size_t index = 0; index < children->size(); ++index) {
-            this->appendChild((*children)[index]);
-        }
+        // P23c frozen stub: void setChildren.
+        throw FactoryError("Unimplemented",u"Root-frozen sparse Node operation");
     }
 
-    Product* appendChild(Product* child) override {
-        if (!this->childNodes) type_error("Cannot append to null child list");
-        this->childNodes->push_back(child);
-        if (!child) type_error("Cannot set parent on null child");
-        child->parent = static_cast<Product*>(this);
-        return child;
+    ChildValue<Product> appendChild(ChildValue<Product> child) override {
+        // P23c frozen stub: ChildValue<Product> appendChild.
+        throw FactoryError("Unimplemented",u"Root-frozen sparse Node operation");
     }
 
-    Product* replaceChild(Product* newChild, Product* oldChild) override {
-        const auto index = childIndex(oldChild);
-        if (index) {
-            (*this->childNodes)[*index] = newChild;
-            if (!newChild) type_error("Cannot set parent on null child");
-            newChild->parent = static_cast<Product*>(this);
-            if (!oldChild) type_error("Cannot read parent of null child");
-            if (oldChild->parent == static_cast<Product*>(this)) oldChild->parent = nullptr;
-        }
-        return newChild;
+    ChildValue<Product> replaceChild(ChildValue<Product> newChild, ChildValue<Product> oldChild) override {
+        // P23c frozen stub: ChildValue<Product> replaceChild.
+        throw FactoryError("Unimplemented",u"Root-frozen sparse Node operation");
     }
 
-    Product* removeChild(Product* child) override {
-        const auto index = childIndex(child);
-        if (index) {
-            this->childNodes->erase(this->childNodes->begin() + static_cast<std::ptrdiff_t>(*index));
-            if (!child) type_error("Cannot clear parent of null child");
-            child->parent = nullptr;
-        }
-        return child;
+    ChildValue<Product> removeChild(ChildValue<Product> child) override {
+        // P23c frozen stub: ChildValue<Product> removeChild.
+        throw FactoryError("Unimplemented",u"Root-frozen sparse Node operation");
     }
 
-    std::optional<std::size_t> childIndex(Product* child) const override {
-        if (!this->childNodes) type_error("Cannot read child list");
-        const auto found = std::find(this->childNodes->begin(), this->childNodes->end(), child);
-        if (found == this->childNodes->end()) return std::nullopt;
-        return static_cast<std::size_t>(found - this->childNodes->begin());
+    std::optional<std::size_t> childIndex(ChildValue<Product> child) const override {
+        // P23c frozen stub: std::optional<std::size_t> childIndex.
+        throw FactoryError("Unimplemented",u"Root-frozen sparse Node operation");
     }
 
     Product* copy(bool keepIds = false) override {
-        TreeCallGuard<Product> guard;
-        (void)keepIds;
-        Product* const created = this->factory.create(this->kind(), {});
-        auto* const result = dynamic_cast<AbstractNode<Product, Base>*>(created);
-        if (!result) type_error("Factory product is not bound to this AbstractNode family");
-
-        result->properties = PropertyList{};
-        result->properties.assign(properties);
-
-        const auto children = this->childNodes;
-        if (children) {
-            for (std::size_t index = 0; index < children->size(); ++index) {
-                Product* const child = (*children)[index];
-                if (child) result->appendChild(child->copy());
-            }
-        }
-        return created;
+        // P23c frozen stub: Product* copy.
+        throw FactoryError("Unimplemented",u"Root-frozen sparse Node operation");
     }
 
     std::vector<Product*> findNodes(std::string_view name) override {
@@ -141,34 +106,13 @@ public:
     }
 
     std::any walkTree(const TreeVisitor<Product>& visit, const std::any& data = {}) override {
-        TreeCallGuard<Product> guard;
-        visit(static_cast<Product*>(this), data);
-        const auto children = this->childNodes;
-        if (!children) type_error("Cannot iterate null child list");
-        for (std::size_t index = 0; index < children->size(); ++index) {
-            Product* const child = (*children)[index];
-            if (child) child->walkTree(visit, data);
-        }
-        return data;
+        // P23c frozen stub: std::any walkTree.
+        throw FactoryError("Unimplemented",u"Root-frozen sparse Node operation");
     }
 
     std::string toString() const override {
-        TreeCallGuard<Product> guard;
-        const std::string kindName = this->kind();
-        const auto children = this->childNodes;
-        if (!children) type_error("Cannot join null child list");
-        TreeJoinGuard<Product> joinGuard(children.get());
-        if (!joinGuard.entered()) return kindName + "()";
-        const auto count = children->size();
-        std::string result = kindName + "(";
-        for (std::size_t index = 0; index < count; ++index) {
-            if (index) result.push_back(',');
-            if (index < children->size()) {
-                if (Product* const child = (*children)[index]) result += child->toString();
-            }
-        }
-        result.push_back(')');
-        return result;
+        // P23c frozen stub: std::string toString.
+        throw FactoryError("Unimplemented",u"Root-frozen sparse Node operation");
     }
 
 protected:
@@ -190,9 +134,9 @@ public:
     AbstractEmptyNode& operator=(AbstractEmptyNode&&) = delete;
 
     void setChildren(FactoryChildren<Product>) override {}
-    Product* appendChild(Product* child) override { return child; }
-    Product* replaceChild(Product*, Product* oldChild) override { return oldChild; }
-    std::optional<std::size_t> childIndex(Product*) const override { return std::nullopt; }
+    ChildValue<Product> appendChild(ChildValue<Product> child) override { return child; }
+    ChildValue<Product> replaceChild(ChildValue<Product>, ChildValue<Product> oldChild) override { return oldChild; }
+    std::optional<std::size_t> childIndex(ChildValue<Product>) const override { return std::nullopt; }
 
     std::any walkTree(const TreeVisitor<Product>& visit, const std::any& data = {}) override {
         TreeCallGuard<Product> guard;

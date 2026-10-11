@@ -22,14 +22,14 @@ public:
         normalized[1] = args.size() > 1 && args[1].has_value()
             ? args[1]
             : std::any(FactoryChildren<Product>(
-                  std::make_shared<std::vector<Product*>>()));
+                  std::make_shared<ChildArray<Product>>()));
         return this->createDirect(kind, FactoryArgs(normalized));
     }
 
     Product* create(std::string_view kind, PropertyList properties = {},
                     FactoryChildren<Product> children = {}) {
         if (!children) {
-            children = std::make_shared<std::vector<Product*>>();
+            children = std::make_shared<ChildArray<Product>>();
         }
         const std::array<std::any, 2> args{
             std::any(std::move(properties)), std::any(std::move(children))};

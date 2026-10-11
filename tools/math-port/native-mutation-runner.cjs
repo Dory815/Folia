@@ -1,7 +1,7 @@
 // Root-owned isolated C++23 mutation runner. Expected values never change.
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
-module.exports=function runPacket({name,modules,units,fixture,pattern,assertions,tests,mutants}){
+module.exports=function runPacket({name,modules,units,fixture,pattern,assertions,tests,mutants,baselineOutcome='green'}){
  const root=path.resolve(__dirname,'../..'),work=path.join(root,'build',name);
  fs.mkdirSync(work,{recursive:true});const lock=path.join(work,'run.lock'),fd=fs.openSync(lock,'wx');
  fs.writeFileSync(fd,String(process.pid));process.on('exit',()=>{fs.closeSync(fd);fs.unlinkSync(lock);});
@@ -49,7 +49,13 @@ exit /b %errorlevel%
  function build(label){const p=cp.spawnSync('cmd.exe',['/d','/c',path.join(work,'build.cmd')],{encoding:'utf8'});fs.writeFileSync(path.join(work,label+'-build.log'),(p.stdout||'')+(p.stderr||''));assert.equal(p.status,0,label+' must compile');}
  function test(label){const p=cp.spawnSync(path.join(work,'bin/MutationTests.exe'),[pattern],{encoding:'utf8',timeout:30000,maxBuffer:64*1024*1024});fs.writeFileSync(path.join(work,label+'-test.log'),(p.stdout||'')+(p.stderr||''));return p;}
  const only=process.argv.find(x=>x.startsWith('--only='))?.slice(7),selected=only?mutants.filter(m=>m.name===only):mutants,results=[];
- assert.ok(selected.length,'Unknown mutation');build('baseline');const baseline=test('baseline');assert.equal(baseline.status,0,'Baseline must pass');
+ assert.ok(selected.length||baselineOutcome==='red','Unknown mutation');build('baseline');const baseline=test('baseline');
+ if(baselineOutcome==='red'){
+  assert.equal(baseline.status,1,'Red baseline must fail assertions, not crash');assert.match(baseline.stdout||'',/FAILED|failed|FAIL/);
+  assert.ok((baseline.stdout||'').includes('Unimplemented'),'Real frozen stubs must execute');
+  fs.writeFileSync(path.join(work,'red-result.json'),JSON.stringify({compiles:true,test_exit:baseline.status,real_stubs_execute:true},null,2)+'\n');console.log('Real red baseline compiled and failed through frozen stubs.');return;
+ }
+ assert.equal(baseline.status,0,'Baseline must pass');
  assert.ok(baseline.stdout.includes(`${assertions} asserts in ${tests} tests`),'Nonzero complete baseline');console.log(`Baseline: ${assertions} assertions in ${tests} tests pass.`);
  for(const m of selected){
   const {source,target}=copies.get(m.file);let changed=source;
