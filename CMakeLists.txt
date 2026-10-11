@@ -158,6 +158,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/string.ixx
     src/math/util/bbox.ixx
     src/math/util/prioritized_list.ixx
+    src/math/util/property_host.ixx
     src/math/util/promise.ixx
     src/math/util/function_types.ixx
     src/math/util/function_list.ixx
@@ -223,7 +224,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_nodes/mo_scripts.cpp
     src/math/core/mml_tree/operator_dictionary_data.cpp
     src/math/core/mml_tree/operator_dictionary.cpp
-    src/math/core/mml_tree/mml_node_host.cpp
+    src/math/util/property_host.cpp
     src/math/util/string.cpp
     src/math/core/mml_tree/mml_nodes/msubsup_bindings.cpp
     src/math/core/mml_tree/mml_nodes/msubsup.cpp
