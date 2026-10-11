@@ -1,8 +1,8 @@
 // Root actual Source observations; no native-derived expected constants.
 use mermaid_rs_renderer::scene::{paint::SpreadMode,prepare::{
  gradient_stop_types::{StopColor,PreparedGradientStop,PreparedGradient},
- gradient_program_types::{ColorSpace,GradientStage},gradient_color_space::approximate_power,
- gradient_program::prepare_gradient_program,radial_stage_types::{RadialStage,RadialStagePlan},
+ gradient_program_types::ColorSpace,gradient_color_space::approximate_power,
+ gradient_program::push_gradient_stages,radial_stage_types::{RadialStage,RadialStagePlan},pipeline_builder::PipelineBuilder,
 }};
 use serde::Deserialize;
 use tiny_skia_path::Transform;
@@ -19,7 +19,6 @@ struct Fixture{programs:Vec<Case>,colors:Vec<ColorCase>,powers:Vec<PowerCase>}
 fn transform(v:[u32;6])->Transform{let a=v.map(f32::from_bits);Transform::from_row(a[0],a[1],a[2],a[3],a[4],a[5])}
 fn color_space(v:u8)->ColorSpace{match v{0=>ColorSpace::Linear,1=>ColorSpace::Gamma2,2=>ColorSpace::SimpleSRGB,3=>ColorSpace::FullSRGBGamma,_=>panic!("bad Source stimulus")}}
 fn radial_stage(v:u8)->RadialStage{use RadialStage::*;match v{1=>XYToRadius,2=>ApplyConcentricScaleBias,3=>XYTo2PtConicalStrip,4=>Mask2PtConicalNan,5=>XYTo2PtConicalFocalOnCircle,6=>XYTo2PtConicalWellBehaved,7=>XYTo2PtConicalSmaller,8=>XYTo2PtConicalGreater,9=>Mask2PtConicalDegenerates,10=>NegateX,11=>Alter2PtConicalCompensateFocal,12=>Alter2PtConicalUnswap,13=>ApplyVectorMask,_=>panic!("bad Source stimulus")}}
-fn stage_name(s:&GradientStage)->String{match s{GradientStage::Radial(r)=>format!("{r:?}"),other=>format!("{other:?}")}}
 fn assert_bits(actual:f32,expected:u32,index:usize,count:&mut usize){assert_eq!(actual.to_bits(),expected,"Source case {index}: f32 bits");*count+=1;}
 fn fixture()->Fixture{serde_json::from_str(include_str!("fixtures/gradient-program.json")).unwrap()}
 static WARNINGS:std::sync::Mutex<Vec<String>>=std::sync::Mutex::new(Vec::new());
@@ -40,9 +39,9 @@ fn complete_source_gradient_program(){
   let spread=match c.input.spread{0=>SpreadMode::Pad,1=>SpreadMode::Reflect,2=>SpreadMode::Repeat,_=>panic!("bad Source stimulus")};
   let mut gradient=PreparedGradient::new(stops,spread,transform(c.input.transform),transform(c.input.points_to_unit));for o in &c.input.opacity{gradient.apply_opacity(f32::from_bits(*o));}
   let radial=c.input.radial.as_ref().map(|(p,stages)|RadialStagePlan{p0:f32::from_bits(p[0]),p1:f32::from_bits(p[1]),before_color:stages.iter().filter(|v|**v!=13).map(|v|radial_stage(*v)).collect(),after_color:stages.iter().filter(|v|**v==13).map(|v|radial_stage(*v)).collect(),geometry_lowp_compatible:false});
-  let program=prepare_gradient_program(&gradient,color_space(c.input.color_space),radial.as_ref());
+  let mut program=PipelineBuilder::new();if let Some(r)=&radial{program.context.radial_p=[r.p0,r.p1];}let returned=push_gradient_stages(&gradient,color_space(c.input.color_space),radial.as_ref(),&mut program);
   assert_eq!(std::mem::take(&mut *WARNINGS.lock().unwrap()),c.warnings,"case {index}: Source warnings");assertions+=1;
-  assert_eq!(program.returned,c.returned,"case {index}: Source returned flag");assert_eq!(program.stages.iter().map(stage_name).collect::<Vec<_>>(),c.stages,"case {index}: ordered stages");assertions+=2;
+  assert_eq!(returned,c.returned,"case {index}: Source returned flag");assert_eq!(program.stages().iter().map(|s|format!("{s:?}")).collect::<Vec<_>>(),c.stages,"case {index}: ordered stages");assertions+=2;
   let t=program.context.transform;for(v,e)in[t.sx,t.ky,t.kx,t.sy,t.tx,t.ty].into_iter().zip(c.transform){assert_bits(v,e,index,&mut assertions);}
   for(v,e)in program.context.two_stop.factor.components.into_iter().zip(c.two_stop[0]){assert_bits(v,e,index,&mut assertions);}for(v,e)in program.context.two_stop.bias.components.into_iter().zip(c.two_stop[1]){assert_bits(v,e,index,&mut assertions);}
   assert_eq!(program.context.gradient.len,c.len);assert_eq!(program.context.gradient.factors.len(),c.factors.len());assert_eq!(program.context.gradient.biases.len(),c.biases.len());assert_eq!(program.context.gradient.t_values.len(),c.t_values.len());assertions+=4;

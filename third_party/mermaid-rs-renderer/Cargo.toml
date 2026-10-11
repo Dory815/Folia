@@ -180,3 +180,7 @@ path = "tests/pipeline_context_parity.rs"
 [[test]]
 name = "pattern_producer_parity"
 path = "tests/pattern_producer_parity.rs"
+
+[[test]]
+name = "gradient_builder_parity"
+path = "tests/gradient_builder_parity.rs"
