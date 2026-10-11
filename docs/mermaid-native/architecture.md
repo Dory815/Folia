@@ -7,13 +7,17 @@ Both objectives remain required. The current goal API supports status changes
 only, so this file records the added requirement rather than replacing or
 prematurely completing the existing math goal.
 
-Status: prerequisite source audit; implementation boundary is not yet frozen.
+Status: verified upstream vendoring, M1 local scene-invariant acceptance;
+M2a typed-path extraction under root source parity/mutation review. Full diagram
+scene compilation, SVG and Direct2D backend acceptance, and Folia wiring remain
+open. Exact implementation packets are frozen in implementation-contract.md,
+m2a-path-contract.md and m3-direct2d-contract.md.
 Root owns architecture, file responsibilities, interfaces, scope and acceptance.
 The explicitly requested Sol agent is mermaid_dx2d. Its initial authorization
-is source audit only: docs/mermaid-native/source-audit.md and optional
-source-inventory.json, with a verified pinned reference checkout. It may not
-change implementation, tests/expectations, build manifests or Folia integration
-until root reviews the source and freezes the exact implementation packet.
+was source audit only. Root has since independently verified archive/source
+identity and frozen exact scene/path implementation responsibilities. Sol may
+write only each authorized packet's owned implementation/report files. Root
+alone owns tests/expectations, build manifests, acceptance and Folia integration.
 
 ## Required architecture
 
@@ -55,5 +59,7 @@ backend, while Folia's normal Mermaid drawing directly consumes native output.
    theme/settings changes, export, tests and app build. Do not retain a Folia
    old/new feature flag or silently fall back to the former SVG drawing route.
 
-Concrete file ownership and fixed expected evidence follow the source audit.
-No release gate is passed by this architecture document.
+Root baseline has 470 source observations over all 23 families, pinned Folia
+dependencies and fingerprinted Windows font environment; --check reproduces it.
+This initial matrix is not complete option/geometry/pixel acceptance. Local M1
+evidence is evidence/m1-acceptance.md. No release gate is passed by this document.
