@@ -102,6 +102,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/attributes.ixx
     src/math/core/mml_tree/mml_node_host.ixx
     src/math/core/mml_tree/mml_node.ixx
+    src/math/core/mml_tree/html_adaptor.ixx
+    src/math/core/mml_tree/mml_nodes/html_node.ixx
     src/math/core/mml_tree/class_binding.ixx
     src/math/core/mml_tree/operator_class.ixx
     src/math/core/mml_tree/mml_nodes/tex_atom.ixx
@@ -148,6 +150,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/option_types.ixx
     src/math/util/options.ixx)
   target_sources(folia_math PRIVATE
+    src/math/core/mml_tree/mml_nodes/html_node_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/html_node.cpp
     src/math/core/mml_tree/operator_class.cpp
     src/math/core/mml_tree/mml_nodes/tex_atom_bindings.cpp
     src/math/core/mml_tree/mml_nodes/tex_atom.cpp
