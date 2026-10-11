@@ -192,3 +192,7 @@ path = "tests/gradient_shader_parity.rs"
 [[test]]
 name = "pipeline_executor_parity"
 path = "tests/pipeline_executor_parity.rs"
+
+[[test]]
+name = "shader_run_parity"
+path = "tests/shader_run_parity.rs"
