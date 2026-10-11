@@ -44,6 +44,14 @@ are audited in evidence/m4d-font-svg-resource-audit.md; root verified all 12
 source hashes and the referenced resource/selection boundaries. This remains
 a prerequisite audit, with resource policy and complete text APIs still open.
 Root owns architecture, file responsibilities, interfaces, scope and acceptance.
+M3e locally accepts shared radial geometry preparation under
+m3e-radial-geometry-contract.md: eight mapped Source geometry methods,
+4,956 actual-Source cases / 23,173 native assertions, 21 effective compiling
+mutants and 38 tests in the explicit native matrix (11 actual WARP tests).
+Evidence: evidence/m3e-radial-geometry-acceptance.md. This packet does not
+advance the 34/70 Mermaid rendering-function count or accept completed paints;
+stop preparation, stage selection/sampling, GPU gradients and scene wiring
+remain required separately.
 The explicitly requested Sol agent is mermaid_dx2d. Its initial authorization
 was source audit only. Root has since independently verified archive/source
 identity and frozen exact scene/path implementation responsibilities. Sol may
