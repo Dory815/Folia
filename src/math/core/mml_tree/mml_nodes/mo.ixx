@@ -40,11 +40,11 @@ public:
     Property texClass()override;
     void setTexClass(Property)override;
     virtual MmlNode* coreParent();
-    virtual std::u16string coreText(MmlNode*);
+    virtual std::u16string coreText(NodeValue);
     bool hasSpacingAttributes()override;
     virtual Property isAccent();
-    MmlNode* setTeXclass(MmlNode*)override;
-    virtual MmlNode* adjustTeXclass(MmlNode*);
+    NodeValue setTeXclass(NodeValue)override;
+    virtual NodeValue adjustTeXclass(NodeValue);
     protected: void inheritAttributes(AttributeList,Property display,Property level,Property prime)override; public:
     virtual PropertyArray getForms();
     virtual bool isMathAccent(std::optional<std::u16string_view> text={});

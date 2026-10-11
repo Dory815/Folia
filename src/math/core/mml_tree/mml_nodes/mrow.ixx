@@ -7,8 +7,8 @@ class MmlMrow:public AbstractMmlNode{
 protected:mutable std::optional<std::size_t> core_;
 public:using AbstractMmlNode::AbstractMmlNode;static PropertyList& defaults();void initializeClassFields()override;
 std::string kind()const override;bool isSpacelike()const override;bool isEmbellished()const override;
-MmlNode* core()override;MmlNode* coreMO()override;
-virtual std::size_t nonSpaceLength();virtual MmlNode* firstNonSpace();virtual MmlNode* lastNonSpace();MmlNode* setTeXclass(MmlNode*)override;
+NodeValue core()override;NodeValue coreMO()override;
+virtual std::size_t nonSpaceLength();virtual MmlNode* firstNonSpace();virtual MmlNode* lastNonSpace();NodeValue setTeXclass(NodeValue)override;
 };
-class MmlInferredMrow:public MmlMrow{public:using MmlMrow::MmlMrow;static PropertyList& defaults();std::string kind()const override;bool isInferred()const override;bool notParent()const override;std::string toString()const override;};
+class MmlInferredMrow:public MmlMrow{public:using MmlMrow::MmlMrow;static PropertyList& defaults();std::string kind()const override;bool isInferred()const override;Property notParent()const override;std::string toString()const override;};
 }

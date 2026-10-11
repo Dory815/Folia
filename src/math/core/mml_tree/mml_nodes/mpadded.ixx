@@ -10,6 +10,6 @@ using AbstractMmlLayoutNode::AbstractMmlLayoutNode;
 static PropertyList& defaults();
 std::string kind()const override;
 bool linebreakContainer()const override;
-MmlNode* setTeXclass(MmlNode*)override;
+NodeValue setTeXclass(NodeValue)override;
 };
 }

@@ -13,7 +13,7 @@ public:
     Children separators;
     MmlNode* open = nullptr;
     MmlNode* close = nullptr;
-    MmlNode* setTeXclass(MmlNode*) override;
+    NodeValue setTeXclass(NodeValue) override;
 protected:
     void setChildInheritedAttributes(AttributeList,Property,Property,Property) override;
     virtual void addFakeNodes();

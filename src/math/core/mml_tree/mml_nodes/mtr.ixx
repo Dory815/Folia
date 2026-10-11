@@ -10,7 +10,7 @@ public:
     std::string kind() const override;
     bool linebreakContainer() const override;
     std::string linebreakAlign() const override;
-    MmlNode* setTeXclass(MmlNode*) override;
+    NodeValue setTeXclass(NodeValue) override;
 protected:
     void setChildInheritedAttributes(AttributeList, Property, Property, Property) override;
     void verifyChildren(PropertyList) override;

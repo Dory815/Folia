@@ -3,5 +3,5 @@
 export module folia.math.core.mml_tree.operator_class;
 export import folia.math.core.mml_tree.mml_node;
 export namespace folia::math::mml {
-MmlNode* adjustOperatorTeXclass(MmlNode& receiver, MmlNode* previous);
+NodeValue adjustOperatorTeXclass(MmlNode& receiver, NodeValue previous);
 }

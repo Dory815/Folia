@@ -12,9 +12,9 @@ public:
     virtual MmlNode* selected()const;
     bool isEmbellished()const override;
     bool isSpacelike()const override;
-    MmlNode* core()override;
-    MmlNode* coreMO()override;
-    MmlNode* setTeXclass(MmlNode*)override;
+    NodeValue core()override;
+    NodeValue coreMO()override;
+    NodeValue setTeXclass(NodeValue)override;
     void nextToggleSelection();
 protected:
     void verifyAttributes(PropertyList)override;

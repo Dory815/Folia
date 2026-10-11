@@ -9,7 +9,7 @@ public:
     static PropertyList& defaults();
     std::string kind()const override;
     double arity()const override;
-    bool notParent()const override;
+    Property notParent()const override;
 protected:
     void inheritAttributes(AttributeList,Property,Property,Property)override;
 };

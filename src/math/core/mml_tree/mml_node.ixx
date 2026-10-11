@@ -12,6 +12,7 @@ export namespace folia::math::mml {
 using AttributeList = Property;
 class MmlNode;
 using Children = tree::FactoryChildren<MmlNode>;
+using NodeValue = tree::ChildValue<MmlNode>;
 using Factory = tree::FactoryServices<MmlNode>;
 using Error = tree::FactoryError;
 class ErrorOptions {
@@ -58,8 +59,8 @@ public:
     virtual bool isEmpty() const=0;
     virtual double arity() const=0;
     virtual bool isInferred() const=0;
-    virtual bool notParent() const=0;
-    virtual MmlNode* Parent() const=0;
+    virtual Property notParent() const=0;
+    virtual NodeValue Parent() const=0;
     virtual Property texClass()=0;
     virtual void setTexClass(Property)=0;
     virtual Property prevClass()=0;
@@ -68,15 +69,15 @@ public:
     virtual void setPrevLevel(Property)=0;
     virtual std::shared_ptr<Attributes> attributes() const=0;
     virtual void setAttributes(std::shared_ptr<Attributes>)=0;
-    virtual MmlNode* core()=0;
-    virtual MmlNode* coreMO()=0;
+    virtual NodeValue core()=0;
+    virtual NodeValue coreMO()=0;
     virtual std::size_t coreIndex()=0;
     virtual std::optional<std::size_t> childPosition()=0;
-    virtual MmlNode* setTeXclass(MmlNode*)=0;
+    virtual NodeValue setTeXclass(NodeValue)=0;
     virtual Property texSpacing()=0;
     virtual bool hasSpacingAttributes()=0;
     void setInheritedAttributes(AttributeList attributes=Missing{},Property display=Missing{},Property level=Missing{},Property prime=Missing{}) { inheritAttributes(std::move(attributes),std::move(display),std::move(level),std::move(prime)); }
-    virtual void inheritAttributesFrom(MmlNode*)=0;
+    virtual void inheritAttributesFrom(NodeValue)=0;
     virtual void verifyTree(std::optional<PropertyList> options={})=0;
     virtual MmlNode* mError(std::string message,ErrorOptions options,bool shortError=false)=0;
 protected:
@@ -123,20 +124,20 @@ public:
     bool isEmpty()const override;
     double arity()const override;
     bool isInferred()const override;
-    bool notParent()const override;
-    MmlNode* Parent()const override;
+    Property notParent()const override;
+    NodeValue Parent()const override;
     void setChildren(Children)override;
-    MmlNode* appendChild(MmlNode*)override;
-    MmlNode* replaceChild(MmlNode*,MmlNode*)override;
-    MmlNode* core()override;
-    MmlNode* coreMO()override;
+    NodeValue appendChild(NodeValue)override;
+    NodeValue replaceChild(NodeValue,NodeValue)override;
+    NodeValue core()override;
+    NodeValue coreMO()override;
     std::size_t coreIndex()override;
     std::optional<std::size_t> childPosition()override;
-    MmlNode* setTeXclass(MmlNode*)override;
+    NodeValue setTeXclass(NodeValue)override;
     Property texSpacing()override;
     bool hasSpacingAttributes()override;
     protected: void inheritAttributes(AttributeList,Property display,Property level,Property prime)override; public:
-    void inheritAttributesFrom(MmlNode*)override;
+    void inheritAttributesFrom(NodeValue)override;
     void verifyTree(std::optional<PropertyList> options={})override;
     MmlNode* mError(std::string message,ErrorOptions options,bool shortError=false)override;
 protected:
@@ -151,8 +152,8 @@ protected:
         return constructorInfo_->accentsBinding();
     }
     void initializeTexClass(Property value){texclass_=std::move(value);}
-    virtual void updateTeXclass(MmlNode*);
-    virtual void getPrevClass(MmlNode*);
+    virtual void updateTeXclass(NodeValue);
+    virtual void getPrevClass(NodeValue);
     virtual void setChildInheritedAttributes(AttributeList,Property,Property,Property);
     virtual AttributeList addInheritedAttributes(AttributeList,Property);
     virtual void verifyAttributes(PropertyList);
@@ -176,18 +177,18 @@ public:
     bool isSpacelike()const override;
     bool isEmbellished()const override;
     double arity()const override;
-    MmlNode* core()override;
-    MmlNode* coreMO()override;
-    MmlNode* setTeXclass(MmlNode*)override;
+    NodeValue core()override;
+    NodeValue coreMO()override;
+    NodeValue setTeXclass(NodeValue)override;
 };
 class AbstractMmlBaseNode : public AbstractMmlNode {
 public:
     using AbstractMmlNode::AbstractMmlNode;
     static PropertyList& defaults();
     bool isEmbellished()const override;
-    MmlNode* core()override;
-    MmlNode* coreMO()override;
-    MmlNode* setTeXclass(MmlNode*)override;
+    NodeValue core()override;
+    NodeValue coreMO()override;
+    NodeValue setTeXclass(NodeValue)override;
 };
 class AbstractMmlEmptyNode : public tree::AbstractEmptyNode<MmlNode,MmlNode> {
 public:
@@ -200,8 +201,8 @@ public:
     bool isEmpty()const override;
     double arity()const override;
     bool isInferred()const override;
-    bool notParent()const override;
-    MmlNode* Parent()const override;
+    Property notParent()const override;
+    NodeValue Parent()const override;
     Property texClass()override;
     void setTexClass(Property)override;
     Property prevClass()override;
@@ -210,15 +211,15 @@ public:
     void setPrevLevel(Property)override;
     std::shared_ptr<Attributes> attributes()const override;
     void setAttributes(std::shared_ptr<Attributes>)override;
-    MmlNode* core()override;
-    MmlNode* coreMO()override;
+    NodeValue core()override;
+    NodeValue coreMO()override;
     std::size_t coreIndex()override;
     std::optional<std::size_t> childPosition()override;
-    MmlNode* setTeXclass(MmlNode*)override;
+    NodeValue setTeXclass(NodeValue)override;
     Property texSpacing()override;
     bool hasSpacingAttributes()override;
     protected: void inheritAttributes(AttributeList,Property display,Property level,Property prime)override; public:
-    void inheritAttributesFrom(MmlNode*)override;
+    void inheritAttributesFrom(NodeValue)override;
     void verifyTree(std::optional<PropertyList> options={})override;
     MmlNode* mError(std::string,ErrorOptions,bool shortError=false)override;
 };

@@ -8,12 +8,9 @@ inline PropertyList arithmeticCopy(const Property& input) {
     // which uses Object.assign, including its inherited __proto__ setter.
     return objectAssign(input);
 }
-inline MmlNode& arithmeticChild(MmlNode& node, std::size_t index) {
-    const auto children = node.childNodes;
-    if (!children) typeError("Cannot read null arithmetic child array");
-    if (index >= children->size() || !(*children)[index])
-        typeError("Cannot read required arithmetic child");
-    return *(*children)[index];
+inline MmlNode& arithmeticChild(MmlNode&, std::size_t, std::string_view) {
+    // Root frozen member-at-dereference binding; actual MML red follows.
+    throw Error("Unimplemented",u"Root-frozen MML required child binding");
 }
 inline std::shared_ptr<Attributes> arithmeticAttributes(const MmlNode& node) {
     auto attributes = node.attributes();

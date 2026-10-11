@@ -4,21 +4,19 @@ export import folia.math.core.mml_tree.arithmetic_host;
 import folia.math.util.string;
 import std;
 export namespace folia::math::mml::host {
-inline MmlNode& tableNode(MmlNode* node) {
-    if (!node) typeError("Cannot read null table node");
-    return *node;
+inline MmlNode& tableNode(NodeValue, std::string_view) {
+    throw Error("Unimplemented",u"Root-frozen MML table receiver binding");
 }
 inline Children tableChildren(MmlNode& node) {
     const auto children = node.childNodes;
     if (!children) typeError("Cannot read null table child array");
     return children;
 }
-inline MmlNode* tableSlot(const Children& children, std::size_t index) {
-    if (!children) typeError("Cannot read null table child array");
-    return index < children->size() ? (*children)[index] : nullptr;
+inline NodeValue tableSlot(const Children&, std::size_t) {
+    throw Error("Unimplemented",u"Root-frozen MML table indexed Get");
 }
-inline MmlNode& tableChild(const Children& children, std::size_t index) {
-    return tableNode(tableSlot(children, index));
+inline MmlNode& tableChild(const Children&, std::size_t, std::string_view) {
+    throw Error("Unimplemented",u"Root-frozen MML table child member");
 }
 inline std::deque<Property> tableSplit(const Property& value) {
     const auto* raw = std::get_if<std::string>(&value.value);
@@ -39,13 +37,10 @@ inline void tableSetIndex(const Property& receiver, std::string_view key, Proper
     if (!object) typeError("Cannot assign table tuple property");
     object->set(key, std::move(value));
 }
-inline MmlNode& tableCreate(Factory& factory, std::string_view kind) {
-    return tableNode(factory.create(kind, {}));
+inline MmlNode& tableCreate(Factory&, std::string_view) {
+    throw Error("Unimplemented",u"Root-frozen MML table factory receiver");
 }
-inline MmlNode& tableCreate(Factory& factory, std::string_view kind, MmlNode* child) {
-    const auto children = std::make_shared<std::vector<MmlNode*>>(
-        std::initializer_list<MmlNode*>{child});
-    const std::array<std::any, 2> args{PropertyList{}, children};
-    return tableNode(factory.create(kind, args));
+inline MmlNode& tableCreate(Factory&, std::string_view, NodeValue) {
+    throw Error("Unimplemented",u"Root-frozen MML table factory child");
 }
 }

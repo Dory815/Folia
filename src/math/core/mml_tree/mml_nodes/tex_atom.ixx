@@ -10,8 +10,8 @@ public:
     void initializeClassFields()override;
     std::string kind()const override;
     double arity()const override;
-    bool notParent()const override;
-    MmlNode* setTeXclass(MmlNode*)override;
-    virtual MmlNode* adjustTeXclass(MmlNode*);
+    Property notParent()const override;
+    NodeValue setTeXclass(NodeValue)override;
+    virtual NodeValue adjustTeXclass(NodeValue);
 };
 }

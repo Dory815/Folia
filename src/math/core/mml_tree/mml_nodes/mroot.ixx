@@ -11,7 +11,7 @@ public:
     std::string kind() const override;
     double arity() const override;
     bool linebreakContainer() const override;
-    MmlNode* setTeXclass(MmlNode*) override;
+    NodeValue setTeXclass(NodeValue) override;
 protected:
     void setChildInheritedAttributes(AttributeList, Property, Property, Property) override;
 };

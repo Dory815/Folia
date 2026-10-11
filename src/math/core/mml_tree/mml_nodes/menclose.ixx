@@ -12,6 +12,6 @@ void initializeClassFields()override;
 std::string kind()const override;
 double arity()const override;
 bool linebreakContainer()const override;
-MmlNode* setTeXclass(MmlNode*)override;
+NodeValue setTeXclass(NodeValue)override;
 };
 }
