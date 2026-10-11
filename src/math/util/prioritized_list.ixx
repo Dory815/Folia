@@ -17,6 +17,7 @@
 
 // Native port of MathJax 4.1.3 ts/util/PrioritizedList.ts.
 export module folia.math.util.prioritized_list;
+export import folia.math.util.object_types;
 import std;
 
 namespace folia::math::detail {
@@ -26,9 +27,12 @@ namespace folia::math::detail {
 export namespace folia::math {
 
 template<class T>
-struct PrioritizedListItem {
+struct PrioritizedListItem : NativeObject {
     double priority;
     T item;
+    PrioritizedListItem()=default;
+    PrioritizedListItem(double priority,T item)
+        : priority(priority),item(std::move(item)) {}
 };
 
 template<class T>

@@ -1,6 +1,7 @@
 // Root native declaration seam for pinned input/tex/Types.ts. Apache-2.0.
 export module folia.math.input.tex.types;
 export import folia.math.input.tex.token;
+export import folia.math.util.function_types;
 import std;
 export namespace folia::math::tex {
 using Args=Property;
@@ -20,7 +21,10 @@ using ParseResult=std::variant<Property,StackItemRef,ParseSymbolRef>;
 using ParseAtom=std::variant<Property,TokenRef,StackItemRef>;
 struct ParseInput {ParserContext& parser;Property token;};
 using ParseRest=std::span<const std::any>;
-struct ParseCallable {std::function<ParseResult(ParserContext&,const ParseAtom&,ParseRest)> call;};
-using ParseCallableRef=std::shared_ptr<ParseCallable>;
-using ParseMethod=std::variant<Property,ParseCallableRef>;
+using ParseCallable=Function;
+using ParseCallableRef=FunctionRef;
+using ParseMethod=FunctionValue;
+using ParseBody=std::function<ParseResult(const FunctionReceiver&,ParserContext&,const ParseAtom&,ParseRest)>;
+ParseCallableRef makeParseCallable(ParseBody);
+ParseResult invokeParseMethod(const ParseMethod&,const FunctionReceiver&,ParserContext&,const ParseAtom&,ParseRest={});
 }
