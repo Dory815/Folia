@@ -1,12 +1,12 @@
-//! Native brushes, exact stroke units, isolated layers and multiply composition.
+//! Native brushes, exact stroke units, isolated layers and blend composition.
 use std::mem::ManuallyDrop;
 use windows::core::Interface;
 use windows::Win32::Graphics::Direct2D::*;
 use windows::Win32::Graphics::Direct2D::Common::*;
 use windows_numerics::Matrix3x2;
-use crate::scene::{Affine, DiagramScene, GradientUnits, LineCap, LineJoin,
+use crate::scene::{Affine, BlendMode, DiagramScene, GradientUnits, LineCap, LineJoin,
     Paint, PaintStyle, Rect, Rgba, SpreadMode, Stroke};
-use super::{geometry, win, NativeRenderError};
+use super::{draw_image, geometry, record, win, NativeRenderError};
 
 pub(super) fn preflight_resources(scene: &DiagramScene) -> Result<(), NativeRenderError> {
     for (index, gradient) in scene.gradients().iter().enumerate() {
@@ -205,12 +205,32 @@ impl Drop for LayerGuard<'_> {
     fn drop(&mut self) { unsafe { self.context.PopLayer(); } }
 }
 
-pub(super) fn multiply(context: &ID2D1DeviceContext, background: &ID2D1Image,
-    foreground: &ID2D1Image, location: &str) -> Result<ID2D1Image, NativeRenderError> {
+pub(super) fn blend(context: &ID2D1DeviceContext, background: &ID2D1Image,
+    foreground: &ID2D1Image, mode: BlendMode, location: &str) -> Result<ID2D1Image, NativeRenderError> {
+    let mode = match mode {
+        BlendMode::Normal => return record(context, location, |context| {
+            draw_image(context, background);
+            draw_image(context, foreground);
+            Ok(())
+        }),
+        BlendMode::Multiply => D2D1_BLEND_MODE_MULTIPLY,
+        BlendMode::Screen => D2D1_BLEND_MODE_SCREEN,
+        BlendMode::Overlay => D2D1_BLEND_MODE_OVERLAY,
+        BlendMode::Darken => D2D1_BLEND_MODE_DARKEN,
+        BlendMode::Lighten => D2D1_BLEND_MODE_LIGHTEN,
+        BlendMode::ColorDodge => D2D1_BLEND_MODE_COLOR_DODGE,
+        BlendMode::ColorBurn => D2D1_BLEND_MODE_COLOR_BURN,
+        BlendMode::HardLight => D2D1_BLEND_MODE_HARD_LIGHT,
+        BlendMode::SoftLight => D2D1_BLEND_MODE_SOFT_LIGHT,
+        BlendMode::Difference => D2D1_BLEND_MODE_DIFFERENCE,
+        BlendMode::Exclusion => D2D1_BLEND_MODE_EXCLUSION,
+        BlendMode::Hue | BlendMode::Saturation | BlendMode::Color | BlendMode::Luminosity =>
+            return super::source_blend::blend(context, background, foreground, mode, location),
+    };
     let effect = win(unsafe { context.CreateEffect(&CLSID_D2D1Blend) }, &format!("{location}: Blend effect"))?;
-    let mode = D2D1_BLEND_MODE_MULTIPLY.0.to_ne_bytes();
-    win(unsafe { effect.SetValue(D2D1_BLEND_PROP_MODE.0 as u32, D2D1_PROPERTY_TYPE_ENUM, &mode) },
-        &format!("{location}: Blend multiply property"))?;
+    let mode_bytes = mode.0.to_ne_bytes();
+    win(unsafe { effect.SetValue(D2D1_BLEND_PROP_MODE.0 as u32, D2D1_PROPERTY_TYPE_ENUM, &mode_bytes) },
+        &format!("{location}: Blend mode property"))?;
     unsafe { effect.SetInput(0, background, true); effect.SetInput(1, foreground, true); }
     win(unsafe { effect.GetOutput() }, &format!("{location}: Blend output"))
 }

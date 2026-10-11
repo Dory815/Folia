@@ -13,6 +13,7 @@ mod geometry;
 mod paint;
 mod text;
 mod image;
+mod source_blend;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NativeErrorKind {
@@ -101,6 +102,7 @@ impl NativeRenderer {
     pub fn new(device: &ID2D1Device) -> Result<Self, NativeRenderError> {
         let context = win(unsafe { device.CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE) }, "CreateDeviceContext")?;
         let factory = win(unsafe { context.GetFactory() }, "GetFactory")?;
+        source_blend::register(&factory)?;
         let device_identity = win(device.cast::<IUnknown>(), "device canonical IUnknown")?;
         unsafe {
             context.SetDpi(96.0, 96.0);
@@ -201,10 +203,10 @@ impl NativeRenderer {
         for node in nodes {
             match node.blend {
                 BlendMode::Normal => normal.push(node.image),
-                BlendMode::Multiply => {
+                mode => {
                     let completed = self.normal_batch(background.as_ref(), &normal, operation)?;
                     normal.clear();
-                    background = Some(paint::multiply(&self.context, &completed, &node.image, operation)?);
+                    background = Some(paint::blend(&self.context, &completed, &node.image, mode, operation)?);
                 }
             }
         }

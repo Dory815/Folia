@@ -371,6 +371,7 @@ dependencies = [
  "ttf-parser",
  "usvg",
  "windows",
+ "windows-core",
  "windows-numerics",
 ]
 

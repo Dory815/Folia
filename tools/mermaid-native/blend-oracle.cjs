@@ -19,5 +19,5 @@ const values=JSON.parse(run.stdout);assert.equal(values.length,input.length);ass
 const target=path.join(root,'third_party/mermaid-rs-renderer/tests/fixtures/direct2d-blends.json');
 // One case per line keeps independent expected-value changes reviewable.
 const text='{"schema":1,"stage":"source reference; no native output used","usvg":"0.47.0","resvg":"0.47.0","cases":[\n'+values.map(value=>JSON.stringify(value)).join(',\n')+'\n]}\n';
-if(process.argv.includes('--check'))assert.equal(fs.readFileSync(target,'utf8'),text);else fs.writeFileSync(target,text);
+if(process.argv.includes('--check'))assert.equal(fs.readFileSync(target,'utf8').replaceAll('\r\n','\n'),text);else fs.writeFileSync(target,text);
 console.log(JSON.stringify({cases:values.length,dpi:4,pixel_samples:values.length*4*2,fixture_sha256:crypto.createHash('sha256').update(text).digest('hex'),mode:process.argv.includes('--check')?'check':'generate'}));

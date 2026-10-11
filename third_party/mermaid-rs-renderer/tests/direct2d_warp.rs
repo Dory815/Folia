@@ -153,6 +153,69 @@ fn near(actual: [u8; 4], expected: [u8; 4], context: &str) {
 }
 
 #[test]
+fn all_source_blend_modes_match_reference_pixels_at_four_dpi() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!("fixtures/direct2d-blends.json")).unwrap();
+    let cases = fixture["cases"].as_array().unwrap();
+    assert_eq!(cases.len(),192,"Complete independent Source fixture");
+    assert_eq!(fixture["usvg"],"0.47.0");assert_eq!(fixture["resvg"],"0.47.0");
+    let color = |value: &serde_json::Value| -> Rgba {
+        let c = value.as_array().unwrap();assert_eq!(c.len(),4);
+        Rgba {r:c[0].as_u64().unwrap() as f64/255.0,g:c[1].as_u64().unwrap() as f64/255.0,
+            b:c[2].as_u64().unwrap() as f64/255.0,a:c[3].as_u64().unwrap() as f64/255.0}
+    };
+    let bytes = |value: &serde_json::Value| -> [u8;4] {
+        let c = value.as_array().unwrap();assert_eq!(c.len(),4);
+        std::array::from_fn(|i| u8::try_from(c[i].as_u64().unwrap()).unwrap())
+    };
+    let _com = Com::new();let device = warp_device();
+    let mut differences=Vec::new();let mut comparisons=0usize;let mut maximum_error=0i32;
+    for (index,case) in cases.iter().enumerate() {
+        let input = &case["input"];let mode_name = input["mode"].as_str().unwrap();
+        let mode = match mode_name {
+            "normal"=>BlendMode::Normal,"multiply"=>BlendMode::Multiply,"screen"=>BlendMode::Screen,
+            "overlay"=>BlendMode::Overlay,"darken"=>BlendMode::Darken,"lighten"=>BlendMode::Lighten,
+            "color-dodge"=>BlendMode::ColorDodge,"color-burn"=>BlendMode::ColorBurn,
+            "hard-light"=>BlendMode::HardLight,"soft-light"=>BlendMode::SoftLight,
+            "difference"=>BlendMode::Difference,"exclusion"=>BlendMode::Exclusion,
+            "hue"=>BlendMode::Hue,"saturation"=>BlendMode::Saturation,"color"=>BlendMode::Color,
+            "luminosity"=>BlendMode::Luminosity,_=>panic!("Unknown Source fixture mode")
+        };
+        let background=rect(0.0,0.0,100.0,80.0,color(&input["background"]));
+        let foreground=rect(24.0,16.0,40.0,32.0,color(&input["foreground"]));
+        let mut scene_builder=builder();scene_builder.push_node(background);
+        scene_builder.push_node(SceneNode::Group(GroupNode{children:vec![foreground],transform:Affine::IDENTITY,
+            clip:None,layer:LayerStyle{opacity:input["opacity"].as_f64().unwrap(),blend:mode},metadata:Default::default()}));
+        // Reuse the actual factory registration, then release the renderer and
+        // scene before consuming the retained effect graph at four DPI values.
+        let mut renderer=NativeRenderer::new(&device).unwrap();
+        let scene=scene_builder.finish().unwrap();let recorded=renderer.record_scene(&scene).unwrap();drop(scene);drop(renderer);
+        let samples=case["samples"].as_array().unwrap();assert_eq!(samples.len(),4);
+        for source in samples {
+            let dpi=source["dpi"].as_u64().unwrap() as f32;
+            unsafe {
+                let ctx=device.CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE).unwrap();
+                let target=bitmap(&ctx,dpi,false);ctx.SetDpi(dpi,dpi);ctx.SetTarget(&target);ctx.BeginDraw();
+                ctx.Clear(Some(&D2D1_COLOR_F{r:0.0,g:0.0,b:0.0,a:0.0}));
+                recorded.draw(&ctx,&DrawOptions::default()).unwrap();ctx.EndDraw(None,None).unwrap();
+                let(data,pitch)=pixels(&ctx,&target,dpi);
+                for(x,y,key)in[(5.0,5.0,"background_bgra"),(40.0,32.0,"overlap_bgra")] {
+                    let actual=sample(&data,pitch,dpi,x,y);let expected=bytes(&source[key]);
+                    comparisons+=1;
+                    let error=actual.into_iter().zip(expected).map(|(a,e)|(i32::from(a)-i32::from(e)).abs()).max().unwrap();
+                    maximum_error=maximum_error.max(error);
+                    if error>2 {
+                        differences.push(format!("case {index} {mode_name} DPI {dpi} {key}: {actual:?} vs {expected:?}"));
+                    }
+                }
+            }
+        }
+    }
+    assert_eq!(comparisons,1536,"Every Source pixel must be compared");
+    println!("Source blend pixels: {comparisons}; maximum channel error: {maximum_error}");
+    assert!(differences.is_empty(),"{} Source pixel differences:\n{}",differences.len(),differences.join("\n"));
+}
+
+#[test]
 fn native_painter_order_and_group_opacity_at_four_dpi() {
     let _com = Com::new();
     let device = warp_device();

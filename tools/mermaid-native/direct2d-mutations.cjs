@@ -6,7 +6,8 @@ const lock=path.join(work,'run.lock'),fd=fs.openSync(lock,'wx');fs.writeFileSync
 const originals=new Map();function copyTree(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const f=path.join(dir,e.name);if(e.isDirectory())copyTree(f);else if(e.isFile()){const rel=path.relative(vendor,f),bytes=fs.readFileSync(f),dest=path.join(copy,rel);originals.set(rel,bytes);fs.mkdirSync(path.dirname(dest),{recursive:true});if(!fs.existsSync(dest)||!fs.readFileSync(dest).equals(bytes))fs.writeFileSync(dest,bytes);}}}
 copyTree(path.join(vendor,'src'));copyTree(path.join(vendor,'tests'));for(const name of ['Cargo.toml','Cargo.lock']){const bytes=fs.readFileSync(path.join(vendor,name));originals.set(name,bytes);fs.writeFileSync(path.join(copy,name),bytes);}
 function run(name){const args=['test','--locked','--offline','--no-default-features','--features','direct2d','--manifest-path',path.join(copy,'Cargo.toml'),'--target-dir',path.join(work,'target'),'--test','direct2d_warp'];const built=cp.spawnSync('cargo',[...args,'--no-run'],{encoding:'utf8'});fs.writeFileSync(path.join(work,name+'-build.log'),(built.stdout||'')+(built.stderr||''));assert.equal(built.status,0,'Mutant must compile: '+name);const result=cp.spawnSync('cargo',args,{encoding:'utf8'});fs.writeFileSync(path.join(work,name+'-test.log'),(result.stdout||'')+(result.stderr||''));return result;}
-assert.equal(run('baseline').status,0,'Unchanged baseline must pass');console.log('Baseline compiles and passes.');
+const baseline=run('baseline');assert.equal(baseline.status,0,'Unchanged baseline must pass');
+assert.match(baseline.stdout||'',/test result: ok\. 11 passed; 0 failed; 0 ignored/,'All WARP tests must run');console.log('Baseline compiles and passes.');
 const mutations=[
  ['fill-rule','geometry.rs','FillRule::EvenOdd => D2D1_FILL_MODE_ALTERNATE','FillRule::EvenOdd => D2D1_FILL_MODE_WINDING'],
  ['arc-sweep','geometry.rs','sweepDirection: if *sweep','sweepDirection: if !*sweep'],
@@ -20,7 +21,28 @@ const mutations=[
  // survived both one- and three-element pixel checks and is an equivalent
  // mutation in this environment. Omit an actual odd-array component instead.
  ['odd-dash-component-omitted','paint.rs','cycle().take(count)','cycle().take(stroke.dash.len().min(2))'],
- ['multiply-mode','paint.rs','D2D1_BLEND_MODE_MULTIPLY.0','D2D1_BLEND_MODE_SCREEN.0'],
+ ['multiply-mode','paint.rs','BlendMode::Multiply => D2D1_BLEND_MODE_MULTIPLY','BlendMode::Multiply => D2D1_BLEND_MODE_SCREEN'],
+ ['screen-mode','paint.rs','BlendMode::Screen => D2D1_BLEND_MODE_SCREEN','BlendMode::Screen => D2D1_BLEND_MODE_MULTIPLY'],
+ ['overlay-mode','paint.rs','BlendMode::Overlay => D2D1_BLEND_MODE_OVERLAY','BlendMode::Overlay => D2D1_BLEND_MODE_HARD_LIGHT'],
+ ['darken-mode','paint.rs','BlendMode::Darken => D2D1_BLEND_MODE_DARKEN','BlendMode::Darken => D2D1_BLEND_MODE_LIGHTEN'],
+ ['lighten-mode','paint.rs','BlendMode::Lighten => D2D1_BLEND_MODE_LIGHTEN','BlendMode::Lighten => D2D1_BLEND_MODE_DARKEN'],
+ ['color-dodge-mode','paint.rs','BlendMode::ColorDodge => D2D1_BLEND_MODE_COLOR_DODGE','BlendMode::ColorDodge => D2D1_BLEND_MODE_COLOR_BURN'],
+ ['color-burn-mode','paint.rs','BlendMode::ColorBurn => D2D1_BLEND_MODE_COLOR_BURN','BlendMode::ColorBurn => D2D1_BLEND_MODE_COLOR_DODGE'],
+ ['hard-light-mode','paint.rs','BlendMode::HardLight => D2D1_BLEND_MODE_HARD_LIGHT','BlendMode::HardLight => D2D1_BLEND_MODE_OVERLAY'],
+ ['soft-light-mode','paint.rs','BlendMode::SoftLight => D2D1_BLEND_MODE_SOFT_LIGHT','BlendMode::SoftLight => D2D1_BLEND_MODE_HARD_LIGHT'],
+ ['difference-mode','paint.rs','BlendMode::Difference => D2D1_BLEND_MODE_DIFFERENCE','BlendMode::Difference => D2D1_BLEND_MODE_EXCLUSION'],
+ ['exclusion-mode','paint.rs','BlendMode::Exclusion => D2D1_BLEND_MODE_EXCLUSION','BlendMode::Exclusion => D2D1_BLEND_MODE_DIFFERENCE'],
+ ['source-hue-kernel','source_blend.rs','BlendMode::Hue => 0','BlendMode::Hue => 2'],
+ ['source-saturation-kernel','source_blend.rs','BlendMode::Saturation => 1','BlendMode::Saturation => 0'],
+ ['source-color-kernel','source_blend.rs','BlendMode::Color => 2','BlendMode::Color => 3'],
+ ['source-luminosity-kernel','source_blend.rs','BlendMode::Luminosity => 3','BlendMode::Luminosity => 2'],
+ ['source-clip-quirk','source_blend.hlsl','if (!(mx >= 0.0f))','if (mn < 0.0f)'],
+ ['source-luminosity-weight','source_blend.hlsl','c.r * 0.30f + c.g * 0.59f + c.b * 0.11f','c.r * 0.2126f + c.g * 0.7152f + c.b * 0.0722f'],
+ ['source-alpha-cross-term','source_blend.hlsl','s.a + d.a - s.a * d.a','s.a + d.a'],
+ ['source-input-order','source_blend.rs','effect.SetInput(0, background, true); effect.SetInput(1, foreground, true);','effect.SetInput(0, foreground, true); effect.SetInput(1, background, true);'],
+ ['builtin-input-order','paint.rs','effect.SetInput(0, background, true); effect.SetInput(1, foreground, true);','effect.SetInput(0, foreground, true); effect.SetInput(1, background, true);'],
+ ['source-bounds-intersection','source_blend.rs','left: a.left.min(b.left), top: a.top.min(b.top),\n                right: a.right.max(b.right), bottom: a.bottom.max(b.bottom)','left: a.left.max(b.left), top: a.top.max(b.top),\n                right: a.right.min(b.right), bottom: a.bottom.min(b.bottom)'],
+ ['blend-painter-order','../direct2d.rs','for image in normal { draw_image(ctx, image); }','for image in normal.iter().rev() { draw_image(ctx, image); }'],
  ['run-origin','text.rs','run.origin.x + advance + glyph.offset.x','text.origin.x + advance + glyph.offset.x'],
  ['run-em-size','text.rs','let scale = run.em_size /','let scale = text.font.size /'],
  ['glyph-y-direction','text.rs','a: scale, d: -scale','a: scale, d: scale'],
