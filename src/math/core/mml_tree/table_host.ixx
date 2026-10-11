@@ -13,10 +13,12 @@ inline Children tableChildren(MmlNode& node) {
     if (!children) typeError("Cannot read null table child array");
     return children;
 }
+inline MmlNode* tableSlot(const Children& children, std::size_t index) {
+    if (!children) typeError("Cannot read null table child array");
+    return index < children->size() ? (*children)[index] : nullptr;
+}
 inline MmlNode& tableChild(const Children& children, std::size_t index) {
-    if (!children || index >= children->size() || !(*children)[index])
-        typeError("Cannot read required table child");
-    return *(*children)[index];
+    return tableNode(tableSlot(children, index));
 }
 inline std::deque<Property> tableSplit(const Property& value) {
     const auto* raw = std::get_if<std::string>(&value.value);

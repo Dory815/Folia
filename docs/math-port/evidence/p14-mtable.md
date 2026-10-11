@@ -34,3 +34,8 @@ The root-frozen fixture is `tests/math/reference_table.cpp`; its generator and
 actual-CJS observations are root-owned. This report does not claim that those
 fixtures pass, that the implementation is accepted, or that table-family
 integration is complete.
+
+Root review correction: the output-loop iterator yields a raw tableSlot value.
+Shared rowalign updates complete before tableNode checks the inherited-method
+receiver. The agent version checked a null child too early; root's actual-CJS
+partial-state witness rejected it, and revision 2 fixes that ordering.

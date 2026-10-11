@@ -60,3 +60,8 @@ is included.
 
 Root owns oracle fixtures, builds, mutations, and final acceptance. This report
 maps source behavior and does not claim packet acceptance.
+
+Root review correction: the output loop now captures a raw tableSlot value.
+Column/vertical tuple updates precede tableNode validation of the inheritance
+receiver. The original early null check failed source partial-state witnesses
+for row and labeled row; root corrected it under contract revision 2.

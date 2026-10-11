@@ -46,7 +46,7 @@ void MmlMtr::setChildInheritedAttributes(AttributeList attributes, Property disp
 
     const Children inheritedChildren = host::tableChildren(*this);
     for (std::size_t index = 0; index < inheritedChildren->size(); ++index) {
-        MmlNode& child = host::tableChild(inheritedChildren, index);
+        MmlNode* const child = host::tableSlot(inheritedChildren, index);
 
         // JavaScript evaluates the indexed assignment receiver before shift().
         Property columnReceiver = attributes.get("columnalign");
@@ -63,7 +63,7 @@ void MmlMtr::setChildInheritedAttributes(AttributeList attributes, Property disp
         attributes.set("data-vertical-align", PropertyArray{std::move(verticalKind),
                                                              std::move(verticalAlign)});
 
-        child.setInheritedAttributes(attributes, display, level, prime);
+        host::tableNode(child).setInheritedAttributes(attributes, display, level, prime);
     }
 }
 

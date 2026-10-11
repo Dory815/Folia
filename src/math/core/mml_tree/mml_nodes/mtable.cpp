@@ -69,7 +69,7 @@ void MmlMtable::setChildInheritedAttributes(AttributeList attributes, Property d
 
     const Children rows = host::tableChildren(*this);
     for (std::size_t index = 0; index < rows->size(); ++index) {
-        MmlNode& child = host::tableChild(rows, index);
+        MmlNode* const child = host::tableSlot(rows, index);
 
         // Capture the assignment reference before evaluating the shifting RHS.
         const Property rowalignTuple = host::get(Property(attributes), "rowalign");
@@ -79,8 +79,8 @@ void MmlMtable::setChildInheritedAttributes(AttributeList attributes, Property d
         }
         host::tableSetIndex(rowalignTuple, "1", std::move(rowalignValue));
 
-        child.setInheritedAttributes(attributes, display, level,
-                                     Property(host::truthy(cramped)));
+        host::tableNode(child).setInheritedAttributes(attributes, display, level,
+                                                      Property(host::truthy(cramped)));
     }
 }
 

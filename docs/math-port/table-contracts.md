@@ -1,4 +1,4 @@
-# P14 table-family root-frozen implementation contract
+# P14 table-family root-frozen implementation contract, revision 2
 
 Root has read the pinned mtable.ts, mtr.ts and mtd.ts and reviewed the three
 read-only dependency reports. The source AST contains 26 members, including
@@ -75,6 +75,11 @@ preserves that entry. Protected verification receives the caller's non-null
 PropertyList handle. No nullable-hook API change is required for this profile.
 
 table_host exports primitive tableNode/tableChildren/tableChild checks,
+and tableSlot for yielding a possibly null child value without dereferencing it.
+Source output loops update shared tuples before reading the child's inheritance
+method; required-node validation belongs at that method access, not at the
+iterator yield. Actual-CJS null-after-helper cases failed all three table/row/
+label partial-state assertions before this root correction and pass after it.
 tableSplit/tableShift for local alignment lists, strict tableSetIndex for
 captured Property receivers, and tableCreate with exact zero/two-argument
 factory shapes. Use arithmeticAttributes to capture virtual attributes;
@@ -104,7 +109,11 @@ reported to root. Root alone may correct interfaces or extend tests.
 
 The initial frozen oracle has 3,783 assertions / 116 cases, with 240 raw hook
 rows and source traces. Root extends any remaining branch gaps before accepting
-the packet. Required observations include defaults, field phases and identities;
+the packet. The expanded fixture has 4,700 assertions / 135 cases and 428 source
+value records. Source graphs are emitted as flat data references to avoid MSVC
+heap exhaustion; each input reconstructs fresh objects. All source observations
+and own-key/array-length comparisons remain present. Required observations
+include defaults, field phases and identities;
 outer inheritance and complete parent/child snapshots; grouping versus per-child
 repair; valid and invalid parents; fixMtables false/truthy branches; short/full
 errors; labels, empty rows and inferred cells; alignment list fallback and raw
