@@ -599,3 +599,17 @@ core/editor suites and WinUI build. Commit small reviewed subsystem batches.
 
 **Release gate:** G7. A native library build, passing a few formulas or a font
 table dump is not authorization to mark the port complete or switch Folia.
+
+### P15b/P15c root acceptance
+
+The source packet is locally accepted: all 18 class members and the final
+prototype assignment are mapped. Root corrected source-ordered base field writes
+and expanded actual-CJS witnesses to 6,888 assertions/74 cases. Complete core
+regression passes; 26 packet mutants, 33 Mo mutants and 20 class-state mutants
+compile and fail unchanged assertions. Evidence: evidence/p15bc-atom-semantics-acceptance.md.
+Local source acceptance is 35/246; full G0–G7 remain closed.
+
+P15d is only a read-only HTML/XML host prerequisite audit. Root must freeze
+its interfaces, exact source methods, host obligations and independent fixtures
+before any implementation dispatch. Disabled texhtml defaults do not authorize
+omitting the configurable enabled path.

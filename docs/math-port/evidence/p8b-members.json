@@ -149,7 +149,9 @@
           "member_sha256": "80426cef5721dd275bc9cb827fd3007d26b5fb3cbc05a84a7ffe4a7ab4b59e06",
           "target": "src/math/core/mml_tree/mml_node.ixx:AbstractMmlNode::prevClass_",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
+          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md. P15b/P15c root correction: pre-phase Missing storage, then source-ordered virtual previous-state writes and raw texclass write after superclass, before children/attributes; throwing callbacks preserve partial state.",
+          "phase_target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::initializeMml",
+          "phase_evidence": "docs/math-port/evidence/p15bc-atom-semantics-acceptance.md"
         },
         {
           "owner": "AbstractMmlNode",
@@ -161,7 +163,9 @@
           "member_sha256": "deaab6cc2e12e61fae0eea68588bf370d13c1875da8184117f8a41da5fe876d3",
           "target": "src/math/core/mml_tree/mml_node.ixx:AbstractMmlNode::prevLevel_",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md."
+          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md. P15b/P15c root correction: pre-phase Missing storage, then source-ordered virtual previous-state writes and raw texclass write after superclass, before children/attributes; throwing callbacks preserve partial state.",
+          "phase_target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::initializeMml",
+          "phase_evidence": "docs/math-port/evidence/p15bc-atom-semantics-acceptance.md"
         },
         {
           "owner": "AbstractMmlNode",
@@ -221,7 +225,9 @@
           "member_sha256": "50cb00d3825abe40e4e4a4ec22d1c0ded23fa096175f649271ffa7e17f77f2c2",
           "target": "src/math/core/mml_tree/mml_node.ixx:AbstractMmlNode::texclass_",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md."
+          "mapping": "Typed storage/accessor or live policy record, under mml-contracts.md. P12a revision 3 preserves raw Property class state, non-const class getters and source property-key/read/write order; see class-state-contracts.md and evidence/p12-class-state-acceptance.md. P15b/P15c root correction: pre-phase Missing storage, then source-ordered virtual previous-state writes and raw texclass write after superclass, before children/attributes; throwing callbacks preserve partial state.",
+          "phase_target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::initializeMml",
+          "phase_evidence": "docs/math-port/evidence/p15bc-atom-semantics-acceptance.md"
         },
         {
           "owner": "AbstractMmlNode",
@@ -233,7 +239,9 @@
           "member_sha256": "48714a9818fe7d36878144aa259bcc18263117b4f510f526a88a0985b261cd60",
           "target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::initializeMml",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Post-adoption constructor phase"
+          "mapping": "Post-adoption constructor phase P15b/P15c root correction: pre-phase Missing storage, then source-ordered virtual previous-state writes and raw texclass write after superclass, before children/attributes; throwing callbacks preserve partial state.",
+          "phase_target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::initializeMml",
+          "phase_evidence": "docs/math-port/evidence/p15bc-atom-semantics-acceptance.md"
         },
         {
           "owner": "AbstractMmlNode",

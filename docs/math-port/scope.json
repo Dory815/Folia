@@ -380,7 +380,7 @@
       "proposed_module": "folia.math.core.mml_tree.mml_node",
       "owner": "semantics_util",
       "disposition": "port_with_host_adaptation",
-      "adaptation_reason": "All 111 members (85 executable) mapped and root-reviewed in evidence/p8b-members.json. Split source-method implementation preserves normal/token/layout/base/empty/Text/XML hierarchy over the one generic tree store. Typed compiled factory/UTF-16/opaque XML services, shared origin tuple arrays, readonly TEXCLASS exports, post-adoption virtual initialization and shared resource budget are explicit in mml-contracts.md. Scope excludes arbitrary erased JS invocation, custom iterator/proxy APIs; concrete MML nodes, MmlFactory and DOM/Html integration remain separate unaccepted dependencies. Root acceptance: 1084 assertions/43 cases, 20 compiling mutations, full core suite; evidence/mml-node-acceptance.md. P12a replaces the rejected optional-number class bridge with one raw Property store, source getter side effects/read order and property-key spacing lookup; bounded Number prototype services are explicit. See class-state-contracts.md and evidence/p12-class-state-acceptance.md; Mo remains unimplemented. P15a additionally exposes ErrorOptions::value as the same nullable object handle for virtual error callbacks; identity/mutation observations, clone mutant and full core regression are recorded in evidence/p15a-multiscript-acceptance.md. Existing error algorithm and authoritative state are unchanged.",
+      "adaptation_reason": "All 111 members (85 executable) mapped and root-reviewed in evidence/p8b-members.json. Split source-method implementation preserves normal/token/layout/base/empty/Text/XML hierarchy over the one generic tree store. Typed compiled factory/UTF-16/opaque XML services, shared origin tuple arrays, readonly TEXCLASS exports, post-adoption virtual initialization and shared resource budget are explicit in mml-contracts.md. Scope excludes arbitrary erased JS invocation, custom iterator/proxy APIs; concrete MML nodes, MmlFactory and DOM/Html integration remain separate unaccepted dependencies. Root acceptance: 1084 assertions/43 cases, 20 compiling mutations, full core suite; evidence/mml-node-acceptance.md. P12a replaces the rejected optional-number class bridge with one raw Property store, source getter side effects/read order and property-key spacing lookup; bounded Number prototype services are explicit. See class-state-contracts.md and evidence/p12-class-state-acceptance.md. P15a additionally exposes ErrorOptions::value as the same nullable object handle for virtual error callbacks; identity/mutation observations, clone mutant and full core regression are recorded in evidence/p15a-multiscript-acceptance.md. Existing error algorithm and authoritative state are unchanged. P15b/P15c corrects base constructor field sequencing and pre-phase Missing state, with virtual setter and throwing callback observations plus class-state regression/mutations; evidence/p15bc-atom-semantics-acceptance.md.",
       "port_status": "implemented",
       "acceptance": "mml_base_gate_passed_root_review",
       "dependencies": [
@@ -411,13 +411,13 @@
     {
       "source": "ts/core/MmlTree/MmlNodes/TeXAtom.ts",
       "source_sha256": "bad114224392b94852456a4636b85ad90a5a2c96b63e6c7911d155db299f7028",
-      "proposed_target": "src/math/core/mml_tree/mml_nodes/te_x_atom.ixx",
-      "proposed_module": "folia.math.core.mml_tree.mml_nodes.te_x_atom",
+      "proposed_target": "src/math/core/mml_tree/mml_nodes/tex_atom.ixx",
+      "proposed_module": "folia.math.core.mml_tree.mml_nodes.tex_atom",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root froze interfaces, bindings, actual-CJS oracle and assigned-only CPP responsibilities in 4e59bcb. All 18 class members and the effective final prototype assignment are individually mapped in evidence/p15bc-members.json. Single shared Mo/TeXAtom semantic operation, source-ordered constructor phases and raw/identity/virtual behavior; native API does not expose JS method-function reflection. 6888 assertions/74 cases/924 raw rows, full core regression, 26 compiling packet mutants plus 33 Mo and 20 class-state mutants. See evidence/p15bc-atom-semantics-acceptance.md. This is local semantic acceptance; renderer gates remain closed.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlFactory.ts",
         "ts/core/MmlTree/MmlNode.ts",
@@ -643,7 +643,7 @@
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mo",
       "owner": "semantics_util",
       "disposition": "port_with_host_adaptation",
-      "adaptation_reason": "Root-reviewed all 32 source members in mo.ixx/mo_bindings.cpp plus disjoint lookup/class/script CPP files. Native actual-constructor live statics, raw null/Missing fields, array/string keys/iterators, precise default pattern services and required intrinsic-function metadata bind the raw-TeX profile; no evaluated JS/regex VM or partial production registry. Actual-CJS fixtures, full core regression and 33 compiling/assertion-failing mutants passed. Evidence: mo-contracts.md, evidence/p12-mo-members.json and evidence/p12c-mo-acceptance.md. Full G0-G7 remain closed.",
+      "adaptation_reason": "Root-reviewed all 32 source members in mo.ixx/mo_bindings.cpp plus disjoint lookup/class/script CPP files. Native actual-constructor live statics, raw null/Missing fields, array/string keys/iterators, precise default pattern services and required intrinsic-function metadata bind the raw-TeX profile; no evaluated JS/regex VM or partial production registry. Actual-CJS fixtures, full core regression and 33 compiling/assertion-failing mutants passed. Evidence: mo-contracts.md, evidence/p12-mo-members.json and evidence/p12c-mo-acceptance.md. Full G0-G7 remain closed. P15b/P15c extracts adjustTeXclass into one shared MML operation, replays all 33 Mo mutants and registers actual TeXAtom in the main semantic fixture; evidence/p15bc-atom-semantics-acceptance.md.",
       "port_status": "implemented",
       "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
@@ -891,10 +891,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/semantics.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.semantics",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root froze interfaces, bindings, actual-CJS oracle and assigned-only CPP responsibilities in 4e59bcb. All 18 class members and the effective final prototype assignment are individually mapped in evidence/p15bc-members.json. Single shared Mo/TeXAtom semantic operation, source-ordered constructor phases and raw/identity/virtual behavior; native API does not expose JS method-function reflection. 6888 assertions/74 cases/924 raw rows, full core regression, 26 compiling packet mutants plus 33 Mo and 20 class-state mutants. See evidence/p15bc-atom-semantics-acceptance.md. This is local semantic acceptance; renderer gates remain closed.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"

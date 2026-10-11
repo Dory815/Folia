@@ -90,3 +90,13 @@ The initial independent oracle has 6,828 assertions / 63 cases, including
 include both actual receiver kinds, constructor virtual-getter behavior,
 malformed dispatch and annotation hook states, outer trees and logical parents.
 Root may extend missing witnesses; agents cannot change or reduce expectations.
+
+Root's final oracle has 6,888 assertions / 74 cases, retaining all 924 raw
+rows and adding fresh-default identities, throwing constructor callbacks,
+real inferred/semantic parent-chain adjustments and the explicit native guard
+budget check. Base initialization now writes prevClass, prevLevel, raw texclass
+in that source order after the generic superclass. Storage remains Missing
+before those phases, and throwing callbacks expose the actual partial state.
+The complete core regression and 26 packet/33 Mo/20 class-state compiling
+mutation checks pass. Local acceptance is recorded only in
+evidence/p15bc-atom-semantics-acceptance.md; full renderer gates remain closed.

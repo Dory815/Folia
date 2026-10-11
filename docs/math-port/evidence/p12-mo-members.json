@@ -290,8 +290,10 @@
           "member_sha256": "73aac84bfd5d3b42932af0dcc7548ad76d7d40412b413d78075f387d777e82d7",
           "target": "src/math/core/mml_tree/mml_nodes/mo_classes.cpp:MmlMo::adjustTeXclass",
           "review": "root_review_passed",
-          "mapping": "Root-reviewed corresponding source method/accessor; source call order and raw state retained. See p12c-mo-acceptance.md and assigned method report.",
-          "evidence": "docs/math-port/evidence/p12c-mo-acceptance.md"
+          "mapping": "Root-reviewed corresponding source method/accessor; source call order and raw state retained. See p12c-mo-acceptance.md and assigned method report. P15b/P15c mechanically extracts the same body into one shared semantic operation, with thin Mo/TeXAtom delegates and unchanged source observations.",
+          "evidence": "docs/math-port/evidence/p12c-mo-acceptance.md",
+          "operation_target": "src/math/core/mml_tree/operator_class.cpp:adjustOperatorTeXclass",
+          "shared_operation_evidence": "docs/math-port/evidence/p15bc-atom-semantics-acceptance.md"
         },
         {
           "owner": "MmlMo",
