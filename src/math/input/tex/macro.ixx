@@ -1,0 +1,18 @@
+// Root declarations for MathJax 4.1.3 Token.ts::Macro. Apache-2.0.
+export module folia.math.input.tex.macro;
+export import folia.math.input.tex.types;
+import std;
+export namespace folia::math::tex {
+class Macro {
+    Property token_;
+    ParseMethod func_;
+    Property args_;
+public:
+    Macro(Property token,ParseMethod func,Property args=Missing{});
+    virtual ~Macro()=default;
+    virtual Property token() const;
+    virtual ParseMethod func() const;
+    virtual Property args() const;
+};
+using MacroRef=std::shared_ptr<Macro>;
+}
