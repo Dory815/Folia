@@ -674,3 +674,26 @@ Root must freeze the single authoritative replacement and independent Source
 cases before any migration/delegation. Math remains required in parallel with
 Mermaid; M3f locally accepts shared radial stage ordering after M3e geometry,
 but complete backends and Folia gates remain open.
+
+### P21d root progress and M3g local acceptance
+
+P21d's ignored two-file point-set repair is reproducible from tracked patches.
+The six actual-Node corpora have zero regressions in the correct adapter;
+original remaining differences are 293, legacy 18, property aliases 144 and
+the new corpus's ordinary-ui controls 28. The v/vi point-algebra observations
+agree; the 101,232-case mutation baseline agrees and all 11 compiling semantic
+mutants are detected. Unchanged upstream remains 495 pass/56 fail/1 ignored.
+Evidence: evidence/p21d-v-casefold-root-review.md. No engine/host/TokenMap is
+accepted; MathJax Source acceptance stays 53/246.
+
+P22 parser and TokenMap audits inventory constructor/identity, MacroRef, stack,
+factory and registry dependencies. They freeze no implementation or API.
+Root must resolve those boundaries before authorizing implementation, including
+base-constructor immediate registration and one live shared map identity.
+
+Mermaid M3g locally accepts six shared stop/color preparation methods, following
+M3e geometry and M3f stages. Root actual Source: 3,242 cases/382,002 assertions,
+22 detected compiling semantic mutants, final 40 tests including 11 WARP with
+the pinned font. Evidence: docs/mermaid-native/evidence/m3g-gradient-stops-
+acceptance.md. Complete wrapper/sampling/resources/backends and Folia remain
+required; Mermaid rendering-function acceptance stays 34/70.
