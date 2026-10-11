@@ -64,3 +64,8 @@ impl ColorSpace {
         color
     }
 }
+
+impl ColorSpace{
+ pub fn expand_dest_stage(self)->Option<super::pipeline_control_types::PipelineStage>{panic!("Unimplemented Root-frozen ColorSpace::expand_dest_stage")}
+ pub fn compress_stage(self)->Option<super::pipeline_control_types::PipelineStage>{panic!("Unimplemented Root-frozen ColorSpace::compress_stage")}
+}

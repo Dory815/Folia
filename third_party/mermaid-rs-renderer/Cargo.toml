@@ -200,3 +200,7 @@ path = "tests/shader_run_parity.rs"
 [[test]]
 name = "shader_public_parity"
 path = "tests/shader_public_parity.rs"
+
+[[test]]
+name = "blitter_policy_parity"
+path = "tests/blitter_policy_parity.rs"

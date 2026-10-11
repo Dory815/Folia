@@ -96,3 +96,7 @@ impl PreparedGradient {
     pub fn colors_are_opaque(&self)->bool{self.colors_are_opaque}
     pub fn has_uniform_stops(&self)->bool{self.has_uniform_stops}
 }
+
+impl super::gradient_stop_types::PremultipliedStopColor{
+ pub fn to_color_u8(&self)->[u8;4]{panic!("Unimplemented Root-frozen PremultipliedColor::to_color_u8")}
+}

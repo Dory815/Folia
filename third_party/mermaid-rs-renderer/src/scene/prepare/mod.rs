@@ -24,3 +24,6 @@ pub mod pipeline_executor;
 pub mod prepared_shader_types;
 pub mod shader_dispatch;
 pub mod sweep_program;
+
+pub mod blend_policy_types;
+pub mod blend_policy;
