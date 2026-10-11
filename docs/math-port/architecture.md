@@ -17,8 +17,10 @@ in `evidence/p13-arithmetic-acceptance.md` and table semantics in
 `evidence/p14-table-acceptance.md` and multiscripts in
 `evidence/p15a-multiscript-acceptance.md` and TeXAtom/semantics in
 `evidence/p15bc-atom-semantics-acceptance.md` and the HTML semantic node in
-`evidence/p15d-html-node-acceptance.md`; this does not pass a full renderer
-gate. Local source acceptance is 36/246, with full G0–G7 still closed.
+`evidence/p15d-html-node-acceptance.md` and five simple MML files in
+`evidence/p16a-simple-mml-acceptance.md` and complete fenced semantics in
+`evidence/p16c-mfenced-acceptance.md`; this does not pass a full renderer
+gate. Local source acceptance is 42/246, with full G0–G7 still closed.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
 

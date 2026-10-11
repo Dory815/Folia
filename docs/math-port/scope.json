@@ -545,10 +545,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mfenced.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mfenced",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root froze all ten source members in mfenced-contract.md, generated six binding responsibilities and independently reviewed four source methods. Complete fake storage/inheritance/class/factory behavior preserves callback order, UTF16 units, captured/live arrays and default ownership through accepted typed native services. Root actual-CJS acceptance: 225 cases/984 assertions/509 source value records; all 30 isolated compiling mutations fail unchanged assertions; full core build/test exit 0. Evidence: evidence/p16c-mfenced-acceptance.md and exact AST member ledger. Common/SVG wrappers, complete parser/profile registration and Folia integration remain unaccepted; no runtime JS or fallback introduced.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
