@@ -6,11 +6,15 @@ export namespace folia::math::async {
 using Value=std::any;
 struct ThrownValue {Value value;};
 Value currentReason();
+struct PromiseState;
 class JobQueue {
     std::deque<std::function<void()>> jobs_;
+    std::vector<std::unique_ptr<PromiseState>> promises_;
     std::shared_ptr<const int> realm_=std::make_shared<const int>(0);
+    friend class Promise;
 public:
-    JobQueue()=default;
+    JobQueue();
+    ~JobQueue();
     JobQueue(const JobQueue&)=delete;
     JobQueue& operator=(const JobQueue&)=delete;
     void post(std::function<void()>);
@@ -27,11 +31,10 @@ class Promise:public std::enable_shared_from_this<Promise> {
     struct Reaction {Handler fulfilled,rejected;PromiseRef next;};
     std::weak_ptr<JobQueue> queue_;
     std::shared_ptr<const int> realm_;
-    State state_=State::pending;
-    Value value_;
-    bool resolved_=false;
-    std::vector<Reaction> reactions_;
+    std::size_t index_=0;
+    friend struct PromiseState;
     explicit Promise(const QueueRef&);
+    PromiseState& record()const;
     void settle(State,Value);
     void schedule(Reaction);
 public:
@@ -42,8 +45,8 @@ public:
     void reject(Value);
     PromiseRef then(Handler fulfilled={},Handler rejected={});
     PromiseRef catchError(Handler rejected);
-    State state()const{return state_;}
-    const Value& value()const{return value_;}
+    State state()const;
+    const Value& value()const;
     bool belongsTo(const QueueRef&)const;
 };
 }

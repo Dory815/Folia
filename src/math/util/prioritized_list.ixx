@@ -48,6 +48,11 @@ public:
 
         iterator() = default;
 
+        [[nodiscard]] std::shared_ptr<value_type> record() const {
+            cache_current();
+            return current_;
+        }
+
         reference operator*() const {
             cache_current();
             return *current_;

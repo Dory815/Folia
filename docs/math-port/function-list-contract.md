@@ -82,11 +82,23 @@ and promise adoption. It executes no JS/QuickJS and creates no threads/platform
 objects. Then reactions are queued even for already settled promises. Handler
 exceptions reject the intermediate with currentReason(): ThrownValue retains
 its arbitrary original any reason; other exceptions retain exception_ptr.
+Ordinary C++ exceptions retain the captured exception_ptr and their type/payload;
+MSVC may copy the thrown exception during current_exception capture. Identity
+across native propagation is the captured handle; caller-created exception_ptr
+address equality across a rethrow/capture is not a C++ guarantee. Raw shared
+reason identity uses ThrownValue and is preserved from the original callback.
 Promise and async-frame queue ownership is weak to avoid queue/job/frame cycles;
 the native session/caller owns the queue while active. Jobs are pumped on that session
 thread; thread creation, event-loop pumping and concurrent completion ingress
 belong to the eventual worker integration. Callback scopes must not capture
 owning session references that form cycles. No inline reaction scheduling.
+The queue owns promise state records; PromiseRef is an identity-bearing native
+handle with weak queue plus record index. Internal reaction/adoption edges never
+own their arena, including mutual pending adoption. Session destruction releases
+all state/jobs/captures; surviving handles raise TypeError on state access after
+the session expires. This is the established session-local native handle boundary,
+not garbage collection or a browser Promise implementation. Reactions/callback
+captures are cleared on settlement; no completed callback graph is retained.
 
 ## Root acceptance
 

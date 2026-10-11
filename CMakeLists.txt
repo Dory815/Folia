@@ -158,6 +158,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/string.ixx
     src/math/util/bbox.ixx
     src/math/util/prioritized_list.ixx
+    src/math/util/promise.ixx
+    src/math/util/function_types.ixx
+    src/math/util/function_list.ixx
     src/math/util/js_number.ixx
     src/math/util/js_numeric_input.ixx
     src/math/util/js_case.ixx
@@ -175,6 +178,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_nodes/maction_selection.cpp
     src/math/core/mml_tree/mml_nodes/maction_behavior.cpp
     src/math/util/js_case.cpp
+    src/math/util/promise.cpp
+    src/math/util/function_list.cpp
     src/math/util/js_case_data.cpp
     src/math/core/mml_tree/mml_nodes/html_node_bindings.cpp
     src/math/core/mml_tree/mml_nodes/html_node.cpp
