@@ -1,6 +1,6 @@
 # Root M2c — complete ordinary node-shape emission
 
-Root read the complete pinned render.rs::shape_svg, lines 5987–6358,
+Root read the complete pinned render.rs::shape_svg, lines 5987–6347,
 SHA256 026efceab06b86752789ea2b5c37ecac569b8cd020f97c776f444bec0a2166b4.
 This is one complete source responsibility, independent of unresolved shared
 text shaping. All source match branches and the source default branch are in
@@ -53,6 +53,9 @@ its 1.2/1.0 width choice. Include inner circle only when unquantized r-4>0;
 no inheritance of outer dash onto the inner circle. Cylinder order is top
 ellipse, body rectangle, bottom ellipse; bottom fill None. Subroutine order
 is rectangle then two lines, and those lines do not receive outer dash.
+Subroutine lines have effective fill None: source omits the fill attribute,
+but its inherited/default fill has no area on a Line. The root observation
+compares effective non-area paint separately from inherited SVG attributes.
 
 Ordinary shape stroke cap/join are Round/Round; default miter 4, opacity 1.
 Mindmap divider uses Butt/Miter defaults, source line width quantized to two
