@@ -113,3 +113,14 @@ overall renderer gate passes merely because a library compiles.
 Initial frozen oracle: 1,286 assertions / 222 cases, 480 raw inheritance rows
 and 1,161 source-value records. Root may extend gaps using actual CJS
 observations; agents cannot alter expectations or reduce this coverage.
+
+Root review extension after implementation dispatch: 1,304 assertions /
+226 cases and 1,170 source-value records, retaining all 480 raw rows. Added
+virtual kind-read traces, script-child and verification-array mutations, and
+actual options-handle identity/mutation through the mError argument. Root's
+ErrorOptions::value accessor returns the existing nullable PropertyList handle;
+it does not clone or create a second options state. This lets virtual callbacks
+observe/mutate the same source options object. No existing error algorithm
+changed. Root also required explicit child-kind-before-owner-kind sequencing
+and final child-receiver validation before JS level addition in the four-method
+implementation. Agent followed those corrections only in its authorized CPP.

@@ -509,6 +509,13 @@ bindings, tests, builds, mutations and acceptance. Reviewers may inspect but
 cannot edit shared code or expected results. TeXAtom, semantics and HtmlNode
 remain separate future packets; this assignment includes no geometry or wiring.
 
+Root's subsequent review added kind-order traces, in-loop script/verification
+array callbacks, and error-options identity/mutation through the actual argument.
+The expanded fixture has 1,304 assertions/226 cases and passes its focused
+native build. Root corrected generated test naming/API errors without changing
+source expectations. Full core and 34 isolated mutants are pending; P15a is
+not accepted at this stage.
+
 ## Wave 3 — base/AMS input and complete font services
 
 P11 is locally accepted under operator-contracts.md revision 2. Root froze the

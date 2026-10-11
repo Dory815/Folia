@@ -20,6 +20,9 @@ public:
     ErrorOptions():value_(PropertyList{}){}
     ErrorOptions(PropertyList value):value_(std::move(value)){}
     ErrorOptions(std::nullptr_t):value_(std::nullopt){}
+    // The same nullable object handle is available to virtual error callbacks.
+    // A PropertyList copy retains identity; this is not an options snapshot.
+    std::optional<PropertyList> value()const{return value_;}
     Property get(std::string_view name)const{
         if(!value_)throw Error("TypeError",u"Cannot read null MML error options");
         return value_->get(name);
