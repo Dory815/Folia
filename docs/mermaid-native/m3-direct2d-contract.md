@@ -117,7 +117,13 @@ visible unsupported appearances report a diagnostic. No DrawText boxes, guessed
 advances, system font replacement or ad-hoc glyph rectangles. Glyph Geometry
 coordinates are local DIPs transformed relative to the current glyph baseline
 origin; Image appearances carry a completed local destination/transform with
-the same origin. Handle retained color geometry/image appearances explicitly.
+the same origin. FontOutline uses the enclosing text's effective paint and full
+text drawable bounds, so its gradient is not restarted per glyph. Retained
+GlyphLayer.style is an independently resolved layer-local paint: user-space
+gradients move with glyph origin * layer.transform, and object-box gradients
+use that layer's local geometry bounds under the same transform. Text outer
+opacity composites all appearances once. Handle retained color geometry/image
+appearances explicitly.
 Sideways/other unsupported run modes must diagnose, never be ignored; all current
 source chart rotations are group transforms, not reshaping requests.
 
