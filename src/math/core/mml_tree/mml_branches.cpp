@@ -11,13 +11,15 @@ import std;
 namespace folia::math::mml {
 namespace {
 NodeValue child_zero(AbstractMmlNode& node) {
-    // P23f Root stub: child_zero.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    const auto children = node.childNodes;
+    if (!children) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
+    return children->get(0);
 }
 
 MmlNode& required_child_zero(const AbstractMmlNode& node, std::string_view member) {
-    // P23f Root stub: required_child_zero.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    const auto children = node.childNodes;
+    if (!children) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
+    return *children->get(0).requireNode(member);
 }
 
 void require_child_list(AbstractMmlNode& node) {
@@ -78,8 +80,8 @@ NodeValue AbstractMmlLayoutNode::core() {
 }
 
 NodeValue AbstractMmlLayoutNode::coreMO() {
-    // P23f Root stub: AbstractMmlLayoutNode::coreMO.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    return child_zero(*this).requireNode("coreMO")->coreMO();
 }
 
 NodeValue AbstractMmlLayoutNode::setTeXclass(NodeValue previous) {
@@ -97,8 +99,8 @@ NodeValue AbstractMmlBaseNode::core() {
 }
 
 NodeValue AbstractMmlBaseNode::coreMO() {
-    // P23f Root stub: AbstractMmlBaseNode::coreMO.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    return child_zero(*this).requireNode("coreMO")->coreMO();
 }
 
 NodeValue AbstractMmlBaseNode::setTeXclass(NodeValue previous) {

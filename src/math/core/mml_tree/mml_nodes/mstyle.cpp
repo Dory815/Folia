@@ -12,8 +12,20 @@ namespace folia::math::mml {
 std::string MmlMstyle::kind() const { return "mstyle"; }
 
 Property MmlMstyle::notParent() const {
-    // P23f Root stub: MmlMstyle::notParent.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    const auto firstArray = this->childNodes;
+    if (!firstArray) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
+    const NodeValue first = firstArray->get(0);
+    if (!first.isNode()) {
+        return first.kind() == tree::ChildKind::Null ? Property(PropertyNull{}) : Property(Missing{});
+    }
+
+    const auto currentArray = this->childNodes;
+    if (!currentArray) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
+    const NodeValue current = currentArray->get(0);
+    MmlNode* const child = current.requireNode("childNodes");
+    const auto grandchildren = child->childNodes;
+    if (!grandchildren) throw Error("TypeError",u"Cannot read properties of null (reading 'length')");
+    return Property(grandchildren->size() == 1);
 }
 
 void MmlMstyle::inheritAttributes(AttributeList attributes, Property display,

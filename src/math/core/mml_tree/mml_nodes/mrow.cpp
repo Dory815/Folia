@@ -46,13 +46,30 @@ bool MmlMrow::isEmbellished() const {
 }
 
 NodeValue MmlMrow::core() {
-    // P23f Root stub: MmlMrow::core.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    if (!this->isEmbellished()) return this;
+    if (!core_) return this;
+    const std::size_t index = *core_;
+    const auto children = this->childNodes;
+    if (!children) {
+        std::string message = "Cannot read properties of null (reading '" + std::to_string(index) + "')";
+        throw Error("TypeError",std::u16string(message.begin(),message.end()));
+    }
+    return children->get(index);
 }
 
 NodeValue MmlMrow::coreMO() {
-    // P23f Root stub: MmlMrow::coreMO.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    if (!this->isEmbellished()) return this;
+    if (!core_) return this;
+    const std::size_t index = *core_;
+    const auto children = this->childNodes;
+    if (!children) {
+        std::string message = "Cannot read properties of null (reading '" + std::to_string(index) + "')";
+        throw Error("TypeError",std::u16string(message.begin(),message.end()));
+    }
+    const NodeValue child = children->get(index);
+    return child.requireNode("coreMO")->coreMO();
 }
 
 std::size_t MmlMrow::nonSpaceLength() {

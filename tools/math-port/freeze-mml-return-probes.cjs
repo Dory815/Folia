@@ -1,6 +1,6 @@
 // Root actual full-registry observer; frozen original expected values never come from native.
 'use strict';
-const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');const root=path.resolve(__dirname,'../..'),source=JSON.parse(fs.readFileSync(path.join(root,'docs/math-port/evidence/p23h2-return-probe-source.json')));assert.equal(source.cases.length,155);
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');const prototypes=process.argv.includes('--prototype');const root=path.resolve(__dirname,'../..'),source=JSON.parse(fs.readFileSync(path.join(root,'docs/math-port/evidence/'+(prototypes?'p23h2-return-prototype-source':'p23h2-return-probe-source')+'.json')));assert.equal(source.cases.length,prototypes?2:155);
 const rows=source.cases.map(({input:i,expected})=>'        {'+[i.kind,i.shape,i.member,i.prototype??'',i.inner??'',i.rowMode??'',i.moResult??''].map(JSON.stringify).join(',')+','+Object.hasOwn(i,'inner')+','+Boolean(i.innerNull)+','+Boolean(i.arrayNull)+','+Boolean(i.moHook)+','+JSON.stringify(expected)+'},').join('\n');
 const data=`// Root registered-class raw core return / positive / null / callback Source probes.
 #include "support/folia_test.hpp"
@@ -36,4 +36,4 @@ ${rows}
  };for(const auto& c:cases)expect(eq(run(c),c.expected))<<c.kind<<c.member<<c.shape<<c.rowMode<<c.moResult;};};
 }
 `;
-const file=path.join(root,'tests/math/reference_mml_return_probes.cpp');if(process.argv.includes('--check'))assert.equal(fs.readFileSync(file,'utf8').replaceAll('\r\n','\n'),data);else{assert.ok(!fs.existsSync(file));fs.writeFileSync(file,data);}console.log('155 actual original raw-return/positive/callback observations frozen');
+const file=path.join(root,'tests/math/'+(prototypes?'reference_mml_return_prototype.cpp':'reference_mml_return_probes.cpp'));if(process.argv.includes('--check'))assert.equal(fs.readFileSync(file,'utf8').replaceAll('\r\n','\n'),data);else{assert.ok(!fs.existsSync(file));fs.writeFileSync(file,data);}console.log(source.cases.length+' actual original raw-return/positive/callback observations frozen');
