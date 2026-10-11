@@ -9,19 +9,19 @@ use crate::scene::paint::SpreadMode;
 
 const STAGE_WIDTH: usize = 8;
 
-struct Pipeline<'a, 'b> {
-    pixmap_src: SourcePixmap<'a>,
-    ctx: &'b PatternContext<'a>,
+struct Pipeline<'source, 'context, 'view> {
+    pixmap_src: SourcePixmap<'source>,
+    ctx: &'view PatternContext<'source, 'context>,
     r: f32x8, g: f32x8, b: f32x8, a: f32x8,
     dr: f32x8, dg: f32x8, db: f32x8, da: f32x8,
 }
-impl Pipeline<'_, '_> {
+impl Pipeline<'_, '_, '_> {
     #[inline(always)]
     fn next_stage(&mut self) {} // Single-stage boundary; continuation is caller-owned.
 }
 
 pub fn pattern_high_stage(stage: PipelineStage, registers: &mut HighRegisters,
-    context: &PatternContext<'_>) -> Result<(), SamplingError> {
+    context: &PatternContext<'_, '_>) -> Result<(), SamplingError> {
     use PipelineStage::*;
     if !matches!(stage, Gather | Reflect | Repeat | Bilinear | Bicubic) {
         return Err(SamplingError { precision: PipelinePrecision::High, stage });
@@ -80,10 +80,10 @@ fn ulp_sub(v: f32) -> f32 {
 
 // Original highp.rs:708-892.
 fn reflect(p: &mut Pipeline) {
-    let ctx = &p.ctx.limit_x;
+    let ctx = &p.ctx.pipeline.limit_x;
     p.r = exclusive_reflect(p.r, ctx.scale, ctx.inv_scale);
 
-    let ctx = &p.ctx.limit_y;
+    let ctx = &p.ctx.pipeline.limit_y;
     p.g = exclusive_reflect(p.g, ctx.scale, ctx.inv_scale);
 
     p.next_stage();
@@ -98,10 +98,10 @@ fn exclusive_reflect(v: f32x8, limit: f32, inv_limit: f32) -> f32x8 {
 }
 
 fn repeat(p: &mut Pipeline) {
-    let ctx = &p.ctx.limit_x;
+    let ctx = &p.ctx.pipeline.limit_x;
     p.r = exclusive_repeat(p.r, ctx.scale, ctx.inv_scale);
 
-    let ctx = &p.ctx.limit_y;
+    let ctx = &p.ctx.pipeline.limit_y;
     p.g = exclusive_repeat(p.g, ctx.scale, ctx.inv_scale);
 
     p.next_stage();
@@ -121,7 +121,7 @@ fn bilinear(p: &mut Pipeline) {
     let wx = [one - fx, fx];
     let wy = [one - fy, fy];
 
-    sampler_2x2(p.pixmap_src, &p.ctx.sampler, x, y, &wx, &wy, &mut p.r, &mut p.g, &mut p.b, &mut p.a);
+    sampler_2x2(p.pixmap_src, &p.ctx.pipeline.sampler, x, y, &wx, &wy, &mut p.r, &mut p.g, &mut p.b, &mut p.a);
 
     p.next_stage();
 }
@@ -135,7 +135,7 @@ fn bicubic(p: &mut Pipeline) {
     let wx = [bicubic_far(one - fx), bicubic_near(one - fx), bicubic_near(fx), bicubic_far(fx)];
     let wy = [bicubic_far(one - fy), bicubic_near(one - fy), bicubic_near(fy), bicubic_far(fy)];
 
-    sampler_4x4(p.pixmap_src, &p.ctx.sampler, x, y, &wx, &wy, &mut p.r, &mut p.g, &mut p.b, &mut p.a);
+    sampler_4x4(p.pixmap_src, &p.ctx.pipeline.sampler, x, y, &wx, &wy, &mut p.r, &mut p.g, &mut p.b, &mut p.a);
 
     p.next_stage();
 }

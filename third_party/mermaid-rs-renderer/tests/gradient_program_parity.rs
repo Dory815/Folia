@@ -43,11 +43,11 @@ fn complete_source_gradient_program(){
   let program=prepare_gradient_program(&gradient,color_space(c.input.color_space),radial.as_ref());
   assert_eq!(std::mem::take(&mut *WARNINGS.lock().unwrap()),c.warnings,"case {index}: Source warnings");assertions+=1;
   assert_eq!(program.returned,c.returned,"case {index}: Source returned flag");assert_eq!(program.stages.iter().map(stage_name).collect::<Vec<_>>(),c.stages,"case {index}: ordered stages");assertions+=2;
-  let t=program.transform;for(v,e)in[t.sx,t.ky,t.kx,t.sy,t.tx,t.ty].into_iter().zip(c.transform){assert_bits(v,e,index,&mut assertions);}
-  for(v,e)in program.two_stop.factor.components.into_iter().zip(c.two_stop[0]){assert_bits(v,e,index,&mut assertions);}for(v,e)in program.two_stop.bias.components.into_iter().zip(c.two_stop[1]){assert_bits(v,e,index,&mut assertions);}
-  assert_eq!(program.gradient.len,c.len);assert_eq!(program.gradient.factors.len(),c.factors.len());assert_eq!(program.gradient.biases.len(),c.biases.len());assert_eq!(program.gradient.t_values.len(),c.t_values.len());assertions+=4;
-  for(actual,expected)in[(&program.gradient.factors,&c.factors),(&program.gradient.biases,&c.biases)]{for(a,e)in actual.iter().zip(expected){for(v,bits)in a.components.into_iter().zip(e){assert_bits(v,*bits,index,&mut assertions);}}}
-  for(v,e)in program.gradient.t_values.iter().zip(&c.t_values){assert_bits(v.get(),*e,index,&mut assertions);}for(v,e)in program.radial_p.into_iter().zip(c.radial_p){assert_bits(v,e,index,&mut assertions);}assert_eq!(program.radial_mask,c.radial_mask);assertions+=1;
+  let t=program.context.transform;for(v,e)in[t.sx,t.ky,t.kx,t.sy,t.tx,t.ty].into_iter().zip(c.transform){assert_bits(v,e,index,&mut assertions);}
+  for(v,e)in program.context.two_stop.factor.components.into_iter().zip(c.two_stop[0]){assert_bits(v,e,index,&mut assertions);}for(v,e)in program.context.two_stop.bias.components.into_iter().zip(c.two_stop[1]){assert_bits(v,e,index,&mut assertions);}
+  assert_eq!(program.context.gradient.len,c.len);assert_eq!(program.context.gradient.factors.len(),c.factors.len());assert_eq!(program.context.gradient.biases.len(),c.biases.len());assert_eq!(program.context.gradient.t_values.len(),c.t_values.len());assertions+=4;
+  for(actual,expected)in[(&program.context.gradient.factors,&c.factors),(&program.context.gradient.biases,&c.biases)]{for(a,e)in actual.iter().zip(expected){for(v,bits)in a.components.into_iter().zip(e){assert_bits(v,*bits,index,&mut assertions);}}}
+  for(v,e)in program.context.gradient.t_values.iter().zip(&c.t_values){assert_bits(v.get(),*e,index,&mut assertions);}for(v,e)in program.context.radial_p.into_iter().zip(c.radial_p){assert_bits(v,e,index,&mut assertions);}assert_eq!(program.context.radial_mask,c.radial_mask);assertions+=1;
  }
  println!("{} Source programs, {assertions} assertions",fixture.programs.len());
 }

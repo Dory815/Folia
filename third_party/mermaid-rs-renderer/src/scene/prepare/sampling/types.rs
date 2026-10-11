@@ -1,4 +1,4 @@
-//! Root-frozen typed registers, with one mutable shared GradientProgram context.
+//! Root-frozen typed registers, with one mutable shared PipelineContext.
 use super::super::pipeline_control_types::{PipelineStage,PipelinePrecision};
 /// Source register order r,g,b,a,dr,dg,db,da. Eight f32 lanes per channel.
 #[derive(Debug,Clone,Copy,Default)]

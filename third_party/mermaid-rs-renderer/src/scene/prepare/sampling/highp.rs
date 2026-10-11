@@ -4,7 +4,7 @@
 //! Source highp gradient stages, with the continuation cursor owned by the caller.
 use super::{HighRegisters, SamplingError};
 use super::super::{
-    gradient_program_types::{GradientContext, GradientProgram},
+    pipeline_context_types::{GradientContext, PipelineContext},
     pipeline_control_types::{PipelinePrecision, PipelineStage},
 };
 use super::wide::{f32x8, u32x8};
@@ -12,7 +12,7 @@ use super::wide::{f32x8, u32x8};
 pub fn sample_high_stage(
     stage: PipelineStage,
     registers: &mut HighRegisters,
-    program: &mut GradientProgram,
+    context: &mut PipelineContext,
     origin: [usize; 2],
 ) -> Result<(), SamplingError> {
     use PipelineStage::*;
@@ -68,7 +68,7 @@ pub fn sample_high_stage(
             *da = f32x8::default();
         }
         Transform => {
-            let ts = &program.transform;
+            let ts = &context.transform;
             let tr = mad(*r, f32x8::splat(ts.sx), mad(*g, f32x8::splat(ts.kx), f32x8::splat(ts.tx)));
             let tg = mad(*r, f32x8::splat(ts.ky), mad(*g, f32x8::splat(ts.sy), f32x8::splat(ts.ty)));
             *r = tr; *g = tg;
@@ -81,7 +81,7 @@ pub fn sample_high_stage(
         }
         RepeatX1 => *r = (*r - r.floor()).normalize(),
         Gradient => {
-            let ctx = &program.gradient;
+            let ctx = &context.gradient;
             let t: [f32; 8] = (*r).into();
             let mut idx = u32x8::default();
             for i in 1..ctx.len {
@@ -98,7 +98,7 @@ pub fn sample_high_stage(
             gradient_lookup(ctx, &idx, t, r, g, b, a);
         }
         EvenlySpaced2StopGradient => {
-            let ctx = &program.two_stop;
+            let ctx = &context.two_stop;
             let t = *r;
             *r = mad(t, f32x8::splat(ctx.factor.components[0]), f32x8::splat(ctx.bias.components[0]));
             *g = mad(t, f32x8::splat(ctx.factor.components[1]), f32x8::splat(ctx.bias.components[1]));
@@ -134,45 +134,45 @@ pub fn sample_high_stage(
         }
         XYTo2PtConicalWellBehaved => {
             let x = *r; let y = *g;
-            *r = (x * x + y * y).sqrt() - x * f32x8::splat(program.radial_p[0]);
+            *r = (x * x + y * y).sqrt() - x * f32x8::splat(context.radial_p[0]);
         }
         XYTo2PtConicalGreater => {
             let x = *r; let y = *g;
-            *r = (x * x - y * y).sqrt() - x * f32x8::splat(program.radial_p[0]);
+            *r = (x * x - y * y).sqrt() - x * f32x8::splat(context.radial_p[0]);
         }
         XYTo2PtConicalSmaller => {
             let x = *r; let y = *g;
-            *r = -(x * x - y * y).sqrt() - x * f32x8::splat(program.radial_p[0]);
+            *r = -(x * x - y * y).sqrt() - x * f32x8::splat(context.radial_p[0]);
         }
         XYTo2PtConicalStrip => {
             let x = *r; let y = *g;
-            *r = x + (f32x8::splat(program.radial_p[0]) - y * y).sqrt();
+            *r = x + (f32x8::splat(context.radial_p[0]) - y * y).sqrt();
         }
         Mask2PtConicalNan => {
             let t = *r;
             let is_degenerate = t.cmp_ne(t);
             *r = is_degenerate.blend(f32x8::default(), t);
-            program.radial_mask = bytemuck::cast(cond_to_mask(!is_degenerate.to_u32x8_bitcast()));
+            context.radial_mask = bytemuck::cast(cond_to_mask(!is_degenerate.to_u32x8_bitcast()));
         }
         Mask2PtConicalDegenerates => {
             let t = *r;
             let is_degenerate = t.cmp_le(f32x8::default()) | t.cmp_ne(t);
             *r = is_degenerate.blend(f32x8::default(), t);
-            program.radial_mask = bytemuck::cast(cond_to_mask(!is_degenerate.to_u32x8_bitcast()));
+            context.radial_mask = bytemuck::cast(cond_to_mask(!is_degenerate.to_u32x8_bitcast()));
         }
         ApplyVectorMask => {
-            let mask: u32x8 = bytemuck::cast(program.radial_mask);
+            let mask: u32x8 = bytemuck::cast(context.radial_mask);
             *r = (r.to_u32x8_bitcast() & mask).to_f32x8_bitcast();
             *g = (g.to_u32x8_bitcast() & mask).to_f32x8_bitcast();
             *b = (b.to_u32x8_bitcast() & mask).to_f32x8_bitcast();
             *a = (a.to_u32x8_bitcast() & mask).to_f32x8_bitcast();
         }
-        Alter2PtConicalCompensateFocal => *r = *r + f32x8::splat(program.radial_p[1]),
+        Alter2PtConicalCompensateFocal => *r = *r + f32x8::splat(context.radial_p[1]),
         Alter2PtConicalUnswap => *r = f32x8::splat(1.0) - *r,
         NegateX => *r = -*r,
         ApplyConcentricScaleBias => {
             let x = *r;
-            *r = x * f32x8::splat(program.radial_p[0]) + f32x8::splat(program.radial_p[1]);
+            *r = x * f32x8::splat(context.radial_p[0]) + f32x8::splat(context.radial_p[1]);
         }
         GammaExpand2 => { *r = *r * *r; *g = *g * *g; *b = *b * *b; }
         GammaExpandDestination2 => { *dr = *dr * *dr; *dg = *dg * *dg; *db = *db * *db; }

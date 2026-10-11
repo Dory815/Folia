@@ -1,5 +1,6 @@
 //! Root-frozen immutable projection of PixmapRef, TileCtx and SamplerCtx.
 pub use super::super::super::pipeline_context_types::{TileContext,SamplerContext};
+use super::super::super::pipeline_context_types::PipelineContext;
 #[derive(Debug,Clone,Copy)]
 pub struct SourcePixmap<'a>{data:&'a[u8],width:u32,height:u32}
 impl<'a> SourcePixmap<'a>{
@@ -17,4 +18,4 @@ impl<'a> SourcePixmap<'a>{
  pub fn height(&self)->u32{self.height}
 }
 #[derive(Debug,Clone,Copy)]
-pub struct PatternContext<'a>{pub source:SourcePixmap<'a>,pub limit_x:TileContext,pub limit_y:TileContext,pub sampler:SamplerContext}
+pub struct PatternContext<'source,'context>{pub source:SourcePixmap<'source>,pub pipeline:&'context PipelineContext}

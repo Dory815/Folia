@@ -4,7 +4,7 @@
 //! Source lowp gradient stages, retaining coordinate bit packing.
 use super::{LowRegisters, SamplingError};
 use super::super::{
-    gradient_program_types::{GradientContext, GradientProgram},
+    pipeline_context_types::{GradientContext, PipelineContext},
     pipeline_control_types::{PipelinePrecision, PipelineStage},
 };
 use super::wide::{f32x8, f32x16, u16x16};
@@ -12,7 +12,7 @@ use super::wide::{f32x8, f32x16, u16x16};
 pub fn sample_low_stage(
     stage: PipelineStage,
     registers: &mut LowRegisters,
-    program: &mut GradientProgram,
+    context: &mut PipelineContext,
     origin: [usize; 2],
 ) -> Result<(), SamplingError> {
     use PipelineStage::*;
@@ -49,7 +49,7 @@ pub fn sample_low_stage(
             split(&y, b, a);
         }
         Transform => {
-            let ts = &program.transform;
+            let ts = &context.transform;
             let x = join(r, g);
             let y = join(b, a);
             let nx = mad(x, f32x16::splat(ts.sx), mad(y, f32x16::splat(ts.kx), f32x16::splat(ts.tx)));
@@ -76,7 +76,7 @@ pub fn sample_low_stage(
             split(&x, r, g);
         }
         Gradient => {
-            let ctx = &program.gradient;
+            let ctx = &context.gradient;
             let t = join(r, g);
             let mut idx = u16x16::splat(0);
             for i in 1..ctx.len {
@@ -103,7 +103,7 @@ pub fn sample_low_stage(
             gradient_lookup(ctx, &idx, t, r, g, b, a);
         }
         EvenlySpaced2StopGradient => {
-            let ctx = &program.two_stop;
+            let ctx = &context.two_stop;
             let t = join(r, g);
             round_f32_to_u16(
                 mad(t, f32x16::splat(ctx.factor.components[0]), f32x16::splat(ctx.bias.components[0])),

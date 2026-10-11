@@ -11,7 +11,7 @@ const WIDTH: usize = 16;
 pub fn resource_low_stage(
     stage: PipelineStage,
     registers: &mut LowRegisters,
-    context: &mut ResourceContext<'_, '_>,
+    context: &mut ResourceContext<'_, '_, '_>,
     cursor: ResourceCursor,
 ) -> Result<StageControl, ResourceStageError> {
     use PipelineStage::*;
@@ -24,7 +24,7 @@ pub fn resource_low_stage(
     let [r, g, b, a, dr, dg, db, da] = &mut channels;
     match stage {
         UniformColor => {
-            let color = &context.uniform_color.rgba;
+            let color = &context.pipeline.uniform_color.rgba;
             *r = u16x16::splat(color[0]);
             *g = u16x16::splat(color[1]);
             *b = u16x16::splat(color[2]);
@@ -82,14 +82,14 @@ pub fn resource_low_stage(
             *a = lerp(*da, *a, c);
         }
         Scale1Float => {
-            let c = from_float(context.current_coverage);
+            let c = from_float(context.pipeline.current_coverage);
             *r = div255(*r * c);
             *g = div255(*g * c);
             *b = div255(*b * c);
             *a = div255(*a * c);
         }
         Lerp1Float => {
-            let c = from_float(context.current_coverage);
+            let c = from_float(context.pipeline.current_coverage);
             *r = lerp(*dr, *r, c);
             *g = lerp(*dg, *g, c);
             *b = lerp(*db, *b, c);
@@ -116,7 +116,7 @@ fn lane_count(cursor: ResourceCursor) -> usize {
 }
 
 #[inline(always)]
-fn copy_aa_at_xy(context: &ResourceContext<'_, '_>, cursor: ResourceCursor) -> [u8; 2] {
+fn copy_aa_at_xy(context: &ResourceContext<'_, '_, '_>, cursor: ResourceCursor) -> [u8; 2] {
     let aa = context.aa_mask;
     let offset = (aa.stride as usize * cursor.dy + cursor.dx) - aa.shift;
     match (offset, cursor.tail) {

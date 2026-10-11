@@ -3,7 +3,7 @@
 // BSD-style license: see LICENSE-tiny-skia-blend.
 //! Complete generic gradient stage and color-context preparation.
 
-use tiny_skia_path::{NormalizedF32, Transform};
+use tiny_skia_path::NormalizedF32;
 
 use crate::scene::paint::SpreadMode;
 
@@ -11,6 +11,7 @@ use super::gradient_program_types::{
     ColorSpace, GradientColor, GradientContext, GradientProgram, GradientStage, TwoStopContext,
 };
 use super::gradient_stop_types::{PreparedGradient, StopColor};
+use super::pipeline_context_types::PipelineContext;
 use super::radial_stage_types::RadialStagePlan;
 
 impl GradientColor {
@@ -39,15 +40,11 @@ pub fn prepare_gradient_program(
     let mut program = GradientProgram {
         returned: false,
         stages: Vec::new(),
-        transform: Transform::default(),
-        two_stop: TwoStopContext::default(),
-        gradient: GradientContext::default(),
-        radial_p: [0.0, 0.0],
-        radial_mask: [0; 8],
+        context: PipelineContext::default(),
     };
 
     if let Some(radial) = radial {
-        program.radial_p = [radial.p0, radial.p1];
+        program.context.radial_p = [radial.p0, radial.p1];
     }
 
     program.stages.push(GradientStage::SeedShader);
@@ -62,7 +59,7 @@ pub fn prepare_gradient_program(
     let ts = ts.post_concat(gradient.points_to_unit);
     if ts.is_finite() && !ts.is_identity() {
         program.stages.push(GradientStage::Transform);
-        program.transform = ts;
+        program.context.transform = ts;
     }
 
     if let Some(radial) = radial {
@@ -87,7 +84,7 @@ pub fn prepare_gradient_program(
         let c0 = GradientColor::from_color(c0);
         let c1 = GradientColor::from_color(c1);
 
-        program.two_stop = TwoStopContext {
+        program.context.two_stop = TwoStopContext {
             factor: GradientColor::new(
                 c1.components[0] - c0.components[0],
                 c1.components[1] - c0.components[1],
@@ -170,7 +167,7 @@ pub fn prepare_gradient_program(
         }
 
         program.stages.push(GradientStage::Gradient);
-        program.gradient = ctx;
+        program.context.gradient = ctx;
     }
 
     if !gradient.colors_are_opaque {

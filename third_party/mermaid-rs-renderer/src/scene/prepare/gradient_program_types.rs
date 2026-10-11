@@ -1,7 +1,7 @@
 //! Root-frozen shared gradient wrapper context. Neither consumer recomputes it.
-use tiny_skia_path::Transform;
 use super::radial_stage_types::RadialStage;
 pub use super::pipeline_context_types::{GradientColor,TwoStopContext,GradientContext};
+use super::pipeline_context_types::PipelineContext;
 
 #[derive(Debug,Clone,Copy,PartialEq,Eq,Default)]
 pub enum ColorSpace { #[default] Linear, Gamma2, SimpleSRGB, FullSRGBGamma }
@@ -14,7 +14,5 @@ pub enum GradientStage {
 
 #[derive(Debug,Clone,PartialEq)]
 pub struct GradientProgram {
- pub returned:bool,pub stages:Vec<GradientStage>,pub transform:Transform,
- pub two_stop:TwoStopContext,pub gradient:GradientContext,
- pub radial_p:[f32;2],pub radial_mask:[u32;8],
+ pub returned:bool,pub stages:Vec<GradientStage>,pub context:PipelineContext,
 }

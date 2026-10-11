@@ -11,7 +11,7 @@ const WIDTH: usize = 8;
 pub fn resource_high_stage(
     stage: PipelineStage,
     registers: &mut HighRegisters,
-    context: &mut ResourceContext<'_, '_>,
+    context: &mut ResourceContext<'_, '_, '_>,
     cursor: ResourceCursor,
 ) -> Result<StageControl, ResourceStageError> {
     use PipelineStage::*;
@@ -24,7 +24,7 @@ pub fn resource_high_stage(
     let [r, g, b, a, dr, dg, db, da] = &mut channels;
     match stage {
         UniformColor => {
-            let color = &context.uniform_color.components;
+            let color = &context.pipeline.uniform_color.components;
             *r = f32x8::splat(color[0]);
             *g = f32x8::splat(color[1]);
             *b = f32x8::splat(color[2]);
@@ -65,11 +65,11 @@ pub fn resource_high_stage(
             *a = lerp(*da, *a, c);
         }
         Scale1Float => {
-            let c = f32x8::splat(context.current_coverage);
+            let c = f32x8::splat(context.pipeline.current_coverage);
             *r *= c; *g *= c; *b *= c; *a *= c;
         }
         Lerp1Float => {
-            let c = f32x8::splat(context.current_coverage);
+            let c = f32x8::splat(context.pipeline.current_coverage);
             *r = lerp(*dr, *r, c);
             *g = lerp(*dg, *g, c);
             *b = lerp(*db, *b, c);
@@ -91,7 +91,7 @@ pub fn resource_high_stage(
 }
 
 #[inline(always)]
-fn copy_aa_at_xy(context: &ResourceContext<'_, '_>, cursor: ResourceCursor) -> [u8; 2] {
+fn copy_aa_at_xy(context: &ResourceContext<'_, '_, '_>, cursor: ResourceCursor) -> [u8; 2] {
     let aa = context.aa_mask;
     let offset = (aa.stride as usize * cursor.dy + cursor.dx) - aa.shift;
     match (offset, cursor.tail) {

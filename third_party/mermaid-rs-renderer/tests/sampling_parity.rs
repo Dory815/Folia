@@ -1,5 +1,5 @@
 // Root golden values execute original compile/start/stage bodies, never native algorithms.
-use mermaid_rs_renderer::scene::prepare::{sampling::{sample_high_stage,sample_low_stage,HighRegisters,LowRegisters},gradient_program_types::{GradientProgram,GradientColor,TwoStopContext,GradientContext},pipeline_control::{compile_pipeline},pipeline_control_types::{ALL_PIPELINE_STAGES,PipelinePrecision}};
+use mermaid_rs_renderer::scene::prepare::{sampling::{sample_high_stage,sample_low_stage,HighRegisters,LowRegisters},pipeline_context_types::{PipelineContext,GradientColor,TwoStopContext,GradientContext},pipeline_control::{compile_pipeline},pipeline_control_types::{ALL_PIPELINE_STAGES,PipelinePrecision}};
 use serde::Deserialize;
 use tiny_skia_path::{NormalizedF32,Transform};
 #[derive(Deserialize)]struct Fixture {high_stages:Vec<u8>,low_stages:Vec<u8>,cases:Vec<Case>}
@@ -9,12 +9,12 @@ use tiny_skia_path::{NormalizedF32,Transform};
  factors:Vec<[u32;4]>,biases:Vec<[u32;4]>,t:Vec<u32>,radial:[u32;2],mask:[u32;8],origin:[u32;2],length:u32,
 }
 fn fixture()->Fixture{serde_json::from_str(include_str!("fixtures/sampling.json")).unwrap()}
-fn context(i:&Input)->GradientProgram{
+fn context(i:&Input)->PipelineContext{
  let color=|v:[u32;4]|GradientColor{components:v.map(f32::from_bits)};let t=i.transform.map(f32::from_bits);
- GradientProgram{returned:true,stages:Vec::new(),transform:Transform::from_row(t[0],t[1],t[2],t[3],t[4],t[5]),two_stop:TwoStopContext{factor:color(i.two_stop[0]),bias:color(i.two_stop[1])},gradient:GradientContext{len:i.len,factors:i.factors.iter().copied().map(color).collect(),biases:i.biases.iter().copied().map(color).collect(),t_values:i.t.iter().map(|b|NormalizedF32::new(f32::from_bits(*b)).unwrap()).collect()},radial_p:i.radial.map(f32::from_bits),radial_mask:i.mask}
+ PipelineContext{transform:Transform::from_row(t[0],t[1],t[2],t[3],t[4],t[5]),two_stop:TwoStopContext{factor:color(i.two_stop[0]),bias:color(i.two_stop[1])},gradient:GradientContext{len:i.len,factors:i.factors.iter().copied().map(color).collect(),biases:i.biases.iter().copied().map(color).collect(),t_values:i.t.iter().map(|b|NormalizedF32::new(f32::from_bits(*b)).unwrap()).collect()},radial_p:i.radial.map(f32::from_bits),radial_mask:i.mask,..PipelineContext::default()}
 }
-fn context_bits(p:&GradientProgram)->Vec<u64>{
- let t=p.transform;let mut v=vec![p.returned as u64,p.stages.len() as u64,p.gradient.len as u64,p.gradient.factors.len() as u64,p.gradient.biases.len() as u64,p.gradient.t_values.len() as u64];
+fn context_bits(p:&PipelineContext)->Vec<u64>{
+ let t=p.transform;let mut v=vec![p.gradient.len as u64,p.gradient.factors.len() as u64,p.gradient.biases.len() as u64,p.gradient.t_values.len() as u64];
  for x in [t.sx,t.ky,t.kx,t.sy,t.tx,t.ty].into_iter().chain(p.two_stop.factor.components).chain(p.two_stop.bias.components).chain(p.radial_p){v.push(x.to_bits() as u64);}
  v.extend(p.radial_mask.map(u64::from));
  for c in p.gradient.factors.iter().chain(&p.gradient.biases){v.extend(c.components.map(|x|x.to_bits() as u64));}

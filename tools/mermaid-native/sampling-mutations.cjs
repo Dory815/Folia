@@ -22,8 +22,8 @@ for(const precision of ['highp','lowp']){
 }
 edit('highp-seed-destination-retained','highp','*dr = f32x8::default();','// Source destination reset omitted.');
 edit('highp-degenerate-zero-valid','highp','t.cmp_le(f32x8::default()) | t.cmp_ne(t)','t.cmp_lt(f32x8::default()) | t.cmp_ne(t)');
-edit('highp-mask-signed-bits-lost','highp','let mask: u32x8 = bytemuck::cast(program.radial_mask);','let mask: u32x8 = bytemuck::cast(program.radial_mask.map(|m|m&0x7fffffff));');
-edit('highp-conical-p0-p1-crossed','highp','*r = x * f32x8::splat(program.radial_p[0]) + f32x8::splat(program.radial_p[1]);','*r = x * f32x8::splat(program.radial_p[1]) + f32x8::splat(program.radial_p[0]);');
+edit('highp-mask-signed-bits-lost','highp','let mask: u32x8 = bytemuck::cast(context.radial_mask);','let mask: u32x8 = bytemuck::cast(context.radial_mask.map(|m|m&0x7fffffff));');
+edit('highp-conical-p0-p1-crossed','highp','*r = x * f32x8::splat(context.radial_p[0]) + f32x8::splat(context.radial_p[1]);','*r = x * f32x8::splat(context.radial_p[1]) + f32x8::splat(context.radial_p[0]);');
 edit('highp-gamma-linear-branch-only','highp','small.blend(linear, exp)','linear',2);
 edit('highp-gamma-power-branch-only','highp','small.blend(linear, exp)','exp',2);
 edit('lowp-alpha-normalized','lowp','let af = af * f32x16::splat(255.0)','let af = af.normalize() * f32x16::splat(255.0)');
