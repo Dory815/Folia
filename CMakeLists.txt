@@ -161,6 +161,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_nodes/merror.ixx
     src/math/core/mml_tree/mml_nodes/mphantom.ixx
     src/math/util/constants.ixx
+    src/math/util/numeric.ixx
     src/math/util/string.ixx
     src/math/util/bbox.ixx
     src/math/util/prioritized_list.ixx
@@ -178,6 +179,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/options.ixx)
   target_sources(folia_math PRIVATE
     src/math/input/tex/token.cpp
+    src/math/util/numeric.cpp
     src/math/input/tex/map_handler.cpp
     src/math/input/tex/macro.cpp
     src/math/core/mml_tree/mml.cpp
