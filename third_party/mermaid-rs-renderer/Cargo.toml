@@ -117,3 +117,7 @@ path = "tests/text_presentation_parity.rs"
 [[test]]
 name = "edge_label_geometry_parity"
 path = "tests/edge_label_geometry_parity.rs"
+
+[[test]]
+name = "architecture_icons_parity"
+path = "tests/architecture_icons_parity.rs"
