@@ -12,7 +12,7 @@ for(const [precision,ids] of [['highp',fixture.high_stages],['lowp',fixture.low_
  const unsupported=precision==='highp'?5:2;
  mutants.push({name:precision+'-accept-unsupported',file,code:source.slice(0,body+1)+`\n if stage as u8 == ${unsupported} {return Ok(());}\n`+source.slice(body+1)});
 }
-const baseline=run('baseline');assert.equal(baseline.status,0);assert.match(baseline.stdout,/5733 Source cases/);assert.match(baseline.stdout,/945 Source cases/);assert.match(baseline.stdout,/448 explicit unsupported-stage assertions/);assert.match(baseline.stdout,/test result: ok\. 3 passed/);console.log('Baseline: 6678 actual Source cases and three tests pass.');
+const baseline=run('baseline');assert.equal(baseline.status,0);assert.match(baseline.stdout,/5733 Source cases/);assert.match(baseline.stdout,/945 Source cases/);assert.match(baseline.stdout,/672 explicit unsupported-stage assertions/);assert.match(baseline.stdout,/test result: ok\. 3 passed/);console.log('Baseline: 6678 actual Source cases and three tests pass.');
 function edit(name,precision,from,to,count=1){const file=path.normalize(`src/scene/prepare/sampling/${precision}.rs`),source=originals.get(file).toString().replaceAll('\r\n','\n');assert.equal(source.split(from).length-1,count,'Unique frozen mutation anchor '+name);mutants.push({name,file,code:source.replaceAll(from,to)});}
 for(const precision of ['highp','lowp']){
  edit(precision+'-exclusive-stop-threshold',precision,'>= tt','> tt',precision==='highp'?8:16);

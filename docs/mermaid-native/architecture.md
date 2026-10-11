@@ -144,3 +144,13 @@ evidence/m3i1-pipeline-control-acceptance.md. One plan retains complete-list
 precision/width/order/tail and default/moved context decisions. Stage execution,
 complete shader/blitter context, actual sampling/GPU gradients and shared-scene/
 SVG/D2D/Folia gates remain open; rendering-function acceptance remains 34/70.
+
+M3i2 locally accepts executable resource-independent gradient sampling under
+m3i2-sampling-contract.md: original wide provider and 35 highp/11 lowp stages
+consume the same existing GradientProgram. Actual original compile/start/stage
+observations cover 6,678 cases/15,750 captures; 1,334,130 native assertions and
+all 66 effective compiling mutants pass. Final sixteen-target matrix passes
+48 tests including 11 actual WARP. Evidence: evidence/m3i2-sampling-acceptance.md.
+Raw register/mask parity does not accept actual Paint/blitter/destination pixel
+execution or GPU resources. Complete scene/SVG/D2D/Folia gates stay open and the
+render-function acceptance count remains 34/70. No Folia integration occurred.
