@@ -183,3 +183,14 @@ contexts borrowing the same resources, Shader dispatch, complete scene and final
 SVG/Direct2D/Folia gates. See evidence/m3i7a-executor-run-gate.md. Rendering-file
 acceptance remains 34/70 and no Folia integration has been authorized by a passed
 full gate.
+
+M3i7b now closes controlled Gradient/Pattern producer-through-executor runs:
+13,580 original complete observations, zero native mismatches, nine effective
+compiling dispatch/image/context/allocation faults; 25 integration targets /
+68 tests pass including 11 WARP. The surviving Gather/Bilinear fault required
+an independent sampling supplement; the frozen main gold stays unchanged.
+See evidence/m3i7b-shader-run-acceptance.md for exact source and build evidence.
+Public Shader factories and variant dispatch still precede three separate
+blitter owners and final shared-scene/SVG/Direct2D/Folia acceptance. Root's
+next responsibility audit is evidence/m3i8-shader-dispatch-audit.md. This
+bounded closure does not advance the historical whole-rendering tally.
