@@ -165,3 +165,21 @@ Low HardLight/Overlay extreme-color debug overflow and release-profile behavior
 remain outside that bounded corpus. Pattern sampling, whole pipeline/blitter,
 paint/text/shared-scene parity and full SVG/D2D/Folia remain required; rendering
 acceptance stays 34/70 and Folia is not connected.
+
+M3i5 and M3i6 subsequently connect borrowed Pattern sampling and shader producers
+to the sole PipelineBuilder/CompiledPipeline context owner. The old independent
+GradientProgram context was removed by M3i6c; its mentions above describe the
+historical packet, not the current ownership model. M3i6d accepts actual
+Linear/Radial producer wrapper wiring, without constructor/variant acceptance.
+See evidence/m3i6c-gradient-builder-acceptance.md and
+evidence/m3i6d-gradient-shader-acceptance.md for exact gates.
+
+M3i7a ports separate highp/lowp start control behind a thin compiled-precision
+facade. Its bounded original complete-run gate passes 4,608 cases and 19 effective
+control faults; all 24 integration targets / 67 tests pass, including 11 WARP.
+This is not full executor acceptance. Gradient/radial/image complete runs and
+context ownership faults remain required, followed by three independent blitter
+contexts borrowing the same resources, Shader dispatch, complete scene and final
+SVG/Direct2D/Folia gates. See evidence/m3i7a-executor-run-gate.md. Rendering-file
+acceptance remains 34/70 and no Folia integration has been authorized by a passed
+full gate.
