@@ -351,9 +351,10 @@
           "line": 73,
           "end_line": 84,
           "member_sha256": "1fbbce4f637c46a5357998dfd0d8334cd4146d5cea374036822092f23cdb5ecf",
-          "target": "src/math/core/mml_tree/mml_nodes/mi.cpp:MmlMi::setInheritedAttributes",
+          "target": "src/math/core/mml_tree/mml_nodes/mi.cpp:MmlMi::inheritAttributes",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source member under leaf-contracts.md typed host boundaries."
+          "mapping": "Source member under leaf-contracts.md typed host boundaries.",
+          "native_adaptation": "The P17b single raw facade dispatches to this body; source default values are applied only in the selected source owner. See docs/math-port/evidence/p17b-inheritance-acceptance.md."
         },
         {
           "owner": "MmlMi",
@@ -681,9 +682,10 @@
           "line": 66,
           "end_line": 75,
           "member_sha256": "7ef147d18b100b6acb88585d7d1b6ed63ee2cefee69f22340d34f8379982328a",
-          "target": "src/math/core/mml_tree/mml_nodes/mstyle.cpp:MmlMstyle::setInheritedAttributes",
+          "target": "src/math/core/mml_tree/mml_nodes/mstyle.cpp:MmlMstyle::inheritAttributes",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source member under leaf-contracts.md typed host boundaries."
+          "mapping": "Source member under leaf-contracts.md typed host boundaries.",
+          "native_adaptation": "The P17b single raw facade dispatches to this body; source default values are applied only in the selected source owner. See docs/math-port/evidence/p17b-inheritance-acceptance.md."
         },
         {
           "owner": "MmlMstyle",

@@ -551,9 +551,10 @@
           "line": 765,
           "end_line": 835,
           "member_sha256": "265f94867c79a0532f68a589951a27e65f8422872383973fb6cde3f7cf0a232c",
-          "target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::setInheritedAttributes",
+          "target": "src/math/core/mml_tree/mml_node.cpp:AbstractMmlNode::inheritAttributes",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source method/accessor, with typed host binding."
+          "mapping": "Source method/accessor, with typed host binding.",
+          "native_adaptation": "The P17b single raw facade dispatches to this body; source default values are applied only in the selected source owner. See docs/math-port/evidence/p17b-inheritance-acceptance.md."
         },
         {
           "owner": "AbstractMmlNode",
@@ -1139,9 +1140,10 @@
           "line": 1398,
           "end_line": 1403,
           "member_sha256": "7c974cf2bdd96702b825f1e46b636b3ffe49c2e06225db67ecff90d06bd10ab3",
-          "target": "src/math/core/mml_tree/mml_empty.cpp:AbstractMmlEmptyNode::setInheritedAttributes",
+          "target": "src/math/core/mml_tree/mml_empty.cpp:AbstractMmlEmptyNode::inheritAttributes",
           "review": "root_review_passed_typed_host_scope",
-          "mapping": "Source method/accessor, with typed host binding."
+          "mapping": "Source method/accessor, with typed host binding.",
+          "native_adaptation": "The P17b single raw facade dispatches to this body; source default values are applied only in the selected source owner. See docs/math-port/evidence/p17b-inheritance-acceptance.md."
         },
         {
           "owner": "AbstractMmlEmptyNode",

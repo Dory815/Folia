@@ -20,7 +20,8 @@ in `evidence/p13-arithmetic-acceptance.md` and table semantics in
 `evidence/p15d-html-node-acceptance.md` and five simple MML files in
 `evidence/p16a-simple-mml-acceptance.md` and complete fenced semantics in
 `evidence/p16c-mfenced-acceptance.md` and the TeX Token/type/constant foundation
-in `evidence/p17a-token-acceptance.md`; this does not pass a full renderer
+in `evidence/p17a-token-acceptance.md`, followed by the raw inheritance dispatch
+correction in `evidence/p17b-inheritance-acceptance.md`; this does not pass a full renderer
 gate. Local source acceptance is 46/246, with full G0–G7 still closed.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.

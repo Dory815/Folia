@@ -93,10 +93,11 @@
           "line": 106,
           "end_line": 125,
           "member_sha256": "c4f704ec2c2359f77db11bf46c785ff8edb2c9523244870c414226ce7b6b9172",
-          "target": "src/math/core/mml_tree/mml_nodes/mtable.cpp:MmlMtable::setInheritedAttributes",
+          "target": "src/math/core/mml_tree/mml_nodes/mtable.cpp:MmlMtable::inheritAttributes",
           "review": "root_review_passed",
           "evidence": "docs/math-port/evidence/p14-table-acceptance.md",
-          "mapping": "Live exported indent-array traversal; capture attributes before tuple/value reads; inherited write before explicit removal; qualified superclass call."
+          "mapping": "Live exported indent-array traversal; capture attributes before tuple/value reads; inherited write before explicit removal; qualified superclass call.",
+          "native_adaptation": "The P17b single raw facade dispatches to this body; source default values are applied only in the selected source owner. See docs/math-port/evidence/p17b-inheritance-acceptance.md."
         },
         {
           "owner": "MmlMtable",

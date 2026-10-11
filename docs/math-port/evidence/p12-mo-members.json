@@ -303,10 +303,11 @@
           "line": 413,
           "end_line": 425,
           "member_sha256": "c3589e30a50048e801a9f3bad8d1bcddb125df927049247aad765f9030f37a0c",
-          "target": "src/math/core/mml_tree/mml_nodes/mo_scripts.cpp:MmlMo::setInheritedAttributes",
+          "target": "src/math/core/mml_tree/mml_nodes/mo_scripts.cpp:MmlMo::inheritAttributes",
           "review": "root_review_passed",
           "mapping": "Root-reviewed corresponding source method/accessor; source call order and raw state retained. See p12c-mo-acceptance.md and assigned method report.",
-          "evidence": "docs/math-port/evidence/p12c-mo-acceptance.md"
+          "evidence": "docs/math-port/evidence/p12c-mo-acceptance.md",
+          "native_adaptation": "The P17b single raw facade dispatches to this body; source default values are applied only in the selected source owner. See docs/math-port/evidence/p17b-inheritance-acceptance.md."
         },
         {
           "owner": "MmlMo",
