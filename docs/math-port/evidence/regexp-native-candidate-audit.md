@@ -7,8 +7,11 @@ UTF-16/UCS-2 entry points, and Unicode generator/version boundary. The
 [pinned upstream source](https://github.com/ridiculousfish/regress/tree/771e6c8fa1e472ef86c45b5206b37fa4e4494e25)
 is a research reference only; no runtime dependency or candidate acceptance was
 added. In particular, Flags::new('v') sets unicode_sets independently of unicode,
-while the UTF-16 entry uses compiled flags.unicode for its input. The parser
-also branches directly on unicode. Exact v-mode syntax/decoding routing needs
+while the UTF-16 entry passes compiled flags.unicode to its indexer for matching
+semantics. Root's executable follow-up corrected the decoding interpretation:
+Utf16Input always decodes valid pairs, regardless of that boolean. Legacy mode
+must select Ucs2Input explicitly. The parser also branches directly on unicode.
+Exact v-mode syntax/decoding routing needs
 direct differential verification before any adapter can be frozen; a claimed
 v feature is not sufficient evidence. Full matching/constructor/state behavior
 and versioned tables remain open. The next callable protocol is independently
@@ -23,6 +26,11 @@ The crate is a Rust backtracking regexp engine. `README.md` describes ECMAScript
 `Regex::with_flags` and `Regex::from_unicode` return `Result<Regex, parse::Error>` for syntax errors. This gives the wrapper a place to convert compile failures into the reference's error outcome, but the Rust error is not itself a JavaScript `SyntaxError`, and the wrapper must preserve source pattern/flag validation order. The parser bounds nesting to 256 and capture groups/loops to 65,535 (`src/types.rs`); those limits are implementation boundaries to test against the accepted input budget, not ECMAScript semantic limits.
 
 The UTF-16 feature is the relevant path for JavaScript strings. `find_from_utf16` chooses `Utf16Input` with the compiled `unicode` flag; `find_from_ucs2` explicitly chooses `Ucs2Input`. The distinction must be tested at the adapter boundary: JS strings and `lastIndex` are UTF-16 code-unit indexed; regex matching without `u/v` must advance through surrogate halves, while `u/v` must treat a valid surrogate pair as one code point. Tests in `tests/tests.rs` cover unpaired surrogate code units and paired input through UCS-2; the source also has a separate UTF-16 indexer. Enabling the crate feature is mandatory for both APIs. The ordinary `&str` API cannot represent lone surrogates and returns UTF-8 byte offsets, so it is insufficient for the fixed oracle.
+
+The independent 119,218-case follow-up is recorded in
+`p19c-regexp-candidate-experiment.md`. It found 2,347 differences even after
+explicit legacy UCS-2 routing and experimental normalization of `v` to Unicode
+matching. No candidate dependency or regex host was adopted.
 
 `Match` provides whole-match range, optional capture ranges, names, and group lookup. Ranges are indices into the input representation used by the selected method (byte offsets for `&str`; UTF-16 code-unit offsets for the UTF-16 indexer). It does not return the JavaScript exec/match array, `index`, `input`, `groups` object, `indices` (`d`) array, or mutable `lastIndex`; a host wrapper must construct any needed result shape. `Regex::find_from(text,start)` is stateless and takes an explicit start; its UTF-8 form panics when `start` is not a character boundary. It is not equivalent to `RegExp.prototype.exec` with persistent `lastIndex` for `g/y`.
 
