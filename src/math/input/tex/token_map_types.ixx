@@ -2,10 +2,11 @@
 // Apache-2.0; the concrete TokenMap classes remain a separate required port.
 export module folia.math.input.tex.token_map_types;
 export import folia.math.input.tex.types;
+export import folia.math.input.tex.macro;
 export import folia.math.util.object_types;
 import std;
 export namespace folia::math::tex {
-using TokenLookup=std::variant<Property,TokenRef>;
+using TokenLookup=std::variant<Property,TokenRef,MacroRef>;
 class TokenMap:public NativeObject {
 public:
     virtual ~TokenMap()=default;

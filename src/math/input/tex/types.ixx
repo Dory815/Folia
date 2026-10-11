@@ -18,7 +18,9 @@ using StackItemRef=std::shared_ptr<StackItemContext>;
 struct ParseSymbol {std::u16string description;};
 using ParseSymbolRef=std::shared_ptr<const ParseSymbol>;
 using ParseResult=std::variant<Property,StackItemRef,ParseSymbolRef>;
-using ParseAtom=std::variant<Property,TokenRef,StackItemRef>;
+// Macro imports this leaf module; its canonical owner crosses this boundary
+// as NativeObjectRef without declaring Macro in the wrong named module.
+using ParseAtom=std::variant<Property,TokenRef,StackItemRef,NativeObjectRef>;
 struct ParseInput {ParserContext& parser;Property token;};
 using ParseRest=std::span<const std::any>;
 using ParseCallable=Function;

@@ -90,6 +90,10 @@ Property characterOf(const TokenLookup& lookup) {
         if (!*token) property_host::typeError("Cannot read character of null token");
         return (*token)->character();
     }
+    if (const auto* macro = std::get_if<MacroRef>(&lookup)) {
+        if (!*macro) property_host::typeError("Cannot read character of null macro");
+        return Missing{};
+    }
     return property_host::get(std::get<Property>(lookup), "char");
 }
 

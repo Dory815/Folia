@@ -3,7 +3,7 @@ export module folia.math.input.tex.macro;
 export import folia.math.input.tex.types;
 import std;
 export namespace folia::math::tex {
-class Macro {
+class Macro:public NativeObject {
     Property token_;
     ParseMethod func_;
     Property args_;
