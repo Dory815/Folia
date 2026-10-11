@@ -101,6 +101,10 @@ name = "radial_geometry_parity"
 path = "tests/radial_geometry_parity.rs"
 
 [[test]]
+name = "radial_stages_parity"
+path = "tests/radial_stages_parity.rs"
+
+[[test]]
 name = "path_parity"
 path = "tests/path_parity.rs"
 
