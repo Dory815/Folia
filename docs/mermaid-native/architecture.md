@@ -35,6 +35,10 @@ not shared text implementation or acceptance. COLR callback/state findings
 are in evidence/m4c-colr-typed-painter-audit.md; root's required Source appearance
 and fallback decisions are in colr-source-parity-policy.md. Neither freezes
 the next complete text API or accepts a text backend.
+The actual OpenType SVG-resource path and independent default parsing options
+are audited in evidence/m4d-font-svg-resource-audit.md; root verified all 12
+source hashes and the referenced resource/selection boundaries. This remains
+a prerequisite audit, with resource policy and complete text APIs still open.
 Root owns architecture, file responsibilities, interfaces, scope and acceptance.
 The explicitly requested Sol agent is mermaid_dx2d. Its initial authorization
 was source audit only. Root has since independently verified archive/source
