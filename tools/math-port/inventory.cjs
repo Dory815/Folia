@@ -82,6 +82,13 @@ for (const item of files.values()) {
   const previous = prior?.files.find(old => old.source === item.source);
   if (previous?.source_sha256 === item.source_sha256) {
     for (const key of ['disposition', 'adaptation_reason', 'port_status', 'acceptance']) item[key] = previous[key];
+    // Accepted native names are root-reviewed architecture, not fresh guesses
+    // from TypeScript capitalization (for example acronym boundaries).
+    if (previous.port_status === 'implemented') {
+      for (const key of ['proposed_target', 'proposed_module', 'owner']) item[key] = previous[key];
+      if (!fs.existsSync(path.join(root,item.proposed_target)))
+        throw new Error(`Accepted native target is missing: ${item.proposed_target}`);
+    }
   }
 }
 const reviewed = [...files.values()].filter(item => item.disposition !== 'unreviewed').length;
