@@ -281,3 +281,14 @@ count or engine/parser/renderer acceptance advances from this design decision.
 RegExp is separately an owned canonical Property value with real object state
 and JS operation/coercion protocols; the audited gaps and candidate mismatches
 remain required work. Sparse node slots must not introduce fake shared ownership.
+
+P23j subsequently closes the frozen inheritance chain with original sparse
+observations and effective compiling faults; see
+`evidence/p23j-inheritance-acceptance.md` for its exact bounded scope. Historical
+dense whole-file evidence still does not certify all sparse consumers. P23k-n
+repair generated observer bindings without changing Source expectations. Script,
+leaf, HtmlNode and MathChoice now independently compile over the actual 90
+interfaces; their Source profiles reproduce. The Root -k 0 repository inventory
+in `evidence/p23n-mathchoice-observer-acceptance.md` still finds 12 stale observer
+translation units and no core tests execute yet. Full parser, wrappers, shared
+layout, SVG/D2D and Folia gates remain open; 54/246 remains a historical tally.
