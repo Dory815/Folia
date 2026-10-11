@@ -697,3 +697,20 @@ M3e geometry and M3f stages. Root actual Source: 3,242 cases/382,002 assertions,
 the pinned font. Evidence: docs/mermaid-native/evidence/m3g-gradient-stops-
 acceptance.md. Complete wrapper/sampling/resources/backends and Folia remain
 required; Mermaid rendering-function acceptance stays 34/70.
+
+### P22a Root local acceptance and M3h freeze
+
+P22a locally accepts canonical callable Property bindings and prototype-aware
+sparse slice needed by map configuration. The independent Node/CJS corpus has
+640 slices, 169 comparisons and 16 graph/call flags. Final native suite:
+4,040 assertions in five tests; all 22 compiling semantic mutants detected.
+Complete core: 3,927 tests/161,045 assertions pass. Existing callable receiver
+matrix retains all 12 detections. Evidence: evidence/p22a-function-property-
+acceptance.md. This is native host work; Source count stays 53/246.
+Whole concrete TokenMap/regexp/parser/Common/SVG and Folia remain required.
+
+Mermaid M3h freezes one portable gradient program from accepted M3g stops and
+M3f radial plans, including complete wrapper/color expansion. Root created
+actual Source observations and compiled three failing native stubs before Sol
+implementation. Contract: docs/mermaid-native/m3h-gradient-program-contract.md.
+Acceptance remains Root-owned; complete backends and Folia gates remain open.

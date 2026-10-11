@@ -246,3 +246,11 @@ the native 512-call guard precedes the OS stack boundary. Caller stack capacity
 is a host prerequisite, not configured by the portable math module. Before G7,
 configure and verify math worker stack availability in Folia; the test executor
 reservation does not validate existing application/thread integration.
+
+P22a locally accepts native callable Property identity and sparse slice under
+evidence/p22a-function-property-acceptance.md. The Missing/object/callable leaf
+dependency direction avoids a Property/function import cycle; raw configuration
+and typed calls retain one FunctionRef/body. This host packet accepts no new
+complete MathJax Source file. Concrete maps and complete rendering/integration
+remain gated, and the parallel Mermaid shared-scene SVG/Direct2D work remains
+required before its separate Folia integration acceptance.
