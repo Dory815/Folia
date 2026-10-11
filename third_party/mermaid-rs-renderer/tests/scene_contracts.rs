@@ -64,7 +64,7 @@ fn with_run(t:&mut TextNode,id:FontId,source:std::ops::Range<usize>) {
     let mut b=builder();b.push_node(SceneNode::Text(text("数学")));assert!(matches!(b.finish(),Err(SceneError::UnresolvedText{..})));
 }
 #[test] fn hidden_and_empty_text_need_no_invented_glyphs() {
-    let mut b=builder();b.push_node(SceneNode::Text(text("")));let mut hidden=text("hidden");hidden.style.opacity=0.0;b.push_node(SceneNode::Text(hidden));assert!(b.finish().is_ok());
+    let mut b=builder();b.push_node(SceneNode::Text(text("")));b.push_node(SceneNode::Text(text(" \n\t")));let mut hidden=text("hidden");hidden.style.opacity=0.0;b.push_node(SceneNode::Text(hidden));assert!(b.finish().is_ok());
 }
 #[test] fn font_identity_ownership_face_and_glyph_bounds_are_checked() {
     let mut b=builder();b.add_font(FontResource{bytes:Arc::from([1u8,2,3]),face_index:0,identity:"bad".into()});assert!(matches!(b.finish(),Err(SceneError::InvalidResource{..})));

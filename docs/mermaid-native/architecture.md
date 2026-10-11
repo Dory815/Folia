@@ -8,7 +8,8 @@ only, so this file records the added requirement rather than replacing or
 prematurely completing the existing math goal.
 
 Status: verified upstream vendoring, M1 local scene-invariant acceptance;
-M2a typed-path extraction under root source parity/mutation review. Full diagram
+M2a typed-path extraction accepted locally; M3 native typed-scene consumer built
+and checked with 10 actual WARP tests and 18 compiling mutations. Full diagram
 scene compilation, SVG and Direct2D backend acceptance, and Folia wiring remain
 open. Exact implementation packets are frozen in implementation-contract.md,
 m2a-path-contract.md and m3-direct2d-contract.md.
@@ -62,4 +63,5 @@ backend, while Folia's normal Mermaid drawing directly consumes native output.
 Root baseline has 470 source observations over all 23 families, pinned Folia
 dependencies and fingerprinted Windows font environment; --check reproduces it.
 This initial matrix is not complete option/geometry/pixel acceptance. Local M1
-evidence is evidence/m1-acceptance.md. No release gate is passed by this document.
+evidence is evidence/m1-acceptance.md; native primitive evidence is
+evidence/m3-warp-local-acceptance.md. No release gate is passed by this document.
