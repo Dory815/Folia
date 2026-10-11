@@ -1,10 +1,10 @@
-# P14 table-family preflight — root design, implementation not dispatched
+# P14 table-family root-frozen implementation contract
 
 Root has read the pinned mtable.ts, mtr.ts and mtd.ts and reviewed the three
 read-only dependency reports. The source AST contains 26 members, including
-21 executable members. This document fixes responsibilities; interfaces,
-host bindings and actual-CJS observations still require a committed freeze
-before implementation assignments are issued.
+21 executable members. Root interfaces, operation bindings, generated fields
+and actual-CJS observations are frozen with this document before dispatch.
+Implementation still requires root source review, regression and mutations.
 
 ## Files and class responsibilities
 
@@ -52,8 +52,9 @@ removed after the inherited write. indentAttributes is an exported const array;
 its array binding is fixed, while elements and length are mutable. The existing
 native vector can retain that binding for this algorithm if traversed by live
 index and if each yielded name is copied before callbacks; a C++ range-for
-would retain invalid iterators across growth. Root must witness this decision
-against actual CJS before declaring the host contract frozen.
+would retain invalid iterators across growth. The frozen actual-CJS oracle
+witnesses growth during the first virtual attributes read and verifies that
+the appended name is inherited and its explicit value removed in the same call.
 
 Mtable recomputes display using explicit displaystyle OR the default, converts
 that result to boolean, and uses boolean explicit data-cramped for each row's
@@ -68,12 +69,42 @@ whitespace behavior. Source TypeScript casts do not coerce non-strings. It will
 also bind checked node/attributes access, exact factory argument shapes and
 strict Property index writes. It must contain no row/cell policy or geometry.
 ErrorOptions already preserves a PropertyList handle for mError; no separate
-boolean options mirror is permitted. Root must review nullable verification
-input reachability at the native API boundary before choosing any API change.
+boolean options mirror is permitted. Source verifyTree defaults to null and
+returns before entering protected hooks; native optional options already
+preserves that entry. Protected verification receives the caller's non-null
+PropertyList handle. No nullable-hook API change is required for this profile.
+
+table_host exports primitive tableNode/tableChildren/tableChild checks,
+tableSplit/tableShift for local alignment lists, strict tableSetIndex for
+captured Property receivers, and tableCreate with exact zero/two-argument
+factory shapes. Use arithmeticAttributes to capture virtual attributes;
+host::get performs raw tuple reads. Each setTeXclass and inheritance/verification
+method uses TreeCallGuard. Do not add algorithms to these helpers or edit them.
+
+All source reads of kind, arity, attributes, isKind and tree edits stay virtual.
+Superclass method calls are explicit qualified calls. Mtable's hook and outer
+override do not add entry defaults; the superclass supplies its own defaults.
+Build both source argument fields in their written order before calling the
+virtual addInheritedAttributes. Capture the rowalign/columnalign tuple before
+shift-or-fallback evaluation. Empty shifted strings fall back to the previous
+slot; label side is a raw Property value. Both output loops use the same local
+attribute handle and retain callbacks' shared-tuple mutations.
+
+| Agent | Only writable CPP | Only writable method report |
+| --- | --- | --- |
+| tex_parser | src/math/core/mml_tree/mml_nodes/mtable.cpp | docs/math-port/evidence/p14-mtable.md |
+| math_layout | src/math/core/mml_tree/mml_nodes/mtr.cpp | docs/math-port/evidence/p14-mtr.md |
+| math_fonts | src/math/core/mml_tree/mml_nodes/mtd.cpp | docs/math-port/evidence/p14-mtd.md |
+
+No agent builds, tests, commits, delegation, shared edits, factory registration
+or changed expected observations. Missing contract requirements must be
+reported to root. Root alone may correct interfaces or extend tests.
 
 ## Required independent acceptance
 
-Freeze actual-CJS defaults, field phases and inherited class/default identities;
+The initial frozen oracle has 3,783 assertions / 116 cases, with 240 raw hook
+rows and source traces. Root extends any remaining branch gaps before accepting
+the packet. Required observations include defaults, field phases and identities;
 outer inheritance and complete parent/child snapshots; grouping versus per-child
 repair; valid and invalid parents; fixMtables false/truthy branches; short/full
 errors; labels, empty rows and inferred cells; alignment list fallback and raw

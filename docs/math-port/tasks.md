@@ -458,14 +458,17 @@ evidence/p13-arithmetic-acceptance.md records the corrections and rejected runs.
 Local source acceptance is now 29/246. Geometry, parser, full MML factory and
 SVG/Folia gates remain unaccepted.
 
-### P14: table semantic family — preflight only
+### P14: table semantic family — root-frozen packet
 
 Root read mtable/mtr/mtd.ts and reviewed the agents' read-only reports in
 evidence/p14-{mtable,mtr,mtd}-audit.md. The 26-member family design and ownership
 are fixed in table-contracts.md. Root corrected minimum-arity and receiver-order
-errors in the reports. No implementation is dispatched yet: root must commit
-the interfaces, generated fields/getters, typed split/index/iterator bindings
-and independent actual-CJS oracle before assigning the nine node methods.
+errors in the reports. Root now freezes the interfaces, 29 default additions,
+12 constant getters, ordered table properties/class fields, primitive split/
+index/factory bindings and independent actual-CJS oracle (3,783 assertions /
+116 cases / 240 raw rows) before assigning the nine node methods. Each agent
+receives only one listed CPP and one method report; root owns all builds,
+mutations and acceptance.
 Tables retain MML inheritance/verification/tree repair here; all table geometry
 and backend work remain in later Common/scene packets.
 
