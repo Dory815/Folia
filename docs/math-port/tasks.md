@@ -746,3 +746,32 @@ compiling semantic mutants detected. The fifteen-target matrix passes 45 tests,
 including 11 WARP. Evidence: docs/mermaid-native/evidence/m3i1-pipeline-control-
 acceptance.md. Executable stage sampling and complete context/blitter/GPU paint,
 shared scenes and full SVG/D2D/Folia remain open; render-function count is 34/70.
+
+### P23 ownership/storage decision and M3i2 executable sampling
+
+Root fixes the sparse-child ownership/API direction in
+`p23-child-storage-design.md`, after the two read-only P23 closure audits. One
+tagged sparse store replaces FactoryChildren's dense vector; factory/session
+ownership stays unique with borrowed parent/child identity. Root must next
+freeze actual declarations, original Node/NodeUtil/MML corpus and compiled red
+tests, then assign disjoint migration files across the entire 31-file graph.
+No concrete migration or NodeUtil is accepted yet; local Source count stays
+54/246 and existing dense evidence does not demonstrate required sparse behavior.
+Canonical RegExp Property/state/coercion and engine mismatches remain separate.
+
+Mermaid M3i2's actual original compile/start/stage observer and pinned numeric
+provider were frozen before Sol's two-file implementation. It covers 35 highp
+and 11 lowp resource-independent stages, with 6,678 original Source cases and
+15,750 raw register/mask captures. Root owns Source/native/mutation acceptance;
+paint/blitter/resource/pixel/GPU and full SVG/D2D/Folia gates remain required.
+The bounded contract is `docs/mermaid-native/m3i2-sampling-contract.md`.
+
+Root now accepts that bounded M3i2 sampling packet: 1,334,130 assertions,
+66 compiling semantic mutants detected by assertions, final 48 native tests
+including 11 actual WARP. Evidence is
+`docs/mermaid-native/evidence/m3i2-sampling-acceptance.md`. Complete contexts,
+valid-paint/blitter/pixels/GPU and full backend/Folia gates remain required.
+P23 now also has 111 actual original Node/NodeUtil observations (27 Source
+TypeErrors), reproduced by sparse-child-oracle.cjs --check; details are in
+evidence/p23-sparse-child-source-review.md. Native declarations/red tests and
+the whole sparse migration remain pending; no math acceptance count advances.

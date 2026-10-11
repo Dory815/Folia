@@ -257,3 +257,14 @@ and typed calls retain one FunctionRef/body. This host packet accepts no new
 complete MathJax Source file. Concrete maps and complete rendering/integration
 remain gated, and the parallel Mermaid shared-scene SVG/Direct2D work remains
 required before its separate Folia integration acceptance.
+
+P23 fixes the sparse-child ownership and storage boundary in
+`p23-child-storage-design.md`: factory/session-owned products, borrowed tagged
+node identity, one sparse child-array store, exact alias/rebind and partial-write
+semantics. Every one of the 31 existing child consumers must migrate together;
+the dense-vector evidence does not accept Source-reachable holes. The concrete
+code contract, Source oracle/red tests and migration remain pending. No Source
+count or engine/parser/renderer acceptance advances from this design decision.
+RegExp is separately an owned canonical Property value with real object state
+and JS operation/coercion protocols; the audited gaps and candidate mismatches
+remain required work. Sparse node slots must not introduce fake shared ownership.
