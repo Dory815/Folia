@@ -6,6 +6,10 @@ Current tagged-tree migration status is recorded in
 `evidence/p23f-constructor-acceptance.md`. Historical dense MML acceptance below
 does not certify the new sparse path: remaining consumers are explicit stubs,
 and the complete native renderer cannot be used by Folia yet.
+The current full core build gate fails on old MML observer bindings; evidence
+and the unchanged-Source factory observer correction are recorded in
+`evidence/p23f-full-core-status.md`. Narrow math packets passing does not pass
+the full core or Folia gate.
 Prerequisite utilities have local acceptance recorded in
 `evidence/primitive-acceptance.md`, `evidence/numeric-acceptance.md` and
 `evidence/options-acceptance.md`, `evidence/factory-acceptance.md` and

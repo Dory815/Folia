@@ -97,7 +97,7 @@ auto* one=f.create("chosen");auto* two=f.create("chosen");
 expect(bool((one->args.size())==2));
 expect(bool((folia::math::Property(std::any_cast<folia::math::PropertyList>(one->args[0]))!=folia::math::Property(std::any_cast<folia::math::PropertyList>(two->args[0])))==true));
 expect(bool((std::any_cast<tr::FactoryChildren<Probe>>(one->args[1])!=std::any_cast<tr::FactoryChildren<Probe>>(two->args[1]))==true));
-folia::math::PropertyList props{{"v",7}};auto children=std::make_shared<std::vector<Probe*>>(std::initializer_list<Probe*>{one,nullptr});auto* r=f.create("chosen",props,children);
+folia::math::PropertyList props{{"v",7}};auto children=std::make_shared<tr::ChildArray<Probe>>(std::initializer_list<tr::ChildValue<Probe>>{one,nullptr});auto* r=f.create("chosen",props,children);
 expect(bool((same_properties(r->args[0],props))==true));
 expect(bool((std::any_cast<tr::FactoryChildren<Probe>>(r->args[1])==children)==true));
 tr::FactoryServices<Probe>& service=f;std::array<std::any,3> raw_args{std::any{},nullptr,std::string("discarded")};auto* raw=service.create("chosen",raw_args);
