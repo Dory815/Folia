@@ -1,0 +1,29 @@
+// Root positive, cached-index and iterator/callback observations from actual original MML.
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const root=path.resolve(__dirname,'../..'),base=path.join(root,'tools/mathjax-bundle/node_modules/@mathjax/src/cjs');assert.equal(process.versions.node,'24.13.0');
+const prerequisite=JSON.parse(fs.readFileSync(path.join(root,'docs/math-port/evidence/p23b-sparse-mml-source.json'))),hash=b=>crypto.createHash('sha256').update(b).digest('hex');for(const[f,p]of Object.entries(prerequisite.loadedPins))assert.equal(hash(fs.readFileSync(path.join(base,f))),p);
+const {MmlFactory}=require(path.join(base,'core/MmlTree/MmlFactory.js'));
+function getter(node,name){for(let p=Object.getPrototypeOf(node);p;p=Object.getPrototypeOf(p)){const d=Object.getOwnPropertyDescriptor(p,name);if(d?.get)return d.get;}throw Error('missing getter');}
+const inputs=[];for(const shape of ['', 'b','s','sb','bs','sbs','bb','a','sa','as','H','U','N','sHb','sNb','HUb','bHN','bab','es','z','c','sc'])for(const member of ['isEmpty','isSpacelike','isEmbellished'])inputs.push({kind:'mrow',shape,member});
+for(const shape of ['','e','ee','t','z','et','te','H','U','N','He','Ne','a','s','b'])inputs.push({kind:'mi',shape,member:'isEmpty'});
+for(const member of ['isEmpty','isSpacelike','isEmbellished','getText'])for(const mutation of ['append','delete','shrink','rebind','replace'])inputs.push({kind:member==='getText'?'mi':'mrow',shape:member==='isEmpty'?'ab':member==='isSpacelike'?'ss':member==='isEmbellished'?'bs':'ee',member:member==='getText'?'isEmpty':member,hook:member,mutation});
+for(const member of ['isEmpty','isSpacelike','isEmbellished'])inputs.push({kind:'mrow',shape:'sb',member,arrayNull:true});inputs.push({kind:'mi',shape:'e',member:'isEmpty',arrayNull:true});
+for(const shape of ['b','sb','bb'])inputs.push({kind:'mrow',shape,member:'isEmbellished',second:'a'});
+for(const member of ['isEmpty','isSpacelike','isEmbellished'])inputs.push({kind:'mrow',shape:'Hb',member,prototype:'s'});
+function run(input){const created=[],ids=new WeakMap();class Observed extends MmlFactory{create(...args){const n=super.create(...args);ids.set(n,'n'+created.length);created.push(n);return n;}}const f=new Observed(),nodes={};
+ for(const[label,kind,text]of [['a','mi'],['b','mo'],['c','mi'],['s','mspace'],['e','text',''],['t','text','x'],['z','text','😀']]){const n=f.create(kind);nodes[label]=n;if(text!==undefined)n.setText(text);}nodes.c.childNodes=[nodes.t];
+ const node=f.create(input.kind);nodes.target=node;const tag=v=>v===undefined?'U':v===null?'N':ids.get(v)??'UNBOUND';
+ const array=shape=>{const a=new Array(shape.length);for(let i=0;i<shape.length;i++)if(shape[i]!=='H')a[i]=shape[i]==='U'?undefined:shape[i]==='N'?null:nodes[shape[i]];return a;};
+ const snapshot=a=>a===null?'N':a.length+':'+Array.from({length:a.length},(_,i)=>Number(Object.hasOwn(a,i))).join('')+':'+Array.from({length:a.length},(_,i)=>Number(i in a)).join('')+':'+Array.from({length:a.length},(_,i)=>tag(a[i])).join(',');
+ node.childNodes=input.arrayNull?null:array(input.shape);const original=node.childNodes;if(input.prototype)Object.setPrototypeOf(original,array(input.prototype));const trace=[];let mutated=false;
+ if(input.hook){const label=input.hook==='isEmpty'?'a':input.hook==='isSpacelike'?'s':input.hook==='isEmbellished'?'b':'e',child=nodes[label];const change=()=>{trace.push(input.hook+':'+label);if(mutated)return;mutated=true;if(input.mutation==='append')original.push(nodes.c);if(input.mutation==='delete')delete original[1];if(input.mutation==='shrink')original.length=1;if(input.mutation==='rebind')node.childNodes=array('c');if(input.mutation==='replace')original[1]=nodes.c;};
+  if(input.hook==='getText'){const method=child.getText;child.getText=function(){const result=method.call(this);change();return result;};}else{const method=getter(child,input.hook);Object.defineProperty(child,input.hook,{get(){const result=method.call(this);change();return result;}});}
+ }
+ let result='',error='ok';try{result=String(node[input.member]);if(input.second!==undefined){node.childNodes=array(input.second);result+=','+String(node[input.member]);}}catch(e){error=e.name+'|'+e.message;}
+ const core=node.kind==='mrow'?(node._core==null?'N':String(node._core)):'-';
+ const out=error+'|'+result+'|'+core+'|'+created.map(n=>tag(n)+':'+n.kind+':'+tag(n.parent)+':'+snapshot(n.childNodes)).join(';')+'|'+snapshot(original)+'|'+trace.join(',');assert.ok(!out.includes('UNBOUND'));return out;
+}
+const cases=inputs.map(input=>({input,expected:run(input)}));assert.equal(cases.length,111);
+const data=JSON.stringify({schema:1,scope:'actual original positive MML predicates, row core-index side effects, TextNode RTTI/text and captured live iterators under getter/method callbacks',loadedPins:prerequisite.loadedPins,cases},null,2)+'\n',out=path.join(root,'docs/math-port/evidence/p23h-predicate-probe-source.json');
+if(process.argv.includes('--check'))assert.equal(fs.readFileSync(out,'utf8').replaceAll('\r\n','\n'),data);else{assert.ok(!fs.existsSync(out));fs.writeFileSync(out,data);}console.log(JSON.stringify({cases:cases.length,sha256:hash(data)}));
