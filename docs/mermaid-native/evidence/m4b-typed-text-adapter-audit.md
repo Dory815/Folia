@@ -4,7 +4,7 @@ Root review: checked the existing 12-file source hash manifest and Folia
 adapter hash against the local pinned registry source. This report's private
 field and narrow-facade findings inform the next interface packet; no proposed
 API is frozen here. The existing COLR synthetic-SVG branch remains a required
-replacement before native text can pass its no-diagram-SVG gate.
+replacement before native text can pass its no-SVG-bridge gate.
 
 Status: proposed boundary for root to freeze, **not** an implementation or
 shared-text acceptance. I inspected the cached `usvg` 0.47.0 source identified
