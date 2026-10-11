@@ -7,6 +7,8 @@ const units=['core/mml_tree/mml_bindings.cpp','core/mml_tree/mml_node.cpp','core
 const nodeNames=['math','mrow','mi','mn','mtext','ms','mspace','mstyle','merror','mphantom','msubsup','munderover'];
 modules.push(...nodeNames.map(n=>'core/mml_tree/mml_nodes/'+n+'.ixx'),'core/mml_tree/mml_nodes/mo.ixx');
 units.push(...nodeNames.flatMap(n=>['core/mml_tree/mml_nodes/'+n+'_bindings.cpp','core/mml_tree/mml_nodes/'+n+'.cpp']),...['bindings','lookup','classes','scripts'].map(n=>'core/mml_tree/mml_nodes/mo_'+n+'.cpp'));
+modules.push('core/mml_tree/operator_class.ixx');
+units.push('core/mml_tree/operator_class.cpp');
 fs.mkdirSync(work,{recursive:true});const lock=path.join(work,'run.lock'),fd=fs.openSync(lock,'wx');fs.writeFileSync(fd,String(process.pid));process.on('exit',()=>{fs.closeSync(fd);fs.unlinkSync(lock);});
 const copies=new Map(),fixtures=new Map();
 function writeChanged(target,source){if(!fs.existsSync(target)||!fs.readFileSync(target).equals(Buffer.from(source)))fs.writeFileSync(target,source);}
@@ -48,7 +50,7 @@ exit /b %errorlevel%
 `.replaceAll('\n','\r\n'));
 function build(name){const p=cp.spawnSync('cmd.exe',['/d','/c',path.join(work,'build.cmd')],{encoding:'utf8'});fs.writeFileSync(path.join(work,name+'-build.log'),(p.stdout||'')+(p.stderr||''));assert.equal(p.status,0,name+' must compile; inspect ignored log');}
 function run(name){const p=cp.spawnSync(path.join(work,'bin/MutationTests.exe'),['*math_port_mo*'],{encoding:'utf8',timeout:30000});fs.writeFileSync(path.join(work,name+'-test.log'),(p.stdout||'')+(p.stderr||''));return p;}
-const lookup='core/mml_tree/mml_nodes/mo_lookup.cpp',classes='core/mml_tree/mml_nodes/mo_classes.cpp',scripts='core/mml_tree/mml_nodes/mo_scripts.cpp';
+const lookup='core/mml_tree/mml_nodes/mo_lookup.cpp',classes='core/mml_tree/mml_nodes/mo_classes.cpp',operatorClass='core/mml_tree/operator_class.cpp',scripts='core/mml_tree/mml_nodes/mo_scripts.cpp';
 const mutation=(name,file,from,to)=>({name,file,edits:[[from,to]]});
 const mutations=[
  mutation('undefined-treated-as-null',lookup,'_texClass == Property(PropertyNull{})','host::nullish(_texClass)'),
@@ -65,10 +67,10 @@ const mutations=[
  mutation('attribute-receiver-after-definition',lookup,'const auto currentAttributes = host::moAttributes(*this);\n        const Property currentProperties = host::get(definition, "3");\n        const Property value = host::get(currentProperties, name);','const Property currentProperties = host::get(definition, "3");\n        const Property value = host::get(currentProperties, name);\n        const auto currentAttributes = host::moAttributes(*this);'),
  mutation('coreparent-compares-kind-label',classes,'!host::moInstance(parent, math)','parent->kind() != "math"'),
  mutation('explicit-parent-accent-returned',classes,'if (value.missing()) {','if (!value.missing()) accent=value;\n            if (value.missing()) {'),
- mutation('autoop-not-demoted',classes,'prev->setTexClass(TEXCLASS.ORD);\n            prevClassValue = TEXCLASS.ORD;','/* no previous class write */\n            prevClassValue = TEXCLASS.ORD;'),
- mutation('binary-after-open-not-demoted',classes,'prevClassValue == Property(TEXCLASS.OPEN) ||','false ||'),
- mutation('binary-last-child-not-demoted',classes,'if (!children.empty() && children.back() == child) setTexClass(TEXCLASS.ORD);','/* omitted final child rule */'),
- mutation('binary-previous-chain-order',classes,'setPrevClass(TEXCLASS.ORD);\n        prev->setTexClass(TEXCLASS.ORD);','prev->setTexClass(TEXCLASS.ORD);\n        setPrevClass(TEXCLASS.ORD);'),
+ mutation('autoop-not-demoted',operatorClass,'prev->setTexClass(TEXCLASS.ORD);\n            prevClassValue = TEXCLASS.ORD;','/* no previous class write */\n            prevClassValue = TEXCLASS.ORD;'),
+ mutation('binary-after-open-not-demoted',operatorClass,'prevClassValue == Property(TEXCLASS.OPEN) ||','false ||'),
+ mutation('binary-last-child-not-demoted',operatorClass,'if (!children.empty() && children.back() == child) receiver.setTexClass(TEXCLASS.ORD);','/* omitted final child rule */'),
+ mutation('binary-previous-chain-order',operatorClass,'receiver.setPrevClass(TEXCLASS.ORD);\n        prev->setTexClass(TEXCLASS.ORD);','prev->setTexClass(TEXCLASS.ORD);\n        receiver.setPrevClass(TEXCLASS.ORD);'),
  mutation('coretext-singleton-not-unwrapped',classes,'parent->childNodes->size() == 1;','parent->childNodes->size() == 2;'),
  mutation('parent-read-after-accent-property',scripts,'MmlNode* const parent = Parent();\n    if (!getProperty("mathaccent").missing()) return;','if (!getProperty("mathaccent").missing()) return;\n    MmlNode* const parent = Parent();'),
  mutation('child-snapshot-read-after-base-callback',scripts,'MmlNode* const under = nodes->size() > 1 ? (*nodes)[1] : nullptr;\n    MmlNode* const over = nodes->size() > 2 ? (*nodes)[2] : nullptr;\n    if (!base) host::typeError("Cannot read base embellishment");\n    if (base->isEmbellished() && base->coreMO() == this) return;','if (!base) host::typeError("Cannot read base embellishment");\n    if (base->isEmbellished() && base->coreMO() == this) return;\n    MmlNode* const under = nodes->size() > 1 ? (*nodes)[1] : nullptr;\n    MmlNode* const over = nodes->size() > 2 ? (*nodes)[2] : nullptr;'),

@@ -5,6 +5,7 @@
  *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mo;
 import folia.math.core.mml_tree.mo_host;
+import folia.math.core.mml_tree.operator_class;
 import folia.math.core.mml_tree.mml_nodes.math;
 import folia.math.core.mml_tree.mml_nodes.munderover;
 import std;
@@ -114,64 +115,7 @@ MmlNode* MmlMo::setTeXclass(MmlNode* prev) {
 }
 
 MmlNode* MmlMo::adjustTeXclass(MmlNode* prev) {
-    tree::TreeCallGuard<MmlNode> guard;
-    const Property texClassValue = texClass();
-    Property prevClassValue = prevClass();
-    if (texClassValue == Property(TEXCLASS.NONE)) return prev;
-
-    if (prev) {
-        const Property autoOp = prev->getProperty("autoOP");
-        if (host::truthy(autoOp) &&
-            (texClassValue == Property(TEXCLASS.BIN) ||
-             texClassValue == Property(TEXCLASS.REL))) {
-            prev->setTexClass(TEXCLASS.ORD);
-            prevClassValue = TEXCLASS.ORD;
-        }
-        const Property previousTexClass = prev->texClass();
-        prevClassValue = host::truthy(previousTexClass)
-            ? previousTexClass : Property(TEXCLASS.ORD);
-        setPrevClass(prevClassValue);
-        const auto attributes = host::moAttributes(*this);
-        setPrevLevel(attributes->getInherited("scriptlevel"));
-    } else {
-        prevClassValue = TEXCLASS.NONE;
-        setPrevClass(prevClassValue);
-    }
-
-    if (texClassValue == Property(TEXCLASS.BIN) &&
-        (prevClassValue == Property(TEXCLASS.NONE) ||
-         prevClassValue == Property(TEXCLASS.BIN) ||
-         prevClassValue == Property(TEXCLASS.OP) ||
-         prevClassValue == Property(TEXCLASS.REL) ||
-         prevClassValue == Property(TEXCLASS.OPEN) ||
-         prevClassValue == Property(TEXCLASS.PUNCT))) {
-        setTexClass(TEXCLASS.ORD);
-    } else if (prevClassValue == Property(TEXCLASS.BIN) &&
-               (texClassValue == Property(TEXCLASS.REL) ||
-                texClassValue == Property(TEXCLASS.CLOSE) ||
-                texClassValue == Property(TEXCLASS.PUNCT))) {
-        if (!prev) host::typeError("Cannot set texClass on null previous node");
-        setPrevClass(TEXCLASS.ORD);
-        prev->setTexClass(TEXCLASS.ORD);
-    } else if (texClassValue == Property(TEXCLASS.BIN)) {
-        MmlNode* child = nullptr;
-        MmlNode* parent = this->parent;
-        while (parent && parent->parent && parent->isEmbellished() &&
-               ([&]() {
-                   if (!parent->childNodes) host::typeError("Cannot read length of null childNodes");
-                   return parent->childNodes->size() == 1 ||
-                       (!parent->isKind("mrow") && parent->core() == child);
-               }())) {
-            child = parent;
-            parent = parent->parent;
-        }
-        child = child ? child : this;
-        if (!parent) host::typeError("Cannot read childNodes of null parent");
-        if (!parent->childNodes) host::typeError("Cannot read length of null childNodes");
-        const auto& children = *parent->childNodes;
-        if (!children.empty() && children.back() == child) setTexClass(TEXCLASS.ORD);
-    }
-    return this;
+    return adjustOperatorTeXclass(*this, prev);
 }
 
 }

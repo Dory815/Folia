@@ -518,6 +518,23 @@ assertion-failing isolated mutants pass. Root accepted all 13 member mappings;
 evidence: evidence/p15a-multiscript-acceptance.md. Local source acceptance is
 33/246; Common/scene/SVG and full G0–G7 remain closed.
 
+### P15b/P15c: shared TeXAtom class operation and semantics
+
+Root owns operator_class extraction from the accepted Mo method. Mo and
+TeXAtom delegate to one MML operation, with one algorithm guard; the typed
+native API's lack of JS function-object reflection is explicit in
+atom-semantics-contracts.md. Root also freezes the two interfaces, generated
+defaults/accessors/field-constructor phases and actual-CJS oracle (6,828
+assertions / 63 cases / 924 raw rows) before dispatch. The AST inventory has
+18 class members plus the separately recorded final prototype assignment.
+
+tex_parser may implement only tex_atom.cpp's two methods and its P15b report;
+math_fonts may implement only semantics.cpp's source-empty annotation hook
+and its P15c report. Root owns every declaration, expected observation, build,
+mutation and acceptance. The existing Mo semantic fixture will register a
+real TeXAtom; narrow dummy-kind witnesses stay isolated and explicitly scoped.
+The previous 33 Mo mutants and new packet-specific mutants remain required.
+
 ## Wave 3 — base/AMS input and complete font services
 
 P11 is locally accepted under operator-contracts.md revision 2. Root froze the
