@@ -66,3 +66,35 @@ Mermaid SVG/D2D and Folia release work remains required. Local Source count
 stays 53/246. Root's next TokenMap step is declaration and actual-Source oracle
 freeze under these decisions, followed by constrained implementation and
 independent acceptance; neither audit is permission to fill in shortcuts.
+
+## Root follow-on decisions after P22a acceptance
+
+P22a's canonical function-valued Property and sparse slice binding is now
+locally accepted. Configured dictionaries/tuples therefore use the existing
+single Property graph; do not introduce a parallel callable JSON array or
+copy function bodies to bypass the original slot identities.
+
+Resolve the lookup/atom dependency cycle by making Macro a NativeObject and
+adding its real shared MacroRef alternative to TokenLookup through a direct
+macro-module import. Types remains a leaf of Macro: ParseAtom may carry the
+same Macro owner through NativeObjectRef, with explicit checked projection at
+typed Macro consumers. Do not declare Macro in the Types named module and
+define it in a different named module, or stringify/copy a Macro into Property.
+TokenMap's existing interface is the original TS interface; the concrete
+AbstractTokenMap family belongs in its own Source-mapped module and implements
+that interface. The interface is not an old/new behavior track.
+
+Construction-host declarations and actual-Source witnesses still must be
+frozen before implementation: source field assignments happen after the final
+shared allocation, with registry/getter observation before parse-map/regex
+field initialization. An uninitialized ordinary map is explicit missing host
+state that reports the Source TypeError on access, never a usable empty map.
+The stored Map uses ordered Property keys and TokenLookup values with the
+accepted SameValueZero host, independent of ordinary object enumeration.
+
+Root must extend MapHandler's character projection for the actual new Macro
+alternative before it is introduced. Preserve CharacterMap-family gating;
+Macro.char is missing, and null reference property access retains TypeError.
+The controlled RegExp protocol may verify map call ordering/identity, while
+the unaccepted engine stays a separate required production gate. These decisions
+authorize no native implementation without exact API and independent corpus.
