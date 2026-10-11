@@ -351,18 +351,30 @@ std::optional<std::size_t> AbstractMmlNode::childPosition() {
 }
 
 NodeValue AbstractMmlNode::setTeXclass(NodeValue previous) {
-    // P23f Root stub: AbstractMmlNode::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    getPrevClass(previous);
+    return !host::nullish(texClass()) ? NodeValue(this) : previous;
 }
 
 void AbstractMmlNode::updateTeXclass(NodeValue coreNode) {
-    // P23f Root stub: AbstractMmlNode::updateTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    auto* core = coreNode.nodeOrNull();
+    if (!core) return;
+    setPrevClass(core->prevClass());
+    setPrevLevel(core->prevLevel());
+    core->setPrevLevel(PropertyNull{});
+    core->setPrevClass(PropertyNull{});
+    setTexClass(core->texClass());
 }
 
 void AbstractMmlNode::getPrevClass(NodeValue previous) {
-    // P23f Root stub: AbstractMmlNode::getPrevClass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    auto* node = previous.nodeOrNull();
+    if (!node) return;
+    setPrevClass(node->texClass());
+    auto previousAttributes = node->attributes();
+    if (!previousAttributes) host::typeError("Cannot read properties of null (reading 'get')");
+    setPrevLevel(previousAttributes->get("scriptlevel"));
 }
 
 Property AbstractMmlNode::texSpacing() {
