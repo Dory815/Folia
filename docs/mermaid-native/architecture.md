@@ -9,7 +9,8 @@ prematurely completing the existing math goal.
 
 Status: verified upstream vendoring, M1 local scene-invariant acceptance;
 M2a typed paths, M2b explicit edge symbols, M2c complete ordinary node shapes
-and M4a source text presentation helpers plus M2d edge-label geometry accepted locally (27/70 inventoried
+and M4a source text presentation helpers plus M2d edge-label geometry and M2e
+Architecture icon presentation accepted locally (28/70 inventoried
 render functions); M3 native typed-scene consumer built
 and checked with 10 actual WARP tests and 18 compiling mutations. Full diagram
 scene compilation, SVG and Direct2D backend acceptance, and Folia wiring remain
@@ -17,7 +18,9 @@ open. Exact implementation packets are frozen in implementation-contract.md,
 m2a-path-contract.md, m2b-edge-symbols-contract.md, m2c-node-shapes-contract.md
 and m3-direct2d-contract.md, followed by m4a-text-presentation-contract.md
 and m2d-edge-label-geometry-contract.md. M2d evidence is
-evidence/m2d-edge-label-geometry-acceptance.md.
+evidence/m2d-edge-label-geometry-acceptance.md. M2e contract is
+m2e-architecture-icons-contract.md, with local evidence in
+evidence/m2e-architecture-icons-acceptance.md.
 M4a accepts source requests only; shared text preparation and completed scenes
 remain open. Pinned shared-text findings and the next preparation
 boundary are recorded in evidence/shared-text-source-audit.md.
