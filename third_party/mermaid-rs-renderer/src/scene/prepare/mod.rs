@@ -11,5 +11,8 @@ pub mod gradient_program;
 pub mod pipeline_control_types;
 pub mod pipeline_control;
 pub mod pipeline_context_types;
+pub mod pipeline_builder;
+pub mod pattern_types;
+pub mod pattern_program;
 
 pub mod sampling;

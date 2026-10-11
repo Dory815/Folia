@@ -358,6 +358,7 @@ name = "mermaid-rs-renderer"
 version = "0.3.1"
 dependencies = [
  "anyhow",
+ "arrayvec",
  "bytemuck",
  "cfg-if",
  "clap",
