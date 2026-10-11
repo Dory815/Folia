@@ -42,8 +42,13 @@ Reject nonfinite input coordinates/radius and nonfinite computed coordinates
 with InvalidNumber context. Source would serialize invalid numeric SVG for
 such inputs; the frozen M1 finite-scene boundary instead reports an error and
 publishes no geometry. Finite negative radius preserves the source straight
-fallback, not a radius error. Preserve source arithmetic overflows as classified
-failure; never clamp to arbitrary viewport coordinates.
+fallback, not a radius error. Reject nonfinite emitted geometric coordinates;
+preserve nonfinite intermediate predicates when source output geometry remains
+finite. Opposite finite extreme points may overflow dedupe's subtraction to
+infinity, making its less-than epsilon predicate false: retain those original
+finite points exactly. Never add a blanket arithmetic overflow guard or clamp
+to arbitrary viewport coordinates. Rounded/basis paths reject only when their
+actually emitted coordinates are nonfinite.
 
 Root independently extracts unchanged functions from the verified pristine
 source for reference execution. Root fixtures compare command types/order and
