@@ -68,3 +68,7 @@ codegen-units = 1
 name = "mmdr"
 path = "src/main.rs"
 required-features = ["cli"]
+
+[[test]]
+name = "scene_contracts"
+path = "tests/scene_contracts.rs"
