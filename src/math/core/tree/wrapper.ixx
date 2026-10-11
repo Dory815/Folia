@@ -33,16 +33,18 @@ public:
                       const std::any& data = {}) override {
         TreeCallGuard<Product> guard;
         visit(static_cast<Product*>(this), data);
-        if (!this->childNodes) return data;
 
-        const FactoryChildren<Product> children = *this->childNodes;
+        // Source checks property presence after the visitor, so a callback
+        // may add, remove, or replace childNodes before this decision.
+        if (!this->childNodes) return data;
+        const auto children = *this->childNodes;
         if (!children) {
             throw FactoryError("TypeError",
-                               u"this.childNodes is not iterable");
+                               u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
         }
-        for (std::size_t i = 0; i < children->size(); ++i) {
-            Product* const child = (*children)[i];
-            if (child) child->walkTree(visit, data);
+        for (std::size_t index = 0; index < children->size(); ++index) {
+            const ChildValue<Product> child = children->get(index);
+            if (child.isNode()) child.requireNode("walkTree")->walkTree(visit, data);
         }
         return data;
     }
