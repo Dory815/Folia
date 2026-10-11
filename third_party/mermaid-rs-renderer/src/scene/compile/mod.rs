@@ -6,3 +6,4 @@ pub mod text_presentation;
 pub mod text_helpers;
 pub mod edge_label_geometry;
 pub mod architecture_icons;
+pub mod c4_style;
