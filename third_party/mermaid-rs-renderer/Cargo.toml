@@ -163,3 +163,7 @@ path = "tests/sampling_parity.rs"
 [[test]]
 name = "resource_stage_parity"
 path = "tests/resource_stage_parity.rs"
+
+[[test]]
+name = "blend_stage_parity"
+path = "tests/blend_stage_parity.rs"
