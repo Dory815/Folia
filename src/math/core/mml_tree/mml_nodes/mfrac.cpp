@@ -17,8 +17,39 @@ NodeValue MmlMfrac::setTeXclass(NodeValue previous) {
 
 void MmlMfrac::setChildInheritedAttributes(AttributeList attributes, Property display,
                                             Property level, Property prime) {
-    // P23f Root stub: MmlMfrac::setChildInheritedAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+
+    if (!host::truthy(display) || host::number(level) > 0.0) {
+        level = Property(host::number(level) + 1.0);
+    }
+
+    const Property numalign = host::arithmeticAttributes(*this)->get("numalign");
+    const Property denalign = host::arithmeticAttributes(*this)->get("denomalign");
+
+    PropertyList numeratorAdditions;
+    numeratorAdditions.setOwn("numalign", numalign);
+    numeratorAdditions.setOwn("indentshift", "0");
+    numeratorAdditions.setOwn("indentalignfirst", numalign);
+    numeratorAdditions.setOwn("indentshiftfirst", "0");
+    numeratorAdditions.setOwn("indentalignlast", "indentalign");
+    numeratorAdditions.setOwn("indentshiftlast", "indentshift");
+    const AttributeList numeratorAttributes = this->addInheritedAttributes(
+        host::arithmeticCopy(attributes), Property(numeratorAdditions));
+
+    PropertyList denominatorAdditions;
+    denominatorAdditions.setOwn("denalign", denalign);
+    denominatorAdditions.setOwn("indentshift", "0");
+    denominatorAdditions.setOwn("indentalignfirst", denalign);
+    denominatorAdditions.setOwn("indentshiftfirst", "0");
+    denominatorAdditions.setOwn("indentalignlast", "indentalign");
+    denominatorAdditions.setOwn("indentshiftlast", "indentshift");
+    const AttributeList denominatorAttributes = this->addInheritedAttributes(
+        host::arithmeticCopy(attributes), Property(denominatorAdditions));
+
+    host::arithmeticChild(*this, 0, "setInheritedAttributes").setInheritedAttributes(
+        numeratorAttributes, false, level, prime);
+    host::arithmeticChild(*this, 1, "setInheritedAttributes").setInheritedAttributes(
+        denominatorAttributes, false, level, true);
 }
 
 } // namespace folia::math::mml

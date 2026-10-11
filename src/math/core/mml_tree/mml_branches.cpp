@@ -45,14 +45,38 @@ bool AbstractMmlTokenNode::isEmpty() const {
 }
 
 std::u16string AbstractMmlTokenNode::getText() const {
-    // P23f Root stub: AbstractMmlTokenNode::getText.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const Children children = this->childNodes;
+    if (!children) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+
+    std::u16string text;
+    for (std::size_t index = 0; index < children->size(); ++index) {
+        const NodeValue child = children->get(index);
+        MmlNode* const node = child.nodeOrNull();
+        if (auto* const textNode = node ? dynamic_cast<TextNode*>(node) : nullptr) {
+            text += textNode->getText();
+        } else if (!node) {
+            const std::string value = child.kind() == tree::ChildKind::Null ? "null" : "undefined";
+            host::typeError("Cannot use 'in' operator to search for 'textContent' in " + value);
+        } else if (auto* const binding = dynamic_cast<TextContentBinding*>(node);
+                   binding && binding->textContent.has_value()) {
+            if (!*binding->textContent) host::typeError("child.textContent is not a function");
+            text += (*binding->textContent)();
+        }
+    }
+    return text;
 }
 
 void AbstractMmlTokenNode::setChildInheritedAttributes(
     AttributeList attributes, Property display, Property level, Property prime) {
-    // P23f Root stub: AbstractMmlTokenNode::setChildInheritedAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    const Children children = this->childNodes;
+    if (!children) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    for (std::size_t index = 0; index < children->size(); ++index) {
+        MmlNode* const node = children->get(index).nodeOrNull();
+        if (auto* const mmlNode = node ? dynamic_cast<AbstractMmlNode*>(node) : nullptr) {
+            mmlNode->setInheritedAttributes(attributes, display, level, prime);
+        }
+    }
 }
 
 std::any AbstractMmlTokenNode::walkTree(

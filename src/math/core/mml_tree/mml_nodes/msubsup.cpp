@@ -17,8 +17,26 @@ std::size_t MmlMsubsup::sup() const { return 2; }
 
 void MmlMsubsup::setChildInheritedAttributes(
     AttributeList attributes, Property display, Property level, Property prime) {
-    // P23f Root stub: MmlMsubsup::setChildInheritedAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const auto nodes = this->childNodes;
+    if (!nodes) host::typeError("Cannot read properties of null (reading '0')");
+
+    nodes->get(0).requireNode("setInheritedAttributes")->setInheritedAttributes(
+        attributes, display, level, prime);
+
+    MmlNode& subscript = *nodes->get(1).requireNode("setInheritedAttributes");
+    const Property subscriptLevel = host::add(level, Property(1));
+    Property subscriptPrime = prime;
+    if (!host::truthy(prime)) subscriptPrime = Property(this->sub() == 1);
+    subscript.setInheritedAttributes(attributes, false, subscriptLevel, subscriptPrime);
+
+    const NodeValue superscriptValue = nodes->get(2);
+    if (!superscriptValue.isNode()) return;
+    MmlNode& superscript = *superscriptValue.requireNode("setInheritedAttributes");
+    const Property superscriptLevel = host::add(level, Property(1));
+    Property superscriptPrime = prime;
+    if (!host::truthy(prime)) superscriptPrime = Property(this->sub() == 2);
+    superscript.setInheritedAttributes(attributes, false, superscriptLevel, superscriptPrime);
 }
 
 std::string MmlMsub::kind() const { return "msub"; }

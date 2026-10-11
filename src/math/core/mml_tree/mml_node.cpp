@@ -395,14 +395,101 @@ bool AbstractMmlNode::hasSpacingAttributes() {
 
 void AbstractMmlNode::inheritAttributes(AttributeList inherited, Property display,
                                               Property level, Property prime) {
-    // P23f Root stub: AbstractMmlNode::inheritAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    host::inheritanceDefaults(inherited, display, level, prime);
+
+    const auto defaultsAttributes = this->attributes();
+    if (!defaultsAttributes) host::typeError("Cannot read properties of null (reading 'getAllDefaults')");
+    const PropertyList defaults = defaultsAttributes->getAllDefaults();
+    const std::vector<std::string> keys = host::ownKeys(inherited);
+    for (const auto& key : keys) {
+        if (defaults.hasOwn(key) || AbstractMmlNode::alwaysInherit().hasOwn(key)) {
+            const Property tuple = host::get(inherited, key);
+            const auto [origin, value] = unpackAttribute(tuple);
+            if (!forbidden_inheritance(origin, *this, key)) {
+                const auto currentAttributes = this->attributes();
+                if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'setInherited')");
+                currentAttributes->setInherited(key, value);
+            }
+        }
+        if (stopped_inheritance(this->kind(), key)) {
+            PropertyList stopped = host::objectAssign(inherited);
+            stopped.erase(key);
+            inherited = Property(std::move(stopped));
+        }
+    }
+
+    const auto displayAttributes = this->attributes();
+    if (!displayAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
+    const Property displaystyle = displayAttributes->getExplicit("displaystyle");
+    if (displaystyle.missing()) {
+        const auto currentAttributes = this->attributes();
+        if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'setInherited')");
+        currentAttributes->setInherited("displaystyle", display);
+    }
+
+    const auto levelAttributes = this->attributes();
+    if (!levelAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
+    const Property scriptlevel = levelAttributes->getExplicit("scriptlevel");
+    if (scriptlevel.missing()) {
+        const auto currentAttributes = this->attributes();
+        if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'setInherited')");
+        currentAttributes->setInherited("scriptlevel", level);
+    }
+
+    if (host::truthy(prime)) this->setProperty("texprimestyle", prime);
+
+    const double expectedArity = this->arity();
+    if (expectedArity >= 0 && expectedArity != std::numeric_limits<double>::infinity()) {
+        const auto children = this->childNodes;
+        if (!children) host::typeError("Cannot read properties of null (reading 'length')");
+        const double childLength = static_cast<double>(children->size());
+        if ((expectedArity == 1 && childLength == 0) ||
+            (expectedArity != 1 && childLength != expectedArity)) {
+            if (expectedArity < childLength) {
+                this->childNodes = children->slice(0, static_cast<std::int64_t>(expectedArity));
+            } else {
+                while (true) {
+                    const auto currentChildren = this->childNodes;
+                    if (!currentChildren) host::typeError("Cannot read properties of null (reading 'length')");
+                    if (!(static_cast<double>(currentChildren->size()) < expectedArity)) break;
+                    MmlNode* const row = this->factory.create("mrow", {});
+                    this->appendChild(NodeValue(row));
+                }
+            }
+        }
+    }
+
+    if (this->linebreakContainer() && !this->isEmbellished()) {
+        const std::string align = this->linebreakAlign();
+        if (!align.empty()) {
+            const auto currentAttributes = this->attributes();
+            if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'get')");
+            Property indentalign = currentAttributes->get(align);
+            if (!host::truthy(indentalign)) indentalign = "left";
+            PropertyList additions{
+                {"indentalign", indentalign},
+                {"indentshift", "0"},
+                {"indentalignfirst", indentalign},
+                {"indentshiftfirst", "0"},
+                {"indentalignlast", "indentalign"},
+                {"indentshiftlast", "indentshift"}
+            };
+            inherited = this->addInheritedAttributes(std::move(inherited), Property(additions));
+        }
+    }
+
+    this->setChildInheritedAttributes(std::move(inherited), display, level, prime);
 }
 
 void AbstractMmlNode::setChildInheritedAttributes(AttributeList inherited, Property display,
                                                    Property level, Property prime) {
-    // P23f Root stub: AbstractMmlNode::setChildInheritedAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    const Children children = this->childNodes;
+    if (!children) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    for (std::size_t index = 0; index < children->size(); ++index) {
+        children->get(index).requireNode("setInheritedAttributes")
+            ->setInheritedAttributes(inherited, display, level, prime);
+    }
 }
 
 AttributeList AbstractMmlNode::addInheritedAttributes(AttributeList current, Property additions) {

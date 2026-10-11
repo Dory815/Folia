@@ -8,13 +8,18 @@ inline PropertyList arithmeticCopy(const Property& input) {
     // which uses Object.assign, including its inherited __proto__ setter.
     return objectAssign(input);
 }
-inline MmlNode& arithmeticChild(MmlNode&, std::size_t, std::string_view) {
-    // Root frozen member-at-dereference binding; actual MML red follows.
-    throw Error("Unimplemented",u"Root-frozen MML required child binding");
+inline MmlNode& arithmeticChild(MmlNode& node, std::size_t index, std::string_view member) {
+    const auto children = node.childNodes;
+    if (!children) {
+        const std::string message = "Cannot read properties of null (reading '" +
+                                   std::to_string(index) + "')";
+        typeError(message);
+    }
+    return *children->get(index).requireNode(member);
 }
 inline std::shared_ptr<Attributes> arithmeticAttributes(const MmlNode& node) {
     auto attributes = node.attributes();
-    if (!attributes) typeError("Cannot read null arithmetic attributes");
+    if (!attributes) typeError("Cannot read properties of null (reading 'get')");
     return attributes;
 }
 }
