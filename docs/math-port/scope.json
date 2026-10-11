@@ -4820,10 +4820,10 @@
       "proposed_target": "src/math/util/function_list.ixx",
       "proposed_module": "folia.math.util.function_list",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port",
+      "adaptation_reason": "Complete four-member port using live typed callable/vector/tuple identities and numeric priorities; post-allocation constructor phase preserves virtual addList. Original array and receiver identity, immutable rest slots, exact false, and full then(execute).catch(fail) async sequencing use a session-local native Promise/job host. Original raw shared reasons retain identity; ordinary C++ exceptions retain captured handle type/payload and propagation identity. No JS interpreter or general proxies/iterables/non-number priority/thenable engine. Root source oracle, 26 compiling mutants and full core tests pass; see function-list-contract.md and evidence/p19a-function-list-acceptance.md.",
+      "port_status": "implemented",
+      "acceptance": "function_list_gate_passed_root_review",
       "dependencies": [
         "ts/util/PrioritizedList.ts"
       ],
@@ -4862,7 +4862,7 @@
       "proposed_module": "folia.math.util.prioritized_list",
       "owner": "semantics_util",
       "disposition": "port",
-      "adaptation_reason": "Native mutation-aware cursor iterator, shared yielded entries and one cross-type default backing value. Identity handles replace JS generic references. See evidence/p3-prioritized-list.md.",
+      "adaptation_reason": "Native mutation-aware cursor iterator captures the original shared array, retains yielded entries and one cross-type default backing value. Identity handles replace JS generic references; replacing current storage cannot redirect active iteration. Original primitive fixtures remain unchanged, with source rebinding/mutation and native lifetime proof in evidence/p19a-function-list-acceptance.md; see also evidence/p3-prioritized-list.md.",
       "port_status": "implemented",
       "acceptance": "primitive_gate_passed_root_review",
       "dependencies": [],
