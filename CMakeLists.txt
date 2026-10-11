@@ -90,6 +90,11 @@ add_library(folia_math STATIC)
 target_compile_features(folia_math PUBLIC cxx_std_23)
 set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+    src/math/input/tex/token.ixx
+    src/math/input/tex/types.ixx
+    src/math/input/tex/macro.ixx
+    src/math/input/tex/handler_types.ixx
+    src/math/input/tex/tex_constants.ixx
     src/math/core/tree/property.ixx
     src/math/core/tree/factory_types.ixx
     src/math/core/tree/factory.ixx
@@ -156,6 +161,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/option_types.ixx
     src/math/util/options.ixx)
   target_sources(folia_math PRIVATE
+    src/math/input/tex/token.cpp
+    src/math/input/tex/macro.cpp
     src/math/core/mml_tree/mml_nodes/html_node_bindings.cpp
     src/math/core/mml_tree/mml_nodes/html_node.cpp
     src/math/core/mml_tree/operator_class.cpp
