@@ -16,3 +16,5 @@ pub mod pattern_types;
 pub mod pattern_program;
 
 pub mod sampling;
+pub mod linear_program;
+pub mod radial_program;
