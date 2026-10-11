@@ -561,10 +561,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mfrac.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mfrac",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-frozen arithmetic-contracts.md revision 2; complete per-node MML classes and individually reviewed 21-member ledger in evidence/p13-arithmetic-members.json. Raw values, object aliases, typed access, captured/live arrays, constructor field phases and pinned compiled __assign semantics remain explicit host bindings. Actual-CJS differential evidence: 13,557 assertions/29 cases including 1,440 raw inheritance rows, complete outer inheritance, virtual receiver/alias traces and nested arithmetic trees; 34 compiling/assertion-failing isolated mutants; full core regression. See evidence/p13-arithmetic-acceptance.md. Common geometry, full MML factory, parser and production renderer remain required and unaccepted.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -694,10 +694,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mroot.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mroot",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-frozen arithmetic-contracts.md revision 2; complete per-node MML classes and individually reviewed 21-member ledger in evidence/p13-arithmetic-members.json. Raw values, object aliases, typed access, captured/live arrays, constructor field phases and pinned compiled __assign semantics remain explicit host bindings. Actual-CJS differential evidence: 13,557 assertions/29 cases including 1,440 raw inheritance rows, complete outer inheritance, virtual receiver/alias traces and nested arithmetic trees; 34 compiling/assertion-failing isolated mutants; full core regression. See evidence/p13-arithmetic-acceptance.md. Common geometry, full MML factory, parser and production renderer remain required and unaccepted.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -758,10 +758,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/msqrt.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.msqrt",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root-frozen arithmetic-contracts.md revision 2; complete per-node MML classes and individually reviewed 21-member ledger in evidence/p13-arithmetic-members.json. Raw values, object aliases, typed access, captured/live arrays, constructor field phases and pinned compiled __assign semantics remain explicit host bindings. Actual-CJS differential evidence: 13,557 assertions/29 cases including 1,440 raw inheritance rows, complete outer inheritance, virtual receiver/alias traces and nested arithmetic trees; 34 compiling/assertion-failing isolated mutants; full core regression. See evidence/p13-arithmetic-acceptance.md. Common geometry, full MML factory, parser and production renderer remain required and unaccepted.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"

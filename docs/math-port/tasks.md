@@ -448,8 +448,26 @@ compiling/assertion-failing mutants. No geometry, parsing or production wiring.
 | math_fonts | mml_nodes/mroot.cpp | evidence/p13-mroot.md |
 
 No builds/commits/shared edits or changed oracle expectations by agents.
-Root also audits existing addInheritedAttributes own-spread semantics before
-acceptance; do not work around a shared-host regression in a new node.
+Root accepted P13 after complete member review, full core regression, final
+actual-CJS fixtures (13,501/7 and 56/22 assertions/cases) and 34 compiling,
+assertion-failing isolated mutants. The virtual-helper witness rejected root's
+initial own-spread assumption: the pinned CJS uses __assign/Object.assign.
+Revision 2 binds that operation; existing addInheritedAttributes required no
+change. All 21 member mappings are reviewed in evidence/p13-arithmetic-members.json;
+evidence/p13-arithmetic-acceptance.md records the corrections and rejected runs.
+Local source acceptance is now 29/246. Geometry, parser, full MML factory and
+SVG/Folia gates remain unaccepted.
+
+### P14: table semantic family — preflight only
+
+Root read mtable/mtr/mtd.ts and reviewed the agents' read-only reports in
+evidence/p14-{mtable,mtr,mtd}-audit.md. The 26-member family design and ownership
+are fixed in table-contracts.md. Root corrected minimum-arity and receiver-order
+errors in the reports. No implementation is dispatched yet: root must commit
+the interfaces, generated fields/getters, typed split/index/iterator bindings
+and independent actual-CJS oracle before assigning the nine node methods.
+Tables retain MML inheritance/verification/tree repair here; all table geometry
+and backend work remain in later Common/scene packets.
 
 ## Wave 3 — base/AMS input and complete font services
 
