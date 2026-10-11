@@ -33,7 +33,10 @@ callable/receiver protocol in `evidence/p19b2-callable-receiver-acceptance.md`
 (neither host packet adds a TS source-file count), followed by complete
 MapHandler acceptance in evidence/p20a-map-handler-acceptance.md and complete
 numeric reductions in evidence/p20c-numeric-reductions-acceptance.md.
-Local source acceptance is 53/246; the complete TeX/Common/SVG renderer and full G0–G7 are still closed.
+Complete TokenMap class-family acceptance is recorded in
+evidence/p22b-token-map-acceptance.md, under explicit native construction/data
+and controlled regex-service boundaries. Local source acceptance is 54/246;
+the regex engine, complete TeX/Common/SVG renderer and full G0–G7 remain closed.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
 

@@ -723,3 +723,26 @@ Source warning omission was repaired by Root, and initial equivalent-rounding
 mutation survival remains recorded separately. No Source expectations were
 weakened. Sampling/precision/resources and complete SVG/Direct2D/Folia remain
 required in parallel with the complete native Math path.
+
+### P22b and Mermaid M3i1 Root local acceptance
+
+P22b accepts the complete TokenMap class family: all 22 executable members and
+the initialized Map field retain original per-source responsibilities and
+inheritance. Root froze ownership/registration/Map/callable/argument contracts
+and independent actual Source tests before Luna implementation. Final native
+870 assertions/13 tests and 41 effective compiling semantic mutants pass;
+complete core passes 3,940 tests/161,915 assertions. The original MapHandler
+29-mutant and callable 12-mutant regressions also pass. Root corrected an unsafe
+mutation observer without changing any Source expectations. Evidence:
+evidence/p22b-token-map-acceptance.md. Local Source acceptance is now 54/246;
+RegExpContext remains a controlled dependency, with engine/configured parser,
+sparse NodeFactory/Common/SVG and Folia gates still required.
+
+Mermaid M3i1 accepts shared whole-pipeline compiler control as a bounded portable
+projection: all 79 stage identities/lowp table, complete-list precision/width,
+full/tail order/repetitions/Return, context default/movement and capacity result.
+Root actual Source compiler pointers: 12,872 cases/64,552 assertions; all 27
+compiling semantic mutants detected. The fifteen-target matrix passes 45 tests,
+including 11 WARP. Evidence: docs/mermaid-native/evidence/m3i1-pipeline-control-
+acceptance.md. Executable stage sampling and complete context/blitter/GPU paint,
+shared scenes and full SVG/D2D/Folia remain open; render-function count is 34/70.
