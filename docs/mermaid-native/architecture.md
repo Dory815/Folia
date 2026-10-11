@@ -8,12 +8,14 @@ only, so this file records the added requirement rather than replacing or
 prematurely completing the existing math goal.
 
 Status: verified upstream vendoring, M1 local scene-invariant acceptance;
-M2a typed paths and M2b explicit edge symbols accepted locally (6/70 inventoried
-render functions); M3 native typed-scene consumer built
+M2a typed paths, M2b explicit edge symbols and M2c complete ordinary node shapes
+accepted locally (7/70 inventoried render functions); M3 native typed-scene consumer built
 and checked with 10 actual WARP tests and 18 compiling mutations. Full diagram
 scene compilation, SVG and Direct2D backend acceptance, and Folia wiring remain
 open. Exact implementation packets are frozen in implementation-contract.md,
-m2a-path-contract.md, m2b-edge-symbols-contract.md and m3-direct2d-contract.md.
+m2a-path-contract.md, m2b-edge-symbols-contract.md, m2c-node-shapes-contract.md
+and m3-direct2d-contract.md. Pinned shared-text findings and the next preparation
+boundary are recorded in evidence/shared-text-source-audit.md.
 Root owns architecture, file responsibilities, interfaces, scope and acceptance.
 The explicitly requested Sol agent is mermaid_dx2d. Its initial authorization
 was source audit only. Root has since independently verified archive/source
