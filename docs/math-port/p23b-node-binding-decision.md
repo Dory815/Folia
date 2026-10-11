@@ -64,15 +64,23 @@ virtual NodeValue Parent() const;
 virtual NodeValue core();
 virtual NodeValue coreMO();
 virtual Property notParent() const; // Boolean, Missing, or PropertyNull
+virtual NodeValue setTeXclass(NodeValue previous);
+virtual void inheritAttributesFrom(NodeValue source);
+// Existing protected AbstractMmlNode helpers:
+virtual void getPrevClass(NodeValue previous);
+virtual void updateTeXclass(NodeValue core);
 ```
 
 Self/fresh-product returns may keep raw Product* when the Source operation
 cannot directly return a nullish child value (factory construction, copy, and
 Node-only fallback helpers). They must explicitly lift into NodeValue when
-implementing a tagged virtual return. Node-valued input/return boundaries beyond
-this list, including setTeXclass's prior/result binding, need the complete Source
-call-domain inventory before declarations freeze; do not infer a pointer-only
-result merely from a TS annotation. Direct child helper Get returns NodeValue;
+implementing a tagged virtual return. The supplementary call-value audit
+confirms setTeXclass must carry tagged input/result: Empty and mspace return
+the exact prior value, mrow forwards sibling results, and operator adjustment
+can return Null or the prior value. getPrevClass/updateTeXclass consume that
+same tagged value and apply the original truthiness guard. inheritAttributesFrom
+preserves its argument until the normal body dereferences it or the Empty
+override ignores it. Direct child helper Get returns NodeValue;
 helpers may require a node only where the original caller dereferences it.
 
 Root has frozen, compiled real red stubs, implemented and independently accepted
