@@ -10,18 +10,18 @@ import std;
 
 namespace folia::math::mml {
 
-void MmlMtable::setInheritedAttributes(AttributeList attributes, Property display,
-                                       Property level, Property prime) {
+void MmlMtable::inheritAttributes(AttributeList attributes, Property display,
+                                  Property level, Property prime) {
     tree::TreeCallGuard<MmlNode> guard;
 
     for (std::size_t index = 0; index < indentAttributes.size(); ++index) {
         // for-of captures the string value for this iteration before callbacks;
         // the shared vector itself remains live and may grow during the loop.
         const std::string name = indentAttributes[index];
-        if (host::truthy(host::get(Property(attributes), name))) {
+        if (host::truthy(host::get(attributes, name))) {
             // JavaScript captures the method receiver before evaluating args.
             const auto receiver = host::arithmeticAttributes(*this);
-            const Property tuple = host::get(Property(attributes), name);
+            const Property tuple = host::get(attributes, name);
             const Property value = host::get(tuple, "1");
             receiver->setInherited(name, value);
         }
@@ -30,7 +30,7 @@ void MmlMtable::setInheritedAttributes(AttributeList attributes, Property displa
         }
     }
 
-    AbstractMmlNode::setInheritedAttributes(
+    AbstractMmlNode::inheritAttributes(
         std::move(attributes), std::move(display), std::move(level), std::move(prime));
 }
 
@@ -72,12 +72,12 @@ void MmlMtable::setChildInheritedAttributes(AttributeList attributes, Property d
         MmlNode* const child = host::tableSlot(rows, index);
 
         // Capture the assignment reference before evaluating the shifting RHS.
-        const Property rowalignTuple = host::get(Property(attributes), "rowalign");
+        const Property rowalignTuple = host::get(attributes, "rowalign");
         Property rowalignValue = host::tableShift(rowAlignments);
         if (!host::truthy(rowalignValue)) {
-            rowalignValue = host::get(host::get(Property(attributes), "rowalign"), "1");
+            rowalignValue = host::get(host::get(attributes, "rowalign"), "1");
         }
-        host::tableSetIndex(rowalignTuple, "1", std::move(rowalignValue));
+        host::set(rowalignTuple, "1", std::move(rowalignValue));
 
         host::tableNode(child).setInheritedAttributes(attributes, display, level,
                                                       Property(host::truthy(cramped)));

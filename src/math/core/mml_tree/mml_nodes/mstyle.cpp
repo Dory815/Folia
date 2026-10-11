@@ -21,18 +21,17 @@ bool MmlMstyle::notParent() const {
     return nested->size() == 1;
 }
 
-void MmlMstyle::setInheritedAttributes(AttributeList attributes, Property display,
-                                       Property level, Property prime) {
+void MmlMstyle::inheritAttributes(AttributeList attributes, Property display,
+                                  Property level, Property prime) {
     tree::TreeCallGuard<MmlNode> guard;
-    host::inheritanceDefaults(display, level, prime);
+    host::inheritanceDefaults(attributes, display, level, prime);
     auto currentAttributes = this->attributes();
     if (!currentAttributes) host::typeError("Cannot set inherited displaystyle on null attributes");
     currentAttributes->setInherited("displaystyle", display);
     currentAttributes = this->attributes();
     if (!currentAttributes) host::typeError("Cannot set inherited scriptlevel on null attributes");
     currentAttributes->setInherited("scriptlevel", level);
-    AbstractMmlNode::setInheritedAttributes(std::move(attributes), std::move(display),
-                                            std::move(level), std::move(prime));
+    AbstractMmlNode::inheritAttributes(attributes, display, level, prime);
 }
 
 void MmlMstyle::setChildInheritedAttributes(AttributeList attributes, Property display,

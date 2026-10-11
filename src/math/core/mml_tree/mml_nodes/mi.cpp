@@ -16,16 +16,16 @@ std::string MmlMi::kind() const {
     return "mi";
 }
 
-void MmlMi::setInheritedAttributes(
+void MmlMi::inheritAttributes(
     AttributeList attributes, Property display, Property level, Property prime) {
     tree::TreeCallGuard<MmlNode> guard;
-    host::inheritanceDefaults(display, level, prime);
-    AbstractMmlTokenNode::setInheritedAttributes(attributes, display, level, prime);
+    host::inheritanceDefaults(attributes, display, level, prime);
+    AbstractMmlTokenNode::inheritAttributes(attributes, display, level, prime);
     const std::u16string text = getText();
     Pattern& pattern = singleCharacter();
     if (!pattern) host::typeError("MmlMi.singleCharacter has no native callback");
     const bool single = pattern(text);
-    if (single && !host::truthy(attributes.get("mathvariant"))) {
+    if (single && !host::truthy(host::get(attributes, "mathvariant"))) {
         auto nodeAttributes = this->attributes();
         if (!nodeAttributes) host::typeError("Cannot read setInherited on null MML attributes");
         nodeAttributes->setInherited("mathvariant", std::string("italic"));

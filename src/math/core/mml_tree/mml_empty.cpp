@@ -41,7 +41,7 @@ std::optional<std::size_t> AbstractMmlEmptyNode::childPosition() { return 0; }
 MmlNode* AbstractMmlEmptyNode::setTeXclass(MmlNode* previous) { return previous; }
 Property AbstractMmlEmptyNode::texSpacing() { return ""; }
 bool AbstractMmlEmptyNode::hasSpacingAttributes() { return false; }
-void AbstractMmlEmptyNode::setInheritedAttributes(AttributeList, Property, Property, Property) {}
+void AbstractMmlEmptyNode::inheritAttributes(AttributeList, Property, Property, Property) {}
 void AbstractMmlEmptyNode::inheritAttributesFrom(MmlNode*) {}
 void AbstractMmlEmptyNode::verifyTree(std::optional<PropertyList>) {}
 MmlNode* AbstractMmlEmptyNode::mError(std::string, ErrorOptions, bool) { return nullptr; }

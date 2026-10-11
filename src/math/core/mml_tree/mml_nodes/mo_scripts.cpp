@@ -10,12 +10,11 @@ import std;
 
 namespace folia::math::mml {
 
-void MmlMo::setInheritedAttributes(AttributeList attributes, Property display,
-                                   Property level, Property prime) {
+void MmlMo::inheritAttributes(AttributeList attributes, Property display,
+                              Property level, Property prime) {
     tree::TreeCallGuard<MmlNode> guard;
-    host::inheritanceDefaults(display, level, prime);
-    AbstractMmlTokenNode::setInheritedAttributes(std::move(attributes), display,
-                                                 level, prime);
+    host::inheritanceDefaults(attributes, display, level, prime);
+    AbstractMmlTokenNode::inheritAttributes(attributes, display, level, prime);
 
     // Source takes one text snapshot after the superclass has completed, then
     // performs these checks in this order.

@@ -3,12 +3,10 @@ export module folia.math.core.mml_tree.arithmetic_host;
 export import folia.math.core.mml_tree.leaf_host;
 import std;
 export namespace folia::math::mml::host {
-inline PropertyList arithmeticCopy(const PropertyList& input) {
-    PropertyList copy;
+inline PropertyList arithmeticCopy(const Property& input) {
     // The locked MathJax distribution lowers {...input} to __assign({}, input),
     // which uses Object.assign, including its inherited __proto__ setter.
-    copy.assign(input);
-    return copy;
+    return objectAssign(input);
 }
 inline MmlNode& arithmeticChild(MmlNode& node, std::size_t index) {
     const auto children = node.childNodes;

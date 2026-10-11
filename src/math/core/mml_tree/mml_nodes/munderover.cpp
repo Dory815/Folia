@@ -140,7 +140,7 @@ void MmlMunderover::setInheritedAccent(std::size_t index, Property accent,
 
     // The source supplies a new {} on each re-inheritance. Keep its identity
     // distinct and preserve the original display/prime values.
-    AttributeList emptyAttributes;
+    AttributeList emptyAttributes = PropertyList{};
     const Property reinheritedLevel = getScriptlevel(accent, force, level);
     node->setInheritedAttributes(std::move(emptyAttributes), std::move(display),
                                  reinheritedLevel, std::move(prime));

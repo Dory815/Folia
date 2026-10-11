@@ -51,17 +51,17 @@ bool property_set_contains(const Property& value) {
         [&](const Property& candidate) { return host::sameValueZero(candidate, value); });
 }
 
-bool forbidden_inheritance(std::string_view origin, std::string_view destination,
+bool forbidden_inheritance(const Property& origin, MmlNode& node,
                            std::string_view name) {
-    auto from = PropertyList::object(AbstractMmlNode::noInherit().get(origin));
-    if (!from) return false;
-    auto to = PropertyList::object(from->get(destination));
-    return to && host::truthy(to->get(name));
+    const auto from = host::get(AbstractMmlNode::noInherit(),host::debugText(host::string(origin)));
+    if (host::nullish(from)) return false;
+    const auto to = host::get(from,node.kind());
+    return !host::nullish(to) && host::truthy(host::get(to,name));
 }
 
 bool stopped_inheritance(std::string_view destination, std::string_view name) {
-    auto to = PropertyList::object(AbstractMmlNode::stopInherit().get(destination));
-    return to && host::truthy(to->get(name));
+    const auto to = host::get(AbstractMmlNode::stopInherit(),destination);
+    return !host::nullish(to) && host::truthy(host::get(to,name));
 }
 }
 
@@ -365,25 +365,24 @@ bool AbstractMmlNode::hasSpacingAttributes() {
     return mo->hasSpacingAttributes();
 }
 
-void AbstractMmlNode::setInheritedAttributes(AttributeList inherited, Property display,
+void AbstractMmlNode::inheritAttributes(AttributeList inherited, Property display,
                                               Property level, Property prime) {
     tree::TreeCallGuard<MmlNode> guard;
-    host::inheritanceDefaults(display,level,prime);
+    host::inheritanceDefaults(inherited,display,level,prime);
     auto attrs = attributes();
     if (!attrs) host::typeError("Cannot read defaults from null attributes");
     const auto defaults = attrs->getAllDefaults();
-    for (const auto& key : inherited.keys()) {
+    for (const auto& key : host::ownKeys(inherited)) {
         if (defaults.hasOwn(key) || alwaysInherit().hasOwn(key)) {
-            const auto [origin, value] = unpackAttribute(inherited.getOwn(key));
-            if (!forbidden_inheritance(origin, kind(), key)) {
+            const auto [origin, value] = unpackAttribute(host::get(inherited,key));
+            if (!forbidden_inheritance(origin, *this, key)) {
                 attrs = attributes();
                 if (!attrs) host::typeError("Cannot inherit into null attributes");
                 attrs->setInherited(key, value);
             }
         }
         if (stopped_inheritance(kind(), key)) {
-            AttributeList updated;
-            updated.assign(inherited);
+            auto updated = host::objectAssign(inherited);
             updated.erase(key);
             inherited = std::move(updated);
         }
@@ -448,12 +447,11 @@ void AbstractMmlNode::setChildInheritedAttributes(AttributeList inherited, Prope
     }
 }
 
-AttributeList AbstractMmlNode::addInheritedAttributes(AttributeList current, PropertyList additions) {
-    AttributeList updated;
-    updated.assign(current);
-    for (const auto& name : additions.keys()) {
+AttributeList AbstractMmlNode::addInheritedAttributes(AttributeList current, Property additions) {
+    auto updated = host::objectAssign(current);
+    for (const auto& name : host::ownKeys(additions)) {
         if (name != "displaystyle" && name != "scriptlevel" && name != "style")
-            updated.set(name, attributeTuple(kind(), additions.getOwn(name)));
+            updated.set(name, attributeTuple(kind(), host::get(additions,name)));
     }
     return updated;
 }
@@ -465,7 +463,7 @@ void AbstractMmlNode::inheritAttributesFrom(MmlNode* node) {
     if (!source) host::typeError("Cannot read inherited attributes from null source attributes");
     const Property display = source->get("displaystyle");
     const Property level = source->get("scriptlevel");
-    AttributeList defaults;
+    PropertyList defaults;
     if (source->isSet("mathsize")) defaults.set("mathsize", attributeTuple("math", source->get("mathsize")));
     Property prime = node->getProperty("texprimestyle");
     if (!host::truthy(prime)) prime = false;

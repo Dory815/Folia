@@ -39,9 +39,9 @@ void MmlMtr::setChildInheritedAttributes(AttributeList attributes, Property disp
     currentAttributes = host::arithmeticAttributes(*this);
     Property rowAlign = currentAttributes->get("rowalign");
     PropertyList additions;
-    additions.set("rowalign", std::move(rowAlign));
-    additions.set("columnalign", "center");
-    additions.set("data-break-align", "top");
+    additions.setOwn("rowalign", std::move(rowAlign));
+    additions.setOwn("columnalign", "center");
+    additions.setOwn("data-break-align", "top");
     attributes = addInheritedAttributes(std::move(attributes), std::move(additions));
 
     const Children inheritedChildren = host::tableChildren(*this);
@@ -49,19 +49,19 @@ void MmlMtr::setChildInheritedAttributes(AttributeList attributes, Property disp
         MmlNode* const child = host::tableSlot(inheritedChildren, index);
 
         // JavaScript evaluates the indexed assignment receiver before shift().
-        Property columnReceiver = attributes.get("columnalign");
+        Property columnReceiver = host::get(attributes, "columnalign");
         Property columnValue = host::tableShift(columnAlign);
         if (!host::truthy(columnValue))
-            columnValue = host::get(attributes.get("columnalign"), "1");
-        host::tableSetIndex(columnReceiver, "1", std::move(columnValue));
+            columnValue = host::get(host::get(attributes, "columnalign"), "1");
+        host::set(columnReceiver, "1", std::move(columnValue));
 
         // The kind getter is evaluated before balign.shift() and its fallback.
         Property verticalKind = this->kind();
         Property verticalAlign = host::tableShift(breakAlign);
         if (!host::truthy(verticalAlign))
-            verticalAlign = host::get(attributes.get("data-break-align"), "1");
-        attributes.set("data-vertical-align", PropertyArray{std::move(verticalKind),
-                                                             std::move(verticalAlign)});
+            verticalAlign = host::get(host::get(attributes, "data-break-align"), "1");
+        host::set(attributes, "data-vertical-align",
+                  PropertyArray{std::move(verticalKind), std::move(verticalAlign)});
 
         host::tableNode(child).setInheritedAttributes(attributes, display, level, prime);
     }

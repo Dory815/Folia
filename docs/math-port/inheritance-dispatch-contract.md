@@ -39,7 +39,10 @@ indices, records retain shared nested identity and __proto__ setter semantics.
 Arithmetic copy reuses that single operation. No record conversion occurs
 before a source Object.keys/spread/property read.
 Tuple destructuring accepts native arrays and strings (Unicode code-point
-iteration), returns raw origin/value including Missing, and rejects noniterables.
+iteration), returning raw origin/value including Missing. The pinned CJS __read
+lowering returns a noniterable receiver unchanged: subsequent indexed reads
+accept boxed scalars/records and throw for nullish receivers. This emitted
+behavior is required for the actual CJS comparisons, including partial state.
 noInherit/stopInherit property access uses existing typed Property lookup and
 nullish optional-chain rules, retaining source property-key conversion.
 Explicit source {} constructions stay PropertyList{} after the alias changes.
