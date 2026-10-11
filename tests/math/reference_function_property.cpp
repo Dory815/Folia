@@ -3,6 +3,7 @@
 import folia.math.util.function_types;
 import folia.math.util.function_list;
 import folia.math.util.property_host;
+import folia.math.core.tree.factory_types;
 import folia.math.input.tex.macro;
 namespace {
 using namespace boost::ut;
@@ -684,6 +685,6 @@ suite function_property=[] {
  }expect(!weak.expired());retained=Missing{};expect(weak.expired());
 };
 "math_port_callable_property_invalid_native_boundary"_test=[] {
- auto error=[](auto call){try{call();}catch(const options::Exception&e){return e.name=="TypeError";}return false;};expect(error([]{Property p(FunctionRef{});}));expect(error([]{functions::toProperty(FunctionValue{FunctionRef{}});}));auto f=std::make_shared<Function>();expect(error([&]{property_host::get(Property(f),"name");}));expect(!functions::reference(FunctionValue{Property(3)}));expect(functions::fromProperty(Property(3))==FunctionValue{Property(3)});expect(functions::toProperty(FunctionValue{Property(3)})==Property(3));
+ auto error=[](auto call){try{call();}catch(const tree::FactoryError&e){return e.name=="TypeError";}return false;};expect(error([]{Property p(FunctionRef{});}));expect(error([]{functions::toProperty(FunctionValue{FunctionRef{}});}));auto f=std::make_shared<Function>();expect(error([&]{property_host::get(Property(f),"name");}));expect(!functions::reference(FunctionValue{Property(3)}));expect(functions::fromProperty(Property(3))==FunctionValue{Property(3)});expect(functions::toProperty(FunctionValue{Property(3)})==Property(3));
 };
 };}
