@@ -57,7 +57,7 @@ source defaults (base spread, actiontype toggle, selection 1), kind and arity.
 
 ## P18c Luna registry ownership
 
-math_fonts owns only mml.cpp, mml_factory.cpp and
+mml_registry (Luna, reassigned from the planned math_fonts packet) owns only mml.cpp, mml_factory.cpp and
 evidence/p18c-mml-registry-methods.md. mml.ixx/MmlFactory declarations are frozen.
 MML() returns one function-local const shared_ptr to a mutable ordered
 FactoryClassMap. Seed all 43 source registry entries in exact source order using

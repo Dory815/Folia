@@ -107,6 +107,10 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/attributes.ixx
     src/math/core/mml_tree/mml_node_host.ixx
     src/math/core/mml_tree/mml_node.ixx
+    src/math/core/mml_tree/mml.ixx
+    src/math/core/mml_tree/mml_factory.ixx
+    src/math/core/mml_tree/action_host.ixx
+    src/math/core/mml_tree/mml_nodes/maction.ixx
     src/math/core/mml_tree/html_adaptor.ixx
     src/math/core/mml_tree/mml_nodes/html_node.ixx
     src/math/core/mml_tree/class_binding.ixx
@@ -156,6 +160,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/prioritized_list.ixx
     src/math/util/js_number.ixx
     src/math/util/js_numeric_input.ixx
+    src/math/util/js_case.ixx
     src/math/util/utf16_types.ixx
     src/math/util/utf16.ixx
     src/math/util/lengths.ixx
@@ -164,6 +169,13 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
   target_sources(folia_math PRIVATE
     src/math/input/tex/token.cpp
     src/math/input/tex/macro.cpp
+    src/math/core/mml_tree/mml.cpp
+    src/math/core/mml_tree/mml_factory.cpp
+    src/math/core/mml_tree/mml_nodes/maction_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/maction_selection.cpp
+    src/math/core/mml_tree/mml_nodes/maction_behavior.cpp
+    src/math/util/js_case.cpp
+    src/math/util/js_case_data.cpp
     src/math/core/mml_tree/mml_nodes/html_node_bindings.cpp
     src/math/core/mml_tree/mml_nodes/html_node.cpp
     src/math/core/mml_tree/operator_class.cpp
