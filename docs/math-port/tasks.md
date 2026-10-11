@@ -513,8 +513,10 @@ Root's subsequent review added kind-order traces, in-loop script/verification
 array callbacks, and error-options identity/mutation through the actual argument.
 The expanded fixture has 1,304 assertions/226 cases and passes its focused
 native build. Root corrected generated test naming/API errors without changing
-source expectations. Full core and 34 isolated mutants are pending; P15a is
-not accepted at this stage.
+source expectations. Complete core regression and all 34 compiling,
+assertion-failing isolated mutants pass. Root accepted all 13 member mappings;
+evidence: evidence/p15a-multiscript-acceptance.md. Local source acceptance is
+33/246; Common/scene/SVG and full G0–G7 remain closed.
 
 ## Wave 3 — base/AMS input and complete font services
 

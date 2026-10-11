@@ -380,7 +380,7 @@
       "proposed_module": "folia.math.core.mml_tree.mml_node",
       "owner": "semantics_util",
       "disposition": "port_with_host_adaptation",
-      "adaptation_reason": "All 111 members (85 executable) mapped and root-reviewed in evidence/p8b-members.json. Split source-method implementation preserves normal/token/layout/base/empty/Text/XML hierarchy over the one generic tree store. Typed compiled factory/UTF-16/opaque XML services, shared origin tuple arrays, readonly TEXCLASS exports, post-adoption virtual initialization and shared resource budget are explicit in mml-contracts.md. Scope excludes arbitrary erased JS invocation, custom iterator/proxy APIs; concrete MML nodes, MmlFactory and DOM/Html integration remain separate unaccepted dependencies. Root acceptance: 1084 assertions/43 cases, 20 compiling mutations, full core suite; evidence/mml-node-acceptance.md. P12a replaces the rejected optional-number class bridge with one raw Property store, source getter side effects/read order and property-key spacing lookup; bounded Number prototype services are explicit. See class-state-contracts.md and evidence/p12-class-state-acceptance.md; Mo remains unimplemented.",
+      "adaptation_reason": "All 111 members (85 executable) mapped and root-reviewed in evidence/p8b-members.json. Split source-method implementation preserves normal/token/layout/base/empty/Text/XML hierarchy over the one generic tree store. Typed compiled factory/UTF-16/opaque XML services, shared origin tuple arrays, readonly TEXCLASS exports, post-adoption virtual initialization and shared resource budget are explicit in mml-contracts.md. Scope excludes arbitrary erased JS invocation, custom iterator/proxy APIs; concrete MML nodes, MmlFactory and DOM/Html integration remain separate unaccepted dependencies. Root acceptance: 1084 assertions/43 cases, 20 compiling mutations, full core suite; evidence/mml-node-acceptance.md. P12a replaces the rejected optional-number class bridge with one raw Property store, source getter side effects/read order and property-key spacing lookup; bounded Number prototype services are explicit. See class-state-contracts.md and evidence/p12-class-state-acceptance.md; Mo remains unimplemented. P15a additionally exposes ErrorOptions::value as the same nullable object handle for virtual error callbacks; identity/mutation observations, clone mutant and full core regression are recorded in evidence/p15a-multiscript-acceptance.md. Existing error algorithm and authoritative state are unchanged.",
       "port_status": "implemented",
       "acceptance": "mml_base_gate_passed_root_review",
       "dependencies": [
@@ -609,10 +609,10 @@
       "proposed_target": "src/math/core/mml_tree/mml_nodes/mmultiscripts.ixx",
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mmultiscripts",
       "owner": "semantics_util",
-      "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "disposition": "port_with_host_adaptation",
+      "adaptation_reason": "Root reviewed all 13 members in evidence/p15a-multiscript-members.json under multiscript-contracts.md. Dense typed child arrays preserve current-property reads, in-place splice and source-order nullable failure; ErrorOptions exposes the original nullable handle to virtual callbacks. Final actual-CJS fixture: 1,304 assertions/226 cases/480 raw rows; full core regression and 34 compiling/assertion-failing isolated mutants. Evidence: evidence/p15a-multiscript-acceptance.md. Semantic inheritance/normalization/verification only; Common/scene/SVG and full factory remain unaccepted.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/MmlTree/MmlNodes/msubsup.ts",
