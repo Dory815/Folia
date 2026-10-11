@@ -491,6 +491,24 @@ class-body identity method is not the effective implementation. Root must
 design and revalidate a shared operation instead of accepting a duplicated
 algorithm or a test-only Atom descriptor. These audits are not acceptances.
 
+### P15a: multiscript semantic packet
+
+Root freezes multiscript-contracts.md, the three-class interface, primitive
+array/error host operations, three generated defaults copies and six accessors,
+13-member AST inventory and independent actual-CJS oracle before dispatch.
+The initial oracle has 1,286 assertions/222 cases, 480 raw inheritance rows
+and 1,161 source-value records. Source callbacks distinguish in-place insertion
+from virtual append, live property traversal, raw prime OR/level addition,
+captured fix, shared attributes and null/factory partial states. Real error
+trees and direct-parent/null-options cases complement returning-error probes.
+Two read-only reviews informed explicit direct-parent and partial-mError rules.
+
+tex_parser owns ONLY mml_nodes/mmultiscripts.cpp and
+evidence/p15a-mmultiscripts.md for four methods. Root owns declarations,
+bindings, tests, builds, mutations and acceptance. Reviewers may inspect but
+cannot edit shared code or expected results. TeXAtom, semantics and HtmlNode
+remain separate future packets; this assignment includes no geometry or wiring.
+
 ## Wave 3 — base/AMS input and complete font services
 
 P11 is locally accepted under operator-contracts.md revision 2. Root froze the
