@@ -52,6 +52,16 @@ and balances only its own optional clip. Caller owns its BeginDraw/EndDraw and
 target; never replace the caller target or end its frame. Check synchronous
 draw errors through Flush where needed; caller EndDraw remains authoritative.
 
+DrawOptions.clip is in the caller's original local coordinate system: push it
+under the original caller transform, then set the combined drawing transform.
+The scene root clip is in completed output viewport coordinates: apply that clip
+at identity in the recording context before applying viewbox_to_viewport.
+ImageNode.destination is a local scene viewport/clip rectangle; push it under
+the current parent transform before applying source_to_destination to intrinsic
+pixels. No clipping-derived refit. Glyph image destination/transform follow the
+same rule in glyph-local DIP coordinates relative to the final glyph origin.
+Clip order is explicit and all pushes are balanced on error and success.
+
 ## Required semantics
 
 Preflight all supported node/resource/numeric conversions before publishing
