@@ -103,3 +103,12 @@ dependencies and fingerprinted Windows font environment; --check reproduces it.
 This initial matrix is not complete option/geometry/pixel acceptance. Local M1
 evidence is evidence/m1-acceptance.md; native primitive evidence is
 evidence/m3-warp-local-acceptance.md. No release gate is passed by this document.
+
+M3e locally accepts shared radial geometry; M3f locally accepts its shared
+radial stage parameter/order projection. Their Source observers, root-frozen
+interfaces and effective mutations are recorded in evidence/m3e-radial-geometry-
+acceptance.md and evidence/m3f-radial-stages-acceptance.md. M3f's final matrix has
+39 passing tests including 11 WARP tests. These local responsibilities leave
+34/70 rendering functions accepted and do not pass stop/sampling/pixel or full
+backend/Folia gates. Both consumers must receive the same completed shared
+preparation rather than independently recreating geometry or stage decisions.
