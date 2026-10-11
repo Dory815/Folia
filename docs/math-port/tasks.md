@@ -714,3 +714,12 @@ M3f radial plans, including complete wrapper/color expansion. Root created
 actual Source observations and compiled three failing native stubs before Sol
 implementation. Contract: docs/mermaid-native/m3h-gradient-program-contract.md.
 Acceptance remains Root-owned; complete backends and Folia gates remain open.
+
+M3h now has Root local acceptance of the complete shared gradient wrapper and
+color context: 13,988 programs/1,296 colors/8,010 powers, 2,130,397 assertions,
+34 effective compiling mutants and final 43 tests including 11 actual WARP.
+Evidence: docs/mermaid-native/evidence/m3h-gradient-program-acceptance.md.
+Source warning omission was repaired by Root, and initial equivalent-rounding
+mutation survival remains recorded separately. No Source expectations were
+weakened. Sampling/precision/resources and complete SVG/Direct2D/Folia remain
+required in parallel with the complete native Math path.

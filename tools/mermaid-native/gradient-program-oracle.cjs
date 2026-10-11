@@ -27,6 +27,14 @@ for(const c of stops)for(let color_space=0;color_space<4;color_space++){
 const matrices=[[0,0,0,0,0,0],[1,2,2,4,0,0],[Infinity,0,0,1,0,0],[NaN,0,0,1,0,0],[1,0,0,1,Infinity,0],[2,0,0,3,-4,5],[1,0,0,1,0,-0]].map(a=>a.map(bits));
 for(let i=0;i<matrices.length;i++)for(let j=0;j<matrices.length;j++)for(let color_space=0;color_space<4;color_space++)for(let spread=0;spread<3;spread++){const r=chosen[(i+j)%chosen.length],c=stops[0].input;programs.push({...c,spread,transform:matrices[i],points_to_unit:matrices[j],color_space,radial:[r.p,r.stages]});}
 const cutoff=bits(.04045),rawChannels=[...[-Infinity,-1,-0,0,2**-149,2**-126,.003,.25,.5,.75,1-2**-24,1,1+2**-23,Infinity,NaN].map(bits),cutoff-1,cutoff,cutoff+1],colors=[];
+// Retain the original program prefix. Original colors may differ even when a
+// nonlinear expansion maps both to the same f32 value; endpoint exclusion must
+// use original Color equality. These are Source inputs, never native outputs.
+for(const positions of [[0,.25,1],[0,.5,1],[0,.25,.25,1],[.1,.5,.9],[0,0,1],[0,1,1]])for(const small of [2**-149,2**-126,1e-30])for(const end of [0,1])for(let color_space=0;color_space<4;color_space++)for(let spread=0;spread<3;spread++){
+ const raw=positions.map((p,i)=>[bits(p),bits(.5),bits(.25),bits(0),bits(1)]),n=raw.length;
+ if(end===0){raw[0][1]=bits(0);raw[1][1]=bits(small);}else{raw[n-2][1]=bits(small);raw[n-1][1]=bits(0);}
+ const r=chosen[programs.length%chosen.length];programs.push({stops:raw,spread,transform:[1,0,0,1,0,0].map(bits),points_to_unit:[1,0,0,1,0,0].map(bits),opacity:[],color_space,radial:[r.p,r.stages]});
+}
 for(const x of rawChannels)for(const y of rawChannels)for(let mode=0;mode<4;mode++)colors.push([[x,y,rawChannels[(colors.length+3)%rawChannels.length],rawChannels[(colors.length+7)%rawChannels.length]],mode]);
 const powers=[],xs=[...rawChannels,...[-3,3,Number.MAX_VALUE,-Number.MAX_VALUE].map(bits)],ys=[...[-Infinity,-3,-1,-0,0,.5,1,2,2.2,2.4,3,128,1e30,Infinity,NaN].map(bits)];
 let seed=0x23456789;for(let i=0;i<512;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;xs.push(bits(seed/0xffffffff));}

@@ -124,3 +124,14 @@ dual transforms and flags for both consumers. The 34/70 rendering-function
 count stays unchanged; complete Gradient::push_stages wrapper, color expansion,
 sampling/precision/masks, radial resources, complete SVG/D2D and Folia gates
 remain open. Agent completion alone never passes a gate.
+
+M3h locally accepts the complete generic gradient wrapper/color context shared
+by both future consumers under m3h-gradient-program-contract.md. Root's actual
+Source corpus has 13,988 programs/1,296 colors/8,010 powers; 2,130,397 assertions
+and all 34 effective compiling semantic mutants pass the independent acceptance.
+The fourteen-target matrix passes 43 tests including 11 WARP. Evidence:
+evidence/m3h-gradient-program-acceptance.md. Original-color endpoint decisions,
+raw f32 contexts/defaults/padding, warning/failure state and stage/mask order
+are retained in one program. Actual sampling, whole-pipeline precision/color
+conversion, scene resources and both consumers remain required. Rendering
+acceptance stays 34/70 and no Folia gate is passed.

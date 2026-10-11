@@ -35,6 +35,8 @@ order and finite/nonidentity omission; omitted transform stays Source identity.
 Color contexts stay default on inversion failure. Preserve all four ColorSpace
 modes, original approx_powf operation sequence/constants/casts/rounding/branch
 returns, normalization rules, inclusive 0.04045 cutoff and unchanged alpha.
+The inverse-failure Source warning is retained through the pinned native log
+facade; Root observes actual Source/native warning messages independently.
 Exactly two stops choose two-stop path; other counts use general path. Endpoint
 dummy exclusion compares original colors before expansion. Equal-position
 intervals still update left color/position. Keep factor/bias operation order,
@@ -43,7 +45,7 @@ nonfinite raw contexts, len before padding to 16, premultiply before post mask.
 Before delegation Root executes original bodies in an ignored pristine copy;
 only exact observer/export additions are allowed and every `.rs` is guarded.
 No native crate is linked. `gradient-program-oracle.cjs --check` reproduces
-13,556 programs (13,476 valid colors; 13,392 successful wrappers), 1,296 color
+13,556 initial programs (13,476 valid colors; 13,392 successful wrappers), 1,296 color
 expansions and 8,010 power operations. Fixture SHA256:
 `79b614e47553c46dc2b424177c5e1fa3edd7e919834b061bfdb39fd077e6be42`.
 Program stimuli preserve every M3g Source input crossed with all four spaces,
@@ -74,3 +76,32 @@ Root compiled the three unimplemented native tests before delegation: exit 101,
 zero passed/three failed, each at its frozen stub. The Source adapter independently
 compiled and executed successfully. Logs are ignored build evidence; neither
 the deliberately red native baseline nor a compiler error is a passed comparison.
+
+## Root review and final independent extension
+
+Root review found that the Sol implementation omitted the original failure
+warning. Root restored it and binds the already locked log 0.4.33 facade without
+changing other native dependency versions. The Source observer adapter records
+warnings from the actual original body; the native test compares them. No Source
+method body changed. The initial independent fields/rows remain unchanged.
+
+Root extends Source stimuli by 432 endpoint-color witnesses across all four
+spaces/all spreads: different original small/subnormal colors can collapse to
+the same expanded f32 color. Endpoint exclusion must still compare originals.
+Final corpus: **13,988 programs, 1,296 colors, 8,010 powers**, 13,908 valid color
+constructions and 13,824 successful wrappers. Final fixture SHA256:
+`bfcb703bea4b279735c60806b14f55208683c13d1f3c69ce0f8de37675da83f3`.
+This independently generated extension strengthens the frozen comparison; no
+native value supplies an expectation.
+
+The initial `a.round() as u32` → `a as u32` mutant survived and is not counted
+as detected. Root Source analysis identifies equivalent output: the last add
+uses `27.728.../(4.842...-f)`, with finite f in [0,1), so that operand lies in
+[4,8). A positive result at least 1 is a binary32 multiple of 2^-23; a positive
+result below 1 requires cancellation of two magnitudes in [4,8), hence is a
+multiple of their 2^-21 spacing. Multiplication by 2^23 therefore yields an
+integer before the guarded cast. Nonfinite/negative branches never expose a
+fractional positive cast operand. Removing round is output-equivalent here;
+the reviewed faithful implementation nevertheless keeps Source round exactly.
+The effective power-bit mutant changes the mantissa exponent instead. The
+surviving initial run remains recorded separately, not relabeled as a pass.
