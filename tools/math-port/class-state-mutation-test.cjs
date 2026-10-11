@@ -51,21 +51,21 @@ const normal='core/mml_tree/mml_node.cpp',branches='core/mml_tree/mml_branches.c
 const mutations=[
   {
     "name": "initial-current-missing",
-    "file": "core/mml_tree/mml_node.ixx",
+    "file": "core/mml_tree/mml_node.cpp",
     "edits": [
       [
-        "Property texclass_=PropertyNull{},prevClass_=PropertyNull{};",
-        "Property texclass_=Missing{},prevClass_=PropertyNull{};"
+        "initializeTexClass(PropertyNull{});",
+        "initializeTexClass(Missing{});"
       ]
     ]
   },
   {
     "name": "initial-previous-missing",
-    "file": "core/mml_tree/mml_node.ixx",
+    "file": "core/mml_tree/mml_node.cpp",
     "edits": [
       [
-        "Property texclass_=PropertyNull{},prevClass_=PropertyNull{};",
-        "Property texclass_=PropertyNull{},prevClass_=Missing{};"
+        "setPrevClass(PropertyNull{});",
+        "setPrevClass(Missing{});"
       ]
     ]
   },
