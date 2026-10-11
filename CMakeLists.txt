@@ -117,6 +117,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_nodes/mpadded.ixx
     src/math/core/mml_tree/mml_nodes/maligngroup.ixx
     src/math/core/mml_tree/mml_nodes/malignmark.ixx
+    src/math/core/mml_tree/mml_nodes/mathchoice.ixx
     src/math/core/mml_tree/mml_nodes/mglyph.ixx
     src/math/core/mml_tree/mml_nodes/mfenced.ixx
     src/math/core/mml_tree/multiscript_host.ixx
@@ -177,6 +178,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_nodes/maligngroup_bindings.cpp
     src/math/core/mml_tree/mml_nodes/maligngroup.cpp
     src/math/core/mml_tree/mml_nodes/malignmark_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mathchoice_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mathchoice.cpp
     src/math/core/mml_tree/mml_nodes/mglyph_bindings.cpp
     src/math/core/mml_tree/mml_nodes/mglyph.cpp
     src/math/core/mml_tree/mml_nodes/mfenced_bindings.cpp
