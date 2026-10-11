@@ -154,3 +154,14 @@ all 66 effective compiling mutants pass. Final sixteen-target matrix passes
 Raw register/mask parity does not accept actual Paint/blitter/destination pixel
 execution or GPU resources. Complete scene/SVG/D2D/Folia gates stay open and the
 render-function acceptance count remains 34/70. No Folia integration occurred.
+
+M3i3 locally accepts borrowed destination/mask/coverage resource stages and
+original mask termination under evidence/m3i3-resource-stage-acceptance.md:
+3,377 original cases, 11,489,370 assertions and 41 effective compiling mutants.
+M3i4 adds pure register blend stages under evidence/m3i4-blend-acceptance.md:
+4,686 original cases, 1,691,703 assertions and 54 effective compiling mutants.
+The final eighteen-target matrix passes 56 tests including 11 actual WARP.
+Low HardLight/Overlay extreme-color debug overflow and release-profile behavior
+remain outside that bounded corpus. Pattern sampling, whole pipeline/blitter,
+paint/text/shared-scene parity and full SVG/D2D/Folia remain required; rendering
+acceptance stays 34/70 and Folia is not connected.
