@@ -5,7 +5,8 @@
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TextValue {
-    /// Source escaped the XML attribute; its semantic value is this string.
+    /// Source escaped this string before inserting the attribute. The shared
+    /// resolver still owns source XML attribute whitespace normalization.
     Literal(String),
     /// Source inserted unescaped attribute text. The shared resolver owns
     /// entity decoding, whitespace normalization and invalid syntax errors.

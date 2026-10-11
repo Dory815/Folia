@@ -81,6 +81,9 @@ windows = { version = "=0.61.3", optional = true, features = [
 lto = true
 codegen-units = 1
 
+[dev-dependencies]
+roxmltree = "=0.21.1"
+
 [[bin]]
 name = "mmdr"
 path = "src/main.rs"
@@ -106,3 +109,7 @@ path = "tests/edge_symbols_parity.rs"
 [[test]]
 name = "node_shapes_parity"
 path = "tests/node_shapes_parity.rs"
+
+[[test]]
+name = "text_presentation_parity"
+path = "tests/text_presentation_parity.rs"
