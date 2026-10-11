@@ -15,7 +15,7 @@ inline MmlNode& arithmeticChild(MmlNode& node, std::size_t index) {
         typeError("Cannot read required arithmetic child");
     return *(*children)[index];
 }
-inline std::shared_ptr<Attributes> arithmeticAttributes(MmlNode& node) {
+inline std::shared_ptr<Attributes> arithmeticAttributes(const MmlNode& node) {
     auto attributes = node.attributes();
     if (!attributes) typeError("Cannot read null arithmetic attributes");
     return attributes;
