@@ -35,6 +35,8 @@ template<class T>
 class PrioritizedList {
 public:
     inline static double& DEFAULTPRIORITY = detail::prioritized_list_default_priority;
+    using Storage = std::vector<std::shared_ptr<PrioritizedListItem<T>>>;
+    using StorageRef = std::shared_ptr<Storage>;
 
     class iterator {
     public:
@@ -72,9 +74,9 @@ public:
             if (owner_ != other.owner_) return false;
             if (!owner_) return true;
             if (end_sentinel_ && other.end_sentinel_) return true;
-            if (end_sentinel_) return other.cursor_ >= owner_->items_.size();
-            if (other.end_sentinel_) return cursor_ >= owner_->items_.size();
-            return cursor_ == other.cursor_;
+            if (end_sentinel_) return other.cursor_ >= other.storage_->size();
+            if (other.end_sentinel_) return cursor_ >= storage_->size();
+            return storage_ == other.storage_ && cursor_ == other.cursor_;
         }
 
         bool operator!=(const iterator& other) const {
@@ -85,13 +87,15 @@ public:
         friend class PrioritizedList;
 
         iterator(PrioritizedList* owner, std::size_t cursor, bool end_sentinel)
-            : owner_(owner), cursor_(cursor), end_sentinel_(end_sentinel) {}
+            : owner_(owner), storage_(owner ? owner->items_ : nullptr),
+              cursor_(cursor), end_sentinel_(end_sentinel) {}
 
         void cache_current() const {
-            if (!current_) current_ = owner_->items_[cursor_];
+            if (!current_) current_ = (*storage_)[cursor_];
         }
 
         PrioritizedList* owner_ = nullptr;
+        StorageRef storage_;
         std::size_t cursor_ = 0;
         bool end_sentinel_ = false;
         mutable std::shared_ptr<value_type> current_;
@@ -110,31 +114,34 @@ public:
     }
 
     T add(T item, double priority = DEFAULTPRIORITY) {
-        std::size_t index = items_.size();
-        while (index > 0 && priority < items_[index - 1]->priority) {
+        std::size_t index = items_->size();
+        while (index > 0 && priority < (*items_)[index - 1]->priority) {
             --index;
         }
 
         // Keep entries separately owned so ordered-array mutations do not
         // invalidate a record already yielded to an iterator.
         auto result = item;
-        items_.insert(items_.begin() + static_cast<std::ptrdiff_t>(index),
+        items_->insert(items_->begin() + static_cast<std::ptrdiff_t>(index),
             std::make_shared<PrioritizedListItem<T>>(PrioritizedListItem<T>{priority, std::move(item)}));
         return result;
     }
 
     PrioritizedList& remove(const T& item) {
-        for (std::size_t index = items_.size(); index > 0; --index) {
-            if (items_[index - 1]->item == item) {
-                items_.erase(items_.begin() + static_cast<std::ptrdiff_t>(index - 1));
+        for (std::size_t index = items_->size(); index > 0; --index) {
+            if ((*items_)[index - 1]->item == item) {
+                items_->erase(items_->begin() + static_cast<std::ptrdiff_t>(index - 1));
                 break;
             }
         }
         return *this;
     }
 
+protected:
+    StorageRef& itemStorage() { return items_; }
+    const StorageRef& itemStorage() const { return items_; }
 private:
-    std::vector<std::shared_ptr<PrioritizedListItem<T>>> items_;
+    StorageRef items_ = std::make_shared<Storage>();
 };
 
 }
