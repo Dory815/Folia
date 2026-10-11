@@ -655,3 +655,22 @@ two inventoried functions, 145 actual-CJS cases/290 exact numeric observations,
 full core exit 0. Evidence: evidence/p20c-numeric-reductions-acceptance.md.
 Local Source acceptance is 53/246; Common mtable, complete TeX/Common/SVG,
 Mermaid backends and Folia release gates remain open.
+
+### P21 root progress — prerequisites, no new MathJax file accepted
+
+P21b isolates generic Unicode escape grammar in an ignored candidate copy;
+P21c uses the original generator with Unicode 16 data. Root-owned five corpora
+retain all failures and report no regressions. The original 119,218 cases still
+have 376 mismatches, legacy corpus 18, and new 286,500 property cases 274.
+Unchanged upstream suites remain failed; no engine/host/TokenMap acceptance.
+See evidence/p21b-unicode-escape-root-review.md and
+evidence/p21c-unicode16-root-review.md. Local acceptance stays 53/246.
+
+P21a NodeUtil and child-array audits identify a real sparse-array prerequisite:
+hole, present undefined, explicit null and node must remain distinguishable,
+with one live aliased storage. Dense nullable vector cannot provide that.
+No NodeUtil implementation or storage/API freeze is accepted by the audits.
+Root must freeze the single authoritative replacement and independent Source
+cases before any migration/delegation. Math remains required in parallel with
+Mermaid; M3f locally accepts shared radial stage ordering after M3e geometry,
+but complete backends and Folia gates remain open.
