@@ -2,7 +2,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../..'),work=path.join(root,'build/math-port-argument-expansion-mutations');
-const modules=['util/option_types.ixx','core/tree/property.ixx','core/tree/factory_types.ixx','util/js_number.ixx','util/js_numeric_input.ixx','util/utf16_types.ixx','util/utf16.ixx','util/property_host.ixx','util/argument_expansion.ixx'];
+const modules=['util/option_types.ixx','core/tree/property.ixx',"util/callable_types.ixx","util/object_types.ixx",'core/tree/factory_types.ixx','util/js_number.ixx','util/js_numeric_input.ixx','util/utf16_types.ixx','util/utf16.ixx','util/property_host.ixx','util/argument_expansion.ixx'];
 const units=['util/property_host.cpp','util/argument_expansion.cpp'];
 fs.mkdirSync(work,{recursive:true});const lock=path.join(work,'run.lock'),fd=fs.openSync(lock,'wx');fs.writeFileSync(fd,String(process.pid));process.on('exit',()=>{fs.closeSync(fd);fs.unlinkSync(lock);});
 

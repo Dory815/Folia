@@ -3,7 +3,7 @@
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../..'),work=path.join(root,'build/math-port-callable-receiver-mutations');
 const modules=['util/option_types.ixx','core/tree/property.ixx','core/tree/factory_types.ixx','util/object_types.ixx','util/callable_types.ixx','util/prioritized_list.ixx','util/promise.ixx','util/function_types.ixx','util/function_list.ixx','input/tex/token.ixx','input/tex/types.ixx','input/tex/macro.ixx'];
-const units=['util/promise.cpp','util/function_list.cpp','input/tex/token.cpp','input/tex/macro.cpp','input/tex/parse_callable.cpp'];
+const units=['util/promise.cpp',"util/function_value.cpp",'util/function_list.cpp','input/tex/token.cpp','input/tex/macro.cpp','input/tex/parse_callable.cpp'];
 fs.mkdirSync(work,{recursive:true});const lock=path.join(work,'run.lock'),fd=fs.openSync(lock,'wx');fs.writeFileSync(fd,String(process.pid));process.on('exit',()=>{fs.closeSync(fd);fs.unlinkSync(lock);});
 const copies=new Map(),fixture=fs.readFileSync(path.join(root,'tests/math/reference_callable_receiver.cpp'));
 function writeChanged(target,bytes){if(!fs.existsSync(target)||!fs.readFileSync(target).equals(Buffer.from(bytes)))fs.writeFileSync(target,bytes);}

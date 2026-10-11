@@ -2,7 +2,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../..'),work=path.join(root,'build/math-port-factory-mutations');
-const modules=['core/tree/property.ixx','util/option_types.ixx','core/tree/factory_types.ixx','core/tree/factory.ixx','core/tree/node_factory.ixx','core/tree/wrapper_factory.ixx'];
+const modules=['core/tree/property.ixx',"util/callable_types.ixx","util/object_types.ixx",'util/option_types.ixx','core/tree/factory_types.ixx','core/tree/factory.ixx','core/tree/node_factory.ixx','core/tree/wrapper_factory.ixx'];
 const copies=new Map();fs.mkdirSync(work,{recursive:true});
 // Reject overlapping runs: sharing Ninja output would invalidate evidence.
 const lock=path.join(work,'run.lock');

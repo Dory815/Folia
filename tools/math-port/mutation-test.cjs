@@ -5,7 +5,7 @@ const cp = require('node:child_process');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../..');
 const work = path.join(root, 'build/math-port-mutations');
-const nativeFiles = ['util/option_types.ixx', 'core/tree/property.ixx', 'core/mml_tree/attributes.ixx',
+const nativeFiles = ['util/option_types.ixx', 'core/tree/property.ixx',"util/callable_types.ixx", 'core/mml_tree/attributes.ixx',
   'util/constants.ixx', 'util/bbox.ixx', 'util/object_types.ixx', 'util/prioritized_list.ixx'];
 fs.mkdirSync(work, {recursive:true});
 const copies = new Map();
