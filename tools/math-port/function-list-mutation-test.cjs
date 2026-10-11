@@ -2,7 +2,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../..'),work=path.join(root,'build/math-port-function-list-mutations');
-const modules=['util/option_types.ixx','core/tree/property.ixx','core/tree/factory_types.ixx','util/prioritized_list.ixx','util/promise.ixx','util/function_types.ixx','util/function_list.ixx'],units=['util/promise.cpp','util/function_list.cpp'];
+const modules=['util/option_types.ixx','core/tree/property.ixx','core/tree/factory_types.ixx','util/object_types.ixx','util/callable_types.ixx','util/prioritized_list.ixx','util/promise.ixx','util/function_types.ixx','util/function_list.ixx'],units=['util/promise.cpp','util/function_list.cpp'];
 fs.mkdirSync(work,{recursive:true});const lock=path.join(work,'run.lock'),fd=fs.openSync(lock,'wx');fs.writeFileSync(fd,String(process.pid));process.on('exit',()=>{fs.closeSync(fd);fs.unlinkSync(lock);});
 const copies=new Map(),fixtures=new Map();
 function writeChanged(target,source){if(!fs.existsSync(target)||!fs.readFileSync(target).equals(Buffer.from(source)))fs.writeFileSync(target,source);}
@@ -58,8 +58,8 @@ add('omitted-priority-zero',body,'else this->add(item);','else this->add(item,0)
 add('sync-false-ignored',body,'if (functions::isFalse(result)) return false;','if (false && functions::isFalse(result)) return false;');
 add('iterator-array-copied',priority,'storage_(owner ? owner->items_ : nullptr)','storage_(owner && owner->items_ ? std::make_shared<Storage>(*owner->items_) : nullptr)');
 add('null-array-error-category',body,'if (!itemStorage()) functions::typeError(u"FunctionList item array is null");','if (!itemStorage()) throw tree::FactoryError("RangeError",u"FunctionList item array is null");');
-add('receiver-priority-overwritten',types,'return captured->call(receiver,args);','receiver.priority=0;return captured->call(receiver,args);');
-add('argument-slot-rewritten',types,'return captured->call(receiver,args);','std::vector<std::any> changed(args.begin(),args.end());if(changed.size()>1)changed[1]=Property(999);return captured->call(receiver,changed);');
+add('receiver-priority-overwritten',types,'return body(FunctionReceiver{std::static_pointer_cast<NativeObject>(receiver)},args);','receiver->priority=0;return body(FunctionReceiver{std::static_pointer_cast<NativeObject>(receiver)},args);');
+add('argument-slot-rewritten',types,'return body(FunctionReceiver{std::static_pointer_cast<NativeObject>(receiver)},args);','std::vector<std::any> changed(args.begin(),args.end());if(changed.size()>1)changed[1]=Property(999);return body(FunctionReceiver{std::static_pointer_cast<NativeObject>(receiver)},changed);');
 add('undefined-stops',types,'return *p==Property(false);','return p->missing() || *p==Property(false);');
 add('async-first-item-skipped',body,'frame->index = -1;','frame->index = 0;');
 add('async-array-copied',body,'frame->items = itemStorage();','frame->items = itemStorage() ? std::make_shared<PrioritizedList<FunctionValue>::Storage>(*itemStorage()) : nullptr;');

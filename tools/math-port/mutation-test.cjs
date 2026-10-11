@@ -5,8 +5,8 @@ const cp = require('node:child_process');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../..');
 const work = path.join(root, 'build/math-port-mutations');
-const nativeFiles = ['core/tree/property.ixx', 'core/mml_tree/attributes.ixx',
-  'util/constants.ixx', 'util/bbox.ixx', 'util/prioritized_list.ixx'];
+const nativeFiles = ['util/option_types.ixx', 'core/tree/property.ixx', 'core/mml_tree/attributes.ixx',
+  'util/constants.ixx', 'util/bbox.ixx', 'util/object_types.ixx', 'util/prioritized_list.ixx'];
 fs.mkdirSync(work, {recursive:true});
 const copies = new Map();
 for (const relative of nativeFiles) {
@@ -59,7 +59,9 @@ function run(name) {
   return result;
 }
 build('baseline');
-assert.equal(run('baseline').status,0,'Unmutated primitives must pass');
+const baseline=run('baseline');
+assert.equal(baseline.status,0,'Unmutated primitives must pass');
+assert.match(baseline.stdout,/1223 asserts in 3 tests/,'Complete nonzero primitive baseline');
 console.log('Baseline compiles and passes frozen reference tests.');
 const mutations = [
   {name:'attribute-inheritance-dropped', file:'core/mml_tree/attributes.ixx',
@@ -67,7 +69,7 @@ const mutations = [
   {name:'bbox-left-spacing-dropped', file:'util/bbox.ixx',
     from:'cbox.w + cbox.L + cbox.R', to:'cbox.w + cbox.R'},
   {name:'priority-ties-reversed', file:'util/prioritized_list.ixx',
-    from:'priority < items_[index - 1]->priority', to:'priority <= items_[index - 1]->priority'},
+    from:'priority < (*items_)[index - 1]->priority', to:'priority <= (*items_)[index - 1]->priority'},
   {name:'priority-default-split-by-type', file:'util/prioritized_list.ixx',
     from:'inline static double& DEFAULTPRIORITY = detail::prioritized_list_default_priority;',
     to:'inline static double DEFAULTPRIORITY = 5;'}
@@ -80,7 +82,7 @@ for (const mutation of mutations) {
     fs.writeFileSync(target,source.replace(mutation.from,mutation.to));
     build(mutation.name);
     const result=run(mutation.name);
-    assert.notEqual(result.status,0,`Oracle failed to detect ${mutation.name}`);
+    assert.equal(result.status,1,`Mutation must fail assertions, not crash: ${mutation.name}`);
     assert.match(result.stdout||'',/FAILED|failed|FAIL/,'Expected an assertion failure, not an unrelated crash');
     results.push({mutation:mutation.name,compiles:true,test_exit:result.status,detected:true});
     console.log(`Detected ${mutation.name}: compiled, failed frozen assertions.`);
