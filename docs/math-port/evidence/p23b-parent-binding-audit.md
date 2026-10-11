@@ -133,4 +133,3 @@ This is a minimum description of required binding behavior, not a chosen class/A
 | `tools/math-port/sparse-mml-oracle.cjs` | 55–58 | `5abbafb661a571520081bf91c19aad208e49484c0f3316a8910037445d64a387`; pins Node/MML/factory/NodeUtil CJS inputs at script lines 6–17 |
 
 No implementation, test, oracle, manifest, build, or commit was changed or run. This report is not a claim that the sparse Node migration or Source gate has passed.
-

@@ -75,8 +75,10 @@ call-domain inventory before declarations freeze; do not infer a pointer-only
 result merely from a TS annotation. Direct child helper Get returns NodeValue;
 helpers may require a node only where the original caller dereferences it.
 
-ChildValue gains `Product* requireNodeForWrite(std::string_view member) const`
-in the root-owned freeze. It must emit the original `Cannot set properties of
+Root has frozen, compiled real red stubs, implemented and independently accepted
+`Product* ChildValue::requireNodeForWrite(std::string_view member) const`.
+Its seven Source-derived assertions and five compiling semantic mutations are
+recorded in `evidence/p23b-child-write-acceptance.md`. It emits the original `Cannot set properties of
 undefined/null (setting 'parent')` error at a parent write receiver. Existing
 requireNode remains the read-receiver error. The value assigned to parent may
 legally be Null or Undefined; a nullish **receiver** causes the setting error.

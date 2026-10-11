@@ -26,6 +26,11 @@ public:
         const auto message=std::string("Cannot read properties of ")+(kind()==ChildKind::Null?"null":"undefined")+" (reading '"+std::string(member)+"')";
         throw options::Exception("TypeError",std::u16string(message.begin(),message.end()));
     }
+    Product* requireNodeForWrite(std::string_view member)const {
+        if(auto* p=nodeOrNull())return p;
+        const auto message=std::string("Cannot set properties of ")+(kind()==ChildKind::Null?"null":"undefined")+" (setting '"+std::string(member)+"')";
+        throw options::Exception("TypeError",std::u16string(message.begin(),message.end()));
+    }
     bool operator==(const ChildValue&)const=default;
 };
 template<class Product> class ChildArray : public std::enable_shared_from_this<ChildArray<Product>> {
