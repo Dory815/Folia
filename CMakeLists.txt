@@ -90,6 +90,7 @@ add_library(folia_math STATIC)
 target_compile_features(folia_math PUBLIC cxx_std_23)
 set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+    src/math/util/argument_expansion.ixx
     src/math/input/tex/token.ixx
     src/math/input/tex/types.ixx
     src/math/input/tex/macro.ixx
@@ -181,6 +182,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/js_case.cpp
     src/math/util/promise.cpp
     src/math/util/function_list.cpp
+    src/math/util/argument_expansion.cpp
     src/math/util/js_case_data.cpp
     src/math/core/mml_tree/mml_nodes/html_node_bindings.cpp
     src/math/core/mml_tree/mml_nodes/html_node.cpp
