@@ -19,11 +19,12 @@ for(const family of ['gradient','pattern']){const name=family==='gradient'?'grad
 assert.equal(prior.gradient.length,53862);assert.equal(prior.pattern.length,13284);
 const names=fs.readFileSync(path.join(source,'src/pipeline/mod.rs'),'utf8').match(/pub enum Stage \{([\s\S]*?)\n\}/)[1].split('\n').map(s=>s.trim().replace(/ = 0/,'').replace(/,$/,'')).filter(Boolean),id=n=>{const i=names.indexOf(n);assert.ok(i>=0);return i;};
 const terminals=[['Store'],['SourceOverRgba'],['LoadDestination','SourceOver','Store'],['MaskU8','SourceOverRgba']].map(a=>a.map(id)),inputs=[],orders={},bands={};
+const samplingBoundary=process.argv.includes('--sampling-boundary');
 function add(family,index,width,terminal,shift){const p=prior[family][index].input,real_width=40,origin=[3,1];
  const image=family==='pattern'?Array.from({length:p.width*p.height*4},(_,i)=>{const pixel=Math.floor(i/4),alpha=[63,127,191,255][pixel%4];return i%4===3?alpha:Math.floor(alpha*([1,3,2][i%4]+(pixel%3))/6);}):[];
  inputs.push({family,source_index:index,producer:p,image,ids:terminals[terminal],destination:Array.from({length:real_width*4*4},(_,i)=>{const a=(Math.floor(i/4)*31+shift*7)%256;return i%4===3?a:Math.floor(a*(i%4+1)/4);}),real_width,mask:Array.from({length:real_width*4},(_,i)=>shift%3===0?0:shift%3===1?(i<real_width+19?0:255):[0,1,127,128,254,255][(i+shift)%6]),mask_width:real_width,aa_pixels:[31,223],aa_stride:0,aa_shift:origin[0],origin,size:[width,2]});
 }
-for(const family of ['gradient','pattern']){
+if(!samplingBoundary)for(const family of ['gradient','pattern']){
  const byOrder=new Map(),byBand=new Map(),stageIndex=family==='gradient'?1:2;
  for(const[index,c]of prior[family].entries()){if(c.input.prefix!==0||c.result?.[0]!=='true'||c.result[stageIndex].length>24)continue;
   const order=JSON.stringify(c.result[stageIndex]);if(!byOrder.has(order))byOrder.set(order,index);
@@ -35,10 +36,21 @@ for(const family of ['gradient','pattern']){
  // complete old producer records; run widths and terminal suffixes rotate.
  for(const[index,sourceIndex]of [...byBand.values()].entries())add(family,sourceIndex,[7,8,9,15,16,17][index%6],index%terminals.length,index);
 }
+if(samplingBoundary){
+ const selected=new Map();
+ for(const[index,c]of prior.pattern.entries()){const p=c.input,r=c.result;
+  // Positive, finite normalized opacity and every actual dimension/transform,
+  // rather than using only the stage order or zero opacity representative.
+  if(p.prefix!==0||p.color_space!==0||r[0]!=='true'||r[2].length>24||!r[1][4]||r[1][4]>=2139095040)continue;
+  const key=JSON.stringify([p.width,p.height,p.spread,p.quality,r[1].slice(4),p.force]);if(!selected.has(key))selected.set(key,index);
+ }
+ bands.pattern_sampling=selected.size;
+ for(const[index,sourceIndex]of [...selected.values()].entries())for(const[wi,width]of [7,8,9,15,16,17].entries())add('pattern',sourceIndex,width,wi%3,index+wi);
+}
 fs.mkdirSync(work,{recursive:true});const manifest=path.join(__dirname,'shader-run-reference/Cargo.toml');if(!fs.existsSync(path.join(path.dirname(manifest),'Cargo.lock')))cp.execFileSync('cargo',['generate-lockfile','--offline','--manifest-path',manifest],{stdio:'pipe'});
 const built=cp.spawnSync('cargo',['build','--locked','--offline','--manifest-path',manifest,'--target-dir',path.join(work,'target')],{encoding:'utf8'});fs.writeFileSync(path.join(work,'build.log'),(built.stdout||'')+(built.stderr||''));assert.equal(built.status,0,'Original producer + original run compiles');
 const run=cp.spawnSync(path.join(work,'target/debug/folia-shader-run-source-reference.exe'),[],{input:JSON.stringify(inputs),encoding:'utf8',maxBuffer:512*1024*1024});fs.writeFileSync(path.join(work,'stderr.log'),run.stderr||'');assert.equal(run.status,0,'Original full shader execution');const cases=JSON.parse(run.stdout);assert.deepEqual(cases.map(c=>c.input),inputs);guard();
 for(const c of cases){assert.deepEqual(c.result[0],prior[c.input.family][c.input.source_index].result,'same original producer record');assert.deepEqual(c.warnings,prior[c.input.family][c.input.source_index].warnings,'same producer warnings');assert.ok(c.result[1]);}
-const data=JSON.stringify({schema:1,scope:'controlled original Gradient/Pattern producer once, same live builder compiled and run unchanged; nonzero borrowed images, complete destination and compiled context; public Gradient constructors and blitter ownership excluded',pins,priorHashes,orders,bands,cases})+'\n',out=path.join(fixtureDir,'shader-run.json');
+const data=JSON.stringify({schema:1,scope:'controlled original Gradient/Pattern producer once, same live builder compiled and run unchanged; nonzero borrowed images, complete destination and compiled context; public Gradient constructors and blitter ownership excluded',pins,priorHashes,orders,bands,cases})+'\n',out=path.join(fixtureDir,samplingBoundary?'shader-run-sampling-boundary.json':'shader-run.json');
 if(process.argv.includes('--check'))assert.equal(fs.readFileSync(out,'utf8').replaceAll('\r\n','\n'),data);else{assert.ok(!fs.existsSync(out));fs.writeFileSync(out,data);}
 console.log(JSON.stringify({cases:cases.length,orders,bands,panics:cases.filter(c=>c.result[1][4]).length,context_mutations:cases.filter(c=>JSON.stringify(c.result[1][6])!==JSON.stringify(c.result[1][7])).length,sha256:hash(data)}));

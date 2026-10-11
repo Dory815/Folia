@@ -56,3 +56,22 @@ Root requires unchanged original `--check`, full native comparison, effective
 compiling context/image/dispatch faults and existing relevant regressions.
 Any runtime mismatch goes into a separate Root-defined implementation packet
 with precise file/body ownership before Sol changes production algorithms.
+
+## Root supplementary sampling witness after a surviving fault
+
+The original 10,016-case gold stays byte-identical. Gather-to-Bilinear dispatch
+compiled and survived its first gate. Root rejected that mutation acceptance:
+the order/band selector chose initial 1x1 or zero-opacity representatives,
+which cannot establish filtering at distinct image coordinates. Root appends
+a separate original-source fixture, `shader-run-sampling-boundary.json`, using
+the same unchanged original push_stages/compile/run observer. It selects all
+594 dimension/spread/quality/final-transform/normalized-positive-opacity/force
+bands in linear color space from the old original Pattern inputs, then runs
+each at six widths with rotating Store/SourceOverRgba/LoadDestination-blend
+suffixes. Original producer records and warnings still reproduce exactly.
+
+3,564 supplementary runs, zero original panics; fixture SHA-256:
+`3ca6607eb6d682357ce719f2846b320355629a2677d354e7b803ce3969b0bc0f`.
+Root alone extends native observation to compare both fixtures (13,580 total)
+and requires the formerly surviving dispatch fault to be detected. No production
+algorithms or old Source expected values are changed to satisfy this gate.
