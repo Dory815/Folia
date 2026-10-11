@@ -14,7 +14,18 @@ impl PipelineBuilder {
     pub fn force_hq_pipeline(&self)->bool{self.force_hq_pipeline}
     pub fn stages(&self)->&[PipelineStage]{self.stages.as_slice()}
     pub fn push(&mut self,stage:PipelineStage){self.stages.push(stage);}
-    pub fn push_uniform_color(&mut self,_color:super::gradient_stop_types::PremultipliedStopColor){panic!("Unimplemented Root-frozen RasterPipelineBuilder::push_uniform_color")}
+    pub fn push_uniform_color(&mut self,color:super::gradient_stop_types::PremultipliedStopColor){
+        let [r,g,b,a]=color.components();
+        let rgba=[
+            (r*255.0+0.5)as u16,
+            (g*255.0+0.5)as u16,
+            (b*255.0+0.5)as u16,
+            (a*255.0+0.5)as u16,
+        ];
+        let context=super::pipeline_context_types::UniformColor{components:[r,g,b,a],rgba};
+        self.stages.push(PipelineStage::UniformColor);
+        self.context.uniform_color=context;
+    }
     pub fn push_transform(&mut self,transform:Transform){
         if transform.is_finite() && !transform.is_identity() {
             self.stages.push(PipelineStage::Transform);

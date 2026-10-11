@@ -18,7 +18,19 @@ impl StopColor {
         })
     }
     pub fn components(&self)->[f32;4]{self.components.map(|v|v.get())}
-    pub fn premultiply(&self)->super::gradient_stop_types::PremultipliedStopColor{panic!("Unimplemented Root-frozen Color::premultiply")}
+    pub fn premultiply(&self)->super::gradient_stop_types::PremultipliedStopColor{
+        use super::gradient_stop_types::PremultipliedStopColor;
+        if self.is_opaque(){
+            PremultipliedStopColor{components:self.components}
+        }else{
+            PremultipliedStopColor{components:[
+                NormalizedF32::new_clamped(self.components[0].get()*self.components[3].get()),
+                NormalizedF32::new_clamped(self.components[1].get()*self.components[3].get()),
+                NormalizedF32::new_clamped(self.components[2].get()*self.components[3].get()),
+                self.components[3],
+            ]}
+        }
+    }
     pub fn is_opaque(&self) -> bool { self.components[3] == NormalizedF32::ONE }
     pub(crate) fn apply_opacity(&mut self, opacity: f32) {
         self.components[3] = NormalizedF32::new_clamped(
