@@ -368,6 +368,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "tiny-skia-path",
  "ttf-parser",
  "usvg",
  "windows",

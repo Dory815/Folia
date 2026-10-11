@@ -25,6 +25,11 @@ Root has generated 4,284 actual-Source observations before implementation:
 tags None=1,887, SolidFirstStop=1,029, Radial=720, Strip=72, Focal=576;
 36 thin-ring replacements. Frozen fixture SHA256 (LF bytes):
 0887632703e3370d4b56e34d18d16451307ec9df1174e0265b95a8de81a9aa67.
+Root's final coverage review adds 672 Source observations for the on-circle
+Focal branch and its threshold neighbors. All original 4,284 records are
+checked unchanged. Final total: 4,956; tags None=2,103, SolidFirstStop=1,197,
+Radial=720, Strip=72, Focal=864; 36 thin rings. Final fixture SHA256:
+00165c1c553319e7ce12c81bde61e13686674fa423b6f096136d13997cf1da80.
 
 prepare_radial_geometry takes resolved f32 circle centers/radii, the number of
 already prepared stops, spread mode and the combined paint transform. Returns
@@ -38,13 +43,16 @@ required responsibilities. This packet cannot accept a completed paint or
 advance the 70 Mermaid rendering-function count.
 
 Implement all geometry decisions of Source new/new_radial_unchecked/create,
-FocalData set/three predicates, map_to_unit_x/ts_from_poly_to_poly/from_poly2,
+FocalData set/is_focal_on_circle, map_to_unit_x/ts_from_poly_to_poly/from_poly2,
 in the original order. Negative radii precede stop-count checks; a single stop
 precedes transform/distance checks; thresholds are inclusive abs comparisons
 at 1/32768 and 1/4096. Preserve NaN/infinity behavior without invented finite
 guards. Keep the exact same-center early optimizations, Pad thin-ring case,
 ordinary-threshold degeneracy, Strip, Focal swap, maps and extra scales.
 No clamping of the focal point or fr to the outer circle is permitted.
+Root review excludes the other two FocalData predicates from this geometry
+packet: is_well_behaved/is_natively_focal are used by later stage selection,
+which remains required separately. Unused speculative copies are not accepted.
 
 Root oracle calls unchanged actual RadialGradient::new in an ignored copy with
 read-only accessors for the resulting private fields. No branch algorithm may
