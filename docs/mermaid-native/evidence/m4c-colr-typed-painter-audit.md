@@ -19,7 +19,7 @@ This is a read-only source audit, not an accepted interface or implementation. I
 | `usvg-0.47.0/src/text/layout.rs` | `b626ca027f12b279b30df600a5a200ed30c0b3328d152176995665bdcc27b571` | `Glyph::colr_transform` 138 onward |
 | `usvg-0.47.0/src/parser/paint_server.rs` | `b268ffb743931c240962b1cd4296b332b12bef14283de1d2aee123072c9003ee` | linear 48–82, radial 85–147, stops 277–404, postpass 554 onward |
 | `usvg-0.47.0/src/parser/converter.rs` | `178ce9e0b90a9e31fe0ff09e8ad5883daf5566da7dede5499ac9d0f927ad5938` | `convert_doc` 348–467; `convert_group` 739–869 |
-| `usvg-0.47.0/src/parser/shapes.rs` | `8c56d8f94639104bfe989d558c7d5223bb3f61a8bae0e2d4e6404aa7e9d3bf24` | path parser 26–64 |
+| `usvg-0.47.0/src/parser/shapes.rs` | `8c56d8f94639104bfe989d558c7d5223bbb3f61a8ba0e2d4e6404aa7e9d3bf24` | path parser 26–64 |
 | `usvg-0.47.0/src/parser/clippath.rs` | `7c5fe4eca5cd4913b528e11578d19a5b79ecfe5fb8983e793e389ffb3ef3094e` | clip conversion 11–91 |
 | `ttf-parser-0.25.1/src/tables/colr.rs` | `cfe387826b48c478e5622c5e8e67b4feb12da982998cf4f85e4c8812c366407d` | `Paint` 31–40, gradients 195–529, composites 579–635, `Painter` 679–701, traversal 878–1791 |
 | `ttf-parser-0.25.1/src/lib.rs` | `694779e7f8a52ba4b9ff22c2b3c3082fdebca00277c2e82be777abf189bd1dc4` | `Face::outline_glyph` 2125; `is_color_glyph` 2247; `paint_color_glyph` 2280–2295; variation coordinates 2339 |

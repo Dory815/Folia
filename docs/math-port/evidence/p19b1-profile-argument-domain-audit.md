@@ -75,11 +75,12 @@ The installed CJS confirms the TS behavior: `Token.js` assigns `_args` directly 
 Root follow-up: the directly active mutable-regex path is `numberPattern`.
 `BaseConfiguration.ts:164–166` only copies a truthy legacy `digits` option to
 `numberPattern` during CONFIG. `ParseMethods.ts:81–82` reads current
-`parser.configuration.options['numberPattern']` and calls its exec on the
-remaining TeX string. Unlike later reassignment of captured initialLetter/
+`parser.configuration.options['numberPattern']` and calls String.match with it
+on the remaining TeX string. Unlike later reassignment of captured initialLetter/
 initialDigit, `\\setOptions{numberPattern=/.../flags}` can therefore change an
-actual subsequent matching operation. General regexp compilation/execution and
-lastIndex/capture/error behavior cannot be replaced by default ASCII tests.
+actual subsequent matching operation. General regexp compilation/execution,
+String.match's global handling, and lastIndex/capture/error behavior cannot be
+replaced by default ASCII tests.
 This follow-up does not broaden Macro.args or accept a regex implementation.
 
 This evidence establishes the Macro.args data produced by the pinned fixed profile and TeX syntax, and distinguishes it from mutable options. It does not establish that the Property representation covers arbitrary MathJax users who instantiate TeX with non-default options, call package maps directly, mutate `Macro._args`/the array returned by `args`, patch built-ins, load third-party packages, or interpose JS objects with iteration/coercion hooks. It also does not establish the complete observable behavior of non-ASCII regexes, stateful regex flags such as `g`/`y`, invalid regex construction errors, or the runtime implications of changing regex option properties after Base CONFIG has captured the original RegExp objects. Those are source-reachable regex-host questions, not grounds for narrowing defaults to ASCII. This audit does not independently validate the native expansion implementation or make an acceptance claim; root owns those checks.

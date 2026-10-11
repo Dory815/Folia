@@ -10,7 +10,8 @@ prematurely completing the existing math goal.
 Status: verified upstream vendoring, M1 local scene-invariant acceptance;
 M2a typed paths, M2b explicit edge symbols, M2c complete ordinary node shapes
 and M4a source text presentation helpers plus M2d edge-label geometry, M2e
-Architecture icon presentation and M2f C4 style selectors accepted locally (32/70 inventoried
+Architecture icon presentation, M2f C4 style selectors and M2g ER/Sankey label
+data accepted locally (34/70 inventoried
 render functions); M3 native typed-scene consumer built
 and checked with 10 actual WARP tests and 18 compiling mutations. Full diagram
 scene compilation, SVG and Direct2D backend acceptance, and Folia wiring remain
@@ -22,13 +23,18 @@ evidence/m2d-edge-label-geometry-acceptance.md. M2e contract is
 m2e-architecture-icons-contract.md, with local evidence in
 evidence/m2e-architecture-icons-acceptance.md. M2f contract is
 m2f-c4-style-contract.md, with local evidence in
-evidence/m2f-c4-style-acceptance.md.
+evidence/m2f-c4-style-acceptance.md. M2g contract is
+m2g-label-data-contract.md, with local evidence in
+evidence/m2g-label-data-acceptance.md.
 M4a accepts source requests only; shared text preparation and completed scenes
 remain open. Pinned shared-text findings and the next preparation
 boundary are recorded in evidence/shared-text-source-audit.md.
 The typed input/fork visibility and provenance proposals are in
 evidence/m4b-typed-text-adapter-audit.md; that report remains a source audit,
-not shared text implementation or acceptance.
+not shared text implementation or acceptance. COLR callback/state findings
+are in evidence/m4c-colr-typed-painter-audit.md; root's required Source appearance
+and fallback decisions are in colr-source-parity-policy.md. Neither freezes
+the next complete text API or accepts a text backend.
 Root owns architecture, file responsibilities, interfaces, scope and acceptance.
 The explicitly requested Sol agent is mermaid_dx2d. Its initial authorization
 was source audit only. Root has since independently verified archive/source
