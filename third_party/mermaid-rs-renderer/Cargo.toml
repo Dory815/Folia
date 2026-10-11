@@ -105,6 +105,10 @@ name = "radial_stages_parity"
 path = "tests/radial_stages_parity.rs"
 
 [[test]]
+name = "gradient_stops_parity"
+path = "tests/gradient_stops_parity.rs"
+
+[[test]]
 name = "path_parity"
 path = "tests/path_parity.rs"
 
