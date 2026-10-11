@@ -2,12 +2,12 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'../..'),work=path.join(root,'build/math-port-operator-mutations');
-const modules=['util/option_types.ixx','core/tree/property.ixx','core/tree/factory_types.ixx','core/tree/factory.ixx','core/tree/node_factory.ixx','core/tree/node_types.ixx','core/tree/node.ixx','util/js_number.ixx','util/js_numeric_input.ixx','util/utf16_types.ixx','util/utf16.ixx','core/mml_tree/attributes.ixx','core/mml_tree/mml_node_host.ixx','core/mml_tree/mml_node.ixx'];
+const modules=['util/option_types.ixx','core/tree/property.ixx','core/tree/factory_types.ixx','core/tree/factory.ixx','core/tree/node_factory.ixx','core/tree/node_types.ixx','core/tree/node.ixx','util/js_number.ixx','util/js_numeric_input.ixx','util/utf16_types.ixx','util/utf16.ixx','core/mml_tree/attributes.ixx','util/property_host.ixx','core/mml_tree/mml_node_host.ixx','core/mml_tree/mml_node.ixx'];
 const units=['core/mml_tree/mml_bindings.cpp','core/mml_tree/mml_node.cpp','core/mml_tree/mml_branches.cpp','core/mml_tree/mml_empty.cpp'];
 const nodeNames=['mrow','math'];
 modules.push('core/mml_tree/class_binding.ixx','core/mml_tree/leaf_host.ixx','core/mml_tree/leaf_defaults.ixx',...nodeNames.map(n=>'core/mml_tree/mml_nodes/'+n+'.ixx'));
 units.push(...nodeNames.flatMap(n=>['core/mml_tree/mml_nodes/'+n+'_bindings.cpp','core/mml_tree/mml_nodes/'+n+'.cpp']));
-modules.push('core/mml_tree/operator_dictionary.ixx'); units.push('core/mml_tree/operator_dictionary_data.cpp','core/mml_tree/operator_dictionary.cpp','core/mml_tree/mml_node_host.cpp');
+modules.push('core/mml_tree/operator_dictionary.ixx'); units.push('core/mml_tree/operator_dictionary_data.cpp','core/mml_tree/operator_dictionary.cpp','util/property_host.cpp');
 const copies=new Map();fs.mkdirSync(work,{recursive:true});
 const lock=path.join(work,'run.lock'),fd=fs.openSync(lock,'wx');fs.writeFileSync(fd,String(process.pid));
 process.on('exit',()=>{fs.closeSync(fd);fs.unlinkSync(lock);});
@@ -73,7 +73,7 @@ const mutations=[
  {name:'data-named-definition-alias-lost',file:data,edits:[['PropertyList& MO(){return state().mo;}',"PropertyList& MO(){auto& result=state().mo;auto a=PropertyArray::array(h::get(result,\"REL\")).value();result.setOwn(\"REL\",a.spread());return result;}"]]},
  {name:'array-own-undefined-as-hole',file:property,edits:[['storage_->arrayPresent[i]=true;','storage_->arrayPresent[i]=!storage_->arrayValues[i].missing();']]},
  {name:'array-spread-preserves-holes',file:property,edits:[['for(std::size_t i=0;i<size();++i)out.push(get(i));','out.resize(size());for(std::size_t i=0;i<size();++i)if(has(i))out.set(i,get(i));']]},
- {name:'array-prototype-parent-self',file:'core/mml_tree/mml_node_host.ixx',edits:[['return key=="__proto__"?Property(BuiltinProperty::prototype):get(Property(PropertyArray{}),key);','return get(Property(PropertyArray{}),key);']]}
+ {name:'array-prototype-parent-self',file:'util/property_host.ixx',edits:[['return key=="__proto__"?Property(BuiltinProperty::prototype):get(Property(PropertyArray{}),key);','return get(Property(PropertyArray{}),key);']]}
 ];
 const only=process.argv.find(a=>a.startsWith('--only='))?.slice(7),selected=only?mutations.filter(m=>m.name===only):mutations,results=[];
 assert.ok(selected.length,'Unknown mutation');
