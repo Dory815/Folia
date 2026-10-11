@@ -113,3 +113,7 @@ path = "tests/node_shapes_parity.rs"
 [[test]]
 name = "text_presentation_parity"
 path = "tests/text_presentation_parity.rs"
+
+[[test]]
+name = "edge_label_geometry_parity"
+path = "tests/edge_label_geometry_parity.rs"
