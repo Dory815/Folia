@@ -9,30 +9,16 @@ import std;
 
 namespace folia::math::mml {
 
-MmlNode* MmlMroot::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    getPrevClass(previous);
-    MmlNode& base = host::arithmeticChild(*this, 0);
-    base.setTeXclass(nullptr);
-
-    // Resolve child 1 after child 0's virtual call; that callback may have
-    // replaced the source childNodes array.
-    MmlNode& index = host::arithmeticChild(*this, 1);
-    index.setTeXclass(nullptr);
-    return this;
+NodeValue MmlMroot::setTeXclass(NodeValue previous) {
+    // P23f Root stub: MmlMroot::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void MmlMroot::setChildInheritedAttributes(AttributeList attributes,
                                            Property display, Property level,
                                            Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode& base = host::arithmeticChild(*this, 0);
-    base.setInheritedAttributes(attributes, display, level, Property(true));
-
-    // JS evaluates the child-1 receiver before evaluating `level + 2`.
-    MmlNode& index = host::arithmeticChild(*this, 1);
-    const Property indexLevel = host::add(level, Property(2));
-    index.setInheritedAttributes(attributes, Property(false), indexLevel, prime);
+    // P23f Root stub: MmlMroot::setChildInheritedAttributes.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 }

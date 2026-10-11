@@ -1,7 +1,7 @@
 // Root-owned isolated C++23 mutation runner. Expected values never change.
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
-module.exports=function runPacket({name,modules,units,fixture,pattern,assertions,tests,mutants,baselineOutcome='green'}){
+module.exports=function runPacket({name,modules,units,fixture,pattern,assertions,tests,mutants,baselineOutcome='green',supportFiles=[]}){
  assert.ok(['green','red','compile'].includes(baselineOutcome));
  const root=path.resolve(__dirname,'../..'),work=path.join(root,'build',name);
  fs.mkdirSync(work,{recursive:true});const lock=path.join(work,'run.lock'),fd=fs.openSync(lock,'wx');
@@ -9,7 +9,7 @@ module.exports=function runPacket({name,modules,units,fixture,pattern,assertions
  const copies=new Map(),originalFixture=fs.readFileSync(path.join(root,'tests/math',fixture));
  function writeChanged(target,bytes){if(!fs.existsSync(target)||!fs.readFileSync(target).equals(Buffer.from(bytes)))fs.writeFileSync(target,bytes);}
  writeChanged(path.join(work,'reference.cpp'),originalFixture);
- for(const file of [...modules,...units]){
+ for(const file of [...modules,...units,...supportFiles]){
   const original=fs.readFileSync(path.join(root,'src/math',file)),source=original.toString().replaceAll('\r\n','\n'),target=path.join(work,'src',file);
   fs.mkdirSync(path.dirname(target),{recursive:true});writeChanged(target,source);copies.set(file,{original,source,target});
  }
@@ -63,7 +63,9 @@ exit /b %errorlevel%
  if(baselineOutcome==='red'){
   assert.equal(baseline.status,1,'Red baseline must fail assertions, not crash');assert.match(baseline.stdout||'',/FAILED|failed|FAIL/);
   assert.ok((baseline.stdout||'').includes('Unimplemented'),'Real frozen stubs must execute');
-  fs.writeFileSync(path.join(work,'red-result.json'),JSON.stringify({compiles:true,test_exit:baseline.status,real_stubs_execute:true},null,2)+'\n');console.log('Real red baseline compiled and failed through frozen stubs.');return;
+  for(const[file,{original}]of copies)assert.ok(original.equals(fs.readFileSync(path.join(root,'src/math',file))),'Working source changed: '+file);
+  assert.ok(originalFixture.equals(fs.readFileSync(path.join(root,'tests/math',fixture))),'Working fixture changed');
+  fs.writeFileSync(path.join(work,'red-result.json'),JSON.stringify({compiles:true,test_exit:baseline.status,real_stubs_execute:true,working_files_unchanged:true},null,2)+'\n');console.log('Real red baseline compiled and failed through frozen stubs.');return;
  }
  assert.equal(baseline.status,0,'Baseline must pass');
  assert.ok(baseline.stdout.includes(`${assertions} asserts in ${tests} tests`),'Nonzero complete baseline');console.log(`Baseline: ${assertions} assertions in ${tests} tests pass.`);

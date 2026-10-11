@@ -11,7 +11,7 @@ return value;}();}
 PropertyList& MmlSemantics::defaults(){return MmlSemanticsDefaults;}
 std::string MmlSemantics::kind()const{return "semantics";}
 double MmlSemantics::arity()const{return 1.0;}
-bool MmlSemantics::notParent()const{return true;}
+Property MmlSemantics::notParent()const{return true;}
 namespace {PropertyList MmlAnnotationXMLDefaults=[] {auto value=host::arithmeticCopy(AbstractMmlNode::defaults());
 value.setOwn("definitionUrl",PropertyNull{});
 value.setOwn("encoding",PropertyNull{});

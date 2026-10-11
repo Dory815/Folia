@@ -11,14 +11,14 @@ import std;
 
 namespace folia::math::mml {
 
-MmlNode* MmlTeXAtom::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    host::arithmeticChild(*this, 0).setTeXclass(nullptr);
-    return adjustTeXclass(previous);
+NodeValue MmlTeXAtom::setTeXclass(NodeValue previous) {
+    // P23f Root stub: MmlTeXAtom::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* MmlTeXAtom::adjustTeXclass(MmlNode* previous) {
-    return adjustOperatorTeXclass(*this, previous);
+NodeValue MmlTeXAtom::adjustTeXclass(NodeValue previous) {
+    // P23f Root stub: MmlTeXAtom::adjustTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 } // namespace folia::math::mml

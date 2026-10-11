@@ -40,10 +40,8 @@ PropertyList class_info_defaults(const tree::FactoryClassRef<MmlNode>& nodeClass
 }
 
 MmlNode* child_at(const Children& children, std::size_t index, std::string_view operation) {
-    if (!children || index >= children->size()) host::typeError(operation);
-    auto* child = (*children)[index];
-    if (!child) host::typeError(operation);
-    return child;
+    // P23f Root stub: child_at.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 bool property_set_contains(const Property& value) {
@@ -120,45 +118,8 @@ PropertyList& AbstractMmlNode::verifyDefaults() {
 }
 
 void AbstractMmlNode::initializeMml(tree::FactoryArgs args) {
-    tree::TreeCallGuard<MmlNode> guard;
-    Generic::initializeNode({});
-
-    // Pinned CJS initializes these three fields after the generic superclass,
-    // before arity/children/attributes. Public previous-state writes retain
-    // their virtual host bindings; texclass is the raw inherited field.
-    setPrevClass(PropertyNull{});
-    setPrevLevel(PropertyNull{});
-    initializeTexClass(PropertyNull{});
-
-    Children children = std::make_shared<std::vector<MmlNode*>>();
-    if (args.size() > 1 && args[1].has_value()) {
-        if (const auto* supplied = std::any_cast<Children>(&args[1])) children = *supplied;
-        else if (std::any_cast<std::nullptr_t>(&args[1])) children.reset();
-        else host::typeError("MML children argument has no child-array binding");
-    }
-
-    if (arity() < 0) {
-        auto* inferred = this->factory.create("inferredMrow", {});
-        this->childNodes = std::make_shared<std::vector<MmlNode*>>();
-        this->childNodes->push_back(inferred);
-        if (!inferred) host::typeError("Cannot set parent on null inferred row");
-        inferred->parent = this;
-    }
-    setChildren(std::move(children));
-
-    const auto ownDefaults = class_info_defaults(this->factory.getNodeClass(kind()), false);
-    const auto mathDefaults = class_info_defaults(this->factory.getNodeClass("math"), true);
-    setAttributes(std::make_shared<Attributes>(ownDefaults, mathDefaults));
-
-    if (!args.empty() && args[0].has_value()) {
-        if (const auto* supplied = std::any_cast<PropertyList>(&args[0])) {
-            auto attrs = attributes();
-            if (!attrs) host::typeError("MML attributes setter produced null handle");
-            attrs->setList(*supplied);
-        } else if (!std::any_cast<std::nullptr_t>(&args[0])) {
-            host::typeError("MML attributes argument has no PropertyList binding");
-        }
-    }
+    // P23f Root stub: AbstractMmlNode::initializeMml.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 PropertyList AbstractMmlNode::constructorDefaults()const {
@@ -169,37 +130,8 @@ PropertyList AbstractMmlNode::constructorDefaults()const {
 }
 
 MmlNode* AbstractMmlNode::copy(bool keepIds) {
-    tree::TreeCallGuard<MmlNode> guard;
-    auto* copied = dynamic_cast<AbstractMmlNode*>(this->factory.create(kind(), {}));
-    if (!copied) host::typeError("MML copy creator did not produce an AbstractMmlNode");
-
-    copied->properties = PropertyList{};
-    copied->properties.assign(this->properties);
-    auto source = attributes();
-    if (source) {
-        const auto sourceAttributes = source->getAllAttributes();
-        for (const auto& name : sourceAttributes.keys()) {
-            if (name != "id" || keepIds) {
-                auto target = copied->attributes();
-                if (!target) host::typeError("Copied MML node has no attributes");
-                target->set(name, sourceAttributes.getOwn(name));
-            }
-        }
-    }
-    if (this->childNodes && !this->childNodes->empty()) {
-        Children children = this->childNodes;
-        if (children->size() == 1 && child_at(children, 0, "Cannot read inferred child")->isInferred()) {
-            children = child_at(children, 0, "Cannot read inferred child")->childNodes;
-        }
-        if (!children) host::typeError("Cannot iterate null MML children");
-        for (std::size_t index = 0; index < children->size(); ++index) {
-            MmlNode* child = index < children->size() ? (*children)[index] : nullptr;
-            if (child) copied->appendChild(child->copy());
-            else if (copied->childNodes) copied->childNodes->push_back(nullptr);
-            else host::typeError("Cannot append null copied child");
-        }
-    }
-    return copied;
+    // P23f Root stub: AbstractMmlNode::copy.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 Property AbstractMmlNode::texClass() { return texclass_; }
@@ -218,120 +150,56 @@ bool AbstractMmlNode::linebreakContainer() const { return false; }
 std::string AbstractMmlNode::linebreakAlign() const { return "data-align"; }
 
 bool AbstractMmlNode::isEmpty() const {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto children = this->childNodes;
-    if (!children) host::typeError("Cannot iterate null MML children");
-    for (std::size_t index = 0; index < children->size(); ++index) {
-        MmlNode* child = (*children)[index];
-        if (child && !child->isEmpty()) return false;
-    }
-    return true;
+    // P23f Root stub: AbstractMmlNode::isEmpty.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 double AbstractMmlNode::arity() const { return std::numeric_limits<double>::infinity(); }
 bool AbstractMmlNode::isInferred() const { return false; }
-bool AbstractMmlNode::notParent() const { return false; }
+Property AbstractMmlNode::notParent() const { return false; }
 
-MmlNode* AbstractMmlNode::Parent() const {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode* parent = this->parent;
-    while (parent && parent->notParent()) parent = parent->Parent();
-    return parent;
+NodeValue AbstractMmlNode::Parent() const {
+    // P23f Root stub: AbstractMmlNode::Parent.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void AbstractMmlNode::setChildren(Children children) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (arity() < 0) {
-        child_at(this->childNodes, 0, "Cannot route children through an empty inferred row")
-            ->setChildren(std::move(children));
-        return;
-    }
-    Generic::setChildren(std::move(children));
+    // P23f Root stub: AbstractMmlNode::setChildren.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* AbstractMmlNode::appendChild(MmlNode* child) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (arity() < 0) {
-        child_at(this->childNodes, 0, "Cannot route child through an empty inferred row")
-            ->appendChild(child);
-        return child;
-    }
-    if (!child) host::typeError("Cannot read isInferred from null child");
-    if (child->isInferred()) {
-        if (arity() == std::numeric_limits<double>::infinity()) {
-            const auto original = child->childNodes;
-            if (!original) host::typeError("Cannot read forEach from null inferred children");
-            const auto length = original->size();
-            for (std::size_t i = 0; i < length; ++i) {
-                if (i < original->size()) Generic::appendChild((*original)[i]);
-            }
-            return child;
-        }
-        auto* original = child;
-        child = this->factory.create("mrow", {});
-        child->setChildren(original->childNodes);
-        child->setAttributes(original->attributes());
-        for (const auto& name : original->getPropertyNames())
-            child->setProperty(name, original->getProperty(name));
-    }
-    return Generic::appendChild(child);
+NodeValue AbstractMmlNode::appendChild(NodeValue child) {
+    // P23f Root stub: AbstractMmlNode::appendChild.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* AbstractMmlNode::replaceChild(MmlNode* newChild, MmlNode* oldChild) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (arity() < 0) {
-        child_at(this->childNodes, 0, "Cannot route replacement through an empty inferred row")
-            ->replaceChild(newChild, oldChild);
-        return newChild;
-    }
-    return Generic::replaceChild(newChild, oldChild);
+NodeValue AbstractMmlNode::replaceChild(NodeValue newChild, NodeValue oldChild) {
+    // P23f Root stub: AbstractMmlNode::replaceChild.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* AbstractMmlNode::core() { return this; }
-MmlNode* AbstractMmlNode::coreMO() { return this; }
+NodeValue AbstractMmlNode::core() { return this; }
+NodeValue AbstractMmlNode::coreMO() { return this; }
 std::size_t AbstractMmlNode::coreIndex() { return 0; }
 
 std::optional<std::size_t> AbstractMmlNode::childPosition() {
-    MmlNode* child = nullptr;
-    MmlNode* parent = this->parent;
-    while (parent && parent->notParent()) {
-        child = parent;
-        parent = parent->parent;
-    }
-    if (!child) child = this;
-    if (parent) {
-        const auto siblings = parent->childNodes;
-        if (!siblings) host::typeError("Cannot iterate null parent children");
-        for (std::size_t i = 0; i < siblings->size(); ++i)
-            if ((*siblings)[i] == child) return i;
-    }
-    return std::nullopt;
+    // P23f Root stub: AbstractMmlNode::childPosition.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* AbstractMmlNode::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    getPrevClass(previous);
-    return !host::nullish(texClass()) ? this : previous;
+NodeValue AbstractMmlNode::setTeXclass(NodeValue previous) {
+    // P23f Root stub: AbstractMmlNode::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-void AbstractMmlNode::updateTeXclass(MmlNode* coreNode) {
-    if (coreNode) {
-        setPrevClass(coreNode->prevClass());
-        setPrevLevel(coreNode->prevLevel());
-        // Right-associative TS assignment clears prevLevel before prevClass.
-        coreNode->setPrevLevel(PropertyNull{});
-        coreNode->setPrevClass(PropertyNull{});
-        setTexClass(coreNode->texClass());
-    }
+void AbstractMmlNode::updateTeXclass(NodeValue coreNode) {
+    // P23f Root stub: AbstractMmlNode::updateTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-void AbstractMmlNode::getPrevClass(MmlNode* previous) {
-    if (previous) {
-        setPrevClass(previous->texClass());
-        auto attrs = previous->attributes();
-        if (!attrs) host::typeError("Cannot read scriptlevel from null attributes");
-        setPrevLevel(attrs->get("scriptlevel"));
-    }
+void AbstractMmlNode::getPrevClass(NodeValue previous) {
+    // P23f Root stub: AbstractMmlNode::getPrevClass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 Property AbstractMmlNode::texSpacing() {
@@ -358,93 +226,20 @@ Property AbstractMmlNode::texSpacing() {
 }
 
 bool AbstractMmlNode::hasSpacingAttributes() {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (!isEmbellished()) return false;
-    auto* mo = coreMO();
-    if (!mo) host::typeError("Cannot read spacing attributes from null core mo");
-    return mo->hasSpacingAttributes();
+    // P23f Root stub: AbstractMmlNode::hasSpacingAttributes.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void AbstractMmlNode::inheritAttributes(AttributeList inherited, Property display,
                                               Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-    host::inheritanceDefaults(inherited,display,level,prime);
-    auto attrs = attributes();
-    if (!attrs) host::typeError("Cannot read defaults from null attributes");
-    const auto defaults = attrs->getAllDefaults();
-    for (const auto& key : host::ownKeys(inherited)) {
-        if (defaults.hasOwn(key) || alwaysInherit().hasOwn(key)) {
-            const auto [origin, value] = unpackAttribute(host::get(inherited,key));
-            if (!forbidden_inheritance(origin, *this, key)) {
-                attrs = attributes();
-                if (!attrs) host::typeError("Cannot inherit into null attributes");
-                attrs->setInherited(key, value);
-            }
-        }
-        if (stopped_inheritance(kind(), key)) {
-            auto updated = host::objectAssign(inherited);
-            updated.erase(key);
-            inherited = std::move(updated);
-        }
-    }
-    attrs = attributes();
-    if (!attrs) host::typeError("Cannot read inherited display attributes");
-    if (attrs->getExplicit("displaystyle").missing()) {
-        attrs = attributes();
-        if (!attrs) host::typeError("Cannot inherit displaystyle into null attributes");
-        attrs->setInherited("displaystyle", display);
-    }
-    attrs = attributes();
-    if (!attrs) host::typeError("Cannot read inherited script attributes");
-    if (attrs->getExplicit("scriptlevel").missing()) {
-        attrs = attributes();
-        if (!attrs) host::typeError("Cannot inherit scriptlevel into null attributes");
-        attrs->setInherited("scriptlevel", level);
-    }
-    if (host::truthy(prime)) setProperty("texprimestyle", prime);
-
-    const double expected = arity();
-    if (expected >= 0 && expected != std::numeric_limits<double>::infinity()) {
-        if (!this->childNodes) host::typeError("Cannot read child count during inherited attributes");
-        if ((expected == 1 && this->childNodes->empty()) ||
-            (expected != 1 && static_cast<double>(this->childNodes->size()) != expected)) {
-            if (expected < static_cast<double>(this->childNodes->size())) {
-                this->childNodes = std::make_shared<std::vector<MmlNode*>>(
-                    this->childNodes->begin(),
-                    this->childNodes->begin() + static_cast<std::ptrdiff_t>(expected));
-            } else {
-                while (static_cast<double>(this->childNodes->size()) < expected)
-                    appendChild(this->factory.create("mrow", {}));
-            }
-        }
-    }
-
-    if (linebreakContainer() && !isEmbellished()) {
-        const auto align = linebreakAlign();
-        if (!align.empty()) {
-            attrs = attributes();
-            if (!attrs) host::typeError("Cannot read linebreak attributes");
-            Property indent = attrs->get(align);
-            if (!host::truthy(indent)) indent = "left";
-            PropertyList added{{"indentalign", indent}, {"indentshift", "0"},
-                               {"indentalignfirst", indent}, {"indentshiftfirst", "0"},
-                               {"indentalignlast", "indentalign"},
-                               {"indentshiftlast", "indentshift"}};
-            inherited = addInheritedAttributes(std::move(inherited), std::move(added));
-        }
-    }
-    setChildInheritedAttributes(std::move(inherited), std::move(display), std::move(level), std::move(prime));
+    // P23f Root stub: AbstractMmlNode::inheritAttributes.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void AbstractMmlNode::setChildInheritedAttributes(AttributeList inherited, Property display,
                                                    Property level, Property prime) {
-    const auto children = this->childNodes;
-    if (!children) host::typeError("Cannot iterate null MML children");
-    for (std::size_t i = 0; i < children->size(); ++i) {
-        auto* child = (*children)[i];
-        if (!child) host::typeError("Cannot set inherited attributes on null child");
-        child->setInheritedAttributes(inherited, display, level, prime);
-    }
+    // P23f Root stub: AbstractMmlNode::setChildInheritedAttributes.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 AttributeList AbstractMmlNode::addInheritedAttributes(AttributeList current, Property additions) {
@@ -456,33 +251,14 @@ AttributeList AbstractMmlNode::addInheritedAttributes(AttributeList current, Pro
     return updated;
 }
 
-void AbstractMmlNode::inheritAttributesFrom(MmlNode* node) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (!node) host::typeError("Cannot read attributes from null MML node");
-    auto source = node->attributes();
-    if (!source) host::typeError("Cannot read inherited attributes from null source attributes");
-    const Property display = source->get("displaystyle");
-    const Property level = source->get("scriptlevel");
-    PropertyList defaults;
-    if (source->isSet("mathsize")) defaults.set("mathsize", attributeTuple("math", source->get("mathsize")));
-    Property prime = node->getProperty("texprimestyle");
-    if (!host::truthy(prime)) prime = false;
-    setInheritedAttributes(std::move(defaults), display, level, prime);
+void AbstractMmlNode::inheritAttributesFrom(NodeValue node) {
+    // P23f Root stub: AbstractMmlNode::inheritAttributesFrom.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void AbstractMmlNode::verifyTree(std::optional<PropertyList> options) {
-    if (!options) return;
-    tree::TreeCallGuard<MmlNode> guard;
-    verifyAttributes(*options);
-    const double expected = arity();
-    if (host::truthy(options->get("checkArity")) && expected >= 0 &&
-        expected != std::numeric_limits<double>::infinity()) {
-        if (!this->childNodes) host::typeError("Cannot read child count while verifying MML node");
-        if ((expected == 1 && this->childNodes->empty()) ||
-            (expected != 1 && static_cast<double>(this->childNodes->size()) != expected))
-            mError("Wrong number of children for \"" + kind() + "\" node", *options, true);
-    }
-    verifyChildren(*options);
+    // P23f Root stub: AbstractMmlNode::verifyTree.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void AbstractMmlNode::verifyAttributes(PropertyList options) {
@@ -517,41 +293,12 @@ void AbstractMmlNode::verifyAttributes(PropertyList options) {
 }
 
 void AbstractMmlNode::verifyChildren(PropertyList options) {
-    const auto children = this->childNodes;
-    if (!children) host::typeError("Cannot iterate null MML children");
-    for (std::size_t i = 0; i < children->size(); ++i) {
-        auto* child = (*children)[i];
-        if (!child) host::typeError("Cannot verify null MML child");
-        child->verifyTree(options);
-    }
+    // P23f Root stub: AbstractMmlNode::verifyChildren.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 MmlNode* AbstractMmlNode::mError(std::string message, ErrorOptions options, bool shortError) {
-    if (this->parent && this->parent->isKind("merror")) return nullptr;
-    auto* error = this->factory.create("merror", {});
-    auto errorAttributes = error->attributes();
-    if (!errorAttributes) host::typeError("MML error node has null attributes");
-    errorAttributes->set("data-mjx-message", message);
-    if (host::truthy(options.get("fullErrors")) || shortError) {
-        auto* textContainer = this->factory.create("mtext", {});
-        auto* text = dynamic_cast<TextNode*>(this->factory.create("text", {}));
-        if (!text) host::typeError("Text factory did not produce TextNode");
-        const auto content = host::truthy(options.get("fullErrors")) ? message : kind();
-        text->setText(host::text(content));
-        textContainer->appendChild(text);
-        error->appendChild(textContainer);
-        if (!this->parent) host::typeError("Cannot replace detached MML node with error");
-        this->parent->replaceChild(error, this);
-        if (!host::truthy(options.get("fullErrors"))) {
-            auto titleAttributes = error->attributes();
-            if (!titleAttributes) host::typeError("MML error node has null attributes after replacement");
-            titleAttributes->set("title", message);
-        }
-    } else {
-        if (!this->parent) host::typeError("Cannot replace detached MML node with error");
-        this->parent->replaceChild(error, this);
-        error->appendChild(this);
-    }
-    return error;
+    // P23f Root stub: AbstractMmlNode::mError.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 } // namespace folia::math::mml

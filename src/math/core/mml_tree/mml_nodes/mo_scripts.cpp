@@ -26,25 +26,8 @@ void MmlMo::inheritAttributes(AttributeList attributes, Property display,
 }
 
 void MmlMo::checkPseudoScripts(std::u16string_view mo) {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto& services = constructorOperators();
-    const auto pattern = host::moStatic(services.pseudoScripts);
-    if (!host::moMatch(pattern, mo)) return;
-
-    MmlNode* const core = coreParent();
-    if (!core) host::typeError("Cannot read Parent from missing core parent");
-    MmlNode* const parent = core->Parent();
-    const bool isPseudo = !parent ||
-        !(parent->isKind("msubsup") && !parent->isKind("msub"));
-    setProperty("pseudoscript", isPseudo);
-    if (isPseudo) {
-        auto currentAttributes = attributes();
-        if (!currentAttributes) host::typeError("Cannot set inherited lspace on null mo attributes");
-        currentAttributes->setInherited("lspace", 0);
-        currentAttributes = attributes();
-        if (!currentAttributes) host::typeError("Cannot set inherited rspace on null mo attributes");
-        currentAttributes->setInherited("rspace", 0);
-    }
+    // P23f Root stub: MmlMo::checkPseudoScripts.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void MmlMo::checkPrimes(std::u16string_view mo) {
@@ -71,35 +54,8 @@ void MmlMo::checkPrimes(std::u16string_view mo) {
 }
 
 void MmlMo::checkMathAccent(std::u16string_view mo) {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode* const parent = Parent();
-    if (!getProperty("mathaccent").missing()) return;
-    if (!parent || !parent->isKind("munderover")) return;
-
-    const Children nodes = parent->childNodes;
-    if (!nodes) host::typeError("Cannot destructure null munderover children");
-    MmlNode* const base = nodes->empty() ? nullptr : (*nodes)[0];
-    MmlNode* const under = nodes->size() > 1 ? (*nodes)[1] : nullptr;
-    MmlNode* const over = nodes->size() > 2 ? (*nodes)[2] : nullptr;
-    if (!base) host::typeError("Cannot read base embellishment");
-    if (base->isEmbellished() && base->coreMO() == this) return;
-
-    const bool isUnder = under && under->isEmbellished() && under->coreMO() == this;
-
-    // Keep the upstream isOver expression as written: it tests under.coreMO()
-    // (and may therefore throw after a truthy over test when under is absent).
-    bool isOver = false;
-    if (over && over->isEmbellished()) {
-        if (!under) host::typeError("Cannot read coreMO of missing under child");
-        isOver = under->coreMO() == this;
-    }
-    if (!isUnder && !isOver) return;
-
-    if (isMathAccent(mo)) {
-        setProperty("mathaccent", true);
-    } else if (isMathAccentWithWidth(mo)) {
-        setProperty("mathaccent", false);
-    }
+    // P23f Root stub: MmlMo::checkMathAccent.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 bool MmlMo::isMathAccent(std::optional<std::u16string_view> text) {

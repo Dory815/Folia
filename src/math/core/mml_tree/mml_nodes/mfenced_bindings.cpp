@@ -12,7 +12,7 @@ return value;}();}
 PropertyList& MmlMfenced::defaults(){return MfencedDefaults;}
 void MmlMfenced::initializeClassFields(){
 initializeTexClass(TEXCLASS.INNER);
-separators=std::make_shared<std::vector<MmlNode*>>();
+separators=std::make_shared<tree::ChildArray<MmlNode>>();
 open=nullptr;
 close=nullptr;
 }

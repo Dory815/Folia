@@ -10,22 +10,13 @@ import std;
 namespace folia::math::mml {
 
 void MmlMtd::verifyChildren(PropertyList options) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (this->parent && !this->parent->isKind("mtr")) {
-        const std::string message = kind() +
-            " can only be a child of an mtr or mlabeledtr";
-        (void)mError(message, ErrorOptions(options), true);
-        return;
-    }
-    AbstractMmlBaseNode::verifyChildren(options);
+    // P23f Root stub: MmlMtd::verifyChildren.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* MmlMtd::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    getPrevClass(previous);
-    MmlNode& child = host::tableChild(host::tableChildren(*this), 0);
-    child.setTeXclass(nullptr);
-    return this;
+NodeValue MmlMtd::setTeXclass(NodeValue previous) {
+    // P23f Root stub: MmlMtd::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 }

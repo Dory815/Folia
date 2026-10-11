@@ -10,58 +10,15 @@ import std;
 
 namespace folia::math::mml {
 
-MmlNode* MmlMfrac::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    getPrevClass(previous);
-
-    // A JavaScript for-of loop keeps this array object but observes its live
-    // length and indexed values on each iteration.
-    const Children children = childNodes;
-    if (!children) host::typeError("this.childNodes is not iterable");
-    for (std::size_t index = 0; index < children->size(); ++index) {
-        MmlNode* const child = (*children)[index];
-        if (!child) host::typeError("Cannot read properties of null (reading 'setTeXclass')");
-        child->setTeXclass(nullptr);
-    }
-    return this;
+NodeValue MmlMfrac::setTeXclass(NodeValue previous) {
+    // P23f Root stub: MmlMfrac::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void MmlMfrac::setChildInheritedAttributes(AttributeList attributes, Property display,
                                             Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-
-    // Preserve the source `if (!display || level > 0) level++` and JavaScript's
-    // numeric conversion for both the relational comparison and increment.
-    if (!host::truthy(display) || host::number(level) > 0) {
-        level = Property(host::number(level) + 1.0);
-    }
-
-    const Property numalign = host::arithmeticAttributes(*this)->get("numalign");
-    const Property denalign = host::arithmeticAttributes(*this)->get("denomalign");
-
-    // Both new records are completed before either child callback can mutate
-    // the fraction or its inherited-attribute input.
-    AttributeList numAttributes = addInheritedAttributes(
-        host::arithmeticCopy(attributes),
-        PropertyList{{"numalign", numalign},
-                     {"indentshift", "0"},
-                     {"indentalignfirst", numalign},
-                     {"indentshiftfirst", "0"},
-                     {"indentalignlast", "indentalign"},
-                     {"indentshiftlast", "indentshift"}});
-    AttributeList denAttributes = addInheritedAttributes(
-        host::arithmeticCopy(attributes),
-        PropertyList{{"denalign", denalign},
-                     {"indentshift", "0"},
-                     {"indentalignfirst", denalign},
-                     {"indentshiftfirst", "0"},
-                     {"indentalignlast", "indentalign"},
-                     {"indentshiftlast", "indentshift"}});
-
-    host::arithmeticChild(*this, 0).setInheritedAttributes(
-        std::move(numAttributes), Property(false), level, prime);
-    host::arithmeticChild(*this, 1).setInheritedAttributes(
-        std::move(denAttributes), Property(false), level, Property(true));
+    // P23f Root stub: MmlMfrac::setChildInheritedAttributes.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 } // namespace folia::math::mml

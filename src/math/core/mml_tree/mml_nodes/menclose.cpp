@@ -10,20 +10,9 @@ import std;
 
 namespace folia::math::mml {
 
-MmlNode* MmlMenclose::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-
-    MmlNode* const result = host::arithmeticChild(*this, 0).setTeXclass(previous);
-
-    // The source re-evaluates this.childNodes[0] after the first child callback.
-    // An empty array yields a nullable update argument; a null array still fails.
-    const Children currentChildren = childNodes;
-    if (!currentChildren) host::typeError("Cannot read child at index 0 from null children");
-    MmlNode* const currentChild = currentChildren->empty()
-        ? nullptr
-        : (*currentChildren)[0];
-    updateTeXclass(currentChild);
-    return result;
+NodeValue MmlMenclose::setTeXclass(NodeValue previous) {
+    // P23f Root stub: MmlMenclose::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 } // namespace folia::math::mml

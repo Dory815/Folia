@@ -10,16 +10,9 @@ import std;
 
 namespace folia::math::mml {
 
-MmlNode* MmlMpadded::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-
-    if (!host::truthy(getProperty("vbox")))
-        return AbstractMmlLayoutNode::setTeXclass(previous);
-
-    getPrevClass(previous);
-    setTexClass(TEXCLASS.ORD);
-    host::arithmeticChild(*this, 0).setTeXclass(nullptr);
-    return this;
+NodeValue MmlMpadded::setTeXclass(NodeValue previous) {
+    // P23f Root stub: MmlMpadded::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 } // namespace folia::math::mml

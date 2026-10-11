@@ -14,8 +14,8 @@ std::string AbstractMmlEmptyNode::linebreakAlign() const { return {}; }
 bool AbstractMmlEmptyNode::isEmpty() const { return true; }
 double AbstractMmlEmptyNode::arity() const { return 0; }
 bool AbstractMmlEmptyNode::isInferred() const { return false; }
-bool AbstractMmlEmptyNode::notParent() const { return false; }
-MmlNode* AbstractMmlEmptyNode::Parent() const { return parent; }
+Property AbstractMmlEmptyNode::notParent() const { return false; }
+NodeValue AbstractMmlEmptyNode::Parent() const { return getParent(); }
 
 Property AbstractMmlEmptyNode::texClass() { return TEXCLASS.NONE; }
 void AbstractMmlEmptyNode::setTexClass(Property) {
@@ -34,15 +34,18 @@ void AbstractMmlEmptyNode::setAttributes(std::shared_ptr<Attributes>) {
     host::typeError("Cannot set read only attributes");
 }
 
-MmlNode* AbstractMmlEmptyNode::core() { return this; }
-MmlNode* AbstractMmlEmptyNode::coreMO() { return this; }
+NodeValue AbstractMmlEmptyNode::core() { return this; }
+NodeValue AbstractMmlEmptyNode::coreMO() { return this; }
 std::size_t AbstractMmlEmptyNode::coreIndex() { return 0; }
 std::optional<std::size_t> AbstractMmlEmptyNode::childPosition() { return 0; }
-MmlNode* AbstractMmlEmptyNode::setTeXclass(MmlNode* previous) { return previous; }
+NodeValue AbstractMmlEmptyNode::setTeXclass(NodeValue previous) { return previous; }
 Property AbstractMmlEmptyNode::texSpacing() { return ""; }
 bool AbstractMmlEmptyNode::hasSpacingAttributes() { return false; }
 void AbstractMmlEmptyNode::inheritAttributes(AttributeList, Property, Property, Property) {}
-void AbstractMmlEmptyNode::inheritAttributesFrom(MmlNode*) {}
+void AbstractMmlEmptyNode::inheritAttributesFrom(NodeValue) {
+    // P23f Root stub: AbstractMmlEmptyNode::inheritAttributesFrom.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+}
 void AbstractMmlEmptyNode::verifyTree(std::optional<PropertyList>) {}
 MmlNode* AbstractMmlEmptyNode::mError(std::string, ErrorOptions, bool) { return nullptr; }
 

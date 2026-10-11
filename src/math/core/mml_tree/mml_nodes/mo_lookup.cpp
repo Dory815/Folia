@@ -113,30 +113,8 @@ void MmlMo::checkOperatorTable(std::u16string_view mo) {
 }
 
 PropertyArray MmlMo::getForms() {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode* core = nullptr;
-    MmlNode* parentNode = parent;
-    MmlNode* ParentNode = Parent();
-    while (ParentNode && ParentNode->isEmbellished()) {
-        core = parentNode;
-        parentNode = ParentNode->parent;
-        ParentNode = ParentNode->Parent();
-    }
-    core = core ? core : this;
-
-    if (parentNode && parentNode->isKind("mrow")) {
-        auto* row = dynamic_cast<MmlMrow*>(parentNode);
-        if (!row) host::typeError("MmlMo mrow kind has no MmlMrow methods");
-        if (row->nonSpaceLength() != 1) {
-            if (row->firstNonSpace() == core) {
-                return formOrder("prefix", "infix", "postfix");
-            }
-            if (row->lastNonSpace() == core) {
-                return formOrder("postfix", "infix", "prefix");
-            }
-        }
-    }
-    return formOrder("infix", "prefix", "postfix");
+    // P23f Root stub: MmlMo::getForms.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 PropertyArray MmlMo::handleExplicitForm(PropertyArray forms) {

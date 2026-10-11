@@ -56,11 +56,7 @@ void MmlMath::setChildInheritedAttributes(AttributeList inherited, Property disp
 }
 
 void MmlMath::verifyTree(std::optional<PropertyList> options) {
-    tree::TreeCallGuard<MmlNode> guard;
-    AbstractMmlNode::verifyTree(options);
-    if (this->parent) {
-        const ErrorOptions errorOptions = options ? ErrorOptions(*options) : ErrorOptions(nullptr);
-        mError("Improper nesting of math tags", errorOptions, true);
-    }
+    // P23f Root stub: MmlMath::verifyTree.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 } // namespace folia::math::mml

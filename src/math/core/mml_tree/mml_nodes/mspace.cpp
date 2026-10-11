@@ -49,7 +49,7 @@ bool MmlMspace::canBreak() const {
     return trimmed.empty() || trimmed.front() != u'-';
 }
 
-MmlNode* MmlMspace::setTeXclass(MmlNode* previous) {
+NodeValue MmlMspace::setTeXclass(NodeValue previous) {
     return previous;
 }
 }

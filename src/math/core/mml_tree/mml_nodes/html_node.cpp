@@ -50,12 +50,8 @@ std::string HtmlNode::toString() const {
 }
 
 void HtmlNode::verifyTree(std::optional<PropertyList> options) {
-    MmlNode* const currentParent = parent;
-    if (currentParent && !currentParent->isToken()) {
-        mError("HTML can only be a child of a token element",
-               htmlErrorOptions(options), true);
-        return;
-    }
+    // P23f Root stub: HtmlNode::verifyTree (additional parent consumer).
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 } // namespace folia::math::mml

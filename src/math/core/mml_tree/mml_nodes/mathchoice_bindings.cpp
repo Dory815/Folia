@@ -8,5 +8,5 @@ namespace {PropertyList choiceDefaults=host::arithmeticCopy(AbstractMmlBaseNode:
 PropertyList& MathChoice::defaults(){return choiceDefaults;}
 std::string MathChoice::kind()const{return "MathChoice";}
 double MathChoice::arity()const{return 4;}
-bool MathChoice::notParent()const{return true;}
+Property MathChoice::notParent()const{return true;}
 }

@@ -10,5 +10,5 @@ PropertyList& MmlTeXAtom::defaults(){return MmlTeXAtomDefaults;}
 void MmlTeXAtom::initializeClassFields(){initializeTexClass(TEXCLASS.ORD);const Property value=texClass();setProperty("texClass",value);}
 std::string MmlTeXAtom::kind()const{return "TeXAtom";}
 double MmlTeXAtom::arity()const{return -1.0;}
-bool MmlTeXAtom::notParent()const{return true;}
+Property MmlTeXAtom::notParent()const{return true;}
 }

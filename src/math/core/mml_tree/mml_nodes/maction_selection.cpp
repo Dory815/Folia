@@ -12,33 +12,8 @@ import std;
 namespace folia::math::mml {
 
 MmlNode* MmlMaction::selected() const {
-    const auto attributes = host::arithmeticAttributes(*this);
-    const Property selection = attributes->get("selection");
-
-    // The source reads childNodes.length before Math.min coerces selection.
-    const Children lengthSource = this->childNodes;
-    if (!lengthSource) host::typeError("Cannot read length of null maction children");
-    const double childLength = static_cast<double>(lengthSource->size());
-    const double selectedNumber = host::number(selection);
-
-    // Math.min/Math.max propagate NaN. Keep fractional values fractional so
-    // they miss the typed node-array's integer slots instead of being rounded.
-    double minimum = std::numeric_limits<double>::quiet_NaN();
-    if (!std::isnan(selectedNumber)) minimum = std::min(childLength, selectedNumber);
-    double index = std::numeric_limits<double>::quiet_NaN();
-    if (!std::isnan(minimum)) index = std::max(1.0, minimum) - 1.0;
-
-    // The source rereads this.childNodes after selection coercion; do not use
-    // the array handle whose length was read above.
-    const Children currentChildren = this->childNodes;
-    if (!currentChildren) host::typeError("Cannot index null maction children");
-    MmlNode* child = nullptr;
-    if (std::isfinite(index) && index >= 0.0 && std::trunc(index) == index &&
-        index < static_cast<double>(currentChildren->size())) {
-        child = (*currentChildren)[static_cast<std::size_t>(index)];
-    }
-    if (!child) child = this->factory.create("mrow", {});
-    return child;
+    // P23f Root stub: MmlMaction::selected.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 bool MmlMaction::isEmbellished() const {
@@ -55,18 +30,14 @@ bool MmlMaction::isSpacelike() const {
     return child->isSpacelike();
 }
 
-MmlNode* MmlMaction::core() {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode* const child = selected();
-    if (!child) host::typeError("Cannot read core from null maction selection");
-    return child->core();
+NodeValue MmlMaction::core() {
+    // P23f Root stub: MmlMaction::core.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* MmlMaction::coreMO() {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode* const child = selected();
-    if (!child) host::typeError("Cannot read coreMO from null maction selection");
-    return child->coreMO();
+NodeValue MmlMaction::coreMO() {
+    // P23f Root stub: MmlMaction::coreMO.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 }

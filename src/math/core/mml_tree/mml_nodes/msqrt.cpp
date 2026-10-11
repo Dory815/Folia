@@ -9,21 +9,15 @@ import std;
 
 namespace folia::math::mml {
 
-MmlNode* MmlMsqrt::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    getPrevClass(previous);
-    MmlNode& child = host::arithmeticChild(*this, 0);
-    child.setTeXclass(nullptr);
-    return this;
+NodeValue MmlMsqrt::setTeXclass(NodeValue previous) {
+    // P23f Root stub: MmlMsqrt::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void MmlMsqrt::setChildInheritedAttributes(AttributeList attributes, Property display,
                                            Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-    (void)prime;
-    MmlNode& child = host::arithmeticChild(*this, 0);
-    child.setInheritedAttributes(std::move(attributes), std::move(display),
-                                 std::move(level), Property(true));
+    // P23f Root stub: MmlMsqrt::setChildInheritedAttributes.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 }

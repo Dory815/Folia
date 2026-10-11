@@ -10,25 +10,14 @@ import std;
 
 namespace folia::math::mml {
 namespace {
-MmlNode* child_zero(AbstractMmlNode& node) {
-    if (!node.childNodes) host::typeError("Cannot read child list");
-    return node.childNodes->empty() ? nullptr : node.childNodes->front();
+NodeValue child_zero(AbstractMmlNode& node) {
+    // P23f Root stub: child_zero.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 MmlNode& required_child_zero(const AbstractMmlNode& node, std::string_view member) {
-    if (!node.childNodes) host::typeError("Cannot read properties of null (reading '0')");
-    if (node.childNodes->empty()) {
-        const std::string message = "Cannot read properties of undefined (reading '" +
-                                    std::string(member) + "')";
-        host::typeError(message);
-    }
-    MmlNode* const child = node.childNodes->front();
-    if (!child) {
-        const std::string message = "Cannot read properties of null (reading '" +
-                                    std::string(member) + "')";
-        host::typeError(message);
-    }
-    return *child;
+    // P23f Root stub: required_child_zero.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void require_child_list(AbstractMmlNode& node) {
@@ -41,61 +30,25 @@ bool AbstractMmlTokenNode::isToken() const {
 }
 
 bool AbstractMmlTokenNode::isEmpty() const {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (!childNodes) host::typeError("this.childNodes is not iterable");
-    const auto children = childNodes;
-    for (std::size_t index = 0; index < children->size(); ++index) {
-        MmlNode* const child = (*children)[index];
-        auto* const text = dynamic_cast<TextNode*>(child);
-        if (!text || !text->getText().empty()) return false;
-    }
-    return true;
+    // P23f Root stub: AbstractMmlTokenNode::isEmpty.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 std::u16string AbstractMmlTokenNode::getText() const {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (!childNodes) host::typeError("this.childNodes is not iterable");
-    std::u16string text;
-    const auto children = childNodes;
-    for (std::size_t index = 0; index < children->size(); ++index) {
-        MmlNode* const child = (*children)[index];
-        if (auto* const textNode = dynamic_cast<TextNode*>(child)) {
-            text += textNode->getText();
-        } else {
-            if (!child) host::typeError("Cannot use 'in' operator to search for 'textContent' in null");
-            if (auto* const binding = dynamic_cast<TextContentBinding*>(child)) {
-                if (!binding->textContent) continue;
-                if (!*binding->textContent) host::typeError("node.textContent is not a function");
-                text += (*binding->textContent)();
-            }
-        }
-    }
-    return text;
+    // P23f Root stub: AbstractMmlTokenNode::getText.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 void AbstractMmlTokenNode::setChildInheritedAttributes(
     AttributeList attributes, Property display, Property level, Property prime) {
-    require_child_list(*this);
-    const auto children = childNodes;
-    for (std::size_t index = 0; index < children->size(); ++index) {
-        if (auto* const child = dynamic_cast<AbstractMmlNode*>((*children)[index])) {
-            child->setInheritedAttributes(attributes, display, level, prime);
-        }
-    }
+    // P23f Root stub: AbstractMmlTokenNode::setChildInheritedAttributes.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 std::any AbstractMmlTokenNode::walkTree(
     const tree::TreeVisitor<MmlNode>& visit, const std::any& data) {
-    tree::TreeCallGuard<MmlNode> guard;
-    visit(this, data);
-    require_child_list(*this);
-    const auto children = childNodes;
-    for (std::size_t index = 0; index < children->size(); ++index) {
-        if (auto* const child = dynamic_cast<AbstractMmlNode*>((*children)[index])) {
-            child->walkTree(visit, data);
-        }
-    }
-    return data;
+    // P23f Root stub: AbstractMmlTokenNode::walkTree.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 bool AbstractMmlLayoutNode::isSpacelike() const {
@@ -112,21 +65,18 @@ double AbstractMmlLayoutNode::arity() const {
     return -1;
 }
 
-MmlNode* AbstractMmlLayoutNode::core() {
+NodeValue AbstractMmlLayoutNode::core() {
     return child_zero(*this);
 }
 
-MmlNode* AbstractMmlLayoutNode::coreMO() {
-    tree::TreeCallGuard<MmlNode> guard;
-    return required_child_zero(*this, "coreMO").coreMO();
+NodeValue AbstractMmlLayoutNode::coreMO() {
+    // P23f Root stub: AbstractMmlLayoutNode::coreMO.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* AbstractMmlLayoutNode::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode& child = required_child_zero(*this, "setTeXclass");
-    previous = child.setTeXclass(previous);
-    updateTeXclass(child_zero(*this));
-    return previous;
+NodeValue AbstractMmlLayoutNode::setTeXclass(NodeValue previous) {
+    // P23f Root stub: AbstractMmlLayoutNode::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 bool AbstractMmlBaseNode::isEmbellished() const {
@@ -134,41 +84,18 @@ bool AbstractMmlBaseNode::isEmbellished() const {
     return required_child_zero(*this, "isEmbellished").isEmbellished();
 }
 
-MmlNode* AbstractMmlBaseNode::core() {
+NodeValue AbstractMmlBaseNode::core() {
     return child_zero(*this);
 }
 
-MmlNode* AbstractMmlBaseNode::coreMO() {
-    tree::TreeCallGuard<MmlNode> guard;
-    return required_child_zero(*this, "coreMO").coreMO();
+NodeValue AbstractMmlBaseNode::coreMO() {
+    // P23f Root stub: AbstractMmlBaseNode::coreMO.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* AbstractMmlBaseNode::setTeXclass(MmlNode* previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    getPrevClass(previous);
-    setTexClass(static_cast<double>(TEXCLASS.ORD));
-    MmlNode* const base = child_zero(*this);
-    MmlNode* result = nullptr;
-    if (base) {
-        if (isEmbellished() || base->isKind("mi")) {
-            result = base->setTeXclass(previous);
-            updateTeXclass(core());
-        } else {
-            base->setTeXclass(nullptr);
-            if (base->isKind("TeXAtom")) setTexClass(base->texClass());
-        }
-    }
-    if (!childNodes) host::typeError("Cannot read child list");
-    // Array.prototype.slice(1) snapshots the script list after base handling.
-    const auto children = childNodes;
-    std::vector<MmlNode*> scripts;
-    if (children->size() > 1) {
-        scripts.assign(children->begin() + 1, children->end());
-    }
-    for (MmlNode* const child : scripts) {
-        if (child) child->setTeXclass(nullptr);
-    }
-    return result ? result : this;
+NodeValue AbstractMmlBaseNode::setTeXclass(NodeValue previous) {
+    // P23f Root stub: AbstractMmlBaseNode::setTeXclass.
+    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
 } // namespace folia::math::mml
