@@ -11,7 +11,7 @@ public:
     std::string kind() const override;
     bool linebreakContainer() const override;
     std::string linebreakAlign() const override;
-    void setInheritedAttributes(AttributeList, Property, Property, Property) override;
+    protected: void inheritAttributes(AttributeList, Property, Property, Property)override; public:
     MmlNode* setTeXclass(MmlNode*) override;
 protected:
     void setChildInheritedAttributes(AttributeList, Property, Property, Property) override;

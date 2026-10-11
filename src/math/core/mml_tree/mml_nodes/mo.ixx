@@ -45,7 +45,7 @@ public:
     virtual Property isAccent();
     MmlNode* setTeXclass(MmlNode*)override;
     virtual MmlNode* adjustTeXclass(MmlNode*);
-    void setInheritedAttributes(AttributeList={},Property display=false,Property level=0,Property prime=false)override;
+    protected: void inheritAttributes(AttributeList,Property display,Property level,Property prime)override; public:
     virtual PropertyArray getForms();
     virtual bool isMathAccent(std::optional<std::u16string_view> text={});
     virtual bool isMathAccentWithWidth(std::optional<std::u16string_view> text={});

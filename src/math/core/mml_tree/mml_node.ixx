@@ -9,7 +9,7 @@ export import folia.math.core.mml_tree.attributes;
 import std;
 
 export namespace folia::math::mml {
-using AttributeList = PropertyList;
+using AttributeList = Property;
 class MmlNode;
 using Children = tree::FactoryChildren<MmlNode>;
 using Factory = tree::FactoryServices<MmlNode>;
@@ -45,7 +45,7 @@ extern std::vector<Property> MATHVARIANTS;
 extern std::vector<std::string> indentAttributes;
 // Native two-slot array tuples preserve the same scalar/object/array Property graph.
 Property attributeTuple(std::string origin,Property value);
-std::pair<std::string,Property> unpackAttribute(const Property& value);
+std::pair<Property,Property> unpackAttribute(const Property& value);
 
 class MmlNode : public tree::Node<MmlNode> {
 public:
@@ -75,10 +75,12 @@ public:
     virtual MmlNode* setTeXclass(MmlNode*)=0;
     virtual Property texSpacing()=0;
     virtual bool hasSpacingAttributes()=0;
-    virtual void setInheritedAttributes(AttributeList={},Property display=false,Property level=0,Property prime=false)=0;
+    void setInheritedAttributes(AttributeList attributes=Missing{},Property display=Missing{},Property level=Missing{},Property prime=Missing{}) { inheritAttributes(std::move(attributes),std::move(display),std::move(level),std::move(prime)); }
     virtual void inheritAttributesFrom(MmlNode*)=0;
     virtual void verifyTree(std::optional<PropertyList> options={})=0;
     virtual MmlNode* mError(std::string message,ErrorOptions options,bool shortError=false)=0;
+protected:
+    virtual void inheritAttributes(AttributeList,Property,Property,Property)=0;
 };
 // Optional native method binding models 'textContent' in node before invocation.
 // An engaged empty callback represents a present non-callable property.
@@ -133,7 +135,7 @@ public:
     MmlNode* setTeXclass(MmlNode*)override;
     Property texSpacing()override;
     bool hasSpacingAttributes()override;
-    void setInheritedAttributes(AttributeList={},Property display=false,Property level=0,Property prime=false)override;
+    protected: void inheritAttributes(AttributeList,Property display,Property level,Property prime)override; public:
     void inheritAttributesFrom(MmlNode*)override;
     void verifyTree(std::optional<PropertyList> options={})override;
     MmlNode* mError(std::string message,ErrorOptions options,bool shortError=false)override;
@@ -152,7 +154,7 @@ protected:
     virtual void updateTeXclass(MmlNode*);
     virtual void getPrevClass(MmlNode*);
     virtual void setChildInheritedAttributes(AttributeList,Property,Property,Property);
-    virtual AttributeList addInheritedAttributes(AttributeList,PropertyList);
+    virtual AttributeList addInheritedAttributes(AttributeList,Property);
     virtual void verifyAttributes(PropertyList);
     virtual void verifyChildren(PropertyList);
 };
@@ -215,7 +217,7 @@ public:
     MmlNode* setTeXclass(MmlNode*)override;
     Property texSpacing()override;
     bool hasSpacingAttributes()override;
-    void setInheritedAttributes(AttributeList={},Property display=false,Property level=0,Property prime=false)override;
+    protected: void inheritAttributes(AttributeList,Property display,Property level,Property prime)override; public:
     void inheritAttributesFrom(MmlNode*)override;
     void verifyTree(std::optional<PropertyList> options={})override;
     MmlNode* mError(std::string,ErrorOptions,bool shortError=false)override;

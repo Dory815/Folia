@@ -7,7 +7,8 @@ import folia.math.util.js_numeric_input;
 import folia.math.util.utf16;
 import std;
 export namespace folia::math::mml::host {
-inline void inheritanceDefaults(Property& display,Property& level,Property& prime){
+inline void inheritanceDefaults(Property& attributes,Property& display,Property& level,Property& prime){
+    if(attributes.missing())attributes=PropertyList{};
     if(display.missing())display=false;
     if(level.missing())level=0;
     if(prime.missing())prime=false;
@@ -191,6 +192,29 @@ inline Property get(const Property& value,std::string_view key){
     }else if(numeric)return Missing{};
     if(numeric)return Missing{};
     return PropertyList{}.get(key);
+}
+// Object.keys boxes scalar values, but rejects null and undefined. String own
+// indices enumerate UTF16 units; nested record and array values remain aliases.
+inline std::vector<std::string> ownKeys(const Property& input){
+    if(nullish(input))typeError("Cannot convert undefined or null to object");
+    if(auto record=PropertyList::record(input))return record->keys();
+    std::vector<std::string> keys;
+    if(auto value=std::get_if<std::string>(&input.value)){
+        auto units=text(*value);keys.reserve(units.size());
+        for(std::size_t i=0;i<units.size();++i)keys.push_back(std::to_string(i));
+    }
+    return keys;
+}
+// Pinned CJS lowers object spread to Object.assign({}, source). Nullish inputs
+// are ignored; assignment invokes the accepted inherited __proto__ setter.
+inline PropertyList objectAssign(const Property& input){
+    PropertyList result;
+    if(!nullish(input))for(const auto& key:ownKeys(input))result.set(key,get(input,key));
+    return result;
+}
+inline void set(const Property& receiver,std::string_view key,Property value){
+    if(auto record=PropertyList::record(receiver)){record->set(key,std::move(value));return;}
+    typeError("Cannot assign property on nullish or scalar receiver");
 }
 inline double number(const Property& input){
     auto p=primitive(input,false);
