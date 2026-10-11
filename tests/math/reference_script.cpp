@@ -11,7 +11,7 @@ import folia.math.core.mml_tree.leaf_host;
 namespace s=folia::math::string_util;namespace m=folia::math::mml;namespace h=m::host;namespace tr=folia::math::tree;using folia::math::Property;using folia::math::PropertyList;using folia::math::PropertyNull;using folia::math::Missing;using namespace boost::ut;namespace {
 std::u16string units(std::initializer_list<unsigned> v){std::u16string s;for(auto c:v)s.push_back(static_cast<char16_t>(c));return s;}
 bool prop(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return *x==*y||(std::isnan(*x)&&std::isnan(*y));return a==b;}
-m::Children children(std::initializer_list<m::MmlNode*> v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}m::MmlNode* at(m::MmlNode*n,std::size_t i){return n->childNodes&&i<n->childNodes->size()?(*n->childNodes)[i]:nullptr;}
+m::Children children(std::initializer_list<m::NodeValue> v={}){return std::make_shared<tr::ChildArray<m::MmlNode>>(v);}m::NodeValue at(m::MmlNode*n,std::size_t i){return n->childNodes->get(i);}
 struct Probe:m::AbstractMmlNode {using AbstractMmlNode::AbstractMmlNode;std::vector<std::array<Property,3>> seen;std::vector<Property> records;std::function<void()> callback;std::string kind()const override{return "probe";}bool isEmbellished()const override{return h::truthy(getProperty("embellished"));}void inheritAttributes(m::AttributeList a,Property d,Property l,Property p)override{records.push_back(a);seen.push_back({d,l,p});if(callback)callback();}};
 struct Sub:m::MmlMsubsup {using MmlMsubsup::MmlMsubsup;void hook(m::AttributeList a,Property d,Property l,Property p){setChildInheritedAttributes(a,d,l,p);}};
 struct Sup:m::MmlMsup {using MmlMsup::MmlMsup;void hook(m::AttributeList a,Property d,Property l,Property p){setChildInheritedAttributes(a,d,l,p);}};
@@ -1684,7 +1684,7 @@ expect(prop((*m::MmlMover::accents())[2],Property(h::debugText(units({97,99,99,1
 };
 "math_port_script_sub_virtual_getter_short_circuit_and_receiver_capture"_test=[] {
 F f(classes());
-{struct Changing:Sub{using Sub::Sub;mutable int reads=0;std::size_t sub()const override{++reads;(*childNodes)[1]=nullptr;(*childNodes)[2]=nullptr;return 1;}};f.setNodeClass("msubsup",m::classBinding<Changing>());auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Changing*>(create(f,"msubsup",{},children({a,b,c})));n->hook({},false,"2",Property(false));
+{struct Changing:Sub{using Sub::Sub;mutable int reads=0;std::size_t sub()const override{++reads;childNodes->set(1,nullptr);childNodes->set(2,nullptr);return 1;}};f.setNodeClass("msubsup",m::classBinding<Changing>());auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Changing*>(create(f,"msubsup",{},children({a,b,c})));n->hook({},false,"2",Property(false));
 expect(bool((n->reads)==1.0));
 expect(bool((b->seen.size())==1.0));
 if(b->seen.size()==1){
@@ -1697,7 +1697,7 @@ if(c->seen.size()==0){
 }
 expect(bool((at(n,1)==nullptr)==true));
 }
-{struct Changing:Sub{using Sub::Sub;mutable int reads=0;std::size_t sub()const override{++reads;(*childNodes)[1]=nullptr;(*childNodes)[2]=nullptr;return 1;}};f.setNodeClass("msubsup",m::classBinding<Changing>());auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Changing*>(create(f,"msubsup",{},children({a,b,c})));n->hook({},false,"2",Property(h::debugText(units({114,97,119}))));
+{struct Changing:Sub{using Sub::Sub;mutable int reads=0;std::size_t sub()const override{++reads;childNodes->set(1,nullptr);childNodes->set(2,nullptr);return 1;}};f.setNodeClass("msubsup",m::classBinding<Changing>());auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Changing*>(create(f,"msubsup",{},children({a,b,c})));n->hook({},false,"2",Property(h::debugText(units({114,97,119}))));
 expect(bool((n->reads)==0.0));
 expect(bool((b->seen.size())==1.0));
 if(b->seen.size()==1){
@@ -1716,7 +1716,7 @@ expect(bool((at(n,1)==nullptr)==false));
 };
 "math_port_script_captured_script_array_replacement_and_slot_mutation"_test=[] {
 F f(classes());
-{auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*late=dynamic_cast<Probe*>(f.create("probe"));auto*replacement=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Sub*>(create(f,"msubsup",{},children({a,b,c})));auto original=n->childNodes;a->callback=[&]{(*original)[2]=late;n->childNodes=children({replacement,replacement,replacement});};n->hook({},true,2,false);
+{auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*late=dynamic_cast<Probe*>(f.create("probe"));auto*replacement=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Sub*>(create(f,"msubsup",{},children({a,b,c})));auto original=n->childNodes;a->callback=[&]{original->set(2,m::NodeValue(late));n->childNodes=children({replacement,replacement,replacement});};n->hook({},true,2,false);
 expect(bool((b->seen.size())==1.0));
 if(b->seen.size()==1){
 expect(prop(b->seen[0][0],Property(false)));
@@ -1736,7 +1736,7 @@ expect(bool((replacement->seen.size())==0.0));
 if(replacement->seen.size()==0){
 }
 }
-{auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*late=dynamic_cast<Probe*>(f.create("probe"));auto*replacement=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Under*>(create(f,"munderover",{},children({a,b,c})));auto original=n->childNodes;a->callback=[&]{(*original)[2]=late;n->childNodes=children({replacement,replacement,replacement});};n->hook({},true,2,false);
+{auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*late=dynamic_cast<Probe*>(f.create("probe"));auto*replacement=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Under*>(create(f,"munderover",{},children({a,b,c})));auto original=n->childNodes;a->callback=[&]{original->set(2,m::NodeValue(late));n->childNodes=children({replacement,replacement,replacement});};n->hook({},true,2,false);
 expect(bool((b->seen.size())==1.0));
 if(b->seen.size()==1){
 expect(prop(b->seen[0][0],Property(false)));
@@ -1876,7 +1876,7 @@ expect(prop(n->attributes()->getExplicit("accentunder"),Property(false)));
 };
 "math_port_script_under_virtual_over_short_circuit_and_base_receiver_capture"_test=[] {
 F f(classes());
-{struct Changing:Under{using Under::Under;mutable int reads=0;std::size_t over()const override{++reads;(*childNodes)[0]=nullptr;return 2;}};f.setNodeClass("munderover",m::classBinding<Changing>());auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Changing*>(create(f,"munderover",{},children({a,b,c})));n->hook({},true,2,Property(false));
+{struct Changing:Under{using Under::Under;mutable int reads=0;std::size_t over()const override{++reads;childNodes->set(0,nullptr);return 2;}};f.setNodeClass("munderover",m::classBinding<Changing>());auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Changing*>(create(f,"munderover",{},children({a,b,c})));n->hook({},true,2,Property(false));
 expect(bool((n->reads)==1.0));
 expect(bool((a->seen.size())==1.0));
 if(a->seen.size()==1){
@@ -1886,7 +1886,7 @@ expect(prop(a->seen[0][2],Property(true)));
 }
 expect(bool((at(n,0)==nullptr)==true));
 }
-{struct Changing:Under{using Under::Under;mutable int reads=0;std::size_t over()const override{++reads;(*childNodes)[0]=nullptr;return 2;}};f.setNodeClass("munderover",m::classBinding<Changing>());auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Changing*>(create(f,"munderover",{},children({a,b,c})));n->hook({},true,2,Property(h::debugText(units({114,97,119}))));
+{struct Changing:Under{using Under::Under;mutable int reads=0;std::size_t over()const override{++reads;childNodes->set(0,nullptr);return 2;}};f.setNodeClass("munderover",m::classBinding<Changing>());auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*b=dynamic_cast<Probe*>(f.create("probe"));auto*c=dynamic_cast<Probe*>(f.create("probe"));auto*n=dynamic_cast<Changing*>(create(f,"munderover",{},children({a,b,c})));n->hook({},true,2,Property(h::debugText(units({114,97,119}))));
 expect(bool((n->reads)==0.0));
 expect(bool((a->seen.size())==1.0));
 if(a->seen.size()==1){

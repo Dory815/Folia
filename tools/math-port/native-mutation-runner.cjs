@@ -32,7 +32,7 @@ add_library(math STATIC)
 set_target_properties(math PROPERTIES CXX_MODULE_STD ON)
 target_sources(math PUBLIC FILE_SET CXX_MODULES FILES ${modules.map(f=>'"src/'+f+'"').join(' ')})
 target_sources(math PRIVATE ${units.map(f=>'"src/'+f+'"').join(' ')})
-${baselineOutcome==='compile'?`target_sources(math PRIVATE reference.cpp)
+${baselineOutcome==='compile'?`target_sources(math PRIVATE reference.cpp ${extraFixtures.map(f=>f.target).join(' ')})
 target_include_directories(math PRIVATE "${slash(path.join(root,'tests'))}")
 target_link_libraries(math PRIVATE Boost::ut_module)`:''}
 add_executable(MutationTests "${slash(path.join(root,'tests/main.cpp'))}" reference.cpp ${extraFixtures.map(f=>f.target).join(' ')})
@@ -59,7 +59,7 @@ exit /b %errorlevel%
  if(baselineOutcome==='compile'){
   for(const[file,{original}]of copies)assert.ok(original.equals(fs.readFileSync(path.join(root,'src/math',file))),'Working source changed: '+file);
   guardFixtures();
-  fs.writeFileSync(path.join(work,'compile-result.json'),JSON.stringify({compiles:true,modules:modules.length,fixture_compiled:true,semantic_tests_executed:false,working_files_unchanged:true},null,2)+'\n');console.log('Concrete declaration graph and static contracts compile; no semantic test executed.');return;
+  fs.writeFileSync(path.join(work,'compile-result.json'),JSON.stringify({compiles:true,modules:modules.length,fixture_compiled:true,compiled_fixtures:1+extraFixtures.length,semantic_tests_executed:false,working_files_unchanged:true},null,2)+'\n');console.log('Concrete declaration graph and static contracts compile; no semantic test executed.');return;
  }
  const baseline=test('baseline');
  if(baselineOutcome==='red'){

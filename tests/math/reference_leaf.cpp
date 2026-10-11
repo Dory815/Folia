@@ -16,10 +16,12 @@ import folia.math.core.mml_tree.leaf_host;
 namespace m=folia::math::mml;namespace tr=folia::math::tree;namespace h=m::host;using folia::math::Property;using folia::math::PropertyList;using folia::math::PropertyNull;using folia::math::Missing;using namespace boost::ut;namespace {
 std::u16string units(std::initializer_list<unsigned> v){std::u16string s;for(auto x:v)s.push_back(static_cast<char16_t>(x));return s;}
 bool prop(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return std::isnan(*y)?std::isnan(*x):std::bit_cast<std::uint64_t>(*x)==std::bit_cast<std::uint64_t>(*y);return a==b;}
-m::Children children(std::initializer_list<m::MmlNode*> v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}
-m::MmlNode* at(m::MmlNode*n,std::size_t i){return n&&n->childNodes&&i<n->childNodes->size()?(*n->childNodes)[i]:nullptr;}
+m::Children children(std::initializer_list<m::MmlNode*> v={}){auto a=std::make_shared<tr::ChildArray<m::MmlNode>>();for(auto*p:v)a->push_back(m::NodeValue(p));return a;}
+m::NodeValue valueAt(m::MmlNode*n,std::size_t i){return n&&n->childNodes&&i<n->childNodes->size()?n->childNodes->get(i):m::NodeValue(Missing{});}
+m::MmlNode* at(m::MmlNode*n,std::size_t i){return valueAt(n,i).nodeOrNull();}
+bool sameNode(m::NodeValue value,m::MmlNode*node){return value.isNode()&&value.nodeOrNull()==node;}
 std::size_t count(m::MmlNode*n){return n&&n->childNodes?n->childNodes->size():0;}
-struct Probe:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::function<void(m::MmlNode*)> onClass;std::function<void(m::AttributeList,Property,Property,Property)> onInherit;std::string kind()const override{return "probe";}bool isSpacelike()const override{return h::truthy(getProperty("space"));}bool isEmbellished()const override{return h::truthy(getProperty("embellished"));}m::MmlNode* setTeXclass(m::MmlNode*p)override{if(onClass)onClass(p);return AbstractMmlNode::setTeXclass(p);}void inheritAttributes(m::AttributeList a,Property d,Property l,Property p)override{if(onInherit)onInherit(a,d,l,p);AbstractMmlNode::inheritAttributes(a,d,l,p);}};
+struct Probe:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::function<void(m::NodeValue)> onClass;std::function<void(m::AttributeList,Property,Property,Property)> onInherit;std::string kind()const override{return "probe";}bool isSpacelike()const override{return h::truthy(getProperty("space"));}bool isEmbellished()const override{return h::truthy(getProperty("embellished"));}m::NodeValue setTeXclass(m::NodeValue p)override{if(onClass)onClass(p);return AbstractMmlNode::setTeXclass(p);}void inheritAttributes(m::AttributeList a,Property d,Property l,Property p)override{if(onInherit)onInherit(a,d,l,p);AbstractMmlNode::inheritAttributes(a,d,l,p);}};
 using F=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode> classes(){return {{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"math",m::classBinding<m::MmlMath>()},{"mi",m::classBinding<m::MmlMi>()},{"mn",m::classBinding<m::MmlMn>()},{"mtext",m::classBinding<m::MmlMtext>()},{"ms",m::classBinding<m::MmlMs>()},{"mspace",m::classBinding<m::MmlMspace>()},{"mstyle",m::classBinding<m::MmlMstyle>()},{"merror",m::classBinding<m::MmlMerror>()},{"mphantom",m::classBinding<m::MmlMphantom>()},{"text",m::classBinding<m::TextNode>()},{"XML",m::classBinding<m::XMLNode>()},{"probe",m::classBinding<Probe>()}};}
 m::MmlNode* create(F&f,std::string_view kind,PropertyList a={},m::Children c=children()){return f.create(kind,std::array<std::any,2>{a,c});}
 m::TextNode* text(F&f,std::u16string value){auto*n=dynamic_cast<m::TextNode*>(f.create("text"));n->setText(std::move(value));return n;}
@@ -31,7 +33,7 @@ suite math_port_leaf_tests=[] {
 expect(bool((n->kind())=="mrow"));
 expect(bool((n->isToken())==false));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==std::numeric_limits<double>::infinity()));
 expect(bool((n->linebreakContainer())==false));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -49,7 +51,7 @@ expect(bool((count(n))==0.0));
 expect(bool((n->kind())=="inferredMrow"));
 expect(bool((n->isToken())==false));
 expect(bool((n->isInferred())==true));
-expect(bool((n->notParent())==true));
+expect(bool((h::truthy(n->notParent()))==true));
 expect(bool((n->arity())==std::numeric_limits<double>::infinity()));
 expect(bool((n->linebreakContainer())==false));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -67,7 +69,7 @@ expect(bool((count(n))==0.0));
 expect(bool((n->kind())=="math"));
 expect(bool((n->isToken())==false));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==-1.0));
 expect(bool((n->linebreakContainer())==true));
 expect(bool((n->linebreakAlign())==""));
@@ -110,7 +112,7 @@ expect(bool((at(n,0)->kind())=="inferredMrow"));
 expect(bool((n->kind())=="mi"));
 expect(bool((n->isToken())==true));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==std::numeric_limits<double>::infinity()));
 expect(bool((n->linebreakContainer())==false));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -129,7 +131,7 @@ expect(bool((count(n))==0.0));
 expect(bool((n->kind())=="mn"));
 expect(bool((n->isToken())==true));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==std::numeric_limits<double>::infinity()));
 expect(bool((n->linebreakContainer())==false));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -148,7 +150,7 @@ expect(bool((count(n))==0.0));
 expect(bool((n->kind())=="mtext"));
 expect(bool((n->isToken())==true));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==std::numeric_limits<double>::infinity()));
 expect(bool((n->linebreakContainer())==false));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -167,7 +169,7 @@ expect(bool((count(n))==0.0));
 expect(bool((n->kind())=="ms"));
 expect(bool((n->isToken())==true));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==std::numeric_limits<double>::infinity()));
 expect(bool((n->linebreakContainer())==false));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -188,7 +190,7 @@ expect(bool((count(n))==0.0));
 expect(bool((n->kind())=="mspace"));
 expect(bool((n->isToken())==true));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==0.0));
 expect(bool((n->linebreakContainer())==false));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -218,7 +220,7 @@ expect(bool((count(n))==0.0));
 expect(bool((n->kind())=="mstyle"));
 expect(bool((n->isToken())==false));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==-1.0));
 expect(bool((n->linebreakContainer())==false));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -242,7 +244,7 @@ expect(bool((at(n,0)->kind())=="inferredMrow"));
 expect(bool((n->kind())=="merror"));
 expect(bool((n->isToken())==false));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==-1.0));
 expect(bool((n->linebreakContainer())==true));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -261,7 +263,7 @@ expect(bool((at(n,0)->kind())=="inferredMrow"));
 expect(bool((n->kind())=="mphantom"));
 expect(bool((n->isToken())==false));
 expect(bool((n->isInferred())==false));
-expect(bool((n->notParent())==false));
+expect(bool((h::truthy(n->notParent()))==false));
 expect(bool((n->arity())==-1.0));
 expect(bool((n->linebreakContainer())==false));
 expect(bool((n->linebreakAlign())=="data-align"));
@@ -320,17 +322,17 @@ expect(bool((bits([](char16_t c){return h::onlySpaces(std::u16string(1,c));}))==
 "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000"));
 };
 "math_port_leaf_row_core_null_persistence_and_queries"_test=[] {F f(classes());
-auto*row=dynamic_cast<m::MmlMrow*>(f.create("mrow"));auto*a=f.create("probe");auto*b=f.create("probe");auto*space=f.create("mspace");a->setProperty("embellished",true);b->setProperty("embellished",true);row->setChildren(children({space,a}));row->childNodes->insert(row->childNodes->begin(),nullptr);
+auto*row=dynamic_cast<m::MmlMrow*>(f.create("mrow"));auto*a=f.create("probe");auto*b=f.create("probe");auto*space=f.create("mspace");a->setProperty("embellished",true);b->setProperty("embellished",true);row->setChildren(children({space,a}));std::array<m::NodeValue,1> added{m::NodeValue(PropertyNull{})};row->childNodes->splice(0,0,added);
 expect(bool((row->isEmbellished())==true));
-expect(bool((row->core()==a)==true));
-expect(bool((row->coreMO()==a)==true));
+expect(bool((sameNode(row->core(),a))==true));
+expect(bool((sameNode(row->coreMO(),a))==true));
 expect(bool((row->nonSpaceLength())==1.0));
 expect(bool((row->firstNonSpace()==a)==true));
 expect(bool((row->lastNonSpace()==a)==true));
 {bool caught=false;try{(void)row->isSpacelike();}catch(const tr::FactoryError&error){caught=true;expect(bool(error.name=="TypeError"));}expect(caught);}
-row->childNodes->push_back(b);
+row->childNodes->push_back(m::NodeValue(b));
 expect(bool((row->isEmbellished())==false));
-expect(bool((row->core()==row)==true));
+expect(bool((sameNode(row->core(),row))==true));
 row->childNodes=children({space});
 expect(bool((row->isEmbellished())==false));
 expect(bool((row->nonSpaceLength())==0.0));
@@ -338,38 +340,38 @@ expect(bool((row->firstNonSpace()==nullptr)==true));
 expect(bool((row->isSpacelike())==true));
 };
 "math_port_leaf_row_delimiter_nullish_and_class_transfer"_test=[] {F f(classes());
-{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(Missing{}));auto*result=r->setTeXclass(prev);
-expect(bool((result==r)==false));
+{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(Missing{}));auto result=r->setTeXclass(m::NodeValue(prev));
+expect(bool((sameNode(result,r))==false));
 expect(prop(r->texClass(),Property(2.0)));
 expect(prop(r->prevClass(),Property(3.0)));
 expect(prop(a->prevClass(),Property(PropertyNull{})));
 }
-{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(PropertyNull{}));auto*result=r->setTeXclass(prev);
-expect(bool((result==r)==false));
+{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(PropertyNull{}));auto result=r->setTeXclass(m::NodeValue(prev));
+expect(bool((sameNode(result,r))==false));
 expect(prop(r->texClass(),Property(2.0)));
 expect(prop(r->prevClass(),Property(3.0)));
 expect(prop(a->prevClass(),Property(PropertyNull{})));
 }
-{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(false));auto*result=r->setTeXclass(prev);
-expect(bool((result==r)==true));
+{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(false));auto result=r->setTeXclass(m::NodeValue(prev));
+expect(bool((sameNode(result,r))==true));
 expect(prop(r->texClass(),Property(7.0)));
 expect(prop(r->prevClass(),Property(3.0)));
 expect(prop(a->prevClass(),Property(PropertyNull{})));
 }
-{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(h::debugText(units({}))));auto*result=r->setTeXclass(prev);
-expect(bool((result==r)==true));
+{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(h::debugText(units({}))));auto result=r->setTeXclass(m::NodeValue(prev));
+expect(bool((sameNode(result,r))==true));
 expect(prop(r->texClass(),Property(7.0)));
 expect(prop(r->prevClass(),Property(3.0)));
 expect(prop(a->prevClass(),Property(PropertyNull{})));
 }
-{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(0.0));auto*result=r->setTeXclass(prev);
-expect(bool((result==r)==true));
+{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(0.0));auto result=r->setTeXclass(m::NodeValue(prev));
+expect(bool((sameNode(result,r))==true));
 expect(prop(r->texClass(),Property(7.0)));
 expect(prop(r->prevClass(),Property(3.0)));
 expect(prop(a->prevClass(),Property(PropertyNull{})));
 }
-{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(h::debugText(units({40}))));auto*result=r->setTeXclass(prev);
-expect(bool((result==r)==true));
+{auto*r=f.create("mrow");auto*a=f.create("probe");auto*prev=f.create("probe");a->setTexClass(2);prev->setTexClass(3);r->setChildren(children({a}));r->setProperty("open",Property(h::debugText(units({40}))));auto result=r->setTeXclass(m::NodeValue(prev));
+expect(bool((sameNode(result,r))==true));
 expect(prop(r->texClass(),Property(7.0)));
 expect(prop(r->prevClass(),Property(3.0)));
 expect(prop(a->prevClass(),Property(PropertyNull{})));
@@ -380,75 +382,75 @@ auto*r=f.create("inferredMrow");auto*x=text(f,units({97,55296}));r->childNodes=c
 expect(bool(h::text(r->toString())==units({91,97,55296,44,44,91,93,93})));
 };
 "math_port_leaf_mi_italic_and_auto_operator"_test=[] {F f(classes());
-{auto*n=create(f,"mi",{},children({text(f,units({120}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({120}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({105,116,97,108,105,99})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({105,116,97,108,105,99})))));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 expect(prop(n->texClass(),Property(0.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
-{auto*n=create(f,"mi",{},children({text(f,units({115,105,110}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({115,105,110}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->getProperty("autoOP"),Property(true)));
 expect(prop(n->texClass(),Property(1.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
-{auto*n=create(f,"mi",{},children({text(f,units({97,98,99,50}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({97,98,99,50}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->getProperty("autoOP"),Property(true)));
 expect(prop(n->texClass(),Property(1.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
-{auto*n=create(f,"mi",{},children({text(f,units({50,120}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({50,120}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 expect(prop(n->texClass(),Property(0.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
-{auto*n=create(f,"mi",{},children({text(f,units({97,45,98}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({97,45,98}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 expect(prop(n->texClass(),Property(0.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
-{auto*n=create(f,"mi",{},children({text(f,units({97,10}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({97,10}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 expect(prop(n->texClass(),Property(0.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
-{auto*n=create(f,"mi",{},children({text(f,units({55357,56832}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({55357,56832}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({105,116,97,108,105,99})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({105,116,97,108,105,99})))));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 expect(prop(n->texClass(),Property(0.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
-{auto*n=create(f,"mi",{},children({text(f,units({97,768}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({97,768}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({105,116,97,108,105,99})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({105,116,97,108,105,99})))));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 expect(prop(n->texClass(),Property(0.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
-{auto*n=create(f,"mi",{},children({text(f,units({97,6847}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({97,6847}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({110,111,114,109,97,108})))));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 expect(prop(n->texClass(),Property(0.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
-{auto*n=create(f,"mi",{},children({text(f,units({55296,55296}))}));n->setInheritedAttributes();auto*result=n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,units({55296,55296}))}));n->setInheritedAttributes();auto result=n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({105,116,97,108,105,99})))));
 expect(prop(n->attributes()->getInherited("mathvariant"),Property(h::debugText(units({105,116,97,108,105,99})))));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 expect(prop(n->texClass(),Property(0.0)));
-expect(bool((result==n)==true));
+expect(bool((sameNode(result,n))==true));
 }
 auto*n=create(f,"mi",PropertyList{{"mathvariant","bold"}},children({text(f,u"x")}));n->setInheritedAttributes();
 expect(prop(n->attributes()->get("mathvariant"),Property(h::debugText(units({98,111,108,100})))));
@@ -947,9 +949,9 @@ expect(prop(level,Property(7.0)));
 m::MmlMath::defaults().set("scriptlevel",old);
 };
 "math_port_leaf_math_nested_null_options_failure_after_allocation"_test=[] {F f(classes());
-auto*parent=f.create("probe");auto*n=f.create("math");parent->appendChild(n);m::MmlNode*error=nullptr;auto c=m::classBinding<m::MmlMerror>();auto original=c->construct;c->construct=[&](m::Factory&f,tr::FactoryArgs a){error=original(f,a);return error;};f.setNodeClass("merror",c);
+auto*parent=f.create("probe");auto*n=f.create("math");parent->appendChild(m::NodeValue(n));m::MmlNode*error=nullptr;auto c=m::classBinding<m::MmlMerror>();auto original=c->construct;c->construct=[&](m::Factory&f,tr::FactoryArgs a){error=original(f,a);return error;};f.setNodeClass("merror",c);
 {bool caught=false;try{n->verifyTree();}catch(const tr::FactoryError&error){caught=true;expect(bool(error.name=="TypeError"));}expect(caught);}
-expect(bool((at(parent,0)==n)==true));
+expect(bool((sameNode(at(parent,0),n))==true));
 expect(bool((error!=nullptr)==true));
 if(error){
 expect(prop(error->attributes()->getExplicit("data-mjx-message"),Property(h::debugText(units({73,109,112,114,111,112,101,114,32,110,101,115,116,105,110,103,32,111,102,32,109,97,116,104,32,116,97,103,115})))));
@@ -970,46 +972,46 @@ expect(bool((r->lastNonSpace()==replacement)==true));
 };
 "math_port_leaf_row_core_uses_current_array_after_predicate"_test=[] {F f(classes());
 struct Flicker:Probe{using Probe::Probe;std::function<void()> callback;bool isEmbellished()const override{if(callback)callback();return Probe::isEmbellished();}};f.setNodeClass("probe",m::classBinding<Flicker>());auto*r=f.create("mrow");auto*a=dynamic_cast<Flicker*>(f.create("probe"));auto*replacement=f.create("probe");a->setProperty("embellished",true);r->childNodes=children({a});a->callback=[&]{r->childNodes=children({replacement});};
-expect(bool((r->core()==replacement)==true));
+expect(bool((sameNode(r->core(),replacement))==true));
 r->childNodes=children({a});a->callback=[&]{r->childNodes=children({nullptr});};
 {bool caught=false;try{(void)r->coreMO();}catch(const tr::FactoryError&error){caught=true;expect(bool(error.name=="TypeError"));}expect(caught);}
 };
 "math_port_leaf_row_live_class_iteration_and_current_first_child"_test=[] {F f(classes());
-auto*r=f.create("mrow");auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*late=f.create("probe");auto*replacement=f.create("probe");a->setTexClass(2);late->setTexClass(3);replacement->setTexClass(1);auto original=children({a});r->childNodes=original;a->onClass=[&](m::MmlNode*){original->push_back(late);r->childNodes=children({replacement});};auto*result=r->setTeXclass(nullptr);
-expect(bool((result==late)==true));
+auto*r=f.create("mrow");auto*a=dynamic_cast<Probe*>(f.create("probe"));auto*late=f.create("probe");auto*replacement=f.create("probe");a->setTexClass(2);late->setTexClass(3);replacement->setTexClass(1);auto original=children({a});r->childNodes=original;a->onClass=[&](m::NodeValue){original->push_back(m::NodeValue(late));r->childNodes=children({replacement});};auto result=r->setTeXclass(m::NodeValue(PropertyNull{}));
+expect(bool((sameNode(result,late))==true));
 expect(prop(r->texClass(),Property(1.0)));
 expect(bool((at(r,0)==replacement)==true));
 };
 "math_port_leaf_mi_tuple_and_property_presence"_test=[] {F f(classes());
-{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("autoOP",Property(PropertyNull{}));n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("autoOP",Property(PropertyNull{}));n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->texClass(),Property(0.0)));
 expect(prop(n->getProperty("autoOP"),Property(PropertyNull{})));
 }
-{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("autoOP",Property(false));n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("autoOP",Property(false));n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->texClass(),Property(0.0)));
 expect(prop(n->getProperty("autoOP"),Property(false)));
 }
-{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("autoOP",Property(0.0));n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("autoOP",Property(0.0));n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->texClass(),Property(0.0)));
 expect(prop(n->getProperty("autoOP"),Property(0.0)));
 }
-{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("autoOP",Property(h::debugText(units({}))));n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("autoOP",Property(h::debugText(units({}))));n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->texClass(),Property(0.0)));
 expect(prop(n->getProperty("autoOP"),Property(h::debugText(units({})))));
 }
-{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("texClass",Property(PropertyNull{}));n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("texClass",Property(PropertyNull{}));n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->texClass(),Property(0.0)));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 }
-{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("texClass",Property(false));n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("texClass",Property(false));n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->texClass(),Property(0.0)));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 }
-{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("texClass",Property(0.0));n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("texClass",Property(0.0));n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->texClass(),Property(0.0)));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 }
-{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("texClass",Property(h::debugText(units({}))));n->setTeXclass(nullptr);
+{auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setProperty("texClass",Property(h::debugText(units({}))));n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(prop(n->texClass(),Property(0.0)));
 expect(prop(n->getProperty("autoOP"),Property(Missing{})));
 }
@@ -1029,7 +1031,7 @@ expect(prop(n->attributes()->get("display"),Property(h::debugText(units({105,110
 }
 };
 "math_port_leaf_mi_operator_assignment_uses_virtual_setter"_test=[] {F f(classes());
-struct Observe:m::MmlMi{using MmlMi::MmlMi;static int& sets(){static int n=0;return n;}void setTexClass(Property v)override{++sets();MmlMi::setTexClass(v);}};f.setNodeClass("mi",m::classBinding<Observe>());auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setTeXclass(nullptr);
+struct Observe:m::MmlMi{using MmlMi::MmlMi;static int& sets(){static int n=0;return n;}void setTexClass(Property v)override{++sets();MmlMi::setTexClass(v);}};f.setNodeClass("mi",m::classBinding<Observe>());auto*n=create(f,"mi",{},children({text(f,u"sin")}));n->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(bool((Observe::sets())==1.0));
 expect(prop(n->texClass(),Property(1.0)));
 };
