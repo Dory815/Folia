@@ -6,6 +6,7 @@ pub mod geometry;
 pub mod paint;
 pub mod text;
 pub mod builder;
+pub mod compile;
 
 pub use builder::SceneBuilder;
 pub use geometry::*;
