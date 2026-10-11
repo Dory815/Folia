@@ -38,7 +38,7 @@ void resumeAsync(const std::shared_ptr<AsyncFrame>& frame) {
         const auto itemIndex = static_cast<std::size_t>(frame->index);
         const auto record = (*frame->items)[itemIndex];
         if (!record) functions::typeError(u"FunctionList item record is null");
-        std::any result = functions::invoke(*record, frame->arguments);
+        std::any result = functions::invoke(record, frame->arguments);
 
         if (auto input = functions::promise(result, queue)) {
             // Keep the source's two links: input.then(execute).catch(fail).
@@ -100,7 +100,7 @@ bool FunctionList::execute(FunctionArgs args) {
     for (auto current = begin(), finish = end(); current != finish; ++current) {
         const auto record = current.record();
         if (!record) functions::typeError(u"FunctionList item record is null");
-        const std::any result = functions::invoke(*record, arguments);
+        const std::any result = functions::invoke(record, arguments);
         if (functions::isFalse(result)) return false;
     }
     return true;

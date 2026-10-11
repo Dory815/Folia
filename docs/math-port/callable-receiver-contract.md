@@ -21,11 +21,16 @@ using NativeObjectRef = std::shared_ptr<NativeObject>;
 // folia.math.util.callable_types; namespace folia::math
 using FunctionReceiver = std::variant<Missing, NativeObjectRef>;
 using FunctionArgs = std::span<const std::any>;
+// FunctionBody retains one shared Callback, including mutable closure state.
 struct Function {
-    std::function<std::any(const FunctionReceiver&, FunctionArgs)> call;
+    FunctionBody call;
 };
 using FunctionRef = std::shared_ptr<Function>;
 ```
+
+FunctionBody is a copyable handle over one shared native std::function. Saving
+the active body keeps it alive through replacement without cloning mutable
+closure state. It is the sole callback field, not another invocation path.
 
 NativeObject is an identity/lifetime marker for explicitly ported objects,
 not a property evaluator, prototype VM, string-tag dispatcher or generic JS
