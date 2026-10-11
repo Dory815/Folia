@@ -292,8 +292,13 @@ bool AbstractMmlNode::isInferred() const { return false; }
 Property AbstractMmlNode::notParent() const { return false; }
 
 NodeValue AbstractMmlNode::Parent() const {
-    // P23f Root stub: AbstractMmlNode::Parent.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    NodeValue parent = getParent();
+    while (auto* node = parent.nodeOrNull()) {
+        if (!host::truthy(node->notParent())) break;
+        parent = node->Parent();
+    }
+    return parent;
 }
 
 void AbstractMmlNode::setChildren(Children children) {
@@ -346,8 +351,23 @@ NodeValue AbstractMmlNode::coreMO() { return this; }
 std::size_t AbstractMmlNode::coreIndex() { return 0; }
 
 std::optional<std::size_t> AbstractMmlNode::childPosition() {
-    // P23f Root stub: AbstractMmlNode::childPosition.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    NodeValue child;
+    NodeValue parent = getParent();
+    while (auto* node = parent.nodeOrNull()) {
+        if (!host::truthy(node->notParent())) break;
+        child = parent;
+        parent = node->getParent();
+    }
+    if (!child.isNode()) child = NodeValue(this);
+    if (auto* node = parent.nodeOrNull()) {
+        const auto children = node->childNodes;
+        if (!children) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+        for (std::size_t index = 0; index < children->size(); ++index) {
+            if (children->get(index) == child) return index;
+        }
+    }
+    return {};
 }
 
 NodeValue AbstractMmlNode::setTeXclass(NodeValue previous) {

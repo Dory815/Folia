@@ -24,7 +24,9 @@ the searched identity is this. If the final parent is a node, capture its
 current child-array receiver and perform for-of semantics: Get every index
 (holes become Undefined, inherited numeric values are visible), live length,
 strict identity, first match returns its index. Null array raises the original
-TypeError `parent.childNodes is not iterable`. Missing parent/match returns
+TypeError `object null is not iterable (cannot read property Symbol(Symbol.iterator))`.
+Root corrected the initially misstated message against the frozen Source profile;
+the Source expectations remain unchanged. Missing parent/match returns
 null via optional<size_t>. No precomputed dense index or hole skipping.
 
 Root actual original oracle --check freezes 10,800 calls, 1,836 source errors,
@@ -44,3 +46,13 @@ all rows and expected values stayed unchanged. No stopped compile is red proof.
 Root requires unchanged Source checks, all 10,800 assertions, effective compiling
 semantic faults, relevant base/inheritance regressions and the repository build.
 This accepts two methods, not the whole MmlNode file or math engine/backend.
+
+Root supplemental final-array rebind profile adds 2,160 original calls (22
+Source errors), SHA-256 f3e1067e06d2b3d969b003811ca9f27e9d653eec3109513214c2601a4a3d8165.
+The initial rebind-b mode does not reach that array as the final receiver;
+this distinct supplement replaces a/c arrays from a.notParent to observe
+current-receiver capture. The main 10,800 Source rows remain byte-identical.
+Native helper transport gained these modes without changing expectations.
+Final acceptance requires 12,960 assertions in two tests and the additional
+compiling stale-receiver fault. The earlier run whose fixture changed during
+execution was rejected; only the fresh immutable run is acceptance evidence.

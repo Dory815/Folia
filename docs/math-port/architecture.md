@@ -298,3 +298,10 @@ values, virtual callback order and partial failure effects: 13,892 assertions,
 11 effective compiling mutations and 1,765 existing regression assertions.
 See `evidence/p24-base-class-acceptance.md`. Full parser, wrappers, shared
 layout, SVG/D2D and Folia gates remain open; 54/246 remains a historical tally.
+
+P25 accepts four parent/class-propagation methods over the actual graph:
+12,960 Parent assertions with ten faults and 6,480 Layout/Base assertions with
+twelve faults. Existing base/inheritance gates also pass. The full build still
+has the same nine observer compilation failures. See
+`evidence/p25-mml-method-acceptance.md`; no whole-file tally or rendering gate
+advances from these narrow method results.

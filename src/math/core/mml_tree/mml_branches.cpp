@@ -109,8 +109,10 @@ NodeValue AbstractMmlLayoutNode::coreMO() {
 }
 
 NodeValue AbstractMmlLayoutNode::setTeXclass(NodeValue previous) {
-    // P23f Root stub: AbstractMmlLayoutNode::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    previous = required_child_zero(*this, "setTeXclass").setTeXclass(previous);
+    updateTeXclass(child_zero(*this));
+    return previous;
 }
 
 bool AbstractMmlBaseNode::isEmbellished() const {
@@ -128,8 +130,37 @@ NodeValue AbstractMmlBaseNode::coreMO() {
 }
 
 NodeValue AbstractMmlBaseNode::setTeXclass(NodeValue previous) {
-    // P23f Root stub: AbstractMmlBaseNode::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    getPrevClass(previous);
+    setTexClass(static_cast<double>(TEXCLASS.ORD));
+
+    const NodeValue base = child_zero(*this);
+    NodeValue result(PropertyNull{});
+    if (auto* const baseNode = base.nodeOrNull()) {
+        if (isEmbellished() || baseNode->isKind("mi")) {
+            result = baseNode->setTeXclass(previous);
+            updateTeXclass(core());
+        } else {
+            baseNode->setTeXclass(NodeValue(PropertyNull{}));
+            if (baseNode->isKind("TeXAtom")) {
+                setTexClass(baseNode->texClass());
+            }
+        }
+    }
+
+    const auto currentChildren = childNodes;
+    if (!currentChildren) {
+        throw Error("TypeError",u"Cannot read properties of null (reading 'slice')");
+    }
+    const auto tail = currentChildren->slice(1);
+    for (std::size_t index = 0; index < tail->size(); ++index) {
+        const NodeValue child = tail->get(index);
+        if (child.isNode()) {
+            child.requireNode("setTeXclass")->setTeXclass(NodeValue(PropertyNull{}));
+        }
+    }
+
+    return result.isNode() ? result : NodeValue(this);
 }
 
 } // namespace folia::math::mml
