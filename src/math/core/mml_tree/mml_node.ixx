@@ -89,8 +89,8 @@ public:
 };
 class AbstractMmlNode : public tree::AbstractNode<MmlNode,MmlNode> {
     using Generic=tree::AbstractNode<MmlNode,MmlNode>;
-    Property texclass_=PropertyNull{},prevClass_=PropertyNull{};
-    Property prevLevel_=PropertyNull{};
+    Property texclass_=Missing{},prevClass_=Missing{};
+    Property prevLevel_=Missing{};
     std::shared_ptr<Attributes> attributes_;
     std::shared_ptr<MmlClassInfo> constructorInfo_;
 public:

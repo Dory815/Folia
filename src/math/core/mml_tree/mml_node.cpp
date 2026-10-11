@@ -123,6 +123,13 @@ void AbstractMmlNode::initializeMml(tree::FactoryArgs args) {
     tree::TreeCallGuard<MmlNode> guard;
     Generic::initializeNode({});
 
+    // Pinned CJS initializes these three fields after the generic superclass,
+    // before arity/children/attributes. Public previous-state writes retain
+    // their virtual host bindings; texclass is the raw inherited field.
+    setPrevClass(PropertyNull{});
+    setPrevLevel(PropertyNull{});
+    initializeTexClass(PropertyNull{});
+
     Children children = std::make_shared<std::vector<MmlNode*>>();
     if (args.size() > 1 && args[1].has_value()) {
         if (const auto* supplied = std::any_cast<Children>(&args[1])) children = *supplied;
