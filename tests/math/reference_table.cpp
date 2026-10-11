@@ -17,16 +17,16 @@ import folia.math.core.tree.node_factory;
 namespace m=folia::math::mml;namespace h=m::host;namespace tr=folia::math::tree;using folia::math::Property;using folia::math::PropertyList;using folia::math::PropertyArray;using folia::math::Missing;using folia::math::PropertyNull;using namespace boost::ut;namespace {
 std::u16string units(std::initializer_list<unsigned>v){std::u16string s;for(auto x:v)s.push_back(static_cast<char16_t>(x));return s;}
 m::Children children(std::initializer_list<m::MmlNode*>v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}
-bool deep(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return (std::isnan(*x)&&std::isnan(*y))||(*x==*y&&std::signbit(*x)==std::signbit(*y));auto x=PropertyList::record(a),y=PropertyList::record(b);if(x&&y){if(PropertyArray::array(a).has_value()!=PropertyArray::array(b).has_value()||x->keys()!=y->keys())return false;for(const auto&k:x->keys())if(!deep(x->getOwn(k),y->getOwn(k)))return false;return true;}return a==b;}
+bool deep(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return (std::isnan(*x)&&std::isnan(*y))||(*x==*y&&std::signbit(*x)==std::signbit(*y));auto x=PropertyList::record(a),y=PropertyList::record(b);if(x&&y){if(PropertyArray::array(a).has_value()!=PropertyArray::array(b).has_value()||x->keys()!=y->keys())return false;for(const auto&k:x->keys())if(!deep(x->getOwn(k),y->getOwn(k)))return false;if(auto ax=PropertyArray::array(a))return ax->size()==PropertyArray::array(b)->size();return true;}return a==b;}
 Property clone(const Property&v){if(auto a=PropertyArray::array(v)){PropertyArray out;for(std::size_t i=0;i<a->size();++i)out.push(clone(a->get(i)));return Property(out);}if(auto a=PropertyList::record(v)){PropertyList out;for(const auto&k:a->keys())out.setOwn(k,clone(a->getOwn(k)));return Property(out);}return v;}
-bool enabled=false;std::vector<std::string>traceLog;std::string mode;struct Call{m::MmlNode*node;PropertyList a;Property d,l,p,snapshot;};std::vector<Call>calls;std::vector<m::MmlNode*>texCalls;m::Children originalChildren;m::MmlNode*target=nullptr,*late=nullptr;Property phaseBag,partialInherited;int attrReads=0;PropertyList changingInherited;void note(std::string s){if(enabled)traceLog.push_back(std::move(s));}
-template<class T>struct Probe:T{using T::T;std::shared_ptr<folia::math::Attributes>attributes()const override{note("attributes");if(enabled&&mode=="indent-grow"&&++attrReads==1)m::indentAttributes.push_back("root-extra");if(enabled&&mode=="indent-argument"&&++attrReads==1)h::tableSetIndex(changingInherited.get("indentalign"),"1","after");return T::attributes();}void setChildren(m::Children c)override{note("phase/"+h::debugText(h::string(T::texClass())));if(enabled)phaseBag=T::getAllProperties();T::setChildren(c);}void getPrevClass(m::MmlNode*p)override{note("previous");T::getPrevClass(p);}PropertyList addInheritedAttributes(PropertyList a,PropertyList b)override{auto result=T::addInheritedAttributes(a,b);if(enabled&&mode=="null-inherit"){(*this->childNodes)[0]=nullptr;partialInherited=result;}return result;}void hook(PropertyList a,Property d,Property l,Property p){T::setChildInheritedAttributes(a,d,l,p);}void verify(PropertyList o){T::verifyChildren(o);}};
+bool enabled=false;std::vector<std::string>traceLog;std::string mode;struct Call{m::MmlNode*node;PropertyList a;Property d,l,p,snapshot;};std::vector<Call>calls;std::vector<m::MmlNode*>texCalls;m::Children originalChildren;m::MmlNode*target=nullptr,*late=nullptr;Property phaseBag,partialInherited;int attrReads=0,verifyCalls=0,errorCalls=0;PropertyList changingInherited;void note(std::string s){if(enabled)traceLog.push_back(std::move(s));}
+template<class T>struct Probe:T{using T::T;std::shared_ptr<folia::math::Attributes>attributes()const override{note("attributes");if(enabled&&mode=="indent-grow"&&++attrReads==1)m::indentAttributes.push_back("root-extra");if(enabled&&mode=="indent-argument"&&++attrReads==1)h::tableSetIndex(changingInherited.get("indentalign"),"1","after");return T::attributes();}void setChildren(m::Children c)override{note("phase/"+h::debugText(h::string(T::texClass())));if(enabled)phaseBag=T::getAllProperties();T::setChildren(c);}void getPrevClass(m::MmlNode*p)override{note("previous");T::getPrevClass(p);}PropertyList addInheritedAttributes(PropertyList a,PropertyList b)override{auto result=T::addInheritedAttributes(a,b);if(enabled&&mode=="null-inherit"){(*this->childNodes)[0]=nullptr;partialInherited=result;}return result;}void hook(PropertyList a,Property d,Property l,Property p){T::setChildInheritedAttributes(a,d,l,p);}m::MmlNode*mError(std::string message,m::ErrorOptions options,bool shortError=false)override{if(mode=="verify-dispatch"){note("error/"+std::string(shortError?"true":"false"));++errorCalls;return this;}return T::mError(message,options,shortError);}void verify(PropertyList o){T::verifyChildren(o);}};
 void receive(m::MmlNode*n,std::string_view label,PropertyList a,Property d,Property l,Property p){note("inherit/"+std::string(label));calls.push_back({n,a,d,l,p,clone(Property(a))});if(label=="first"&&mode=="tuple"){h::tableSetIndex(a.get("rowalign"),"1","callback");h::tableSetIndex(a.get("columnalign"),"1","callback");h::tableSetIndex(a.get("data-break-align"),"1","callback");}if(label=="first"&&mode=="swap")target->childNodes=children({n,late});}
 m::MmlNode*tex(m::MmlNode*n,std::string_view label,m::MmlNode*p){note("tex/"+std::string(label)+"/"+(p?"prev":"null"));texCalls.push_back(n);if(label=="first"&&mode=="grow-rebind"){originalChildren->push_back(late);target->childNodes=children({late});}if(label=="first"&&mode=="swap")target->childNodes=children({n,late});return n;}
-template<class T>struct Sink:T{using T::T;std::string label;void setInheritedAttributes(PropertyList a={},Property d=false,Property l=0,Property p=false)override{receive(this,label,a,d,l,p);}m::MmlNode*setTeXclass(m::MmlNode*p)override{return tex(this,label,p);}};using SinkRow=Sink<m::MmlMtr>;using SinkCell=Sink<m::MmlMtd>;using Table=Probe<m::MmlMtable>;using Row=Probe<m::MmlMtr>;using Label=Probe<m::MmlMlabeledtr>;using Cell=Probe<m::MmlMtd>;
+template<class T>struct Sink:T{using T::T;std::string label;void verifyTree(std::optional<PropertyList> options={})override{note("verify/"+label);++verifyCalls;}void setInheritedAttributes(PropertyList a={},Property d=false,Property l=0,Property p=false)override{receive(this,label,a,d,l,p);}m::MmlNode*setTeXclass(m::MmlNode*p)override{return tex(this,label,p);}};using SinkRow=Sink<m::MmlMtr>;using SinkCell=Sink<m::MmlMtd>;using Table=Probe<m::MmlMtable>;using Row=Probe<m::MmlMtr>;using Label=Probe<m::MmlMlabeledtr>;using Cell=Probe<m::MmlMtd>;
 using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode>bindings(){return {{"probe-mtable",m::classBinding<Table>()},{"probe-mtr",m::classBinding<Row>()},{"probe-mlabeledtr",m::classBinding<Label>()},{"probe-mtd",m::classBinding<Cell>()},{"sinkrow",m::classBinding<SinkRow>()},{"sinkcell",m::classBinding<SinkCell>()},{"mtable",m::classBinding<m::MmlMtable>()},{"mtr",m::classBinding<m::MmlMtr>()},{"mlabeledtr",m::classBinding<m::MmlMlabeledtr>()},{"mtd",m::classBinding<m::MmlMtd>()},{"math",m::classBinding<m::MmlMath>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"mi",m::classBinding<m::MmlMi>()},{"mtext",m::classBinding<m::MmlMtext>()},{"merror",m::classBinding<m::MmlMerror>()},{"mfrac",m::classBinding<m::MmlMfrac>()},{"msqrt",m::classBinding<m::MmlMsqrt>()},{"mroot",m::classBinding<m::MmlMroot>()},{"text",m::classBinding<m::TextNode>()}};}
 m::MmlNode*create(NF&f,std::string_view k,PropertyList a={},m::Children c=children()){return f.create(k,std::array<std::any,2>{a,c});}
-void reset(){enabled=false;traceLog.clear();mode.clear();calls.clear();texCalls.clear();originalChildren.reset();target=late=nullptr;phaseBag=Missing{};partialInherited=Missing{};attrReads=0;changingInherited=PropertyList{};}
+void reset(){enabled=false;traceLog.clear();mode.clear();calls.clear();texCalls.clear();originalChildren.reset();target=late=nullptr;phaseBag=Missing{};partialInherited=Missing{};attrReads=0;changingInherited=PropertyList{};verifyCalls=errorCalls=0;}
 struct Setup{NF f{bindings()};m::MmlNode*n,*a,*b,*c;Setup(std::string_view k){reset();n=create(f,"probe-"+std::string(k));const auto sink=k=="mtable"?"sinkrow":"sinkcell";a=create(f,sink);b=create(f,sink);c=create(f,sink);if(auto*x=dynamic_cast<SinkRow*>(a)){x->label="first";dynamic_cast<SinkRow*>(b)->label="second";dynamic_cast<SinkRow*>(c)->label="late";}else{dynamic_cast<SinkCell*>(a)->label="first";dynamic_cast<SinkCell*>(b)->label="second";dynamic_cast<SinkCell*>(c)->label="late";}n->childNodes=children({a,b});a->parent=b->parent=c->parent=n;if(k=="mtr"||k=="mlabeledtr"){n->attributes()->set("columnalign","center");n->attributes()->set("rowalign","baseline");}if(k=="mlabeledtr")n->parent=create(f,"mtable");}};
 void hook(m::MmlNode*n,PropertyList a,Property d,Property l,Property p){if(auto*x=dynamic_cast<Table*>(n))x->hook(a,d,l,p);else if(auto*x=dynamic_cast<Label*>(n))x->hook(a,d,l,p);else if(auto*x=dynamic_cast<Row*>(n))x->hook(a,d,l,p);else dynamic_cast<Cell*>(n)->hook(a,d,l,p);}
 void verify(m::MmlNode*n,PropertyList o){if(auto*x=dynamic_cast<Table*>(n))x->verify(o);else if(auto*x=dynamic_cast<Label*>(n))x->verify(o);else if(auto*x=dynamic_cast<Row*>(n))x->verify(o);else dynamic_cast<Cell*>(n)->verify(o);}
@@ -1958,6 +1958,102 @@ traceLog.clear();enabled=true;
 n->setInheritedAttributes(attrs,true,0,true);
 enabled=false;expect(traceLog==std::vector<std::string>{});
 expect(deep(snapshot(n),clone(sourceValues[348])));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mtable_113"_test=[] {reset();
+Setup s("mtable");s.n->parent=nullptr;mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"verify/first","verify/second"});
+expect(bool((verifyCalls)==2));
+expect(bool((errorCalls)==0));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mtable_114"_test=[] {reset();
+Setup s("mtable");s.n->parent=create(s.f,"mrow");mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"verify/first","verify/second"});
+expect(bool((verifyCalls)==2));
+expect(bool((errorCalls)==0));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mtable_115"_test=[] {reset();
+Setup s("mtable");s.n->parent=create(s.f,"mtable");mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"verify/first","verify/second"});
+expect(bool((verifyCalls)==2));
+expect(bool((errorCalls)==0));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mtr_116"_test=[] {reset();
+Setup s("mtr");s.n->parent=nullptr;mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"verify/first","verify/second"});
+expect(bool((verifyCalls)==2));
+expect(bool((errorCalls)==0));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mtr_117"_test=[] {reset();
+Setup s("mtr");s.n->parent=create(s.f,"mrow");mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"error/true"});
+expect(bool((verifyCalls)==0));
+expect(bool((errorCalls)==1));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mtr_118"_test=[] {reset();
+Setup s("mtr");s.n->parent=create(s.f,"mtable");mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"verify/first","verify/second"});
+expect(bool((verifyCalls)==2));
+expect(bool((errorCalls)==0));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mlabeledtr_119"_test=[] {reset();
+Setup s("mlabeledtr");s.n->parent=nullptr;mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"verify/first","verify/second"});
+expect(bool((verifyCalls)==2));
+expect(bool((errorCalls)==0));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mlabeledtr_120"_test=[] {reset();
+Setup s("mlabeledtr");s.n->parent=create(s.f,"mrow");mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"error/true"});
+expect(bool((verifyCalls)==0));
+expect(bool((errorCalls)==1));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mlabeledtr_121"_test=[] {reset();
+Setup s("mlabeledtr");s.n->parent=create(s.f,"mtable");mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"verify/first","verify/second"});
+expect(bool((verifyCalls)==2));
+expect(bool((errorCalls)==0));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mtd_122"_test=[] {reset();
+Setup s("mtd");s.n->parent=nullptr;mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"verify/first","verify/second"});
+expect(bool((verifyCalls)==2));
+expect(bool((errorCalls)==0));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mtd_123"_test=[] {reset();
+Setup s("mtd");s.n->parent=create(s.f,"mrow");mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"error/true"});
+expect(bool((verifyCalls)==0));
+expect(bool((errorCalls)==1));
+enabled=false;};
+"math_port_table_verification_virtual_dispatch_mtd_124"_test=[] {reset();
+Setup s("mtd");s.n->parent=create(s.f,"mlabeledtr");mode="verify-dispatch";
+traceLog.clear();enabled=true;
+verify(s.n,PropertyList{{"fixMtables",true}});
+enabled=false;expect(traceLog==std::vector<std::string>{"verify/first","verify/second"});
+expect(bool((verifyCalls)==2));
+expect(bool((errorCalls)==0));
 enabled=false;};
 "math_port_table_alignment_exhaustion_and_callback_mtable"_test=[] {reset();
 Setup s("mtable");PropertyList attrs;s.n->attributes()->set("rowalign","top");s.n->attributes()->set("columnalign","left");s.n->attributes()->set("data-break-align","bottom");s.n->childNodes->push_back(s.c);mode="tuple";
