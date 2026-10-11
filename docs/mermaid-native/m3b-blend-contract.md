@@ -6,6 +6,10 @@ font SVG resources, full diagram compilation, an SVG backend or Folia wiring.
 Root owns declarations, Source oracle, stimuli/expected pixels, manifests,
 mutants, builds, review and acceptance. Sol implements only assigned bodies.
 
+The initial built-in nonseparable path failed independent pixel comparison.
+M3c-source-blend-contract.md supersedes its four-mode implementation direction;
+the shared enum, input order and acceptance requirements here remain unchanged.
+
 ## Frozen interface and responsibility
 
 Root extends scene/paint.rs BlendMode to exactly the 16 variants in pinned
@@ -19,9 +23,10 @@ After declarations are written, Sol may edit ONLY:
 
 - src/backends/direct2d/paint.rs: replace multiply helper by blend(context,
   background,foreground,mode,location), with exhaustive native D2D1_BLEND_MODE
-  mapping. Preserve effect lifetime, SetValue/GetOutput error forwarding and
-  input order. Normal is representable by the corresponding multiply-free
-  source-over composition already used by NativeRenderer.
+  mapping for the 15 non-Normal modes. Preserve effect lifetime, SetValue/GetOutput
+  error forwarding and input order. D2D has no Normal blend enum: that helper
+  branch records background then foreground with the existing source-over
+  drawing helpers. NativeRenderer's Normal batching remains unchanged.
 - src/backends/direct2d.rs: Normal retains existing ordered batching. Every
   other resolved enum enters the same blend helper with completed background
   as input 0 and foreground as input 1. Preserve flush/order and state/resource

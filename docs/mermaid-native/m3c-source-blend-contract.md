@@ -48,7 +48,7 @@ Compile four immutable kernel variants from include_str!(source_blend.hlsl)
 using D3DCompile, entry main, ps_4_0, strictness and IEEE strictness, optimization
 level zero initially. Preserve compile HRESULT and diagnostic bytes in the
 native error. Root adds the Fxc binding feature. This stage uses authored full
-shader entry semantics SV_POSITION, TEXCOORD0 and TEXCOORD1 and register pairs
+shader entry semantics SV_POSITION, SCENE_POSITION, TEXCOORD0 and TEXCOORD1 and register pairs
 t0/s0,t1/s1; samples use supplied .xy coordinates. No SDK include, SDK path,
 filesystem shader source or checked-in binary is permitted at runtime.
 Do not copy the SDK helper header. No shader linking optimization is required.

@@ -13,7 +13,11 @@ and M4a source text presentation helpers plus M2d edge-label geometry, M2e
 Architecture icon presentation, M2f C4 style selectors and M2g ER/Sankey label
 data accepted locally (34/70 inventoried
 render functions); M3 native typed-scene consumer built
-and checked with 10 actual WARP tests and 18 compiling mutations. Full diagram
+and checked with 11 actual WARP tests and 39 compiling mutations after local
+M3b/M3c Source blend acceptance. Its 16 blend modes match 1,536 independent
+Source pixel samples across four DPI values with maximum channel error 2;
+the four nonseparable modes use a private native HLSL effect. Evidence is
+evidence/m3bc-source-blend-acceptance.md. Full diagram
 scene compilation, SVG and Direct2D backend acceptance, and Folia wiring remain
 open. Exact implementation packets are frozen in implementation-contract.md,
 m2a-path-contract.md, m2b-edge-symbols-contract.md, m2c-node-shapes-contract.md
