@@ -109,6 +109,10 @@ name = "gradient_stops_parity"
 path = "tests/gradient_stops_parity.rs"
 
 [[test]]
+name = "gradient_program_parity"
+path = "tests/gradient_program_parity.rs"
+
+[[test]]
 name = "path_parity"
 path = "tests/path_parity.rs"
 
