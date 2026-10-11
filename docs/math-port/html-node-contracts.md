@@ -22,8 +22,9 @@ presence for token.getText. Root's native constructor installs a callback that
 invokes this receiver's virtual textContent. It is a method binding, not stored
 text or a cache; token extraction must see later payload/adaptor changes and
 derived overrides. Source strings used as token text remain UTF-16, including
-lone surrogates. Serialized markup and kind labels use the established UTF-8
-host boundary. No Windows headers enter this module.
+lone surrogates. Serialized markup and kind labels use the existing lossless
+WTF-8 internal host strings; strict external UTF-8 encoding is a separate
+boundary. No Windows headers enter this module.
 
 The typed API does not expose arbitrary JS erased objects, own accessor
 replacement or non-callable DOM properties. Callbacks expose actual host calls,
@@ -31,6 +32,9 @@ arguments, return identities, mutations and exceptions. getAttribute returns a
 raw Property because its result is ignored by HtmlNode. node takes the exact
 span label, fresh empty attribute record and one-element original payload list.
 It may return null; do not reject or normalize that result.
+The typed children argument is a fresh vector value carrying the same XmlRef
+handles; the API does not expose JavaScript array-object reflection/identity.
+Attribute record identity and each payload identity remain observable.
 
 setHTML returns XMLNode* to retain the actual virtual setXML result, including
 a different XML receiver. A runtime cast demanding HtmlNode would add a source
