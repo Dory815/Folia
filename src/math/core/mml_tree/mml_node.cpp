@@ -194,8 +194,69 @@ PropertyList AbstractMmlNode::constructorDefaults()const {
 }
 
 MmlNode* AbstractMmlNode::copy(bool keepIds) {
-    // P23f Root stub: AbstractMmlNode::copy.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+
+    MmlNode* const node = factory.create(this->kind(), {});
+    if (!node) host::typeError("Cannot set properties of null (setting 'properties')");
+    auto* const normalNode = dynamic_cast<AbstractMmlNode*>(node);
+    if (!normalNode) {
+        host::typeError("MML copy factory product does not implement normal MML property storage");
+    }
+
+    // Replace the store handle, rather than assigning into a factory-owned
+    // record that constructor observers may already have retained.
+    PropertyList copiedProperties;
+    copiedProperties.assign(this->properties);
+    normalNode->properties = std::move(copiedProperties);
+
+    if (this->attributes()) {
+        const auto sourceAttributes = this->attributes();
+        if (!sourceAttributes) {
+            host::typeError("Cannot read properties of null (reading 'getAllAttributes')");
+        }
+        const PropertyList attributes = sourceAttributes->getAllAttributes();
+        const std::vector<std::string> names = attributes.keys();
+        for (const auto& name : names) {
+            if (name != "id" || keepIds) {
+                const auto destinationAttributes = normalNode->attributes();
+                if (!destinationAttributes) {
+                    host::typeError("Cannot read properties of null (reading 'set')");
+                }
+                const Property value = attributes.get(name);
+                destinationAttributes->set(name, value);
+            }
+        }
+    }
+
+    // Preserve the source's condition reads before capturing its iteration
+    // handle: a factory/attribute callback may have changed childNodes.
+    if (this->childNodes && this->childNodes->size()) {
+        Children children = this->childNodes;
+        if (!children) host::typeError("Cannot read properties of null (reading 'length')");
+        if (children->size() == 1) {
+            const NodeValue firstForInference = children->get(0);
+            if (firstForInference.requireNode("isInferred")->isInferred()) {
+                const NodeValue firstForChildren = children->get(0);
+                children = firstForChildren.requireNode("childNodes")->childNodes;
+            }
+        }
+        if (!children) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+
+        for (std::size_t index = 0; index < children->size(); ++index) {
+            const NodeValue child = children->get(index);
+            if (child.isNode()) {
+                MmlNode* const copiedChild = child.requireNode("copy")->copy();
+                normalNode->appendChild(NodeValue(copiedChild));
+            } else {
+                const Children destination = normalNode->childNodes;
+                if (!destination) {
+                    host::typeError("Cannot read properties of null (reading 'push')");
+                }
+                destination->push_back(NodeValue(PropertyNull{}));
+            }
+        }
+    }
+    return node;
 }
 
 Property AbstractMmlNode::texClass() { return texclass_; }
