@@ -8,6 +8,8 @@ import folia.math.core.tree.factory_types;
 import std;
 export namespace folia::math {
 using FunctionValue=std::variant<Property,FunctionRef>;
+// Typed boundaries and raw configuration slots retain the same function owner.
+bool operator==(const FunctionValue&,const FunctionValue&);
 using FunctionListItem=PrioritizedListItem<FunctionValue>;
 struct FunctionTuple {
     FunctionValue item=Property(Missing{});
@@ -19,14 +21,17 @@ using FunctionDefinition=std::variant<FunctionValue,FunctionTupleRef>;
 using FunctionDefinitions=std::vector<FunctionDefinition>;
 using FunctionDefinitionsRef=std::shared_ptr<FunctionDefinitions>;
 namespace functions {
+FunctionRef reference(const FunctionValue&);
+FunctionValue fromProperty(const Property&);
+Property toProperty(const FunctionValue&);
 [[noreturn]] inline void typeError(std::u16string message){throw tree::FactoryError("TypeError",std::move(message));}
 inline std::any invoke(const std::shared_ptr<FunctionListItem>& receiver,FunctionArgs args){
     if(!receiver)typeError(u"FunctionList item record is null");
-    const auto* function=std::get_if<FunctionRef>(&receiver->item);
-    if(!function||!*function||!(*function)->call)
+    const auto function=reference(receiver->item);
+    if(!function||!function->call)
         throw tree::FactoryError("TypeError",u"FunctionList item is not callable");
     // Capture callable before a callback mutates the receiver's item field.
-    const FunctionRef captured=*function;
+    const FunctionRef captured=function;
     const auto body=captured->call;
     return body(FunctionReceiver{std::static_pointer_cast<NativeObject>(receiver)},args);
 }

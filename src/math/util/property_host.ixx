@@ -122,6 +122,9 @@ inline std::u16string string(const Property& input){
 // arbitrary descriptors, evaluated functions and iterator overrides are not bindings.
 inline Property get(const Property& value,std::string_view key){
     if(value.missing()||std::holds_alternative<PropertyNull>(value.value))typeError("Cannot read property of null or undefined");
+    // This packet binds callable values, not a general function-object host.
+    // A missing host must not silently return Object.prototype metadata.
+    if(std::holds_alternative<FunctionRef>(value.value))typeError("Native callable property evaluation is unbound");
     if(auto object=PropertyList::record(value))return object->get(key);
     std::uint32_t index=0;auto [end,error]=std::from_chars(key.data(),key.data()+key.size(),index);
     bool numeric=!key.empty()&&(key.size()==1||key.front()!='0')&&error==std::errc{}&&end==key.data()+key.size()&&index!=0xFFFFFFFFU;

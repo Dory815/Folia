@@ -236,6 +236,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/operator_dictionary_data.cpp
     src/math/core/mml_tree/operator_dictionary.cpp
     src/math/util/property_host.cpp
+    src/math/core/tree/property_array.cpp
+    src/math/util/function_value.cpp
     src/math/util/string.cpp
     src/math/core/mml_tree/mml_nodes/msubsup_bindings.cpp
     src/math/core/mml_tree/mml_nodes/msubsup.cpp

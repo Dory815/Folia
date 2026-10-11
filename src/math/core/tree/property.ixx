@@ -1,11 +1,11 @@
 // Native storage adaptation for MathJax core/Tree/Node.ts PropertyList.
 // MathJax source is Apache-2.0; see docs/math-port/architecture.md for provenance.
 export module folia.math.core.tree.property;
+export import folia.math.util.callable_types;
 import std;
 import folia.math.util.option_types;
 
 export namespace folia::math {
-struct Missing { bool operator==(const Missing&) const = default; };
 struct PropertyNull { bool operator==(const PropertyNull&) const = default; };
 // Object.prototype values are observable on malformed attribute names, but are
 // not callable math services. Keep their identities, rather than stringify them.
@@ -22,7 +22,7 @@ class PropertyList;
 class PropertyArray;
 struct Property {
     using Value = std::variant<Missing, PropertyNull, bool, double, std::string, BuiltinProperty,
-                               std::shared_ptr<PropertyStorage>>;
+                               std::shared_ptr<PropertyStorage>, FunctionRef>;
     Value value = Missing{};
     Property() = default;
     Property(Missing v) : value(v) {}
@@ -33,6 +33,9 @@ struct Property {
     Property(const char* v) : value(std::string(v)) {}
     Property(std::string v) : value(std::move(v)) {}
     Property(BuiltinProperty v) : value(v) {}
+    Property(FunctionRef v) : value(v) {
+        if(!v)throw options::Exception("TypeError",u"Native callable property is null");
+    }
     Property(const PropertyList& v);
     Property(const PropertyArray& v);
     bool missing() const { return std::holds_alternative<Missing>(value); }
@@ -252,6 +255,9 @@ public:
     void erase(std::size_t i){if(i<size()){storage_->arrayValues[i]=Missing{};storage_->arrayPresent[i]=false;}}
     std::vector<std::string> keys()const{return record().keys();}
     PropertyArray spread()const{PropertyArray out;for(std::size_t i=0;i<size();++i)out.push(get(i));return out;}
+    // Native nonnegative index binding for Source slice(1) in MacroMap.
+    // HasProperty/Get preserve inherited slots and holes; this is not spread.
+    PropertyArray slice(std::size_t first=0)const;
 };
 inline Property::Property(const PropertyArray& v):value(v.storage_){}
 }

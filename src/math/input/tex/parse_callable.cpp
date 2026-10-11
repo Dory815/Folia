@@ -68,9 +68,8 @@ folia::math::tex::ParseResult folia::math::tex::invokeParseMethod(
     ParserContext& parser, const ParseAtom& atom, ParseRest rest) {
     validate_receiver(receiver);
 
-    const auto* candidate = std::get_if<ParseCallableRef>(&method);
-    if (!candidate || !*candidate) invalid_callable(u"ParseMethod is not callable");
-    const ParseCallableRef callable = *candidate;
+    const ParseCallableRef callable = functions::reference(method);
+    if (!callable) invalid_callable(u"ParseMethod is not callable");
     const auto body = callable->call;
     if (!body) invalid_callable(u"ParseMethod body is empty");
 
