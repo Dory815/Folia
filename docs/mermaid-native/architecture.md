@@ -135,3 +135,12 @@ raw f32 contexts/defaults/padding, warning/failure state and stage/mask order
 are retained in one program. Actual sampling, whole-pipeline precision/color
 conversion, scene resources and both consumers remain required. Rendering
 acceptance stays 34/70 and no Folia gate is passed.
+
+M3i1 locally accepts the whole-pipeline compiler control projection under
+m3i1-pipeline-control-contract.md, using original compiled function-pointer
+observations: 12,872 cases/64,552 assertions, all 27 compiling mutants detected,
+final fifteen-target matrix 45 tests including 11 WARP. Evidence:
+evidence/m3i1-pipeline-control-acceptance.md. One plan retains complete-list
+precision/width/order/tail and default/moved context decisions. Stage execution,
+complete shader/blitter context, actual sampling/GPU gradients and shared-scene/
+SVG/D2D/Folia gates remain open; rendering-function acceptance remains 34/70.
