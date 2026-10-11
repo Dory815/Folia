@@ -196,3 +196,7 @@ path = "tests/pipeline_executor_parity.rs"
 [[test]]
 name = "shader_run_parity"
 path = "tests/shader_run_parity.rs"
+
+[[test]]
+name = "shader_public_parity"
+path = "tests/shader_public_parity.rs"

@@ -1,5 +1,5 @@
 //! Shared resource-independent gradient sampling; no SVG or platform APIs.
-mod wide;
+pub(crate) mod wide;
 mod highp;
 mod lowp;
 mod types;

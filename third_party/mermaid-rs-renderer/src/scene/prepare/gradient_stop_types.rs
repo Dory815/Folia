@@ -20,3 +20,8 @@ pub struct PreparedGradient {
     pub(crate) colors_are_opaque: bool,
     pub(crate) has_uniform_stops: bool,
 }
+
+/// Normalized premultiplied components; constructed only through StopColor.
+#[derive(Debug,Clone,Copy,PartialEq)]
+pub struct PremultipliedStopColor{pub(crate) components:[NormalizedF32;4]}
+impl PremultipliedStopColor{pub fn components(&self)->[f32;4]{self.components.map(|v|v.get())}}

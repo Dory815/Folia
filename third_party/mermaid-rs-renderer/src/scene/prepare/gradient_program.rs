@@ -33,15 +33,9 @@ impl GradientContext {
 }
 
 /// Original generic Gradient producer: supplied pre/post plan owns no context.
-pub fn push_gradient_stages(
-    gradient: &PreparedGradient,
-    color_space: ColorSpace,
-    radial: Option<&RadialStagePlan>,
-    builder: &mut PipelineBuilder,
-) -> bool {
+pub fn push_gradient_stages(gradient:&PreparedGradient,color_space:ColorSpace,radial:Option<&RadialStagePlan>,builder:&mut PipelineBuilder)->bool{
     use super::pipeline_control_types::PipelineStage;
     use super::radial_stage_types::RadialStage;
-
     let push_radial_stages = |stages: &[RadialStage], builder: &mut PipelineBuilder| {
         for stage in stages {
             let stage = match stage {
@@ -63,6 +57,11 @@ pub fn push_gradient_stages(
         }
     };
 
+    push_gradient_stages_with_callbacks(gradient,color_space,&|b|{if let Some(r)=radial{push_radial_stages(&r.before_color,b);}},&|b|{if let Some(r)=radial{push_radial_stages(&r.after_color,b);}},builder)
+}
+/// Source Gradient pre/post producer callbacks share the caller's sole builder.
+pub fn push_gradient_stages_with_callbacks(gradient:&PreparedGradient,color_space:ColorSpace,before_color:&dyn Fn(&mut PipelineBuilder),after_color:&dyn Fn(&mut PipelineBuilder),builder:&mut PipelineBuilder)->bool{
+    use super::pipeline_control_types::PipelineStage;
     builder.push(PipelineStage::SeedShader);
 
     let ts = match gradient.transform.invert() {
@@ -75,9 +74,7 @@ pub fn push_gradient_stages(
     let ts = ts.post_concat(gradient.points_to_unit);
     builder.push_transform(ts);
 
-    if let Some(radial) = radial {
-        push_radial_stages(&radial.before_color, builder);
-    }
+    before_color(builder);
 
     match gradient.spread {
         SpreadMode::Reflect => builder.push(PipelineStage::ReflectX1),
@@ -187,9 +184,7 @@ pub fn push_gradient_stages(
         builder.push(PipelineStage::Premultiply);
     }
 
-    if let Some(radial) = radial {
-        push_radial_stages(&radial.after_color, builder);
-    }
+    after_color(builder);
 
     true
 }

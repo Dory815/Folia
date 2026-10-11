@@ -20,3 +20,7 @@ pub mod linear_program;
 pub mod radial_program;
 pub mod pipeline_executor_types;
 pub mod pipeline_executor;
+
+pub mod prepared_shader_types;
+pub mod shader_dispatch;
+pub mod sweep_program;
