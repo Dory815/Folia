@@ -60,6 +60,14 @@ Do not coerce false/null/zero/undefined to an empty string. Do not run superclas
 verification before or after the invalid-glyph branch. No image/font loading.
 This nonrecursive method needs no additional TreeCallGuard.
 
+The source observer's mError override uses the base default short=false, matching
+the established native bool interface. Omitted/undefined short arguments fold to
+false at this typed boundary; explicit true remains distinguishable. An override
+without the source default would observe undefined for superclass attribute
+errors and is not an equivalent observer. No source production value is changed.
+Root compares default and inherited lookup, explicit empty/missing overrides,
+and both error paths in addition to the raw explicit-value matrix.
+
 maligngroup.setChildInheritedAttributes reads current attributes and their live
 getAllAttributes record, calls virtual addInheritedAttributes(original input,
 that record), then qualified AbstractMmlLayoutNode::setChildInheritedAttributes
