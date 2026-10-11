@@ -47,7 +47,7 @@ cmake --build "${work}\\bin" --target MutationTests
 exit /b %errorlevel%
 `.replaceAll('\n','\r\n'));
  function build(label){const p=cp.spawnSync('cmd.exe',['/d','/c',path.join(work,'build.cmd')],{encoding:'utf8'});fs.writeFileSync(path.join(work,label+'-build.log'),(p.stdout||'')+(p.stderr||''));assert.equal(p.status,0,label+' must compile');}
- function test(label){const p=cp.spawnSync(path.join(work,'bin/MutationTests.exe'),[pattern],{encoding:'utf8',timeout:30000});fs.writeFileSync(path.join(work,label+'-test.log'),(p.stdout||'')+(p.stderr||''));return p;}
+ function test(label){const p=cp.spawnSync(path.join(work,'bin/MutationTests.exe'),[pattern],{encoding:'utf8',timeout:30000,maxBuffer:64*1024*1024});fs.writeFileSync(path.join(work,label+'-test.log'),(p.stdout||'')+(p.stderr||''));return p;}
  const only=process.argv.find(x=>x.startsWith('--only='))?.slice(7),selected=only?mutants.filter(m=>m.name===only):mutants,results=[];
  assert.ok(selected.length,'Unknown mutation');build('baseline');const baseline=test('baseline');assert.equal(baseline.status,0,'Baseline must pass');
  assert.ok(baseline.stdout.includes(`${assertions} asserts in ${tests} tests`),'Nonzero complete baseline');console.log(`Baseline: ${assertions} assertions in ${tests} tests pass.`);

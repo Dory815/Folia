@@ -103,6 +103,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/handler_types.ixx
     src/math/input/tex/tex_constants.ixx
     src/math/core/tree/property.ixx
+    src/math/core/tree/child_array.ixx
     src/math/core/tree/factory_types.ixx
     src/math/core/tree/factory.ixx
     src/math/core/tree/node_factory.ixx
