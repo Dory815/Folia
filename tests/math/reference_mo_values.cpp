@@ -8,7 +8,7 @@ import folia.math.core.mml_tree.mml_nodes.math;
 import folia.math.core.mml_tree.mml_nodes.mrow;
 namespace m=folia::math::mml;namespace h=m::host;namespace tr=folia::math::tree;using folia::math::Property;using folia::math::PropertyArray;using folia::math::PropertyList;using folia::math::Missing;using folia::math::PropertyNull;using namespace boost::ut;namespace {
 std::u16string units(std::initializer_list<unsigned>v){std::u16string s;for(auto x:v)s.push_back(static_cast<char16_t>(x));return s;}
-m::Children children(std::initializer_list<m::MmlNode*>v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}
+m::Children children(std::initializer_list<m::NodeValue>v={}){return std::make_shared<tr::ChildArray<m::MmlNode>>(v);}
 struct Mo:m::MmlMo{using MmlMo::MmlMo;void table(std::u16string_view s){checkOperatorTable(s);}Property op(std::u16string_view s){return getOperatorDef(s);}};
 using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode>classes(){return {{"mo",m::classBinding<Mo>()},{"math",m::classBinding<m::MmlMath>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"text",m::classBinding<m::TextNode>()}};}
 Mo*mo(NF&f){auto*t=dynamic_cast<m::TextNode*>(f.create("text"));t->setText(u"!");return dynamic_cast<Mo*>(f.create("mo",std::array<std::any,2>{PropertyList{},children({t})}));}

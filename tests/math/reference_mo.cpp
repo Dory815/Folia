@@ -21,7 +21,7 @@ import folia.math.core.mml_tree.mml_nodes.munderover;
 namespace m=folia::math::mml;namespace h=m::host;namespace d=m::operator_dict;namespace tr=folia::math::tree;using folia::math::Property;using folia::math::PropertyList;using folia::math::PropertyArray;using folia::math::PropertyNull;using folia::math::Missing;using namespace boost::ut;namespace {
 std::u16string units(std::initializer_list<unsigned>v){std::u16string s;for(auto x:v)s.push_back(static_cast<char16_t>(x));return s;}
 bool prop(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return (std::isnan(*x)&&std::isnan(*y))||std::bit_cast<std::uint64_t>(*x)==std::bit_cast<std::uint64_t>(*y);return a==b;}
-m::Children children(std::initializer_list<m::MmlNode*>v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}
+m::Children children(std::initializer_list<m::NodeValue>v={}){return std::make_shared<tr::ChildArray<m::MmlNode>>(v);}
 struct Mo:m::MmlMo{using MmlMo::MmlMo;Property op(std::u16string_view s){return getOperatorDef(s);}void table(std::u16string_view s){checkOperatorTable(s);}PropertyArray forms(PropertyArray a){return handleExplicitForm(a);}void pseudo(std::u16string_view s){checkPseudoScripts(s);}void prime(std::u16string_view s){checkPrimes(s);}void accent(std::u16string_view s){checkMathAccent(s);}};
 struct Fork:Mo{using Mo::Mo;static Property&operatorTable(){static Property p=PropertyList{{"infix",PropertyList{}},{"prefix",PropertyList{}},{"postfix",PropertyList{}}};return p;}static Property&mathSpacing(){static Property p=[] {PropertyArray a;for(int i=0;i<8;++i)a.push(PropertyArray{9,8});return Property(a);}();return p;}};
 using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode> classes(){return {{"TeXAtom",m::classBinding<m::MmlTeXAtom>()},{"mo",m::classBinding<Mo>()},{"fork",m::classBinding<Fork>()},{"math",m::classBinding<m::MmlMath>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"mi",m::classBinding<m::MmlMi>()},{"mn",m::classBinding<m::MmlMn>()},{"mtext",m::classBinding<m::MmlMtext>()},{"ms",m::classBinding<m::MmlMs>()},{"mspace",m::classBinding<m::MmlMspace>()},{"mstyle",m::classBinding<m::MmlMstyle>()},{"merror",m::classBinding<m::MmlMerror>()},{"mphantom",m::classBinding<m::MmlMphantom>()},{"msubsup",m::classBinding<m::MmlMsubsup>()},{"msub",m::classBinding<m::MmlMsub>()},{"msup",m::classBinding<m::MmlMsup>()},{"munderover",m::classBinding<m::MmlMunderover>()},{"munder",m::classBinding<m::MmlMunder>()},{"mover",m::classBinding<m::MmlMover>()},{"text",m::classBinding<m::TextNode>()}};}
@@ -2106,37 +2106,37 @@ expect(prop(n->getProperty("noDictDef"),Property(Missing{})));
 };
 "math_port_mo_positional_forms_and_explicit_filter_identity"_test=[] {
 NF f(classes());
-{std::vector<m::MmlNode*> items;for(unsigned i=0;i<1;++i)items.push_back(token(f,i==0?"mo":"mi",i==0?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[0]);auto list=std::make_shared<std::vector<m::MmlNode*>>(items);create(f,"mrow",{},list);auto forms=n->getForms();
+{std::vector<m::MmlNode*> items;for(unsigned i=0;i<1;++i)items.push_back(token(f,i==0?"mo":"mi",i==0?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[0]);auto list=children();for(auto*item:items)list->push_back(item);create(f,"mrow",{},list);auto forms=n->getForms();
 expect(prop(forms.get(0),Property(h::debugText(units({105,110,102,105,120})))));
 expect(prop(forms.get(1),Property(h::debugText(units({112,114,101,102,105,120})))));
 expect(prop(forms.get(2),Property(h::debugText(units({112,111,115,116,102,105,120})))));
 expect(bool((Property(forms)==Property(n->getForms()))==false));
 }
-{std::vector<m::MmlNode*> items;for(unsigned i=0;i<2;++i)items.push_back(token(f,i==0?"mo":"mi",i==0?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[0]);auto list=std::make_shared<std::vector<m::MmlNode*>>(items);create(f,"mrow",{},list);auto forms=n->getForms();
+{std::vector<m::MmlNode*> items;for(unsigned i=0;i<2;++i)items.push_back(token(f,i==0?"mo":"mi",i==0?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[0]);auto list=children();for(auto*item:items)list->push_back(item);create(f,"mrow",{},list);auto forms=n->getForms();
 expect(prop(forms.get(0),Property(h::debugText(units({112,114,101,102,105,120})))));
 expect(prop(forms.get(1),Property(h::debugText(units({105,110,102,105,120})))));
 expect(prop(forms.get(2),Property(h::debugText(units({112,111,115,116,102,105,120})))));
 expect(bool((Property(forms)==Property(n->getForms()))==false));
 }
-{std::vector<m::MmlNode*> items;for(unsigned i=0;i<2;++i)items.push_back(token(f,i==1?"mo":"mi",i==1?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[1]);auto list=std::make_shared<std::vector<m::MmlNode*>>(items);create(f,"mrow",{},list);auto forms=n->getForms();
+{std::vector<m::MmlNode*> items;for(unsigned i=0;i<2;++i)items.push_back(token(f,i==1?"mo":"mi",i==1?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[1]);auto list=children();for(auto*item:items)list->push_back(item);create(f,"mrow",{},list);auto forms=n->getForms();
 expect(prop(forms.get(0),Property(h::debugText(units({112,111,115,116,102,105,120})))));
 expect(prop(forms.get(1),Property(h::debugText(units({105,110,102,105,120})))));
 expect(prop(forms.get(2),Property(h::debugText(units({112,114,101,102,105,120})))));
 expect(bool((Property(forms)==Property(n->getForms()))==false));
 }
-{std::vector<m::MmlNode*> items;for(unsigned i=0;i<3;++i)items.push_back(token(f,i==0?"mo":"mi",i==0?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[0]);auto list=std::make_shared<std::vector<m::MmlNode*>>(items);create(f,"mrow",{},list);auto forms=n->getForms();
+{std::vector<m::MmlNode*> items;for(unsigned i=0;i<3;++i)items.push_back(token(f,i==0?"mo":"mi",i==0?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[0]);auto list=children();for(auto*item:items)list->push_back(item);create(f,"mrow",{},list);auto forms=n->getForms();
 expect(prop(forms.get(0),Property(h::debugText(units({112,114,101,102,105,120})))));
 expect(prop(forms.get(1),Property(h::debugText(units({105,110,102,105,120})))));
 expect(prop(forms.get(2),Property(h::debugText(units({112,111,115,116,102,105,120})))));
 expect(bool((Property(forms)==Property(n->getForms()))==false));
 }
-{std::vector<m::MmlNode*> items;for(unsigned i=0;i<3;++i)items.push_back(token(f,i==1?"mo":"mi",i==1?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[1]);auto list=std::make_shared<std::vector<m::MmlNode*>>(items);create(f,"mrow",{},list);auto forms=n->getForms();
+{std::vector<m::MmlNode*> items;for(unsigned i=0;i<3;++i)items.push_back(token(f,i==1?"mo":"mi",i==1?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[1]);auto list=children();for(auto*item:items)list->push_back(item);create(f,"mrow",{},list);auto forms=n->getForms();
 expect(prop(forms.get(0),Property(h::debugText(units({105,110,102,105,120})))));
 expect(prop(forms.get(1),Property(h::debugText(units({112,114,101,102,105,120})))));
 expect(prop(forms.get(2),Property(h::debugText(units({112,111,115,116,102,105,120})))));
 expect(bool((Property(forms)==Property(n->getForms()))==false));
 }
-{std::vector<m::MmlNode*> items;for(unsigned i=0;i<3;++i)items.push_back(token(f,i==2?"mo":"mi",i==2?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[2]);auto list=std::make_shared<std::vector<m::MmlNode*>>(items);create(f,"mrow",{},list);auto forms=n->getForms();
+{std::vector<m::MmlNode*> items;for(unsigned i=0;i<3;++i)items.push_back(token(f,i==2?"mo":"mi",i==2?u"+":u"x"));auto*n=dynamic_cast<Mo*>(items[2]);auto list=children();for(auto*item:items)list->push_back(item);create(f,"mrow",{},list);auto forms=n->getForms();
 expect(prop(forms.get(0),Property(h::debugText(units({112,111,115,116,102,105,120})))));
 expect(prop(forms.get(1),Property(h::debugText(units({105,110,102,105,120})))));
 expect(prop(forms.get(2),Property(h::debugText(units({112,114,101,102,105,120})))));
@@ -5746,7 +5746,7 @@ expect(bool((n->isMathAccent(std::u16string_view(u"")))==false));
 expect(bool((n->isMathAccentWithWidth(std::u16string_view(u"")))==false));
 }
 {auto*n=mo(f,u"+");auto*x=token(f,"mi",u"x");auto*style=create(f,"mstyle",{},children({n}));auto*math=create(f,"math",{},children({style}));
-expect(bool((n->coreParent()==style->parent)==true));
+expect(bool((n->coreParent()==style->getParent().nodeOrNull())==true));
 expect(bool((h::debugText(checkedCore(n,nullptr)))==""));
 expect(bool((h::debugText(checkedCore(n,style)))=="+"));
 expect(bool((h::debugText(checkedCore(n,x)))=="x"));
