@@ -624,3 +624,14 @@ Local source acceptance is 36/246; full G0–G7 remain closed.
 Concrete DOM/texhtml parsing, HTML measurement and SVG foreignObject are still
 required separately. P16-remaining-mml-audit.md is a read-only prerequisite,
 not implementation authorization or acceptance of the remaining eight sources.
+
+### P16a root acceptance
+
+The five menclose/mpadded/maligngroup/malignmark/mglyph sources are locally
+accepted after root's interface freeze and source review. All 22 source members
+are mapped. Final actual-source oracle has 7,667 assertions / 106 cases;
+complete core regression passes; 42 compiling/assertion-failing mutants pass.
+Evidence: evidence/p16a-simple-mml-acceptance.md. Local acceptance is 41/246,
+full G0–G7 remain closed. The remaining 205 sources are not accepted by this
+packet. Mermaid's parallel native-rendering goal is recorded separately in
+docs/mermaid-native/architecture.md and remains required before goal completion.

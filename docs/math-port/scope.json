@@ -449,9 +449,9 @@
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.maligngroup",
       "owner": "semantics_util",
       "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "adaptation_reason": "Root-frozen complete source/interface/default/accessor/field/method packet; raw property/options identity, virtual callback order and current-child rereads preserved. Typed dense nullable child and bool-omission boundaries explicit. 7667 actual-CJS assertions/106 cases, full core pass and 42 compiling assertion-failing mutants; all members mapped in evidence/p16a-simple-mml-members.json. Evidence: evidence/p16a-simple-mml-acceptance.md. Common geometry/TeX/SVG/Folia still unaccepted.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/Attributes.ts",
         "ts/core/MmlTree/MmlNode.ts",
@@ -466,9 +466,9 @@
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.malignmark",
       "owner": "semantics_util",
       "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "adaptation_reason": "Root-frozen complete source/interface/default/accessor/field/method packet; raw property/options identity, virtual callback order and current-child rereads preserved. Typed dense nullable child and bool-omission boundaries explicit. 7667 actual-CJS assertions/106 cases, full core pass and 42 compiling assertion-failing mutants; all members mapped in evidence/p16a-simple-mml-members.json. Evidence: evidence/p16a-simple-mml-acceptance.md. Common geometry/TeX/SVG/Folia still unaccepted.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -514,9 +514,9 @@
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.menclose",
       "owner": "semantics_util",
       "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "adaptation_reason": "Root-frozen complete source/interface/default/accessor/field/method packet; raw property/options identity, virtual callback order and current-child rereads preserved. Typed dense nullable child and bool-omission boundaries explicit. 7667 actual-CJS assertions/106 cases, full core pass and 42 compiling assertion-failing mutants; all members mapped in evidence/p16a-simple-mml-members.json. Evidence: evidence/p16a-simple-mml-acceptance.md. Common geometry/TeX/SVG/Folia still unaccepted.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -578,9 +578,9 @@
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mglyph",
       "owner": "semantics_util",
       "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "adaptation_reason": "Root-frozen complete source/interface/default/accessor/field/method packet; raw property/options identity, virtual callback order and current-child rereads preserved. Typed dense nullable child and bool-omission boundaries explicit. 7667 actual-CJS assertions/106 cases, full core pass and 42 compiling assertion-failing mutants; all members mapped in evidence/p16a-simple-mml-members.json. Evidence: evidence/p16a-simple-mml-acceptance.md. Common geometry/TeX/SVG/Folia still unaccepted.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
@@ -663,9 +663,9 @@
       "proposed_module": "folia.math.core.mml_tree.mml_nodes.mpadded",
       "owner": "semantics_util",
       "disposition": "unreviewed",
-      "adaptation_reason": "",
-      "port_status": "not_started",
-      "acceptance": "not_verified",
+      "adaptation_reason": "Root-frozen complete source/interface/default/accessor/field/method packet; raw property/options identity, virtual callback order and current-child rereads preserved. Typed dense nullable child and bool-omission boundaries explicit. 7667 actual-CJS assertions/106 cases, full core pass and 42 compiling assertion-failing mutants; all members mapped in evidence/p16a-simple-mml-members.json. Evidence: evidence/p16a-simple-mml-acceptance.md. Common geometry/TeX/SVG/Folia still unaccepted.",
+      "port_status": "implemented",
+      "acceptance": "concrete_mml_gate_passed_root_review",
       "dependencies": [
         "ts/core/MmlTree/MmlNode.ts",
         "ts/core/Tree/Node.ts"
