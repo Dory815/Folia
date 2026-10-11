@@ -108,6 +108,11 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/operator_class.ixx
     src/math/core/mml_tree/mml_nodes/tex_atom.ixx
     src/math/core/mml_tree/mml_nodes/semantics.ixx
+    src/math/core/mml_tree/mml_nodes/menclose.ixx
+    src/math/core/mml_tree/mml_nodes/mpadded.ixx
+    src/math/core/mml_tree/mml_nodes/maligngroup.ixx
+    src/math/core/mml_tree/mml_nodes/malignmark.ixx
+    src/math/core/mml_tree/mml_nodes/mglyph.ixx
     src/math/core/mml_tree/multiscript_host.ixx
     src/math/core/mml_tree/mml_nodes/mmultiscripts.ixx
     src/math/core/mml_tree/table_host.ixx
@@ -157,6 +162,15 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_nodes/tex_atom.cpp
     src/math/core/mml_tree/mml_nodes/semantics_bindings.cpp
     src/math/core/mml_tree/mml_nodes/semantics.cpp
+    src/math/core/mml_tree/mml_nodes/menclose_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/menclose.cpp
+    src/math/core/mml_tree/mml_nodes/mpadded_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mpadded.cpp
+    src/math/core/mml_tree/mml_nodes/maligngroup_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/maligngroup.cpp
+    src/math/core/mml_tree/mml_nodes/malignmark_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mglyph_bindings.cpp
+    src/math/core/mml_tree/mml_nodes/mglyph.cpp
     src/math/core/mml_tree/mml_nodes/mmultiscripts_bindings.cpp
     src/math/core/mml_tree/mml_nodes/mmultiscripts.cpp
     src/math/core/mml_tree/mml_nodes/mtable_bindings.cpp
