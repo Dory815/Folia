@@ -171,3 +171,7 @@ path = "tests/blend_stage_parity.rs"
 [[test]]
 name = "pattern_stage_parity"
 path = "tests/pattern_stage_parity.rs"
+
+[[test]]
+name = "pipeline_context_parity"
+path = "tests/pipeline_context_parity.rs"

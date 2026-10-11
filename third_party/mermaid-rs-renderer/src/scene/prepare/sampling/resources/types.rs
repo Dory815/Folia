@@ -1,7 +1,6 @@
 //! Root-frozen borrowed resource projection of tiny-skia pipeline Context.
 use super::super::super::pipeline_control_types::{PipelinePrecision,PipelineStage};
-#[derive(Debug,Clone,Copy,Default,PartialEq)]
-pub struct UniformColor {pub components:[f32;4],pub rgba:[u16;4]}
+pub use super::super::super::pipeline_context_types::UniformColor;
 #[derive(Debug)]
 pub struct DestinationSurface<'a> {pub data:&'a mut [u8],pub real_width:usize}
 #[derive(Debug,Clone,Copy,Default)]

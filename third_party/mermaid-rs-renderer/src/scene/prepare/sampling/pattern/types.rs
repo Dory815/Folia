@@ -1,5 +1,5 @@
 //! Root-frozen immutable projection of PixmapRef, TileCtx and SamplerCtx.
-use crate::scene::paint::SpreadMode;
+pub use super::super::super::pipeline_context_types::{TileContext,SamplerContext};
 #[derive(Debug,Clone,Copy)]
 pub struct SourcePixmap<'a>{data:&'a[u8],width:u32,height:u32}
 impl<'a> SourcePixmap<'a>{
@@ -16,9 +16,5 @@ impl<'a> SourcePixmap<'a>{
  pub fn width(&self)->u32{self.width}
  pub fn height(&self)->u32{self.height}
 }
-#[derive(Debug,Clone,Copy,PartialEq)]
-pub struct TileContext{pub scale:f32,pub inv_scale:f32}
-#[derive(Debug,Clone,Copy,PartialEq)]
-pub struct SamplerContext{pub spread_mode:SpreadMode,pub inv_width:f32,pub inv_height:f32}
 #[derive(Debug,Clone,Copy)]
 pub struct PatternContext<'a>{pub source:SourcePixmap<'a>,pub limit_x:TileContext,pub limit_y:TileContext,pub sampler:SamplerContext}
