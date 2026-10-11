@@ -8,3 +8,5 @@ pub mod gradient_stops;
 pub mod gradient_program_types;
 pub mod gradient_color_space;
 pub mod gradient_program;
+pub mod pipeline_control_types;
+pub mod pipeline_control;

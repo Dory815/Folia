@@ -88,6 +88,10 @@ codegen-units = 1
 [dev-dependencies]
 roxmltree = "=0.21.1"
 
+[[test]]
+name = "pipeline_control_parity"
+path = "tests/pipeline_control_parity.rs"
+
 [[bin]]
 name = "mmdr"
 path = "src/main.rs"
