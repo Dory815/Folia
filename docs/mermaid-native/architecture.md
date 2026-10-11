@@ -112,3 +112,15 @@ acceptance.md and evidence/m3f-radial-stages-acceptance.md. M3f's final matrix h
 34/70 rendering functions accepted and do not pass stop/sampling/pixel or full
 backend/Folia gates. Both consumers must receive the same completed shared
 preparation rather than independently recreating geometry or stage decisions.
+
+M3g locally accepts six shared f32 stop/color preparation methods under
+m3g-gradient-stops-contract.md. Root's actual Source oracle has 3,242 cases /
+382,002 native assertions; all 22 compiling semantic mutants are detected.
+The final thirteen-target matrix has 40 tests, including all 11 actual WARP
+tests with the pinned Arial fixture. Evidence:
+evidence/m3g-gradient-stops-acceptance.md. The initial missing-font failure is
+retained separately. One authoritative stop preparation vector carries mode,
+dual transforms and flags for both consumers. The 34/70 rendering-function
+count stays unchanged; complete Gradient::push_stages wrapper, color expansion,
+sampling/precision/masks, radial resources, complete SVG/D2D and Folia gates
+remain open. Agent completion alone never passes a gate.

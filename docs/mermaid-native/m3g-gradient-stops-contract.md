@@ -16,8 +16,8 @@ Pinned tiny-skia 0.12.0 `src/shaders/gradient.rs` SHA256
 `Gradient::apply_opacity` (261–267).
 Pinned `src/color.rs` SHA256
 `3cea03557e9e7d8593230149052a11c2062a2439e6ebc2631dac6594e402bd8d`:
-`Color::from_rgba` (240–249), `Color::apply_opacity` (332–334),
-`Color::is_opaque` (340–342). These three color dependencies are included
+`Color::from_rgba` (240–249), `Color::apply_opacity` (326–328),
+`Color::is_opaque` (333–335). These three color dependencies are included
 explicitly; other color methods and complete pipeline remain required later.
 The six exact methods, all branches and field assignments must be mapped.
 

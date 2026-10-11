@@ -17,7 +17,7 @@ fn stop_bits(stops:&[PreparedGradientStop],expected:&[[u32;5]],index:usize,count
 }
 #[test]
 fn complete_source_gradient_stop_preparation(){
- let fixture:Fixture=serde_json::from_str(include_str!("fixtures/gradient-stops.json")).unwrap();assert_eq!(fixture.cases.len(),3050);let mut assertions=1;
+ let fixture:Fixture=serde_json::from_str(include_str!("fixtures/gradient-stops.json")).unwrap();assert_eq!(fixture.cases.len(),3242);let mut assertions=1;
  for(index,case)in fixture.cases.iter().enumerate(){
   let stops:Option<Vec<_>>=case.input.stops.iter().map(|v|{let a=v.map(f32::from_bits);StopColor::from_rgba(a[1],a[2],a[3],a[4]).map(|c|PreparedGradientStop::new(a[0],c))}).collect();
   assert_eq!(stops.is_some(),case.accepted,"case {index}: color construction");assertions+=1;let Some(stops)=stops else{continue};stop_bits(&stops,&case.constructed,index,&mut assertions);
