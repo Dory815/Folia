@@ -125,3 +125,7 @@ path = "tests/architecture_icons_parity.rs"
 [[test]]
 name = "c4_style_parity"
 path = "tests/c4_style_parity.rs"
+
+[[test]]
+name = "label_data_parity"
+path = "tests/label_data_parity.rs"

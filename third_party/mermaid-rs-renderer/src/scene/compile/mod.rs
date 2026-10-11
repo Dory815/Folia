@@ -7,3 +7,5 @@ pub mod text_helpers;
 pub mod edge_label_geometry;
 pub mod architecture_icons;
 pub mod c4_style;
+pub mod sankey_labels;
+pub mod er_attributes;
