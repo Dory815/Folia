@@ -98,3 +98,7 @@ path = "tests/path_parity.rs"
 name = "direct2d_warp"
 path = "tests/direct2d_warp.rs"
 required-features = ["direct2d"]
+
+[[test]]
+name = "edge_symbols_parity"
+path = "tests/edge_symbols_parity.rs"
