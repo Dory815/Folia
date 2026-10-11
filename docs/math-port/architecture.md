@@ -289,6 +289,12 @@ dense whole-file evidence still does not certify all sparse consumers. P23k-n
 repair generated observer bindings without changing Source expectations. Script,
 leaf, HtmlNode and MathChoice now independently compile over the actual 90
 interfaces; their Source profiles reproduce. The Root -k 0 repository inventory
-in `evidence/p23n-mathchoice-observer-acceptance.md` still finds 12 stale observer
-translation units and no core tests execute yet. Full parser, wrappers, shared
+in `evidence/p23n-mathchoice-observer-acceptance.md` found 12 stale observer
+translation units. P24 independently repairs and compiles three operator and
+registry observers, leaving nine in the current keep-going compiler inventory;
+see `evidence/p24-operator-registry-observer-acceptance.md`. No core tests execute
+yet. P24 also accepts three base TeX-class propagation bodies, including raw
+values, virtual callback order and partial failure effects: 13,892 assertions,
+11 effective compiling mutations and 1,765 existing regression assertions.
+See `evidence/p24-base-class-acceptance.md`. Full parser, wrappers, shared
 layout, SVG/D2D and Folia gates remain open; 54/246 remains a historical tally.
