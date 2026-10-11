@@ -19,7 +19,8 @@ manifest, expectation, test, build, production or commit mutations. Report missi
 APIs/uncertain semantics before substituting a different behavior. Do not spawn.
 Root controls cfg/exports/manifests/tests and approves each responsibility.
 
-Root will add optional windows = =0.61.3 in a cfg(windows) dependency section
+Root will add optional windows = =0.61.3 and windows-numerics = =0.2.0
+in a cfg(windows) dependency section
 and direct2d feature, with required Graphics::Direct2D/Common, Imaging and COM
 APIs. Use cached pinned primary generated bindings; Windows/core APIs remain
 strictly in this backend. Portable modules must continue building feature-off.
@@ -84,8 +85,14 @@ layers and multiply groups must preserve isolation/painter order. Multiply uses
 native D2D effect/composition with completed foreground/background images; never
 approximate it using a color tint or per-brush alpha. Root will compare against
 actual source Sankey blend output. Object-bounding-box gradient mapping needs
-correct geometric bounds; if a shared bound helper is needed, report to root
-before duplicating it in backend-specific layout code. An explicit diagnostic
+correct geometric bounds. Root approves ID2D1Geometry::GetBounds(None) on the
+already-converted drawable geometry as a generic native primitive query, not
+diagram layout. Use local untransformed fill bounds excluding stroke, then
+bounding-box mapping composed with the gradient transform in SVG order. Zero
+bounds retain SVG's degenerate paint semantics. Text paint bounds span the full
+text drawable, never a separately reanchored box or per-glyph gradient reset.
+If a shared algorithm beyond that query is needed, report to root before
+duplicating it in backend-specific layout code. An explicit diagnostic
 for not-yet-supported generic scene features is allowed during implementation,
 but cannot pass the final full-feature gate.
 

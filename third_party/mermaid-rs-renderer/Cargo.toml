@@ -45,6 +45,8 @@ default = ["cli", "png"]
 cli = ["dep:clap"]
 # PNG output support (adds resvg/usvg dependencies)
 png = ["dep:resvg", "dep:usvg"]
+# Optional native scene consumer; portable parser/layout/scene remain independent.
+direct2d = ["dep:windows", "dep:windows-numerics"]
 
 [dependencies]
 anyhow = "1.0"
@@ -59,6 +61,18 @@ fontdb = "0.23"
 ttf-parser = "0.25"
 resvg = { version = "0.47.0", optional = true }
 usvg = { version = "0.47.0", optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-numerics = { version = "=0.2.0", optional = true }
+windows = { version = "=0.61.3", optional = true, features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct2D",
+    "Win32_Graphics_Direct2D_Common",
+    "Win32_Graphics_Imaging",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+] }
 
 [profile.release]
 lto = true

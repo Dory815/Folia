@@ -99,6 +99,7 @@ pub mod layout_dump;
 pub mod parser;
 pub mod render;
 pub mod scene;
+pub mod backends;
 mod text_metrics;
 pub mod theme;
 pub(crate) mod unicode_width;
