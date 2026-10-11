@@ -22,7 +22,7 @@ begin('every_operator_key_range_lookup_and_freshness');
 for(const table of Object.values(D.OPTABLE))for(const key of Object.keys(table)){const value=D.getRange(key);emit('{auto a=d::getRange('+u(key)+');auto b=d::getRange('+u(key)+');');range(value,'a');eq(D.getRange(key)!==D.getRange(key),'a!=b');emit('}');}end();
 begin('OPDEF_missing_null_fresh_and_property_identity');
 for(const tc of [undefined,null,false,0,'2'])for(const props of [undefined,null,false,0,'data']){const v=D.OPDEF('l',null,tc,props);emit('{auto a=d::OPDEF("l",PropertyNull{},'+p(tc)+','+p(props)+');auto b=d::OPDEF("l",PropertyNull{},'+p(tc)+','+p(props)+');');range(v,'Property(a)');eq(v!==D.OPDEF('l',null,tc,props),'Property(a)!=Property(b)');emit('}');}
-{const props={accent:true},v=D.OPDEF(1,2,undefined,props);emit('{PropertyList props{{"accent",true}};auto a=d::OPDEF(1,2,Missing{},props);');eq(v[3]===props,'a.get(3)==Property(props)');emit('}');}end();
+{const props={accent:true},v=D.OPDEF(1,2,undefined,props);emit('{PropertyList props{{"accent",true}};auto a=d::OPDEF(1,2,Missing{},props);');eq(v[3]===props,"a.get(3)==Property(props)");emit('}');}end();
 begin('inherited_names_empty_multichar_surrogates');
 for(const text of ['', 'constructor','toString','__proto__','hasOwnProperty','valueOf','<=','!=','!!','\u2a7d\u0338','\ud800','\udfff','😀','字tail','+tail']){emit('{auto value=d::getRange('+u(text)+');');range(D.getRange(text),'value');emit('}');}end();
 begin('every_range_boundary_with_pristine_tables');

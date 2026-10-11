@@ -59,7 +59,7 @@ expect(traceLog==std::vector<std::string>{"forms","Parent","explicit","attribute
 enabled=false;};
 "math_port_mo_order_inherited_gettext_once_dispatch"_test=[] {enabled=false;traceLog.clear();
 NF f(classes());auto*n=mo(f,u"x",{},"dispatch");
-traceLog.clear();enabled=true;n->setInheritedAttributes({},false,2,true);enabled=false;
+traceLog.clear();enabled=true;n->setInheritedAttributes(PropertyList{},false,2,true);enabled=false;
 expect(traceLog==std::vector<std::string>{"attributes","attributes","attributes","attributes","attributes","set/texprimestyle","text","table/x","pseudo/x","prime/x","accent/x"})<<traceText();
 enabled=false;};
 "math_port_mo_order_phase_missing_before_initializers"_test=[] {enabled=false;traceLog.clear();

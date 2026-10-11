@@ -12,7 +12,7 @@ namespace s=folia::math::string_util;namespace m=folia::math::mml;namespace h=m:
 std::u16string units(std::initializer_list<unsigned> v){std::u16string s;for(auto c:v)s.push_back(static_cast<char16_t>(c));return s;}
 bool prop(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return *x==*y||(std::isnan(*x)&&std::isnan(*y));return a==b;}
 m::Children children(std::initializer_list<m::MmlNode*> v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}m::MmlNode* at(m::MmlNode*n,std::size_t i){return n->childNodes&&i<n->childNodes->size()?(*n->childNodes)[i]:nullptr;}
-struct Probe:m::AbstractMmlNode {using AbstractMmlNode::AbstractMmlNode;std::vector<std::array<Property,3>> seen;std::vector<PropertyList> records;std::function<void()> callback;std::string kind()const override{return "probe";}bool isEmbellished()const override{return h::truthy(getProperty("embellished"));}void setInheritedAttributes(m::AttributeList a,Property d,Property l,Property p)override{records.push_back(a);seen.push_back({d,l,p});if(callback)callback();}};
+struct Probe:m::AbstractMmlNode {using AbstractMmlNode::AbstractMmlNode;std::vector<std::array<Property,3>> seen;std::vector<Property> records;std::function<void()> callback;std::string kind()const override{return "probe";}bool isEmbellished()const override{return h::truthy(getProperty("embellished"));}void inheritAttributes(m::AttributeList a,Property d,Property l,Property p)override{records.push_back(a);seen.push_back({d,l,p});if(callback)callback();}};
 struct Sub:m::MmlMsubsup {using MmlMsubsup::MmlMsubsup;void hook(m::AttributeList a,Property d,Property l,Property p){setChildInheritedAttributes(a,d,l,p);}};
 struct Sup:m::MmlMsup {using MmlMsup::MmlMsup;void hook(m::AttributeList a,Property d,Property l,Property p){setChildInheritedAttributes(a,d,l,p);}};
 struct Under:m::MmlMunderover {using MmlMunderover::MmlMunderover;void hook(m::AttributeList a,Property d,Property l,Property p){setChildInheritedAttributes(a,d,l,p);}Property level(Property a,bool f,Property l){return getScriptlevel(a,f,l);}void accent(std::size_t n,Property a,Property d,Property l,Property p,bool f){setInheritedAccent(n,a,d,l,p,f);}};
@@ -1767,7 +1767,7 @@ expect(prop(b->seen[0][1],Property(2.0)));
 expect(prop(b->seen[0][2],Property(h::debugText(units({112,114,105,109,101})))));
 }
 expect(prop(n->attributes()->getInherited("accentunder"),Property(true)));
-expect(bool(((b->records.empty()?std::size_t(999):b->records[0].keys().size()))==0.0));
+expect(bool(((b->records.empty()?std::size_t(999):h::ownKeys(b->records[0]).size()))==0.0));
 }
 {auto*b=dynamic_cast<Probe*>(f.create("probe"));b->setProperty("embellished",true);b->attributes()->set("accent",Property(true));auto*n=dynamic_cast<Under*>(f.create("munderover"));n->childNodes=children({f.create("probe"),b});n->attributes()->set("accentunder",false);n->accent(1,"accentunder","display",2,"prime",false);
 expect(bool((b->seen.size())==0.0));
@@ -1795,7 +1795,7 @@ expect(prop(b->seen[0][1],Property(2.0)));
 expect(prop(b->seen[0][2],Property(h::debugText(units({112,114,105,109,101})))));
 }
 expect(prop(n->attributes()->getInherited("accentunder"),Property(h::debugText(units({121,101,115})))));
-expect(bool(((b->records.empty()?std::size_t(999):b->records[0].keys().size()))==0.0));
+expect(bool(((b->records.empty()?std::size_t(999):h::ownKeys(b->records[0]).size()))==0.0));
 }
 {auto*b=dynamic_cast<Probe*>(f.create("probe"));b->setProperty("embellished",true);b->attributes()->set("accent",Property(h::debugText(units({121,101,115}))));auto*n=dynamic_cast<Under*>(f.create("munderover"));n->childNodes=children({f.create("probe"),b});n->attributes()->set("accentunder",false);n->accent(1,"accentunder","display",2,"prime",false);
 expect(bool((b->seen.size())==0.0));
@@ -1811,7 +1811,7 @@ expect(prop(b->seen[0][1],Property(3.0)));
 expect(prop(b->seen[0][2],Property(h::debugText(units({112,114,105,109,101})))));
 }
 expect(prop(n->attributes()->getInherited("accentunder"),Property(PropertyNull{})));
-expect(bool(((b->records.empty()?std::size_t(999):b->records[0].keys().size()))==0.0));
+expect(bool(((b->records.empty()?std::size_t(999):h::ownKeys(b->records[0]).size()))==0.0));
 }
 {auto*b=dynamic_cast<Probe*>(f.create("probe"));b->setProperty("embellished",true);b->attributes()->set("accent",Property(PropertyNull{}));auto*n=dynamic_cast<Under*>(f.create("munderover"));n->childNodes=children({f.create("probe"),b});n->attributes()->set("accentunder",false);n->accent(1,"accentunder","display",2,"prime",false);
 expect(bool((b->seen.size())==0.0));
@@ -1827,7 +1827,7 @@ expect(prop(b->seen[0][1],Property(3.0)));
 expect(prop(b->seen[0][2],Property(h::debugText(units({112,114,105,109,101})))));
 }
 expect(prop(n->attributes()->getInherited("accentunder"),Property(Missing{})));
-expect(bool(((b->records.empty()?std::size_t(999):b->records[0].keys().size()))==0.0));
+expect(bool(((b->records.empty()?std::size_t(999):h::ownKeys(b->records[0]).size()))==0.0));
 }
 {auto*b=dynamic_cast<Probe*>(f.create("probe"));b->setProperty("embellished",true);b->attributes()->set("accent",Property(Missing{}));auto*n=dynamic_cast<Under*>(f.create("munderover"));n->childNodes=children({f.create("probe"),b});n->attributes()->set("accentunder",false);n->accent(1,"accentunder","display",2,"prime",false);
 expect(bool((b->seen.size())==0.0));
@@ -1843,7 +1843,7 @@ expect(prop(b->seen[0][1],Property(3.0)));
 expect(prop(b->seen[0][2],Property(h::debugText(units({112,114,105,109,101})))));
 }
 expect(prop(n->attributes()->getInherited("accentunder"),Property(std::numeric_limits<double>::quiet_NaN())));
-expect(bool(((b->records.empty()?std::size_t(999):b->records[0].keys().size()))==0.0));
+expect(bool(((b->records.empty()?std::size_t(999):h::ownKeys(b->records[0]).size()))==0.0));
 }
 {auto*b=dynamic_cast<Probe*>(f.create("probe"));b->setProperty("embellished",true);b->attributes()->set("accent",Property(std::numeric_limits<double>::quiet_NaN()));auto*n=dynamic_cast<Under*>(f.create("munderover"));n->childNodes=children({f.create("probe"),b});n->attributes()->set("accentunder",false);n->accent(1,"accentunder","display",2,"prime",false);
 expect(bool((b->seen.size())==0.0));

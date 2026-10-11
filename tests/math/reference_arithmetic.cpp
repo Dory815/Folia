@@ -14,8 +14,8 @@ namespace m=folia::math::mml;namespace h=m::host;namespace tr=folia::math::tree;
 std::u16string units(std::initializer_list<unsigned>v){std::u16string s;for(auto x:v)s.push_back(static_cast<char16_t>(x));return s;}
 m::Children children(std::initializer_list<m::MmlNode*>v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}
 bool deep(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return (std::isnan(*x)&&std::isnan(*y))||(*x==*y&&std::signbit(*x)==std::signbit(*y));auto x=PropertyList::record(a),y=PropertyList::record(b);if(x&&y){if(PropertyArray::array(a).has_value()!=PropertyArray::array(b).has_value()||x->keys()!=y->keys())return false;for(const auto&k:x->keys())if(!deep(x->getOwn(k),y->getOwn(k)))return false;if(auto ax=PropertyArray::array(a)){auto ay=PropertyArray::array(b);return ax->size()==ay->size();}return true;}return a==b;}
-struct Call{m::MmlNode*node;PropertyList a;Property d,l,p;};std::vector<std::string> arithmeticEvents;std::vector<Call> calls;std::vector<m::MmlNode*> texCalls;std::string mode;m::MmlNode*target=nullptr; m::MmlNode*late=nullptr;m::Children originalChildren;
-struct Record:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::string label;std::string kind()const override{return "record";}void setInheritedAttributes(PropertyList a={},Property d=false,Property l=0,Property p=false)override{arithmeticEvents.push_back("inherit/"+label);calls.push_back({this,a,d,l,p});if(label=="first"&&mode=="swap")target->childNodes=children({this,late});if(label=="first"&&mode=="attributes"){a.setOwn("onlyFirst","changed");auto tuple=PropertyArray::array(a.get("shared"));if(!tuple)h::typeError("Missing shared tuple in fixture");tuple->set(1,"changed");}}m::MmlNode*setTeXclass(m::MmlNode*prev)override{arithmeticEvents.push_back("tex/"+label+(prev?"/prev":"/null"));texCalls.push_back(this);if(label=="first"&&mode=="grow-rebind"){originalChildren->push_back(late);target->childNodes=children({late});}if(label=="first"&&mode=="swap")target->childNodes=children({this,late});return this;}};
+struct Call{m::MmlNode*node;Property a=PropertyList{};Property d,l,p;};std::vector<std::string> arithmeticEvents;std::vector<Call> calls;std::vector<m::MmlNode*> texCalls;std::string mode;m::MmlNode*target=nullptr; m::MmlNode*late=nullptr;m::Children originalChildren;
+struct Record:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::string label;std::string kind()const override{return "record";}void inheritAttributes(Property a,Property d,Property l,Property p)override{arithmeticEvents.push_back("inherit/"+label);calls.push_back({this,a,d,l,p});if(label=="first"&&mode=="swap")target->childNodes=children({this,late});if(label=="first"&&mode=="attributes"){h::set(a,"onlyFirst","changed");auto tuple=PropertyArray::array(h::get(a,"shared"));if(!tuple)h::typeError("Missing shared tuple in fixture");tuple->set(1,"changed");}}m::MmlNode*setTeXclass(m::MmlNode*prev)override{arithmeticEvents.push_back("tex/"+label+(prev?"/prev":"/null"));texCalls.push_back(this);if(label=="first"&&mode=="grow-rebind"){originalChildren->push_back(late);target->childNodes=children({late});}if(label=="first"&&mode=="swap")target->childNodes=children({this,late});return this;}};
 template<class T>struct Proxy:T{using T::T;void hook(PropertyList a,Property d,Property l,Property p){T::setChildInheritedAttributes(a,d,l,p);}void getPrevClass(m::MmlNode*p)override{arithmeticEvents.push_back("previous");T::getPrevClass(p);}};using Frac=Proxy<m::MmlMfrac>;using Sqrt=Proxy<m::MmlMsqrt>;using Root=Proxy<m::MmlMroot>;
 using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode>classes(){return {{"mfrac",m::classBinding<Frac>()},{"msqrt",m::classBinding<Sqrt>()},{"mroot",m::classBinding<Root>()},{"record",m::classBinding<Record>()},{"math",m::classBinding<m::MmlMath>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"mi",m::classBinding<m::MmlMi>()},{"mo",m::classBinding<m::MmlMo>()},{"text",m::classBinding<m::TextNode>()}};}
 m::MmlNode*create(NF&f,std::string_view k,PropertyList a={},m::Children c=children()){return f.create(k,std::array<std::any,2>{a,c});}
@@ -1600,8 +1600,8 @@ expect(deep(calls[1].l,Property(0)));
 expect(deep(calls[1].p,Property(true)));
 expect(bool((Property(calls[1].a)==Property(attrs))==false));
 expect(deep(Property(attrs),Property(PropertyList{{"shared",Property(PropertyArray{Property(h::debugText(units({116,101,115,116}))),Property(h::debugText(units({99,104,97,110,103,101,100})))})},{"__proto__",Property(PropertyArray{Property(h::debugText(units({116,101,115,116}))),Property(h::debugText(units({111,119,110})))})}})));
-expect(bool((calls[0].a.get("shared")==attrs.get("shared"))==true));
-expect(bool((calls[1].a.get("shared")==attrs.get("shared"))==true));
+expect(bool((h::get(calls[0].a,"shared")==attrs.get("shared"))==true));
+expect(bool((h::get(calls[1].a,"shared")==attrs.get("shared"))==true));
 }
 {Setup s("msqrt");PropertyList attrs{{"shared",PropertyArray{"test","old"}},{"__proto__",PropertyArray{"test","own"}}};mode="attributes";
 hook(s,attrs,true,0,false);
@@ -1612,7 +1612,7 @@ expect(deep(calls[0].l,Property(0)));
 expect(deep(calls[0].p,Property(true)));
 expect(bool((Property(calls[0].a)==Property(attrs))==true));
 expect(deep(Property(attrs),Property(PropertyList{{"shared",Property(PropertyArray{Property(h::debugText(units({116,101,115,116}))),Property(h::debugText(units({99,104,97,110,103,101,100})))})},{"__proto__",Property(PropertyArray{Property(h::debugText(units({116,101,115,116}))),Property(h::debugText(units({111,119,110})))})},{"onlyFirst",Property(h::debugText(units({99,104,97,110,103,101,100})))}})));
-expect(bool((calls[0].a.get("shared")==attrs.get("shared"))==true));
+expect(bool((h::get(calls[0].a,"shared")==attrs.get("shared"))==true));
 }
 {Setup s("mroot");PropertyList attrs{{"shared",PropertyArray{"test","old"}},{"__proto__",PropertyArray{"test","own"}}};mode="attributes";
 hook(s,attrs,true,0,false);
@@ -1628,8 +1628,8 @@ expect(deep(calls[1].l,Property(2)));
 expect(deep(calls[1].p,Property(false)));
 expect(bool((Property(calls[1].a)==Property(attrs))==true));
 expect(deep(Property(attrs),Property(PropertyList{{"shared",Property(PropertyArray{Property(h::debugText(units({116,101,115,116}))),Property(h::debugText(units({99,104,97,110,103,101,100})))})},{"__proto__",Property(PropertyArray{Property(h::debugText(units({116,101,115,116}))),Property(h::debugText(units({111,119,110})))})},{"onlyFirst",Property(h::debugText(units({99,104,97,110,103,101,100})))}})));
-expect(bool((calls[0].a.get("shared")==attrs.get("shared"))==true));
-expect(bool((calls[1].a.get("shared")==attrs.get("shared"))==true));
+expect(bool((h::get(calls[0].a,"shared")==attrs.get("shared"))==true));
+expect(bool((h::get(calls[1].a,"shared")==attrs.get("shared"))==true));
 }
 };
 "math_port_arithmetic_child_inheritance_rebinding"_test=[] {

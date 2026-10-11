@@ -19,7 +19,7 @@ bool prop(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.va
 m::Children children(std::initializer_list<m::MmlNode*> v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}
 m::MmlNode* at(m::MmlNode*n,std::size_t i){return n&&n->childNodes&&i<n->childNodes->size()?(*n->childNodes)[i]:nullptr;}
 std::size_t count(m::MmlNode*n){return n&&n->childNodes?n->childNodes->size():0;}
-struct Probe:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::function<void(m::MmlNode*)> onClass;std::function<void(m::AttributeList,Property,Property,Property)> onInherit;std::string kind()const override{return "probe";}bool isSpacelike()const override{return h::truthy(getProperty("space"));}bool isEmbellished()const override{return h::truthy(getProperty("embellished"));}m::MmlNode* setTeXclass(m::MmlNode*p)override{if(onClass)onClass(p);return AbstractMmlNode::setTeXclass(p);}void setInheritedAttributes(m::AttributeList a={},Property d=false,Property l=0,Property p=false)override{if(onInherit)onInherit(a,d,l,p);AbstractMmlNode::setInheritedAttributes(a,d,l,p);}};
+struct Probe:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::function<void(m::MmlNode*)> onClass;std::function<void(m::AttributeList,Property,Property,Property)> onInherit;std::string kind()const override{return "probe";}bool isSpacelike()const override{return h::truthy(getProperty("space"));}bool isEmbellished()const override{return h::truthy(getProperty("embellished"));}m::MmlNode* setTeXclass(m::MmlNode*p)override{if(onClass)onClass(p);return AbstractMmlNode::setTeXclass(p);}void inheritAttributes(m::AttributeList a,Property d,Property l,Property p)override{if(onInherit)onInherit(a,d,l,p);AbstractMmlNode::inheritAttributes(a,d,l,p);}};
 using F=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode> classes(){return {{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"math",m::classBinding<m::MmlMath>()},{"mi",m::classBinding<m::MmlMi>()},{"mn",m::classBinding<m::MmlMn>()},{"mtext",m::classBinding<m::MmlMtext>()},{"ms",m::classBinding<m::MmlMs>()},{"mspace",m::classBinding<m::MmlMspace>()},{"mstyle",m::classBinding<m::MmlMstyle>()},{"merror",m::classBinding<m::MmlMerror>()},{"mphantom",m::classBinding<m::MmlMphantom>()},{"text",m::classBinding<m::TextNode>()},{"XML",m::classBinding<m::XMLNode>()},{"probe",m::classBinding<Probe>()}};}
 m::MmlNode* create(F&f,std::string_view kind,PropertyList a={},m::Children c=children()){return f.create(kind,std::array<std::any,2>{a,c});}
 m::TextNode* text(F&f,std::u16string value){auto*n=dynamic_cast<m::TextNode*>(f.create("text"));n->setText(std::move(value));return n;}
@@ -657,145 +657,145 @@ expect(bool((n->isSpacelike())==false));
 }
 };
 "math_port_leaf_mstyle_raw_relative_levels_and_prime"_test=[] {F f(classes());
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({43,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(2.0),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({43,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(2.0),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({32,45,48,120,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(2.0),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({32,45,48,120,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(2.0),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(0.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({51,120})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(2.0),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({51,120})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(2.0),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(3.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({48,120,49,48})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(2.0),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({48,120,49,48})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(2.0),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(16.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(false)}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(2.0),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(false)}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(2.0),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(std::numeric_limits<double>::quiet_NaN())));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(PropertyNull{})}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(2.0),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(PropertyNull{})}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(2.0),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(true)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({43,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(h::debugText(units({50}))),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({43,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(h::debugText(units({50}))),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(h::debugText(units({50,50})))));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({32,45,48,120,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(h::debugText(units({50}))),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({32,45,48,120,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(h::debugText(units({50}))),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(h::debugText(units({50,45,50})))));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({51,120})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(h::debugText(units({50}))),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({51,120})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(h::debugText(units({50}))),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(3.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({48,120,49,48})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(h::debugText(units({50}))),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({48,120,49,48})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(h::debugText(units({50}))),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(16.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(false)}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(h::debugText(units({50}))),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(false)}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(h::debugText(units({50}))),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(std::numeric_limits<double>::quiet_NaN())));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(PropertyNull{})}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(h::debugText(units({50}))),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(PropertyNull{})}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(h::debugText(units({50}))),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(h::debugText(units({50})))));
 expect(prop(observed[2],Property(true)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({43,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(PropertyNull{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({43,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(PropertyNull{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({32,45,48,120,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(PropertyNull{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({32,45,48,120,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(PropertyNull{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(-2.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({51,120})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(PropertyNull{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({51,120})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(PropertyNull{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(3.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({48,120,49,48})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(PropertyNull{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({48,120,49,48})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(PropertyNull{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(16.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(false)}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(PropertyNull{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(false)}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(PropertyNull{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(std::numeric_limits<double>::quiet_NaN())));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(PropertyNull{})}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(PropertyNull{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(PropertyNull{})}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(PropertyNull{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(PropertyNull{})));
 expect(prop(observed[2],Property(true)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({43,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(Missing{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({43,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(Missing{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({32,45,48,120,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(Missing{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({32,45,48,120,50})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(Missing{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(-2.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({51,120})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(Missing{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({51,120})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(Missing{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(3.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({48,120,49,48})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(Missing{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(h::debugText(units({48,120,49,48})))}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(Missing{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(16.0)));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(false)}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(Missing{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(false)}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(Missing{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(std::numeric_limits<double>::quiet_NaN())));
 expect(prop(observed[2],Property(false)));
 expect(bool((n->notParent())==true));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(PropertyNull{})}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},true,Property(Missing{}),true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto*n=create(f,"mstyle",PropertyList{{"scriptlevel",Property(PropertyNull{})}},children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},true,Property(Missing{}),true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(0.0)));
 expect(prop(observed[2],Property(true)));
@@ -803,138 +803,138 @@ expect(bool((n->notParent())==true));
 }
 };
 "math_port_leaf_mstyle_display_and_cramped"_test=[] {F f(classes());
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(true)}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(true)}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(true)}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(true)}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(true)}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(true)}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(h::debugText(units({121,101,115})))));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(false)}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(false)}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(false)}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(false)}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(false)}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(false)}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(h::debugText(units({121,101,115})))));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(h::debugText(units({116,114,117,101})))}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(h::debugText(units({116,114,117,101})))}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(h::debugText(units({116,114,117,101})))}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(h::debugText(units({116,114,117,101})))}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(h::debugText(units({116,114,117,101})))}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(h::debugText(units({116,114,117,101})))}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(h::debugText(units({121,101,115})))));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(1.0)}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(1.0)}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(1.0)}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(1.0)}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(1.0)}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(1.0)}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(h::debugText(units({121,101,115})))));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(PropertyNull{})}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(PropertyNull{})}};auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(true)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(PropertyNull{})}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(PropertyNull{})}};a.set("data-cramped",Property(false));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(PropertyNull{})}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,4,true);
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"displaystyle",Property(PropertyNull{})}};a.set("data-cramped",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"mstyle",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,4,true);
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(4.0)));
 expect(prop(observed[2],Property(h::debugText(units({121,101,115})))));
 }
 };
 "math_port_leaf_math_display_mode_and_explicit_precedence"_test=[] {F f(classes());
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
 expect(prop(n->attributes()->getInherited("displaystyle"),Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
 expect(prop(n->attributes()->getInherited("displaystyle"),Property(true)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};a.set("displaystyle",Property(false));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};a.set("displaystyle",Property(false));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
 expect(prop(n->attributes()->getInherited("displaystyle"),Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};a.set("displaystyle",Property(false));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};a.set("displaystyle",Property(false));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
 expect(prop(n->attributes()->getInherited("displaystyle"),Property(true)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};a.set("displaystyle",Property(true));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};a.set("displaystyle",Property(true));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
 expect(prop(n->attributes()->getInherited("displaystyle"),Property(true)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};a.set("displaystyle",Property(true));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};a.set("displaystyle",Property(true));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
 expect(prop(n->attributes()->getInherited("displaystyle"),Property(true)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};a.set("displaystyle",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};a.set("displaystyle",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
 expect(prop(n->attributes()->getInherited("displaystyle"),Property(true)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};a.set("displaystyle",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};a.set("displaystyle",Property(h::debugText(units({121,101,115}))));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
 expect(prop(n->attributes()->getInherited("displaystyle"),Property(true)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};a.set("displaystyle",Property(0.0));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({105,110,108,105,110,101})))}};a.set("displaystyle",Property(0.0));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(false)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
 expect(prop(n->attributes()->getInherited("displaystyle"),Property(false)));
 }
-{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};a.set("displaystyle",Property(0.0));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes({},false,2,"prime");
+{auto*spy=dynamic_cast<Probe*>(f.create("probe"));auto a=PropertyList{{"display",Property(h::debugText(units({98,108,111,99,107})))}};a.set("displaystyle",Property(0.0));auto*n=create(f,"math",a,children({spy}));std::array<Property,3> observed;spy->onInherit=[&](m::AttributeList,Property d,Property l,Property p){observed={d,l,p};};n->setInheritedAttributes(PropertyList{},false,2,"prime");
 expect(prop(observed[0],Property(true)));
 expect(prop(observed[1],Property(2.0)));
 expect(prop(observed[2],Property(h::debugText(units({112,114,105,109,101})))));
@@ -1040,7 +1040,7 @@ expect(prop(n->sequence[5]->getInherited("displaystyle"),Property(true)));
 };
 "math_port_leaf_mstyle_defaults_precede_first_write_and_partial_throw"_test=[] {F f(classes());
 struct Partial:m::MmlMstyle{using MmlMstyle::MmlMstyle;bool armed=false;mutable int calls=0;std::shared_ptr<folia::math::Attributes> attributes()const override{if(armed&&++calls==2)throw tr::FactoryError("TypeError",u"second read");return MmlMstyle::attributes();}};f.setNodeClass("mstyle",m::classBinding<Partial>());auto*n=dynamic_cast<Partial*>(f.create("mstyle"));auto saved=n->attributes();n->armed=true;n->calls=0;
-{bool caught=false;try{n->setInheritedAttributes({},Missing{},Missing{},Missing{});}catch(const tr::FactoryError&error){caught=true;expect(bool(error.name=="TypeError"));}expect(caught);}
+{bool caught=false;try{n->setInheritedAttributes(PropertyList{},Missing{},Missing{},Missing{});}catch(const tr::FactoryError&error){caught=true;expect(bool(error.name=="TypeError"));}expect(caught);}
 expect(prop(saved->getInherited("displaystyle"),Property(false)));
 expect(bool((n->calls)==2.0));
 };

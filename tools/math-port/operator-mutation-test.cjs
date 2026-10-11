@@ -69,8 +69,8 @@ const mutations=[
  {name:'range-continue-through-gap',file:dictionary,edits:[['            break;','            continue;']]},
  {name:'range-matching-row-cloned',file:dictionary,edits:[['if (pointValue >= lowerValue) return row;','if (pointValue >= lowerValue) return PropertyArray::array(row).value().spread();']]},
  {name:'fallback-wrong-class',file:dictionary,edits:[['Property(static_cast<double>(TEXCLASS.REL))','Property(static_cast<double>(TEXCLASS.ORD))']]},
- {name:'data-pristine-startup-write-baked',file:data,edits:[['PropertyList& MO(){return state().mo;}','PropertyList& MO(){auto& result=state().mo;PropertyList::object(PropertyArray::array(result.get("CLOSE")).value().get(3)).value().setOwn("linebreakstyle","after");return result;}']]},
- {name:'data-named-definition-alias-lost',file:data,edits:[['PropertyList& MO(){return state().mo;}','PropertyList& MO(){auto& result=state().mo;auto a=PropertyArray::array(result.get("REL")).value();result.setOwn("REL",a.spread());return result;}']]},
+ {name:'data-pristine-startup-write-baked',file:data,edits:[['PropertyList& MO(){return state().mo;}',"PropertyList& MO(){auto& result=state().mo;PropertyList::object(PropertyArray::array(h::get(result,\"CLOSE\")).value().get(3)).value().setOwn(\"linebreakstyle\",\"after\");return result;}"]]},
+ {name:'data-named-definition-alias-lost',file:data,edits:[['PropertyList& MO(){return state().mo;}',"PropertyList& MO(){auto& result=state().mo;auto a=PropertyArray::array(h::get(result,\"REL\")).value();result.setOwn(\"REL\",a.spread());return result;}"]]},
  {name:'array-own-undefined-as-hole',file:property,edits:[['storage_->arrayPresent[i]=true;','storage_->arrayPresent[i]=!storage_->arrayValues[i].missing();']]},
  {name:'array-spread-preserves-holes',file:property,edits:[['for(std::size_t i=0;i<size();++i)out.push(get(i));','out.resize(size());for(std::size_t i=0;i<size();++i)if(has(i))out.set(i,get(i));']]},
  {name:'array-prototype-parent-self',file:'core/mml_tree/mml_node_host.ixx',edits:[['return key=="__proto__"?Property(BuiltinProperty::prototype):get(Property(PropertyArray{}),key);','return get(Property(PropertyArray{}),key);']]}
