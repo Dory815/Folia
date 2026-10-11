@@ -92,7 +92,8 @@ and fallback_ allow observational test probes; no alternate state is introduced.
 
 tools/math-port/map-handler-source.cjs executes actual hash-pinned CJS and
 freezes p20a-map-handler-source.json: 24 probes/117 observations initially,
-with any root-added boundary probes frozen independently before testing.
+expanded by root to 35 probes/153 observations before final native testing.
+Boundary additions preserve independent actual-Source execution.
 They cover registry overwrite/SameValueZero/name access, reversed/partial adds,
 priorities/duplicates/remove, falsy and identity-bearing results, FALLBACK,
 live mutation, actual fallback receiver, empty/noncallable errors, character

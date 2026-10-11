@@ -4,6 +4,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const root=path.resolve(__dirname,'../..'),base=path.join(root,'tools/mathjax-bundle/node_modules/@mathjax/src/cjs');
 for(const[name,sha]of Object.entries({'input/tex/MapHandler':'d82e3034776d2392689aad86500b5e60dbe0aa5540853b48f308841879f3cf67','input/tex/TokenMap':'9e3f086080a6ab052b68b22a5d9ee3dbc5e17d7b0c03a31e789664b01df36cf7','util/FunctionList':'571f57801b863b2d9f01a66dc72f2836b7fd06a1a48a3fe0057e4ec3d51a7278'}))assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(base,name+'.js'))).digest('hex'),sha);
 const{MapHandler,SubHandler,SubHandlers}=require(path.join(base,'input/tex/MapHandler.js')),{CharacterMap}=require(path.join(base,'input/tex/TokenMap.js'));
+assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(base,'util/PrioritizedList.js'))).digest('hex'),'787bd21f3634312af666917d8f140145864f98d09ede1bdde3c957d28ec2bc25');
 const cases=[];function add(name,flags){assert.ok(flags.every(x=>typeof x==='boolean'));cases.push({name,flags});}
 const map=(name,{contains=()=>true,lookup=()=>null,parse=()=>null}={})=>({name,parser:null,parserFor(){return null;},contains,lookup,parse});
 const names=xs=>Array.from(xs._configuration).map(r=>r.item.name),items=xs=>Array.from(xs._fallback);
@@ -60,6 +61,32 @@ const names=xs=>Array.from(xs._configuration).map(r=>r.item.name),items=xs=>Arra
 {
  const s=new SubHandler(),array=['p20-array-change-missing','p20-array-change-last'],last=map(array[1]);MapHandler.register(last);const logs=[],saved=console.log;try{console.log=x=>{logs.push(x);array[0]=last.name;};s.add(array,null);}finally{console.log=saved;}add('add_snapshot',[names(s).length===1,names(s)[0]===last.name,logs.length===1]);
 }
+{
+ const saved=SubHandler.FALLBACK,flags=[];try{for(const [i,value]of [false,null,undefined,0,'',{},Symbol('changed')].entries()){SubHandler.FALLBACK=value;const s=new SubHandler(),events=[],a=map('p20-static-'+i,{parse(){events.push('a');return value;}}),b=map('p20-static-later-'+i,{parse(){events.push('b');return true;}});[a,b].forEach(MapHandler.register);s.add([b.name,a.name],()=>events.push('f'));flags.push(s.parse([{},'x'])===undefined,events.join('|')==='a|f');}SubHandler.FALLBACK=NaN;const s=new SubHandler(),a=map('p20-static-nan',{parse(){return NaN;}}),b=map('p20-static-nan-b',{parse(){return 7;}});[a,b].forEach(MapHandler.register);s.add([b.name,a.name],()=>{throw Error('NaN must not equal itself');});flags.push(s.parse([{},'x'])===7);}finally{SubHandler.FALLBACK=saved;}add('mutable_fallback',flags);
+}
+{
+ const s=new SubHandler(),a=map(null),b=map(undefined),c=map(false);[a,b,c].forEach(MapHandler.register);s.add([c.name,b.name,a.name],null);add('nullish_names',[s.toString()===', , false',s.retrieve(null)===a,s.retrieve(undefined)===b]);
+ const inherited=Object.create(Array.prototype);inherited[0]=undefined;const holes=Array(2);Object.setPrototypeOf(holes,inherited);holes[1]=false;const q=new SubHandler();q.add(holes,null);add('array_holes',[names(q).length===2,names(q)[0]===false,names(q)[1]===undefined]);
+}
+{
+ const f=()=>{},parent={macro:f},child=Object.create(parent);child.macro=undefined;const all=new SubHandlers();all.add({macro:[]},child);const flags=[items(all.get('macro')).length===0];delete child.macro;all.add({macro:[]},child);flags.push(items(all.get('macro'))[0].item===f);add('fallback_shadow',flags);
+ let all2=new SubHandlers();all2.set('retained',new SubHandler());const it=all2.keys();all2=null;add('retained_keys',[it.next().value==='retained',it.next().done===true]);
+}
+{
+ const reason={},s=new SubHandler(),a=map('p20-throw-partial');MapHandler.register(a);const saved=console.log;let same=false;try{console.log=()=>{throw reason;};try{s.add(['p20-throw-missing',a.name],()=>{});}catch(e){same=e===reason;}}finally{console.log=saved;}add('warning_throw',[same,s.toString()===a.name,items(s).length===0]);
+ const all=new SubHandlers(),a2=map('p20-values-a'),b2=map('p20-values-b');[a2,b2].forEach(MapHandler.register);const one=new SubHandler(),two=new SubHandler();one.add([a2.name]);two.add([b2.name]);all.set('one',one);let once=true;one.retrieve=()=>{if(once){once=false;all.set('two',two);}return null;};add('live_values',[all.retrieve(b2.name)===b2]);
+}
+{
+ const all=new SubHandlers();all.add({macro:[]},{});const original=all.get('macro');all.remove({macro:[]},{});add('remove_identity',[all.get('macro')===original]);
+ const s=new SubHandler(),a=map('p20-remove-live-a'),b=map('p20-remove-live-b'),c=map('p20-remove-live-c');[a,b,c].forEach(MapHandler.register);s.add([c.name,b.name,a.name]);const array=[a.name,b.name],events=[],retrieve=s.retrieve.bind(s);s.retrieve=name=>{events.push(name);if(events.length===1){array[1]=a.name;array.push(c.name);}return retrieve(name);};s.remove(array);add('remove_array_live',[s.toString()===b.name,events.join('|')===[a.name,a.name,c.name].join('|')]);
+}
+{
+ const {PrioritizedList}=require(path.join(base,'util/PrioritizedList.js'));const saved=PrioritizedList.DEFAULTPRIORITY,s=new SubHandler(),a=map('p20-default-priority'),f=()=>{};MapHandler.register(a);try{PrioritizedList.DEFAULTPRIORITY=13;s.add([a.name],f);add('dynamic_priority',[Array.from(s._configuration)[0].priority===13,items(s)[0].priority===13]);}finally{PrioritizedList.DEFAULTPRIORITY=saved;}
+ const logs=[],old=console.log,q=new SubHandler(),name='p20-警告-\ud800';try{console.log=x=>logs.push(x);q.add([name],null);}finally{console.log=old;}add('unicode_warning',[logs.length===1,logs[0]==="TexParser Warning: Configuration '"+name+"' not found! Omitted."]);
+}
 const text=JSON.stringify({stage:'actual Source MapHandler; concrete token maps not accepted',source:'7cacdaef3ed1df90b4f05cc0b3183a2956ae8f848f20ae8833932faa4efcb2a2',cases},null,2)+'\n',target=path.join(root,'docs/math-port/evidence/p20a-map-handler-source.json');
-if(process.argv.includes('--check'))assert.equal(fs.readFileSync(target,'utf8').replaceAll('\r\n','\n'),text);else fs.writeFileSync(target,text);
+const header='// Root generated from actual pinned CJS; do not hand edit.\n'+cases.map(c=>`const std::array<bool,${c.flags.length}> source_${c.name}{${c.flags.join(',')}};`).join('\n')+'\n';
+for(const[file,content]of [[target,text],[path.join(root,'tests/math/map_handler_source.inc'),header]]){
+ if(process.argv.includes('--check'))assert.equal(fs.readFileSync(file,'utf8').replaceAll('\r\n','\n'),content);else fs.writeFileSync(file,content);
+}
 console.log(JSON.stringify({cases:cases.length,observations:cases.reduce((n,c)=>n+c.flags.length,0),mode:process.argv.includes('--check')?'check':'generate'}));
