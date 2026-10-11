@@ -13,8 +13,9 @@ Prerequisite utilities have local acceptance recorded in
 in `evidence/p12-class-state-acceptance.md` and five default Mo regex services
 in `evidence/p12b-pattern-acceptance.md`, followed by complete MmlMo semantic
 node acceptance in `evidence/p12c-mo-acceptance.md` and fraction/radical semantics
-in `evidence/p13-arithmetic-acceptance.md`; this does not pass a full renderer
-gate. Local source acceptance is 29/246, with full G0–G7 still closed.
+in `evidence/p13-arithmetic-acceptance.md` and table semantics in
+`evidence/p14-table-acceptance.md`; this does not pass a full renderer
+gate. Local source acceptance is 32/246, with full G0–G7 still closed.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
 

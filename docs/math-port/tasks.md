@@ -472,6 +472,25 @@ mutations and acceptance.
 Tables retain MML inheritance/verification/tree repair here; all table geometry
 and backend work remain in later Common/scene packets.
 
+Root accepted P14 after reviewing all 26 members and correcting null-child
+dispatch timing in the table/row output loops. Final actual-CJS fixture passes
+4,700 assertions/135 cases; complete core regression and 39 compiling,
+assertion-failing isolated mutants pass. Working sources and fixture remain
+byte-equal after mutations. Evidence: evidence/p14-table-acceptance.md and
+the individual mappings in evidence/p14-table-members.json. Local source
+acceptance is 32/246; full G0–G7 remains closed.
+
+### P15 prerequisite audits — no implementation authorization yet
+
+Agents have produced read-only audits of mmultiscripts, TeXAtom, semantics and
+HtmlNode in evidence/p15-*-audit.md. Root must freeze source-ordered class
+construction, live multiscript array edits, nullable verification and the HTML
+adaptor contract before implementation dispatch. TeXAtom's final method is the
+actual Mo adjustTeXclass function installed by prototype assignment; the
+class-body identity method is not the effective implementation. Root must
+design and revalidate a shared operation instead of accepting a duplicated
+algorithm or a test-only Atom descriptor. These audits are not acceptances.
+
 ## Wave 3 — base/AMS input and complete font services
 
 P11 is locally accepted under operator-contracts.md revision 2. Root froze the
