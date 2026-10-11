@@ -625,6 +625,17 @@ Concrete DOM/texhtml parsing, HTML measurement and SVG foreignObject are still
 required separately. P16-remaining-mml-audit.md is a read-only prerequisite,
 not implementation authorization or acceptance of the remaining eight sources.
 
+### P20a root acceptance
+
+Complete MapHandler.ts is locally accepted under map-handler-contract.md:
+21 inventoried members plus both MapHandler object methods, 35 actual-CJS
+probes/153 observations, 198 native assertions/22 tests, 29 compiling and
+assertion-failing mutants, and final full core exit 0. Evidence:
+evidence/p20a-map-handler-acceptance.md. Local Source acceptance is 52/246.
+TokenMap concrete algorithms, regexp engine, complete TeX/Common/SVG and all
+Folia release gates remain open. Mermaid remains separately required before
+goal completion; its radial Source audits freeze no implementation/API.
+
 ### P16a root acceptance
 
 The five menclose/mpadded/maligngroup/malignmark/mglyph sources are locally
