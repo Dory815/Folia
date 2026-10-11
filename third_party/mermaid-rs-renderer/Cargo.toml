@@ -72,3 +72,7 @@ required-features = ["cli"]
 [[test]]
 name = "scene_contracts"
 path = "tests/scene_contracts.rs"
+
+[[test]]
+name = "path_parity"
+path = "tests/path_parity.rs"
