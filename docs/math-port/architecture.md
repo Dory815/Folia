@@ -305,3 +305,9 @@ twelve faults. Existing base/inheritance gates also pass. The full build still
 has the same nine observer compilation failures. See
 `evidence/p25-mml-method-acceptance.md`; no whole-file tally or rendering gate
 advances from these narrow method results.
+
+P26 independently compiles the simple/mfenced/maction observers against all
+90 interfaces with original data intact. The current repository inventory
+has six remaining observer compilation failures; semantic runtime acceptance
+does not follow from this compile repair. See
+`evidence/p26-observer-repair-acceptance.md`.
