@@ -646,3 +646,12 @@ Evidence: evidence/p16a-simple-mml-acceptance.md. Local acceptance is 41/246,
 full G0–G7 remain closed. The remaining 205 sources are not accepted by this
 packet. Mermaid's parallel native-rendering goal is recorded separately in
 docs/mermaid-native/architecture.md and remains required before goal completion.
+
+### P20c root acceptance
+
+Complete util/numeric.ts is locally accepted under numeric-reductions-contract.md:
+two inventoried functions, 145 actual-CJS cases/290 exact numeric observations,
+290 native assertions, seven compiling assertion-failing mutants and final
+full core exit 0. Evidence: evidence/p20c-numeric-reductions-acceptance.md.
+Local Source acceptance is 53/246; Common mtable, complete TeX/Common/SVG,
+Mermaid backends and Folia release gates remain open.
