@@ -1,6 +1,8 @@
 # P19b2 root-frozen shared native callable and receiver protocol
 
-This is the next prerequisite packet, not accepted implementation. Root owns
+This host packet has local acceptance in
+`evidence/p19b2-callable-receiver-acceptance.md`; full renderer gates remain open.
+Root owns
 interfaces, build/test manifests, Source observations and acceptance. It follows
 complete FunctionList acceptance and the TokenMap/MapHandler receiver audits.
 TokenMap/MapHandler APIs remain unfrozen until the remaining regex, constructor

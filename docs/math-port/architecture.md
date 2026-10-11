@@ -28,7 +28,9 @@ and MML registry/factory acceptance in `evidence/p18b-maction-acceptance.md` and
 host in `evidence/p18a-case-host-acceptance.md`, followed by complete FunctionList
 and native asynchronous host acceptance in `evidence/p19a-function-list-acceptance.md`,
 followed by the bounded native argument host in
-`evidence/p19b1-argument-expansion-acceptance.md` (no new TS source-file count).
+`evidence/p19b1-argument-expansion-acceptance.md`, followed by the shared native
+callable/receiver protocol in `evidence/p19b2-callable-receiver-acceptance.md`
+(neither host packet adds a TS source-file count).
 Local source acceptance is 51/246; the complete TeX/Common/SVG renderer and full G0–G7 are still closed.
 Owner: the root agent. Agents implement assigned files; they do not decide
 architecture, scope, interfaces, exclusions, or acceptance criteria.
