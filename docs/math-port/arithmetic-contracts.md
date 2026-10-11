@@ -1,4 +1,4 @@
-# P13 fraction/radical semantic nodes — root-frozen contract
+# P13 fraction/radical semantic nodes — root-frozen contract, revision 2
 
 Sources are MathJax 4.1.3 mfrac.ts, msqrt.ts and mroot.ts from the pinned clone.
 This packet ports complete source files over the accepted MML hierarchy. It
@@ -26,7 +26,7 @@ defaults already belong to the accepted MmlNode implementation.
 
 Fraction retains its inherited null class. Radicals initialize the same
 inherited source texclass field to ORD after superclass initialization, never
-a numeric mirror or separate state. Defaults use source shallow own spreads;
+a numeric mirror or separate state. Defaults use the pinned shallow-copy helper;
 sqrt/root have distinct records despite equal values. Constant accessors stay
 in root-generated binding CPP files.
 
@@ -38,13 +38,19 @@ normalize the fraction class, or stop iteration at its original length.
 
 Mfrac inheritance uses JS truthiness and `level > 0`, then numeric `level++`
 only when that branch executes. It reads numalign then denomalign separately,
-spreads a fresh own copy for each addInheritedAttributes call, and constructs
+creates a fresh shallow copy for each addInheritedAttributes call, and constructs
 both records before child inheritance. Source denominator key is `denalign`
 (not denomalign). Preserve raw alignments and exact six added entries. Child
 0 gets false display/current prime; child 1 gets false display/true prime.
-Re-read childNodes for each call after callbacks. Spreads preserve own data
-`__proto__` and shallow nested aliases; arithmeticOwnCopy does not run the
-Object.assign prototype setter.
+Re-read childNodes for each call after callbacks. The pinned CJS distribution
+lowers source spreads to `__assign({}, attributes)` using Object.assign.
+`arithmeticCopy` preserves shallow nested aliases and that inherited prototype
+setter. An own source `__proto__` array becomes the new copy's prototype and is
+absent from its own keys. Root revision 2 corrects the original own-spread
+contract after an actual-CJS virtual-helper witness rejected it. MmlNode's
+existing assign-based helper already matches this compiled profile; no base
+semantic change was needed. This transpilation detail is part of the locked
+runtime compatibility contract, not a claim of uncompiled TS spread semantics.
 
 Msqrt setTeXclass transfers previous state then calls only child 0 with null
 previous and returns this. The child is normally inferredMrow; do not flatten

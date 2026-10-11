@@ -4,7 +4,7 @@ module folia.math.core.mml_tree.mml_nodes.mfrac;
 import folia.math.core.mml_tree.arithmetic_host;
 import std;
 namespace folia::math::mml {namespace {
-PropertyList sourceDefaults=[] {auto value=host::arithmeticOwnCopy(AbstractMmlBaseNode::defaults());
+PropertyList sourceDefaults=[] {auto value=host::arithmeticCopy(AbstractMmlBaseNode::defaults());
 value.setOwn("linethickness","medium");
 value.setOwn("numalign","center");
 value.setOwn("denomalign","center");

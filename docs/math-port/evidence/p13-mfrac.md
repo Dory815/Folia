@@ -13,13 +13,19 @@ build or test was run. Root owns review and acceptance.
 | `MmlMfrac::setChildInheritedAttributes` | `mfrac.ts:96–139` | Keeps raw display/level/prime inputs. Applies source truthiness and numeric relational conversion, incrementing level numerically only in the source branch. Reads `numalign` then `denomalign` through separate current attribute receivers. Makes two fresh shallow own-property copies, calls `addInheritedAttributes` for numerator and denominator with source key/value order, and completes both records before child callbacks. The denominator's first added key is `denalign`. Child 0 receives false display/current prime; child 1 receives false display/true prime. Each child access re-reads current `childNodes`, so mutations by child 0 affect the denominator lookup. |
 
 The typed adaptations are the root-frozen helpers `arithmeticChild`,
-`arithmeticAttributes`, and `arithmeticOwnCopy`. `host::number` and `host::truthy`
+`arithmeticAttributes`, and `arithmeticCopy`. `host::number` and `host::truthy`
 bind the JavaScript comparison/increment operations. No protected-hook defaults
 are applied here. Shared CJS fixture cases in
 `tests/math/reference_arithmetic.cpp` cover raw level/display matrices, alignment
 values and copy aliasing, child-list rebinding/growth during TeX-class iteration,
 and required-child/null-list errors; these observations remain root-owned and
 have not been independently rerun for this packet.
+
+Root review correction: revision 2 renames the copy helper to arithmeticCopy
+and binds the pinned CJS `__assign` / Object.assign lowering. The original
+agent's own-spread interpretation is superseded by that locked-runtime
+contract. Root's virtual-helper prototype/key trace failed before the fix and
+passes after it; the MmlNode base required no change.
 
 No additional algorithm or native acceptance is claimed here. In particular,
 geometry, TeX parsing, and backend behavior are outside these two methods.

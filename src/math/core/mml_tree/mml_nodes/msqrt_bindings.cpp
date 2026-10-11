@@ -4,7 +4,7 @@ module folia.math.core.mml_tree.mml_nodes.msqrt;
 import folia.math.core.mml_tree.arithmetic_host;
 import std;
 namespace folia::math::mml {namespace {
-PropertyList sourceDefaults=[] {auto value=host::arithmeticOwnCopy(AbstractMmlNode::defaults());
+PropertyList sourceDefaults=[] {auto value=host::arithmeticCopy(AbstractMmlNode::defaults());
 value.setOwn("data-vertical-align","bottom");
 return value;}();
 }

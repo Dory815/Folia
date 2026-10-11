@@ -1,11 +1,13 @@
-// Root bindings for source own-property spread and required child access.
+// Root bindings for pinned CJS __assign lowering and required child access.
 export module folia.math.core.mml_tree.arithmetic_host;
 export import folia.math.core.mml_tree.leaf_host;
 import std;
 export namespace folia::math::mml::host {
-inline PropertyList arithmeticOwnCopy(const PropertyList& input) {
+inline PropertyList arithmeticCopy(const PropertyList& input) {
     PropertyList copy;
-    for (const auto& key : input.keys()) copy.setOwn(key, input.getOwn(key));
+    // The locked MathJax distribution lowers {...input} to __assign({}, input),
+    // which uses Object.assign, including its inherited __proto__ setter.
+    copy.assign(input);
     return copy;
 }
 inline MmlNode& arithmeticChild(MmlNode& node, std::size_t index) {

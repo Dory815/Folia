@@ -42,7 +42,7 @@ void MmlMfrac::setChildInheritedAttributes(AttributeList attributes, Property di
     // Both new records are completed before either child callback can mutate
     // the fraction or its inherited-attribute input.
     AttributeList numAttributes = addInheritedAttributes(
-        host::arithmeticOwnCopy(attributes),
+        host::arithmeticCopy(attributes),
         PropertyList{{"numalign", numalign},
                      {"indentshift", "0"},
                      {"indentalignfirst", numalign},
@@ -50,7 +50,7 @@ void MmlMfrac::setChildInheritedAttributes(AttributeList attributes, Property di
                      {"indentalignlast", "indentalign"},
                      {"indentshiftlast", "indentshift"}});
     AttributeList denAttributes = addInheritedAttributes(
-        host::arithmeticOwnCopy(attributes),
+        host::arithmeticCopy(attributes),
         PropertyList{{"denalign", denalign},
                      {"indentshift", "0"},
                      {"indentalignfirst", denalign},

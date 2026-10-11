@@ -8,7 +8,7 @@ let fields=0,accessors=0;
 for(const kind of kinds){const hash=hashes.find(x=>x.source.endsWith('/'+kind+'.ts')),source=ts.createSourceFile(kind+'.ts',fs.readFileSync(path.join(root,'.reference/MathJax-src',hash.source),'utf8'),ts.ScriptTarget.Latest,true),cls=source.statements.find(ts.isClassDeclaration),name=cls.name.text,base=cls.heritageClauses[0].types[0].expression.text;
  const defaults=cls.members.find(x=>x.name?.getText(source)==='defaults').initializer.properties.filter(ts.isPropertyAssignment).map(x=>x.name.text);
  const n=new MmlFactory().create(kind);
- const out=['// Generated root source bindings; MathJax 4.1.3, Apache-2.0.','// '+hash.source+' SHA256 '+hash.sha256,'module folia.math.core.mml_tree.mml_nodes.'+kind+';','import folia.math.core.mml_tree.arithmetic_host;','import std;','namespace folia::math::mml {namespace {','PropertyList sourceDefaults=[] {auto value=host::arithmeticOwnCopy('+base+'::defaults());'];
+ const out=['// Generated root source bindings; MathJax 4.1.3, Apache-2.0.','// '+hash.source+' SHA256 '+hash.sha256,'module folia.math.core.mml_tree.mml_nodes.'+kind+';','import folia.math.core.mml_tree.arithmetic_host;','import std;','namespace folia::math::mml {namespace {','PropertyList sourceDefaults=[] {auto value=host::arithmeticCopy('+base+'::defaults());'];
  for(const key of defaults)out.push('value.setOwn('+q(key)+','+p(classes[kind].defaults[key])+');');fields+=defaults.length;
  out.push('return value;}();','}','PropertyList& '+name+'::defaults(){return sourceDefaults;}');
  if(cls.members.some(x=>ts.isPropertyDeclaration(x)&&x.name?.getText(source)==='texclass')){assert.equal(n.texClass,0);out.push('void '+name+'::initializeClassFields(){initializeTexClass(TEXCLASS.ORD);}');}
