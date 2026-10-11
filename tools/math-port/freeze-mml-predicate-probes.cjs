@@ -1,6 +1,6 @@
 // Root native observer of independent original predicates; agents cannot alter this binding.
 'use strict';
-const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');const root=path.resolve(__dirname,'../..'),source=JSON.parse(fs.readFileSync(path.join(root,'docs/math-port/evidence/p23h-predicate-probe-source.json')));assert.equal(source.cases.length,111);
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');const extended=process.argv.includes('--extended');const root=path.resolve(__dirname,'../..'),source=JSON.parse(fs.readFileSync(path.join(root,'docs/math-port/evidence/'+(extended?'p23h-predicate-rebind-source':'p23h-predicate-probe-source')+'.json')));assert.equal(source.cases.length,extended?7:111);
 const rows=source.cases.map(({input:i,expected})=>'        {'+[i.kind,i.shape,i.member,i.hook??'',i.mutation??'',i.prototype??''].map(JSON.stringify).join(',')+','+Boolean(i.arrayNull)+','+Object.hasOwn(i,'second')+','+JSON.stringify(expected)+'},').join('\n');
 const data=`// Root actual-registry positive predicate / callback / TextNode observer.
 #include "support/folia_test.hpp"
@@ -30,7 +30,7 @@ std::string run(const Case& c){Observed f;std::map<char,MmlNode*> nodes;for(cons
  dynamic_cast<TextNode*>(nodes['e'])->setText(u"");dynamic_cast<TextNode*>(nodes['t'])->setText(u"x");dynamic_cast<TextNode*>(nodes['z'])->setText(u"\\U0001F600");
  const auto shape=[&](std::string_view s){auto a=std::make_shared<tree::ChildArray<MmlNode>>();a->resize(s.size());for(std::size_t i=0;i<s.size();++i){auto v=s[i];if(v!='H')a->set(i,v=='U'?NodeValue(Missing{}):v=='N'?NodeValue(PropertyNull{}):NodeValue(nodes.at(v)));}return a;};
  nodes['c']->childNodes=shape("t");auto* node=f.create(c.kind,{});node->childNodes=c.arrayNull?Children{}:shape(c.shape);auto original=node->childNodes;if(!c.prototype.empty())original->setPrototype(shape(c.prototype));std::vector<std::string> trace;bool mutated=false;
- const auto change=[&]{char label=c.hook=="isEmpty"?'a':c.hook=="isSpacelike"?'s':c.hook=="isEmbellished"?'b':'e';trace.push_back(c.hook+':'+label);if(mutated)return;mutated=true;if(c.mutation=="append")original->push_back(nodes['c']);if(c.mutation=="delete")original->erase(1);if(c.mutation=="shrink")original->resize(1);if(c.mutation=="rebind")node->childNodes=shape("c");if(c.mutation=="replace")original->set(1,nodes['c']);};
+ const auto change=[&]{char label=c.hook=="isEmpty"?'a':c.hook=="isSpacelike"?'s':c.hook=="isEmbellished"?'b':'e';trace.push_back(c.hook+':'+label);if(mutated)return;mutated=true;if(c.mutation=="append")original->push_back(nodes['c']);if(c.mutation=="delete")original->erase(1);if(c.mutation=="shrink")original->resize(1);if(c.mutation=="rebind")node->childNodes=shape("c");if(c.mutation=="rebind-long")node->childNodes=shape("cc");if(c.mutation=="replace")original->set(1,nodes['c']);};
  if(c.hook=="isEmpty")dynamic_cast<MiHook*>(nodes['a'])->after=change;if(c.hook=="isSpacelike")dynamic_cast<SpaceHook*>(nodes['s'])->after=change;if(c.hook=="isEmbellished")dynamic_cast<MoHook*>(nodes['b'])->after=change;if(c.hook=="getText")dynamic_cast<TextHook*>(nodes['e'])->after=change;
  std::string result,error="ok";const auto predicate=[&]{return c.member=="isEmpty"?node->isEmpty():c.member=="isSpacelike"?node->isSpacelike():node->isEmbellished();};try{result=predicate()?"true":"false";if(c.second){node->childNodes=shape("a");result+=predicate()?",true":",false";}}catch(const Error& e){error=e.name+'|'+ascii(e.message);}
  std::string core="-";if(auto* row=dynamic_cast<RowObserver*>(node)){auto index=row->observedCore();core=index?std::to_string(*index):"N";}
@@ -41,4 +41,4 @@ ${rows}
  };for(const auto& c:cases)expect(eq(run(c),c.expected))<<c.kind<<c.member<<c.shape<<c.hook<<c.mutation;};};
 }
 `;
-const file=path.join(root,'tests/math/reference_mml_predicate_probes.cpp');if(process.argv.includes('--check'))assert.equal(fs.readFileSync(file,'utf8').replaceAll('\r\n','\n'),data);else{assert.ok(!fs.existsSync(file));fs.writeFileSync(file,data);}console.log('111 original positive/text/callback predicate observations frozen');
+const file=path.join(root,'tests/math/'+(extended?'reference_mml_predicate_rebind.cpp':'reference_mml_predicate_probes.cpp'));if(process.argv.includes('--check'))assert.equal(fs.readFileSync(file,'utf8').replaceAll('\r\n','\n'),data);else{assert.ok(!fs.existsSync(file));fs.writeFileSync(file,data);}console.log(source.cases.length+' original positive/text/callback predicate observations frozen');

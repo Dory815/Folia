@@ -17,9 +17,11 @@ responsibilities and use existing TreeCallGuard for recursive native bounds.
 Each original for-of captures the child array once, tests live length at every
 iteration, and gets each yielded value including holes and prototype values.
 It must not use forEach, snapshot length, omit prototypes, or re-read a rebound
-this.childNodes during iteration. Null arrays fail with the pinned original CJS
-iterator TypeError `Object is not iterable.`; agents may not substitute a generic
-null-member diagnostic. Child reads/calls are virtual and ordered as in Source.
+this.childNodes during iteration. Root initially froze an incorrect generic
+iterator message; actual original gold and the independent delivered comparison
+show `object null is not iterable (cannot read property Symbol(Symbol.iterator))`.
+The corrected bodies preserve that TypeError. Gold is unchanged. Child reads/calls
+are virtual and ordered as in Source.
 
 Base isEmpty skips falsey Undefined/Null; present nodes call isEmpty and stop
 immediately when false. Token isEmpty does not use a child's isEmpty predicate:

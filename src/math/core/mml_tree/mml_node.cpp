@@ -275,8 +275,16 @@ bool AbstractMmlNode::linebreakContainer() const { return false; }
 std::string AbstractMmlNode::linebreakAlign() const { return "data-align"; }
 
 bool AbstractMmlNode::isEmpty() const {
-    // P23f Root stub: AbstractMmlNode::isEmpty.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const auto children = this->childNodes;
+    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    for (std::size_t i = 0; i < children->size(); ++i) {
+        const NodeValue child = children->get(i);
+        if (MmlNode* const node = child.nodeOrNull(); node && !node->isEmpty()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 double AbstractMmlNode::arity() const { return std::numeric_limits<double>::infinity(); }

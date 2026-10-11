@@ -15,13 +15,34 @@ void MmlMrow::initializeClassFields() {
 std::string MmlMrow::kind() const { return "mrow"; }
 
 bool MmlMrow::isSpacelike() const {
-    // P23f Root stub: MmlMrow::isSpacelike.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const auto children = this->childNodes;
+    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    for (std::size_t i = 0; i < children->size(); ++i) {
+        const NodeValue value = children->get(i);
+        if (!value.requireNode("isSpacelike")->isSpacelike()) return false;
+    }
+    return true;
 }
 
 bool MmlMrow::isEmbellished() const {
-    // P23f Root stub: MmlMrow::isEmbellished.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const auto children = this->childNodes;
+    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    bool embellished = false;
+    for (std::size_t i = 0; i < children->size(); ++i) {
+        const NodeValue value = children->get(i);
+        MmlNode* const child = value.nodeOrNull();
+        if (!child) continue;
+        if (child->isEmbellished()) {
+            if (embellished) return false;
+            embellished = true;
+            core_ = i;
+        } else if (!child->isSpacelike()) {
+            return false;
+        }
+    }
+    return embellished;
 }
 
 NodeValue MmlMrow::core() {

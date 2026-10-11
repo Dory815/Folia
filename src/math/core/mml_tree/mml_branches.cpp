@@ -30,8 +30,16 @@ bool AbstractMmlTokenNode::isToken() const {
 }
 
 bool AbstractMmlTokenNode::isEmpty() const {
-    // P23f Root stub: AbstractMmlTokenNode::isEmpty.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const auto children = this->childNodes;
+    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    for (std::size_t i = 0; i < children->size(); ++i) {
+        const NodeValue child = children->get(i);
+        MmlNode* const node = child.nodeOrNull();
+        auto* const text = node ? dynamic_cast<TextNode*>(node) : nullptr;
+        if (!text || !text->getText().empty()) return false;
+    }
+    return true;
 }
 
 std::u16string AbstractMmlTokenNode::getText() const {
