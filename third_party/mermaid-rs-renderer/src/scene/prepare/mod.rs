@@ -18,3 +18,5 @@ pub mod pattern_program;
 pub mod sampling;
 pub mod linear_program;
 pub mod radial_program;
+pub mod pipeline_executor_types;
+pub mod pipeline_executor;

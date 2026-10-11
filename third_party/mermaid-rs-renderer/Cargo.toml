@@ -188,3 +188,7 @@ path = "tests/gradient_builder_parity.rs"
 [[test]]
 name = "gradient_shader_parity"
 path = "tests/gradient_shader_parity.rs"
+
+[[test]]
+name = "pipeline_executor_parity"
+path = "tests/pipeline_executor_parity.rs"
