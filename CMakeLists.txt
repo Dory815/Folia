@@ -103,6 +103,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/find_tex_host.ixx
     src/math/util/string_map.ixx
     src/math/util/unicode_normalization.ixx
+    src/math/util/unicode_normalization_data.ixx
     src/math/input/tex/parser_types.ixx
     src/math/input/tex/configuration.ixx
     src/math/input/tex/tags.ixx
@@ -258,6 +259,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/parse_callable.cpp
     src/math/input/tex/unit_util.cpp
     src/math/input/tex/unit_util_bindings.cpp
+    src/math/util/unicode_normalization.cpp
     src/math/util/js_case_data.cpp
     src/math/core/mml_tree/mml_nodes/html_node_bindings.cpp
     src/math/core/mml_tree/mml_nodes/html_node.cpp
