@@ -99,6 +99,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/find_math_host.ixx
     src/math/util/regexp_host.ixx
     src/math/util/regexp_binding.ixx
+    src/math/input/tex/find_tex.ixx
+    src/math/input/tex/find_tex_host.ixx
     src/math/util/object_types.ixx
     src/math/util/callable_types.ixx
     src/math/util/argument_expansion.ixx
@@ -214,6 +216,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/input_jax_constructor.cpp
     src/math/core/input_jax.cpp
     src/math/core/find_math.cpp
+    src/math/input/tex/find_tex.cpp
     src/math/util/regexp_host.cpp
     src/math/input/tex/token.cpp
     src/math/input/tex/node_util.cpp

@@ -14,11 +14,11 @@ public:
     FindMathModule& operator=(const FindMathModule&)=delete;
     options::ObjectRef abstractClass()const{return abstractClass_;}
 };
-template<class T>std::shared_ptr<T> makeFindMath(options::Context& context,
-    options::ObjectRef actualConstructor,options::Value supplied){
+template<class T,class... Bindings>std::shared_ptr<T> makeFindMath(options::Context& context,
+    options::ObjectRef actualConstructor,options::Value supplied,Bindings&&... bindings){
     static_assert(std::is_base_of_v<AbstractFindMath,T>);
     const auto identity=context.instance(actualConstructor);
-    auto result=std::make_shared<T>(context,identity);
+    auto result=std::make_shared<T>(context,identity,std::forward<Bindings>(bindings)...);
     context.payload(identity)=std::static_pointer_cast<NativeObject>(result);
     result->initializeFindMath(std::move(supplied));
     return result;
