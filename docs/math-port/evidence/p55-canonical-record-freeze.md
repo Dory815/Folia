@@ -82,3 +82,10 @@ reducer registers each map. Property inputs supply their existing equivalent
 native snapshot iterator. This is a Source-mandated temporary, not a second
 authoritative Configuration record. Keep missing-map short-circuit before
 reading any later copied-array slot.
+
+The 27th original observation exposes reverse operation order by retaining its
+actual getter receiver. Lower Get deletes the upper property before Upper Has;
+performing both Has checks before either Get incorrectly creates an own
+Undefined lower slot. The initial body fails this original observation
+(build/p55-reverse-order-red.log, exit 1). Reverse must perform Lower Has/Get,
+then Upper Has/Get, then the appropriate Set/Delete branch.
