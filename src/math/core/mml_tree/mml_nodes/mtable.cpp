@@ -40,7 +40,7 @@ void MmlMtable::setChildInheritedAttributes(AttributeList attributes, Property d
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-void MmlMtable::verifyChildren(PropertyList options) {
+void MmlMtable::verifyChildren(Property options) {
     // P23f Root stub: MmlMtable::verifyChildren.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }

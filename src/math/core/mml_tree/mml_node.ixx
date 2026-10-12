@@ -15,20 +15,6 @@ using Children = tree::FactoryChildren<MmlNode>;
 using NodeValue = tree::ChildValue<MmlNode>;
 using Factory = tree::FactoryServices<MmlNode>;
 using Error = tree::FactoryError;
-class ErrorOptions {
-    std::optional<PropertyList> value_;
-public:
-    ErrorOptions():value_(PropertyList{}){}
-    ErrorOptions(PropertyList value):value_(std::move(value)){}
-    ErrorOptions(std::nullptr_t):value_(std::nullopt){}
-    // The same nullable object handle is available to virtual error callbacks.
-    // A PropertyList copy retains identity; this is not an options snapshot.
-    std::optional<PropertyList> value()const{return value_;}
-    Property get(std::string_view name)const{
-        if(!value_)throw Error("TypeError",u"Cannot read null MML error options");
-        return value_->get(name);
-    }
-};
 struct MmlClassInfo {
     std::optional<PropertyList> defaults;
     std::function<std::optional<PropertyList>()> defaultsBinding;
@@ -78,8 +64,8 @@ public:
     virtual bool hasSpacingAttributes()=0;
     void setInheritedAttributes(AttributeList attributes=Missing{},Property display=Missing{},Property level=Missing{},Property prime=Missing{}) { inheritAttributes(std::move(attributes),std::move(display),std::move(level),std::move(prime)); }
     virtual void inheritAttributesFrom(NodeValue)=0;
-    virtual void verifyTree(std::optional<PropertyList> options={})=0;
-    virtual MmlNode* mError(std::string message,ErrorOptions options,bool shortError=false)=0;
+    virtual void verifyTree(Property options=Missing{})=0;
+    virtual MmlNode* mError(std::string message,Property options,bool shortError=false)=0;
 protected:
     virtual void inheritAttributes(AttributeList,Property,Property,Property)=0;
 };
@@ -138,8 +124,8 @@ public:
     bool hasSpacingAttributes()override;
     protected: void inheritAttributes(AttributeList,Property display,Property level,Property prime)override; public:
     void inheritAttributesFrom(NodeValue)override;
-    void verifyTree(std::optional<PropertyList> options={})override;
-    MmlNode* mError(std::string message,ErrorOptions options,bool shortError=false)override;
+    void verifyTree(Property options=Missing{})override;
+    MmlNode* mError(std::string message,Property options,bool shortError=false)override;
 protected:
     const std::any& constructorStaticServices()const {
         if(!constructorInfo_)throw Error("TypeError",u"Missing constructor static services");
@@ -156,8 +142,8 @@ protected:
     virtual void getPrevClass(NodeValue);
     virtual void setChildInheritedAttributes(AttributeList,Property,Property,Property);
     virtual AttributeList addInheritedAttributes(AttributeList,Property);
-    virtual void verifyAttributes(PropertyList);
-    virtual void verifyChildren(PropertyList);
+    virtual void verifyAttributes(Property);
+    virtual void verifyChildren(Property);
 };
 class AbstractMmlTokenNode : public AbstractMmlNode {
 public:
@@ -220,8 +206,8 @@ public:
     bool hasSpacingAttributes()override;
     protected: void inheritAttributes(AttributeList,Property display,Property level,Property prime)override; public:
     void inheritAttributesFrom(NodeValue)override;
-    void verifyTree(std::optional<PropertyList> options={})override;
-    MmlNode* mError(std::string,ErrorOptions,bool shortError=false)override;
+    void verifyTree(Property options=Missing{})override;
+    MmlNode* mError(std::string,Property,bool shortError=false)override;
 };
 class TextNode : public AbstractMmlEmptyNode {
     std::u16string text_;

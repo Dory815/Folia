@@ -55,7 +55,7 @@ void MmlMath::setChildInheritedAttributes(AttributeList inherited, Property disp
                                                  std::move(level), std::move(prime));
 }
 
-void MmlMath::verifyTree(std::optional<PropertyList> options) {
+void MmlMath::verifyTree(Property options) {
     // P23f Root stub: MmlMath::verifyTree.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }

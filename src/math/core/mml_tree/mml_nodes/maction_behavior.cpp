@@ -10,7 +10,7 @@ import std;
 
 namespace folia::math::mml {
 
-void MmlMaction::verifyAttributes(PropertyList options) {
+void MmlMaction::verifyAttributes(Property options) {
     tree::TreeCallGuard<MmlNode> guard;
     AbstractMmlNode::verifyAttributes(std::move(options));
 

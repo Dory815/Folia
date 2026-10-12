@@ -45,8 +45,8 @@ void AbstractMmlEmptyNode::inheritAttributes(AttributeList, Property, Property, 
 void AbstractMmlEmptyNode::inheritAttributesFrom(NodeValue) {
     // MathJax AbstractMmlEmptyNode deliberately ignores this operation.
 }
-void AbstractMmlEmptyNode::verifyTree(std::optional<PropertyList>) {}
-MmlNode* AbstractMmlEmptyNode::mError(std::string, ErrorOptions, bool) { return nullptr; }
+void AbstractMmlEmptyNode::verifyTree(Property) {}
+MmlNode* AbstractMmlEmptyNode::mError(std::string, Property, bool) { return nullptr; }
 
 std::string TextNode::kind() const { return "text"; }
 std::u16string TextNode::getText() const { return text_; }

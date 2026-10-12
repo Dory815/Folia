@@ -10,6 +10,6 @@ using AbstractMmlTokenNode::AbstractMmlTokenNode;
 static PropertyList& defaults();
 void initializeClassFields()override;
 std::string kind()const override;
-void verifyAttributes(PropertyList)override;
+void verifyAttributes(Property)override;
 };
 }

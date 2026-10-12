@@ -15,6 +15,6 @@ public:
     virtual std::string getSerializedHTML()const;
     virtual std::u16string textContent()const;
     std::string toString()const override;
-    void verifyTree(std::optional<PropertyList> options={})override;
+    void verifyTree(Property options=Missing{})override;
 };
 }

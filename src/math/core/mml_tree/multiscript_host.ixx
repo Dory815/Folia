@@ -24,7 +24,4 @@ inline MmlNode* multiscriptCreate(Factory& factory, std::string_view kind) {
     // Retain a possibly null returned value until the source dereferences it.
     return factory.create(kind, {});
 }
-inline ErrorOptions multiscriptErrorOptions(const std::optional<PropertyList>& options) {
-    return options ? ErrorOptions(*options) : ErrorOptions(nullptr);
-}
 }

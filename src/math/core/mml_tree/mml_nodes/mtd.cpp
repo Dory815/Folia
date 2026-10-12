@@ -9,7 +9,7 @@ import std;
 
 namespace folia::math::mml {
 
-void MmlMtd::verifyChildren(PropertyList options) {
+void MmlMtd::verifyChildren(Property options) {
     // P23f Root stub: MmlMtd::verifyChildren.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }

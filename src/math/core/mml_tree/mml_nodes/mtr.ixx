@@ -13,7 +13,7 @@ public:
     NodeValue setTeXclass(NodeValue) override;
 protected:
     void setChildInheritedAttributes(AttributeList, Property, Property, Property) override;
-    void verifyChildren(PropertyList) override;
+    void verifyChildren(Property) override;
 };
 class MmlMlabeledtr : public MmlMtr {
 public:

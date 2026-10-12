@@ -16,9 +16,6 @@ HtmlAdaptor& htmlAdaptor(XmlAdaptor* adaptor) {
     return *result;
 }
 
-ErrorOptions htmlErrorOptions(const std::optional<PropertyList>& options) {
-    return options ? ErrorOptions(*options) : ErrorOptions(nullptr);
-}
 }
 
 XmlRef HtmlNode::getHTML() const {
@@ -49,7 +46,7 @@ std::string HtmlNode::toString() const {
     return "HTML=<" + htmlKind + ">...</" + htmlKind + ">";
 }
 
-void HtmlNode::verifyTree(std::optional<PropertyList> options) {
+void HtmlNode::verifyTree(Property options) {
     // P23f Root stub: HtmlNode::verifyTree (additional parent consumer).
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }

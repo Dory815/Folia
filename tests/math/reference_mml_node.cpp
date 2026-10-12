@@ -26,7 +26,7 @@ struct Unary:Plain{using Plain::Plain;std::string kind()const override{return "u
 struct Layout:m::AbstractMmlLayoutNode{using AbstractMmlLayoutNode::AbstractMmlLayoutNode;std::string kind()const override{return "layout";}};
 struct Base:m::AbstractMmlBaseNode{using AbstractMmlBaseNode::AbstractMmlBaseNode;std::string kind()const override{return "base";}};
 struct Token:m::AbstractMmlTokenNode{using AbstractMmlTokenNode::AbstractMmlTokenNode;std::string kind()const override{return "token";}};
-struct Leaf:Plain{using Plain::Plain;std::function<void(m::NodeValue)> onClass;std::function<void()> onCopy;std::function<void(m::AttributeList,Property,Property,Property)> onInherit;std::function<void(std::optional<PropertyList>)> onVerify;std::string kind()const override{return "leaf";}bool isEmpty()const override{return false;}bool isSpacelike()const override{return h::truthy(getProperty("space"));}bool isEmbellished()const override{return h::truthy(getProperty("embellished"));}bool hasSpacingAttributes()override{return h::truthy(getProperty("spacing"));}m::NodeValue setTeXclass(m::NodeValue p)override{if(onClass)onClass(p);return Plain::setTeXclass(p);}m::MmlNode* copy(bool keepIds=false)override{if(onCopy)onCopy();return Plain::copy(keepIds);}void inheritAttributes(m::AttributeList a,Property d,Property l,Property p)override{if(onInherit)onInherit(a,d,l,p);Plain::inheritAttributes(a,d,l,p);}void verifyTree(std::optional<PropertyList> o={})override{if(onVerify)onVerify(o);Plain::verifyTree(o);}};
+struct Leaf:Plain{using Plain::Plain;std::function<void(m::NodeValue)> onClass;std::function<void()> onCopy;std::function<void(m::AttributeList,Property,Property,Property)> onInherit;std::function<void(Property)> onVerify;std::string kind()const override{return "leaf";}bool isEmpty()const override{return false;}bool isSpacelike()const override{return h::truthy(getProperty("space"));}bool isEmbellished()const override{return h::truthy(getProperty("embellished"));}bool hasSpacingAttributes()override{return h::truthy(getProperty("spacing"));}m::NodeValue setTeXclass(m::NodeValue p)override{if(onClass)onClass(p);return Plain::setTeXclass(p);}m::MmlNode* copy(bool keepIds=false)override{if(onCopy)onCopy();return Plain::copy(keepIds);}void inheritAttributes(m::AttributeList a,Property d,Property l,Property p)override{if(onInherit)onInherit(a,d,l,p);Plain::inheritAttributes(a,d,l,p);}void verifyTree(Property o=Missing{})override{if(onVerify)onVerify(o);Plain::verifyTree(o);}};
 struct Mi:Leaf{using Leaf::Leaf;std::string kind()const override{return "mi";}};struct Atom:Leaf{using Leaf::Leaf;std::string kind()const override{return "TeXAtom";}};
 struct ErrorNode:Plain{using Plain::Plain;std::string kind()const override{return "merror";}};struct Mtext:Token{using Token::Token;std::string kind()const override{return "mtext";}};
 struct Container:Plain{using Plain::Plain;std::string kind()const override{return "container";}bool linebreakContainer()const override{return true;}};
@@ -1820,7 +1820,7 @@ expect(prop(err->attributes()->getExplicit("data-mjx-message"),Property("message
 expect(prop(err->attributes()->getExplicit("title"),Property(Missing{})));
 expect(bool((sameNode(n->getParent(),err))==true));
 expect(bool((kindAt(err,0))=="plain"));
-expect(bool((isNull(n->mError("again",{})))==true));
+expect(bool((isNull(n->mError("again",PropertyList{})))==true));
 }
 {auto*parent=f.create("plain");auto*n=f.create("plain");parent->appendChild(m::NodeValue(n));auto*err=n->mError("message",PropertyList{{"fullErrors",false}},true);
 expect(bool((sameNode(valueAt(parent,0),err))==true));
@@ -1829,7 +1829,7 @@ expect(prop(err->attributes()->getExplicit("title"),Property("message")));
 expect(bool((sameNode(n->getParent(),err))==false));
 expect(bool((kindAt(err,0))=="mtext"));
 expect(bool(dynamic_cast<m::TextNode*>(at(at(err,0),0))->getText()==units({112,108,97,105,110})));
-{std::string error;try{(void)n->mError("again",{});}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
+{std::string error;try{(void)n->mError("again",PropertyList{});}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
 }
 {auto*parent=f.create("plain");auto*n=f.create("plain");parent->appendChild(m::NodeValue(n));auto*err=n->mError("message",PropertyList{{"fullErrors",true}},false);
 expect(bool((sameNode(valueAt(parent,0),err))==true));
@@ -1838,10 +1838,10 @@ expect(prop(err->attributes()->getExplicit("title"),Property(Missing{})));
 expect(bool((sameNode(n->getParent(),err))==false));
 expect(bool((kindAt(err,0))=="mtext"));
 expect(bool(dynamic_cast<m::TextNode*>(at(at(err,0),0))->getText()==units({109,101,115,115,97,103,101})));
-{std::string error;try{(void)n->mError("again",{});}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
+{std::string error;try{(void)n->mError("again",PropertyList{});}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
 }
 auto*n=f.create("plain");
-{std::string error;try{(void)n->mError("root",{},true);}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
+{std::string error;try{(void)n->mError("root",PropertyList{},true);}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
 };
 "math_port_mml_node_verify_rules_arity_variant_and_child_traversal"_test=[] {F f(classes());
 auto*parent=f.create("plain");auto*n=create(f,"fixed",PropertyList{{"unknown","a"},{"data-x","a"},{"id","i"},{"href","h"},{"mathvariant","bad"}});parent->appendChild(m::NodeValue(n));n->appendChild(m::NodeValue(f.create("leaf")));PropertyList options{{"checkArity",true},{"checkAttributes",true},{"checkMathvariants",true},{"fullErrors",false}};n->verifyTree(options);
@@ -1983,7 +1983,7 @@ expect(prop(a->prevLevel(),Property(0.0)));
 "math_port_mml_node_live_inheritance_verify_and_base_script_snapshot"_test=[] {F f(classes());
 auto*n=f.create("plain");auto*a=dynamic_cast<Leaf*>(f.create("leaf"));auto*late=dynamic_cast<Leaf*>(f.create("leaf"));n->appendChild(m::NodeValue(a));auto original=n->childNodes;std::vector<std::string> seen;a->onInherit=[&](m::AttributeList,Property,Property,Property){seen.push_back("a");original->push_back(m::NodeValue(late));n->childNodes=children();};late->onInherit=[&](m::AttributeList,Property,Property,Property){seen.push_back("late");};n->setInheritedAttributes();
 expect(bool(seen==std::vector<std::string>{"a","late"}));
-auto*pnode=f.create("plain");auto*v=dynamic_cast<Leaf*>(f.create("leaf"));auto*extra=dynamic_cast<Leaf*>(f.create("leaf"));pnode->appendChild(m::NodeValue(v));auto array=pnode->childNodes;seen.clear();v->onVerify=[&](std::optional<PropertyList>){seen.push_back("v");array->push_back(m::NodeValue(extra));pnode->childNodes=children();};extra->onVerify=[&](std::optional<PropertyList>){seen.push_back("extra");};pnode->verifyTree(PropertyList{});
+auto*pnode=f.create("plain");auto*v=dynamic_cast<Leaf*>(f.create("leaf"));auto*extra=dynamic_cast<Leaf*>(f.create("leaf"));pnode->appendChild(m::NodeValue(v));auto array=pnode->childNodes;seen.clear();v->onVerify=[&](Property){seen.push_back("v");array->push_back(m::NodeValue(extra));pnode->childNodes=children();};extra->onVerify=[&](Property){seen.push_back("extra");};pnode->verifyTree(PropertyList{});
 expect(bool(seen==std::vector<std::string>{"v","extra"}));
 auto*base=create(f,"base",{},children({f.create("leaf"),f.create("leaf"),f.create("leaf")}));auto*script=dynamic_cast<Leaf*>(at(base,1));auto*third=dynamic_cast<Leaf*>(at(base,2));seen.clear();script->onClass=[&](m::NodeValue){seen.push_back("script");base->childNodes->erase(2);};third->onClass=[&](m::NodeValue){seen.push_back("third");};base->setTeXclass(m::NodeValue(PropertyNull{}));
 expect(bool(seen==std::vector<std::string>{"script","third"}));
@@ -2017,7 +2017,7 @@ expect(prop(n->texClass(),Property(1.0)));
 expect(bool((n->calls)==0.0));
 };
 "math_port_mml_node_finite_arity_null_checks_before_virtual_children"_test=[] {F f(classes());
-struct Observe:Fixed{using Fixed::Fixed;std::vector<std::string> trace;void verifyChildren(PropertyList)override{trace.push_back("verify");}void setChildInheritedAttributes(m::AttributeList,Property,Property,Property)override{trace.push_back("inherit");}};f.setNodeClass("fixed",cls<Observe>(m::AbstractMmlNode::defaults()));auto*n=dynamic_cast<Observe*>(f.create("fixed"));n->childNodes.reset();
+struct Observe:Fixed{using Fixed::Fixed;std::vector<std::string> trace;void verifyChildren(Property)override{trace.push_back("verify");}void setChildInheritedAttributes(m::AttributeList,Property,Property,Property)override{trace.push_back("inherit");}};f.setNodeClass("fixed",cls<Observe>(m::AbstractMmlNode::defaults()));auto*n=dynamic_cast<Observe*>(f.create("fixed"));n->childNodes.reset();
 {std::string error;try{n->verifyTree(PropertyList{{"checkArity",true}});}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
 expect(bool(n->trace==std::vector<std::string>{}));
 {std::string error;try{n->setInheritedAttributes();}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
@@ -2043,7 +2043,7 @@ expect(bool((x->walks)==0.0));
 };
 "math_port_mml_node_short_error_replacement_nulls_attributes_after_mutation"_test=[] {F f(classes());
 struct ParentProbe:Plain{using Plain::Plain;m::NodeValue replaceChild(m::NodeValue n,m::NodeValue o)override{auto r=Plain::replaceChild(n,o);n.requireNode("setAttributes")->setAttributes({});return r;}};f.setNodeClass("plain",cls<ParentProbe>(m::AbstractMmlNode::defaults()));auto*parent=f.create("plain");auto*n=f.create("leaf");parent->appendChild(m::NodeValue(n));
-{std::string error;try{(void)n->mError("broken",{},true);}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
+{std::string error;try{(void)n->mError("broken",PropertyList{},true);}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"));}
 expect(bool((kindAt(parent,0))=="merror"));
 expect(bool((isNull(n->getParent()))==true));
 expect(bool((at(parent,0)->attributes()==nullptr)==true));

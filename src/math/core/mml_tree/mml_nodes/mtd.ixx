@@ -13,6 +13,6 @@ public:
     std::string linebreakAlign() const override;
     NodeValue setTeXclass(NodeValue) override;
 protected:
-    void verifyChildren(PropertyList) override;
+    void verifyChildren(Property) override;
 };
 }

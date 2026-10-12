@@ -16,17 +16,17 @@ void MmlMmultiscripts::setChildInheritedAttributes(
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-void MmlMmultiscripts::verifyChildren(PropertyList options) {
+void MmlMmultiscripts::verifyChildren(Property options) {
     // P23f Root stub: MmlMmultiscripts::verifyChildren.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-void MmlMprescripts::verifyTree(std::optional<PropertyList> options) {
+void MmlMprescripts::verifyTree(Property options) {
     // P23f Root stub: MmlMprescripts::verifyTree.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-void MmlNone::verifyTree(std::optional<PropertyList> options) {
+void MmlNone::verifyTree(Property options) {
     // P23f Root stub: MmlNone::verifyTree.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }

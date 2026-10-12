@@ -15,7 +15,7 @@ void MmlMtr::setChildInheritedAttributes(AttributeList attributes, Property disp
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-void MmlMtr::verifyChildren(PropertyList options) {
+void MmlMtr::verifyChildren(Property options) {
     // P23f Root stub: MmlMtr::verifyChildren.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }

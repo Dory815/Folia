@@ -11,7 +11,7 @@ public:
     double arity()const override;
 protected:
     void setChildInheritedAttributes(AttributeList,Property,Property,Property)override;
-    void verifyChildren(PropertyList)override;
+    void verifyChildren(Property)override;
 };
 class MmlMprescripts : public AbstractMmlNode {
 public:
@@ -19,7 +19,7 @@ public:
     static PropertyList& defaults();
     std::string kind()const override;
     double arity()const override;
-    void verifyTree(std::optional<PropertyList> options={})override;
+    void verifyTree(Property options=Missing{})override;
 };
 class MmlNone : public AbstractMmlNode {
 public:
@@ -27,6 +27,6 @@ public:
     static PropertyList& defaults();
     std::string kind()const override;
     double arity()const override;
-    void verifyTree(std::optional<PropertyList> options={})override;
+    void verifyTree(Property options=Missing{})override;
 };
 }

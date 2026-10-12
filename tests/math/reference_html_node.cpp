@@ -17,7 +17,7 @@ void note(std::string s){htmlTrace.push_back(std::move(s));}void reset(){mode.cl
 Property traceValue(){PropertyArray a;for(const auto&s:htmlTrace)a.push(s);return a;}
 void fail(){throw m::Error("HostError",u"witness");}
 template<class F>std::string caught(F&&f){try{f();return "";}catch(const m::Error&e){return e.name;}catch(const std::exception&){return "Error";}catch(int){return "number";}}
-struct Probe:m::HtmlNode{using HtmlNode::HtmlNode;m::XmlRef getXML()const override{note("getXML");if(mode=="getXML-other")return other;if(mode=="getXML-throw")fail();return HtmlNode::getXML();}m::XMLNode*setXML(m::XmlRef x,m::XmlAdaptor*a=nullptr)override{note("setXML/"+id(x)+"/"+(a?"host":"null"));if(mode=="setXML-throw")fail();if(mode=="setXML-other")return late;return HtmlNode::setXML(x,a);}std::u16string textContent()const override{note("textContent");if(mode=="text-override")return units({111,118,101,114,114,105,100,101,55296,55357,56832});return HtmlNode::textContent();}m::MmlNode*mError(std::string s,m::ErrorOptions opts,bool shortError=false)override{note("mError/"+s+"/"+(shortError?"true":"false"));received=opts.value();if(mode=="error-throw")fail();if(received)received->setOwn("observed",true);return late;}m::XmlRef raw()const{return xml_;}m::XmlAdaptor*host()const{return adaptor_;}};
+struct Probe:m::HtmlNode{using HtmlNode::HtmlNode;m::XmlRef getXML()const override{note("getXML");if(mode=="getXML-other")return other;if(mode=="getXML-throw")fail();return HtmlNode::getXML();}m::XMLNode*setXML(m::XmlRef x,m::XmlAdaptor*a=nullptr)override{note("setXML/"+id(x)+"/"+(a?"host":"null"));if(mode=="setXML-throw")fail();if(mode=="setXML-other")return late;return HtmlNode::setXML(x,a);}std::u16string textContent()const override{note("textContent");if(mode=="text-override")return units({111,118,101,114,114,105,100,101,55296,55357,56832});return HtmlNode::textContent();}m::MmlNode*mError(std::string s,Property opts,bool shortError=false)override{note("mError/"+s+"/"+(shortError?"true":"false"));received=PropertyList::object(opts);if(mode=="error-throw")fail();if(received)received->setOwn("observed",true);return late;}m::XmlRef raw()const{return xml_;}m::XmlAdaptor*host()const{return adaptor_;}};
 struct Host:m::HtmlAdaptor{PropertyList lastAttrs;Property getAttribute(m::XmlRef x,std::string_view k)override{note("attribute/"+id(x)+"/"+std::string(k));if(mode=="attribute-throw"||mode.starts_with("node-")||mode=="wrap"||mode=="fresh-wrap")fail();if(mode=="attribute-primitive")throw 7;if(mode=="attribute-foreign")throw std::runtime_error("foreign");if(mode=="attribute-rebind")owner->setXML(other,nullptr);return mode=="attribute-false"?Property(false):mode=="attribute-null"?Property(PropertyNull{}):mode=="attribute-undefined"?Property(Missing{}):Property("hdw");}m::XmlRef node(std::string_view k,PropertyList a,std::vector<m::XmlRef>c)override{note("node/"+std::string(k)+"/"+std::to_string(h::ownKeys(a).size())+"/"+std::to_string(c.size())+"/"+id(c.at(0)));if(mode=="fresh-wrap"){note(std::string("fresh/")+(Property(lastAttrs)!=Property(a)?"true":"false"));lastAttrs=a;a.setOwn("touched",true);}if(mode=="node-throw")fail();if(mode=="node-null")return nullptr;return wrapped;}std::string outerHTML(m::XmlRef x)override{note("outerHTML/"+id(x));if(mode=="outer-throw")fail();return mode=="outer-unicode"?m::host::debugText(units({60,26631,31614,62,55296,55357,56832,38,10,60,47,26631,31614,62})):"<payload>"+id(x)+"</payload>";}std::u16string textContent(m::XmlRef x)override{note("hostText/"+id(x));if(mode=="text-throw")fail();return m::host::text(id(x))+units({55296,55357,56832,38,10});}std::string kind(m::XmlRef x)override{note("hostKind/"+id(x));if(mode=="kind-throw")fail();if(mode=="kind-rebind")owner->setXML(other,nullptr);return mode=="kind-unicode"?m::host::debugText(units({26631,31614,55296,55357,56832})):"tag-"+id(x);}m::XmlRef clone(m::XmlRef x)override{note("clone/"+id(x));if(mode=="clone-throw")fail();return wrapped;}std::string serializeXML(m::XmlRef x)override{note("serializeXML/"+id(x));return "<xml>"+id(x)+"</xml>";}};
 struct XMLHost:m::XmlAdaptor{m::XmlRef clone(m::XmlRef x)override{return x;}std::string serializeXML(m::XmlRef)override{return "xml";}};
 using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode>bindings(){return{{"math",m::classBinding<m::MmlMath>()},{"html",m::classBinding<m::HtmlNode>()},{"probe",m::classBinding<Probe>()},{"XML",m::classBinding<m::XMLNode>()},{"text",m::classBinding<m::TextNode>()},{"mi",m::classBinding<m::MmlMi>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()}};}
@@ -674,7 +674,7 @@ expect(bool((id(n->raw()))=="original"));
 };
 "math_port_html_node_verify_none_object_normal"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);PropertyList options{{"check",true}};mode="";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::optional<PropertyList>(options));});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(Property(options));});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[18])));
 }
@@ -683,7 +683,7 @@ expect(deep(Property(options),clone(sourceValues[37])));
 };
 "math_port_html_node_verify_none_object_error-throw"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);PropertyList options{{"check",true}};mode="error-throw";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::optional<PropertyList>(options));});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(Property(options));});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[18])));
 }
@@ -692,7 +692,7 @@ expect(deep(Property(options),clone(sourceValues[37])));
 };
 "math_port_html_node_verify_none_null_normal"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);PropertyList options{{"check",true}};mode="";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::nullopt);});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(PropertyNull{});});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[18])));
 }
@@ -701,7 +701,7 @@ expect(deep(Property(PropertyNull{}),clone(sourceValues[38])));
 };
 "math_port_html_node_verify_none_null_error-throw"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);PropertyList options{{"check",true}};mode="error-throw";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::nullopt);});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(PropertyNull{});});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[18])));
 }
@@ -710,7 +710,7 @@ expect(deep(Property(PropertyNull{}),clone(sourceValues[38])));
 };
 "math_port_html_node_verify_mi_object_normal"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);n->setParent(m::NodeValue(f.create("mi")));PropertyList options{{"check",true}};mode="";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::optional<PropertyList>(options));});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(Property(options));});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[18])));
 }
@@ -719,7 +719,7 @@ expect(deep(Property(options),clone(sourceValues[37])));
 };
 "math_port_html_node_verify_mi_object_error-throw"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);n->setParent(m::NodeValue(f.create("mi")));PropertyList options{{"check",true}};mode="error-throw";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::optional<PropertyList>(options));});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(Property(options));});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[18])));
 }
@@ -728,7 +728,7 @@ expect(deep(Property(options),clone(sourceValues[37])));
 };
 "math_port_html_node_verify_mi_null_normal"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);n->setParent(m::NodeValue(f.create("mi")));PropertyList options{{"check",true}};mode="";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::nullopt);});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(PropertyNull{});});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[18])));
 }
@@ -737,7 +737,7 @@ expect(deep(Property(PropertyNull{}),clone(sourceValues[38])));
 };
 "math_port_html_node_verify_mi_null_error-throw"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);n->setParent(m::NodeValue(f.create("mi")));PropertyList options{{"check",true}};mode="error-throw";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::nullopt);});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(PropertyNull{});});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[18])));
 }
@@ -746,7 +746,7 @@ expect(deep(Property(PropertyNull{}),clone(sourceValues[38])));
 };
 "math_port_html_node_verify_mrow_object_normal"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);n->setParent(m::NodeValue(f.create("mrow")));PropertyList options{{"check",true}};mode="";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::optional<PropertyList>(options));});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(Property(options));});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[40])));
 }
@@ -755,7 +755,7 @@ expect(deep(Property(options),clone(sourceValues[41])));
 };
 "math_port_html_node_verify_mrow_object_error-throw"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);n->setParent(m::NodeValue(f.create("mrow")));PropertyList options{{"check",true}};mode="error-throw";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::optional<PropertyList>(options));});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(Property(options));});
 expect(bool((failure)=="HostError"));
 expect(deep(traceValue(),clone(sourceValues[40])));
 }
@@ -764,7 +764,7 @@ expect(deep(Property(options),clone(sourceValues[37])));
 };
 "math_port_html_node_verify_mrow_null_normal"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);n->setParent(m::NodeValue(f.create("mrow")));PropertyList options{{"check",true}};mode="";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::nullopt);});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(PropertyNull{});});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[40])));
 }
@@ -773,7 +773,7 @@ expect(deep(Property(PropertyNull{}),clone(sourceValues[38])));
 };
 "math_port_html_node_verify_mrow_null_error-throw"_test=[] {reset();
 NF f(bindings());auto*n=probe(f);n->setParent(m::NodeValue(f.create("mrow")));PropertyList options{{"check",true}};mode="error-throw";
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::nullopt);});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(PropertyNull{});});
 expect(bool((failure)=="HostError"));
 expect(deep(traceValue(),clone(sourceValues[40])));
 }
@@ -782,7 +782,7 @@ expect(deep(Property(PropertyNull{}),clone(sourceValues[38])));
 };
 "math_port_html_node_verify_inherited_empty_error"_test=[] {reset();
 NF f(bindings());auto*n=dynamic_cast<m::HtmlNode*>(f.create("html"));n->setParent(m::NodeValue(f.create("mrow")));
-{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(std::nullopt);});
+{htmlTrace.clear();auto failure=caught([&]{n->verifyTree(PropertyNull{});});
 expect(bool((failure)==""));
 expect(deep(traceValue(),clone(sourceValues[18])));
 }

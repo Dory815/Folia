@@ -17,7 +17,7 @@ public:
     NodeValue setTeXclass(NodeValue)override;
     void nextToggleSelection();
 protected:
-    void verifyAttributes(PropertyList)override;
+    void verifyAttributes(Property)override;
     void setChildInheritedAttributes(AttributeList,Property,Property,Property)override;
 };
 }

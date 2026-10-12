@@ -9,7 +9,7 @@ import std;
 
 namespace folia::math::mml {
 
-void MmlMglyph::verifyAttributes(PropertyList options) {
+void MmlMglyph::verifyAttributes(Property options) {
     const auto currentAttributes = attributes();
     if (!currentAttributes)
         host::typeError("Cannot read properties of null (reading 'getList')");
@@ -23,7 +23,7 @@ void MmlMglyph::verifyAttributes(PropertyList options) {
     if (src == empty && (fontfamily == empty || index == empty)) {
         (void)mError(
             "mglyph must have either src or fontfamily and index attributes",
-            ErrorOptions(options), true);
+            options, true);
     } else {
         AbstractMmlTokenNode::verifyAttributes(options);
     }

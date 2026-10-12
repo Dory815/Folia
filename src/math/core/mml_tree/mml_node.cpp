@@ -563,13 +563,13 @@ void AbstractMmlNode::inheritAttributesFrom(NodeValue node) {
     setInheritedAttributes(Property(std::move(defaults)), display, level, prime);
 }
 
-void AbstractMmlNode::verifyTree(std::optional<PropertyList> options) {
+void AbstractMmlNode::verifyTree(Property options) {
     // P23f Root stub: AbstractMmlNode::verifyTree.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-void AbstractMmlNode::verifyAttributes(PropertyList options) {
-    if (host::truthy(options.get("checkAttributes"))) {
+void AbstractMmlNode::verifyAttributes(Property options) {
+    if (host::truthy(host::get(options,"checkAttributes"))) {
         auto attrs = attributes();
         if (!attrs) host::typeError("Cannot verify null MML attributes");
         std::vector<std::string> bad;
@@ -588,7 +588,7 @@ void AbstractMmlNode::verifyAttributes(PropertyList options) {
             mError("Unknown attributes for " + kind() + " node: " + joined, options, false);
         }
     }
-    if (host::truthy(options.get("checkMathvariants"))) {
+    if (host::truthy(host::get(options,"checkMathvariants"))) {
         auto attrs = attributes();
         if (!attrs) host::typeError("Cannot verify null MML attributes");
         const Property variant = attrs->getExplicit("mathvariant");
@@ -599,12 +599,12 @@ void AbstractMmlNode::verifyAttributes(PropertyList options) {
     }
 }
 
-void AbstractMmlNode::verifyChildren(PropertyList options) {
+void AbstractMmlNode::verifyChildren(Property options) {
     // P23f Root stub: AbstractMmlNode::verifyChildren.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
 
-MmlNode* AbstractMmlNode::mError(std::string message, ErrorOptions options, bool shortError) {
+MmlNode* AbstractMmlNode::mError(std::string message, Property options, bool shortError) {
     // P23f Root stub: AbstractMmlNode::mError.
     throw Error("Unimplemented",u"Root-frozen tagged MML operation");
 }
