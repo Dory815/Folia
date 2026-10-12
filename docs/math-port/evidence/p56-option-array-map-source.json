@@ -138,7 +138,7 @@
     },
     {
       "label": "method-metadata",
-      "cpp": "auto method=e.context.get(e.array,u\"map\");auto desc=e.context.descriptor(e.context.intrinsics().arrayPrototype,u\"map\");return e.text(e.context.get(method,u\"length\"))+\":\"+e.yes(desc->enumerable)+\":\"+e.yes(desc->writable)+\":\"+e.yes(desc->configurable);",
+      "cpp": "auto method=e.context.get(e.array,u\"map\");auto desc=e.context.descriptor(e.context.intrinsics().arrayPrototype,u\"map\");if(!desc)return std::string(\"absent\");return e.text(e.context.get(method,u\"length\"))+\":\"+e.yes(desc->enumerable)+\":\"+e.yes(desc->writable)+\":\"+e.yes(desc->configurable);",
       "expected": "ok|1:false:true:true|"
     },
     {
