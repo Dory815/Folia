@@ -9,3 +9,4 @@ pub mod architecture_icons;
 pub mod c4_style;
 pub mod sankey_labels;
 pub mod er_attributes;
+pub mod dimensions;

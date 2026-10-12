@@ -15,6 +15,14 @@ Root expanded that dependency work beyond the requested backend task and has
 stopped further shader/pipeline/blitter porting. Existing work is preserved;
 its narrow tests are not end-to-end Mermaid acceptance.
 
+M5a now extracts the original diagram dimensions/viewBox computation unchanged
+into scene/compile/dimensions.rs, used by the existing SVG entry through a thin
+wrapper. Root compared the full extraction and surrounding source, checked the
+portable library build and passed 12 existing renderer unit tests. Its contract
+is m5a-dimensions-contract.md and evidence is
+evidence/m5a-dimensions-acceptance.md. Complete scene compilation and backend
+acceptance below remain open; this extraction does not change family coverage.
+
 The required route is the existing parser and layout, completed shared drawing
 commands, and parallel SVG/Direct2D consumers. Existing NativeRenderer already
 records DiagramScene through Direct2D geometry, brushes and text resources.
