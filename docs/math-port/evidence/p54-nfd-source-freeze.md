@@ -12,6 +12,10 @@ fields and excludes compatibility decompositions. It emits 2081 canonical
 decompositions, 3127 decomposition values and 934 nonzero combining classes.
 The Unicode license is retained alongside the generated module.
 
+The official corpus is https://www.unicode.org/Public/16.0.0/ucd/NormalizationTest.txt.
+Node/ICU versions in the manifest are observed metadata; the oracle enforces
+Unicode 16.0, which fixes the relevant normalization data version.
+
 Root froze the data, public interface, original Node oracle and generated
 tests before implementation. The compiled stub throws Unimplemented.
 `build/p54-nfd-stub-red.log` records successful compilation and failing NFD

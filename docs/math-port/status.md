@@ -9,7 +9,7 @@ Completed current-state evidence:
 - MathJax-src 4.1.3 is cloned in .reference/MathJax-src, pinned to
   fb987178c2d279a99b0db5ea02e751691703955e. scope.json inventories 246 reachable
   upstream files for the enabled Folia profile.
-- The C++23 folia_math target contains 118 module interfaces. The normal
+- The C++23 folia_math target contains 132 module interfaces. The normal
   FoliaTests target builds and links; individual accepted packets have actual
   Source observations, Native checks and independent acceptance evidence.
 - Utility, attribute, factory, tagged child-array/tree and parts of MML/TeX
@@ -121,10 +121,25 @@ Completed current-state evidence:
   evidence/p52-find-tex-acceptance.md. This is formula discovery; actual
   parser/configuration/package declarations and bodies are the next main route.
 
+- P53 establishes the actual parser-family declaration graph, aligned with the
+  Source class/file responsibilities and one named-module owner for genuine
+  cycles. Compile-time contracts check canonical identities, all 26 BaseItems
+  and selected field/signature types. Independent Source audits corrected tuple,
+  nullable-return and initialization details before acceptance. These are
+  declarations; parser-family algorithms remain unimplemented. See
+  evidence/p53-parser-declarations.md.
+- P54 supplies the portable Unicode 16 NFD host needed by ParseOptions and
+  ParseUtil. All 99825 official corpus outputs, 85 exact UTF-16 sequences and
+  17 complete-plane output fingerprints pass. All nine compiling NFD faults
+  and four string-key Map faults are detected; correct baselines pass again.
+  Independent Luna review and complete core build/tests pass, exit 0. See
+  evidence/p54-nfd-acceptance.md. The next main route is actual parser-family
+  method bodies and their module-lifetime registrations.
+
 Incomplete requirements, verified from the current source tree:
 
-- ParseOptions, BaseItems and the configuration pipeline
-  are the next parser prerequisites. Accepted input utilities do not establish
+- ParseOptions, BaseItems and the configuration pipeline have complete native
+  declarations but lack their method bodies. Accepted input utilities do not establish
   complete TeX/package parsing or whole-source reflection parity.
 - TeXParser and the complete base/AMS/enabled-package command pipeline
   have not been implemented. Accepted Stack and input foundations do not provide
@@ -137,6 +152,6 @@ Incomplete requirements, verified from the current source tree:
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 118 interfaces likewise measure compilation
+measure coverage or usability. The 132 interfaces likewise measure compilation
 structure, not completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.
