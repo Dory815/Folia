@@ -94,3 +94,22 @@ entry assertions failed with Unimplemented. Those executed counts are the
 truncated red paths, not the green Source corpus's expected 6004 assertions.
 The red runner's working source/fixture guards passed. No implementation was
 accepted from compilation or from merely having a Source fixture.
+
+## Root scope extension after the real baseline
+
+The restored table baseline reaches `nested_arithmetic_cells` and stops in
+Msqrt's remaining inheritance stub. Root authorizes only the two corresponding
+`msqrt.cpp` bodies as the dependency extension: class assignment first calls
+getPrevClass then literal child 0 with Null previous and returns this; inheritance
+dispatches literal child 0 with unchanged attributes/display/level and true prime.
+Both retain entry guards and exact tagged access errors. The original unchanged
+arithmetic corpus (13501 assertions in seven tests) joins this packet's gate;
+two independent faults must detect a wrong prime or omitted child class dispatch.
+
+The next actual baseline also exposes Mroot's two stubs and Mfrac's class stub
+in that same unchanged arithmetic corpus. Root adds exactly these three bodies
+to `mml_row_mi` ownership: Mfrac class dispatch uses a captured array/live length;
+Mroot class dispatch reads literal slot 0 then a fresh slot 1 after callbacks;
+Mroot inheritance sends true prime to slot 0, then reads current slot 1 and uses
+Source `level + 2` (host addition) and raw prime. Keep their original file/classes,
+existing fraction inheritance, and guards. No new arithmetic model is authorized.

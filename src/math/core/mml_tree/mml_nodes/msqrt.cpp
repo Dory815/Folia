@@ -10,14 +10,17 @@ import std;
 namespace folia::math::mml {
 
 NodeValue MmlMsqrt::setTeXclass(NodeValue previous) {
-    // P23f Root stub: MmlMsqrt::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    getPrevClass(previous);
+    host::arithmeticChild(*this,0,"setTeXclass").setTeXclass(PropertyNull{});
+    return this;
 }
 
 void MmlMsqrt::setChildInheritedAttributes(AttributeList attributes, Property display,
-                                           Property level, Property prime) {
-    // P23f Root stub: MmlMsqrt::setChildInheritedAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+                                           Property level, Property /*prime*/) {
+    tree::TreeCallGuard<MmlNode> guard;
+    host::arithmeticChild(*this,0,"setInheritedAttributes")
+        .setInheritedAttributes(attributes,display,level,true);
 }
 
 }

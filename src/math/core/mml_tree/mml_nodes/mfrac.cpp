@@ -11,8 +11,16 @@ import std;
 namespace folia::math::mml {
 
 NodeValue MmlMfrac::setTeXclass(NodeValue previous) {
-    // P23f Root stub: MmlMfrac::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    getPrevClass(previous);
+    const auto children = this->childNodes;
+    if (!children) {
+        host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    }
+    for (std::size_t index = 0; index < children->size(); ++index) {
+        children->get(index).requireNode("setTeXclass")->setTeXclass(PropertyNull{});
+    }
+    return this;
 }
 
 void MmlMfrac::setChildInheritedAttributes(AttributeList attributes, Property display,

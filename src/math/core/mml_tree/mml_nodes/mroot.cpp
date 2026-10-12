@@ -10,15 +10,21 @@ import std;
 namespace folia::math::mml {
 
 NodeValue MmlMroot::setTeXclass(NodeValue previous) {
-    // P23f Root stub: MmlMroot::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    getPrevClass(previous);
+    host::arithmeticChild(*this, 0, "setTeXclass").setTeXclass(PropertyNull{});
+    host::arithmeticChild(*this, 1, "setTeXclass").setTeXclass(PropertyNull{});
+    return this;
 }
 
 void MmlMroot::setChildInheritedAttributes(AttributeList attributes,
                                            Property display, Property level,
                                            Property prime) {
-    // P23f Root stub: MmlMroot::setChildInheritedAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    host::arithmeticChild(*this, 0, "setInheritedAttributes")
+        .setInheritedAttributes(attributes, display, level, true);
+    host::arithmeticChild(*this, 1, "setInheritedAttributes")
+        .setInheritedAttributes(attributes, false, host::add(level, Property(2)), prime);
 }
 
 }
