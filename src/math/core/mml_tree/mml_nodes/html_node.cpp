@@ -47,8 +47,11 @@ std::string HtmlNode::toString() const {
 }
 
 void HtmlNode::verifyTree(Property options) {
-    // P23f Root stub: HtmlNode::verifyTree (additional parent consumer).
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    if (getParent().isNode() && !getParent().requireNode("isToken")->isToken()) {
+        (void)mError("HTML can only be a child of a token element", options, true);
+        return;
+    }
 }
 
 } // namespace folia::math::mml

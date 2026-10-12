@@ -22,13 +22,19 @@ void MmlMmultiscripts::verifyChildren(Property options) {
 }
 
 void MmlMprescripts::verifyTree(Property options) {
-    // P23f Root stub: MmlMprescripts::verifyTree.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    AbstractMmlNode::verifyTree(options);
+    if (getParent().isNode() && !getParent().requireNode("isKind")->isKind("mmultiscripts")) {
+        (void)mError(kind() + " must be a child of mmultiscripts", options, true);
+    }
 }
 
 void MmlNone::verifyTree(Property options) {
-    // P23f Root stub: MmlNone::verifyTree.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    AbstractMmlNode::verifyTree(options);
+    if (getParent().isNode() && !getParent().requireNode("isKind")->isKind("mmultiscripts")) {
+        (void)mError(kind() + " must be a child of mmultiscripts", options, true);
+    }
 }
 
 } // namespace folia::math::mml
