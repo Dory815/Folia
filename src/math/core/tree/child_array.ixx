@@ -65,7 +65,15 @@ private:
         return length;
     }
     std::vector<std::optional<Value>> slots_;
+    std::vector<std::pair<std::string,Value>> named_;
     Handle prototype_;
+    static std::optional<std::uint32_t> propertyIndex(std::string_view key) {
+        if (key.empty() || (key.size()>1 && key.front()=='0')) return {};
+        std::uint64_t value=0;
+        const auto [end,error]=std::from_chars(key.data(),key.data()+key.size(),value);
+        if(error!=std::errc{} || end!=key.data()+key.size() || value>=4294967295ULL) return {};
+        return static_cast<std::uint32_t>(value);
+    }
 public:
     ChildArray()=default;
     ChildArray(std::initializer_list<Value> values) {
@@ -96,6 +104,29 @@ public:
     void erase(std::size_t index) {
         if (index < slots_.size()) slots_[index].reset();
     }
+    // Node-valued property access. Non-index keys are ordinary named slots;
+    // they neither extend array length nor participate in indexed slice/pop.
+    // Scalar length and Array/Object intrinsics belong to their typed hosts.
+    bool hasOwnProperty(std::string_view key)const {
+        if(auto index=propertyIndex(key))return hasOwn(*index);
+        return std::ranges::any_of(named_,[&](const auto& entry){return entry.first==key;});
+    }
+    Value getProperty(std::string_view key)const {
+        if(auto index=propertyIndex(key))return get(*index);
+        const auto found=std::ranges::find_if(named_,[&](const auto& entry){return entry.first==key;});
+        if(found!=named_.end())return found->second;
+        return prototype_?prototype_->getProperty(key):Value(Missing{});
+    }
+    void setProperty(std::string key,Value value) {
+        if(auto index=propertyIndex(key)){set(*index,std::move(value));return;}
+        const auto found=std::ranges::find_if(named_,[&](const auto& entry){return entry.first==key;});
+        if(found==named_.end())named_.emplace_back(std::move(key),std::move(value));
+        else found->second=std::move(value);
+    }
+    void eraseProperty(std::string_view key) {
+        if(auto index=propertyIndex(key)){erase(*index);return;}
+        std::erase_if(named_,[&](const auto& entry){return entry.first==key;});
+    }
     void resize(std::size_t length) {
         checkedLength(length, slots_.max_size(), u"Array length");
         slots_.resize(length);
@@ -122,6 +153,18 @@ public:
             const std::size_t sourceIndex = first + offset;
             if (has(sourceIndex)) result->set(offset, get(sourceIndex));
         }
+        return result;
+    }
+    Handle sliceNumber(double start)const {
+        const auto length=slots_.size();
+        // ECMAScript ToIntegerOrInfinity, followed by relative-index clamping.
+        const double integer=std::isnan(start)?0:std::trunc(start);
+        const double relative=integer<0?std::max(static_cast<double>(length)+integer,0.0)
+                                      :std::min(integer,static_cast<double>(length));
+        const auto first=static_cast<std::size_t>(relative);
+        auto result=std::make_shared<ChildArray>();result->resize(length-first);
+        for(std::size_t index=first;index<length;++index)
+            if(has(index))result->set(index-first,get(index));
         return result;
     }
     Handle splice(std::int64_t start,std::optional<std::size_t> count = {},std::span<const Value> added = {}) {

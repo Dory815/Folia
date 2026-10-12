@@ -97,6 +97,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/node_util.ixx
     src/math/input/tex/node_factory.ixx
     src/math/input/tex/node_factory_host.ixx
+    src/math/input/tex/stack_services.ixx
+    src/math/input/tex/stack_item.ixx
+    src/math/input/tex/stack_item_host.ixx
     src/math/input/tex/tex_error.ixx
     src/math/input/tex/tex_error_pattern.ixx
     src/math/input/tex/types.ixx
@@ -189,6 +192,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/node_util.cpp
     src/math/input/tex/node_factory.cpp
     src/math/input/tex/node_factory_bindings.cpp
+    src/math/input/tex/stack_item.cpp
     src/math/input/tex/tex_error.cpp
     src/math/util/numeric.cpp
     src/math/input/tex/map_handler.cpp
