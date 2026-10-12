@@ -44,7 +44,11 @@ public:
         }
         const auto fallback = creator(defaultKind);
         if (fallback.kind == CreatorLookupKind::creator) return invoke(fallback.ref, args);
-        type_error("Factory creator is not callable");
+        if (fallback.kind == CreatorLookupKind::non_callable_inherited)
+            type_error("Factory creator is not a native product constructor");
+        if (fallback.kind == CreatorLookupKind::null_value)
+            type_error("Cannot read properties of null (reading 'apply')");
+        type_error("Cannot read properties of undefined (reading 'apply')");
     }
 
     void setNodeClass(std::string kind, FactoryClassRef<Product> type) override {

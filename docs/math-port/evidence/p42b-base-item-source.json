@@ -378,5 +378,45 @@
     "label": "errors-captured-class-after-replacement",
     "cpp": "classErrors=PropertyList{{\"extra\",PropertyArray{\"old\",\"old message\"}}};auto replacement=std::make_shared<tree::FactoryClass<tex::BaseItem>>();auto nextInfo=std::make_shared<tex::StackItemClassInfo>();nextInfo->errorsBinding=[] {return Property(PropertyList{{\"extra\",PropertyArray{\"new\",\"new message\"}}});};replacement->staticData=nextInfo;f.setNodeClass(\"probe\",replacement);return errorShape(x->getErrors(\"extra\"));",
     "expected": "ok|old;old message|"
+  },
+  {
+    "label": "factory-null-fallback",
+    "cpp": "tex::StackItemFactory empty;empty.creatorView()->entries.emplace_back(\"dummy\",nullptr);return empty.create(\"unknown\")->kind();",
+    "expected": "TypeError|Cannot read properties of null (reading 'apply')|THREW|"
+  },
+  {
+    "label": "toString-kind-before-nodes-and-live-join",
+    "cpp": "m.setNodeClass(\"reader\",mml::classBinding<NodeProbe>());auto* reader=static_cast<NodeProbe*>(m.create(\"reader\",tree::FactoryArgs{}));auto old=x->array();old->push_back(reader);old->push_back(b);reader->stringHook=[&](){trace.push_back(\"node\");old->resize(1);return \"A\";};x->kindHook=[&](){trace.push_back(\"kind\");return \"base\";};x->nodesHook=[&](){trace.push_back(\"nodes\");return old;};return x->toString();",
+    "expected": "ok|base[A; ]|kind/nodes/node"
+  },
+  {
+    "label": "latex-empty-touches-no-null-node",
+    "cpp": "x->startStr=u\"\";x->addLatexItem(mml::NodeValue(PropertyNull{}));return \"ok\";",
+    "expected": "ok|ok|"
+  },
+  {
+    "label": "latex-null-node-with-source",
+    "cpp": "x->startStr=u\"x\";x->stopI=1;x->addLatexItem(mml::NodeValue(PropertyNull{}));return \"ok\";",
+    "expected": "TypeError|Cannot read properties of null (reading 'attributes')|THREW|"
+  },
+  {
+    "label": "latex-rereads-attributes",
+    "cpp": "m.setNodeClass(\"reader\",mml::classBinding<NodeProbe>());auto* reader=static_cast<NodeProbe*>(m.create(\"reader\",tree::FactoryArgs{}));auto first=reader->attributes(),second=b->attributes();int n=0;reader->attrsHook=[&](){trace.push_back(\"attrs:\"+std::to_string(++n));return n==1?first:second;};x->startStr=u\"x\";x->stopI=1;x->addLatexItem(reader);return hexValue(first->getExplicit(\"data-latex-item\"))+\":\"+hexValue(first->getExplicit(\"data-latex\"))+\":\"+hexValue(second->getExplicit(\"data-latex\"));",
+    "expected": "ok|0078:U:0078|attrs:1/attrs:2"
+  },
+  {
+    "label": "latex-retains-first-write-on-second-failure",
+    "cpp": "m.setNodeClass(\"reader\",mml::classBinding<NodeProbe>());auto* reader=static_cast<NodeProbe*>(m.create(\"reader\",tree::FactoryArgs{}));auto first=reader->attributes();int n=0;reader->attrsHook=[&]()->std::shared_ptr<folia::math::Attributes>{trace.push_back(\"attrs:\"+std::to_string(++n));if(n==2){trace.push_back(\"retained:\"+hexValue(first->getExplicit(\"data-latex-item\")));throw Error(\"Error\",u\"second attrs\");}return first;};x->startStr=u\"x\";x->stopI=1;x->addLatexItem(reader);return \"ok\";",
+    "expected": "Error|second attrs|THREW|attrs:1/attrs:2/retained:0078"
+  },
+  {
+    "label": "latex-null-attributes",
+    "cpp": "m.setNodeClass(\"reader\",mml::classBinding<NodeProbe>());auto* reader=static_cast<NodeProbe*>(m.create(\"reader\",tree::FactoryArgs{}));reader->attrsHook=[&]()->std::shared_ptr<folia::math::Attributes>{trace.push_back(\"attrs\");return {};};x->startStr=u\"x\";x->stopI=1;x->addLatexItem(reader);return \"ok\";",
+    "expected": "TypeError|Cannot read properties of null (reading 'set')|THREW|attrs"
+  },
+  {
+    "label": "latex-current-constant-after-receiver-read",
+    "cpp": "m.setNodeClass(\"reader\",mml::classBinding<NodeProbe>());auto* reader=static_cast<NodeProbe*>(m.create(\"reader\",tree::FactoryArgs{}));auto original=reader->attributes();reader->attrsHook=[&](){trace.push_back(\"attrs\");auto keys=PropertyList::record(PropertyList::record(Property(tex::TexConstant))->get(\"Attr\")).value();keys.set(\"LATEXITEM\",\"item-now\");keys.set(\"LATEX\",\"latex-now\");return original;};x->startStr=u\"x\";x->stopI=1;x->addLatexItem(reader);return hexValue(original->getExplicit(\"item-now\"))+\":\"+hexValue(original->getExplicit(\"latex-now\"));",
+    "expected": "ok|0078:0078|attrs/attrs"
   }
 ]

@@ -105,7 +105,8 @@ create(base/dummy/unknown) reaches the generic absent creator .apply error. The
 normal ParseOptions path explicitly supplies configuration.items. Fix any error
 mismatch at generic Factory, never with local exception translation/fallback.
 
-The current 76 actual original records are generated before release; Root will
+The initial 76 actual original records were generated before release; Root has
+strengthened them to 84 records for attribute/constructor/order/ownership. Root will
 strengthen attribute/constructor/order/ownership witnesses as needed without
 changing original results to fit Native. Gate: compiled stubs fail assertions,
 completed methods match Source, independent compiling faults are caught, old
