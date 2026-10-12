@@ -23,9 +23,7 @@ add('fractional-cursor-is-floored','x','xx','g',1.9);
 add('nan-cursor-is-zero','x','x','g',NaN);
 add('infinite-cursor-fails','x','x','g',Infinity);
 add('large-cursor-fails','x','x','g',9007199254740992);
-add('plain-scan-ignores-and-retains-cursor','x','ax','','17');
-// Above caller profile is numeric; keep the Source stimulus numeric too.
-rows.at(-1).lastIndex=17;{const r=new RegExp('x');r.lastIndex=17;rows.at(-1).expected=observe(r,'ax',3);}
+add('plain-scan-ignores-and-retains-cursor','x','ax','',17);
 add('plain-negative-cursor-retained','x','ax','',-3);
 add('empty-global-match-does-not-advance','','abc','g',1);
 add('lookahead-zero-width-does-not-advance','(?=x)','ax','g',1);
