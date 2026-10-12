@@ -260,6 +260,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/unit_util.cpp
     src/math/input/tex/unit_util_bindings.cpp
     src/math/util/unicode_normalization.cpp
+    src/math/input/tex/tags.cpp
     src/math/util/js_case_data.cpp
     src/math/core/mml_tree/mml_nodes/html_node_bindings.cpp
     src/math/core/mml_tree/mml_nodes/html_node.cpp

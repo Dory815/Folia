@@ -2,6 +2,7 @@
 export module folia.math.input.tex.node_factory;
 export import folia.math.core.mml_tree.mml_node;
 export import folia.math.util.callable_types;
+export import folia.math.util.option_functions;
 import std;
 export namespace folia::math::tex {
 // ParseOptions implements this back-edge. The TeX/session owns both services;
@@ -15,6 +16,7 @@ using NodeFactoryConfigurationReference=std::variant<Missing,PropertyNull,NodeFa
 using MmlFactoryReference=std::variant<Missing,PropertyNull,mml::Factory*>;
 class NodeFactory:public NativeObject,public std::enable_shared_from_this<NodeFactory> {
     PropertyList factory_;
+    void installCreators(std::span<const std::string>,const std::function<std::optional<Property>(std::string_view)>&);
 protected:
     NodeFactory();
     MmlFactoryReference mmlFactory=PropertyNull{};
@@ -37,6 +39,7 @@ public:
     virtual void setMmlFactory(MmlFactoryReference);
     virtual void set(std::string_view kind,Property creator);
     virtual void setCreators(Property maps);
+    virtual void setCreators(options::Context&,OptionFunctionBindings&,options::Value maps);
     virtual mml::NodeValue create(std::string_view kind,FunctionArgs rest={});
     virtual Property get(std::string_view kind) const;
 };

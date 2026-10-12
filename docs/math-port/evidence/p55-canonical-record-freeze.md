@@ -1,0 +1,62 @@
+# P55 canonical configuration-record boundary freeze
+
+Source Configuration owns ordinary Context handler/fallback/node records.
+Existing SubHandlers and NodeFactory operate on their actual native registries,
+but their input methods currently accept Property records. Copying complete
+Configuration records into Property dictionaries would create a second owner
+and move getter evaluation ahead of Source operation order. Root instead adds
+typed Context input overloads to these actual classes, retaining the one
+semantic registry and the same canonical FunctionRef identities.
+
+Responsibilities and exclusive body assignments:
+
+- map_handler.cpp: Context overloads for SubHandlers/SubHandler add and remove;
+  existing Property input bindings and Context input bindings share class-owned
+  addMapSnapshot/removeMapIterator/addHandlerNames/removeHandlerNames reducers.
+  No new configuration graph or Source parser class is introduced.
+- node_factory.cpp: Context setCreators reads the original record live, resolves
+  the existing canonical callable and calls the actual virtual set method.
+  Both input bindings share installCreators; the factory registry remains its
+  actual existing owner. Context for-in includes prototype keys, non-enumerable
+  shadowing and deleted-slot checks, without reading values ahead of iteration.
+- tags.cpp: complete actual Label and TagInfo record constructors, including all
+  eight original TagInfo parameters/defaults. The remaining Tags bodies are not
+  implemented or accepted by this stage.
+
+Root owns interfaces, original oracle, tests, build and acceptance. Luna may
+edit only its assigned implementation unit, necessary private local helpers and
+the corresponding existing adapter methods to share the one reducer. No data,
+gold, interface, build, other Source class or test edits; no agent build/commit.
+
+Required read order: SubHandlers snapshots Object.keys(handlers), performs
+actual get/set handler dispatch, then Gets handlers[name] and fallbacks[name]
+in argument order. Only after both Gets may SubHandler copy the names array,
+as Source maps.slice().reverse() explicitly requires. A fallback getter may
+mutate the same names array. Add uses a length-captured source copy; remove
+iterates the actual array with live length/Get. Missing handlers during remove
+skip both argument Gets. Missing token maps abort before registering fallback.
+
+Native profiles are ordinary Context arrays/records with accessor effects and
+canonical bound native callables, retaining UTF-16 primitive strings through the
+existing lossless Property scalar conversion. Arbitrary JS execution, overridden
+array iterator/slice protocols and unbound object-to-primitive evaluation are
+outside the native host profile. They must never be silently emulated by string
+special cases. Records and nested arrays are borrowed, not authoritative copies.
+Only Source-mandated array copies and computed native registry entries are owned.
+
+The Root oracle executes actual hash-verified pinned MapHandler, CharacterMap,
+NodeFactory, Label and TagInfo classes. All 21 observations are frozen before
+implementation in p55-parser-record-source.json and reference_parser_records.cpp.
+It checks getter order, inherited/absent handler keys, array copy/iteration timing,
+fallback identity/removal, warning short-circuit, live/deleted creator properties,
+prototype shadowing, virtual set, function/scalar identities and all record fields.
+No fake TeX parser/jax/reducer is used. Native tests instantiate the actual token
+maps and factories; protected-state inspection/virtual set tracing are test probes.
+
+The normal core target compiles these interfaces and fixtures. The frozen stubs
+execute and fail the 21 assertions through Unimplemented (build/p55-parser-record-
+stub-red.log). After implementation: original baseline, independent review,
+compiling semantic faults, restored baseline and full core verification must pass.
+This is necessary parser-family plumbing, not complete TeX/package/rendering
+acceptance. The main Configuration/ParserConfiguration/Tags/ColumnParser bodies
+still require their full original operation-order and lifetime contracts.

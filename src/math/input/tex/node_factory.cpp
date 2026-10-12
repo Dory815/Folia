@@ -69,6 +69,9 @@ void NodeFactory::setCreators(Property maps) {
         this->set(kind, creator);
     }
 }
+void NodeFactory::setCreators(options::Context&,OptionFunctionBindings&,options::Value) {
+    throw options::Exception("Unimplemented",u"NodeFactory canonical creator record");
+}
 mml::NodeValue NodeFactory::create(std::string_view kind,FunctionArgs rest) {
     tree::TreeCallGuard<mml::MmlNode> guard;
     Property creator = factory_.get(kind);

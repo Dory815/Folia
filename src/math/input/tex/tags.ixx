@@ -13,7 +13,9 @@ public:
     std::u16string env,tagId,labelId;
     bool taggable=false,defaultTags=false,noTag=false;
     options::Value tag=options::Null{},tagFormat=u"";
-    explicit TagInfo(std::u16string env=u"",bool taggable=false,bool defaultTags=false);
+    explicit TagInfo(std::u16string env=u"",bool taggable=false,bool defaultTags=false,
+        options::Value tag=options::Null{},std::u16string tagId=u"",
+        TagFormat tagFormat=u"",bool noTag=false,std::u16string labelId=u"");
 };
 class Tags:public NativeObject {
 public:

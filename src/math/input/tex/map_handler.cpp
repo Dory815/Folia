@@ -132,6 +132,13 @@ TokenMapRef MapHandler::getMap(const Property& name) {
 
 SubHandler::SubHandler(WarningSink warning) : warning_(std::move(warning)) {}
 
+void SubHandler::add(options::Context&,options::Value,ParseMethod,double) {
+    throw options::Exception("Unimplemented",u"SubHandler canonical record ingress");
+}
+void SubHandler::remove(options::Context&,options::Value,ParseMethod) {
+    throw options::Exception("Unimplemented",u"SubHandler canonical record removal");
+}
+
 void SubHandler::warn(std::u16string message) {
     std::u16string output = u"TexParser Warning: ";
     output += message;
@@ -246,6 +253,13 @@ TokenMapRef SubHandler::retrieve(const Property& name) {
 }
 
 SubHandlers::SubHandlers(WarningSink warning) : warning_(std::move(warning)) {}
+
+void SubHandlers::add(options::Context&,OptionFunctionBindings&,options::Value,options::Value,double) {
+    throw options::Exception("Unimplemented",u"SubHandlers canonical records");
+}
+void SubHandlers::remove(options::Context&,OptionFunctionBindings&,options::Value,options::Value) {
+    throw options::Exception("Unimplemented",u"SubHandlers canonical record removal");
+}
 
 void SubHandlers::add(const HandlerConfig& handlers, const FallbackConfig& fallbacks, double priority) {
     const std::vector<std::string> keys = handlers.keys();
