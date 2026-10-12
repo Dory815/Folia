@@ -534,8 +534,25 @@ AttributeList AbstractMmlNode::addInheritedAttributes(AttributeList current, Pro
 }
 
 void AbstractMmlNode::inheritAttributesFrom(NodeValue node) {
-    // P23f Root stub: AbstractMmlNode::inheritAttributesFrom.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+
+    MmlNode* const source = node.requireNode("attributes");
+    const auto attributes = source->attributes();
+    if (!attributes) host::typeError("Cannot read properties of null (reading 'get')");
+
+    const Property display = attributes->get("displaystyle");
+    const Property level = attributes->get("scriptlevel");
+
+    PropertyList defaults;
+    if (attributes->isSet("mathsize")) {
+        const Property mathsize = attributes->get("mathsize");
+        defaults.set("mathsize", attributeTuple("math", mathsize));
+    }
+
+    Property prime = source->getProperty("texprimestyle");
+    if (!host::truthy(prime)) prime = false;
+
+    setInheritedAttributes(Property(std::move(defaults)), display, level, prime);
 }
 
 void AbstractMmlNode::verifyTree(std::optional<PropertyList> options) {

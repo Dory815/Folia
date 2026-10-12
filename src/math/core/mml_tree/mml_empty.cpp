@@ -43,8 +43,7 @@ Property AbstractMmlEmptyNode::texSpacing() { return ""; }
 bool AbstractMmlEmptyNode::hasSpacingAttributes() { return false; }
 void AbstractMmlEmptyNode::inheritAttributes(AttributeList, Property, Property, Property) {}
 void AbstractMmlEmptyNode::inheritAttributesFrom(NodeValue) {
-    // P23f Root stub: AbstractMmlEmptyNode::inheritAttributesFrom.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    // MathJax AbstractMmlEmptyNode deliberately ignores this operation.
 }
 void AbstractMmlEmptyNode::verifyTree(std::optional<PropertyList>) {}
 MmlNode* AbstractMmlEmptyNode::mError(std::string, ErrorOptions, bool) { return nullptr; }

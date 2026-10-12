@@ -324,3 +324,9 @@ four Native host assertions and eleven effective compiling faults. The actual
 core filtered runner passes 784 assertions in two tests; inherited regressions
 also pass. Other MML runtime failures remain. See
 `evidence/p28-token-walk-acceptance.md` for the exact bounded evidence.
+
+P29 accepts the base template inheritance method and Empty no-op override over
+9,344 original complete records and thirteen effective compiling faults. The
+normal core filtered runner, 445 Attributes assertions and existing inheritance
+regressions pass. See `evidence/p29-inherit-from-acceptance.md`; verification,
+replacement/error consumers and full TeX/layout/output/Folia remain open.
