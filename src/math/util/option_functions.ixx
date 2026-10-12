@@ -6,6 +6,13 @@ export import folia.math.util.function_list;
 import folia.math.util.property_host;
 import std;
 export namespace folia::math {
+// Converters carry no callback algorithm. The binding always invokes the one
+// retained FunctionRef body between argument conversion and result conversion.
+struct OptionCallBinding {
+    std::function<FunctionReceiver(options::Context&,options::Value)> receiver;
+    std::function<std::vector<std::any>(options::Context&,std::span<const options::Value>)> arguments;
+    std::function<options::Value(options::Context&,const std::any&)> result;
+};
 class OptionFunctionBindings {
     options::Context& context_;
     std::vector<std::pair<FunctionRef,options::ObjectRef>> bindings_;
@@ -14,11 +21,17 @@ public:
     OptionFunctionBindings(const OptionFunctionBindings&)=delete;
     OptionFunctionBindings& operator=(const OptionFunctionBindings&)=delete;
     options::Context& context()const{return context_;}
-    options::Value bind(FunctionRef function,options::NativeCall call,std::u16string label=u"native"){
-        if(!function||!function->call||!call)
+    options::Value bind(FunctionRef function,OptionCallBinding binding,std::u16string label=u"native"){
+        if(!function||!function->call||!binding.receiver||!binding.arguments||!binding.result)
             throw tree::FactoryError("Unimplemented",u"Option function requires its canonical body and typed call binding");
         for(const auto&[existing,object]:bindings_)if(existing==function)return object;
-        const auto object=context_.function(std::move(label),std::move(call),function);
+        const auto object=context_.function(std::move(label),
+            [function,binding=std::move(binding)](options::Context& context,options::Value receiver,std::span<const options::Value> arguments){
+                const auto nativeReceiver=binding.receiver(context,receiver);
+                const auto nativeArguments=binding.arguments(context,arguments);
+                const auto result=function->call(nativeReceiver,nativeArguments);
+                return binding.result(context,result);
+            },function);
         bindings_.emplace_back(std::move(function),object);
         return object;
     }

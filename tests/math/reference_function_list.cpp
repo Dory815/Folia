@@ -65,7 +65,8 @@ Property construction(std::string kind){
  struct ConstructorProbe:FunctionList{
   PropertyArray calls;std::map<FunctionRef,std::string>ids;FunctionRef fa,fb,fc;FunctionDefinitionsRef defs;std::string kind;
   void addList(FunctionDefinitionsRef values)override{calls.push(PropertyArray{"list",int(values->size())});FunctionList::addList(values);}
-  FunctionValue add(FunctionValue item,double priority=DEFAULTPRIORITY)override{
+  FunctionValue add(FunctionValue item,std::optional<double> supplied=std::nullopt)override{
+   const double priority=supplied.value_or(DEFAULTPRIORITY);
    auto p=std::get_if<FunctionRef>(&item);calls.push(PropertyArray{"add",p?Property(ids[*p]):Property("raw"),priority});
    if(calls.size()==2){if(kind=="live")defs->push_back(std::make_shared<FunctionTuple>(FunctionTuple{fa,-1,{}}));if(kind=="shrink")defs->resize(1);if(kind=="default")DEFAULTPRIORITY=31;}return FunctionList::add(std::move(item),priority);
   }

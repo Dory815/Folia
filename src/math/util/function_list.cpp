@@ -83,8 +83,24 @@ void FunctionList::addList(FunctionDefinitionsRef list) {
     appendDefinitions(source);
 }
 void FunctionList::addList(FunctionDefinitionsSource& source){appendDefinitions(source);}
-void FunctionList::appendDefinitions(FunctionDefinitionsSource&){
-    throw tree::FactoryError("Unimplemented",u"FunctionList::appendDefinitions");
+void FunctionList::appendDefinitions(FunctionDefinitionsSource& source){
+    // Match `for (const item of list)`: the source identity is retained and
+    // its current length/value are observed on each step.
+    for(std::size_t index=0;index<source.length();++index){
+        const FunctionDefinition definition=source.read(index);
+        if(const auto* direct=std::get_if<FunctionValue>(&definition)){
+            this->add(*direct);
+            continue;
+        }
+
+        const FunctionTupleRef tuple=std::get<FunctionTupleRef>(definition);
+        if(!tuple)functions::typeError(u"FunctionList tuple is null");
+        // Source reads both tuple slots before invoking the virtual add method.
+        const FunctionValue item=tuple->item;
+        const std::optional<double> priority=tuple->priority;
+        if(priority)this->add(item,*priority);
+        else this->add(item);
+    }
 }
 
 bool FunctionList::execute(FunctionArgs args) {

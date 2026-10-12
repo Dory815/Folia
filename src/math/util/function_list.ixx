@@ -25,7 +25,8 @@ public:
     virtual void addList(FunctionDefinitionsRef);
     // Typed host entry for an already captured Source array. No snapshot.
     void addList(FunctionDefinitionsSource&);
-    virtual FunctionValue add(FunctionValue value,double priority=DEFAULTPRIORITY){return Base::add(std::move(value),priority);}
+    // Preserve omittedness until the actual virtual callee resolves its default.
+    virtual FunctionValue add(FunctionValue value,std::optional<double> priority=std::nullopt){return Base::add(std::move(value),priority.value_or(DEFAULTPRIORITY));}
     virtual bool execute(FunctionArgs args={});
     virtual async::PromiseRef asyncExecute(const async::QueueRef&,FunctionArgs args={});
 };

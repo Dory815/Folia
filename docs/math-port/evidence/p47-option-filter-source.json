@@ -1,5 +1,22 @@
 {
   "stage": "original ordinary-array/numeric-priority option binding observations",
+  "hashes": [
+    {
+      "source": "ts/util/FunctionList.ts",
+      "source_sha256": "d4106c42268e0d7cb3549f8ffdbeb5bab87eae6daffae7314d5e724045a6918f",
+      "cjs_sha256": "571f57801b863b2d9f01a66dc72f2836b7fd06a1a48a3fe0057e4ec3d51a7278"
+    },
+    {
+      "source": "ts/util/PrioritizedList.ts",
+      "source_sha256": "a700459f984ba1a5f18bf0e7dc183c242961b94c33587a9aa81bbaacf97180c8",
+      "cjs_sha256": "787bd21f3634312af666917d8f140145864f98d09ede1bdde3c957d28ec2bc25"
+    },
+    {
+      "source": "ts/util/Options.ts",
+      "source_sha256": "b810ffc09864eb8ed9295d829b229194d7e38aaac6c8f01525bc1a4b190a61e3",
+      "cjs_sha256": "76f3df8a3e899fba1d0944d5b79818b586c1d9f95cc7021c395fbb10295db660"
+    }
+  ],
   "rows": [
     {
       "label": "direct-and-tuple-order",
@@ -45,6 +62,11 @@
       "label": "indexed-get-after-add",
       "cpp": "auto a=e.context.array(2);e.context.set(a,options::Key(u\"0\"),e.fv);e.getter(a,u\"1\",[&](){trace.push_back(\"get:1\");return e.gv;});e.append(a);return \"ok\";",
       "expected": "ok|ok|f:5,g:5|add:f:5/get:1/add:g:5"
+    },
+    {
+      "label": "virtual-callee-default-and-undefined",
+      "cpp": "e.list.ownDefault=17;e.append(e.array({e.fv,e.array({e.gv,options::Undefined{}}),e.tuple(e.fv,3)}));return \"ok\";",
+      "expected": "ok|ok|f:3,f:17,g:17|add:f:17/add:g:17/add:f:3"
     },
     {
       "label": "getter-error-prefix",

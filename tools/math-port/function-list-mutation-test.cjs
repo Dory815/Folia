@@ -50,10 +50,10 @@ const body='util/function_list.cpp',types='util/function_types.ixx',priority='ut
 add('constructor-skipped',body,'if (list) addList(std::move(list));','if (false && list) addList(std::move(list));');
 add('constructor-empty-skipped',body,'if (list) addList(std::move(list));','if (list && !list->empty()) addList(std::move(list));');
 add('constructor-virtual-bypassed',body,'if (list) addList(std::move(list));','if (list) FunctionList::addList(std::move(list));');
-add('definitions-reversed',body,'const FunctionDefinition definition = (*list)[index];','const FunctionDefinition definition = (*list)[list->size()-1-index];');
-add('definitions-growth-ignored',body,'for (std::size_t index = 0; index < list->size(); ++index) {','const auto limit=list->size();for (std::size_t index = 0; index < std::min(limit,list->size()); ++index) {');
+add('definitions-reversed',body,'const FunctionDefinition definition=source.read(index);','const FunctionDefinition definition=source.read(source.length()-1-index);');
+add('definitions-growth-ignored',body,'for(std::size_t index=0;index<source.length();++index){','const auto limit=source.length();for(std::size_t index=0;index<std::min(limit,source.length());++index){');
 add('direct-default-frozen',body,'this->add(*direct);','this->add(*direct,5);');
-add('tuple-priority-ignored',body,'if (priority) this->add(item, *priority);','if (priority) this->add(item);');
+add('tuple-priority-ignored',body,'if(priority)this->add(item,*priority);','if(priority)this->add(item);');
 add('omitted-priority-zero',body,'else this->add(item);','else this->add(item,0);');
 add('sync-false-ignored',body,'if (functions::isFalse(result)) return false;','if (false && functions::isFalse(result)) return false;');
 add('iterator-array-copied',priority,'storage_(owner ? owner->items_ : nullptr)','storage_(owner && owner->items_ ? std::make_shared<Storage>(*owner->items_) : nullptr)');
