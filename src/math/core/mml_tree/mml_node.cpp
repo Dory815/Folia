@@ -33,7 +33,7 @@ PropertyList class_info_defaults(const tree::FactoryClassRef<MmlNode>& nodeClass
     if (!info || !*info) host::typeError("MML class has no native static metadata");
     const auto defaults=(*info)->getDefaults();
     if (!defaults) {
-        if (required) host::typeError("Math node class has no defaults");
+        if (required) host::typeError("Object prototype may only be an Object or null: undefined");
         return {};
     }
     return *defaults;
@@ -174,7 +174,7 @@ void AbstractMmlNode::initializeMml(tree::FactoryArgs args) {
     const auto nodeClass = factory.getNodeClass(this->kind());
     PropertyList nodeDefaults = class_info_defaults(nodeClass, false);
     const auto mathClass = factory.getNodeClass("math");
-    PropertyList mathDefaults = class_info_defaults(mathClass, false);
+    PropertyList mathDefaults = class_info_defaults(mathClass, true);
     auto newAttributes = std::make_shared<Attributes>(nodeDefaults, mathDefaults);
     this->setAttributes(std::move(newAttributes));
 
@@ -429,8 +429,9 @@ Property AbstractMmlNode::texSpacing() {
 }
 
 bool AbstractMmlNode::hasSpacingAttributes() {
-    // P23f Root stub: AbstractMmlNode::hasSpacingAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    if (!isEmbellished()) return false;
+    return coreMO().requireNode("hasSpacingAttributes")->hasSpacingAttributes();
 }
 
 void AbstractMmlNode::inheritAttributes(AttributeList inherited, Property display,
@@ -630,7 +631,58 @@ void AbstractMmlNode::verifyChildren(Property options) {
 }
 
 MmlNode* AbstractMmlNode::mError(std::string message, Property options, bool shortError) {
-    // P23f Root stub: AbstractMmlNode::mError.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+
+    const NodeValue initialParent = getParent();
+    if (initialParent.isNode() &&
+        getParent().requireNode("isKind")->isKind("merror")) return nullptr;
+
+    MmlNode* const merror = factory.create("merror", {});
+    auto* const initialErrorNode = NodeValue(merror).requireNode("attributes");
+    auto initialErrorAttributes = initialErrorNode->attributes();
+    if (!initialErrorAttributes) host::typeError("Cannot read properties of null (reading 'set')");
+    initialErrorAttributes->set("data-mjx-message", message);
+
+    if (options.missing()) host::typeError("Cannot read properties of undefined (reading 'fullErrors')");
+    if (std::holds_alternative<PropertyNull>(options.value))
+        host::typeError("Cannot read properties of null (reading 'fullErrors')");
+    const Property initialFullErrors = host::get(options, "fullErrors");
+
+    if (host::truthy(initialFullErrors) || shortError) {
+        MmlNode* const mtext = factory.create("mtext", {});
+        MmlNode* const text = factory.create("text", {});
+        MmlNode* const textReceiver = NodeValue(text).requireNode("setText");
+
+        if (options.missing()) host::typeError("Cannot read properties of undefined (reading 'fullErrors')");
+        if (std::holds_alternative<PropertyNull>(options.value))
+            host::typeError("Cannot read properties of null (reading 'fullErrors')");
+        const Property textFullErrors = host::get(options, "fullErrors");
+        const std::u16string textValue = host::truthy(textFullErrors)
+            ? host::text(message)
+            : host::text(kind());
+        auto* const textNode = dynamic_cast<TextNode*>(textReceiver);
+        if (!textNode) host::typeError("text.setText is not a function");
+        textNode->setText(textValue);
+
+        NodeValue(mtext).requireNode("appendChild")->appendChild(NodeValue(text));
+        merror->appendChild(NodeValue(mtext));
+
+        getParent().requireNode("replaceChild")->replaceChild(NodeValue(merror), NodeValue(this));
+
+        if (options.missing()) host::typeError("Cannot read properties of undefined (reading 'fullErrors')");
+        if (std::holds_alternative<PropertyNull>(options.value))
+            host::typeError("Cannot read properties of null (reading 'fullErrors')");
+        const Property titleFullErrors = host::get(options, "fullErrors");
+        if (!host::truthy(titleFullErrors)) {
+            MmlNode* const titleNode = NodeValue(merror).requireNode("attributes");
+            auto titleAttributes = titleNode->attributes();
+            if (!titleAttributes) host::typeError("Cannot read properties of null (reading 'set')");
+            titleAttributes->set("title", message);
+        }
+    } else {
+        getParent().requireNode("replaceChild")->replaceChild(NodeValue(merror), NodeValue(this));
+        merror->appendChild(NodeValue(this));
+    }
+    return merror;
 }
 } // namespace folia::math::mml
