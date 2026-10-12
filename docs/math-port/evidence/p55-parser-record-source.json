@@ -8,6 +8,11 @@
       "cjs_sha256": "d82e3034776d2392689aad86500b5e60dbe0aa5540853b48f308841879f3cf67"
     },
     {
+      "source": "ts/input/tex/TokenMap.ts",
+      "sha256": "0209895b13569008b2129b61c88050e7c70e70ce9477d234b9a6e303a86a738e",
+      "cjs_sha256": "9e3f086080a6ab052b68b22a5d9ee3dbc5e17d7b0c03a31e789664b01df36cf7"
+    },
+    {
       "source": "ts/input/tex/NodeFactory.ts",
       "sha256": "bf20e8d4f7ed43450df42d65556ccbceea1469541b214c37544f180aa205c840",
       "cjs_sha256": "426e3ca8822d209edc8a22b5e9f11c5631e52213b232220a2a55e81828374db5"
@@ -98,6 +103,16 @@
       "label": "node-nullish-records-noop",
       "cpp": "auto nf=std::make_shared<Factory>(trace);nf->setCreators(c,bindings,o::Null{});nf->setCreators(c,bindings,o::Undefined{});return join(trace)+\"|\"+yes(std::holds_alternative<FunctionRef>(nf->get(\"node\").value));",
       "expected": "|true"
+    },
+    {
+      "label": "node-deleted-own-slot-reveals-prototype-value",
+      "cpp": "auto p=c.object(),maps=c.objectWithPrototype(p);c.set(p,u\"beta\",bound);getter(c,maps,u\"alpha\",[&]{trace.push_back(\"get:alpha\");c.erase(maps,u\"beta\");return bound;});c.set(maps,u\"beta\",false);auto nf=std::make_shared<Factory>(trace);nf->setCreators(c,bindings,maps);return join(trace)+\"|\"+yes(std::get<FunctionRef>(nf->get(\"beta\").value)==fn);",
+      "expected": "get:alpha,set:alpha,set:beta|true"
+    },
+    {
+      "label": "node-inherited-key-gains-own-shadow-during-iteration",
+      "cpp": "auto p=c.object(),maps=c.objectWithPrototype(p);c.set(p,u\"beta\",bound);getter(c,maps,u\"alpha\",[&]{trace.push_back(\"get:alpha\");c.define(maps,u\"beta\",o::Descriptor::data(false,true,false,true));return bound;});auto nf=std::make_shared<Factory>(trace);nf->setCreators(c,bindings,maps);return join(trace)+\"|\"+yes(nf->get(\"beta\")==Property(false));",
+      "expected": "get:alpha,set:alpha,set:beta|true"
     },
     {
       "label": "label-defaults",

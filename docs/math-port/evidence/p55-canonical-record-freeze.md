@@ -60,3 +60,12 @@ compiling semantic faults, restored baseline and full core verification must pas
 This is necessary parser-family plumbing, not complete TeX/package/rendering
 acceptance. The main Configuration/ParserConfiguration/Tags/ColumnParser bodies
 still require their full original operation-order and lifetime contracts.
+
+Root review then added two independent original for-in observations. Deleting
+an own property can reveal an inherited property of the same name, so checking
+only the original owner's hasOwn is wrong; a new own non-enumerable shadow may
+also supply the value for an already-enumerated inherited name. The expanded
+23-case original fixture fails the initial native body before correction
+(build/p55-node-prototype-red.log, exit 1). These are actual pinned Node/Source
+observations, not expected values adjusted to the native body. TokenMap Source
+and CJS hashes and scope.json guards are now included explicitly.
