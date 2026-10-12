@@ -194,3 +194,13 @@ Public Shader factories and variant dispatch still precede three separate
 blitter owners and final shared-scene/SVG/Direct2D/Folia acceptance. Root's
 next responsibility audit is evidence/m3i8-shader-dispatch-audit.md. This
 bounded closure does not advance the historical whole-rendering tally.
+
+M3i8 accepts original public Shader factories and variant dispatch (7,905
+records and 18 effective faults). M3j1 additionally accepts blitter's five
+blend/colour policy dependencies (3,445 original records and twelve compiling
+faults). All 27 registered integration targets / 72 tests pass, including
+11 WARP. See evidence/m3i8-public-shader-acceptance.md and
+evidence/m3j1-blitter-policy-acceptance.md. Three independent blitter contexts,
+borrowed logical surfaces and sparse alpha callbacks still precede full scene
+and SVG/Direct2D/Folia acceptance; no full-renderer claim follows from these
+dependency packets.

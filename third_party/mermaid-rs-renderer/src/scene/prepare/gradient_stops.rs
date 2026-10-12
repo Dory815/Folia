@@ -98,5 +98,12 @@ impl PreparedGradient {
 }
 
 impl super::gradient_stop_types::PremultipliedStopColor{
- pub fn to_color_u8(&self)->[u8;4]{panic!("Unimplemented Root-frozen PremultipliedColor::to_color_u8")}
+ pub fn to_color_u8(&self)->[u8;4]{
+  [
+   (self.components[0].get()*255.0+0.5) as u8,
+   (self.components[1].get()*255.0+0.5) as u8,
+   (self.components[2].get()*255.0+0.5) as u8,
+   (self.components[3].get()*255.0+0.5) as u8,
+  ]
+ }
 }

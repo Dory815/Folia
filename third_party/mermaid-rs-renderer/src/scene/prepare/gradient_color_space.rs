@@ -66,6 +66,22 @@ impl ColorSpace {
 }
 
 impl ColorSpace{
- pub fn expand_dest_stage(self)->Option<super::pipeline_control_types::PipelineStage>{panic!("Unimplemented Root-frozen ColorSpace::expand_dest_stage")}
- pub fn compress_stage(self)->Option<super::pipeline_control_types::PipelineStage>{panic!("Unimplemented Root-frozen ColorSpace::compress_stage")}
+ pub fn expand_dest_stage(self)->Option<super::pipeline_control_types::PipelineStage>{
+  use super::pipeline_control_types::PipelineStage;
+  match self{
+   ColorSpace::Linear=>None,
+   ColorSpace::Gamma2=>Some(PipelineStage::GammaExpandDestination2),
+   ColorSpace::SimpleSRGB=>Some(PipelineStage::GammaExpandDestination22),
+   ColorSpace::FullSRGBGamma=>Some(PipelineStage::GammaExpandDestinationSrgb),
+  }
+ }
+ pub fn compress_stage(self)->Option<super::pipeline_control_types::PipelineStage>{
+  use super::pipeline_control_types::PipelineStage;
+  match self{
+   ColorSpace::Linear=>None,
+   ColorSpace::Gamma2=>Some(PipelineStage::GammaCompress2),
+   ColorSpace::SimpleSRGB=>Some(PipelineStage::GammaCompress22),
+   ColorSpace::FullSRGBGamma=>Some(PipelineStage::GammaCompressSrgb),
+  }
+ }
 }
