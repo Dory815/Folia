@@ -145,6 +145,15 @@ Completed current-state evidence:
   See evidence/p55-parser-record-acceptance.md. P56 freezes Array.map and runtime
   initialization requirements for the next actual Configuration methods.
 
+- P56 supplies the actual ordinary Context Array.map host needed by
+  Configuration, with retained prototype callable, holes, live getters and
+  callback/return identities. All 41 original observations and two native-scope
+  assertions pass; all eighteen compiling faults are detected; independent
+  Luna review and full core tests pass, exit 0. Custom species remain explicitly
+  unsupported. See evidence/p56-array-map-acceptance.md. The sustained complete
+  Configuration/runtime, Tags/ColumnParser and independent original verification
+  assignments are recorded in parser-family-work-plan.md.
+
 Incomplete requirements, verified from the current source tree:
 
 - ParseOptions, BaseItems and the configuration pipeline have complete native
