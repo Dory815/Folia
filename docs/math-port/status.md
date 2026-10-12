@@ -15,17 +15,18 @@ Completed current-state evidence:
 - Utility, attribute, factory, tagged child-array/tree and parts of MML/TeX
   token/handler-map foundations exist. The architecture keeps semantic nodes,
   parsing, common layout and output responsibilities separate.
-- Latest accepted semantic change is ec87cc5: base verifyTree/verifyChildren.
-  It matches 3,752 original records, passes four Native budget/recovery checks,
-  and detects 24 compiling semantic faults. The normal verification filter
-  also passes the 476 raw virtual-options checks: 4,232 assertions in three
-  executed tests. See evidence/p32-verification-acceptance.md for scope.
+- P33/P34/P35 restores thirteen bounded MML consumer methods: error construction,
+  spacing, row/identifier classes, style inheritance and subclass verification.
+  The joint baseline passes 5,815 assertions in 238 executed tests and detects
+  all 38 compiling semantic faults. The normal FoliaTests target builds and
+  passes its new error filter plus constructor/base-verification regressions.
+  See evidence/p33-p35-consumer-acceptance.md for precise scope and limitations.
 
 Incomplete requirements, verified from the current source tree:
 
 - Remaining tagged-tree MML consumers include explicit Unimplemented stubs.
-  Error-node construction, row/identifier class assignment and subclass
-  verification are the next bounded implementation packets P33/P34/P35.
+  The next P36 packet restores table/multiscript inheritance, verification/repair
+  and class assignment under Root's file ownership and acceptance contract.
 - TeXParser, Stack and the complete base/AMS/enabled-package command pipeline
   have not been implemented. Current input/tex contains foundations only.
 - There is no src/math/output common-wrapper/scene/SVG implementation, nor a
