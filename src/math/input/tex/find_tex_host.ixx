@@ -17,6 +17,7 @@ public:
     FindTeXModule(options::Context&context,core::FindMathModule&base,regexp_host::RegExpBindings&regexp)
         :context_(context),regexp_(regexp),constructor_(context.constructor(u"FindTeX")){
         if(&regexp.context()!=&context)throw options::Exception("TypeError",u"FindTeX binding context mismatch");
+        context.define(constructor_,options::Key(u"length"),options::Descriptor::data(1,false,false,true));
         context.setPrototype(constructor_,base.abstractClass());
         auto prototype=std::get<options::ObjectRef>(context.get(constructor_,options::Key(u"prototype")).data);
         auto basePrototype=std::get<options::ObjectRef>(context.get(base.abstractClass(),options::Key(u"prototype")).data);
