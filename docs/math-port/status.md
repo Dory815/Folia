@@ -136,6 +136,15 @@ Completed current-state evidence:
   evidence/p54-nfd-acceptance.md. The next main route is actual parser-family
   method bodies and their module-lifetime registrations.
 
+- P55 supplies canonical Context configuration-record inputs to the actual
+  SubHandlers and NodeFactory registries, sharing their existing reducers, plus
+  complete Label/TagInfo constructors. All 27 pinned original observations and
+  eleven compiling faults pass their gates. Independent Luna reviews and the
+  full core build/tests pass, exit 0. Root repaired three Source-semantic errors
+  before acceptance and removed a test's shared-registry pre-state dependency.
+  See evidence/p55-parser-record-acceptance.md. P56 freezes Array.map and runtime
+  initialization requirements for the next actual Configuration methods.
+
 Incomplete requirements, verified from the current source tree:
 
 - ParseOptions, BaseItems and the configuration pipeline have complete native
