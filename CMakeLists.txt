@@ -98,6 +98,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/find_math.ixx
     src/math/core/find_math_host.ixx
     src/math/util/regexp_host.ixx
+    src/math/util/regexp_binding.ixx
     src/math/util/object_types.ixx
     src/math/util/callable_types.ixx
     src/math/util/argument_expansion.ixx
