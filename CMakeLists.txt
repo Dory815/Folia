@@ -89,6 +89,7 @@ target_sources(folia_core PRIVATE ${FOLIA_CORE_SOURCE})
 add_library(folia_math STATIC)
 target_compile_features(folia_math PUBLIC cxx_std_23)
 set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
+target_include_directories(folia_math PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/srell)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/math_item.ixx
     src/math/core/math_item_host.ixx
@@ -96,6 +97,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/input_jax_host.ixx
     src/math/core/find_math.ixx
     src/math/core/find_math_host.ixx
+    src/math/util/regexp_host.ixx
     src/math/util/object_types.ixx
     src/math/util/callable_types.ixx
     src/math/util/argument_expansion.ixx
@@ -211,6 +213,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/input_jax_constructor.cpp
     src/math/core/input_jax.cpp
     src/math/core/find_math.cpp
+    src/math/util/regexp_host.cpp
     src/math/input/tex/token.cpp
     src/math/input/tex/node_util.cpp
     src/math/input/tex/node_factory.cpp
