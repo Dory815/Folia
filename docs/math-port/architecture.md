@@ -6,8 +6,8 @@ Accepted method packets and original observations are recorded under evidence/.
 Their bounded results do not accept a complete upstream file or a working renderer.
 
 The normal FoliaTests target builds and links. Restored tagged-tree consumers
-currently include P33-P38; mfenced's remaining consumers are the next packet.
-Remaining consumers, the complete TeX/package pipeline,
+currently include P33-P39; no explicit MML Unimplemented stubs remain and the
+complete core suite passes. Complete NodeUtil/TexError and the TeX/package pipeline,
 common wrappers, fonts, scene, SVG and Folia integration still block release.
 Folia currently uses its existing QuickJS math path. The historical 54/246 ledger
 and 90 compiled module interfaces are not completion percentages.

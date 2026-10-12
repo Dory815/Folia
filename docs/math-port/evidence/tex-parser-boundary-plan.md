@@ -43,3 +43,38 @@ No source file is accepted merely because declarations compile. Parser milestone
 must include real reductions producing the same MML as the locked JavaScript
 configuration. The release milestone remains identical TeX-to-layout/SVG behavior,
 not an isolated utility count.
+
+## Current prerequisite audit after P39
+
+All currently declared MML consumers execute; the complete core runner passes.
+NodeUtil currently declares only getChildAt/setChild/copyChildren. Complete its
+Source singleton responsibilities: entity/text/children operations, property versus
+attribute routing through the eleven-name attrs Set, attribute/property copying,
+type/core/class queries, and ordered operator definition/attribute lookup. Keep
+the one MML graph and raw Property definitions; do not make a second parser AST.
+Source setter callbacks, attributes identity, live child arrays and captured
+Object.entries values must survive the typed adaptation. Audit enabled-package
+argument domains before freezing new declarations.
+
+TexError is a plain Source class with id and processed message, not an Error
+subclass. Its complete private regexp/split/placeholder/plural behavior is required
+by the parser's error protocol; a generic C++ formatter is not equivalent.
+
+NodeFactory creators can be temporarily overridden and restored by physics;
+get/set must retain the canonical FunctionRef identity. Reuse the existing
+FunctionBody/FunctionArgs (std::any) primitive protocol, not a second function
+object model. The parser-specific ParseCallable signature alone cannot express
+NodeFactory's heterogeneous rest arguments and nullable MML result.
+
+Required reference-edge services include NodeFactory -> configuration.addNode,
+StackItem -> factory.configuration.nodeFactory, factories -> real ParseOptions,
+and ParseOptions -> active TexParser/Tags/ColumnParser. The real owning classes
+implement narrow services; a dummy configuration must not satisfy these edges.
+ParseOptions preserves shared packageData, parser stack, nodeLists and live raw
+parent filtering. StackItemContext cannot remain an empty final protocol.
+
+The enabled profile includes nested textmacros, physics, ams/amscd, action and
+other configured packages in entry.cjs. Do not reduce it to base TeX to accelerate
+acceptance. Root freezes the full module declarations and per-file responsibilities
+before releasing the next Luna implementations. These observations are a dependency
+audit, not new accepted parser implementations.

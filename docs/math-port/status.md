@@ -34,12 +34,16 @@ Completed current-state evidence:
   baseline passes 9,031 assertions in 1,452 executed tests and detects all 25
   compiling semantic faults. The normal build and affected filters also pass.
   See evidence/p38-action-choice-acceptance.md.
+- P39 restores four mfenced methods. Its baseline passes 1,012 assertions in
+  229 executed tests and detects all 21 compiling semantic faults. The complete
+  normal core build/test now passes (build_test.bat, exit 0). No explicit MML
+  Unimplemented stubs remain. See evidence/p39-mfenced-acceptance.md.
 
 Incomplete requirements, verified from the current source tree:
 
-- Remaining tagged-tree MML consumers include explicit Unimplemented stubs.
-  The remaining explicit MML packet covers mfenced's four semantic methods and
-  tagged indexed helper under Root's ownership and acceptance contract.
+- NodeUtil currently has only three child-array methods. Complete NodeUtil and
+  TexError are the next parser prerequisites; current MML tests do not establish
+  complete TeX/package parsing or whole-source reflection parity.
 - TeXParser, Stack and the complete base/AMS/enabled-package command pipeline
   have not been implemented. Current input/tex contains foundations only.
 - There is no src/math/output common-wrapper/scene/SVG implementation, nor a
