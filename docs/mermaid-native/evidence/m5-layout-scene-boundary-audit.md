@@ -46,5 +46,3 @@ The current renderer can serve as an independent reference while the scene route
 - `src/lib.rs`: keep parse/layout public stages; add a shared scene-render entry (for backend API/acceptance) and route ordinary SVG public APIs through `compile_layout -> render_scene_svg`. Folia may call the native scene route only after Root's full backend acceptance; do not wire it during this audit.
 
 The returned scene should contain final dimensions and viewBox/root viewport transform, theme-resolved background and every visible ordered draw command, text runs resolved through the explicit text service, clips/transforms, marker geometry, styles, and export metadata/resources required by SVG. Both consumers then operate over the same immutable value.
-
-
