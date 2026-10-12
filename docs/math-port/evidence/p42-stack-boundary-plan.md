@@ -1,8 +1,9 @@
 # P42 parser stack boundary plan
 
-This is a Source audit and design frontier, not an implementation release.
-P41 has accepted NodeFactory. Root must freeze the following interfaces and
-actual-original observations before assigning stack method bodies to Luna.
+This is the remaining Source audit and design frontier. P42A has accepted the
+MmlStack responsibility only; see p42-mml-stack-acceptance.md. P41 has accepted
+NodeFactory. Root must freeze the remaining interfaces and actual-original
+observations before assigning BaseItem/StackItemFactory/Stack bodies to Luna.
 
 ## Source responsibilities
 
@@ -77,6 +78,31 @@ enabled parser supplies its configured item classes explicitly. Do not silently
 auto-register dummy/base according to the comments or rename the static field.
 
 ## Integration sequence
+
+Next Root interface decisions, audited read-only after P42A:
+
+- Keep stack_services.ixx as the borrowed configuration/NodeFactory leaf. When
+  adding BaseItem, move StackItemFactoryService/StackFactoryReference to their
+  Source-owner stack_item module, where BaseItem can be forward-declared without
+  declaring the same entity in two named modules.
+- One concrete StackItemFactory inherits AbstractFactory<BaseItem> and a narrow
+  independent service interface. That interface must not also inherit generic
+  FactoryServices (no diamond). Its borrowed itemFactory() accessor returns the
+  same concrete factory, not another registry or wrapper. Existing MmlStack
+  create always uses configuration.nodeFactory; reducers' this.factory.create
+  uses the StackItem constructor registry. Never switch by a guessed kind string.
+- Override adopt to retain one shared BaseItem identity in the factory pool;
+  reference(raw) returns that same existing StackItemContext shared identity.
+  Every class binding explicitly adopts before Source constructor phases.
+- Capture actual class static errors metadata, including inherited live error
+  arrays; do not read metadata from a later kind registration. Run virtual isOpen
+  during the Source BaseItem phase with derived fields still Missing, rather
+  than in a C++ base constructor or after native derived field initialization.
+- StackProperty must contain canonical scalar Property, existing NodeValue and
+  recursive shared records, without reversing the generic Property -> MML
+  dependency. Retain existing scalar PropertyList identity for style/color;
+  do not promote-by-copy and claim aliases survived. Freeze record mutation,
+  Object.assign key/value order and actual package domains before releasing it.
 
 Freeze Source service/identity/value interfaces and original boundary gold;
 implement complete MmlStack/BaseItem and StackItemFactory responsibilities;

@@ -9,7 +9,7 @@ Completed current-state evidence:
 - MathJax-src 4.1.3 is cloned in .reference/MathJax-src, pinned to
   fb987178c2d279a99b0db5ea02e751691703955e. scope.json inventories 246 reachable
   upstream files for the enabled Folia profile.
-- The C++23 folia_math target contains 94 module interfaces. The normal
+- The C++23 folia_math target contains 97 module interfaces. The normal
   FoliaTests target builds and links; individual accepted packets have actual
   Source observations, Native checks and independent acceptance evidence.
 - Utility, attribute, factory, tagged child-array/tree and parts of MML/TeX
@@ -48,6 +48,11 @@ Completed current-state evidence:
   All 78 original observations pass and all nine compiling semantic faults are
   detected. The full core suite passes, exit 0. See
   evidence/p41-node-factory-acceptance.md.
+- P42A supplies MmlStack's eleven semantic methods over the same existing MML
+  graph and node-array identity. All 76 original records pass; all twelve
+  compiling semantic faults are detected. The full core suite passes, exit 0.
+  This is one responsibility of StackItem.ts, not full stack/parser acceptance.
+  See evidence/p42-mml-stack-acceptance.md.
 
 Incomplete requirements, verified from the current source tree:
 
@@ -64,6 +69,6 @@ Incomplete requirements, verified from the current source tree:
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 94 interfaces likewise measure compilation
-structure, not 90 completed upstream files. No complete-clean-port claim follows
+measure coverage or usability. The 97 interfaces likewise measure compilation
+structure, not completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.
