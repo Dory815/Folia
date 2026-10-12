@@ -81,8 +81,21 @@ void AbstractMmlTokenNode::setChildInheritedAttributes(
 
 std::any AbstractMmlTokenNode::walkTree(
     const tree::TreeVisitor<MmlNode>& visit, const std::any& data) {
-    // P23f Root stub: AbstractMmlTokenNode::walkTree.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    visit(this, data);
+
+    const Children children = this->childNodes;
+    if (!children) {
+        host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    }
+    for (std::size_t index = 0; index < children->size(); ++index) {
+        const NodeValue child = children->get(index);
+        MmlNode* const node = child.nodeOrNull();
+        if (auto* const mmlNode = node ? dynamic_cast<AbstractMmlNode*>(node) : nullptr) {
+            mmlNode->walkTree(visit, data);
+        }
+    }
+    return data;
 }
 
 bool AbstractMmlLayoutNode::isSpacelike() const {

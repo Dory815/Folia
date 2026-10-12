@@ -318,3 +318,9 @@ normal repository runner now builds and links, then exits 1 on mathematical
 runtime exceptions/assertion failures. Compile repair does not accept those
 consumer algorithms or any TeX/layout/rendering integration. See
 `evidence/p27-observer-repair-acceptance.md`; 54/246 remains historical.
+
+P28 accepts only AbstractMmlTokenNode::walkTree: 780 original complete records,
+four Native host assertions and eleven effective compiling faults. The actual
+core filtered runner passes 784 assertions in two tests; inherited regressions
+also pass. Other MML runtime failures remain. See
+`evidence/p28-token-walk-acceptance.md` for the exact bounded evidence.
