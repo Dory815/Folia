@@ -1,9 +1,9 @@
 # P42 parser stack boundary plan
 
-This is the remaining Source audit and design frontier. P42A has accepted the
-MmlStack responsibility only; see p42-mml-stack-acceptance.md. P41 has accepted
+This is the remaining Source audit and design frontier. P42A accepts MmlStack;
+P42B accepts BaseItem/StackItemFactory; see their acceptance records. P41 accepts
 NodeFactory. Root must freeze the remaining interfaces and actual-original
-observations before assigning BaseItem/StackItemFactory/Stack bodies to Luna.
+observations before assigning Stack and concrete reducer bodies to Luna.
 
 ## Source responsibilities
 
@@ -62,9 +62,12 @@ ArrayItem.parser point back into the same session-owned services.
 CheckType is a tuple whose replacement-list slot can be Null; BaseItem.fail and
 success are shared static tuples, and SubsupItem.checkItem can itself be null.
 Stack.Push must preserve falsey skipping, reduction ordering, recursive result
-processing, null-item suppression and environment propagation. Stack.Pop deletes
-env only for non-open items and resets current env to the next item's exact
-record or a fresh empty record. Use no generic tree-editing algorithm here.
+processing, null-item suppression and environment propagation. Stack.Pop executes
+delete item.env only for non-open items. For actual BaseItem descendants this is
+an inherited accessor, so deleting the absent own property is a no-op: it must
+NOT clear _env, setEnv(Missing), or manufacture a new item env. Stack then resets
+its current env to the next item's exact record or a fresh empty record. Use no
+generic tree-editing algorithm here.
 
 ## Verified default-registry trap
 
@@ -79,7 +82,7 @@ auto-register dummy/base according to the comments or rename the static field.
 
 ## Integration sequence
 
-Next Root interface decisions, audited read-only after P42A:
+Root interface decisions implemented/accepted in P42B:
 
 - Keep stack_services.ixx as the borrowed configuration/NodeFactory leaf. When
   adding BaseItem, move StackItemFactoryService/StackFactoryReference to their
