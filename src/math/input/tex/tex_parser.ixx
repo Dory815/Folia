@@ -4,6 +4,8 @@ export import :types;
 import std;
 export namespace folia::math::tex {
 class TexParser:public ParserContext,public NativeObject {
+    // Native allocation handle, bound once by make before Source initialization.
+    std::optional<options::ObjectRef> identity_;
     std::u16string string_;
     Property currentCS_=""; // sole Source currentCS, accessed by bridge
     double saveI=0;
@@ -20,6 +22,10 @@ public:
     TexParser()=default; // allocation only; initialize after retaining identity
     static TexParserRef make(std::u16string string,Property env,ParseOptions&);
     void initializeTexParser(std::u16string string,Property env,ParseOptions&);
+    options::ObjectRef instanceIdentity()const {
+        if(!identity_)throw options::Exception("Unimplemented",u"TexParser has no canonical native instance binding");
+        return *identity_;
+    }
     virtual options::Value options()const;
     virtual ParserShared<StackItemFactory> itemFactory()const;
     virtual ParserShared<Tags> tags()const;

@@ -34,6 +34,15 @@ are tracked as remaining work, not replaced by accepting stubs. The new complete
 implementation units are enabled together after the real class graph compiles
 and links. Until then, their unimplemented peers prevent acceptance.
 
+Root resolved the first shared seams: TagsFactory::initializeModule receives
+the two actual built-in TagsClassInfo descriptors after runtime identity buckets
+and constructor objects exist. Its allocation constructor registers nothing.
+ColumnState's ordinary fields remain one Context record accessed by its thin
+native reference; no parallel C++ field values are synchronized. TexParser's
+instanceIdentity is its actual allocation handle, bound once by the eventual
+make implementation before Source initialization, so ColumnState.parser can
+point to the same object. The handle is not a substitute parser implementation.
+
 Root alone owns shared CMake/build targets and runs the combined builds, avoiding
 parallel mutation/build interference and duplicate generated trees. Workers may
 run their independent Node observers and source/coverage checks. Candidate native
