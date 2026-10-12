@@ -95,6 +95,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/argument_expansion.ixx
     src/math/input/tex/token.ixx
     src/math/input/tex/node_util.ixx
+    src/math/input/tex/tex_error.ixx
+    src/math/input/tex/tex_error_pattern.ixx
     src/math/input/tex/types.ixx
     src/math/input/tex/token_map_types.ixx
     src/math/input/tex/token_map.ixx
@@ -183,6 +185,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
   target_sources(folia_math PRIVATE
     src/math/input/tex/token.cpp
     src/math/input/tex/node_util.cpp
+    src/math/input/tex/tex_error.cpp
     src/math/util/numeric.cpp
     src/math/input/tex/map_handler.cpp
     src/math/input/tex/token_map.cpp
