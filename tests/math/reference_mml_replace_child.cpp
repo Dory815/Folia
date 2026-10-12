@@ -1525,4 +1525,10 @@ suite replace_child=[] {"math_port_replace_child_source"_test=[] {const Case cas
 {"NaN","ab","b","N","old-parent-other","ok|b|2:11:11:a,b|2:11:11:a,b|2:11:11:first,b|N,n,first,N|arity,index:N"},
 {"NaN","ab","b","a","old-parent-other","ok|b|2:11:11:b,b|2:11:11:b,b|2:11:11:first,b|N,N,n,N|arity,index:a,parent.set:b=n,parent.get:a,parent.set:a=N"},
 {"NaN","ab","b","b","old-parent-other","ok|b|2:11:11:a,b|2:11:11:a,b|2:11:11:first,b|N,n,N,N|arity,index:b,parent.set:b=n,parent.get:b,parent.set:b=N"},
-};for(const auto&i:cases)expect(eq(run(i),i.expected))<<i.arity<<i.shape<<i.mode<<i.newValue<<i.oldValue;};};}
+};for(const auto&i:cases)expect(eq(run(i),i.expected))<<i.arity<<i.shape<<i.mode<<i.newValue<<i.oldValue;};
+"math_port_replace_child_native_depth_and_recovery"_test=[] {
+active=false;mode.clear();firstNode=nullptr;rootNode=nullptr;MmlFactory f;
+struct Chain:AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::string kind()const override{return "replace-chain";}double arity()const override{return active?-1:std::numeric_limits<double>::infinity();}};
+f.setNodeClass("replace-chain",classBinding<Chain>());auto*root=f.create("replace-chain");auto*tail=root;for(std::size_t j=1;j<512;++j){auto*next=f.create("replace-chain");tail->childNodes=std::make_shared<tree::ChildArray<MmlNode>>(std::initializer_list<NodeValue>{next});tail=next;}auto*empty=f.create("text");auto*argument=f.create("text");tail->childNodes=std::make_shared<tree::ChildArray<MmlNode>>(std::initializer_list<NodeValue>{empty});active=true;const auto result=root->replaceChild(argument,PropertyNull{});expect(result==NodeValue(argument));expect(argument->getParent()==NodeValue(PropertyNull{}));active=false;
+auto*extra=f.create("replace-chain");extra->childNodes=std::make_shared<tree::ChildArray<MmlNode>>(std::initializer_list<NodeValue>{empty});tail->childNodes->set(0,extra);bool caught=false;active=true;try{root->replaceChild(argument,PropertyNull{});}catch(const Error&e){caught=e.name=="RangeError";}expect(caught);tail->childNodes->set(0,empty);expect(root->replaceChild(argument,PropertyNull{})==NodeValue(argument));active=false;
+};};}

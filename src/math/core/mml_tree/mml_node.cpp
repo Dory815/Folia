@@ -342,8 +342,16 @@ NodeValue AbstractMmlNode::appendChild(NodeValue child) {
 }
 
 NodeValue AbstractMmlNode::replaceChild(NodeValue newChild, NodeValue oldChild) {
-    // P23f Root stub: AbstractMmlNode::replaceChild.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const double nodeArity = arity();
+    if (nodeArity < 0) {
+        const Children children = this->childNodes;
+        if (!children) host::typeError("Cannot read properties of null (reading '0')");
+        const NodeValue first = children->get(0);
+        first.requireNode("replaceChild")->replaceChild(newChild, oldChild);
+        return newChild;
+    }
+    return Generic::replaceChild(newChild, oldChild);
 }
 
 NodeValue AbstractMmlNode::core() { return this; }
