@@ -284,32 +284,32 @@
     },
     {
       "label": "prev:undefined",
-      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);return nodeName(s->Prev(Property(Missing{})))+\":\"+std::to_string(static_cast<int>(start->Size()));",
+      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);const auto previous=s->Prev(Property(Missing{}));const auto size=start->Size();return nodeName(previous)+\":\"+std::to_string(static_cast<int>(size));",
       "expected": "ok|mn:1||h=1:env=start=1"
     },
     {
       "label": "prev:false",
-      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);return nodeName(s->Prev(Property(false)))+\":\"+std::to_string(static_cast<int>(start->Size()));",
+      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);const auto previous=s->Prev(Property(false));const auto size=start->Size();return nodeName(previous)+\":\"+std::to_string(static_cast<int>(size));",
       "expected": "ok|mn:1||h=1:env=start=1"
     },
     {
       "label": "prev:true",
-      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);return nodeName(s->Prev(Property(true)))+\":\"+std::to_string(static_cast<int>(start->Size()));",
+      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);const auto previous=s->Prev(Property(true));const auto size=start->Size();return nodeName(previous)+\":\"+std::to_string(static_cast<int>(size));",
       "expected": "ok|mn:2||h=1:env=start=1"
     },
     {
       "label": "prev:0",
-      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);return nodeName(s->Prev(Property(0)))+\":\"+std::to_string(static_cast<int>(start->Size()));",
+      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);const auto previous=s->Prev(Property(0));const auto size=start->Size();return nodeName(previous)+\":\"+std::to_string(static_cast<int>(size));",
       "expected": "ok|mn:1||h=1:env=start=1"
     },
     {
       "label": "prev:",
-      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);return nodeName(s->Prev(Property(\"\")))+\":\"+std::to_string(static_cast<int>(start->Size()));",
+      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);const auto previous=s->Prev(Property(\"\"));const auto size=start->Size();return nodeName(previous)+\":\"+std::to_string(static_cast<int>(size));",
       "expected": "ok|mn:1||h=1:env=start=1"
     },
     {
       "label": "prev:yes",
-      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);return nodeName(s->Prev(Property(\"yes\")))+\":\"+std::to_string(static_cast<int>(start->Size()));",
+      "cpp": "make(Missing{});std::array<mml::NodeValue,2> nodes{a,b};start->Push(nodes);const auto previous=s->Prev(Property(\"yes\"));const auto size=start->Size();return nodeName(previous)+\":\"+std::to_string(static_cast<int>(size));",
       "expected": "ok|mn:2||h=1:env=start=1"
     },
     {
@@ -321,6 +321,26 @@
       "label": "prev-empty:true",
       "cpp": "make(Missing{});s->Pop();return nodeName(s->Prev(true));",
       "expected": "TypeError|Cannot read properties of null (reading 'First')|THREW||h=0:env="
+    },
+    {
+      "label": "replacement-captured-tuple-slot",
+      "cpp": "make(Missing{});auto*x=item(\"x\"),*y=item(\"y\"),*z=item(\"z\");auto t=std::get<std::shared_ptr<tex::CheckTuple>>(check(true,{entry(y)}));start->checkHook=[&](auto*)->tex::CheckType{return t;};start->openHook=[&](){t->items=std::make_shared<std::vector<tex::StackEntry>>(std::initializer_list<tex::StackEntry>{entry(z)});return false;};push(x);return topName();",
+      "expected": "ok|y||h=1:env="
+    },
+    {
+      "label": "replacement-spread-after-pop",
+      "cpp": "make(Missing{});auto*x=item(\"x\"),*y=item(\"y\"),*z=item(\"z\");auto t=std::get<std::shared_ptr<tex::CheckTuple>>(check(true,{entry(y)}));start->checkHook=[&](auto*)->tex::CheckType{return t;};start->openHook=[&](){std::get<tex::CheckList>(t->items)->at(0)=entry(z);return false;};push(x);return topName();",
+      "expected": "ok|z||h=1:env="
+    },
+    {
+      "label": "input-rest-array-snapshot",
+      "cpp": "make(Missing{});auto*x=item(\"x\"),*y=item(\"y\"),*z=item(\"z\");std::vector<tex::StackEntry> args{entry(x),entry(y)};start->checkHook=[&](auto*){args[1]=entry(z);return check(true);};s->Push(args);return topName();",
+      "expected": "ok|y|check:x:y|h=3:env=start=1"
+    },
+    {
+      "label": "environment-own-only-alias",
+      "cpp": "auto parent=PropertyList{{\"inherited\",8}};auto source=PropertyList::withPrototype(parent);PropertyList nested{{\"v\",1}};source.set(\"nested\",nested);make(source);auto*x=item(\"x\");PropertyList target;x->setEnv(target);push(x);nested.set(\"v\",2);return rec(target)+\":\"+rec(target.get(\"nested\"))+\":\"+val(target.get(\"inherited\"))+\":\"+std::string(target.get(\"nested\")==Property(nested)?\"same\":\"bad\");",
+      "expected": "ok|nested=object:v=2:U:same|check:start:x|h=2:env=nested=object"
     },
     {
       "label": "string-basic",
