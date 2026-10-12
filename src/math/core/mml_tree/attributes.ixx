@@ -37,6 +37,7 @@ class Attributes {
     PropertyList global_;
 
 public:
+    virtual ~Attributes() = default;
     Attributes(const PropertyList& defaults, const PropertyList& global)
         : global_(global) {
         defaults_ = PropertyList::withPrototype(global_);
@@ -59,7 +60,7 @@ public:
         attributes_.erase(name);
     }
 
-    Property get(std::string_view name) const {
+    virtual Property get(std::string_view name) const {
         Property value = attributes_.get(name);
         if (value == Property{std::string(INHERIT)}) {
             value = global_.get(name);
@@ -102,7 +103,7 @@ public:
         return defaults_.get(name);
     }
 
-    bool isSet(std::string_view name) const {
+    virtual bool isSet(std::string_view name) const {
         return attributes_.hasOwn(name) || inherited_.hasOwn(name);
     }
 
