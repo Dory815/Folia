@@ -9,7 +9,7 @@ Completed current-state evidence:
 - MathJax-src 4.1.3 is cloned in .reference/MathJax-src, pinned to
   fb987178c2d279a99b0db5ea02e751691703955e. scope.json inventories 246 reachable
   upstream files for the enabled Folia profile.
-- The C++23 folia_math target contains 92 module interfaces. The normal
+- The C++23 folia_math target contains 94 module interfaces. The normal
   FoliaTests target builds and links; individual accepted packets have actual
   Source observations, Native checks and independent acceptance evidence.
 - Utility, attribute, factory, tagged child-array/tree and parts of MML/TeX
@@ -43,11 +43,16 @@ Completed current-state evidence:
   original; all eight compiling semantic faults are detected. The complete core
   build/test passes, exit 0. See evidence/p40-parser-utilities-acceptance.md for
   the typed host boundaries and exact scope.
+- P41 supplies all nine TeX NodeFactory methods, using the existing callable
+  identity and MML graph with a narrow borrowed ParseOptions registration edge.
+  All 78 original observations pass and all nine compiling semantic faults are
+  detected. The full core suite passes, exit 0. See
+  evidence/p41-node-factory-acceptance.md.
 
 Incomplete requirements, verified from the current source tree:
 
-- NodeFactory, ParseOptions and the configuration/stack pipeline are the next
-  parser prerequisites. Accepted NodeUtil/TexError utilities do not establish
+- ParseOptions, StackItemFactory/BaseItems/Stack and the configuration pipeline
+  are the next parser prerequisites. Accepted input utilities do not establish
   complete TeX/package parsing or whole-source reflection parity.
 - TeXParser, Stack and the complete base/AMS/enabled-package command pipeline
   have not been implemented. Current input/tex contains foundations only.
@@ -59,6 +64,6 @@ Incomplete requirements, verified from the current source tree:
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 92 interfaces likewise measure compilation
+measure coverage or usability. The 94 interfaces likewise measure compilation
 structure, not 90 completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.
