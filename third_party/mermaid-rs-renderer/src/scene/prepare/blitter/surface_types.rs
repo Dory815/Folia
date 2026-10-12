@@ -1,4 +1,7 @@
-//! Root-frozen original logical surface and storage representations.
+// Copyright 2006 The Android Open Source Project
+// Copyright 2020 Yevhenii Reizner
+// BSD-style license: see LICENSE-tiny-skia-blend.
+//! Original logical surface and storage representations.
 use tiny_skia_path::IntSize;
 /// The original mutable contiguous RGBA owner borrows all supplied bytes.
 #[derive(Debug)]

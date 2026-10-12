@@ -204,3 +204,12 @@ evidence/m3j1-blitter-policy-acceptance.md. Three independent blitter contexts,
 borrowed logical surfaces and sparse alpha callbacks still precede full scene
 and SVG/Direct2D/Folia acceptance; no full-renderer claim follows from these
 dependency packets.
+
+M3j2 accepts eight borrowed surface methods and three original storage helpers:
+3,887 original surface/size/allocation records, nineteen effective compiling
+faults and eleven direct-body witnesses. All 29 registered integration targets
+/ 77 tests pass, including eleven WARP. The initial surface gold lacked incoming
+Mask allocation identity; Root froze an independent ownership supplement and
+proved the clone fault is detected. See evidence/m3j2-borrowed-surface-acceptance.md.
+Blitter's three independent contexts, sparse alpha callbacks and the full
+scene/backend/Folia gate still precede integration.

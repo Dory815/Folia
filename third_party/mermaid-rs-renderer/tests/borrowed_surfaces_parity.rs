@@ -1,6 +1,8 @@
 // Root original complete surface observations and direct actual-body witnesses.
 use mermaid_rs_renderer::scene::prepare::blitter::surface_types::{BorrowedPixmapMut,OwnedMask,LogicalTarget};
 use tiny_skia_path::{IntSize,IntRect};use serde::Deserialize;use std::panic::AssertUnwindSafe;
+#[derive(Deserialize)]struct OwnershipInput{data:Vec<u8>,capacity:usize,width:u32,height:u32}#[derive(Deserialize)]struct OwnershipCase{input:OwnershipInput,result:(String,bool,usize,usize)}#[derive(Deserialize)]struct OwnershipFixture{cases:Vec<OwnershipCase>}
+#[test]fn original_owned_mask_allocation_identity(){let f:OwnershipFixture=serde_json::from_str(include_str!("fixtures/borrowed-ownership.json")).unwrap();assert_eq!(f.cases.len(),80);let mut mismatches=0;for c in f.cases{let i=c.input;let mut data=Vec::with_capacity(i.capacity);data.extend_from_slice(&i.data);let ptr=data.as_ptr();let before=data.capacity();let result=if let Some(size)=IntSize::from_wh(i.width,i.height){match OwnedMask::from_vec(data,size){Some(mask)=>("some".into(),mask.data.as_ptr()==ptr,before,mask.data.capacity()),None=>("none".into(),false,before,0)}}else{("none".into(),false,before,0)};mismatches+=usize::from(result!=c.result);}println!("80 actual original owned mask allocation records / {mismatches} mismatches");assert_eq!(mismatches,0);}
 #[derive(Debug,Deserialize)]struct Input{kind:u8,width:u32,height:u32,data:Vec<u8>,rect:Option<[i32;4]>,write:Option<(usize,u8)>}
 type View=(u32,u32,usize,usize,usize,Vec<u8>,Vec<u8>);type Record=(String,Option<View>,Vec<u8>);
 #[derive(Deserialize)]struct Case{input:Input,result:Record}#[derive(Deserialize)]struct Fixture{cases:Vec<Case>}
