@@ -13,6 +13,8 @@ public:
     UnitPatternRef dimenEnd,dimenRest;
     explicit UnitMap(UnitEntries);
     virtual ~UnitMap()=default;
+    UnitMap(const UnitMap&)=delete;
+    UnitMap& operator=(const UnitMap&)=delete;
     virtual UnitMap* set(std::u16string name,double ems);
     virtual Property get(Property name)const;
     virtual bool erase(std::u16string_view name);
@@ -22,6 +24,8 @@ class UnitUtil {
     UnitUtil();
 public:
     std::shared_ptr<UnitMap> UNIT_CASES;
+    UnitUtil(const UnitUtil&)=delete;
+    UnitUtil& operator=(const UnitUtil&)=delete;
     static UnitUtil& instance();
     Dimension matchDimen(Property dim,Property rest=Missing{});
     double dimen2em(Property dim);

@@ -663,6 +663,16 @@
       "expected": "ok|1e+22em"
     },
     {
+      "label": "em:1e+30:false",
+      "cpp": "return u.em(1e+30);",
+      "expected": "ok|1e+3em"
+    },
+    {
+      "label": "em:-1e+30:false",
+      "cpp": "return u.em(-1e+30);",
+      "expected": "ok|-1e+3em"
+    },
+    {
       "label": "em:NaN:false",
       "cpp": "return u.em(std::numeric_limits<double>::quiet_NaN());",
       "expected": "ok|NaNem"
@@ -676,6 +686,311 @@
       "label": "em:-Infinity:false",
       "cpp": "return u.em(-std::numeric_limits<double>::infinity());",
       "expected": "ok|-Infinityem"
+    },
+    {
+      "label": "whitespace-match:9",
+      "cpp": "return shape(u.matchDimen(Property(\"\\t2em\\t\")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:9",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\"\\ta\\t\"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:10",
+      "cpp": "return shape(u.matchDimen(Property(\"\\n2em\\n\")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:10",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\"\\na\\n\"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:11",
+      "cpp": "return shape(u.matchDimen(Property(\"\\u000b2em\\u000b\")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:11",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\"\\u000ba\\u000b\"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:12",
+      "cpp": "return shape(u.matchDimen(Property(\"\\f2em\\f\")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:12",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\"\\fa\\f\"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:13",
+      "cpp": "return shape(u.matchDimen(Property(\"\\r2em\\r\")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:13",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\"\\ra\\r\"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:32",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:32",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:160",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:160",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:5760",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:5760",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8192",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8192",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8193",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8193",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8194",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8194",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8195",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8195",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8196",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8196",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8197",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8197",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8198",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8198",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8199",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8199",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8200",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8200",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8201",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8201",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8202",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8202",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8232",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8232",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8233",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8233",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8239",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8239",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:8287",
+      "cpp": "return shape(u.matchDimen(Property(\" 2em \")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:8287",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\" a \"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:12288",
+      "cpp": "return shape(u.matchDimen(Property(\"　2em　\")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:12288",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\"　a　\"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:65279",
+      "cpp": "return shape(u.matchDimen(Property(\"﻿2em﻿\")));",
+      "expected": "ok|2:em:5"
+    },
+    {
+      "label": "whitespace-trim:65279",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\"﻿a﻿\"))));",
+      "expected": "ok|0061"
+    },
+    {
+      "label": "whitespace-match:133",
+      "cpp": "return shape(u.matchDimen(Property(\"2em\")));",
+      "expected": "ok|N:N:0"
+    },
+    {
+      "label": "whitespace-trim:133",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\"a\"))));",
+      "expected": "ok|0085,0061,0085"
+    },
+    {
+      "label": "whitespace-match:6158",
+      "cpp": "return shape(u.matchDimen(Property(\"᠎2em᠎\")));",
+      "expected": "ok|N:N:0"
+    },
+    {
+      "label": "whitespace-trim:6158",
+      "cpp": "return hex(unit_util_host::text(u.trimSpaces(Property(\"᠎a᠎\"))));",
+      "expected": "ok|180e,0061,180e"
+    },
+    {
+      "label": "rest-truthiness:U",
+      "cpp": "return shape(u.matchDimen(\"2emtail\",Property(Missing{})));",
+      "expected": "ok|N:N:0"
+    },
+    {
+      "label": "rest-truthiness:N",
+      "cpp": "return shape(u.matchDimen(\"2emtail\",Property(PropertyNull{})));",
+      "expected": "ok|N:N:0"
+    },
+    {
+      "label": "rest-truthiness:zero",
+      "cpp": "return shape(u.matchDimen(\"2emtail\",Property(0)));",
+      "expected": "ok|N:N:0"
+    },
+    {
+      "label": "rest-truthiness:empty",
+      "cpp": "return shape(u.matchDimen(\"2emtail\",Property(\"\")));",
+      "expected": "ok|N:N:0"
+    },
+    {
+      "label": "rest-truthiness:one",
+      "cpp": "return shape(u.matchDimen(\"2emtail\",Property(1)));",
+      "expected": "ok|2:em:3"
+    },
+    {
+      "label": "rest-truthiness:string",
+      "cpp": "return shape(u.matchDimen(\"2emtail\",Property(\"rest\")));",
+      "expected": "ok|2:em:3"
+    },
+    {
+      "label": "rest-truthiness:object",
+      "cpp": "return shape(u.matchDimen(\"2emtail\",Property(PropertyList{})));",
+      "expected": "ok|2:em:3"
     },
     {
       "label": "trim:\"\"",
