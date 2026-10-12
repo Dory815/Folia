@@ -8,6 +8,13 @@ import std;
 namespace {
 using namespace folia::math::options;
 
+struct ArrayIteratorState {
+    Value source;
+    std::uint64_t index=0;
+    bool done=false;
+    bool string_iterator=false;
+};
+
 [[noreturn]] void type_error(std::u16string message) {
     throw Exception("TypeError", std::move(message));
 }
@@ -68,11 +75,88 @@ void Context::initializeArrayIntrinsics() {
                                      Descriptor::data(Value(0), true, false, false));
     }
 
-    // Array.prototype.values is present as an identity, but this closed native
-    // profile consumes ordinary iteration through arrayValues() at spread sites.
-    // Direct JS iterator calls are deliberately opaque: the graph has no
-    // iterator/result object protocol or Symbol.iterator intrinsic.
-    register_method(*this, state_->intrinsics.arrayPrototype, u"values", 0);
+    auto& intrinsics=state_->intrinsics;
+    intrinsics.iteratorPrototype=objectWithPrototype(intrinsics.objectPrototype);
+    intrinsics.arrayIteratorPrototype=objectWithPrototype(intrinsics.iteratorPrototype);
+    intrinsics.stringIteratorPrototype=objectWithPrototype(intrinsics.iteratorPrototype);
+    intrinsics.mapIteratorPrototype=objectWithPrototype(intrinsics.iteratorPrototype);
+    const auto iteratorSelf=function(u"[Symbol.iterator]",[](Context&,Value receiver,std::span<const Value>){return receiver;});
+    define(intrinsics.iteratorPrototype,Key(intrinsics.symbolIterator),Descriptor::data(Value(iteratorSelf),true,false,true));
+    const auto iteratorNext=function(u"next",[](Context& context,Value receiver,std::span<const Value>)->Value {
+        const auto* iterator=std::get_if<ObjectRef>(&receiver.data);
+        if(!iterator) type_error(u"Array Iterator next called on incompatible receiver");
+        auto* state=std::any_cast<ArrayIteratorState>(&context.payload(*iterator));
+        if(!state) type_error(u"Array Iterator state is missing");
+        auto result=context.object();
+        if(state->done) {
+            context.define(result,Key(u"value"),Descriptor::data(Value(Undefined{})));
+            context.define(result,Key(u"done"),Descriptor::data(Value(true)));
+            return Value(result);
+        }
+        if(state->string_iterator) {
+            const auto* text=std::get_if<std::u16string>(&state->source.data);
+            if(!text) type_error(u"String iterator state is invalid");
+            if(state->index>=text->size()) {
+                state->done=true;
+                context.define(result,Key(u"value"),Descriptor::data(Value(Undefined{})));
+                context.define(result,Key(u"done"),Descriptor::data(Value(true)));
+                return Value(result);
+            }
+            const std::size_t start=static_cast<std::size_t>(state->index);
+            std::size_t width=1;
+            const char16_t lead=(*text)[start];
+            if(lead>=0xD800&&lead<=0xDBFF&&start+1<text->size()&&(*text)[start+1]>=0xDC00&&(*text)[start+1]<=0xDFFF) width=2;
+            state->index+=width;
+            context.define(result,Key(u"value"),Descriptor::data(Value(text->substr(start,width))));
+            context.define(result,Key(u"done"),Descriptor::data(Value(false)));
+            return Value(result);
+        }
+        const double rawLength=context.toNumber(context.get(state->source,Key(u"length")));
+        const double maxLength=9007199254740991.0;
+        const std::uint64_t length=std::isnan(rawLength)||rawLength<=0 ? 0 :
+            rawLength>=maxLength ? static_cast<std::uint64_t>(maxLength) :
+            static_cast<std::uint64_t>(std::floor(rawLength));
+        if(state->index>=length) {
+            state->done=true;
+            context.define(result,Key(u"value"),Descriptor::data(Value(Undefined{})));
+            context.define(result,Key(u"done"),Descriptor::data(Value(true)));
+            return Value(result);
+        }
+        const std::uint64_t index=state->index++;
+        const auto ascii=std::to_string(index);
+        const Value value=context.get(state->source,Key(std::u16string(ascii.begin(),ascii.end())));
+        context.define(result,Key(u"value"),Descriptor::data(value));
+        context.define(result,Key(u"done"),Descriptor::data(Value(false)));
+        return Value(result);
+    });
+    define(intrinsics.arrayIteratorPrototype,Key(u"next"),Descriptor::data(Value(iteratorNext),true,false,true));
+    const auto values=function(u"values",[](Context& context,Value receiver,std::span<const Value>)->Value {
+        if(std::holds_alternative<Undefined>(receiver.data)||std::holds_alternative<Null>(receiver.data))
+            type_error(u"Array.prototype.values called on null or undefined");
+        auto iterator=context.objectWithPrototype(context.intrinsics().arrayIteratorPrototype);
+        context.payload(iterator)=ArrayIteratorState{receiver,0,false,false};
+        return Value(iterator);
+    });
+    define(values,Key(u"length"),Descriptor::data(Value(0),false,false,true));
+    define(intrinsics.arrayPrototype,Key(u"values"),Descriptor::data(Value(values),true,false,true));
+    define(intrinsics.arrayPrototype,Key(intrinsics.symbolIterator),Descriptor::data(Value(values),true,false,true));
+    const auto stringIterator=function(u"[Symbol.iterator]",[](Context& context,Value receiver,std::span<const Value>)->Value {
+        const auto* text=std::get_if<std::u16string>(&receiver.data);
+        if(!text) type_error(u"String iterator called on incompatible receiver");
+        auto iterator=context.objectWithPrototype(context.intrinsics().stringIteratorPrototype);
+        context.payload(iterator)=ArrayIteratorState{receiver,0,false,true};
+        return Value(iterator);
+    });
+    define(intrinsics.stringPrototype,Key(intrinsics.symbolIterator),Descriptor::data(Value(stringIterator),true,false,true));
+    define(intrinsics.stringIteratorPrototype,Key(u"next"),Descriptor::data(Value(iteratorNext),true,false,true));
+    const auto mapIteratorNext=function(u"next",[](Context& context,Value receiver,std::span<const Value>)->Value {
+        const auto* iterator=std::get_if<ObjectRef>(&receiver.data);
+        if(!iterator) type_error(u"Map Iterator next called on incompatible receiver");
+        const auto* next=std::any_cast<std::function<Value(Context&)>>(&context.payload(*iterator));
+        if(!next||!*next) type_error(u"Map Iterator state is missing");
+        return (*next)(context);
+    });
+    define(intrinsics.mapIteratorPrototype,Key(u"next"),Descriptor::data(Value(mapIteratorNext),true,false,true));
 
     register_method(*this, state_->intrinsics.arrayPrototype, u"indexOf", 1,
         [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
@@ -139,6 +223,65 @@ void Context::initializeArrayIntrinsics() {
             const Value callback=arguments.empty()?Value(Undefined{}):arguments.front();
             const Value thisArgument=arguments.size()>1?arguments[1]:Value(Undefined{});
             return context.arrayMap(*array,callback,thisArgument);
+        });
+
+    register_method(*this, state_->intrinsics.arrayPrototype, u"slice", 2,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            return Value(context.arraySlice(*array,
+                arguments.empty() ? Value(Undefined{}) : arguments[0],
+                arguments.size() < 2 ? Value(Undefined{}) : arguments[1]));
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"reverse", 0,
+        [](Context& context, Value receiver, std::span<const Value>) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            return Value(context.arrayReverse(*array));
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"includes", 1,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            return Value(context.arrayIncludes(*array,
+                arguments.empty() ? Value(Undefined{}) : arguments[0],
+                arguments.size() < 2 ? Value(Undefined{}) : arguments[1]));
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"push", 1,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            return Value(static_cast<double>(context.arrayPush(*array, arguments)));
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"pop", 0,
+        [](Context& context, Value receiver, std::span<const Value>) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            return context.arrayPop(*array);
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"join", 1,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            return Value(context.arrayJoin(*array,
+                arguments.empty() ? Value(Undefined{}) : arguments[0]));
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"fill", 1,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            return Value(context.arrayFill(*array,
+                arguments.empty() ? Value(Undefined{}) : arguments[0],
+                arguments.size() < 2 ? Value(Undefined{}) : arguments[1],
+                arguments.size() < 3 ? Value(Undefined{}) : arguments[2]));
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"find", 1,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            return context.arrayFind(*array,
+                arguments.empty() ? Value(Undefined{}) : arguments[0],
+                arguments.size() < 2 ? Value(Undefined{}) : arguments[1]);
         });
 }
 

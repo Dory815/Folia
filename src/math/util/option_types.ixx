@@ -56,8 +56,14 @@ struct Exception : std::exception {
 };
 class Context;
 using NativeCall = std::function<Value(Context&, Value, std::span<const Value>)>;
+// A registered constructor allocates and returns the actual native instance.
+// It does not receive a substitute plain object as an artificial `this`.
+using NativeConstruct = std::function<ObjectRef(Context&, std::span<const Value>)>;
 struct Intrinsics {
-    ObjectRef objectPrototype, functionPrototype, arrayPrototype, expandablePrototype;
+    SymbolRef symbolSpecies, symbolIterator;
+    ObjectRef objectPrototype, functionPrototype, arrayPrototype, iteratorPrototype,
+              arrayIteratorPrototype, stringIteratorPrototype, mapIteratorPrototype,
+              expandablePrototype;
     ObjectRef numberPrototype, booleanPrototype, stringPrototype, symbolPrototype;
     ObjectRef objectConstructor, functionConstructor, arrayConstructor, expandableConstructor;
     ObjectRef numberConstructor, booleanConstructor, stringConstructor, symbolConstructor;
@@ -87,6 +93,8 @@ public:
     ObjectRef array(std::uint32_t length=0);
     ObjectRef function(std::u16string label, NativeCall callable={}, std::any payload={});
     ObjectRef constructor(std::u16string label, NativeCall callable={}, std::any payload={});
+    ObjectRef nativeConstructor(std::u16string label, NativeConstruct construct,
+                                NativeCall callable={}, std::any payload={});
     ObjectRef instance(ObjectRef constructor, std::any payload={});
     std::any& payload(ObjectRef object);
     ObjectKind kind(ObjectRef object) const;
@@ -106,6 +114,18 @@ public:
     void define(ObjectRef object, const Key& key, Descriptor descriptor);
     void erase(ObjectRef object, const Key& key);
     Value call(ObjectRef function, Value receiver, std::span<const Value> arguments={});
+    Value callMember(Value function, Value receiver, std::span<const Value> arguments={},
+                     std::u16string_view expression=u"value.call");
+    ObjectRef construct(ObjectRef constructor, std::span<const Value> arguments={});
+    double toNumber(const Value& value) const;
+    // These implement the pinned TypeScript helper protocol: getIterator is
+    // __values, iteratorNext is its dynamic next() step, and readIterable is
+    // __read with its bounded-read and IteratorClose semantics.
+    Value getIterator(Value iterable);
+    Value iteratorNext(Value iterator);
+    Value readIterable(Value iterable, std::optional<std::uint32_t> count=std::nullopt);
+    void forEachIterable(Value iterable,const std::function<void(Value)>& body);
+    ObjectRef nativeIterator(std::function<Value(Context&)> next);
     ObjectRef descriptorObject(const Descriptor& descriptor);
     Descriptor descriptorFromObject(Value object);
     std::uint32_t arrayLength(ObjectRef object) const;
@@ -114,5 +134,13 @@ public:
     ObjectRef arrayFilter(ObjectRef object, const std::function<bool(Value)>& predicate);
     void arrayForEach(ObjectRef object, Value callback, Value thisArgument=Undefined{});
     ObjectRef arrayMap(ObjectRef object, Value callback, Value thisArgument=Undefined{});
+    ObjectRef arraySlice(ObjectRef object, Value start=Undefined{}, Value end=Undefined{});
+    ObjectRef arrayReverse(ObjectRef object);
+    bool arrayIncludes(ObjectRef object, Value search, Value fromIndex=Undefined{});
+    std::uint32_t arrayPush(ObjectRef object, std::span<const Value> values);
+    Value arrayPop(ObjectRef object);
+    std::u16string arrayJoin(ObjectRef object, Value separator=Undefined{});
+    ObjectRef arrayFill(ObjectRef object, Value value, Value start=Undefined{}, Value end=Undefined{});
+    Value arrayFind(ObjectRef object, Value callback, Value thisArgument=Undefined{});
 };
 }

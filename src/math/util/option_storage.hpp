@@ -7,6 +7,7 @@ struct Record {
     std::optional<ObjectRef> prototype;
     std::vector<std::pair<Key,Descriptor>> properties;
     NativeCall callable;
+    NativeConstruct construct;
     std::any payload;
     std::u16string label;
 };

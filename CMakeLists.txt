@@ -341,7 +341,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/option_array.cpp)
 target_sources(folia_math PRIVATE
     src/math/util/option_array_iteration.cpp
-    src/math/util/context_property_bindings.cpp)
+    src/math/util/context_property_bindings.cpp
+    src/math/util/option_iterator.cpp)
 
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.

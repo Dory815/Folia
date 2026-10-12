@@ -183,6 +183,8 @@ Context::Context() : state_(std::make_unique<ContextState>()) {
     state_->identity = next_context_identity.fetch_add(1, std::memory_order_relaxed);
     if (state_->identity == 0) state_->identity = next_context_identity.fetch_add(1, std::memory_order_relaxed);
     auto& i = state_->intrinsics;
+    i.symbolSpecies = symbol(u"Symbol.species");
+    i.symbolIterator = symbol(u"Symbol.iterator");
 
     i.objectPrototype = allocate(ObjectKind::object, std::nullopt);
     i.functionPrototype = allocate(ObjectKind::function, i.objectPrototype);
@@ -211,6 +213,11 @@ Context::Context() : state_(std::make_unique<ContextState>()) {
     i.booleanConstructor = make_intrinsic(u"Boolean", 1, i.booleanPrototype);
     i.stringConstructor = make_intrinsic(u"String", 1, i.stringPrototype);
     i.symbolConstructor = make_intrinsic(u"Symbol", 0, i.symbolPrototype);
+
+    const auto arraySpeciesGetter = function(u"get [Symbol.species]",
+        [](Context&, Value receiver, std::span<const Value>) { return receiver; });
+    define(i.arrayConstructor, Key(i.symbolSpecies),
+           Descriptor::access(arraySpeciesGetter, std::nullopt, false, true));
 
     auto link_constructor = [&](ObjectRef prototype, ObjectRef constructor) {
         define(prototype, Key(std::u16string(kConstructor)), Descriptor::data(Value(constructor), true, false, true));
@@ -265,6 +272,21 @@ Context::Context() : state_(std::make_unique<ContextState>()) {
     initialize_constructor_proto(i.stringConstructor, i.stringPrototype);
     initialize_constructor_proto(i.symbolConstructor, i.symbolPrototype);
 
+    // Function.prototype.call is part of the emitted TypeScript helpers' real
+    // property lookup path. Keep it as one ordinary inherited function so
+    // deleting or shadowing `call` is observable by dynamic member calls.
+    const auto function_call = function(u"call",
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            const auto* target = std::get_if<ObjectRef>(&receiver.data);
+            if (!target || context.kind(*target) != ObjectKind::function)
+                type_error(u"Function.prototype.call called on incompatible receiver");
+            const Value this_argument = arguments.empty() ? Value(Undefined{}) : arguments.front();
+            const auto forwarded = arguments.empty() ? std::span<const Value>{} : arguments.subspan(1);
+            return context.call(*target, this_argument, forwarded);
+        });
+    define(function_call, Key(u"length"), Descriptor::data(Value(1), false, false, true));
+    define(i.functionPrototype, Key(u"call"), Descriptor::data(Value(function_call), true, false, true));
+
     initializeArrayIntrinsics();
 }
 
@@ -312,6 +334,21 @@ ObjectRef Context::instance(ObjectRef constructor_ref, std::any payload_value) {
     const auto result = allocate(ObjectKind::instance, prototype_ref);
     record(result).payload = std::move(payload_value);
     return result;
+}
+
+ObjectRef Context::nativeConstructor(std::u16string label, NativeConstruct construct_body,
+                                     NativeCall callable, std::any payload_value) {
+    if (!construct_body) type_error(u"Native constructor has no allocation body");
+    if (!callable) callable = [](Context&, Value, std::span<const Value>) -> Value {
+        throw Exception("Unimplemented", u"Native constructor ordinary-call body is not registered");
+    };
+    const auto result = constructor(std::move(label), std::move(callable), std::move(payload_value));
+    record(result).construct = std::move(construct_body);
+    return result;
+}
+
+double Context::toNumber(const Value& value) const {
+    return primitive_number(value);
 }
 
 std::any& Context::payload(ObjectRef object_ref) { return record(object_ref).payload; }
@@ -659,6 +696,21 @@ Value Context::call(ObjectRef function_ref, Value receiver, std::span<const Valu
     for (const auto& argument : arguments) validate_value(*this, argument);
     if (fn.kind != ObjectKind::function || !fn.callable) type_error(u"Value is not callable in this native context");
     return fn.callable(*this, std::move(receiver), arguments);
+}
+
+ObjectRef Context::construct(ObjectRef constructor_ref, std::span<const Value> arguments) {
+    auto& constructor_record = record(constructor_ref);
+    for (const auto& argument : arguments) validate_value(*this, argument);
+    if (constructor_record.kind != ObjectKind::function)
+        type_error(u"Value is not a constructor");
+    if (!constructor_record.construct)
+        throw Exception("Unimplemented", u"Constructor has no registered native allocation body");
+    // Callback can allocate records or reenter the Context. Keep the callback
+    // alive independently of any bindings it may change during construction.
+    const auto body = constructor_record.construct;
+    const auto result = body(*this, arguments);
+    (void)record(result);
+    return result;
 }
 
 ObjectRef Context::descriptorObject(const Descriptor& descriptor_value) {

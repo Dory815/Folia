@@ -1,0 +1,342 @@
+{
+  "schema": "folia.math.parser-host-semantic-fault-plan.v1",
+  "purpose": "One mutation per row. Apply exactly one anchor replacement, run only the named native candidate, then restore the exact source file and verify the baseline SHA-256 before the next row.",
+  "baselineSha256": {
+    "src/math/util/option_array.cpp": "281EC13640CA56569AE6589312333EB0FB4FE6BB870A582BDD2C77839808B8B1",
+    "src/math/util/option_array_iteration.cpp": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246",
+    "src/math/util/option_iterator.cpp": "88AAE9BD7272A3F83E920298F6BCDDCD65137FCE255A7871AD49C474BF596927",
+    "src/math/util/option_object.cpp": "C2A4FE4E85A75D2E1DBE6BB80BB20F3CF945E08122AB19376771CAC44F57280F"
+  },
+  "rows": [
+    {
+      "id": "slice-species-live-get",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arraySlice",
+      "anchor": "species = get(constructor, Key(intrinsics().symbolSpecies));",
+      "replacement": "species = Undefined{};",
+      "nativeCase": "slice_species_nullish_defaults_and_order",
+      "expectedEffect": "Expected trace loses species:true; output behavior changes when species is non-nullish.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "slice-supported-constructor-species-index-order",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arraySlice",
+      "anchor": "const Value constructor = get(Value(object), Key(u\"constructor\"));",
+      "replacement": "const Value constructor = Undefined{};",
+      "nativeCase": "slice_numeric_bounds_constructor_species_index_order",
+      "expectedEffect": "Constructor and species getters disappear from the expected constructor/species/get0 trace.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "slice-hole-presence-check",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arraySlice",
+      "anchor": "if (!has(Value(object), source)) continue;",
+      "replacement": "if (!has(Value(object), source)) { define(result, ordinary_key(offset), Descriptor::data(Undefined{})); continue; }",
+      "nativeCase": "slice_holes_and_length",
+      "expectedEffect": "Hole at output slot zero becomes an own undefined element instead of H.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "slice-create-data-property",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arraySlice",
+      "anchor": "define(result, ordinary_key(offset), Descriptor::data(value));",
+      "replacement": "set(Value(result), ordinary_key(offset), value);",
+      "nativeCase": "slice_result_owns_data_and_bypasses_prototype_setter",
+      "expectedEffect": "Inherited Array.prototype slot setter runs or output lacks the required own W/E/C data descriptor.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "reverse-lower-before-upper-has",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayReverse",
+      "anchor": "const bool lower_exists = has(receiver, lower_key);\n        Value lower_value = Undefined{};\n        if (lower_exists) lower_value = get(receiver, lower_key);\n        const bool upper_exists = has(receiver, upper_key);",
+      "replacement": "const bool lower_exists = has(receiver, lower_key);\n        const bool upper_exists = has(receiver, upper_key);\n        Value lower_value = Undefined{};\n        if (lower_exists) lower_value = get(receiver, lower_key);",
+      "nativeCase": "reverse_lower_get_mutates_upper_before_test",
+      "expectedEffect": "The upper Has occurs before lower getter deletes slot 1; mutated value/hole outcome diverges.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "reverse-both-hole-presence",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayReverse",
+      "anchor": "if (lower_exists && upper_exists) {",
+      "replacement": "if (true) {",
+      "nativeCase": "reverse_two_sided_holes",
+      "expectedEffect": "An all-hole pair is treated as present and writes undefined slots.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "reverse-lower-only-delete",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayReverse",
+      "anchor": "} else if (lower_exists && !upper_exists) {\n            erase(object, lower_key);",
+      "replacement": "} else if (lower_exists && !upper_exists) {\n            (void)lower_key;",
+      "nativeCase": "reverse_moves_lower_only_slot",
+      "expectedEffect": "Original lower slot remains instead of becoming a hole.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "reverse-upper-only-delete",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayReverse",
+      "anchor": "} else if (!lower_exists && upper_exists) {\n            set(receiver, lower_key, upper_value);\n            erase(object, upper_key);",
+      "replacement": "} else if (!lower_exists && upper_exists) {\n            set(receiver, lower_key, upper_value);",
+      "nativeCase": "reverse_moves_one_sided_slots",
+      "expectedEffect": "Original upper slot remains instead of becoming a hole.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "reverse-write-order",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayReverse",
+      "anchor": "set(receiver, lower_key, upper_value);\n            set(receiver, upper_key, lower_value);",
+      "replacement": "set(receiver, upper_key, lower_value);\n            set(receiver, lower_key, upper_value);",
+      "nativeCase": "reverse_live_pair_order_and_holes",
+      "expectedEffect": "Accessor setter trace becomes set1/set0 rather than set0/set1.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "reverse-stop-after-setter-error",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayReverse",
+      "anchor": "set(receiver, lower_key, upper_value);\n            set(receiver, upper_key, lower_value);",
+      "replacement": "try { set(receiver, lower_key, upper_value); } catch (...) {}\n            set(receiver, upper_key, lower_value);",
+      "nativeCase": "reverse_lower_set_throw_stops_before_upper_set",
+      "expectedEffect": "The exception is swallowed and the method proceeds to the upper Set.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "includes-holes-are-get-undefined",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayIncludes",
+      "anchor": "if (same_value_zero(get(receiver, ordinary_key(index)), search)) return true;",
+      "replacement": "if (has(receiver, ordinary_key(index)) && same_value_zero(get(receiver, ordinary_key(index)), search)) return true;",
+      "nativeCase": "includes_hole_matches_undefined",
+      "expectedEffect": "Searching undefined in a sparse array changes from true to false.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "includes-same-value-zero",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayIncludes",
+      "anchor": "same_value_zero(get(receiver, ordinary_key(index)), search)",
+      "replacement": "get(receiver, ordinary_key(index)) == search",
+      "nativeCase": "includes_nan_uses_samevaluezero",
+      "expectedEffect": "NaN search changes from true to false.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "includes-string-to-number",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayIncludes",
+      "anchor": "const double number = toNumber(fromIndex);",
+      "replacement": "const double number = 0;",
+      "nativeCase": "includes_from_index_string_to_number",
+      "expectedEffect": "Searching zero with offset '1' returns false; ignoring the string conversion starts at index zero and returns true.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "includes-empty-before-from-index-coercion",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayIncludes",
+      "anchor": "if (length == 0) return false;",
+      "replacement": "/* fault: omit early return */",
+      "nativeCase": "includes_zero_length_skips_symbol_conversion",
+      "expectedEffect": "Empty array evaluates Symbol ToNumber and throws instead of returning false.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "push-final-length-after-sequential-sets",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayPush",
+      "anchor": "set(receiver, Key(u\"length\"), Value(static_cast<double>(length)));",
+      "replacement": "/* fault: omit final length Set */",
+      "nativeCase": "push_max_length_writes_tail_then_range_errors",
+      "expectedEffect": "After tail creation RangeError, length does not remain source-compatible.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "push-sequential-index-order",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayPush",
+      "anchor": "set(receiver, Key(ordinary_index(length)), value);",
+      "replacement": "set(receiver, Key(ordinary_index(length + 1)), value);",
+      "nativeCase": "push_partial_write_before_inherited_setter_throw",
+      "expectedEffect": "First pushed value is misplaced and inherited setter is reached at the wrong index.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "pop-get-before-delete",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayPop",
+      "anchor": "const Value result = get(Value(object), key);\n    erase(object, key);",
+      "replacement": "erase(object, key);\n    const Value result = get(Value(object), key);",
+      "nativeCase": "pop_get_delete_then_length",
+      "expectedEffect": "Getter is bypassed or reads after deletion; result/trace differs.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "pop-delete-before-length",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayPop",
+      "anchor": "erase(object, key);\n    set(Value(object), Key(u\"length\"), Value(static_cast<double>(index)));",
+      "replacement": "set(Value(object), Key(u\"length\"), Value(static_cast<double>(index)));\n    erase(object, key);",
+      "nativeCase": "pop_deletes_tail_before_readonly_length_failure",
+      "expectedEffect": "Setting readonly length before Delete leaves the configurable tail present; Source deletes it before the failed length write.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "pop-hole-inherited-get",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayPop",
+      "anchor": "const Value result = get(Value(object), key);",
+      "replacement": "const Value result = Undefined{};",
+      "nativeCase": "pop_hole_gets_inherited_value",
+      "expectedEffect": "Pop returns undefined instead of inherited value 9.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "join-captured-length",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayJoin",
+      "anchor": "for (std::uint64_t index = 0; index < length; ++index) {",
+      "replacement": "for (std::uint64_t index = 0; index < arrayLength(object); ++index) {",
+      "nativeCase": "join_hole_gets_and_captured_length",
+      "expectedEffect": "Index 2 added by getter at index 0 is incorrectly included in output.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "join-nullish-element-empty",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayJoin",
+      "anchor": "if (std::holds_alternative<Undefined>(value.data) || std::holds_alternative<Null>(value.data)) continue;",
+      "replacement": "if (false) continue;",
+      "nativeCase": "join_nullish_separator_and_primitives",
+      "expectedEffect": "Null/undefined emit text instead of empty fields.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "fill-end-exclusive",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayFill",
+      "anchor": "index < final; ++index",
+      "replacement": "index <= final; ++index",
+      "nativeCase": "fill_fractional_and_infinite_bounds",
+      "expectedEffect": "End index is incorrectly filled; exact sparse/result summary differs.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "fill-partial-set-kept-on-error",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayFill",
+      "anchor": "set(Value(object), ordinary_key(index), value);",
+      "replacement": "if (false) set(Value(object), ordinary_key(index), value);",
+      "nativeCase": "fill_partial_set_via_own_accessor",
+      "expectedEffect": "First index is not written before the second-index setter throws.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "find-visits-holes",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayFind",
+      "anchor": "const Value value = get(receiver, ordinary_key(index));",
+      "replacement": "if (!has(receiver, ordinary_key(index))) continue;\n        const Value value = get(receiver, ordinary_key(index));",
+      "nativeCase": "find_hole_callback_returns_undefined_value",
+      "expectedEffect": "Callback is skipped for index zero hole and callback's matching undefined return is lost.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "find-captured-length",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayFind",
+      "anchor": "for (std::uint64_t index = 0; index < length; ++index) {",
+      "replacement": "for (std::uint64_t index = 0; index < arrayLength(object); ++index) {",
+      "nativeCase": "find_shrink_still_gets_captured_slots",
+      "expectedEffect": "Later captured indices are skipped after callback shrinks array length.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "find-return-matched-value",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayFind",
+      "anchor": "if (truthy(call(function, thisArgument, arguments))) return value;",
+      "replacement": "if (truthy(call(function, thisArgument, arguments))) return Value(true);",
+      "nativeCase": "find_hole_callback_returns_undefined_value",
+      "expectedEffect": "Matched hole result changes from Undefined to boolean true.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "find-callback-receiver",
+      "source": "src/math/util/option_array_iteration.cpp",
+      "method": "Context::arrayFind",
+      "anchor": "call(function, thisArgument, arguments)",
+      "replacement": "call(function, Value(Undefined{}), arguments)",
+      "nativeCase": "find_reads_holes_and_passes_exact_callback_arguments",
+      "expectedEffect": "Callback receiver no longer equals the supplied sentinel.",
+      "restoreSha256": "ABB80AA6B00946CFCAF4E61AC0BED1E8F8AA4B1C68D718D8C8F098C0E5E90246"
+    },
+    {
+      "id": "iterator-dynamic-function-call-property",
+      "source": "src/math/util/option_iterator.cpp",
+      "method": "Context::callMember",
+      "anchor": "const Value callableProperty=get(function,Key(u\"call\"));",
+      "replacement": "const Value callableProperty=Value(function);",
+      "nativeCase": "source_helper_does_not_bypass_deleted_call",
+      "expectedEffect": "Deleted own/inherited Function.prototype.call is bypassed instead of producing m.call TypeError.",
+      "restoreSha256": "88AAE9BD7272A3F83E920298F6BCDDCD65137FCE255A7871AD49C474BF596927"
+    },
+    {
+      "id": "read-bounded-count-and-close",
+      "source": "src/math/util/option_iterator.cpp",
+      "method": "Context::readIterable",
+      "anchor": "while(!count||read<*count) {",
+      "replacement": "while(!count||read<=*count) {",
+      "nativeCase": "source_read_bounded_iterator_closes_after_requested_values",
+      "expectedEffect": "A third next is called instead of closing after the requested two values.",
+      "restoreSha256": "88AAE9BD7272A3F83E920298F6BCDDCD65137FCE255A7871AD49C474BF596927"
+    },
+    {
+      "id": "read-no-iterator-identity",
+      "source": "src/math/util/option_iterator.cpp",
+      "method": "Context::readIterable",
+      "anchor": "if(!truthy(method)) return iterable;",
+      "replacement": "if(!truthy(method)) return Value(array());",
+      "nativeCase": "source_read_without_iterator_returns_original_identity",
+      "expectedEffect": "Returned array identity differs from the original tuple.",
+      "restoreSha256": "88AAE9BD7272A3F83E920298F6BCDDCD65137FCE255A7871AD49C474BF596927"
+    },
+    {
+      "id": "values-fallback-live-length",
+      "source": "src/math/util/option_iterator.cpp",
+      "method": "Context::getIterator fallback next",
+      "anchor": "const double currentLength=context.toNumber(context.get(source,Key(u\"length\")));",
+      "replacement": "const double currentLength=1;",
+      "nativeCase": "source_values_arraylike_fallback_reads_dynamic_length_and_get",
+      "expectedEffect": "Dynamic extension at index 1 is missed and the live length getter is not reread.",
+      "restoreSha256": "88AAE9BD7272A3F83E920298F6BCDDCD65137FCE255A7871AD49C474BF596927"
+    },
+    {
+      "id": "iterator-close-prior-error-wins",
+      "source": "src/math/util/option_iterator.cpp",
+      "method": "Context::readIterable",
+      "anchor": "if(!error) error=std::current_exception();",
+      "replacement": "error=std::current_exception();",
+      "nativeCase": "source_read_iterator_error_after_yield_precedes_close_error",
+      "expectedEffect": "After a prior yielded step, abrupt next() invokes return(); the original next-fault still wins over close-fault.",
+      "restoreSha256": "88AAE9BD7272A3F83E920298F6BCDDCD65137FCE255A7871AD49C474BF596927"
+    },
+    {
+      "id": "for-of-closes-after-body-error",
+      "source": "src/math/util/option_iterator.cpp",
+      "method": "Context::forEachIterable",
+      "anchor": "if(truthy(step)&&!truthy(get(step,Key(u\"done\")))) {",
+      "replacement": "if(false) {",
+      "nativeCase": "source_for_of_body_error_closes_current_iterator",
+      "expectedEffect": "Iterator return is not called after a body abrupt completion.",
+      "restoreSha256": "88AAE9BD7272A3F83E920298F6BCDDCD65137FCE255A7871AD49C474BF596927"
+    }
+  ]
+}
