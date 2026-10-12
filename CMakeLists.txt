@@ -211,6 +211,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/prioritized_list.ixx
     src/math/util/property_host.ixx
     src/math/util/promise.ixx
+    src/math/util/retries.ixx
     src/math/util/function_types.ixx
     src/math/util/function_list.ixx
     src/math/util/option_functions.ixx
@@ -342,7 +343,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
 target_sources(folia_math PRIVATE
     src/math/util/option_array_iteration.cpp
     src/math/util/context_property_bindings.cpp
-    src/math/util/option_iterator.cpp)
+    src/math/util/option_iterator.cpp
+    src/math/util/retries.cpp)
 
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
@@ -425,6 +427,14 @@ endif()
 # Boost.UT parses positional test-name patterns and CLI options. For example,
 # `FoliaTests.exe "*name*"` filters by name; `-t` lists tags.
 add_test(NAME FoliaTests COMMAND FoliaTests)
+
+add_executable(FoliaMathRetryTests EXCLUDE_FROM_ALL
+    tests/main.cpp
+    tools/math-port/parser-family-reference/retries-native-candidate.cpp)
+target_compile_features(FoliaMathRetryTests PRIVATE cxx_std_23)
+set_target_properties(FoliaMathRetryTests PROPERTIES CXX_MODULE_STD ON CXX_SCAN_FOR_MODULES ON)
+target_include_directories(FoliaMathRetryTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(FoliaMathRetryTests PRIVATE folia_math Boost::ut_module)
 
 if(TARGET folia_platform)
     add_executable(FoliaWindowsEditorTests)
