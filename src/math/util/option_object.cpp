@@ -52,7 +52,7 @@ void validate_key(const Context& context, const Key& key) {
     }
 }
 
-void validate_value(Context& context, const Value& value) {
+void validate_value(const Context& context, const Value& value) {
     if (const auto* object = std::get_if<ObjectRef>(&value.data)) (void)context.kind(*object);
     if (const auto* symbol = std::get_if<SymbolRef>(&value.data)) (void)context.symbolString(*symbol);
 }
@@ -429,7 +429,7 @@ std::vector<std::u16string> Context::enumerableStringKeys(Value object_value) co
     for (const auto& key : ownKeys(object_value)) {
         const auto* text = std::get_if<std::u16string>(&key.data);
         if (!text) continue;
-        const auto property = descriptor(object_value, key);
+        const auto property = rawDescriptor(object_value, key);
         if (property && property->enumerable) result.push_back(*text);
     }
     return result;
@@ -443,7 +443,7 @@ std::vector<SymbolRef> Context::ownSymbols(Value object_value) const {
     return result;
 }
 
-std::optional<Descriptor> Context::descriptor(Value object_value, const Key& key) const {
+std::optional<Descriptor> Context::rawDescriptor(Value object_value, const Key& key) const {
     validate_key(*this, key);
     if (is_nullish(object_value)) type_error(u"Cannot convert null or undefined to object");
     if (const auto* symbol_ref = std::get_if<SymbolRef>(&object_value.data)) (void)symbolString(*symbol_ref);
@@ -463,11 +463,26 @@ std::optional<Descriptor> Context::descriptor(Value object_value, const Key& key
     return std::nullopt;
 }
 
-bool Context::hasOwn(Value object_value, const Key& key) const { return descriptor(std::move(object_value), key).has_value(); }
+NativeDataFieldRef Context::nativeDataField(ObjectRef object,const Key& key)const{
+    for(const auto& [name,field]:record(object).nativeFields)if(name==key)return field;
+    return {};
+}
+
+std::optional<Descriptor> Context::descriptor(Value object_value,const Key& key)const{
+    auto result=rawDescriptor(object_value,key);
+    if(result&&!result->accessor)if(const auto* object=std::get_if<ObjectRef>(&object_value.data))
+        if(auto field=nativeDataField(*object,key)){
+            result->value=field->read();
+            validate_value(*this,result->value);
+        }
+    return result;
+}
+
+bool Context::hasOwn(Value object_value, const Key& key) const { return rawDescriptor(std::move(object_value), key).has_value(); }
 
 bool Context::has(Value object_value, const Key& key) const {
     if (is_nullish(object_value)) type_error(u"Cannot convert null or undefined to object");
-    if (descriptor(object_value, key)) return true;
+    if (rawDescriptor(object_value, key)) return true;
     const auto* object_ref = std::get_if<ObjectRef>(&object_value.data);
     auto cursor = object_ref ? record(*object_ref).prototype : std::optional<ObjectRef>{};
     if (!object_ref) {
@@ -477,7 +492,7 @@ bool Context::has(Value object_value, const Key& key) const {
         else if (std::holds_alternative<SymbolRef>(object_value.data)) cursor = state_->intrinsics.symbolPrototype;
     }
     while (cursor) {
-        if (descriptor(Value(*cursor), key)) return true;
+        if (rawDescriptor(Value(*cursor), key)) return true;
         cursor = record(*cursor).prototype;
     }
     return false;
@@ -536,6 +551,10 @@ void Context::set(Value object_value, const Key& key, Value value) {
             return;
         }
         if (!own->writable) type_error(u"Cannot assign to read only property");
+        if(auto field=nativeDataField(*object_ref,key)){
+            field->write(std::move(value));
+            return;
+        }
         if (target.kind == ObjectKind::array && key_is(key, kLength)) {
             const auto requested = primitive_number(value);
             if (!std::isfinite(requested) || requested < 0 || requested > 4294967295.0 || std::trunc(requested) != requested) range_error();
@@ -658,6 +677,12 @@ void Context::define(ObjectRef object_ref, const Key& key, Descriptor new_descri
 
     auto existing = find_own();
     if (existing == target.properties.end()) {
+        if(auto field=nativeDataField(object_ref,key)){
+            if(new_descriptor.accessor)
+                throw Exception("Unimplemented",u"Replacing a native data field with an accessor requires its native owner operation");
+            field->write(std::move(new_descriptor.value));
+            new_descriptor.value=Undefined{};
+        }
         target.properties.emplace_back(key, std::move(new_descriptor));
         if (grows_array_length) {
             const auto length = std::find_if(target.properties.begin(), target.properties.end(), [](const auto& pair) { return key_is(pair.first, kLength); });
@@ -665,19 +690,44 @@ void Context::define(ObjectRef object_ref, const Key& key, Descriptor new_descri
         }
         return;
     }
-    const auto& old = existing->second;
+    const auto old = existing->second;
     if (!old.configurable) {
         if (new_descriptor.configurable || new_descriptor.enumerable != old.enumerable ||
             !data_descriptor_compatible(old, new_descriptor)) type_error(u"Cannot redefine non-configurable property");
-        if (!old.accessor && !old.writable && (new_descriptor.writable || !sameValue(old.value, new_descriptor.value))) {
+        const auto field=nativeDataField(object_ref,key);
+        const Value oldValue=field&&!old.accessor&&!old.writable?field->read():old.value;
+        if (!old.accessor && !old.writable && (new_descriptor.writable || !sameValue(oldValue, new_descriptor.value))) {
             type_error(u"Cannot redefine non-writable property");
         }
+    }
+    if(auto field=nativeDataField(object_ref,key)){
+        if(new_descriptor.accessor)
+            throw Exception("Unimplemented",u"Replacing a native data field with an accessor requires its native owner operation");
+        if(old.configurable||old.writable)field->write(std::move(new_descriptor.value));
+        // The ordinary descriptor stores metadata, never the owner's value.
+        new_descriptor.value=Undefined{};
+        existing=find_own();
+        if(existing==target.properties.end())type_error(u"Native field changed its own descriptor during definition");
     }
     existing->second = std::move(new_descriptor);
     if (grows_array_length) {
         const auto length = std::find_if(target.properties.begin(), target.properties.end(), [](const auto& pair) { return key_is(pair.first, kLength); });
         length->second.value = Value(static_cast<double>(*array_index(std::get<std::u16string>(key.data)) + 1));
     }
+}
+
+void Context::bindData(ObjectRef object,const Key& key,NativeDataFieldRef field,
+                       bool writable,bool enumerable,bool configurable){
+    auto& target=record(object);
+    validate_key(*this,key);
+    if(!field)type_error(u"Native data field is null");
+    if(target.kind==ObjectKind::array)
+        throw Exception("Unimplemented",u"Native array storage requires a complete array record binding");
+    if(rawDescriptor(Value(object),key))type_error(u"Native data field already has an own property");
+    if(nativeDataField(object,key))type_error(u"Native data field already has its actual owner binding");
+    target.properties.emplace_back(key,Descriptor::data(Undefined{},writable,enumerable,configurable));
+    try{target.nativeFields.emplace_back(key,std::move(field));}
+    catch(...){target.properties.pop_back();throw;}
 }
 
 void Context::erase(ObjectRef object_ref, const Key& key) {
@@ -687,6 +737,16 @@ void Context::erase(ObjectRef object_ref, const Key& key) {
     if (found == target.properties.end()) return;
     if (!found->second.configurable) type_error(u"Cannot delete non-configurable property");
     if (target.kind == ObjectKind::array && key_is(key, kLength)) type_error(u"Cannot delete array length");
+    if(auto field=nativeDataField(object_ref,key)){
+        field->remove();
+        // Keep the actual class field binding when its Source own property
+        // disappears. A later data-property definition uses this same cell;
+        // it must not become a detached Context value beside the C++ field.
+        // The owner operation can reenter; locate the property again.
+        const auto current=std::find_if(target.properties.begin(),target.properties.end(),[&](const auto& pair){return pair.first==key;});
+        if(current!=target.properties.end())target.properties.erase(current);
+        return;
+    }
     target.properties.erase(found);
 }
 

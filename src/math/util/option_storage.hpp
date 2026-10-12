@@ -6,6 +6,7 @@ struct Record {
     ObjectKind kind = ObjectKind::object;
     std::optional<ObjectRef> prototype;
     std::vector<std::pair<Key,Descriptor>> properties;
+    std::vector<std::pair<Key,NativeDataFieldRef>> nativeFields;
     NativeCall callable;
     NativeConstruct construct;
     std::any payload;

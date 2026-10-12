@@ -216,6 +216,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/function_list.ixx
     src/math/util/option_functions.ixx
     src/math/util/context_property_bindings.ixx
+    src/math/util/native_data_fields.ixx
     src/math/util/native_identities.ixx
     src/math/util/js_number.ixx
     src/math/util/js_numeric_input.ixx

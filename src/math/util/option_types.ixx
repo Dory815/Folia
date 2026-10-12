@@ -55,6 +55,27 @@ struct Exception : std::exception {
     const char* what() const noexcept override { return "Native MathJax option exception"; }
 };
 class Context;
+// Internal native data-cell view. Its value lives only in the real owner;
+// this host binding is not a JavaScript accessor or a second value store.
+class NativeDataField {
+    std::shared_ptr<void> owner_;
+    std::function<Value()> read_;
+    std::function<void(Value)> write_;
+    std::function<void()> remove_;
+public:
+    NativeDataField(std::shared_ptr<void> owner,std::function<Value()> read,
+                    std::function<void(Value)> write,std::function<void()> remove={})
+        :owner_(std::move(owner)),read_(std::move(read)),write_(std::move(write)),remove_(std::move(remove)){
+        if(!owner_||!read_||!write_)throw Exception("TypeError",u"Native data field requires its actual owner and read/write operations");
+    }
+    Value read()const{return read_();}
+    void write(Value value){write_(std::move(value));}
+    void remove(){
+        if(!remove_)throw Exception("Unimplemented",u"Native data field has no Source deletion operation");
+        remove_();
+    }
+};
+using NativeDataFieldRef=std::shared_ptr<NativeDataField>;
 using NativeCall = std::function<Value(Context&, Value, std::span<const Value>)>;
 // A registered constructor allocates and returns the actual native instance.
 // It does not receive a substitute plain object as an artificial `this`.
@@ -80,6 +101,8 @@ class Context {
     std::unique_ptr<ContextState> state_;
     Record& record(ObjectRef object) const;
     ObjectRef allocate(ObjectKind kind, std::optional<ObjectRef> prototype);
+    std::optional<Descriptor> rawDescriptor(Value,const Key&)const;
+    NativeDataFieldRef nativeDataField(ObjectRef,const Key&)const;
     void initializeArrayIntrinsics();
 public:
     Context();
@@ -112,6 +135,10 @@ public:
     Value get(Value object, const Key& key);
     void set(Value object, const Key& key, Value value);
     void define(ObjectRef object, const Key& key, Descriptor descriptor);
+    // Install at the Source own-field initialization point. Metadata belongs
+    // to the ordinary record; all data reads/writes reach the native owner.
+    void bindData(ObjectRef object,const Key& key,NativeDataFieldRef,
+                  bool writable=true,bool enumerable=true,bool configurable=true);
     void erase(ObjectRef object, const Key& key);
     Value call(ObjectRef function, Value receiver, std::span<const Value> arguments={});
     Value callMember(Value function, Value receiver, std::span<const Value> arguments={},
