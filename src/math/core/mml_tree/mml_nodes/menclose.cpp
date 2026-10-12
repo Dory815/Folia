@@ -11,8 +11,15 @@ import std;
 namespace folia::math::mml {
 
 NodeValue MmlMenclose::setTeXclass(NodeValue previous) {
-    // P23f Root stub: MmlMenclose::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    previous = host::arithmeticChild(*this, 0, "setTeXclass").setTeXclass(previous);
+
+    // The upstream method reads childNodes[0] again after the callback, so
+    // retain the live-array receiver only for this fresh slot lookup.
+    const auto children = this->childNodes;
+    if (!children) host::typeError("Cannot read properties of null (reading '0')");
+    updateTeXclass(children->get(0));
+    return previous;
 }
 
 } // namespace folia::math::mml

@@ -11,8 +11,16 @@ import std;
 namespace folia::math::mml {
 
 NodeValue MmlMpadded::setTeXclass(NodeValue previous) {
-    // P23f Root stub: MmlMpadded::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    if (!host::truthy(getProperty("vbox"))) {
+        return AbstractMmlLayoutNode::setTeXclass(previous);
+    }
+
+    getPrevClass(previous);
+    setTexClass(Property(static_cast<double>(TEXCLASS.ORD)));
+    host::arithmeticChild(*this, 0, "setTeXclass")
+        .setTeXclass(NodeValue(PropertyNull{}));
+    return this;
 }
 
 } // namespace folia::math::mml
