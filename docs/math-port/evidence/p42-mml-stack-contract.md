@@ -65,7 +65,7 @@ temporaries wherever C++ argument evaluation would lose Source order.
 ## Acceptance
 
 The Root oracle executes pinned original compiled methods with hash-checked TS
-and locked CJS. The 74 complete observations compare return states, array holes,
+and locked CJS. The 76 complete observations compare return states, array holes,
 aliases, virtual dispatch, ordering, partial effects and exact errors. Required
 gate: compiled stub fails assertions (not compiler errors), completed body passes
 all original records, independent compiling semantic faults are detected, and

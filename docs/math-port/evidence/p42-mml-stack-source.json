@@ -141,7 +141,7 @@
   },
   {
     "label": "first-get-captures-array",
-    "cpp": "std::array<NodeValue,2> values{a,b};s.Push(values);auto old=s.array();s.sizeHook=[&](){trace.push_back(\"size-clear\");s.Clear();return 2;};return tag(s.First())+\":\"+snap(old)+\":\"+snap(s.array());",
+    "cpp": "std::array<NodeValue,2> values{a,b};s.Push(values);auto old=s.array();s.sizeHook=[&](){trace.push_back(\"size-clear\");s.Clear();return 2;};auto first=s.First();return tag(first)+\":\"+snap(old)+\":\"+snap(s.array());",
     "expected": "ok|mn:len=2;mi,mn:len=0;|size-clear"
   },
   {
@@ -151,7 +151,7 @@
   },
   {
     "label": "peek-captures-array",
-    "cpp": "std::array<NodeValue,2> values{a,b};s.Push(values);auto old=s.array();s.sizeHook=[&](){trace.push_back(\"size-clear\");s.Clear();return 2;};return snap(s.Peek(1))+\":\"+snap(old)+\":\"+snap(s.array());",
+    "cpp": "std::array<NodeValue,2> values{a,b};s.Push(values);auto old=s.array();s.sizeHook=[&](){trace.push_back(\"size-clear\");s.Clear();return 2;};auto peek=s.Peek(1);return snap(peek)+\":\"+snap(old)+\":\"+snap(s.array());",
     "expected": "ok|len=1;mn:len=2;mi,mn:len=0;|size-clear"
   },
   {
@@ -368,5 +368,15 @@
     "label": "null-array-virtual-order:Peek",
     "cpp": "Probe other(trace,{});other.sizeHook=[&](){trace.push_back(\"size\");return 0;};other.Peek();return \"ok\";",
     "expected": "TypeError|Cannot read properties of null (reading 'slice')|THREW|"
+  },
+  {
+    "label": "first-inherited-named",
+    "cpp": "auto parent=std::make_shared<tree::ChildArray<MmlNode>>();parent->setProperty(\"-1\",b);s.array()->setPrototype(parent);auto before=tag(s.First());s.setFirst(c);return before+\":\"+tag(s.First())+\":\"+tag(parent->getProperty(\"-1\"))+\":\"+snap(s.array());",
+    "expected": "ok|mn:mo:mn:len=0;|"
+  },
+  {
+    "label": "raw-nodes-not-accessor",
+    "cpp": "auto old=s.array();s.nodesHook=[]()->Children{throw Error(\"Error\",u\"unexpected nodes getter\");};std::array<NodeValue,2> values{a,b};s.Push(values);s.setFirst(c);s.setLast(a);auto first=s.First();auto last=s.Last();auto peek=s.Peek(2);auto popped=s.Pop();auto size=s.Size();auto mml=s.toMml();auto result=tag(first)+\":\"+tag(last)+\":\"+snap(peek)+\":\"+tag(popped)+\":\"+val(Property(size))+\":\"+tag(mml);s.Clear();return result+\":\"+val(Property(s.Size()))+\":\"+snap(old);",
+    "expected": "ok|mo:mi:len=2;mi,mo:mo:1:mi:0:len=1;mi|"
   }
 ]
