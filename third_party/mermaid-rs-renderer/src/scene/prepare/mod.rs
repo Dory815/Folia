@@ -27,3 +27,4 @@ pub mod sweep_program;
 
 pub mod blend_policy_types;
 pub mod blend_policy;
+pub mod blitter;

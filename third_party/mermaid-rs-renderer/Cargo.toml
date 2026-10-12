@@ -204,3 +204,11 @@ path = "tests/shader_public_parity.rs"
 [[test]]
 name = "blitter_policy_parity"
 path = "tests/blitter_policy_parity.rs"
+
+[[test]]
+name = "borrowed_surfaces_parity"
+path = "tests/borrowed_surfaces_parity.rs"
+
+[[test]]
+name = "borrowed_size_parity"
+path = "tests/borrowed_size_parity.rs"
