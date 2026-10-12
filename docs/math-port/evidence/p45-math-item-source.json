@@ -258,6 +258,11 @@
       "expected": "ok|124|render:125"
     },
     {
+      "label": "rerender-live-actions-after-state",
+      "cpp": "Actions other;other.mathHook=[&](auto&,auto,Property n){trace.push_back(\"live-render:\"+val(n));};x.forceRaw(200);x.stateHook=[&](Property n,Property r){if(!n.missing())doc.actionsHook=[&](){return core::MathRenderActionsReference(&other);};return x.AbstractMathItem::state(n,r);};x.rerender(&doc);return val(x.raw());",
+      "expected": "ok|124|live-render:125"
+    },
+    {
       "label": "convert:U",
       "cpp": "x.convert(&doc,Property(Missing{}));return \"ok\";",
       "expected": "ok|ok|convert:10000"
@@ -366,6 +371,11 @@
       "label": "typeset-error-retains-output",
       "cpp": "x.typesetRoot=output2;output.typesetHook=[](auto&,auto)->core::MathOutput{throw Error(\"Error\",u\"typeset\");};try{x.typeset(&doc);}catch(const Error&){return outputName(x.typesetRoot)+\":\"+val(x.raw());}return \"bad\";",
       "expected": "ok|two:0|"
+    },
+    {
+      "label": "typeset-output-before-setter-error",
+      "cpp": "x.stateHook=[&](Property n,Property r)->Property{if(!n.missing())throw Error(\"Error\",u\"state\");return x.AbstractMathItem::state(n,r);};try{x.typeset(&doc);}catch(const Error&){return outputName(x.typesetRoot)+\":\"+val(x.raw());}return \"bad\";",
+      "expected": "ok|one:0|typeset"
     },
     {
       "label": "doc-nullish:render:U",
