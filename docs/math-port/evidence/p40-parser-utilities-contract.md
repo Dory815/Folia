@@ -11,7 +11,7 @@ AST, interpreter, generic JavaScript engine or formula-specific shortcuts.
 
 ## File ownership
 
-- Root: `node_util.ixx`, its four local receiver helpers, attrs membership and
+- Root: `node_util.ixx`, its local receiver/property-access helpers, attrs membership and
   shared service; `tex_error.ixx`; complete fixed-pattern host
   `tex_error_pattern.ixx`; CMake; all fixtures and acceptance documents.
 - Luna mml_row_mi: only the 21 newly stubbed semantic methods in
