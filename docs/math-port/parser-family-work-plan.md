@@ -20,7 +20,8 @@ Concurrent exclusive ownership:
 2. Tags worker: complete actual Tags/AbstractTags/NoTags/AllTags/TagsFactory in
    tags.cpp, actual ColumnParser in column_parser.cpp, their interface corrections
    and a portable URI encoder if Source formatUrl requires one.
-3. Original verification worker: independent executable observers against the
+3. TexParser/ParseUtil worker: complete actual TexParser, ParseUtil and
+   KeyValueDef bodies and module initialization, alongside independent executable observers against the
    pinned actual Configuration/Tags/ColumnParser classes; coverage and identity/
    getter/priority/lifetime/error observations, original gold and native fixture
    design. Observe real original peers; never use fake TexParser or TeX to make
@@ -50,6 +51,21 @@ fixtures stay under tools/math-port/parser-family-reference until their actual
 peer dependencies are available; then Root enables them in the normal core target.
 Workers do not stop after a plan or one method: continue through the full assigned
 class/file responsibilities, original observer coverage and dependency report.
+
+The configuration worker also owns the complete ordinary Array host packet
+(slice, reverse, includes, push, pop, join, fill and find), its frozen original
+observations and corresponding native cases. Follow-on ownership is the generic
+iterator protocol and its real Configuration consumers; package-specific loops
+are not a substitute for the Source iterator helpers. Root owns the shared
+native construct dispatch and runtime integration. Tags owns its class
+prototype registration hook as part of the actual Tags module, preserving
+AbstractTags/NoTags/AllTags inheritance and emitted-CJS descriptors.
+
+The local Codex configuration requests eight child workers. The current
+conversation still advertises four total concurrency slots, so the three child
+workers run these sustained responsibilities concurrently. Do not claim that a
+configuration edit has changed this conversation's tool allocation, and do not
+create unrelated threads or shell-launched agents to evade that allocation.
 
 Acceptance requires actual complete declared method bodies, preserved Source
 field/operation order and graph identity, independent pinned-original outputs,
