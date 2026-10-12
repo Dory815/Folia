@@ -63,7 +63,13 @@ Completed current-state evidence:
   BaseItem owners. All 72 original records pass; all sixteen compiling semantic
   faults are detected. Full core tests pass, exit 0. See
   evidence/p43-parser-stack-acceptance.md. Complete configured reducers,
-  ParseOptions and TeXParser remain; P44 service ownership is planned, not built.
+  ParseOptions and TeXParser remain; the active next ownership boundary is P45.
+- P44 moves the invocation context to its sole module above Stack and completes
+  UnitMap/UnitUtil's nine responsibilities plus muReplace. All 245 original
+  records pass; all sixteen compiling semantic faults are detected; full core
+  tests pass, exit 0. See evidence/p44-unit-util-acceptance.md. P45 selects one
+  parser-family module with Source-aligned partitions after a passing MSVC/CMake
+  toolchain pilot. The actual parser-family classes are not implemented yet.
 
 Incomplete requirements, verified from the current source tree:
 
@@ -81,6 +87,6 @@ Incomplete requirements, verified from the current source tree:
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 102 interfaces likewise measure compilation
+measure coverage or usability. The 106 interfaces likewise measure compilation
 structure, not completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.

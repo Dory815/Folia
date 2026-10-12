@@ -1,5 +1,9 @@
 # P44 parser service ownership plan after P43
 
+Superseded before implementation by p45-parser-module-ownership.md. State-owner
+and lifecycle observations below remain Source evidence; the broad service
+expansion/import graph below is not the active implementation architecture.
+
 This is Root's next architecture boundary, not accepted implementation. Source
 signatures and original gold must still be frozen before Luna body assignments.
 Do not forward-declare a class in one named module and define the same class in
