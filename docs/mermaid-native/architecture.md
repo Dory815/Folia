@@ -1,5 +1,32 @@
 # Mermaid native Direct2D work — root ownership and acceptance
 
+## User scope correction, 2026-10-12
+
+The user clarified that this task is adding a Direct2D backend alongside SVG
+in mermaid-rs-renderer, not porting tiny-skia's raster engine. This correction
+supersedes the later raster/blitter-frontier prerequisites in this document.
+Root expanded that dependency work beyond the requested backend task and has
+stopped further shader/pipeline/blitter porting. Existing work is preserved;
+its narrow tests are not end-to-end Mermaid acceptance.
+
+The required route is the existing parser and layout, completed shared drawing
+commands, and parallel SVG/Direct2D consumers. Existing NativeRenderer already
+records DiagramScene through Direct2D geometry, brushes and text resources.
+The current main public Mermaid entry still calls Layout -> render_svg; complete
+Layout -> DiagramScene compilation and a matching scene SVG consumer remain
+the actual implementation gap. Close that gap directly, using Direct2D drawing
+and DirectWrite/font services at the Windows boundary. No custom CPU rasterizer,
+tiny-skia compiler/executor/blitter clone, or exact reproduction of its internal
+instruction/context arrays is a prerequisite for this task or Folia integration.
+
+Acceptance must exercise actual Mermaid input through both backends, existing
+diagram families/options, shared placement/dimensions/styles/text/markers and
+native drawing/resource behavior. Primitive WARP tests support backend checks
+but cannot replace complete diagram tests. Original SVG/PNG output may be a
+comparison reference; normal Direct2D drawing must not generate or parse SVG.
+Folia wiring still follows Root's complete backend acceptance. The native
+MathJax task retains its separately requested clean-port requirements.
+
 User added this objective alongside the native MathJax goal: add Direct2D to
 mermaid-rs-renderer as a backend parallel to SVG, validate it independently,
 then switch Folia's Mermaid drawing to the native result without SVG transit.
