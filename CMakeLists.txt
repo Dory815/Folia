@@ -101,6 +101,19 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/regexp_binding.ixx
     src/math/input/tex/find_tex.ixx
     src/math/input/tex/find_tex_host.ixx
+    src/math/util/string_map.ixx
+    src/math/util/unicode_normalization.ixx
+    src/math/input/tex/parser_types.ixx
+    src/math/input/tex/configuration.ixx
+    src/math/input/tex/tags.ixx
+    src/math/input/tex/base/base_items.ixx
+    src/math/input/tex/column_parser.ixx
+    src/math/input/tex/parse_options.ixx
+    src/math/input/tex/tex_parser.ixx
+    src/math/input/tex/parse_util.ixx
+    src/math/input/tex/tex_jax.ixx
+    src/math/input/tex/parser_runtime.ixx
+    src/math/input/tex/parser_family.ixx
     src/math/util/object_types.ixx
     src/math/util/callable_types.ixx
     src/math/util/argument_expansion.ixx
