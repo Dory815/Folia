@@ -73,23 +73,78 @@ NodeValue MmlMrow::coreMO() {
 }
 
 std::size_t MmlMrow::nonSpaceLength() {
-    // P23f Root stub: MmlMrow::nonSpaceLength.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const auto children = this->childNodes;
+    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < children->size(); ++i) {
+        const NodeValue value = children->get(i);
+        MmlNode* const child = value.nodeOrNull();
+        if (child && !child->isSpacelike()) ++count;
+    }
+    return count;
 }
 
 MmlNode* MmlMrow::firstNonSpace() {
-    // P23f Root stub: MmlMrow::firstNonSpace.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const auto children = this->childNodes;
+    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    for (std::size_t i = 0; i < children->size(); ++i) {
+        const NodeValue value = children->get(i);
+        MmlNode* const child = value.nodeOrNull();
+        if (child && !child->isSpacelike()) return child;
+    }
+    return nullptr;
 }
 
 MmlNode* MmlMrow::lastNonSpace() {
-    // P23f Root stub: MmlMrow::lastNonSpace.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const auto initialChildren = this->childNodes;
+    if (!initialChildren) {
+        throw Error("TypeError",u"Cannot read properties of null (reading 'length')");
+    }
+    std::size_t i = initialChildren->size();
+    while (i > 0) {
+        --i;
+        const auto children = this->childNodes;
+        if (!children) {
+            const std::string message = "Cannot read properties of null (reading '" + std::to_string(i) + "')";
+            throw Error("TypeError",std::u16string(message.begin(),message.end()));
+        }
+        const NodeValue value = children->get(i);
+        MmlNode* const child = value.nodeOrNull();
+        if (child && !child->isSpacelike()) return child;
+    }
+    return nullptr;
 }
 
 NodeValue MmlMrow::setTeXclass(NodeValue previous) {
-    // P23f Root stub: MmlMrow::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    if (!host::nullish(getProperty("open")) || !host::nullish(getProperty("close"))) {
+        getPrevClass(previous);
+        previous = PropertyNull{};
+        const auto children = this->childNodes;
+        if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+        for (std::size_t i = 0; i < children->size(); ++i) {
+            previous = children->get(i).requireNode("setTeXclass")->setTeXclass(previous);
+        }
+        if (host::nullish(texClass())) setTexClass(static_cast<double>(TEXCLASS.INNER));
+        return this;
+    }
+    const auto children = this->childNodes;
+    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    for (std::size_t i = 0; i < children->size(); ++i) {
+        previous = children->get(i).requireNode("setTeXclass")->setTeXclass(previous);
+    }
+    const auto currentChildren = this->childNodes;
+    if (!currentChildren) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
+    const NodeValue first = currentChildren->get(0);
+    if (first.nodeOrNull()) {
+        const auto latestChildren = this->childNodes;
+        if (!latestChildren) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
+        updateTeXclass(latestChildren->get(0));
+    }
+    return previous;
 }
 
 std::string MmlInferredMrow::kind() const { return "inferredMrow"; }
@@ -97,7 +152,19 @@ bool MmlInferredMrow::isInferred() const { return true; }
 Property MmlInferredMrow::notParent() const { return true; }
 
 std::string MmlInferredMrow::toString() const {
-    // P23f Root stub: MmlInferredMrow::toString.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> callGuard;
+    const auto children = this->childNodes;
+    if (!children) throw Error("TypeError",u"Cannot read properties of null (reading 'join')");
+    tree::TreeJoinGuard<MmlNode> joinGuard(children.get());
+    if (!joinGuard.entered()) return "[]";
+    const std::size_t length = children->size();
+    std::string result = "[";
+    for (std::size_t i = 0; i < length; ++i) {
+        if (i != 0) result.push_back(',');
+        const NodeValue value = children->get(i);
+        if (MmlNode* const child = value.nodeOrNull()) result += child->toString();
+    }
+    result.push_back(']');
+    return result;
 }
 } // namespace folia::math::mml

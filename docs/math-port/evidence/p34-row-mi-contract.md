@@ -44,3 +44,16 @@ array rebinding/live growth/backward access, property presence and virtual class
 assignment. Root will reproduce gold, inspect the pre-implementation failure,
 review the six bodies and run actual reference_leaf tests with deliberate
 faults and source/fixture guards. Remaining parser/layout/SVG work stays open.
+
+Root extension after the actual normal build/run: the six restored bodies leave
+three existing leaf tests failing through MmlMstyle::setChildInheritedAttributes
+at its explicit stub. Root now additionally assigns exactly that body in
+src/math/core/mml_tree/mml_nodes/mstyle.cpp to the same Luna, with its report.
+No other write scope expands. Read the original mstyle.ts method. Preserve raw
+Property level += parseInt string/number addition, nullish explicit presence,
+methodString/relativeLevel/integer host operations, exact displaystyle===true,
+raw cramped value, resets of prime, fresh virtual attribute reads, virtual
+addInheritedAttributes and the single literal current childNodes[0] dispatch.
+Do not use a loop/embellished core, normalize Property level/prime, or add a new
+regex/parser service. Keep exact reached nullish get/setInherited/member errors
+and the shared TreeCallGuard. Original leaf gold is unchanged.

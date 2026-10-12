@@ -43,8 +43,41 @@ void MmlMstyle::inheritAttributes(AttributeList attributes, Property display,
 
 void MmlMstyle::setChildInheritedAttributes(AttributeList attributes, Property display,
                                             Property level, Property prime) {
-    // P23f Root stub: MmlMstyle::setChildInheritedAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    auto currentAttributes = this->attributes();
+    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
+    Property scriptlevel = currentAttributes->getExplicit("scriptlevel");
+    if (!host::nullish(scriptlevel)) {
+        const std::u16string text = host::methodString(scriptlevel);
+        if (host::relativeLevel(text)) {
+            level = host::add(level, Property(host::integer(text)));
+        } else {
+            level = host::integer(text);
+        }
+        prime = false;
+    }
+
+    currentAttributes = this->attributes();
+    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
+    const Property displaystyle = currentAttributes->getExplicit("displaystyle");
+    if (!host::nullish(displaystyle)) {
+        display = displaystyle == Property(true);
+        prime = false;
+    }
+
+    currentAttributes = this->attributes();
+    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
+    const Property cramped = currentAttributes->getExplicit("data-cramped");
+    if (!host::nullish(cramped)) prime = cramped;
+
+    currentAttributes = this->attributes();
+    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getAllAttributes')");
+    attributes = addInheritedAttributes(std::move(attributes), Property(currentAttributes->getAllAttributes()));
+
+    const auto children = this->childNodes;
+    if (!children) host::typeError("Cannot read properties of null (reading '0')");
+    children->get(0).requireNode("setInheritedAttributes")
+        ->setInheritedAttributes(std::move(attributes), display, level, prime);
 }
 
 }

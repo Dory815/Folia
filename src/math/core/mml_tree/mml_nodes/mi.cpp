@@ -33,7 +33,27 @@ void MmlMi::inheritAttributes(
 }
 
 NodeValue MmlMi::setTeXclass(NodeValue previous) {
-    // P23f Root stub: MmlMi::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    getPrevClass(previous);
+    const std::u16string name = getText();
+    if (name.size() > 1) {
+        Pattern& pattern = operatorName();
+        if (!pattern) host::typeError("MmlMi.operatorName has no native callback");
+        if (pattern(name)) {
+            const auto currentAttributes = attributes();
+            if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'get')");
+            if (currentAttributes->get("mathvariant") == Property(std::string("normal"))) {
+                const Property autoOP = getProperty("autoOP");
+                if (autoOP.missing()) {
+                    const Property texClassProperty = getProperty("texClass");
+                    if (texClassProperty.missing()) {
+                        setTexClass(static_cast<double>(TEXCLASS.OP));
+                        setProperty("autoOP", true);
+                    }
+                }
+            }
+        }
+    }
+    return this;
 }
 }
