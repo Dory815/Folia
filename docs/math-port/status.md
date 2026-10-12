@@ -25,13 +25,17 @@ Completed current-state evidence:
   baseline passes 19,609 assertions in 373 executed tests and detects all 39
   compiling semantic faults; the normal target's affected tests also pass.
   See evidence/p36-table-multiscript-acceptance.md.
+- P37 restores thirteen operator/TeXAtom/under-over semantic methods, sharing the
+  effective operator adjustment body. The independent baseline passes 32,828
+  assertions in 162 executed tests and detects all 33 compiling semantic faults.
+  The normal build and affected constructor/MML/script/operator filters pass.
+  See evidence/p37-operator-script-acceptance.md for bounded scope and limitations.
 
 Incomplete requirements, verified from the current source tree:
 
 - Remaining tagged-tree MML consumers include explicit Unimplemented stubs.
-  The next packet covers operator/shared class adjustment, TeXAtom and under/over
-  rules under Root's file ownership and acceptance contract. Action and MathChoice
-  also remain incomplete.
+  The next packet covers action, MathChoice, menclose and mpadded under Root's
+  frozen file ownership and acceptance contract.
 - TeXParser, Stack and the complete base/AMS/enabled-package command pipeline
   have not been implemented. Current input/tex contains foundations only.
 - There is no src/math/output common-wrapper/scene/SVG implementation, nor a
