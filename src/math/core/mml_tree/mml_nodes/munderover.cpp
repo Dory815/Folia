@@ -16,19 +16,18 @@ std::string property_key(const Property& value) {
 
 Property accent_at(const std::shared_ptr<std::vector<Property>>& accents,
                    std::size_t index) {
-    if (!accents) host::typeError("Cannot read ACCENTS from null");
+    if (!accents) host::typeError("Cannot read properties of null (reading '"+std::to_string(index)+"')");
     return index < accents->size() ? (*accents)[index] : Property(Missing{});
 }
 
 NodeValue child_slot(const Children& nodes, std::size_t index) {
-    // P23f Root stub: child_slot.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    if (!nodes) host::typeError("Cannot read properties of null (reading '"+std::to_string(index)+"')");
+    return nodes->get(index);
 }
 
 MmlNode* require_child(const Children& nodes, std::size_t index,
                        std::string_view operation) {
-    // P23f Root stub: require_child.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    return child_slot(nodes,index).requireNode(operation);
 }
 
 Property truthy_or_under(const Property& left, const MmlMunderover& node,
@@ -50,8 +49,41 @@ void MmlMunderover::setChildInheritedAttributes(AttributeList attributes,
                                                Property display,
                                                Property level,
                                                Property prime) {
-    // P23f Root stub: MmlMunderover::setChildInheritedAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const Children nodes = this->childNodes;
+
+    MmlNode* const baseNode = require_child(nodes, 0, "setInheritedAttributes");
+    const bool basePrimePresent = host::truthy(prime)
+        ? true
+        : child_slot(nodes, this->over()).isNode();
+    const Property basePrime = host::truthy(prime) ? prime : Property(basePrimePresent);
+    baseNode->setInheritedAttributes(attributes, display, level, basePrime);
+
+    bool force = false;
+    if (!host::truthy(display)) {
+        MmlNode* const baseForLimits = require_child(nodes, 0, "coreMO");
+        const NodeValue baseCore = baseForLimits->coreMO();
+        MmlNode* const coreNode = baseCore.requireNode("attributes");
+        const auto coreAttributes = coreNode->attributes();
+        if (!coreAttributes) host::typeError("Cannot read properties of null (reading 'get')");
+        force = host::truthy(coreAttributes->get("movablelimits"));
+    }
+
+    const auto accents = constructorAccents();
+    MmlNode* const underNode = require_child(nodes, 1, "setInheritedAttributes");
+    const Property underAccent = accent_at(accents, 1);
+    const Property underLevel = getScriptlevel(underAccent, force, level);
+    const Property underPrime = host::truthy(prime) ? prime : Property(this->under() == 1);
+    underNode->setInheritedAttributes(attributes, false, underLevel, underPrime);
+    setInheritedAccent(1, accent_at(accents,1), display, level, prime, force);
+
+    if (!child_slot(nodes, 2).isNode()) return;
+    MmlNode* const overNode = require_child(nodes, 2, "setInheritedAttributes");
+    const Property overAccent = accent_at(accents, 2);
+    const Property overLevel = getScriptlevel(overAccent, force, level);
+    const Property overPrime = host::truthy(prime) ? prime : Property(this->under() == 2);
+    overNode->setInheritedAttributes(attributes, false, overLevel, overPrime);
+    setInheritedAccent(2, accent_at(accents,2), display, level, prime, force);
 }
 
 Property MmlMunderover::getScriptlevel(Property accent, bool force, Property level) {
@@ -67,8 +99,31 @@ Property MmlMunderover::getScriptlevel(Property accent, bool force, Property lev
 void MmlMunderover::setInheritedAccent(std::size_t index, Property accent,
                                       Property display, Property level,
                                       Property prime, bool force) {
-    // P23f Root stub: MmlMunderover::setInheritedAccent.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const Children nodes = this->childNodes;
+    const NodeValue child = child_slot(nodes, index);
+    const auto initialAttributes = this->attributes();
+    if (!initialAttributes) host::typeError("Cannot read properties of null (reading 'hasExplicit')");
+    if (initialAttributes->hasExplicit(property_key(accent)) ||
+        !child.requireNode("isEmbellished")->isEmbellished()) return;
+
+    MmlNode* const childNode = child.requireNode("coreMO");
+    const NodeValue core = childNode->coreMO();
+    MmlNode* const coreNode = core.requireNode("attributes");
+    const auto coreAttributes = coreNode->attributes();
+    if (!coreAttributes) host::typeError("Cannot read properties of null (reading 'get')");
+    const Property value = coreAttributes->get("accent");
+
+    auto currentAttributes = this->attributes();
+    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'setInherited')");
+    currentAttributes->setInherited(property_key(accent), value);
+
+    currentAttributes = this->attributes();
+    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getDefault')");
+    if (!(value == currentAttributes->getDefault(property_key(accent)))) {
+        child.requireNode("setInheritedAttributes")->setInheritedAttributes(
+            Property(PropertyList{}), display, getScriptlevel(accent, force, level), prime);
+    }
 }
 
 std::string MmlMunder::kind() const { return "munder"; }
