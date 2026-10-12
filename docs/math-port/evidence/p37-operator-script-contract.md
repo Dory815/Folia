@@ -78,3 +78,14 @@ establish parity. Surviving faults, crashes and compile failures reject the gate
 Known observer gaps are supplemented from the actual original Source before
 native comparison. No unsupported feature or error fallback is accepted as a
 completed native MathJax renderer. Mermaid remains paused.
+
+Root's preimplementation red gate builds all 90 existing modules and the four
+original fixtures plus two separate Native entry assertions. It exits 1 through
+real Unimplemented bodies and verifies working source/fixture bytes unchanged.
+The failing paths execute only 7320 assertions (3266 failed) rather than
+the full green corpus; this is red evidence only. Both Native entry assertions
+also fail with Unimplemented. No implementation is inferred from that build.
+
+Primitive bindings retain tagged Get until the requested member dereference.
+Null arrays and Null ACCENTS reads report the actual requested numeric property.
+The missing slot itself remains Undefined and retains the subsequent member error.
