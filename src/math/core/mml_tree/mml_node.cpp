@@ -564,8 +564,29 @@ void AbstractMmlNode::inheritAttributesFrom(NodeValue node) {
 }
 
 void AbstractMmlNode::verifyTree(Property options) {
-    // P23f Root stub: AbstractMmlNode::verifyTree.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    if (options.missing()) options = PropertyNull{};
+    if (std::holds_alternative<PropertyNull>(options.value)) return;
+
+    verifyAttributes(options);
+    const double nodeArity = arity();
+    if (host::truthy(host::get(options, "checkArity")) &&
+        nodeArity >= 0 && !(std::isinf(nodeArity) && nodeArity > 0)) {
+        bool wrongCount = false;
+        if (nodeArity == 1) {
+            const Children children = this->childNodes;
+            if (!children) host::typeError("Cannot read properties of null (reading 'length')");
+            wrongCount = children->size() == 0;
+        } else {
+            const Children children = this->childNodes;
+            if (!children) host::typeError("Cannot read properties of null (reading 'length')");
+            wrongCount = static_cast<double>(children->size()) != nodeArity;
+        }
+        if (wrongCount) {
+            mError("Wrong number of children for \"" + kind() + "\" node", options, true);
+        }
+    }
+    verifyChildren(options);
 }
 
 void AbstractMmlNode::verifyAttributes(Property options) {
@@ -600,8 +621,12 @@ void AbstractMmlNode::verifyAttributes(Property options) {
 }
 
 void AbstractMmlNode::verifyChildren(Property options) {
-    // P23f Root stub: AbstractMmlNode::verifyChildren.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const Children children = this->childNodes;
+    if (!children) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    for (std::size_t index = 0; index < children->size(); ++index) {
+        children->get(index).requireNode("verifyTree")->verifyTree(options);
+    }
 }
 
 MmlNode* AbstractMmlNode::mError(std::string message, Property options, bool shortError) {

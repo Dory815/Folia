@@ -55,3 +55,20 @@ records to match, adds independent compiling faults, checks the actual normal
 core build and prior accepted invariants, and records bounded acceptance.
 This does not accept mError, subclass verification, the remaining MML/TeX stack,
 shared layout, SVG output or Folia. Complete native math remains the goal.
+
+Root independently added a separate 576-call original-Source supplement after
+the initial implementation, retaining the original 3,176-record file unchanged.
+It exercises null, signed zeros, one, NaN, empty/nonempty strings and object/array
+values in checkArity, through both object and array options, eight arities and
+four child shapes. The supplement is p32-verification-flags-source.json,
+SHA-256 60578d1cc08ed3b283d8d8c1080e782325ed391b6e467213c1d3f642b53308b0.
+Its 576 calls include 32 Source exceptions; its expected values come only from
+the pinned original method. It prevents a strict-boolean implementation from
+passing the original true/false/undefined field stimuli.
+
+The final native fixture has 3,752 Source-record assertions plus four distinct
+Native call-budget/recovery assertions, in two tests. The Native checks require
+a 256-node verification chain to complete at the existing 512-call budget,
+preserve the raw options handle at every virtual attribute callback, throw
+RangeError on a 257-node chain, and recover after restoring the 256-node chain.
+These are Native safety checks, not additional MathJax syntax expectations.
