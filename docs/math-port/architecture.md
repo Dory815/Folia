@@ -9,10 +9,11 @@ The normal FoliaTests target builds and links. Restored tagged-tree consumers
 currently include P33-P39; P40 supplies NodeUtil/TexError and P41 supplies the TeX
 NodeFactory within the frozen typed
 profile. No explicit MML Unimplemented stubs remain and the complete core suite
-passes. ParseOptions/configuration/stack and the TeX/package pipeline,
+passes. The actual Stack and core MathItem lifecycle are accepted prerequisites.
+ParseOptions/configuration and the TeX/package pipeline,
 common wrappers, fonts, scene, SVG and Folia integration still block release.
 Folia currently uses its existing QuickJS math path. The historical 54/246 ledger
-and 94 compiled module interfaces are not completion percentages.
+and compiled module-interface counts are not completion percentages.
 
 Root owns architecture, scope, interfaces, exclusions and acceptance. Luna agents
 implement only assigned existing responsibilities after contracts and bindings
@@ -107,8 +108,10 @@ nodes and layout wrappers must not be merged into a general switch engine.
 
 Factory modules register constructors only. Dependencies point from wrappers
 to semantic interfaces, and from per-kind registrations to concrete classes.
-Dependencies that would form C++ module cycles are broken with injected
-factory/service interfaces, not global mutable singletons or a second model.
+Cross-owner dependency cycles use narrowly scoped borrowed factory/service edges.
+The real mutually dependent parser classes share one named module with
+Source-aligned partitions, as specified in evidence/p45-parser-module-ownership.md;
+the partitions' interface imports form a DAG. Neither choice adds a second model.
 TypeScript mixins can become C++ inheritance/composition; their method
 ownership, dependencies and invariants must remain traceable.
 

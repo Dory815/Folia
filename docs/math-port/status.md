@@ -9,7 +9,7 @@ Completed current-state evidence:
 - MathJax-src 4.1.3 is cloned in .reference/MathJax-src, pinned to
   fb987178c2d279a99b0db5ea02e751691703955e. scope.json inventories 246 reachable
   upstream files for the enabled Folia profile.
-- The C++23 folia_math target contains 100 module interfaces. The normal
+- The C++23 folia_math target contains 108 module interfaces. The normal
   FoliaTests target builds and links; individual accepted packets have actual
   Source observations, Native checks and independent acceptance evidence.
 - Utility, attribute, factory, tagged child-array/tree and parts of MML/TeX
@@ -70,6 +70,12 @@ Completed current-state evidence:
   tests pass, exit 0. See evidence/p44-unit-util-acceptance.md. P45 selects one
   parser-family module with Source-aligned partitions after a passing MSVC/CMake
   toolchain pilot. The actual parser-family classes are not implemented yet.
+- P45 supplies core MathItem's actual fields, constructor, state table/registration
+  and complete AbstractMathItem lifecycle through typed borrowed engine edges.
+  All 92 original records pass; all twenty compiling semantic faults are detected;
+  full core tests pass, exit 0. See evidence/p45-math-item-acceptance.md. Parser
+  declarations still need a canonical options representation using accepted
+  util/Options without copied option dictionaries.
 
 Incomplete requirements, verified from the current source tree:
 
@@ -87,6 +93,6 @@ Incomplete requirements, verified from the current source tree:
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 106 interfaces likewise measure compilation
+measure coverage or usability. The 108 interfaces likewise measure compilation
 structure, not completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.
