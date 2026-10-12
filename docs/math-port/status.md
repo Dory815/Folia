@@ -9,7 +9,7 @@ Completed current-state evidence:
 - MathJax-src 4.1.3 is cloned in .reference/MathJax-src, pinned to
   fb987178c2d279a99b0db5ea02e751691703955e. scope.json inventories 246 reachable
   upstream files for the enabled Folia profile.
-- The C++23 folia_math target contains 111 module interfaces. The normal
+- The C++23 folia_math target contains 115 module interfaces. The normal
   FoliaTests target builds and links; individual accepted packets have actual
   Source observations, Native checks and independent acceptance evidence.
 - Utility, attribute, factory, tagged child-array/tree and parts of MML/TeX
@@ -99,6 +99,14 @@ Completed current-state evidence:
   core suite passes. See evidence/p49-prerequisites-acceptance.md. Actual FindTeX
   and its UTF-16 non-Unicode regexp binding are the next implementation boundary.
 
+- P50 supplies the native UTF-16 non-Unicode RegExp host needed by actual
+  FindTeX. It uses SRELL code-unit traits and preserves configured punctuation
+  delimiters. All 34 original observations, four explicit host-scope assertions
+  and seven compiling faults pass their gates; full core tests pass. See
+  evidence/p50-regexp-host-acceptance.md. The complete actual FindTeX boundary
+  and remaining array/regexp bindings are recorded in
+  evidence/p51-find-tex-declaration-frontier.md; its class is not implemented yet.
+
 Incomplete requirements, verified from the current source tree:
 
 - ParseOptions, BaseItems and the configuration pipeline
@@ -115,6 +123,6 @@ Incomplete requirements, verified from the current source tree:
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 114 interfaces likewise measure compilation
+measure coverage or usability. The 115 interfaces likewise measure compilation
 structure, not completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.
