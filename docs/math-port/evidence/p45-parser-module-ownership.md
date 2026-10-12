@@ -84,6 +84,10 @@ Its necessary native interface/fields must be established against real callers
 core/MathDocument/InputJax boundaries reviewed. MathItem does not acquire a
 reverse parser-module dependency. Fonts/common layout/output remain separate.
 
+P46's canonical option-graph lifetime decision is recorded in
+p46-parser-options-ownership.md; parser declarations must use that one graph and
+the accepted util/Options algorithms without a PropertyList options mirror.
+
 Root must enumerate complete fields/defaults/nullable results and Source
 constructor phases, define the actual module partitions, freeze independent
 original observations, then delegate bounded method bodies to Luna. There is

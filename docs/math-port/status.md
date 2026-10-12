@@ -74,8 +74,9 @@ Completed current-state evidence:
   and complete AbstractMathItem lifecycle through typed borrowed engine edges.
   All 92 original records pass; all twenty compiling semantic faults are detected;
   full core tests pass, exit 0. See evidence/p45-math-item-acceptance.md. Parser
-  declarations still need a canonical options representation using accepted
-  util/Options without copied option dictionaries.
+  declarations use P46's single-runtime Context/Value option-graph decision in
+  evidence/p46-parser-options-ownership.md. The actual declaration graph and
+  native option callback/regexp bindings are the next implementation boundary.
 
 Incomplete requirements, verified from the current source tree:
 
