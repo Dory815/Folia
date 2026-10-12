@@ -1,0 +1,382 @@
+[
+  {
+    "label": "initial",
+    "cpp": "return x->kind()+\":\"+val(x->env())+\":\"+val(Property(x->copyEnv()))+\":\"+record(PropertyList::record(x->global).value())+\":\"+val(x->getProperty(\"absent\"))+\":\"+val(Property(x->isOpen()))+\":\"+val(Property(x->isClose()))+\":\"+val(Property(x->isFinal()));",
+    "expected": "ok|base:U:true::U:false:false:false|"
+  },
+  {
+    "label": "independent-instance-state",
+    "cpp": "auto gx=PropertyList::record(x->global).value();gx.set(\"v\",1);x->setProperty(\"v\",2);return val(PropertyList::record(y->global)->get(\"v\"))+\":\"+val(y->getProperty(\"v\"));",
+    "expected": "ok|U:U|"
+  },
+  {
+    "label": "isKind:base",
+    "cpp": "return val(Property(x->isKind(\"base\")));",
+    "expected": "ok|true|"
+  },
+  {
+    "label": "isKind:open",
+    "cpp": "return val(Property(x->isKind(\"open\")));",
+    "expected": "ok|false|"
+  },
+  {
+    "label": "isKind:BASE",
+    "cpp": "return val(Property(x->isKind(\"BASE\")));",
+    "expected": "ok|false|"
+  },
+  {
+    "label": "isKind:",
+    "cpp": "return val(Property(x->isKind(\"\")));",
+    "expected": "ok|false|"
+  },
+  {
+    "label": "isKind-virtual-kind",
+    "cpp": "x->kindHook=[&](){trace.push_back(\"kind\");return \"open\";};return val(Property(x->isKind(\"open\")));",
+    "expected": "ok|true|kind"
+  },
+  {
+    "label": "property:undefined",
+    "cpp": "auto* returned=x->setProperty(\"name\",tex::StackProperty(Missing{}));return std::string(returned==x?\"same\":\"bad\")+\":\"+val(x->getProperty(\"name\"))+\":\"+val(x->getName());",
+    "expected": "ok|same:U:U|"
+  },
+  {
+    "label": "property:null",
+    "cpp": "auto* returned=x->setProperty(\"name\",tex::StackProperty(PropertyNull{}));return std::string(returned==x?\"same\":\"bad\")+\":\"+val(x->getProperty(\"name\"))+\":\"+val(x->getName());",
+    "expected": "ok|same:N:N|"
+  },
+  {
+    "label": "property:false",
+    "cpp": "auto* returned=x->setProperty(\"name\",tex::StackProperty(false));return std::string(returned==x?\"same\":\"bad\")+\":\"+val(x->getProperty(\"name\"))+\":\"+val(x->getName());",
+    "expected": "ok|same:false:false|"
+  },
+  {
+    "label": "property:zero",
+    "cpp": "auto* returned=x->setProperty(\"name\",tex::StackProperty(0));return std::string(returned==x?\"same\":\"bad\")+\":\"+val(x->getProperty(\"name\"))+\":\"+val(x->getName());",
+    "expected": "ok|same:0:0|"
+  },
+  {
+    "label": "property:text",
+    "cpp": "auto* returned=x->setProperty(\"name\",tex::StackProperty(\"abc\"));return std::string(returned==x?\"same\":\"bad\")+\":\"+val(x->getProperty(\"name\"))+\":\"+val(x->getName());",
+    "expected": "ok|same:abc:abc|"
+  },
+  {
+    "label": "node-property-identity",
+    "cpp": "x->setProperty(\"num\",a);return val(x->getProperty(\"num\"))+\":\"+(tex::stack_property_host::node(x->getProperty(\"num\")).nodeOrNull()==a?\"same\":\"bad\");",
+    "expected": "ok|node:mi:same|"
+  },
+  {
+    "label": "getName-virtual-property",
+    "cpp": "x->propertyHook=[&](auto k){trace.push_back(std::string(k));return tex::StackProperty(\"override\");};return val(x->getName());",
+    "expected": "ok|override|name"
+  },
+  {
+    "label": "inherited-builtin-property",
+    "cpp": "return val(x->getProperty(\"toString\"));",
+    "expected": "ok|function toString() { [native code] }|"
+  },
+  {
+    "label": "assign-key-order-and-node",
+    "cpp": "tex::StackPropertyList def{{\"10\",a},{\"2\",b},{\"z\",1},{\"a\",2}};auto* returned=x->setProperties(def);return std::string(returned==x?\"same\":\"bad\")+\":\"+val(x->getProperty(\"10\"))+\":\"+val(x->getProperty(\"2\"))+\":\"+val(x->getProperty(\"z\"));",
+    "expected": "ok|same:node:mi:node:mn:1|"
+  },
+  {
+    "label": "assign-own-only",
+    "cpp": "tex::StackPropertyList parent{{\"inherited\",a}};auto def=tex::StackPropertyList::withPrototype(parent);def.set(\"own\",b);x->setProperties(def);return val(x->getProperty(\"inherited\"))+\":\"+val(x->getProperty(\"own\"));",
+    "expected": "ok|U:node:mn|"
+  },
+  {
+    "label": "assign-style-alias",
+    "cpp": "PropertyList styles{{\"mathcolor\",\"red\"}};x->setProperties(tex::StackPropertyList{{\"styles\",styles}});styles.set(\"mathcolor\",\"blue\");auto copy=tex::stack_property_host::scalar(x->getProperty(\"styles\"));return std::string(copy==Property(styles)?\"same\":\"bad\")+\":\"+val(PropertyList::record(copy)->get(\"mathcolor\"));",
+    "expected": "ok|same:blue|"
+  },
+  {
+    "label": "assign-recursive-record-alias",
+    "cpp": "tex::StackPropertyList nested{{\"num\",a}};x->setProperties(tex::StackPropertyList{{\"nested\",nested}});nested.set(\"num\",b);auto got=x->getProperty(\"nested\");return std::string(got==tex::StackProperty(nested)?\"same\":\"bad\")+\":\"+val(tex::StackPropertyList::record(got)->get(\"num\"));",
+    "expected": "ok|same:node:mn|"
+  },
+  {
+    "label": "assign-boxed:U",
+    "cpp": "x->setProperties(tex::StackProperty(Missing{}));return val(x->getProperty(\"0\"))+\":\"+val(x->getProperty(\"1\"));",
+    "expected": "ok|U:U|"
+  },
+  {
+    "label": "assign-boxed:N",
+    "cpp": "x->setProperties(tex::StackProperty(PropertyNull{}));return val(x->getProperty(\"0\"))+\":\"+val(x->getProperty(\"1\"));",
+    "expected": "ok|U:U|"
+  },
+  {
+    "label": "assign-boxed:string",
+    "cpp": "x->setProperties(tex::StackProperty(\"ab\"));return val(x->getProperty(\"0\"))+\":\"+val(x->getProperty(\"1\"));",
+    "expected": "ok|a:b|"
+  },
+  {
+    "label": "assign-boxed:number",
+    "cpp": "x->setProperties(tex::StackProperty(2));return val(x->getProperty(\"0\"))+\":\"+val(x->getProperty(\"1\"));",
+    "expected": "ok|U:U|"
+  },
+  {
+    "label": "prototype-record-shadow",
+    "cpp": "tex::StackPropertyList parent{{\"inherited\",a}};x->setProperty(\"__proto__\",parent);auto before=x->getProperty(\"inherited\");x->setProperty(\"inherited\",b);return val(before)+\":\"+val(x->getProperty(\"inherited\"))+\":\"+val(parent.get(\"inherited\"));",
+    "expected": "ok|node:mi:node:mn:node:mi|"
+  },
+  {
+    "label": "prototype-null",
+    "cpp": "x->setProperty(\"__proto__\",PropertyNull{});return val(x->getProperty(\"toString\"))+\":\"+val(x->getProperty(\"__proto__\"));",
+    "expected": "ok|U:U|"
+  },
+  {
+    "label": "env-alias-clear-own-only",
+    "cpp": "PropertyList parent{{\"p\",1}};auto value=PropertyList::withPrototype(parent);value.set(\"a\",2);value.set(\"b\",3);x->setEnv(value);bool same=x->env()==Property(value);x->clearEnv();return std::string(same?\"same\":\"bad\")+\":\"+record(value)+\":\"+val(value.get(\"p\"));",
+    "expected": "ok|same::1|"
+  },
+  {
+    "label": "clear-env:U",
+    "cpp": "x->setEnv(Property(Missing{}));x->clearEnv();return \"ok\";",
+    "expected": "TypeError|Cannot convert undefined or null to object|THREW|"
+  },
+  {
+    "label": "clear-env:N",
+    "cpp": "x->setEnv(Property(PropertyNull{}));x->clearEnv();return \"ok\";",
+    "expected": "TypeError|Cannot convert undefined or null to object|THREW|"
+  },
+  {
+    "label": "clear-env:false",
+    "cpp": "x->setEnv(Property(false));x->clearEnv();return \"ok\";",
+    "expected": "ok|ok|"
+  },
+  {
+    "label": "clear-env-live-target",
+    "cpp": "PropertyList first{{\"a\",1},{\"b\",2}},second{{\"a\",3},{\"b\",4},{\"c\",5}};int n=0;x->envHook=[&](){trace.push_back(\"env:\"+std::to_string(++n));return Property(n==1?first:second);};x->clearEnv();return record(first)+\":\"+record(second);",
+    "expected": "ok|a=1,b=2:c=5|env:1/env:2/env:3"
+  },
+  {
+    "label": "errors:end",
+    "cpp": "auto got=x->getErrors(\"end\");return errorShape(got);",
+    "expected": "ok|MissingBeginExtraEnd;Missing \\begin{%1} or extra \\end{%1}|"
+  },
+  {
+    "label": "errors:close",
+    "cpp": "auto got=x->getErrors(\"close\");return errorShape(got);",
+    "expected": "ok|ExtraCloseMissingOpen;Extra close brace or missing open brace|"
+  },
+  {
+    "label": "errors:right",
+    "cpp": "auto got=x->getErrors(\"right\");return errorShape(got);",
+    "expected": "ok|MissingLeftExtraRight;Missing \\left or extra \\right|"
+  },
+  {
+    "label": "errors:middle",
+    "cpp": "auto got=x->getErrors(\"middle\");return errorShape(got);",
+    "expected": "ok|ExtraMiddle;Extra \\middle|"
+  },
+  {
+    "label": "errors:absent",
+    "cpp": "auto got=x->getErrors(\"absent\");return errorShape(got);",
+    "expected": "ok|U|"
+  },
+  {
+    "label": "errors-class-prototype-and-live-array",
+    "cpp": "PropertyList parent=PropertyList::record(tex::BaseItem::baseErrors()).value();auto table=PropertyList::withPrototype(parent);PropertyArray custom{\"id\",\"msg\"};table.set(\"extra\",custom);classErrors=table;auto got=x->getErrors(\"extra\");custom.set(1,\"changed\");return std::string(got==Property(custom)?\"same\":\"bad\")+\":\"+errorShape(got)+\":\"+errorShape(x->getErrors(\"close\"));",
+    "expected": "ok|same:id;changed:ExtraCloseMissingOpen;Extra close brace or missing open brace|"
+  },
+  {
+    "label": "errors-falsy-fallback:PropertyNull{}",
+    "cpp": "classErrors=PropertyList{{\"close\",Property(PropertyNull{})}};return errorShape(x->getErrors(\"close\"));",
+    "expected": "ok|ExtraCloseMissingOpen;Extra close brace or missing open brace|"
+  },
+  {
+    "label": "errors-falsy-fallback:false",
+    "cpp": "classErrors=PropertyList{{\"close\",Property(false)}};return errorShape(x->getErrors(\"close\"));",
+    "expected": "ok|ExtraCloseMissingOpen;Extra close brace or missing open brace|"
+  },
+  {
+    "label": "errors-falsy-fallback:0",
+    "cpp": "classErrors=PropertyList{{\"close\",Property(0)}};return errorShape(x->getErrors(\"close\"));",
+    "expected": "ok|ExtraCloseMissingOpen;Extra close brace or missing open brace|"
+  },
+  {
+    "label": "errors-falsy-fallback:\"\"",
+    "cpp": "classErrors=PropertyList{{\"close\",Property(\"\")}};return errorShape(x->getErrors(\"close\"));",
+    "expected": "ok|ExtraCloseMissingOpen;Extra close brace or missing open brace|"
+  },
+  {
+    "label": "errors-empty-array-identity",
+    "cpp": "PropertyArray empty;classErrors=PropertyList{{\"close\",empty}};return std::string(x->getErrors(\"close\")==Property(empty)?\"same\":\"bad\")+\":\"+errorShape(x->getErrors(\"close\"));",
+    "expected": "ok|same:|"
+  },
+  {
+    "label": "check-normal-success",
+    "cpp": "return tuple(x->checkItem(y));",
+    "expected": "ok|success:N:true|"
+  },
+  {
+    "label": "check-final-push",
+    "cpp": "std::array<mml::NodeValue,1> n{a};y->Push(n);y->finalHook=[] {return true;};auto got=x->checkItem(y);return tuple(got)+\":\"+val(tex::StackProperty(x->First()));",
+    "expected": "ok|fail:N:false:node:mi|"
+  },
+  {
+    "label": "check-fail-shared-mutable-tuple",
+    "cpp": "y->finalHook=[] {return true;};Probe::failure()->success=true;auto got=x->checkItem(y);return tuple(got)+\":\"+(std::get<std::shared_ptr<tex::CheckTuple>>(got)==Probe::failure()?\"same\":\"bad\");",
+    "expected": "ok|fail:N:true:same|"
+  },
+  {
+    "label": "check-cell:false:false",
+    "cpp": "x->openHook=[] {return false;};y->kindHook=[] {return \"cell\";};y->setProperty(\"name\",\"&\");y->setProperty(\"linebreak\",false);return tuple(x->checkItem(y));",
+    "expected": "ok|success:N:true|"
+  },
+  {
+    "label": "check-cell:false:true",
+    "cpp": "x->openHook=[] {return false;};y->kindHook=[] {return \"cell\";};y->setProperty(\"name\",\"&\");y->setProperty(\"linebreak\",true);return tuple(x->checkItem(y));",
+    "expected": "ok|success:N:true|"
+  },
+  {
+    "label": "check-cell:true:false",
+    "cpp": "x->openHook=[] {return true;};y->kindHook=[] {return \"cell\";};y->setProperty(\"name\",\"&\");y->setProperty(\"linebreak\",false);return tuple(x->checkItem(y));",
+    "expected": "TexError|Misplaced|Misplaced &|THREW|"
+  },
+  {
+    "label": "check-cell:true:true",
+    "cpp": "x->openHook=[] {return true;};y->kindHook=[] {return \"cell\";};y->setProperty(\"name\",\"&\");y->setProperty(\"linebreak\",true);return tuple(x->checkItem(y));",
+    "expected": "ok|fail:N:false|"
+  },
+  {
+    "label": "check-close:end",
+    "cpp": "y->kindHook=[] {return \"end\";};y->closeHook=[] {return true;};y->setProperty(\"name\",\"foo\");return tuple(x->checkItem(y));",
+    "expected": "TexError|MissingBeginExtraEnd|Missing \\begin{foo} or extra \\end{foo}|THREW|"
+  },
+  {
+    "label": "check-close:close",
+    "cpp": "y->kindHook=[] {return \"close\";};y->closeHook=[] {return true;};y->setProperty(\"name\",\"foo\");return tuple(x->checkItem(y));",
+    "expected": "TexError|ExtraCloseMissingOpen|Extra close brace or missing open brace|THREW|"
+  },
+  {
+    "label": "check-close:right",
+    "cpp": "y->kindHook=[] {return \"right\";};y->closeHook=[] {return true;};y->setProperty(\"name\",\"foo\");return tuple(x->checkItem(y));",
+    "expected": "TexError|MissingLeftExtraRight|Missing \\left or extra \\right|THREW|"
+  },
+  {
+    "label": "check-close:middle",
+    "cpp": "y->kindHook=[] {return \"middle\";};y->closeHook=[] {return true;};y->setProperty(\"name\",\"foo\");return tuple(x->checkItem(y));",
+    "expected": "TexError|ExtraMiddle|Extra \\middle|THREW|"
+  },
+  {
+    "label": "check-close:other",
+    "cpp": "y->kindHook=[] {return \"other\";};y->closeHook=[] {return true;};y->setProperty(\"name\",\"foo\");return tuple(x->checkItem(y));",
+    "expected": "ok|success:N:true|"
+  },
+  {
+    "label": "check-over-partial-setter-throw",
+    "cpp": "std::array<mml::NodeValue,1> n{a};x->Push(n);x->openHook=[] {return true;};y->kindHook=[] {return \"over\";};y->setHook=[&](auto k,auto value)->tex::BaseItem*{trace.push_back(std::string(k)+\":\"+val(value)+\":\"+val(Property(x->Size())));throw Error(\"Error\",u\"setter\");};return tuple(x->checkItem(y));",
+    "expected": "Error|setter|THREW|num:node:mi:1"
+  },
+  {
+    "label": "check-over-clears-rebind",
+    "cpp": "std::array<mml::NodeValue,1> n{a};x->Push(n);auto old=x->array();x->openHook=[] {return true;};y->kindHook=[] {return \"over\";};auto got=x->checkItem(y);return tuple(got)+\":\"+val(y->getProperty(\"num\"))+\":\"+std::to_string(old->size())+\":\"+val(Property(x->Size()));",
+    "expected": "ok|success:N:true:node:mi:1:0|"
+  },
+  {
+    "label": "check-repeat-errors-and-kind",
+    "cpp": "y->isKindHook=[&](auto k){trace.push_back(\"isKind:\"+std::string(k));return false;};y->closeHook=[&] {trace.push_back(\"isClose\");return true;};int n=0;y->kindHook=[&](){trace.push_back(\"kind:\"+std::to_string(++n));return n==1?\"one\":\"two\";};x->errorsHook=[&](auto k){trace.push_back(\"errors:\"+std::string(k));return Property(PropertyArray{\"id\",\"bad %1\"});};y->propertyHook=[&](auto k){trace.push_back(\"prop:\"+std::string(k));return tex::StackProperty(\"name\");};return tuple(x->checkItem(y));",
+    "expected": "TexError|id|bad name|THREW|isKind:over/isKind:cell/isClose/kind:1/errors:one/kind:2/errors:two/prop:name"
+  },
+  {
+    "label": "check-errors-second-nullish:Missing{}",
+    "cpp": "y->closeHook=[] {return true;};int n=0;x->errorsHook=[&](auto){trace.push_back(\"errors:\"+std::to_string(++n));return n==1?Property(PropertyArray{}):Property(Missing{});};return tuple(x->checkItem(y));",
+    "expected": "TypeError|undefined is not iterable (cannot read property Symbol(Symbol.iterator))|THREW|errors:1/errors:2"
+  },
+  {
+    "label": "check-errors-second-nullish:PropertyNull{}",
+    "cpp": "y->closeHook=[] {return true;};int n=0;x->errorsHook=[&](auto){trace.push_back(\"errors:\"+std::to_string(++n));return n==1?Property(PropertyArray{}):Property(PropertyNull{});};return tuple(x->checkItem(y));",
+    "expected": "TypeError|object null is not iterable (cannot read property Symbol(Symbol.iterator))|THREW|errors:1/errors:2"
+  },
+  {
+    "label": "check-errors-empty-array",
+    "cpp": "y->closeHook=[] {return true;};x->errorsHook=[](auto){return Property(PropertyArray{});};y->propertyHook=[&](auto k){trace.push_back(\"prop:\"+std::string(k));return tex::StackProperty(\"name\");};return tuple(x->checkItem(y));",
+    "expected": "TypeError|Cannot read properties of undefined (reading 'split')|THREW|prop:name"
+  },
+  {
+    "label": "toString-sparse-live-list",
+    "cpp": "x->array()->resize(4);x->array()->set(0,a);x->array()->set(2,PropertyNull{});x->array()->set(3,b);return x->toString();",
+    "expected": "ok|base[mi(); ; ; mn()]|"
+  },
+  {
+    "label": "latex:[\"abc\",0,3,\"\"]",
+    "cpp": "x->startStr=host::text(\"abc\");x->startI=0;x->stopI=3;x->addLatexItem(a,Property(\"\"));return attrHex(a,\"data-latex-item\")+\":\"+attrHex(a,\"data-latex\");",
+    "expected": "ok|0061,0062,0063:0061,0062,0063|"
+  },
+  {
+    "label": "latex:[\"}\",0,1,\"\"]",
+    "cpp": "x->startStr=host::text(\"}\");x->startI=0;x->stopI=1;x->addLatexItem(a,Property(\"\"));return attrHex(a,\"data-latex-item\")+\":\"+attrHex(a,\"data-latex\");",
+    "expected": "ok|007d:U|"
+  },
+  {
+    "label": "latex:[\"}\",0,1,\"pre\"]",
+    "cpp": "x->startStr=host::text(\"}\");x->startI=0;x->stopI=1;x->addLatexItem(a,Property(\"pre\"));return attrHex(a,\"data-latex-item\")+\":\"+attrHex(a,\"data-latex\");",
+    "expected": "ok|0070,0072,0065,007d:0070,0072,0065,007d|"
+  },
+  {
+    "label": "latex:[\"\",0,0,\"pre\"]",
+    "cpp": "x->startStr=host::text(\"\");x->startI=0;x->stopI=0;x->addLatexItem(a,Property(\"pre\"));return attrHex(a,\"data-latex-item\")+\":\"+attrHex(a,\"data-latex\");",
+    "expected": "ok|U:U|"
+  },
+  {
+    "label": "latex:[\"abcdef\",-3,-1,\"p\"]",
+    "cpp": "x->startStr=host::text(\"abcdef\");x->startI=-3;x->stopI=-1;x->addLatexItem(a,Property(\"p\"));return attrHex(a,\"data-latex-item\")+\":\"+attrHex(a,\"data-latex\");",
+    "expected": "ok|0070,0064,0065:0070,0064,0065|"
+  },
+  {
+    "label": "latex:[\"a😀b\",1,2,\"\"]",
+    "cpp": "x->startStr=host::text(\"a😀b\");x->startI=1;x->stopI=2;x->addLatexItem(a,Property(\"\"));return attrHex(a,\"data-latex-item\")+\":\"+attrHex(a,\"data-latex\");",
+    "expected": "ok|d83d:d83d|"
+  },
+  {
+    "label": "latex:[\"abcdef\",1.9,4.9,\"\"]",
+    "cpp": "x->startStr=host::text(\"abcdef\");x->startI=1.9;x->stopI=4.9;x->addLatexItem(a,Property(\"\"));return attrHex(a,\"data-latex-item\")+\":\"+attrHex(a,\"data-latex\");",
+    "expected": "ok|0062,0063,0064:0062,0063,0064|"
+  },
+  {
+    "label": "latex:[\"abcdef\",4,1,\"\"]",
+    "cpp": "x->startStr=host::text(\"abcdef\");x->startI=4;x->stopI=1;x->addLatexItem(a,Property(\"\"));return attrHex(a,\"data-latex-item\")+\":\"+attrHex(a,\"data-latex\");",
+    "expected": "ok|U:U|"
+  },
+  {
+    "label": "factory-empty:base",
+    "cpp": "tex::StackItemFactory empty;return empty.create(\"base\")->kind();",
+    "expected": "TypeError|Cannot read properties of undefined (reading 'apply')|THREW|"
+  },
+  {
+    "label": "factory-empty:dummy",
+    "cpp": "tex::StackItemFactory empty;return empty.create(\"dummy\")->kind();",
+    "expected": "TypeError|Cannot read properties of undefined (reading 'apply')|THREW|"
+  },
+  {
+    "label": "factory-empty:unknown",
+    "cpp": "tex::StackItemFactory empty;return empty.create(\"unknown\")->kind();",
+    "expected": "TypeError|Cannot read properties of undefined (reading 'apply')|THREW|"
+  },
+  {
+    "label": "factory-default-field-mismatch",
+    "cpp": "tex::StackItemFactory empty;return empty.defaultKind+\":\"+std::to_string(empty.getKinds().size())+\":\"+tex::StackItemFactory::DefaultStackItems.front().first+\":\"+val(Property(std::holds_alternative<PropertyNull>(empty.configuration)));",
+    "expected": "ok|dummy:0:base:true|"
+  },
+  {
+    "label": "factory-explicit-default-map",
+    "cpp": "tex::StackItemFactory explicitFactory(tex::StackItemFactory::DefaultStackItems);auto* item=explicitFactory.create(\"base\");return item->kind()+\":\"+std::to_string(explicitFactory.getKinds().size());",
+    "expected": "ok|base:1|"
+  },
+  {
+    "label": "factory-single-identity",
+    "cpp": "auto one=f.reference(x),two=f.reference(x);return std::string(one==two?\"same\":\"bad\")+\":\"+(dynamic_cast<tex::BaseItem*>(one.get())==x?\"actual\":\"wrapper\")+\":\"+(&f.itemFactory()==static_cast<tree::FactoryServices<tex::BaseItem>*>(&f)?\"one-factory\":\"bad\");",
+    "expected": "ok|same:actual:one-factory|"
+  },
+  {
+    "label": "constructor-virtual-open-before-fields",
+    "cpp": "struct Phase:Probe{std::vector<std::string>&trace;Property flag=Missing{};explicit Phase(std::vector<std::string>&t):trace(t){}bool isOpen()const override{trace.push_back(\"open:\"+val(flag)+\":\"+record(PropertyList::record(global).value())+\":\"+val(getProperty(\"p\"))+\":\"+val(env()));return true;}};auto owned=std::make_unique<Phase>(trace);auto* raw=owned.get();f.adopt(std::move(owned));auto list=std::make_shared<tree::ChildArray<mml::MmlNode>>();list->push_back(a);raw->initializeBaseItem(&f,list,type);raw->flag=1;return val(raw->env())+\":\"+val(raw->flag)+\":\"+val(tex::StackProperty(raw->First()));",
+    "expected": "ok|object:1:node:mi|open:U::U:U"
+  },
+  {
+    "label": "errors-captured-class-after-replacement",
+    "cpp": "classErrors=PropertyList{{\"extra\",PropertyArray{\"old\",\"old message\"}}};auto replacement=std::make_shared<tree::FactoryClass<tex::BaseItem>>();auto nextInfo=std::make_shared<tex::StackItemClassInfo>();nextInfo->errorsBinding=[] {return Property(PropertyList{{\"extra\",PropertyArray{\"new\",\"new message\"}}});};replacement->staticData=nextInfo;f.setNodeClass(\"probe\",replacement);return errorShape(x->getErrors(\"extra\"));",
+    "expected": "ok|old;old message|"
+  }
+]

@@ -10,10 +10,4 @@ public:
     virtual TeXNodeFactoryReference nodeFactoryReference()const=0;
 };
 using StackConfigurationReference=std::variant<Missing,PropertyNull,StackItemFactoryConfiguration*>;
-class StackItemFactoryService {
-public:
-    virtual ~StackItemFactoryService()=default;
-    StackConfigurationReference configuration=PropertyNull{};
-};
-using StackFactoryReference=std::variant<Missing,PropertyNull,StackItemFactoryService*>;
 }
