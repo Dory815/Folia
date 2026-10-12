@@ -91,6 +91,14 @@ Completed current-state evidence:
   The next gate is the real complete parser-family declaration graph and its
   native class/array/regexp/Unicode bindings; no TeX parser is claimed yet.
 
+- P49 supplies canonical typed native identities in the same Context option
+  graph, with retained actual MML factory lifetimes, and the actual core
+  AbstractFindMath superclass. Nine original identity/Options/MML observations,
+  26 native ownership assertions, and eleven original FindMath observations
+  pass. All eight host faults and five FindMath faults are detected; the full
+  core suite passes. See evidence/p49-prerequisites-acceptance.md. Actual FindTeX
+  and its UTF-16 non-Unicode regexp binding are the next implementation boundary.
+
 Incomplete requirements, verified from the current source tree:
 
 - ParseOptions, BaseItems and the configuration pipeline
@@ -107,6 +115,6 @@ Incomplete requirements, verified from the current source tree:
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 111 interfaces likewise measure compilation
+measure coverage or usability. The 114 interfaces likewise measure compilation
 structure, not completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.
