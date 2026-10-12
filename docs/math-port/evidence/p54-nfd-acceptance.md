@@ -30,6 +30,10 @@ The parser string-key Map host also detects all four compiling faults recorded
 in p53-string-map-mutations.json, with its 12 original observations passing
 before and after faults. Those cover duplicate replacement, revived exhausted
 iterator, snapshotted iterator storage and reporting an existing key as missing.
+Independent Luna review checked the actual Configuration/Tags/ParseOptions and
+enabled-package Map callsites and found no blocker for this string-key surface.
+The native key iterator returns an optional key for native loops; it does not
+claim an externally observable JavaScript iterator-result object API.
 
 Generators reproduce with --check. All validation reuses build/core; no large
 duplicated build tree is created. The complete build_test.bat core build and
