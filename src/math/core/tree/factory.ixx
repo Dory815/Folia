@@ -109,7 +109,7 @@ public:
 protected:
     Product* createDirect(std::string_view kind, FactoryArgs args) {
         const auto requested = creator(kind);
-        if (requested.kind != CreatorLookupKind::creator) type_error("Factory creator is not callable");
+        if (requested.kind != CreatorLookupKind::creator) type_error("this.node[kind] is not a function");
         return invoke(requested.ref, args);
     }
 

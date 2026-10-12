@@ -47,7 +47,7 @@ build('baseline');assert.equal(run('baseline').status,0,'Baseline must pass');co
 const factory='core/tree/factory.ixx';
 const mutations=[
  {name:'generic-fallback-dropped',file:factory,from:'const auto fallback = creator(defaultKind);',to:'const auto fallback = creator("absent-never-registered");'},
- {name:'direct-dispatch-uses-fallback',file:factory,from:'if (requested.kind != CreatorLookupKind::creator) type_error("Factory creator is not callable");',to:'if (requested.kind != CreatorLookupKind::creator) return AbstractFactory<Product>::create(kind,args);'},
+ {name:'direct-dispatch-uses-fallback',file:factory,from:'if (requested.kind != CreatorLookupKind::creator) type_error("this.node[kind] is not a function");',to:'if (requested.kind != CreatorLookupKind::creator) return AbstractFactory<Product>::create(kind,args);'},
  {name:'captured-class-reread-from-map',file:factory,from:'[this, type = std::move(type)](FactoryArgs args) -> Product* {',to:'[this, key = kind](FactoryArgs args) -> Product* { auto type = getNodeClass(key);'},
  {name:'map-order-reversed',file:factory,from:'return kinds;',to:'std::reverse(kinds.begin(),kinds.end()); return kinds;'},
  {name:'prototype-creator-deleted',file:factory,from:'if (found != nodeMap_.end()) nodeMap_.erase(found);',to:'if (found != nodeMap_.end()) nodeMap_.erase(found); if(kind=="__proto__"){node_->prototypeCreator.reset();node_->prototypeAssigned=false;}'},
