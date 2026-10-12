@@ -34,6 +34,11 @@
       "expected": "ok|true:true:true:true|"
     },
     {
+      "label": "inherited-original-class-metadata",
+      "cpp": "e.context.erase(e.klass,opts::Key(u\"NAME\"));e.context.erase(e.klass,opts::Key(u\"OPTIONS\"));auto j=e.make();auto defaults=e.get(e.module.abstractClass(),u\"OPTIONS\");return e.text(j->name())+\":\"+std::to_string(count(j->preFilters))+\":\"+yes(e.get(j->options,u\"preFilters\")!=e.get(defaults,u\"preFilters\"))+\":\"+yes(e.get(j->instanceIdentity(),u\"constructor\")==opts::Value(e.klass));",
+      "expected": "ok|generic:0:true:true|"
+    },
+    {
       "label": "live-class-name",
       "cpp": "auto j=e.make();auto first=j->name();e.context.set(e.klass,opts::Key(u\"NAME\"),u\"changed\");return e.text(first)+\":\"+e.text(j->name());",
       "expected": "ok|generic:changed|"
@@ -45,8 +50,8 @@
     },
     {
       "label": "constructor-CLASS-capture",
-      "cpp": "auto other=e.context.constructor(u\"Other\");e.context.set(other,opts::Key(u\"NAME\"),u\"other\");e.getter(e.prototype(),u\"constructor\",[&](opts::Value receiver){trace.push_back(\"constructor\");e.capture(receiver);e.context.define(e.captured->instanceIdentity(),opts::Key(u\"constructor\"),opts::Descriptor::data(other));return opts::Value(e.klass);});auto j=e.make();return e.text(j->name())+\":\"+std::to_string(count(j->preFilters));",
-      "expected": "ok|other:0|constructor"
+      "cpp": "auto other=e.context.constructor(u\"Other\");e.context.set(other,opts::Key(u\"NAME\"),u\"other\");e.context.set(e.get(e.klass,u\"OPTIONS\"),opts::Key(u\"marker\"),1);e.context.set(other,opts::Key(u\"OPTIONS\"),e.object({{u\"marker\",2}}));e.getter(e.prototype(),u\"constructor\",[&](opts::Value receiver){trace.push_back(\"constructor\");e.capture(receiver);e.context.define(e.captured->instanceIdentity(),opts::Key(u\"constructor\"),opts::Descriptor::data(other));return opts::Value(e.klass);});auto j=e.make();return e.text(j->name())+\":\"+std::to_string(count(j->preFilters))+\":\"+e.text(e.get(j->options,u\"marker\"));",
+      "expected": "ok|other:0:1|constructor"
     },
     {
       "label": "constructor-initial-field-phase",
@@ -130,7 +135,7 @@
     },
     {
       "label": "filter-data-mutation-and-replacement",
-      "cpp": "auto j=e.make();auto list=makeFunctionList();list->add(e.f);list->add(e.g);e.hook=[&](std::string label,core::InputJaxFilterDataRef a)->std::any{if(label==\"f\"){PropertyList::object(std::any_cast<Property>(a->data))->set(\"value\",9);a->data=Property(17);}return {};};return val(std::any_cast<Property>(e.run(*list)))+\":\"+val(e.data.get(\"value\"));",
+      "cpp": "auto j=e.make();auto list=makeFunctionList();list->add(e.f);list->add(e.g);e.hook=[&](std::string label,core::InputJaxFilterDataRef a)->std::any{if(label==\"f\"){PropertyList::object(std::any_cast<Property>(a->data))->set(\"value\",9);a->data=Property(17);}return {};};auto result=e.run(*list);return val(std::any_cast<Property>(result))+\":\"+val(e.data.get(\"value\"));",
       "expected": "ok|17:9|f:true:true:true:true/g:true:true:true:true"
     },
     {
