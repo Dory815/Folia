@@ -1,5 +1,14 @@
 # Mermaid native Direct2D work — root ownership and acceptance
 
+## User-requested pause, 2026-10-12
+
+The user explicitly paused Mermaid work to prioritize completing native MathJax.
+No further Mermaid implementation, agent assignment, build or acceptance work
+is scheduled while that instruction applies. Preserve existing code and pending
+Source-only artifacts. The resumable checkpoint is status.md; complete backend
+and Folia acceptance are still open. This pause concerns Mermaid only and does
+not pause or narrow the active MathJax goal.
+
 ## User scope correction, 2026-10-12
 
 The user additionally requires Luna for all future Mermaid sub-agent work.
