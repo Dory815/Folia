@@ -21,12 +21,17 @@ Completed current-state evidence:
   all 38 compiling semantic faults. The normal FoliaTests target builds and
   passes its new error filter plus constructor/base-verification regressions.
   See evidence/p33-p35-consumer-acceptance.md for precise scope and limitations.
+- P36 restores fifteen table/multiscript/fraction/radical methods. Its independent
+  baseline passes 19,609 assertions in 373 executed tests and detects all 39
+  compiling semantic faults; the normal target's affected tests also pass.
+  See evidence/p36-table-multiscript-acceptance.md.
 
 Incomplete requirements, verified from the current source tree:
 
 - Remaining tagged-tree MML consumers include explicit Unimplemented stubs.
-  The next P36 packet restores table/multiscript inheritance, verification/repair
-  and class assignment under Root's file ownership and acceptance contract.
+  The next packet covers operator/shared class adjustment, TeXAtom and under/over
+  rules under Root's file ownership and acceptance contract. Action and MathChoice
+  also remain incomplete.
 - TeXParser, Stack and the complete base/AMS/enabled-package command pipeline
   have not been implemented. Current input/tex contains foundations only.
 - There is no src/math/output common-wrapper/scene/SVG implementation, nor a

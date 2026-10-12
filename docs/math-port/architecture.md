@@ -14,7 +14,8 @@ evidence/p23f-full-core-status.md. Remaining explicit MML stubs still fail their
 runtime tests; neither the full test suite nor the native renderer is accepted.
 Current milestone status is in status.md.
 P33–P35 consumer acceptance is recorded in
-evidence/p33-p35-consumer-acceptance.md. Table/multiscript and other remaining
+evidence/p33-p35-consumer-acceptance.md; table/multiscript/arithmetic dependencies
+are accepted in evidence/p36-table-multiscript-acceptance.md. Other remaining
 tagged-tree stubs still prevent full semantic-tree acceptance.
 Prerequisite utilities have local acceptance recorded in
 `evidence/primitive-acceptance.md`, `evidence/numeric-acceptance.md` and
