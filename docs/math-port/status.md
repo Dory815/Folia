@@ -59,14 +59,20 @@ Completed current-state evidence:
   seventeen compiling semantic faults are detected. Full core tests pass,
   exit 0. See evidence/p42b-base-item-acceptance.md. Stack.ts and concrete reducers
   are still required before actual TeX parsing.
+- P43 supplies the actual parser Stack's nine responsibilities over existing
+  BaseItem owners. All 72 original records pass; all sixteen compiling semantic
+  faults are detected. Full core tests pass, exit 0. See
+  evidence/p43-parser-stack-acceptance.md. Complete configured reducers,
+  ParseOptions and TeXParser remain; P44 service ownership is planned, not built.
 
 Incomplete requirements, verified from the current source tree:
 
-- ParseOptions, BaseItems/Stack and the configuration pipeline
+- ParseOptions, BaseItems and the configuration pipeline
   are the next parser prerequisites. Accepted input utilities do not establish
   complete TeX/package parsing or whole-source reflection parity.
-- TeXParser, Stack and the complete base/AMS/enabled-package command pipeline
-  have not been implemented. Current input/tex contains foundations only.
+- TeXParser and the complete base/AMS/enabled-package command pipeline
+  have not been implemented. Accepted Stack and input foundations do not provide
+  a functioning TeX parser.
 - There is no src/math/output common-wrapper/scene/SVG implementation, nor a
   native mathematical font service or public complete TeX -> SVG entry.
 - Formula SVG parity and Folia native integration cannot be accepted without
@@ -75,6 +81,6 @@ Incomplete requirements, verified from the current source tree:
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 100 interfaces likewise measure compilation
+measure coverage or usability. The 102 interfaces likewise measure compilation
 structure, not completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.
