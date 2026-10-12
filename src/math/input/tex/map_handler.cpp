@@ -77,6 +77,20 @@ Property mapName(const TokenMapRef& map) {
     return map->name();
 }
 
+Property optionScalar(const options::Value& value) {
+    if (std::holds_alternative<options::Undefined>(value.data)) return Missing{};
+    if (std::holds_alternative<options::Null>(value.data)) return PropertyNull{};
+    if (const auto* boolean = std::get_if<bool>(&value.data)) return *boolean;
+    if (const auto* number = std::get_if<double>(&value.data)) return *number;
+    if (const auto* text = std::get_if<std::u16string>(&value.data))
+        return property_host::debugText(*text);
+    throw options::Exception("Unimplemented", u"Map names require a lossless scalar Property binding");
+}
+
+std::u16string optionName(std::string_view name) {
+    return property_host::text(name);
+}
+
 std::u16string interpolation(const Property& value) {
     return property_host::string(value);
 }
@@ -132,13 +146,6 @@ TokenMapRef MapHandler::getMap(const Property& name) {
 
 SubHandler::SubHandler(WarningSink warning) : warning_(std::move(warning)) {}
 
-void SubHandler::add(options::Context&,options::Value,ParseMethod,double) {
-    throw options::Exception("Unimplemented",u"SubHandler canonical record ingress");
-}
-void SubHandler::remove(options::Context&,options::Value,ParseMethod) {
-    throw options::Exception("Unimplemented",u"SubHandler canonical record removal");
-}
-
 void SubHandler::warn(std::u16string message) {
     std::u16string output = u"TexParser Warning: ";
     output += message;
@@ -153,13 +160,73 @@ void SubHandler::add(const Property& maps, ParseMethod fallback, double priority
     auto input = PropertyArray::array(maps);
     if (!input) property_host::typeError("MapHandler.add expects an array of map names");
 
-    const PropertyArray snapshot = input->spread();
-    for (std::size_t remaining = snapshot.size(); remaining > 0; --remaining) {
-        const Property name = snapshot.get(remaining - 1);
-        const TokenMapRef map = MapHandler::getMap(name);
+    const PropertyArray snapshot = input->slice();
+    std::size_t index = snapshot.size();
+    addMapIterator([&]() -> std::optional<Property> {
+        if (index == 0) return std::nullopt;
+        return snapshot.get(--index);
+    }, std::move(fallback), priority);
+}
+
+void SubHandler::add(options::Context& context, options::Value maps, ParseMethod fallback, double priority) {
+    const auto* array = std::get_if<options::ObjectRef>(&maps.data);
+    if (!array || context.kind(*array) != options::ObjectKind::array)
+        throw options::Exception("TypeError", u"maps.slice is not a function");
+
+    // Source calls maps.slice() before reverse iteration. Preserve holes in
+    // that ordinary temporary array: an indexed prototype property added by a
+    // later slice getter can become visible during reverse/Get iteration.
+    const std::uint32_t length = context.arrayLength(*array);
+    const options::ObjectRef snapshot = context.array(length);
+    for (std::uint32_t index = 0; index < length; ++index) {
+        const std::u16string key = optionName(std::to_string(index));
+        const options::Key slot(key);
+        const options::Value receiver(*array);
+        if (context.has(receiver, slot)) {
+            context.define(snapshot, slot, options::Descriptor::data(context.get(receiver, slot)));
+        }
+    }
+
+    for (std::uint32_t lower = 0, upper = length ? length - 1 : 0; lower < upper; ++lower, --upper) {
+        const std::u16string lowerName = optionName(std::to_string(lower));
+        const std::u16string upperName = optionName(std::to_string(upper));
+        const options::Key lowerKey(lowerName), upperKey(upperName);
+        const options::Value receiver(snapshot);
+        const bool lowerExists = context.has(receiver, lowerKey);
+        const std::optional<options::Value> lowerValue = lowerExists
+            ? std::optional<options::Value>(context.get(receiver, lowerKey))
+            : std::nullopt;
+        const bool upperExists = context.has(receiver, upperKey);
+        const std::optional<options::Value> upperValue = upperExists
+            ? std::optional<options::Value>(context.get(receiver, upperKey))
+            : std::nullopt;
+        if (lowerExists && upperExists) {
+            context.set(receiver, lowerKey, *upperValue);
+            context.set(receiver, upperKey, *lowerValue);
+        } else if (!lowerExists && upperExists) {
+            context.set(receiver, lowerKey, *upperValue);
+            context.erase(snapshot, upperKey);
+        } else if (lowerExists && !upperExists) {
+            context.erase(snapshot, lowerKey);
+            context.set(receiver, upperKey, *lowerValue);
+        }
+    }
+
+    std::uint32_t index = 0;
+    addMapIterator([&]() -> std::optional<Property> {
+        if (index >= context.arrayLength(snapshot)) return std::nullopt;
+        const std::u16string key = optionName(std::to_string(index++));
+        return optionScalar(context.get(options::Value(snapshot), options::Key(key)));
+    }, std::move(fallback), priority);
+}
+
+void SubHandler::addMapIterator(const std::function<std::optional<Property>()>& next,
+                               ParseMethod fallback, double priority) {
+    while (const auto name = next()) {
+        const TokenMapRef map = MapHandler::getMap(*name);
         if (!map) {
             std::u16string message = u"Configuration '";
-            message += interpolation(name);
+            message += interpolation(*name);
             message += u"' not found! Omitted.";
             warn(std::move(message));
             return;
@@ -173,9 +240,29 @@ void SubHandler::remove(const Property& maps, ParseMethod fallback) {
     auto input = PropertyArray::array(maps);
     if (!input) property_host::typeError("MapHandler.remove expects an array of map names");
 
-    for (std::size_t index = 0; index < input->size(); ++index) {
-        const Property name = input->get(index);
-        const TokenMapRef map = retrieve(name);
+    std::size_t index = 0;
+    removeMapIterator([&]() -> std::optional<Property> {
+        if (index >= input->size()) return std::nullopt;
+        return input->get(index++);
+    }, std::move(fallback));
+}
+
+void SubHandler::remove(options::Context& context, options::Value maps, ParseMethod fallback) {
+    const auto* array = std::get_if<options::ObjectRef>(&maps.data);
+    if (!array || context.kind(*array) != options::ObjectKind::array)
+        throw options::Exception("TypeError", u"maps is not iterable");
+    const options::ObjectRef captured = *array;
+    std::uint32_t index = 0;
+    removeMapIterator([&]() -> std::optional<Property> {
+        if (index >= context.arrayLength(captured)) return std::nullopt;
+        const std::u16string key = optionName(std::to_string(index++));
+        return optionScalar(context.get(options::Value(captured), options::Key(key)));
+    }, std::move(fallback));
+}
+
+void SubHandler::removeMapIterator(const std::function<std::optional<Property>()>& next, ParseMethod fallback) {
+    while (const auto name = next()) {
+        const TokenMapRef map = retrieve(*name);
         if (map) configuration_.remove(map);
     }
     if (truthy(fallback)) fallback_.remove(fallback);
@@ -254,35 +341,70 @@ TokenMapRef SubHandler::retrieve(const Property& name) {
 
 SubHandlers::SubHandlers(WarningSink warning) : warning_(std::move(warning)) {}
 
-void SubHandlers::add(options::Context&,OptionFunctionBindings&,options::Value,options::Value,double) {
-    throw options::Exception("Unimplemented",u"SubHandlers canonical records");
-}
-void SubHandlers::remove(options::Context&,OptionFunctionBindings&,options::Value,options::Value) {
-    throw options::Exception("Unimplemented",u"SubHandlers canonical record removal");
-}
-
 void SubHandlers::add(const HandlerConfig& handlers, const FallbackConfig& fallbacks, double priority) {
     const std::vector<std::string> keys = handlers.keys();
+    addHandlerNames(keys, [&](SubHandler& handler, std::string_view name) {
+        const Property maps = handlers.get(name);
+        const ParseMethod fallback = fallbacks.get(name);
+        handler.add(maps, fallback, priority);
+    });
+}
+
+void SubHandlers::add(options::Context& context, OptionFunctionBindings& bindings,
+                      options::Value handlers, options::Value fallbacks, double priority) {
+    if (&context != &bindings.context())
+        throw options::Exception("TypeError", u"SubHandlers Context does not match callable bindings");
+    std::vector<std::string> names;
+    for (const auto& key : context.enumerableStringKeys(handlers)) names.push_back(property_host::debugText(key));
+    addHandlerNames(names, [&](SubHandler& handler, std::string_view name) {
+        const options::Key key(optionName(name));
+        const options::Value maps = context.get(handlers, key);
+        const options::Value fallback = context.get(fallbacks, key);
+        handler.add(context, maps, bindings.functionValue(fallback), priority);
+    });
+}
+
+void SubHandlers::addHandlerNames(std::span<const std::string> keys,
+                                  const std::function<void(SubHandler&, std::string_view)>& apply) {
     for (const std::string& name : keys) {
         SubHandlerRef handler = get(name);
         if (!handler) {
             handler = std::make_shared<SubHandler>(warning_);
             set(name, handler);
         }
-        const Property maps = handlers.get(name);
-        const ParseMethod fallback = fallbacks.get(name);
-        handler->add(maps, fallback, priority);
+        apply(*handler, name);
     }
 }
 
 void SubHandlers::remove(const HandlerConfig& handlers, const FallbackConfig& fallbacks) {
     const std::vector<std::string> keys = handlers.keys();
+    removeHandlerNames(keys, [&](SubHandler& handler, std::string_view name) {
+        const Property maps = handlers.get(name);
+        const ParseMethod fallback = fallbacks.get(name);
+        handler.remove(maps, fallback);
+    });
+}
+
+void SubHandlers::remove(options::Context& context, OptionFunctionBindings& bindings,
+                         options::Value handlers, options::Value fallbacks) {
+    if (&context != &bindings.context())
+        throw options::Exception("TypeError", u"SubHandlers Context does not match callable bindings");
+    std::vector<std::string> names;
+    for (const auto& key : context.enumerableStringKeys(handlers)) names.push_back(property_host::debugText(key));
+    removeHandlerNames(names, [&](SubHandler& handler, std::string_view name) {
+        const options::Key key(optionName(name));
+        const options::Value maps = context.get(handlers, key);
+        const options::Value fallback = context.get(fallbacks, key);
+        handler.remove(context, maps, bindings.functionValue(fallback));
+    });
+}
+
+void SubHandlers::removeHandlerNames(std::span<const std::string> keys,
+                                     const std::function<void(SubHandler&, std::string_view)>& apply) {
     for (const std::string& name : keys) {
         const SubHandlerRef handler = get(name);
         if (handler) {
-            const Property maps = handlers.get(name);
-            const ParseMethod fallback = fallbacks.get(name);
-            handler->remove(maps, fallback);
+            apply(*handler, name);
         }
     }
 }

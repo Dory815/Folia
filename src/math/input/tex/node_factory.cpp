@@ -2,8 +2,51 @@
 module folia.math.input.tex.node_factory;
 import folia.math.input.tex.node_factory_host;
 import folia.math.input.tex.node_util;
+import folia.math.util.property_host;
 import std;
 namespace folia::math::tex {
+namespace {
+struct CreatorSlot {
+    std::string name;
+    options::Key key;
+};
+
+std::vector<CreatorSlot> enumerateCreatorSlots(options::Context& context, options::Value source) {
+    std::vector<CreatorSlot> result;
+    if (std::holds_alternative<options::Null>(source.data) ||
+        std::holds_alternative<options::Undefined>(source.data)) return result;
+
+    std::unordered_set<std::u16string> seen;
+    options::Value current = source;
+    while (true) {
+        for (const auto& key : context.ownKeys(current)) {
+            const auto* name = std::get_if<std::u16string>(&key.data);
+            if (!name || !seen.insert(*name).second) continue;
+            const auto property = context.descriptor(current, key);
+            if (property && property->enumerable) {
+                result.push_back({property_host::debugText(*name), key});
+            }
+        }
+
+        std::optional<options::ObjectRef> prototype;
+        if (const auto* object = std::get_if<options::ObjectRef>(&current.data)) {
+            prototype = context.prototype(*object);
+        } else if (std::holds_alternative<std::u16string>(current.data)) {
+            prototype = context.intrinsics().stringPrototype;
+        } else if (std::holds_alternative<double>(current.data)) {
+            prototype = context.intrinsics().numberPrototype;
+        } else if (std::holds_alternative<bool>(current.data)) {
+            prototype = context.intrinsics().booleanPrototype;
+        } else if (std::holds_alternative<options::SymbolRef>(current.data)) {
+            prototype = context.intrinsics().symbolPrototype;
+        }
+        if (!prototype) break;
+        current = options::Value(*prototype);
+    }
+    return result;
+}
+}
+
 mml::NodeValue NodeFactory::createNode(NodeFactory& factory,Property kind,
                                        mml::Children children,Property definition,
                                        mml::NodeValue text) {
@@ -62,15 +105,37 @@ void NodeFactory::set(std::string_view kind,Property creator) {
     tree::TreeCallGuard<mml::MmlNode> guard;
     factory_.set(kind, std::move(creator));
 }
-void NodeFactory::setCreators(Property maps) {
-    tree::TreeCallGuard<mml::MmlNode> guard;
-    for (const std::string& kind : node_factory_host::creatorKeys(maps)) {
-        const Property creator = mml::host::get(maps, kind);
-        this->set(kind, creator);
+void NodeFactory::installCreators(
+    std::span<const std::string> names,
+    const std::function<std::optional<Property>(std::string_view)>& readCreator) {
+    for (const std::string& kind : names) {
+        if (const auto creator = readCreator(kind)) this->set(kind, *creator);
     }
 }
-void NodeFactory::setCreators(options::Context&,OptionFunctionBindings&,options::Value) {
-    throw options::Exception("Unimplemented",u"NodeFactory canonical creator record");
+void NodeFactory::setCreators(Property maps) {
+    tree::TreeCallGuard<mml::MmlNode> guard;
+    const std::vector<std::string> names = node_factory_host::creatorKeys(maps);
+    installCreators(names, [&maps](std::string_view kind) -> std::optional<Property> {
+        return mml::host::get(maps, kind);
+    });
+}
+void NodeFactory::setCreators(options::Context& context,OptionFunctionBindings& bindings,options::Value maps) {
+    tree::TreeCallGuard<mml::MmlNode> guard;
+    if (&context != &bindings.context()) {
+        throw options::Exception("TypeError",u"NodeFactory creator record and callable bindings belong to different Contexts");
+    }
+    const std::vector<CreatorSlot> slots = enumerateCreatorSlots(context, maps);
+    std::vector<std::string> names;
+    names.reserve(slots.size());
+    for (const auto& slot : slots) names.push_back(slot.name);
+    installCreators(names, [&context,&bindings,maps,&slots](std::string_view name) -> std::optional<Property> {
+        const auto slot = std::find_if(slots.begin(), slots.end(), [name](const CreatorSlot& candidate) {
+            return candidate.name == name;
+        });
+        if (slot == slots.end() || !context.has(maps, slot->key)) return std::nullopt;
+        const auto value = context.get(maps, slot->key);
+        return functions::toProperty(bindings.functionValue(value));
+    });
 }
 mml::NodeValue NodeFactory::create(std::string_view kind,FunctionArgs rest) {
     tree::TreeCallGuard<mml::MmlNode> guard;
