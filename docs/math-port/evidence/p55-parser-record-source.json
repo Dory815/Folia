@@ -86,8 +86,8 @@
     },
     {
       "label": "reverse-lower-get-precedes-upper-has",
-      "cpp": "auto maps=c.array(2),h=c.object(),f=c.object();std::optional<o::ObjectRef> seen;getter(c,maps,u\"1\",[&]{auto g=c.function(u\"lower\",[&](o::Context& inner,o::Value receiver,auto){seen=std::get<o::ObjectRef>(receiver.data);inner.erase(inner.intrinsics().arrayPrototype,u\"0\");inner.erase(*seen,u\"1\");return o::Value(u\"p55-a\");});c.define(c.intrinsics().arrayPrototype,u\"0\",o::Descriptor::access(g,{},true,true));return o::Value(u\"p55-b\");});c.set(h,u\"macro\",maps);t::SubHandlers handlers([&](const auto& message){trace.push_back(property_host::debugText(message));});handlers.add(c,bindings,h,f,1);return yes(c.hasOwn(*seen,u\"0\"))+\"|\"+mapNames(handlers)+\"|\"+join(trace);",
-      "expected": "false||TexParser Warning: Configuration 'undefined' not found! Omitted."
+      "cpp": "auto maps=c.array(2),h=c.object(),f=c.object();std::optional<o::ObjectRef> seen;getter(c,maps,u\"1\",[&]{auto g=c.function(u\"lower\",[&](o::Context& inner,o::Value receiver,auto){seen=std::get<o::ObjectRef>(receiver.data);inner.erase(inner.intrinsics().arrayPrototype,u\"0\");inner.erase(*seen,u\"1\");inner.set(inner.intrinsics().arrayPrototype,u\"0\",u\"p55-reverse-missing\");return o::Value(u\"p55-a\");});c.define(c.intrinsics().arrayPrototype,u\"0\",o::Descriptor::access(g,{},true,true));return o::Value(u\"p55-b\");});c.set(h,u\"macro\",maps);t::SubHandlers handlers([&](const auto& message){trace.push_back(property_host::debugText(message));});handlers.add(c,bindings,h,f,1);return yes(seen.has_value())+\"|\"+yes(seen && c.hasOwn(*seen,u\"0\"))+\"|\"+mapNames(handlers)+\"|\"+join(trace);",
+      "expected": "true|false||TexParser Warning: Configuration 'p55-reverse-missing' not found! Omitted."
     },
     {
       "label": "canonical-fallback-identity-and-removal",

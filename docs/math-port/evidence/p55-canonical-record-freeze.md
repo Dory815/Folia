@@ -89,3 +89,18 @@ performing both Has checks before either Get incorrectly creates an own
 Undefined lower slot. The initial body fails this original observation
 (build/p55-reverse-order-red.log, exit 1). Reverse must perform Lower Has/Get,
 then Upper Has/Get, then the appropriate Set/Delete branch.
+
+The mutation harness initially dereferenced an absent optional getter receiver
+when a fault prevented that getter from running. That run timed out and is not
+accepted fault evidence. Root added a receiver-presence observation to both
+original and native probes and guarded the native optional before retrying.
+
+The first complete core suite then exposed shared registry pre-state: an older
+test legitimately registers an Undefined token-map key. The reverse witness
+formerly depended on that key being absent. Both stimuli now install a named
+missing inherited slot after the lower getter removes the upper own slot.
+The original still records the receiver's own-slot absence, read order and
+missing-map short-circuit, without depending on the unrelated Undefined key.
+Independent Luna review confirms the changed stimulus still distinguishes the
+upper-Has-before-lower-Get fault. Production code is unchanged by this repair;
+expectations are regenerated solely from the pinned original classes.
