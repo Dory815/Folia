@@ -12,15 +12,15 @@ import folia.math.core.mml_tree.arithmetic_host;
 import folia.math.core.tree.node_factory;
 namespace m=folia::math::mml;namespace h=m::host;namespace tr=folia::math::tree;using folia::math::Property;using folia::math::PropertyList;using folia::math::PropertyArray;using folia::math::Missing;using folia::math::PropertyNull;using namespace boost::ut;namespace {
 std::u16string units(std::initializer_list<unsigned>v){std::u16string s;for(auto x:v)s.push_back(static_cast<char16_t>(x));return s;}
-m::Children children(std::initializer_list<m::MmlNode*>v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}
+m::Children children(std::initializer_list<m::MmlNode*>v={}){auto result=std::make_shared<tr::ChildArray<m::MmlNode>>();for(auto*node:v)result->push_back(m::NodeValue(node));return result;}
 bool deep(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return (std::isnan(*x)&&std::isnan(*y))||(*x==*y&&std::signbit(*x)==std::signbit(*y));auto x=PropertyList::record(a),y=PropertyList::record(b);if(x&&y){if(PropertyArray::array(a).has_value()!=PropertyArray::array(b).has_value()||x->keys()!=y->keys())return false;for(const auto&k:x->keys())if(!deep(x->getOwn(k),y->getOwn(k)))return false;if(auto ax=PropertyArray::array(a)){auto ay=PropertyArray::array(b);return ax->size()==ay->size();}return true;}return a==b;}
 struct Call{m::MmlNode*node;Property a=PropertyList{};Property d,l,p;};std::vector<std::string> arithmeticEvents;std::vector<Call> calls;std::vector<m::MmlNode*> texCalls;std::string mode;m::MmlNode*target=nullptr; m::MmlNode*late=nullptr;m::Children originalChildren;
-struct Record:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::string label;std::string kind()const override{return "record";}void inheritAttributes(Property a,Property d,Property l,Property p)override{arithmeticEvents.push_back("inherit/"+label);calls.push_back({this,a,d,l,p});if(label=="first"&&mode=="swap")target->childNodes=children({this,late});if(label=="first"&&mode=="attributes"){h::set(a,"onlyFirst","changed");auto tuple=PropertyArray::array(h::get(a,"shared"));if(!tuple)h::typeError("Missing shared tuple in fixture");tuple->set(1,"changed");}}m::MmlNode*setTeXclass(m::MmlNode*prev)override{arithmeticEvents.push_back("tex/"+label+(prev?"/prev":"/null"));texCalls.push_back(this);if(label=="first"&&mode=="grow-rebind"){originalChildren->push_back(late);target->childNodes=children({late});}if(label=="first"&&mode=="swap")target->childNodes=children({this,late});return this;}};
-template<class T>struct Proxy:T{using T::T;void hook(PropertyList a,Property d,Property l,Property p){T::setChildInheritedAttributes(a,d,l,p);}void getPrevClass(m::MmlNode*p)override{arithmeticEvents.push_back("previous");T::getPrevClass(p);}};using Frac=Proxy<m::MmlMfrac>;using Sqrt=Proxy<m::MmlMsqrt>;using Root=Proxy<m::MmlMroot>;
+struct Record:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::string label;std::string kind()const override{return "record";}void inheritAttributes(Property a,Property d,Property l,Property p)override{arithmeticEvents.push_back("inherit/"+label);calls.push_back({this,a,d,l,p});if(label=="first"&&mode=="swap")target->childNodes=children({this,late});if(label=="first"&&mode=="attributes"){h::set(a,"onlyFirst","changed");auto tuple=PropertyArray::array(h::get(a,"shared"));if(!tuple)h::typeError("Missing shared tuple in fixture");tuple->set(1,"changed");}}m::NodeValue setTeXclass(m::NodeValue prev)override{arithmeticEvents.push_back("tex/"+label+(prev.isNode()?"/prev":"/null"));texCalls.push_back(this);if(label=="first"&&mode=="grow-rebind"){originalChildren->push_back(m::NodeValue(late));target->childNodes=children({late});}if(label=="first"&&mode=="swap")target->childNodes=children({this,late});return m::NodeValue(this);}};
+template<class T>struct Proxy:T{using T::T;void hook(m::AttributeList a,Property d,Property l,Property p){T::setChildInheritedAttributes(a,d,l,p);}void getPrevClass(m::NodeValue p)override{arithmeticEvents.push_back("previous");T::getPrevClass(p);}};using Frac=Proxy<m::MmlMfrac>;using Sqrt=Proxy<m::MmlMsqrt>;using Root=Proxy<m::MmlMroot>;
 using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode>classes(){return {{"mfrac",m::classBinding<Frac>()},{"msqrt",m::classBinding<Sqrt>()},{"mroot",m::classBinding<Root>()},{"record",m::classBinding<Record>()},{"math",m::classBinding<m::MmlMath>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"mi",m::classBinding<m::MmlMi>()},{"mo",m::classBinding<m::MmlMo>()},{"text",m::classBinding<m::TextNode>()}};}
 m::MmlNode*create(NF&f,std::string_view k,PropertyList a={},m::Children c=children()){return f.create(k,std::array<std::any,2>{a,c});}
-struct Setup{NF f{classes()};m::MmlNode*n;Record*r0,*r1,*r2;Setup(std::string_view k){arithmeticEvents.clear();calls.clear();texCalls.clear();mode.clear();target=late=nullptr;originalChildren.reset();n=create(f,k);r0=dynamic_cast<Record*>(create(f,"record"));r1=dynamic_cast<Record*>(create(f,"record"));r2=dynamic_cast<Record*>(create(f,"record"));r0->label="first";r1->label="second";r2->label="late";n->childNodes=children({r0,r1});r0->parent=r1->parent=r2->parent=n;}};
-void hook(Setup&s,PropertyList a,Property d,Property l,Property p){if(auto*n=dynamic_cast<Frac*>(s.n))n->hook(a,d,l,p);else if(auto*n=dynamic_cast<Sqrt*>(s.n))n->hook(a,d,l,p);else dynamic_cast<Root*>(s.n)->hook(a,d,l,p);}
+struct Setup{NF f{classes()};m::MmlNode*n;Record*r0,*r1,*r2;Setup(std::string_view k){arithmeticEvents.clear();calls.clear();texCalls.clear();mode.clear();target=late=nullptr;originalChildren.reset();n=create(f,k);r0=dynamic_cast<Record*>(create(f,"record"));r1=dynamic_cast<Record*>(create(f,"record"));r2=dynamic_cast<Record*>(create(f,"record"));r0->label="first";r1->label="second";r2->label="late";n->childNodes=children({r0,r1});r2->setParent(m::NodeValue(n));r1->setParent(m::NodeValue(n));r0->setParent(m::NodeValue(n));}};
+void hook(Setup&s,m::AttributeList a,Property d,Property l,Property p){if(auto*n=dynamic_cast<Frac*>(s.n))n->hook(a,d,l,p);else if(auto*n=dynamic_cast<Sqrt*>(s.n))n->hook(a,d,l,p);else dynamic_cast<Root*>(s.n)->hook(a,d,l,p);}
 }
 suite math_port_arithmetic_tests=[] {
 "math_port_arithmetic_source_defaults_fields_and_accessors"_test=[] {
@@ -51,7 +51,7 @@ expect(deep(m::MmlMsqrt::defaults().getOwn("mathcolor"),Property(h::debugText(un
 expect(deep(m::MmlMsqrt::defaults().getOwn("mathsize"),Property(h::debugText(units({95,105,110,104,101,114,105,116,95})))));
 expect(deep(m::MmlMsqrt::defaults().getOwn("dir"),Property(h::debugText(units({95,105,110,104,101,114,105,116,95})))));
 expect(deep(m::MmlMsqrt::defaults().getOwn("data-vertical-align"),Property(h::debugText(units({98,111,116,116,111,109})))));
-expect(bool(((*n->childNodes)[0]->isInferred())==true));
+expect(bool((n->childNodes->get(0).requireNode("isInferred")->isInferred())==true));
 }
 {auto*n=create(f,"mroot");
 expect(bool((n->kind())=="mroot"));
@@ -1678,9 +1678,9 @@ expect(bool((calls[1].node==s.r2)==true));
 };
 "math_port_arithmetic_tex_class_transfer_iteration_and_live_children"_test=[] {
 {Setup s("mfrac");auto*prev=create(s.f,"record");prev->setTexClass("raw");prev->attributes()->set("scriptlevel","2");mode="";target=s.n;late=s.r2;originalChildren=s.n->childNodes;
-m::MmlNode*result=nullptr;
-result=s.n->setTeXclass(prev);
-expect(bool((result==s.n)==true));
+m::NodeValue result{folia::math::Missing{}}     ;
+result=s.n->setTeXclass(m::NodeValue(prev));
+expect(bool((result.nodeOrNull()==s.n)==true));
 expect(deep(s.n->prevClass(),Property(h::debugText(units({114,97,119})))));
 expect(deep(s.n->prevLevel(),Property(h::debugText(units({50})))));
 expect(deep(s.n->texClass(),Property(PropertyNull{})));
@@ -1690,9 +1690,9 @@ expect(bool(((0<texCalls.size()&&texCalls[0]==s.r2))==false));
 expect(bool(((1<texCalls.size()&&texCalls[1]==s.r2))==false));
 }
 {Setup s("mfrac");auto*prev=create(s.f,"record");prev->setTexClass("raw");prev->attributes()->set("scriptlevel","2");mode="swap";target=s.n;late=s.r2;originalChildren=s.n->childNodes;
-m::MmlNode*result=nullptr;
-result=s.n->setTeXclass(prev);
-expect(bool((result==s.n)==true));
+m::NodeValue result{folia::math::Missing{}}     ;
+result=s.n->setTeXclass(m::NodeValue(prev));
+expect(bool((result.nodeOrNull()==s.n)==true));
 expect(deep(s.n->prevClass(),Property(h::debugText(units({114,97,119})))));
 expect(deep(s.n->prevLevel(),Property(h::debugText(units({50})))));
 expect(deep(s.n->texClass(),Property(PropertyNull{})));
@@ -1702,9 +1702,9 @@ expect(bool(((0<texCalls.size()&&texCalls[0]==s.r2))==false));
 expect(bool(((1<texCalls.size()&&texCalls[1]==s.r2))==false));
 }
 {Setup s("mfrac");auto*prev=create(s.f,"record");prev->setTexClass("raw");prev->attributes()->set("scriptlevel","2");mode="grow-rebind";target=s.n;late=s.r2;originalChildren=s.n->childNodes;
-m::MmlNode*result=nullptr;
-result=s.n->setTeXclass(prev);
-expect(bool((result==s.n)==true));
+m::NodeValue result{folia::math::Missing{}}     ;
+result=s.n->setTeXclass(m::NodeValue(prev));
+expect(bool((result.nodeOrNull()==s.n)==true));
 expect(deep(s.n->prevClass(),Property(h::debugText(units({114,97,119})))));
 expect(deep(s.n->prevLevel(),Property(h::debugText(units({50})))));
 expect(deep(s.n->texClass(),Property(PropertyNull{})));
@@ -1715,9 +1715,9 @@ expect(bool(((1<texCalls.size()&&texCalls[1]==s.r2))==false));
 expect(bool(((2<texCalls.size()&&texCalls[2]==s.r2))==true));
 }
 {Setup s("msqrt");auto*prev=create(s.f,"record");prev->setTexClass("raw");prev->attributes()->set("scriptlevel","2");mode="";target=s.n;late=s.r2;originalChildren=s.n->childNodes;
-m::MmlNode*result=nullptr;
-result=s.n->setTeXclass(prev);
-expect(bool((result==s.n)==true));
+m::NodeValue result{folia::math::Missing{}}     ;
+result=s.n->setTeXclass(m::NodeValue(prev));
+expect(bool((result.nodeOrNull()==s.n)==true));
 expect(deep(s.n->prevClass(),Property(h::debugText(units({114,97,119})))));
 expect(deep(s.n->prevLevel(),Property(h::debugText(units({50})))));
 expect(deep(s.n->texClass(),Property(0)));
@@ -1726,9 +1726,9 @@ expect(bool((texCalls.size())==1));
 expect(bool(((0<texCalls.size()&&texCalls[0]==s.r2))==false));
 }
 {Setup s("msqrt");auto*prev=create(s.f,"record");prev->setTexClass("raw");prev->attributes()->set("scriptlevel","2");mode="swap";target=s.n;late=s.r2;originalChildren=s.n->childNodes;
-m::MmlNode*result=nullptr;
-result=s.n->setTeXclass(prev);
-expect(bool((result==s.n)==true));
+m::NodeValue result{folia::math::Missing{}}     ;
+result=s.n->setTeXclass(m::NodeValue(prev));
+expect(bool((result.nodeOrNull()==s.n)==true));
 expect(deep(s.n->prevClass(),Property(h::debugText(units({114,97,119})))));
 expect(deep(s.n->prevLevel(),Property(h::debugText(units({50})))));
 expect(deep(s.n->texClass(),Property(0)));
@@ -1737,9 +1737,9 @@ expect(bool((texCalls.size())==1));
 expect(bool(((0<texCalls.size()&&texCalls[0]==s.r2))==false));
 }
 {Setup s("msqrt");auto*prev=create(s.f,"record");prev->setTexClass("raw");prev->attributes()->set("scriptlevel","2");mode="grow-rebind";target=s.n;late=s.r2;originalChildren=s.n->childNodes;
-m::MmlNode*result=nullptr;
-result=s.n->setTeXclass(prev);
-expect(bool((result==s.n)==true));
+m::NodeValue result{folia::math::Missing{}}     ;
+result=s.n->setTeXclass(m::NodeValue(prev));
+expect(bool((result.nodeOrNull()==s.n)==true));
 expect(deep(s.n->prevClass(),Property(h::debugText(units({114,97,119})))));
 expect(deep(s.n->prevLevel(),Property(h::debugText(units({50})))));
 expect(deep(s.n->texClass(),Property(0)));
@@ -1748,9 +1748,9 @@ expect(bool((texCalls.size())==1));
 expect(bool(((0<texCalls.size()&&texCalls[0]==s.r2))==false));
 }
 {Setup s("mroot");auto*prev=create(s.f,"record");prev->setTexClass("raw");prev->attributes()->set("scriptlevel","2");mode="";target=s.n;late=s.r2;originalChildren=s.n->childNodes;
-m::MmlNode*result=nullptr;
-result=s.n->setTeXclass(prev);
-expect(bool((result==s.n)==true));
+m::NodeValue result{folia::math::Missing{}}     ;
+result=s.n->setTeXclass(m::NodeValue(prev));
+expect(bool((result.nodeOrNull()==s.n)==true));
 expect(deep(s.n->prevClass(),Property(h::debugText(units({114,97,119})))));
 expect(deep(s.n->prevLevel(),Property(h::debugText(units({50})))));
 expect(deep(s.n->texClass(),Property(0)));
@@ -1760,9 +1760,9 @@ expect(bool(((0<texCalls.size()&&texCalls[0]==s.r2))==false));
 expect(bool(((1<texCalls.size()&&texCalls[1]==s.r2))==false));
 }
 {Setup s("mroot");auto*prev=create(s.f,"record");prev->setTexClass("raw");prev->attributes()->set("scriptlevel","2");mode="swap";target=s.n;late=s.r2;originalChildren=s.n->childNodes;
-m::MmlNode*result=nullptr;
-result=s.n->setTeXclass(prev);
-expect(bool((result==s.n)==true));
+m::NodeValue result{folia::math::Missing{}}     ;
+result=s.n->setTeXclass(m::NodeValue(prev));
+expect(bool((result.nodeOrNull()==s.n)==true));
 expect(deep(s.n->prevClass(),Property(h::debugText(units({114,97,119})))));
 expect(deep(s.n->prevLevel(),Property(h::debugText(units({50})))));
 expect(deep(s.n->texClass(),Property(0)));
@@ -1772,9 +1772,9 @@ expect(bool(((0<texCalls.size()&&texCalls[0]==s.r2))==false));
 expect(bool(((1<texCalls.size()&&texCalls[1]==s.r2))==true));
 }
 {Setup s("mroot");auto*prev=create(s.f,"record");prev->setTexClass("raw");prev->attributes()->set("scriptlevel","2");mode="grow-rebind";target=s.n;late=s.r2;originalChildren=s.n->childNodes;
-m::MmlNode*result=nullptr;
-{bool caught=false;try{result=s.n->setTeXclass(prev);}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);}
-expect(bool((result==s.n)==false));
+m::NodeValue result{folia::math::Missing{}}     ;
+{bool caught=false;try{result=s.n->setTeXclass(m::NodeValue(prev));}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);}
+expect(bool((result.nodeOrNull()==s.n)==false));
 expect(deep(s.n->prevClass(),Property(h::debugText(units({114,97,119})))));
 expect(deep(s.n->prevLevel(),Property(h::debugText(units({50})))));
 expect(deep(s.n->texClass(),Property(0)));

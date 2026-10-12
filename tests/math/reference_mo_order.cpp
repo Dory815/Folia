@@ -16,8 +16,8 @@ namespace m=folia::math::mml;namespace h=m::host;namespace d=m::operator_dict;na
 bool enabled=false;std::vector<std::string> traceLog;void note(std::string s){if(enabled)traceLog.push_back(std::move(s));}
 std::string traceText(){std::string s;for(const auto&v:traceLog){s+=v;s+=" | ";}return s;}
 std::u16string units(std::initializer_list<unsigned>v){std::u16string s;for(auto x:v)s.push_back(static_cast<char16_t>(x));return s;}
-m::Children children(std::initializer_list<m::MmlNode*>v={}){return std::make_shared<std::vector<m::MmlNode*>>(v);}
-struct Probe:m::MmlMo{using MmlMo::MmlMo;m::MmlNode*Parent()const override{note("Parent");return MmlMo::Parent();}std::shared_ptr<folia::math::Attributes>attributes()const override{note("attributes");return MmlMo::attributes();}std::u16string getText()const override{note("text");return MmlMo::getText();}Property getProperty(std::string_view k)const override{note("get/"+std::string(k));return MmlMo::getProperty(k);}void setProperty(std::string_view k,Property v)override{note("set/"+std::string(k));MmlMo::setProperty(k,std::move(v));}Property texClass()override{note("tex.read");return MmlMo::texClass();}void setTexClass(Property v)override{note("tex.write");MmlMo::setTexClass(std::move(v));}PropertyArray getForms()override{note("forms");return MmlMo::getForms();}PropertyArray handleExplicitForm(PropertyArray a)override{note("explicit");return MmlMo::handleExplicitForm(a);}
+m::Children children(std::initializer_list<m::NodeValue>v={}){auto result=std::make_shared<tr::ChildArray<m::MmlNode>>();for(auto node:v)result->push_back(node);return result;}
+struct Probe:m::MmlMo{using MmlMo::MmlMo;m::NodeValue Parent()const override{note("Parent");return MmlMo::Parent();}std::shared_ptr<folia::math::Attributes>attributes()const override{note("attributes");return MmlMo::attributes();}std::u16string getText()const override{note("text");return MmlMo::getText();}Property getProperty(std::string_view k)const override{note("get/"+std::string(k));return MmlMo::getProperty(k);}void setProperty(std::string_view k,Property v)override{note("set/"+std::string(k));MmlMo::setProperty(k,std::move(v));}Property texClass()override{note("tex.read");return MmlMo::texClass();}void setTexClass(Property v)override{note("tex.write");MmlMo::setTexClass(std::move(v));}PropertyArray getForms()override{note("forms");return MmlMo::getForms();}PropertyArray handleExplicitForm(PropertyArray a)override{note("explicit");return MmlMo::handleExplicitForm(a);}
 static Property&operatorTable(){note("static.table");return MmlMo::operatorTable();}
 static Property&mathSpacing(){note("static.spacing");return MmlMo::mathSpacing();}
 static Property&remapPrimes(){note("static.remap");return MmlMo::remapPrimes();}
@@ -31,7 +31,7 @@ struct Dispatch:Probe{using Probe::Probe;void checkOperatorTable(std::u16string_
 struct NullCore:Probe{using Probe::Probe;m::MmlNode*coreParent()override{return nullptr;}};
 struct Phase:Probe{using Probe::Probe;void setChildren(m::Children c)override{note("phase/"+std::string(_texClass.missing()?"missing":h::debugText(h::string(_texClass)))+"/"+std::string(lspace.missing()?"missing":h::debugText(h::string(lspace)))+"/"+std::string(rspace.missing()?"missing":h::debugText(h::string(rspace))));Probe::setChildren(c);}};
 PropertyArray changingDef;int attributeReads=0;struct AttrMutation:Probe{using Probe::Probe;std::shared_ptr<folia::math::Attributes>attributes()const override{auto a=Probe::attributes();if(enabled&&++attributeReads==3)changingDef.set(3,PropertyList{{"a",9},{"b",8}});return a;}};
-struct Snapshot:m::MmlMi{using MmlMi::MmlMi;bool isEmbellished()const override{if(enabled){note("snapshot");(*parent->childNodes)[1]=const_cast<Snapshot*>(this);(*parent->childNodes)[2]=const_cast<Snapshot*>(this);}return false;}};
+struct Snapshot:m::MmlMi{using MmlMi::MmlMi;bool isEmbellished()const override{if(enabled){note("snapshot");auto*parent=getParent().requireNode("childNodes");parent->childNodes->set(1,m::NodeValue(const_cast<Snapshot*>(this)));parent->childNodes->set(2,m::NodeValue(const_cast<Snapshot*>(this)));}return false;}};
 struct Atom:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::string kind()const override{return "TeXAtom";}};Probe*current=nullptr;struct Previous:Probe{using Probe::Probe;Property texClass()override{note("prev.tex.read");return Probe::texClass();}void setTexClass(Property v)override{note("prev.tex.write/"+h::debugText(h::string(current->prevClass())));Probe::setTexClass(std::move(v));}};
 using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode>classes(){return {{"probe",m::classBinding<Probe>()},{"dispatch",m::classBinding<Dispatch>()},{"nullcore",m::classBinding<NullCore>()},{"phase",m::classBinding<Phase>()},{"mo",m::classBinding<m::MmlMo>()},{"math",m::classBinding<m::MmlMath>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"mi",m::classBinding<m::MmlMi>()},{"munderover",m::classBinding<m::MmlMunderover>()},{"munder",m::classBinding<m::MmlMunder>()},{"mover",m::classBinding<m::MmlMover>()},{"text",m::classBinding<m::TextNode>()}};}
 m::MmlNode*create(NF&f,std::string_view k,PropertyList a={},m::Children c=children()){return f.create(k,std::array<std::any,2>{a,c});}m::MmlNode*token(NF&f,std::string_view k,std::u16string s,PropertyList a={}){auto*t=dynamic_cast<m::TextNode*>(f.create("text"));t->setText(std::move(s));return create(f,k,a,children({t}));}Probe*mo(NF&f,std::u16string s,PropertyList a={},std::string_view k="probe"){return dynamic_cast<Probe*>(token(f,k,std::move(s),a));}
@@ -168,41 +168,41 @@ expect((h::get(result,"2")).value==Property(0).value);
 m::MmlMo::operatorTable()=old;m::MmlMo::mathSpacing()=spacing;
 enabled=false;};
 "math_port_mo_order_malformed_accent_empty"_test=[] {enabled=false;traceLog.clear();
-NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*over=mo(f,u"^");auto*p=create(f,"munderover",{},children({b,n,over}));p->childNodes=children();n->parent=p;
+NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*over=mo(f,u"^");auto*p=create(f,"munderover",{},children({b,n,over}));p->childNodes=children();n->setParent(m::NodeValue(p));
 traceLog.clear();enabled=true;{bool caught=false;try{n->accent(u"^");}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);}enabled=false;
 expect(traceLog==std::vector<std::string>{"Parent","get/mathaccent"})<<traceText();
 expect((n->getProperty("mathaccent")).value==Property(Missing{}).value);
 enabled=false;};
 "math_port_mo_order_malformed_accent_null-array"_test=[] {enabled=false;traceLog.clear();
-NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*over=mo(f,u"^");auto*p=create(f,"munderover",{},children({b,n,over}));p->childNodes=nullptr;n->parent=p;
+NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*over=mo(f,u"^");auto*p=create(f,"munderover",{},children({b,n,over}));p->childNodes=nullptr;n->setParent(m::NodeValue(p));
 traceLog.clear();enabled=true;{bool caught=false;try{n->accent(u"^");}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);}enabled=false;
 expect(traceLog==std::vector<std::string>{"Parent","get/mathaccent"})<<traceText();
 expect((n->getProperty("mathaccent")).value==Property(Missing{}).value);
 enabled=false;};
 "math_port_mo_order_malformed_accent_null-base"_test=[] {enabled=false;traceLog.clear();
-NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*over=mo(f,u"^");auto*p=create(f,"munderover",{},children({b,n,over}));p->childNodes=children({nullptr,n,over});n->parent=p;
+NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*over=mo(f,u"^");auto*p=create(f,"munderover",{},children({b,n,over}));p->childNodes=children({nullptr,n,over});n->setParent(m::NodeValue(p));
 traceLog.clear();enabled=true;{bool caught=false;try{n->accent(u"^");}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);}enabled=false;
 expect(traceLog==std::vector<std::string>{"Parent","get/mathaccent"})<<traceText();
 expect((n->getProperty("mathaccent")).value==Property(Missing{}).value);
 enabled=false;};
 "math_port_mo_order_malformed_accent_missing-under-embellished-over"_test=[] {enabled=false;traceLog.clear();
-NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*over=mo(f,u"^");auto*p=create(f,"munderover",{},children({b,n,over}));p->childNodes=children({b,nullptr,over});n->parent=p;
+NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*over=mo(f,u"^");auto*p=create(f,"munderover",{},children({b,n,over}));p->childNodes=children({b,m::NodeValue(folia::math::Missing{}),over});n->setParent(m::NodeValue(p));
 traceLog.clear();enabled=true;{bool caught=false;try{n->accent(u"^");}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);}enabled=false;
 expect(traceLog==std::vector<std::string>{"Parent","get/mathaccent"})<<traceText();
 expect((n->getProperty("mathaccent")).value==Property(Missing{}).value);
 enabled=false;};
 "math_port_mo_order_accent_missing_script_mover"_test=[] {enabled=false;traceLog.clear();
-NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*p=create(f,"mover",{},children({b,n}));p->childNodes=children({b});n->parent=p;
+NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*p=create(f,"mover",{},children({b,n}));p->childNodes=children({b});n->setParent(m::NodeValue(p));
 traceLog.clear();enabled=true;{bool caught=false;try{n->isAccent();}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);}enabled=false;
 expect(traceLog==std::vector<std::string>{})<<traceText();
 enabled=false;};
 "math_port_mo_order_accent_missing_script_munder"_test=[] {enabled=false;traceLog.clear();
-NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*p=create(f,"munder",{},children({b,n}));p->childNodes=children({b});n->parent=p;
+NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*p=create(f,"munder",{},children({b,n}));p->childNodes=children({b});n->setParent(m::NodeValue(p));
 traceLog.clear();enabled=true;{bool caught=false;try{n->isAccent();}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);}enabled=false;
 expect(traceLog==std::vector<std::string>{})<<traceText();
 enabled=false;};
 "math_port_mo_order_accent_missing_script_munderover"_test=[] {enabled=false;traceLog.clear();
-NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*p=create(f,"munderover",{},children({b,n,n}));p->childNodes=children({b});n->parent=p;
+NF f(classes());auto*n=mo(f,u"^");auto*b=token(f,"mi",u"b");auto*p=create(f,"munderover",{},children({b,n,n}));p->childNodes=children({b});n->setParent(m::NodeValue(p));
 traceLog.clear();enabled=true;{bool caught=false;try{n->isAccent();}catch(const m::Error&e){caught=e.name=="TypeError";}expect(caught);}enabled=false;
 expect(traceLog==std::vector<std::string>{})<<traceText();
 enabled=false;};

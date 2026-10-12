@@ -311,3 +311,10 @@ P26 independently compiles the simple/mfenced/maction observers against all
 has six remaining observer compilation failures; semantic runtime acceptance
 does not follow from this compile repair. See
 `evidence/p26-observer-repair-acceptance.md`.
+
+P27 closes the six remaining stale observer compile failures against all 90
+interfaces with original profiles, value tables and raw matrices intact. The
+normal repository runner now builds and links, then exits 1 on mathematical
+runtime exceptions/assertion failures. Compile repair does not accept those
+consumer algorithms or any TeX/layout/rendering integration. See
+`evidence/p27-observer-repair-acceptance.md`; 54/246 remains historical.
