@@ -2,6 +2,12 @@
 
 ## User scope correction, 2026-10-12
 
+The user additionally requires Luna for all future Mermaid sub-agent work.
+Root stopped the running Sol audit and assigned the bounded layout-to-scene
+audit to a Luna agent. Historical Sol assignments below describe past work;
+they do not authorize further Sol delegation. Root retains architecture,
+interface, Source expectations, red gates and final acceptance ownership.
+
 The user clarified that this task is adding a Direct2D backend alongside SVG
 in mermaid-rs-renderer, not porting tiny-skia's raster engine. This correction
 supersedes the later raster/blitter-frontier prerequisites in this document.

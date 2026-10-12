@@ -27,6 +27,12 @@ all other mathematical host operations. Use existing `host::get(options,key)`
 when Source accesses a property; no synthetic empty object, early validation,
 boolean coercion, generic null-error message or cloned options bag is allowed.
 
+Native emitter repairs must also disambiguate empty-object stimuli explicitly.
+After this signature change, a bare C++ `{}` constructs Missing; it cannot stand
+for Source `{}` as the old ErrorOptions default did. Emit `PropertyList{}` for
+an original empty object, `Missing{}` for undefined and `PropertyNull{}` for null.
+Do not preserve an old brace spelling that changes the original stimulus.
+
 ## File duties and controlled migration
 
 Root owns replacement signatures in `mml_node.ixx` and the derived declarations
@@ -36,6 +42,14 @@ representation repairs and their regenerated fixtures. Original JS stimuli
 and Source records remain immutable; emitter refresh is never gold refresh.
 The boundary migration may change parameter types and property access syntax,
 but must leave unrelated algorithm bodies and honest stubs intact.
+
+Root verified all seven existing Source emitters with `--check` before migration
+on 2026-10-12: mml-node 43 cases/1,084 assertions; html-node 75/434 (52 value
+records); multiscript 226/1,304 (480 raw rows/1,170 value records); simple-mml
+106/7,667 (1,605 raw rows/296 value records); table 135/4,700 (240 raw rows/428
+value records); maction 934 cases/2,318 Source values; leaf 27/669. All reproduced
+their unchanged generated fixtures. These are original-emitter baseline checks,
+not Native runtime passes for the unimplemented verification algorithms.
 
 Before delegation, Root must establish a compiling declaration graph, typed
 dispatch observers retaining raw options identity, and an original-driven red
