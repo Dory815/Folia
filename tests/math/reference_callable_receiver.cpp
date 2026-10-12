@@ -1,6 +1,6 @@
 // Root native invocation stimuli, without map/handler algorithm implementations.
 #include "support/folia_test.hpp"
-import folia.math.input.tex.types;
+import folia.math.input.tex.tex_parser_context;
 import folia.math.input.tex.macro;
 import folia.math.util.function_list;
 import folia.math.core.tree.factory_types;

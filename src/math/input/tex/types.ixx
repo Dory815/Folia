@@ -7,12 +7,6 @@ export namespace folia::math::tex {
 using Args=Property;
 using Attributes=Property;
 using Environment=Property;
-class ParserContext {
-public:
-    virtual ~ParserContext()=default;
-    virtual Property currentCS() const=0;
-    virtual void setCurrentCS(Property)=0;
-};
 class StackItemContext {public: virtual ~StackItemContext()=default;};
 using StackItemRef=std::shared_ptr<StackItemContext>;
 struct ParseSymbol {std::u16string description;};
@@ -21,12 +15,8 @@ using ParseResult=std::variant<Property,StackItemRef,ParseSymbolRef>;
 // Macro imports this leaf module; its canonical owner crosses this boundary
 // as NativeObjectRef without declaring Macro in the wrong named module.
 using ParseAtom=std::variant<Property,TokenRef,StackItemRef,NativeObjectRef>;
-struct ParseInput {ParserContext& parser;Property token;};
 using ParseRest=std::span<const std::any>;
 using ParseCallable=Function;
 using ParseCallableRef=FunctionRef;
 using ParseMethod=FunctionValue;
-using ParseBody=std::function<ParseResult(const FunctionReceiver&,ParserContext&,const ParseAtom&,ParseRest)>;
-ParseCallableRef makeParseCallable(ParseBody);
-ParseResult invokeParseMethod(const ParseMethod&,const FunctionReceiver&,ParserContext&,const ParseAtom&,ParseRest={});
 }

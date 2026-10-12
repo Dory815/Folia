@@ -1,6 +1,6 @@
 // Shared native ParseMethod bridge for MathJax 4.1.3 TeX input.
 // Apache-2.0; see src/math/LICENSE-MathJax.txt.
-module folia.math.input.tex.types;
+module folia.math.input.tex.tex_parser_context;
 
 import folia.math.core.tree.factory_types;
 import folia.math.util.callable_types;

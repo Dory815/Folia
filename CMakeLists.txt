@@ -108,6 +108,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/tex_error.ixx
     src/math/input/tex/tex_error_pattern.ixx
     src/math/input/tex/types.ixx
+    src/math/input/tex/tex_parser_context.ixx
     src/math/input/tex/token_map_types.ixx
     src/math/input/tex/token_map.ixx
     src/math/input/tex/map_handler.ixx

@@ -5,6 +5,7 @@ import folia.math.util.function_list;
 import folia.math.util.property_host;
 import folia.math.core.tree.factory_types;
 import folia.math.input.tex.macro;
+import folia.math.input.tex.tex_parser_context;
 namespace {
 using namespace boost::ut;
 using namespace folia::math;

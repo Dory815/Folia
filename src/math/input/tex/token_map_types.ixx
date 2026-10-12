@@ -1,7 +1,7 @@
 // Root native protocol for pinned TokenMap.ts and MapHandler.ts dependencies.
 // Apache-2.0; the concrete TokenMap classes remain a separate required port.
 export module folia.math.input.tex.token_map_types;
-export import folia.math.input.tex.types;
+export import folia.math.input.tex.tex_parser_context;
 export import folia.math.input.tex.macro;
 export import folia.math.util.object_types;
 import std;
