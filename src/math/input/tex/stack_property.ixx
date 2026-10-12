@@ -45,6 +45,7 @@ class StackPropertyList {
     // The rich graph is created rich; scalar objects are never promoted/copied.
     static StackProperty next(const Property& p){
         if(auto* storage=std::get_if<std::shared_ptr<PropertyStorage>>(&p.value);storage&&*storage){
+            if((*storage)->binding)return (*storage)->binding->prototype();
             if((*storage)->array)property_host::typeError("Native stack property array prototype is unbound");
             if((*storage)->prototype){Property out;out.value=(*storage)->prototype;return out;}
             return (*storage)->objectPrototype?StackProperty(Property(BuiltinProperty::prototype)):StackProperty(PropertyNull{});

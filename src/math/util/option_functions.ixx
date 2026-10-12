@@ -21,6 +21,10 @@ public:
     OptionFunctionBindings(const OptionFunctionBindings&)=delete;
     OptionFunctionBindings& operator=(const OptionFunctionBindings&)=delete;
     options::Context& context()const{return context_;}
+    std::optional<options::ObjectRef> find(FunctionRef function)const{
+        for(const auto& [known,object]:bindings_)if(known==function)return object;
+        return {};
+    }
     options::Value bind(FunctionRef function,OptionCallBinding binding,std::u16string label=u"native"){
         if(!function||!function->call||!binding.receiver||!binding.arguments||!binding.result)
             throw tree::FactoryError("Unimplemented",u"Option function requires its canonical body and typed call binding");

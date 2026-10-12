@@ -1,9 +1,12 @@
 // One native function identity/body for typed input and utility invocation.
 export module folia.math.util.callable_types;
 export import folia.math.util.object_types;
+export import folia.math.util.option_types;
 import std;
 export namespace folia::math {
-using FunctionReceiver=std::variant<Missing,NativeObjectRef>;
+// Ordinary Source records/arrays retain their exact Context identity as a
+// receiver. They are never copied into a pretend native class or dictionary.
+using FunctionReceiver=std::variant<Missing,NativeObjectRef,options::Value>;
 using FunctionArgs=std::span<const std::any>;
 class FunctionBody {
     using Callback=std::function<std::any(const FunctionReceiver&,FunctionArgs)>;

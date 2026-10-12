@@ -65,6 +65,8 @@ inline std::u16string arrayString(Property receiver){
     }return out;
 }
 inline Property primitive(const Property& p,bool stringHint){
+    if(auto storage=std::get_if<std::shared_ptr<PropertyStorage>>(&p.value);storage&&*storage&&(*storage)->binding)
+        return (*storage)->binding->primitive(stringHint);
     if(p==Property(BuiltinProperty::arrayPrototype))return "";
     if(p==Property(BuiltinProperty::numberPrototype))return 0;
     auto object=PropertyList::record(p);if(!object)return p;

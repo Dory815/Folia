@@ -41,7 +41,23 @@ struct Property {
     bool missing() const { return std::holds_alternative<Missing>(value); }
     bool operator==(const Property&) const = default;
 };
+// A view of an existing record graph. Bound storage owns no parallel entries:
+// every operation reaches the original record, including getters and setters.
+struct PropertyRecordBinding {
+    virtual ~PropertyRecordBinding()=default;
+    virtual Property get(std::string_view)=0;
+    virtual Property getOwn(std::string_view)=0;
+    virtual bool has(std::string_view)const=0;
+    virtual bool hasOwn(std::string_view)const=0;
+    virtual void set(std::string_view,Property)=0;
+    virtual void setOwn(std::string_view,Property)=0;
+    virtual void erase(std::string_view)=0;
+    virtual std::vector<std::string> keys()const=0;
+    virtual Property prototype()const=0;
+    virtual Property primitive(bool)=0;
+};
 struct PropertyStorage {
+    std::shared_ptr<PropertyRecordBinding> binding;
     std::vector<std::pair<std::string, Property>> entries;
     std::shared_ptr<PropertyStorage> prototype;
     bool objectPrototype = true;
@@ -80,6 +96,7 @@ class PropertyList {
         bool ordinary = true;
         for (auto p = storage; p; p = p->prototype)
         {
+            if(p->binding)return p->binding->get(name);
             for (const auto& [key, value] : p->entries) if (key == name) return value;
             if(p->array){
                 if(name=="length")return static_cast<double>(p->arrayValues.size());
@@ -111,6 +128,11 @@ class PropertyList {
     }
 public:
     PropertyList() = default;
+    static PropertyList live(std::shared_ptr<PropertyRecordBinding> binding,bool array=false){
+        if(!binding)throw options::Exception("TypeError",u"Live Property record requires a binding");
+        PropertyList result;result.storage_->binding=std::move(binding);
+        result.storage_->array=array;return result;
+    }
     static std::optional<PropertyList> object(const Property& value) {
         if (auto p = std::get_if<std::shared_ptr<Storage>>(&value.value); p && *p && !(*p)->array) {
             return PropertyList(*p);
@@ -124,17 +146,20 @@ public:
         for (const auto& [key, value] : entries) setOwn(key, value);
     }
     static PropertyList withPrototype(const PropertyList& parent) {
+        if(parent.storage_->binding)throw options::Exception("Unimplemented",u"Mixed native/Context Property prototype requires a canonical receiver binding");
         PropertyList result;
         result.storage_->prototype = parent.storage_;
         return result;
     }
     Property get(std::string_view name) const { return resolve(storage_, name); }
     Property getOwn(std::string_view name) const {
+        if(storage_->binding)return storage_->binding->getOwn(name);
         if(storage_->array){if(name=="length")return static_cast<double>(storage_->arrayValues.size());if(auto i=arrayIndex(name);i&&*i<storage_->arrayValues.size()&&storage_->arrayPresent[*i])return storage_->arrayValues[*i];}
         for (const auto& [key, value] : storage_->entries) if (key == name) return value;
         return Missing{};
     }
     bool hasOwn(std::string_view name) const {
+        if(storage_->binding)return storage_->binding->hasOwn(name);
         if(storage_->array){if(name=="length")return true;if(auto i=arrayIndex(name);i&&*i<storage_->arrayValues.size()&&storage_->arrayPresent[*i])return true;}
         for (const auto& [key, value] : storage_->entries) if (key == name) return true;
         return false;
@@ -143,6 +168,7 @@ public:
         bool ordinary = true;
         for (auto p = storage_; p; p = p->prototype)
         {
+            if(p->binding)return p->binding->has(name);
             for (const auto& [key, value] : p->entries) if (key == name) return true;
             if(p->array){
                 if(name=="length")return true;
@@ -154,6 +180,7 @@ public:
         return ordinary && !builtin(name).missing();
     }
     void setOwn(std::string_view name, Property value) {
+        if(storage_->binding){storage_->binding->setOwn(name,std::move(value));return;}
         if(storage_->array){
             if(name=="length"){
                 auto n=std::get_if<double>(&value.value);
@@ -171,6 +198,7 @@ public:
         storage_->entries.emplace_back(name, std::move(value));
     }
     void set(std::string_view name, Property value) {
+        if(storage_->binding){storage_->binding->set(name,std::move(value));return;}
         // The inherited Object.prototype __proto__ setter ignores scalar values.
         // An own data property on any layer instead allows a new own property.
         if (name == "__proto__") {
@@ -178,11 +206,13 @@ public:
             bool ordinary = true;
             for (auto p = storage_; p; p = p->prototype)
             {
+                if(p->binding)throw options::Exception("Unimplemented",u"Native Property __proto__ assignment through a live prototype requires descriptor binding");
                 for (const auto& [key, v] : p->entries) if (key == name) data = true;
                 ordinary = p->objectPrototype;
             }
             if (!data && ordinary) {
                 if (auto parent = std::get_if<std::shared_ptr<Storage>>(&value.value)) {
+                    if(*parent&&(*parent)->binding)throw options::Exception("Unimplemented",u"Mixed native/Context Property prototype requires a canonical receiver binding");
                     for (auto p = *parent; p; p = p->prototype)
                         if (p == storage_) throw std::invalid_argument("Cyclic __proto__ value");
                     storage_->prototype = *parent;
@@ -207,10 +237,12 @@ public:
         setOwn(name, std::move(value));
     }
     void erase(std::string_view name) {
+        if(storage_->binding){storage_->binding->erase(name);return;}
         if(storage_->array){if(name=="length")return;if(auto i=arrayIndex(name);i&&*i<storage_->arrayValues.size()){storage_->arrayValues[*i]=Missing{};storage_->arrayPresent[*i]=false;}}
         std::erase_if(storage_->entries, [&](const auto& entry) { return entry.first == name; });
     }
     std::vector<std::string> keys() const {
+        if(storage_->binding)return storage_->binding->keys();
         std::vector<std::string> result;
         if(storage_->array)for(std::size_t i=0;i<storage_->arrayValues.size();++i)if(storage_->arrayPresent[i])result.push_back(std::to_string(i));
         for (const auto& [key, value] : storage_->entries) result.push_back(key);
@@ -239,20 +271,25 @@ public:
     static std::optional<PropertyArray> array(const Property& p){
         if(auto v=std::get_if<std::shared_ptr<PropertyStorage>>(&p.value);v&&*v&&(*v)->array)return PropertyArray(*v);return {};
     }
-    std::size_t size()const{return storage_->arrayValues.size();}
-    bool has(std::size_t i)const{return i<size()&&storage_->arrayPresent[i];}
+    std::size_t size()const{
+        if(storage_->binding)return static_cast<std::size_t>(std::get<double>(storage_->binding->get("length").value));
+        return storage_->arrayValues.size();
+    }
+    bool has(std::size_t i)const{return storage_->binding?storage_->binding->hasOwn(std::to_string(i)):i<size()&&storage_->arrayPresent[i];}
     Property get(std::size_t i)const{return record().get(std::to_string(i));}
     PropertyList record()const{return PropertyList::record(Property(*this)).value();}
     void resize(std::size_t length){
         if(length>0xFFFFFFFFULL)throw options::Exception("RangeError",u"Invalid array length");
+        if(storage_->binding){storage_->binding->set("length",Property(static_cast<double>(length)));return;}
         storage_->arrayValues.resize(length);storage_->arrayPresent.resize(length,false);
     }
     void set(std::size_t i,Property value){
         if(i>=0xFFFFFFFFULL)throw options::Exception("RangeError",u"Native array index exceeds index domain");
+        if(storage_->binding){storage_->binding->set(std::to_string(i),std::move(value));return;}
         if(i>=size())resize(i+1);storage_->arrayValues[i]=std::move(value);storage_->arrayPresent[i]=true;
     }
     void push(Property value){set(size(),std::move(value));}
-    void erase(std::size_t i){if(i<size()){storage_->arrayValues[i]=Missing{};storage_->arrayPresent[i]=false;}}
+    void erase(std::size_t i){if(storage_->binding){storage_->binding->erase(std::to_string(i));return;}if(i<size()){storage_->arrayValues[i]=Missing{};storage_->arrayPresent[i]=false;}}
     std::vector<std::string> keys()const{return record().keys();}
     PropertyArray spread()const{PropertyArray out;for(std::size_t i=0;i<size();++i)out.push(get(i));return out;}
     // Native nonnegative index binding for Source slice(1) in MacroMap.

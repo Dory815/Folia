@@ -214,6 +214,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/function_types.ixx
     src/math/util/function_list.ixx
     src/math/util/option_functions.ixx
+    src/math/util/context_property_bindings.ixx
     src/math/util/native_identities.ixx
     src/math/util/js_number.ixx
     src/math/util/js_numeric_input.ixx
@@ -338,7 +339,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_nodes/mphantom.cpp
     src/math/util/option_object.cpp
     src/math/util/option_array.cpp)
-target_sources(folia_math PRIVATE src/math/util/option_array_iteration.cpp)
+target_sources(folia_math PRIVATE
+    src/math/util/option_array_iteration.cpp
+    src/math/util/context_property_bindings.cpp)
 
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
