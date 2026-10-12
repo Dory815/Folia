@@ -73,23 +73,18 @@ void FunctionList::initializeFunctions(FunctionDefinitionsRef list) {
 
 void FunctionList::addList(FunctionDefinitionsRef list) {
     if (!list) functions::typeError(u"FunctionList definition list is null");
-
-    // Array iteration reads the current length and definition on every turn.
-    for (std::size_t index = 0; index < list->size(); ++index) {
-        const FunctionDefinition definition = (*list)[index];
-        if (const auto* direct = std::get_if<FunctionValue>(&definition)) {
-            this->add(*direct);
-            continue;
-        }
-
-        const FunctionTupleRef tuple = std::get<FunctionTupleRef>(definition);
-        if (!tuple) functions::typeError(u"FunctionList tuple is null");
-        // Source evaluates tuple[0], then tuple[1], before calling add.
-        const FunctionValue item = tuple->item;
-        const std::optional<double> priority = tuple->priority;
-        if (priority) this->add(item, *priority);
-        else this->add(item);
-    }
+    class NativeDefinitions final:public FunctionDefinitionsSource {
+        FunctionDefinitionsRef list_;
+    public:
+        explicit NativeDefinitions(FunctionDefinitionsRef list):list_(std::move(list)){}
+        std::size_t length()override{return list_->size();}
+        FunctionDefinition read(std::size_t index)override{return (*list_)[index];}
+    } source(std::move(list));
+    appendDefinitions(source);
+}
+void FunctionList::addList(FunctionDefinitionsSource& source){appendDefinitions(source);}
+void FunctionList::appendDefinitions(FunctionDefinitionsSource&){
+    throw tree::FactoryError("Unimplemented",u"FunctionList::appendDefinitions");
 }
 
 bool FunctionList::execute(FunctionArgs args) {

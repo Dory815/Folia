@@ -190,6 +190,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/promise.ixx
     src/math/util/function_types.ixx
     src/math/util/function_list.ixx
+    src/math/util/option_functions.ixx
     src/math/util/js_number.ixx
     src/math/util/js_numeric_input.ixx
     src/math/util/js_case.ixx
