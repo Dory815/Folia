@@ -11,9 +11,16 @@ import std;
 namespace folia::math::mml {
 namespace {
 
-NodeValue childAt(const Children& children, std::size_t index, std::string_view message) {
-    // P23f Root stub: childAt.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+NodeValue childAt(const Children& children, std::size_t index) {
+    if (!children) host::typeError("Cannot read properties of null (reading '"+
+                                  std::to_string(index)+"')");
+    return children->get(index);
+}
+
+TextNode& requiredText(MmlNode* product) {
+    auto* node = NodeValue(product).requireNode("setText");
+    if (auto* text = dynamic_cast<TextNode*>(node)) return *text;
+    host::typeError("this.factory.create(...).setText is not a function");
 }
 
 std::u16string nativeStringReplaceTarget(const Property& value) {
