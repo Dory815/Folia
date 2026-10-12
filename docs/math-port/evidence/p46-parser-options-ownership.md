@@ -98,17 +98,25 @@ Examples verified from pinned Source:
 
 ## Root gates before Luna implementation
 
-1. Freeze Source field/default/nullable types and all actual parser partitions;
+1. core/InputJax.ts is a real prerequisite of TeX's declaration. Establish its
+   actual interface/AbstractInputJax owner above core MathItem, preserving its
+   constructor's captured CLASS.OPTIONS, live class NAME getter, option graph,
+   real pre/post FunctionLists, adaptor/MmlFactory identity, base no-ops/empty
+   findMath and executeFilters argument identity/returned mutated data. The base
+   only stores the generic adaptor, so a complete opaque native adaptor reference
+   suffices at this boundary; it cannot pretend to implement DOMAdaptor methods.
+   No fake TeX base or generic configuration target substitutes for InputJax.
+2. Freeze Source field/default/nullable types and all actual parser partitions;
    compile their declaration graph together in folia_math. Include all 26 base
    item declarations and real Tags/configuration types, not test probe reducers.
-2. Bind option callbacks/regex/native references with original alias/receiver
+3. Bind option callbacks/regex/native references with original alias/receiver
    observations. Existing controlled RegExpContext tests accept map dispatch,
    not a complete native regexp engine; real required patterns remain a gate.
-3. Freeze original configuration/ParseOptions lifecycle observations, including
+4. Freeze original configuration/ParseOptions lifecycle observations, including
    nested options/callback identity across two jax instances, clear persistence,
    dynamic package addition and live option mutation. Do not substitute fake
    TeX/ParseOptions algorithms in an observer.
-4. Delegate exclusive Source-aligned body files only after contracts and gold are
+5. Delegate exclusive Source-aligned body files only after contracts and gold are
    reviewable. Root owns original comparisons, build and acceptance.
 
 Unicode NFD for the French math style also requires a proper portable native host.

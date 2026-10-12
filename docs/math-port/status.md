@@ -77,6 +77,7 @@ Completed current-state evidence:
   declarations use P46's single-runtime Context/Value option-graph decision in
   evidence/p46-parser-options-ownership.md. The actual declaration graph and
   native option callback/regexp bindings are the next implementation boundary.
+  The real core InputJax base must also precede the actual TeX declaration.
 
 Incomplete requirements, verified from the current source tree:
 
