@@ -109,6 +109,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/tex_error_pattern.ixx
     src/math/input/tex/types.ixx
     src/math/input/tex/tex_parser_context.ixx
+    src/math/input/tex/unit_pattern.ixx
+    src/math/input/tex/unit_util.ixx
+    src/math/input/tex/unit_util_host.ixx
     src/math/input/tex/token_map_types.ixx
     src/math/input/tex/token_map.ixx
     src/math/input/tex/map_handler.ixx
@@ -219,6 +222,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/function_list.cpp
     src/math/util/argument_expansion.cpp
     src/math/input/tex/parse_callable.cpp
+    src/math/input/tex/unit_util.cpp
+    src/math/input/tex/unit_util_bindings.cpp
     src/math/util/js_case_data.cpp
     src/math/core/mml_tree/mml_nodes/html_node_bindings.cpp
     src/math/core/mml_tree/mml_nodes/html_node.cpp
