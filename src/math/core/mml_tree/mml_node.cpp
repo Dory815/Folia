@@ -121,8 +121,8 @@ PropertyList& AbstractMmlNode::verifyDefaults() {
 void AbstractMmlNode::initializeMml(tree::FactoryArgs args) {
     // These are the source field-initializer values. Establish them before
     // factory creation or virtual child hooks can observe this object.
-    prevClass_ = PropertyNull{};
-    prevLevel_ = PropertyNull{};
+    setPrevClass(PropertyNull{});
+    setPrevLevel(PropertyNull{});
     texclass_ = PropertyNull{};
 
     Property inputAttributes = Missing{};

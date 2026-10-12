@@ -44,6 +44,12 @@ public:
     TreeCallGuard(const TreeCallGuard&)=delete;
     TreeCallGuard& operator=(const TreeCallGuard&)=delete;
 };
+// Iterative parent walks consume the same resource budget as recursive calls.
+template<class Product> class TreeWalkBudget {
+    std::vector<std::unique_ptr<TreeCallGuard<Product>>> steps_;
+public:
+    void step(){steps_.push_back(std::make_unique<TreeCallGuard<Product>>());}
+};
 // Array.join suppresses recursion into an array already being joined.
 template<class Product> class TreeJoinGuard {
     inline static thread_local std::vector<const ChildArray<Product>*> active_;

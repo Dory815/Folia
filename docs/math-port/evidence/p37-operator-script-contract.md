@@ -89,3 +89,17 @@ also fail with Unimplemented. No implementation is inferred from that build.
 Primitive bindings retain tagged Get until the requested member dereference.
 Null arrays and Null ACCENTS reads report the actual requested numeric property.
 The missing slot itself remains Undefined and retains the subsequent member error.
+
+Root's first real implementation baseline passes Mo 23577/14, ordering 538/50
+and scripts 1689/18, but the full Atom/semantics corpus reveals ten failed
+constructor assertions in six tests. The current base initializer bypasses
+Source public prevClass/prevLevel setters. Root authorizes correcting those two
+field writes at the responsible AbstractMmlNode boundary, in Source declaration
+order before its protected texclass field. Existing original partial-constructor
+and virtual-setter witnesses remain unchanged and must pass, along with the
+accepted generic constructor and MML regressions. This does not move any node
+constructor behavior into the new operator algorithm.
+
+Iterative core/parent walks use the same Native TreeCallGuard resource budget
+through TreeWalkBudget steps. This is a Native termination adaptation for malformed
+cycles; it is tested separately and is not a claimed JavaScript stack-capacity match.

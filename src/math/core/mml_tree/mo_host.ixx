@@ -8,9 +8,13 @@ import std;
 export namespace folia::math::mml::host {
 template<class T>T moStatic(const std::function<T()>& f){if(!f)typeError("Missing native constructor static getter");return f();}
 inline std::shared_ptr<folia::math::Attributes> moAttributes(MmlNode& n){auto p=n.attributes();if(!p)typeError("Cannot read null MML attributes");return p;}
-inline NodeValue moChild(NodeValue,std::size_t){throw Error("Unimplemented",u"Root-frozen MML operator indexed Get");}
-inline MmlNode& moRequired(NodeValue,std::string_view){throw Error("Unimplemented",u"Root-frozen MML operator member receiver");}
-inline bool moInstance(MmlNode* n,const tree::FactoryClassRef<MmlNode>& c){if(!c||!c->isInstance)typeError("Invalid math constructor for instanceof");return c->isInstance(n);}
+inline NodeValue moChild(NodeValue value,std::size_t index){
+    const auto nodes=value.requireNode("childNodes")->childNodes;
+    if(!nodes)typeError("Cannot read properties of null (reading '"+std::to_string(index)+"')");
+    return nodes->get(index);
+}
+inline MmlNode& moRequired(NodeValue value,std::string_view member){return *value.requireNode(member);}
+inline bool moInstance(MmlNode* n,const tree::FactoryClassRef<MmlNode>& c){if(!c)typeError("Right-hand side of 'instanceof' is not an object");if(!c->isInstance)typeError("Invalid math constructor for instanceof");return c->isInstance(n);}
 inline bool moMatch(const MoPatternHandle& p,std::u16string_view s){if(!p||!*p)typeError("Missing native constructor pattern");return (*p)(s);}
 inline std::vector<std::string> moKeys(const Property& p){
     if(auto r=PropertyList::record(p))return r->keys();
