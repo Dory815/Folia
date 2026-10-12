@@ -8,9 +8,6 @@ export namespace folia::math::core {
 using MathItemReference=std::variant<Missing,PropertyNull,MathItem*>;
 using InputAdaptorReference=std::variant<Missing,PropertyNull,NativeObjectRef>;
 using InputMmlFactoryReference=std::variant<Missing,PropertyNull,mml::MmlFactory*>;
-// Existing scalar protoItem records and complete opaque records with N/T nodes.
-using ProtoMathItem=std::variant<Property,NativeObjectRef>;
-using ProtoMathItems=std::shared_ptr<std::vector<ProtoMathItem>>;
 struct InputJaxFilterData:NativeObject {
     MathItemReference math=Missing{};
     MathDocumentReference document=Missing{};

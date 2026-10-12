@@ -19,6 +19,11 @@ using MathOutput=std::variant<Missing,PropertyNull,NativeObjectRef>;
 // Generic Location may include a native N/T node. Keep the complete supplied
 // location object opaque and identical; scalar location records use Property.
 using MathLocation=std::variant<Property,NativeObjectRef>;
+// Source ProtoItem belongs to core/MathItem.ts, shared by InputJax and FindMath.
+// Scalar records use the existing lossless Property graph; native N/T locations
+// may retain a complete opaque proto record.
+using ProtoMathItem=std::variant<Property,NativeObjectRef>;
+using ProtoMathItems=std::shared_ptr<std::vector<ProtoMathItem>>;
 class MathInputJaxService {
 public:
     virtual ~MathInputJaxService()=default;

@@ -94,6 +94,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/math_item_host.ixx
     src/math/core/input_jax.ixx
     src/math/core/input_jax_host.ixx
+    src/math/core/find_math.ixx
+    src/math/core/find_math_host.ixx
     src/math/util/object_types.ixx
     src/math/util/callable_types.ixx
     src/math/util/argument_expansion.ixx
@@ -193,6 +195,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/function_types.ixx
     src/math/util/function_list.ixx
     src/math/util/option_functions.ixx
+    src/math/util/native_identities.ixx
     src/math/util/js_number.ixx
     src/math/util/js_numeric_input.ixx
     src/math/util/js_case.ixx
@@ -207,6 +210,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/math_item_bindings.cpp
     src/math/core/input_jax_constructor.cpp
     src/math/core/input_jax.cpp
+    src/math/core/find_math.cpp
     src/math/input/tex/token.cpp
     src/math/input/tex/node_util.cpp
     src/math/input/tex/node_factory.cpp
