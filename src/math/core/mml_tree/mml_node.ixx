@@ -35,8 +35,20 @@ Property attributeTuple(std::string origin,Property value);
 std::pair<Property,Property> unpackAttribute(const Property& value);
 
 class MmlNode : public tree::Node<MmlNode> {
+    tree::FactoryClassRef<MmlNode> nativeConstructorClass_;
 public:
     using tree::Node<MmlNode>::Node;
+    // Internal identity of the constructor that actually allocated this node.
+    // Its lifetime is independent of later factory registration changes.
+    void bindNativeConstructorClass(tree::FactoryClassRef<MmlNode> actual) {
+        if (!actual) throw Error("TypeError", u"MML node requires its actual constructor class");
+        if (nativeConstructorClass_ && nativeConstructorClass_ != actual)
+            throw Error("TypeError", u"MML node is already bound to another constructor class");
+        nativeConstructorClass_ = std::move(actual);
+    }
+    const tree::FactoryClassRef<MmlNode>& nativeConstructorClass() const {
+        return nativeConstructorClass_;
+    }
     virtual bool isToken() const=0;
     virtual bool isEmbellished() const=0;
     virtual bool isSpacelike() const=0;

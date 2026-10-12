@@ -11,8 +11,12 @@ template<class T>tree::FactoryClassRef<MmlNode> classBinding(){
     if constexpr(requires{T::accents();})info->accentsBinding=[] {return T::accents();};
     if constexpr(requires{T::template staticBinding<T>();})info->staticServices=T::template staticBinding<T>();
     result->staticData=info;
-    result->construct=[info](Factory& factory,tree::FactoryArgs args){
+    const std::weak_ptr<tree::FactoryClass<MmlNode>> capturedClass(result);
+    result->construct=[info,capturedClass](Factory& factory,tree::FactoryArgs args){
+        const auto actualClass=capturedClass.lock();
+        if(!actualClass)throw Error("TypeError",u"MML constructor class is no longer live");
         auto owned=std::make_unique<T>(factory);auto* node=owned.get();
+        node->bindNativeConstructorClass(actualClass);
         factory.adopt(std::move(owned));
         if constexpr(std::is_base_of_v<AbstractMmlNode,T>){
             node->bindConstructorClass(info);
