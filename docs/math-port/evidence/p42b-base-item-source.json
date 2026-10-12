@@ -86,12 +86,12 @@
   },
   {
     "label": "assign-style-alias",
-    "cpp": "PropertyList styles{{\"mathcolor\",\"red\"}};x->setProperties(tex::StackPropertyList{{\"styles\",styles}});styles.set(\"mathcolor\",\"blue\");auto copy=tex::stack_property_host::scalar(x->getProperty(\"styles\"));return std::string(copy==Property(styles)?\"same\":\"bad\")+\":\"+val(PropertyList::record(copy)->get(\"mathcolor\"));",
+    "cpp": "PropertyList styles{{\"mathcolor\",\"red\"}};x->setProperties(tex::StackPropertyList{{\"styles\",styles}});styles.set(\"mathcolor\",\"blue\");auto copy=tex::stack_property_host::scalar(x->getProperty(\"styles\"));auto obj=PropertyList::record(copy);return std::string(copy==Property(styles)?\"same\":\"bad\")+\":\"+(obj?val(obj->get(\"mathcolor\")):\"missing\");",
     "expected": "ok|same:blue|"
   },
   {
     "label": "assign-recursive-record-alias",
-    "cpp": "tex::StackPropertyList nested{{\"num\",a}};x->setProperties(tex::StackPropertyList{{\"nested\",nested}});nested.set(\"num\",b);auto got=x->getProperty(\"nested\");return std::string(got==tex::StackProperty(nested)?\"same\":\"bad\")+\":\"+val(tex::StackPropertyList::record(got)->get(\"num\"));",
+    "cpp": "tex::StackPropertyList nested{{\"num\",a}};x->setProperties(tex::StackPropertyList{{\"nested\",nested}});nested.set(\"num\",b);auto got=x->getProperty(\"nested\");auto obj=tex::StackPropertyList::record(got);return std::string(got==tex::StackProperty(nested)?\"same\":\"bad\")+\":\"+(obj?val(obj->get(\"num\")):\"missing\");",
     "expected": "ok|same:node:mn|"
   },
   {
@@ -211,8 +211,8 @@
   },
   {
     "label": "check-final-push",
-    "cpp": "std::array<mml::NodeValue,1> n{a};y->Push(n);y->finalHook=[] {return true;};auto got=x->checkItem(y);return tuple(got)+\":\"+val(tex::StackProperty(x->First()));",
-    "expected": "ok|fail:N:false:node:mi|"
+    "cpp": "std::array<mml::NodeValue,1> n{a};y->Push(n);y->finalHook=[] {return true;};auto got=x->checkItem(y);return tuple(got)+\":\"+val(tex::StackProperty(x->First()))+\":\"+val(Property(y->Size()));",
+    "expected": "ok|fail:N:false:node:mi:1|"
   },
   {
     "label": "check-fail-shared-mutable-tuple",
@@ -418,5 +418,10 @@
     "label": "latex-current-constant-after-receiver-read",
     "cpp": "m.setNodeClass(\"reader\",mml::classBinding<NodeProbe>());auto* reader=static_cast<NodeProbe*>(m.create(\"reader\",tree::FactoryArgs{}));auto original=reader->attributes();reader->attrsHook=[&](){trace.push_back(\"attrs\");auto keys=PropertyList::record(PropertyList::record(Property(tex::TexConstant))->get(\"Attr\")).value();keys.set(\"LATEXITEM\",\"item-now\");keys.set(\"LATEX\",\"latex-now\");return original;};x->startStr=u\"x\";x->stopI=1;x->addLatexItem(reader);return hexValue(original->getExplicit(\"item-now\"))+\":\"+hexValue(original->getExplicit(\"latex-now\"));",
     "expected": "ok|0078:0078|attrs/attrs"
+  },
+  {
+    "label": "check-over-explicit-row",
+    "cpp": "std::array<mml::NodeValue,2> nodes{a,b};x->Push(nodes);x->openHook=[] {return true;};y->kindHook=[] {return \"over\";};auto got=x->checkItem(y);return tuple(got)+\":\"+val(y->getProperty(\"num\"))+\":\"+val(Property(x->Size()));",
+    "expected": "ok|success:N:true:node:mrow:0|add:mrow"
   }
 ]
