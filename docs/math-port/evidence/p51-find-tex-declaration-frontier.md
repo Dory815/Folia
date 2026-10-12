@@ -5,6 +5,13 @@ producer. A readonly Luna audit inventories every field and method. This records
 the next complete class boundary; actual FindTeX declarations and bodies have
 not yet been frozen or accepted. Do not replace it with a smaller custom scanner.
 
+Update after P51 host acceptance: P51A implements the required ordinary-array
+forEach in the existing Context, and P51B supplies actual RegExp identity/cursor/
+exec conversion. Both pass original observations, independent faults and the
+complete core suite. The requirements below now constrain the actual finder
+declaration and its callers; those host bodies are no longer missing. Runtime
+must lend one shared RegExpBindings owner to every finder in that Context.
+
 FindTeX extends the accepted core AbstractFindMath and has no parser-family cycle.
 It belongs in input/tex/find_tex.ixx and corresponding implementation files,
 separate from the mutually dependent parser-family partitions. The constructor
