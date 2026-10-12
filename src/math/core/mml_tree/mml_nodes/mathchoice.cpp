@@ -12,8 +12,26 @@ namespace folia::math::mml {
 
 void MathChoice::inheritAttributes(AttributeList attributes, Property display,
                                   Property level, Property prime) {
-    // P23f Root stub: MathChoice::inheritAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+
+    double selection = 0;
+    if (!host::truthy(display)) {
+        const double clamped = host::mathMax(0.0, host::mathMin(host::number(level), 2.0));
+        selection = clamped + 1.0;
+    }
+
+    // Keep the selected tagged slot even if factory callbacks mutate this node.
+    NodeValue child = host::numericChild(this->childNodes, selection);
+    if (!child.isNode()) {
+        child = NodeValue(this->factory.create("mrow", tree::FactoryArgs{}));
+    }
+
+    // Source reads the raw parent only after selection/factory effects. The
+    // replacement result is intentionally discarded; inheritance uses child.
+    const NodeValue parent = this->getParent();
+    parent.requireNode("replaceChild")->replaceChild(child, NodeValue(this));
+    child.requireNode("setInheritedAttributes")
+        ->setInheritedAttributes(attributes, display, level, prime);
 }
 
 }
