@@ -6,6 +6,8 @@ import std;
 export namespace folia::math::mml::host {
 inline std::u16string lowerString(const Property& value){
     if(auto s=std::get_if<std::string>(&value.value))return js_case::lowerCase(text(*s));
-    typeError("toLowerCase is not callable on this receiver");
+    if(value.missing())typeError("Cannot read properties of undefined (reading 'toLowerCase')");
+    if(std::holds_alternative<PropertyNull>(value.value))typeError("Cannot read properties of null (reading 'toLowerCase')");
+    typeError("this.attributes.get(...).toLowerCase is not a function");
 }
 }

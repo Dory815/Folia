@@ -22,21 +22,41 @@ void MmlMaction::verifyAttributes(Property options) {
 }
 
 NodeValue MmlMaction::setTeXclass(NodeValue previous) {
-    // P23f Root stub: MmlMaction::setTeXclass.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    if (host::arithmeticAttributes(*this)->get("actiontype") == Property(std::string("tooltip")) &&
+        host::numericChild(childNodes, 1).isNode()) {
+        host::numericChild(childNodes, 1).requireNode("setTeXclass")->setTeXclass(PropertyNull{});
+    }
+    const NodeValue selectedNode(selected());
+    const NodeValue result = selectedNode.requireNode("setTeXclass")->setTeXclass(previous);
+    updateTeXclass(selectedNode);
+    return result;
 }
 
 void MmlMaction::nextToggleSelection() {
-    // P23f Root stub: MmlMaction::nextToggleSelection.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const Property rawSelection = host::arithmeticAttributes(*this)->get("selection");
+    double selection = host::mathMax(1.0, host::integer(host::string(rawSelection)) + 1.0);
+    const auto children = childNodes;
+    if (!children) host::typeError("Cannot read properties of null (reading 'length')");
+    if (selection > static_cast<double>(children->size())) selection = 1.0;
+    host::arithmeticAttributes(*this)->set("selection", selection);
 }
 
 void MmlMaction::setChildInheritedAttributes(AttributeList attributes,
                                               Property display,
                                               Property level,
                                               Property prime) {
-    // P23f Root stub: MmlMaction::setChildInheritedAttributes.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const Property actiontype = host::arithmeticAttributes(*this)->get("actiontype");
+    if (host::lowerString(actiontype) != u"tooltip") {
+        AbstractMmlNode::setChildInheritedAttributes(attributes, display, level, prime);
+        return;
+    }
+    const NodeValue base = host::numericChild(childNodes, 0);
+    if (base.isNode()) base.requireNode("setInheritedAttributes")->setInheritedAttributes(attributes, display, level, prime);
+    const NodeValue tip = host::numericChild(childNodes, 1);
+    if (tip.isNode()) tip.requireNode("setInheritedAttributes")->setInheritedAttributes(attributes, false, 1, false);
 }
 
 } // namespace folia::math::mml

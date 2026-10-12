@@ -12,8 +12,15 @@ import std;
 namespace folia::math::mml {
 
 MmlNode* MmlMaction::selected() const {
-    // P23f Root stub: MmlMaction::selected.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const Property selection = host::arithmeticAttributes(*this)->get("selection");
+    const auto lengthNodes = childNodes;
+    if (!lengthNodes) host::typeError("Cannot read properties of null (reading 'length')");
+    const double length = static_cast<double>(lengthNodes->size());
+    const double index = host::mathMax(1.0, host::mathMin(length, host::number(selection))) - 1.0;
+    const NodeValue child = host::numericChild(childNodes, index);
+    if (child.isNode()) return child.nodeOrNull();
+    return this->factory.create("mrow", {});
 }
 
 bool MmlMaction::isEmbellished() const {
@@ -31,13 +38,15 @@ bool MmlMaction::isSpacelike() const {
 }
 
 NodeValue MmlMaction::core() {
-    // P23f Root stub: MmlMaction::core.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const NodeValue child(selected());
+    return child.requireNode("core")->core();
 }
 
 NodeValue MmlMaction::coreMO() {
-    // P23f Root stub: MmlMaction::coreMO.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const NodeValue child(selected());
+    return child.requireNode("coreMO")->coreMO();
 }
 
 }

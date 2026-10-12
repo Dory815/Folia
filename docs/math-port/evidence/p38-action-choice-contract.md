@@ -68,3 +68,10 @@ the pinned original before Native comparison. Each bounded semantic method needs
 independent effective compiling faults; surviving faults, crashes or compilation
 failure reject acceptance. Run the normal FoliaTests build and affected regressions.
 This packet does not accept a complete parser, layout, SVG or Folia integration.
+
+Root's first implementation baseline passes all 9023 assertions in 1451 tests.
+Full method review also identifies the action_host lowerString error projection:
+Root supplements eight actual original string-method observations before Native
+comparison and corrects Null/Undefined/non-callable errors at that existing
+primitive boundary. This bounded extension adds no MML semantic algorithm to a
+helper and does not alter the old Source gold.
