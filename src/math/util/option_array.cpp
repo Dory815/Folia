@@ -121,6 +121,16 @@ void Context::initializeArrayIntrinsics() {
             }
             return Value(result);
         });
+
+    register_method(*this, state_->intrinsics.arrayPrototype, u"forEach", 1,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            const auto* array=std::get_if<ObjectRef>(&receiver.data);
+            if(!array)type_error(u"Array method called on incompatible receiver");
+            const Value callback=arguments.empty()?Value(Undefined{}):arguments.front();
+            const Value thisArgument=arguments.size()>1?arguments[1]:Value(Undefined{});
+            context.arrayForEach(*array,callback,thisArgument);
+            return Undefined{};
+        });
 }
 
 ObjectRef Context::array(std::uint32_t length) {

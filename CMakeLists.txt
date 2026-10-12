@@ -318,6 +318,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_nodes/mphantom.cpp
     src/math/util/option_object.cpp
     src/math/util/option_array.cpp)
+target_sources(folia_math PRIVATE src/math/util/option_array_iteration.cpp)
 
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
