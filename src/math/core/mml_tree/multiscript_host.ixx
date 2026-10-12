@@ -3,22 +3,27 @@ export module folia.math.core.mml_tree.multiscript_host;
 export import folia.math.core.mml_tree.arithmetic_host;
 import std;
 export namespace folia::math::mml::host {
-inline MmlNode& multiscriptNode(NodeValue, std::string_view) {
-    throw Error("Unimplemented",u"Root-frozen MML multiscript receiver binding");
+inline MmlNode& multiscriptNode(NodeValue value, std::string_view member) {
+    return *value.requireNode(member);
 }
 inline Children multiscriptChildren(MmlNode& node) {
     auto children = node.childNodes;
-    if (!children) typeError("Cannot read null multiscript child array");
+    if (!children) typeError("Cannot read properties of null (reading 'length')");
     return children;
 }
-inline NodeValue multiscriptSlot(const Children&, std::size_t) {
-    throw Error("Unimplemented",u"Root-frozen MML multiscript indexed Get");
+inline NodeValue multiscriptSlot(const Children& children, std::size_t index) {
+    if (!children) typeError("Cannot read properties of null (reading '"+std::to_string(index)+"')");
+    return children->get(index);
 }
-inline MmlNode& multiscriptChild(MmlNode&, std::size_t, std::string_view) {
-    throw Error("Unimplemented",u"Root-frozen MML multiscript child member");
+inline MmlNode& multiscriptChild(MmlNode& node, std::size_t index, std::string_view member) {
+    return multiscriptNode(multiscriptSlot(node.childNodes,index),member);
 }
-inline void multiscriptInsert(const Children&, std::size_t, NodeValue) {
-    throw Error("Unimplemented",u"Root-frozen MML multiscript splice binding");
+inline void multiscriptInsert(const Children& children, std::size_t index, NodeValue value) {
+    if (!children) typeError("Cannot read properties of null (reading 'splice')");
+    if (index>static_cast<std::size_t>(std::numeric_limits<std::int64_t>::max()))
+        throw Error("RangeError",u"Native multiscript splice index exceeds int64_t");
+    const std::array<NodeValue,1> values{value};
+    children->splice(static_cast<std::int64_t>(index),0,values);
 }
 inline MmlNode* multiscriptCreate(Factory& factory, std::string_view kind) {
     // Retain a possibly null returned value until the source dereferences it.
