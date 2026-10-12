@@ -113,8 +113,34 @@ void MmlMo::checkOperatorTable(std::u16string_view mo) {
 }
 
 PropertyArray MmlMo::getForms() {
-    // P23f Root stub: MmlMo::getForms.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    MmlNode* core = nullptr;
+    NodeValue parentValue = this->getParent();
+    NodeValue logicalParentValue = this->Parent();
+    tree::TreeWalkBudget<MmlNode> walkBudget;
+    while (MmlNode* const logicalParent = logicalParentValue.nodeOrNull()) {
+        if (!logicalParent->isEmbellished()) break;
+        walkBudget.step();
+        core = parentValue.nodeOrNull();
+        parentValue = logicalParent->getParent();
+        logicalParentValue = logicalParent->Parent();
+    }
+    if (!core) core = this;
+
+    MmlNode* const parent = parentValue.nodeOrNull();
+    if (parent && parent->isKind("mrow")) {
+        auto* const row = dynamic_cast<MmlMrow*>(parent);
+        if (!row) host::typeError("parent.nonSpaceLength is not a function");
+        if (row->nonSpaceLength() != 1) {
+            if (row->firstNonSpace() == core) {
+                return PropertyArray{"prefix", "infix", "postfix"};
+            }
+            if (row->lastNonSpace() == core) {
+                return PropertyArray{"postfix", "infix", "prefix"};
+            }
+        }
+    }
+    return PropertyArray{"infix", "prefix", "postfix"};
 }
 
 PropertyArray MmlMo::handleExplicitForm(PropertyArray forms) {

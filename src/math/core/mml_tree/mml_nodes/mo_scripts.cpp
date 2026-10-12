@@ -26,8 +26,30 @@ void MmlMo::inheritAttributes(AttributeList attributes, Property display,
 }
 
 void MmlMo::checkPseudoScripts(std::u16string_view mo) {
-    // P23f Root stub: MmlMo::checkPseudoScripts.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const auto& services = constructorOperators();
+    const MoPatternHandle pattern = host::moStatic(services.pseudoScripts);
+    if (!host::moMatch(pattern, mo)) return;
+
+    MmlNode* const core = coreParent();
+    if (!core) host::typeError("Cannot read properties of null (reading 'Parent')");
+    const NodeValue parentValue = core->Parent();
+    MmlNode* const parent = parentValue.nodeOrNull();
+    bool isPseudo = !parent;
+    if (parent) {
+        const bool isSubsup = parent->isKind("msubsup");
+        const bool isOnlySubsup = isSubsup ? !parent->isKind("msub") : false;
+        isPseudo = !isOnlySubsup;
+    }
+    setProperty("pseudoscript", isPseudo);
+    if (isPseudo) {
+        auto currentAttributes = this->attributes();
+        if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'setInherited')");
+        currentAttributes->setInherited("lspace", 0);
+        currentAttributes = this->attributes();
+        if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'setInherited')");
+        currentAttributes->setInherited("rspace", 0);
+    }
 }
 
 void MmlMo::checkPrimes(std::u16string_view mo) {
@@ -54,8 +76,42 @@ void MmlMo::checkPrimes(std::u16string_view mo) {
 }
 
 void MmlMo::checkMathAccent(std::u16string_view mo) {
-    // P23f Root stub: MmlMo::checkMathAccent.
-    throw Error("Unimplemented",u"Root-frozen tagged MML operation");
+    tree::TreeCallGuard<MmlNode> guard;
+    const NodeValue parentValue = this->Parent();
+    if (!getProperty("mathaccent").missing() || !parentValue.nodeOrNull()) return;
+    MmlNode* const parent = parentValue.nodeOrNull();
+    if (!parent->isKind("munderover")) return;
+
+    const auto nodes = parent->childNodes;
+    if (!nodes) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+    const auto next = [&](std::size_t index) -> NodeValue {
+        if (index >= nodes->size()) return Missing{};
+        return nodes->get(index);
+    };
+    const NodeValue base = next(0);
+    const NodeValue under = next(1);
+    const NodeValue over = next(2);
+
+    MmlNode* const baseNode = base.requireNode("isEmbellished");
+    if (baseNode->isEmbellished() && baseNode->coreMO() == NodeValue(this)) return;
+
+    bool isUnder = false;
+    if (MmlNode* const underNode = under.nodeOrNull()) {
+        if (underNode->isEmbellished()) isUnder = underNode->coreMO() == NodeValue(this);
+    }
+    bool isOver = false;
+    if (MmlNode* const overNode = over.nodeOrNull()) {
+        if (overNode->isEmbellished()) {
+            MmlNode* const underNode = under.requireNode("coreMO");
+            isOver = underNode->coreMO() == NodeValue(this);
+        }
+    }
+    if (!isUnder && !isOver) return;
+    if (isMathAccent(mo)) {
+        setProperty("mathaccent", true);
+    } else if (isMathAccentWithWidth(mo)) {
+        setProperty("mathaccent", false);
+    }
 }
 
 bool MmlMo::isMathAccent(std::optional<std::u16string_view> text) {
