@@ -20,7 +20,7 @@ protected:
 private:
     WarningSink warning_;
     void warn(std::u16string);
-    void addMapSnapshot(std::span<const Property>,ParseMethod,double);
+    void addMapIterator(const std::function<std::optional<Property>()>&,ParseMethod,double);
     void removeMapIterator(const std::function<std::optional<Property>()>&,ParseMethod);
 public:
     static ParseResult FALLBACK;

@@ -35,6 +35,11 @@
       "expected": "character|true"
     },
     {
+      "label": "handler-arguments-get-in-source-order",
+      "cpp": "auto h=c.object(),f=c.object();getter(c,h,u\"macro\",[&]{trace.push_back(\"maps\");return o::Value(array(c,{u\"p55-a\"}));});getter(c,f,u\"macro\",[&]{trace.push_back(\"fallback\");return bound;});t::SubHandlers handlers;handlers.add(c,bindings,h,f,1);return join(trace)+\"|\"+mapNames(handlers);",
+      "expected": "maps,fallback|p55-a"
+    },
+    {
       "label": "fallback-getter-mutates-map-before-slice",
       "cpp": "auto h=c.object(),f=c.object(),maps=array(c,{u\"p55-a\"});c.set(h,u\"macro\",maps);getter(c,f,u\"macro\",[&]{trace.push_back(\"fallback\");c.set(maps,u\"0\",u\"p55-b\");return bound;});t::SubHandlers handlers;handlers.add(c,bindings,h,f,5);return mapNames(handlers)+\"|\"+join(trace)+\"|\"+std::to_string(fallbackCount(handlers));",
       "expected": "p55-b|fallback|1"
@@ -68,6 +73,16 @@
       "label": "remove-absent-handler-skips-argument-getters",
       "cpp": "auto h=c.object(),f=c.object();getter(c,h,u\"absent\",[&]{trace.push_back(\"maps\");return o::Value(array(c,{}));});getter(c,f,u\"absent\",[&]{trace.push_back(\"fallback\");return bound;});t::SubHandlers handlers;handlers.remove(c,bindings,h,f);return join(trace)+\"|\"+handlerKeys(handlers);",
       "expected": "|"
+    },
+    {
+      "label": "remove-shrink-stops-before-inherited-index-getter",
+      "cpp": "auto h=c.object(),f=c.object();c.set(h,u\"macro\",array(c,{u\"p55-a\",u\"p55-b\"}));t::SubHandlers handlers;handlers.add(c,bindings,h,f,1);auto p=c.objectWithPrototype(c.intrinsics().arrayPrototype),maps=c.array(2),remove=c.object();c.setPrototype(maps,p);c.set(maps,u\"1\",u\"p55-b\");getter(c,p,u\"1\",[&]{trace.push_back(\"index1\");return o::Value(u\"p55-b\");});getter(c,maps,u\"0\",[&]{trace.push_back(\"index0\");c.set(maps,u\"length\",1);return o::Value(u\"p55-a\");});c.set(remove,u\"macro\",maps);handlers.remove(c,bindings,remove,f);return mapNames(handlers)+\"|\"+join(trace);",
+      "expected": "p55-b|index0"
+    },
+    {
+      "label": "slice-hole-observes-array-prototype-added-by-later-getter",
+      "cpp": "auto maps=c.array(2),h=c.object(),f=c.object();getter(c,maps,u\"1\",[&]{trace.push_back(\"index1\");c.set(c.intrinsics().arrayPrototype,u\"0\",u\"p55-a\");return o::Value(u\"p55-b\");});c.set(h,u\"macro\",maps);t::SubHandlers handlers([&](const auto& message){trace.push_back(property_host::debugText(message));});handlers.add(c,bindings,h,f,1);return mapNames(handlers)+\"|\"+join(trace);",
+      "expected": "p55-b, p55-a|index1"
     },
     {
       "label": "canonical-fallback-identity-and-removal",

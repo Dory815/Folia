@@ -12,7 +12,7 @@ Responsibilities and exclusive body assignments:
 
 - map_handler.cpp: Context overloads for SubHandlers/SubHandler add and remove;
   existing Property input bindings and Context input bindings share class-owned
-  addMapSnapshot/removeMapIterator/addHandlerNames/removeHandlerNames reducers.
+  addMapIterator/removeMapIterator/addHandlerNames/removeHandlerNames reducers.
   No new configuration graph or Source parser class is introduced.
 - node_factory.cpp: Context setCreators reads the original record live, resolves
   the existing canonical callable and calls the actual virtual set method.
@@ -69,3 +69,16 @@ also supply the value for an already-enumerated inherited name. The expanded
 (build/p55-node-prototype-red.log, exit 1). These are actual pinned Node/Source
 observations, not expected values adjusted to the native body. TokenMap Source
 and CJS hashes and scope.json guards are now included explicitly.
+
+Root also froze argument-Get order and remove's length-shrink barrier, plus an
+actual slice-hole witness: a later source getter adds an indexed Array.prototype
+value, which the new slice array's hole observes during reverse. Filling holes
+with Undefined in a vector loses that behavior. The 26-case expanded fixture
+fails the initial body before correction (build/p55-slice-hole-red.log, exit 1).
+The Context binding must create a real temporary ordinary slice array, use
+CreateDataProperty for present copied slots, perform reverse Has/Get/Set/Delete
+in Source order, then iterate its live length/Get while the one addMapIterator
+reducer registers each map. Property inputs supply their existing equivalent
+native snapshot iterator. This is a Source-mandated temporary, not a second
+authoritative Configuration record. Keep missing-map short-circuit before
+reading any later copied-array slot.
