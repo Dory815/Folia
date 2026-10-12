@@ -2,6 +2,8 @@
 import folia.math.util.context_property_bindings;
 import folia.math.input.tex.node_util;
 import folia.math.core.mml_tree.mml_factory;
+import folia.math.input.tex.token_map;
+import folia.math.util.property_host;
 namespace {
 using namespace boost::ut;
 using namespace folia::math;
@@ -12,6 +14,38 @@ struct Graph {
     ContextPropertyBindings properties{context,functions};
 };
 suite contextProperties=[] {
+    "math_context_property_symbol_keeps_canonical_marker_identity"_test=[] {
+        Graph graph;
+        const auto marker=graph.context.symbol(u"marker");
+        const auto peer=graph.context.symbol(u"marker");
+        const auto value=graph.properties.from(marker);
+        expect(value==graph.properties.from(marker));
+        expect(value!=graph.properties.from(peer));
+        expect(graph.properties.to(value)==opts::Value(marker));
+        expect(property_host::truthy(value));
+        const auto map=tex::TokenMapHost::create<tex::CharacterMap>(
+            Property("native-symbol-marker"),tex::ParseMethod(Property(Missing{})),Property(PropertyList{}));
+        map->add(Property("x"),tex::TokenLookup(value));
+        expect(map->contains(Property("x")));
+        const auto saved=map->lookup(Property("x"));
+        expect(std::get<Property>(saved)==value);
+        map->remove(Property("x"));
+        expect(!map->contains(Property("x")));
+    };
+    "math_context_property_symbol_rejects_foreign_context_and_coercion"_test=[] {
+        Graph graph,foreign;
+        const auto value=graph.properties.from(graph.context.symbol(u"marker"));
+        const auto rejected=[](auto operation,std::u16string_view message){
+            try{operation();}catch(const opts::Exception& error){return error.name=="TypeError"&&error.message==message;}
+            return false;
+        };
+        expect(rejected([&]{(void)property_host::string(value);},u"Cannot convert a Symbol value to a string"));
+        expect(rejected([&]{(void)property_host::number(value);},u"Cannot convert a Symbol value to a number"));
+        bool wrongFrom=false,wrongTo=false;
+        try{(void)foreign.properties.from(graph.properties.to(value));}catch(const opts::Exception&){wrongFrom=true;}
+        try{(void)foreign.properties.to(value);}catch(const opts::Exception&){wrongTo=true;}
+        expect(wrongFrom);expect(wrongTo);
+    };
     "math_context_property_live_alias_and_cycle"_test=[] {
         Graph graph;auto object=graph.context.object();auto child=graph.context.object();
         graph.context.set(object,u"self",object);graph.context.set(object,u"child",child);

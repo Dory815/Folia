@@ -22,7 +22,7 @@ class PropertyList;
 class PropertyArray;
 struct Property {
     using Value = std::variant<Missing, PropertyNull, bool, double, std::string, BuiltinProperty,
-                               std::shared_ptr<PropertyStorage>, FunctionRef>;
+                               std::shared_ptr<PropertyStorage>, FunctionRef, options::SymbolRef>;
     Value value = Missing{};
     Property() = default;
     Property(Missing v) : value(v) {}
@@ -33,6 +33,7 @@ struct Property {
     Property(const char* v) : value(std::string(v)) {}
     Property(std::string v) : value(std::move(v)) {}
     Property(BuiltinProperty v) : value(v) {}
+    Property(options::SymbolRef v) : value(v) {}
     Property(FunctionRef v) : value(v) {
         if(!v)throw options::Exception("TypeError",u"Native callable property is null");
     }

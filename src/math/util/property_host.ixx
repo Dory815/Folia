@@ -98,6 +98,7 @@ inline std::u16string string(const Property& input){
     if(auto b=std::get_if<bool>(&p.value))return *b?u"true":u"false";
     if(auto n=std::get_if<double>(&p.value))return text(js_number::toString(*n));
     if(auto s=std::get_if<std::string>(&p.value))return text(*s);
+    if(std::holds_alternative<options::SymbolRef>(p.value))typeError("Cannot convert a Symbol value to a string");
     if(auto b=std::get_if<BuiltinProperty>(&p.value)){
         if(*b==BuiltinProperty::prototype)return u"[object Object]";
         if(*b==BuiltinProperty::arrayPrototype)return u"";
@@ -217,6 +218,7 @@ inline void set(const Property& receiver,std::string_view key,Property value){
 }
 inline double number(const Property& input){
     auto p=primitive(input,false);
+    if(std::holds_alternative<options::SymbolRef>(p.value))typeError("Cannot convert a Symbol value to a number");
     if(p.missing())return std::numeric_limits<double>::quiet_NaN();
     if(std::holds_alternative<PropertyNull>(p.value))return 0;
     if(auto b=std::get_if<bool>(&p.value))return *b?1:0;

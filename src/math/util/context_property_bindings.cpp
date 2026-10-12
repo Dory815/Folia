@@ -46,6 +46,10 @@ struct ContextPropertyBindings::State:std::enable_shared_from_this<State> {
         if(const auto* p=std::get_if<bool>(&value.data))return *p;
         if(const auto* p=std::get_if<double>(&value.data))return *p;
         if(const auto* p=std::get_if<std::u16string>(&value.data))return property_host::debugText(*p);
+        if(const auto* symbol=std::get_if<SymbolRef>(&value.data)){
+            (void)context.symbolString(*symbol); // Validate the genuine owning Context.
+            return Property(*symbol);
+        }
         if(const auto* object=std::get_if<ObjectRef>(&value.data)){
             const auto kind=context.kind(*object); // Validate Context before caching.
             if(kind==ObjectKind::function){
@@ -60,7 +64,7 @@ struct ContextPropertyBindings::State:std::enable_shared_from_this<State> {
             const auto storage=std::get<std::shared_ptr<PropertyStorage>>(result.value);
             records.emplace_back(*object,storage);return result;
         }
-        throw Exception("Unimplemented",u"Context Symbol requires a typed Property Symbol binding");
+        throw Exception("Unimplemented",u"Context value requires its typed Property binding");
     }
     Value to(const Property& value)const{
         if(value.missing())return Undefined{};
@@ -68,6 +72,10 @@ struct ContextPropertyBindings::State:std::enable_shared_from_this<State> {
         if(const auto* p=std::get_if<bool>(&value.value))return *p;
         if(const auto* p=std::get_if<double>(&value.value))return *p;
         if(const auto* p=std::get_if<std::string>(&value.value))return property_host::text(*p);
+        if(const auto* symbol=std::get_if<SymbolRef>(&value.value)){
+            (void)context.symbolString(*symbol);
+            return *symbol;
+        }
         if(const auto* p=std::get_if<FunctionRef>(&value.value)){
             if(auto object=functions.find(*p))return *object;
             throw Exception("Unimplemented",u"Typed function has no canonical Context callable binding");
