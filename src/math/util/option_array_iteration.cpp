@@ -2,6 +2,9 @@
 module folia.math.util.option_types;
 import std;
 namespace folia::math::options {
+ObjectRef Context::arrayMap(ObjectRef,Value,Value){
+    throw Exception("Unimplemented",u"Ordinary native Array.map host");
+}
 void Context::arrayForEach(ObjectRef object,Value callback,Value thisArgument){
     // This is Array.prototype.forEach's ordinary-array profile: length is
     // captured once, while HasProperty/Get and callback effects remain live.

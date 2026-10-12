@@ -113,5 +113,6 @@ public:
     std::ptrdiff_t arrayIndexOf(ObjectRef object, const Value& needle);
     ObjectRef arrayFilter(ObjectRef object, const std::function<bool(Value)>& predicate);
     void arrayForEach(ObjectRef object, Value callback, Value thisArgument=Undefined{});
+    ObjectRef arrayMap(ObjectRef object, Value callback, Value thisArgument=Undefined{});
 };
 }
