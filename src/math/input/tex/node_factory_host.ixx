@@ -56,7 +56,7 @@ inline std::vector<std::string> creatorKeys(const Property& maps){
 }
 inline mml::NodeValue invoke(Property creator,const NativeObjectRef& factory,FunctionArgs rest){
     auto* reference=std::get_if<FunctionRef>(&creator.value);
-    if(!reference||!*reference||!(*reference)->call)mml::host::typeError("func is not a function");
+    if(!reference||!*reference||!(*reference)->call)mml::host::typeError("func.apply is not a function");
     const auto body=(*reference)->call;
     std::vector<std::any> args;args.reserve(std::max(rest.size(),std::size_t(1))+1);
     args.emplace_back(factory);
