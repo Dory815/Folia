@@ -9,7 +9,7 @@ Completed current-state evidence:
 - MathJax-src 4.1.3 is cloned in .reference/MathJax-src, pinned to
   fb987178c2d279a99b0db5ea02e751691703955e. scope.json inventories 246 reachable
   upstream files for the enabled Folia profile.
-- The C++23 folia_math target contains 109 module interfaces. The normal
+- The C++23 folia_math target contains 111 module interfaces. The normal
   FoliaTests target builds and links; individual accepted packets have actual
   Source observations, Native checks and independent acceptance evidence.
 - Utility, attribute, factory, tagged child-array/tree and parts of MML/TeX
@@ -84,6 +84,12 @@ Completed current-state evidence:
   tests pass. A Source subclass-default witness first failed and now confirms
   omitted priorities reach the actual virtual callee. See
   evidence/p47-option-filter-acceptance.md. Actual core InputJax is next.
+- P48 supplies the real generic core InputJax base above the same MathItem
+  compile service, including actual class/options/filters and the shared mutable
+  filter record. All 30 original records pass, all fifteen compiling faults are
+  detected, and full core tests pass. See evidence/p48-input-jax-acceptance.md.
+  The next gate is the real complete parser-family declaration graph and its
+  native class/array/regexp/Unicode bindings; no TeX parser is claimed yet.
 
 Incomplete requirements, verified from the current source tree:
 
@@ -101,6 +107,6 @@ Incomplete requirements, verified from the current source tree:
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 109 interfaces likewise measure compilation
+measure coverage or usability. The 111 interfaces likewise measure compilation
 structure, not completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.
