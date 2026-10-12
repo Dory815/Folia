@@ -30,12 +30,16 @@ Completed current-state evidence:
   assertions in 162 executed tests and detects all 33 compiling semantic faults.
   The normal build and affected constructor/MML/script/operator filters pass.
   See evidence/p37-operator-script-acceptance.md for bounded scope and limitations.
+- P38 restores nine action/MathChoice/menclose/mpadded methods. Its independent
+  baseline passes 9,031 assertions in 1,452 executed tests and detects all 25
+  compiling semantic faults. The normal build and affected filters also pass.
+  See evidence/p38-action-choice-acceptance.md.
 
 Incomplete requirements, verified from the current source tree:
 
 - Remaining tagged-tree MML consumers include explicit Unimplemented stubs.
-  The next packet covers action, MathChoice, menclose and mpadded under Root's
-  frozen file ownership and acceptance contract.
+  The remaining explicit MML packet covers mfenced's four semantic methods and
+  tagged indexed helper under Root's ownership and acceptance contract.
 - TeXParser, Stack and the complete base/AMS/enabled-package command pipeline
   have not been implemented. Current input/tex contains foundations only.
 - There is no src/math/output common-wrapper/scene/SVG implementation, nor a

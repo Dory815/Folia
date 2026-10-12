@@ -1,60 +1,21 @@
 # Native MathJax 4 port: architecture and release gates
 
-Status: architecture specification; complete native renderer is not accepted.
-Current tagged-tree migration status is recorded in
-`evidence/p23cd-generic-tree-acceptance.md` and
-`evidence/p23f-constructor-acceptance.md`. Historical dense MML acceptance below
-does not certify the new sparse path: remaining consumers are explicit stubs,
-and the complete native renderer cannot be used by Folia yet.
-The current normal FoliaTests target builds and links after the P30 raw-options
-boundary correction. P32 passes the two base verification methods' original
-records and independent faults; see evidence/p32-verification-acceptance.md.
-This supersedes the historical observer compile failure in
-evidence/p23f-full-core-status.md. Remaining explicit MML stubs still fail their
-runtime tests; neither the full test suite nor the native renderer is accepted.
-Current milestone status is in status.md.
-P33–P35 consumer acceptance is recorded in
-evidence/p33-p35-consumer-acceptance.md; table/multiscript/arithmetic dependencies
-are accepted in evidence/p36-table-multiscript-acceptance.md. Other remaining
-tagged-tree stubs still prevent full semantic-tree acceptance.
-Prerequisite utilities have local acceptance recorded in
-`evidence/primitive-acceptance.md`, `evidence/numeric-acceptance.md` and
-`evidence/options-acceptance.md`, `evidence/factory-acceptance.md` and
-`evidence/tree-acceptance.md`, plus explicit runtime primitive adaptations in
-`evidence/input-host-acceptance.md` and MML base hierarchy acceptance in
-`evidence/mml-node-acceptance.md`, plus the first ten concrete node files in
-`evidence/leaf-acceptance.md` and the script-node/string packet in
-`evidence/script-acceptance.md` and the operator dictionary in
-`evidence/operator-acceptance.md`, with the raw class-state boundary correction
-in `evidence/p12-class-state-acceptance.md` and five default Mo regex services
-in `evidence/p12b-pattern-acceptance.md`, followed by complete MmlMo semantic
-node acceptance in `evidence/p12c-mo-acceptance.md` and fraction/radical semantics
-in `evidence/p13-arithmetic-acceptance.md` and table semantics in
-`evidence/p14-table-acceptance.md` and multiscripts in
-`evidence/p15a-multiscript-acceptance.md` and TeXAtom/semantics in
-`evidence/p15bc-atom-semantics-acceptance.md` and the HTML semantic node in
-`evidence/p15d-html-node-acceptance.md` and five simple MML files in
-`evidence/p16a-simple-mml-acceptance.md` and complete fenced semantics in
-`evidence/p16c-mfenced-acceptance.md` and the TeX Token/type/constant foundation
-in `evidence/p17a-token-acceptance.md`, followed by the raw inheritance dispatch
-correction in `evidence/p17b-inheritance-acceptance.md` and complete MathChoice
-semantics in `evidence/p17c-mathchoice-acceptance.md`, followed by complete action
-and MML registry/factory acceptance in `evidence/p18b-maction-acceptance.md` and
-`evidence/p18c-mml-registry-acceptance.md`, with the general Unicode lowercase
-host in `evidence/p18a-case-host-acceptance.md`, followed by complete FunctionList
-and native asynchronous host acceptance in `evidence/p19a-function-list-acceptance.md`,
-followed by the bounded native argument host in
-`evidence/p19b1-argument-expansion-acceptance.md`, followed by the shared native
-callable/receiver protocol in `evidence/p19b2-callable-receiver-acceptance.md`
-(neither host packet adds a TS source-file count), followed by complete
-MapHandler acceptance in evidence/p20a-map-handler-acceptance.md and complete
-numeric reductions in evidence/p20c-numeric-reductions-acceptance.md.
-Complete TokenMap class-family acceptance is recorded in
-evidence/p22b-token-map-acceptance.md, under explicit native construction/data
-and controlled regex-service boundaries. Local source acceptance is 54/246;
-the regex engine, complete TeX/Common/SVG renderer and full G0–G7 remain closed.
-Owner: the root agent. Agents implement assigned files; they do not decide
-architecture, scope, interfaces, exclusions, or acceptance criteria.
+Status: architecture specification; the complete native renderer is not accepted.
+The authoritative current progress and remaining requirements are in status.md.
+Accepted method packets and original observations are recorded under evidence/.
+Their bounded results do not accept a complete upstream file or a working renderer.
+
+The normal FoliaTests target builds and links. Restored tagged-tree consumers
+currently include P33-P38; mfenced's remaining consumers are the next packet.
+Remaining consumers, the complete TeX/package pipeline,
+common wrappers, fonts, scene, SVG and Folia integration still block release.
+Folia currently uses its existing QuickJS math path. The historical 54/246 ledger
+and 90 compiled module interfaces are not completion percentages.
+
+Root owns architecture, scope, interfaces, exclusions and acceptance. Luna agents
+implement only assigned existing responsibilities after contracts and bindings
+are frozen. Agents cannot narrow the required profile or certify their own work.
+Mermaid is paused; its checkpoint and remaining work are in ../mermaid-native/status.md.
 
 ## 1. Baseline and scope
 
