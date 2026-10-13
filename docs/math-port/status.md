@@ -4,26 +4,30 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output/parser checkpoint (2026-10-13):
+Active output/parser checkpoint (2026-10-13, Gate24):
 
 - OutputJax and its FunctionList Context binding are being implemented; they
   are not registered or compiled yet. The native indexed-view protocol edits
-  and later parser fixes are also uncompiled. Gate23's passing core snapshot
-  does not validate those changes.
+  compiled in Gate24 and passed existing core/focused tests, but their new
+  specific tests are unregistered. Later parser/test edits are uncompiled.
+  Gate24 core passes 345,517 assertions/5,291 tests; see
+  `evidence/shared-gate24.md` for snapshot scope and incomplete diagnostics.
 - Root froze the LiteAdaptor file responsibilities and ownership/measurement
   contract in `lite-adaptor-work-plan.md`. Its 35 original CJS observations
   repeat exactly, with nine TS and nine CJS source locks. Native LiteAdaptor,
   CommonOutputJax, wrappers and SVG scene construction remain outstanding.
 - Root independently repeated the Boldsymbol/ConfigMacros original oracle.
   Its output equals the existing original corpus exactly. Comparing all native
-  emitted fields from Gate23 gives 10/16 matching cases (all ConfigMacros);
+  emitted fields from Gate24 gives 10/16 matching cases (all ConfigMacros);
   all six Boldsymbol cases still retain `fixBold` and miss the Source rewrite.
   The Source oracle uses full `TeX.compile`, not direct `TexParser.mml`.
 - AMS default array spacing was traced to UTF-16 string literals selecting the
   bool Property constructor. The two caller defaults have been corrected to
-  string Properties but have not been compiled or compared yet. Base array
-  column controls, AMS filter paths and TextMacros factory ownership remain
-  assigned to the persistent parser owners.
+  string Properties and now match. Base37 is 35/37, AMS24 is 23/24 and the
+  supplemental36 is 33/36. Both remaining Base parser states match; an extra
+  `align:'undefined'` attribute has a subsequent uncompiled caller fix. The
+  alignedat supplemental row now matches. AMS tag/factory/filter paths,
+  Begingroup and TextMacros registration remain assigned to the parser owners.
 
 Completed current-state evidence:
 
