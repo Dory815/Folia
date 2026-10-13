@@ -4,17 +4,32 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output/parser checkpoint (2026-10-13, Gate49):
+Active output checkpoint (2026-10-13, Gate55):
+
+- Gate55 builds all 13 targets, preserving all 1,047 captured input hashes.
+  InferredMrow and the real shared-store XML/HTML adaptor bridge are compiled.
+  Fresh Foundation passes Map (69 assertions/10 tests) and completed Scene
+  ownership/precision (16 assertions/2 tests). Lite projection/lifetime has
+  one failed assertion: a text-node receiver does not throw the original
+  missing-children TypeError. The production repair is outstanding. See
+  `evidence/shared-gate50-55.md`.
+- Source constructor phases and binding the actual wrapper identity before
+  initialization now compile. Complete own-field/prototype/method behavior,
+  real service ownership and native Jax-backed layout comparisons remain open.
+  XML/HTML consumers, menclose, FontData class surface, remaining painting,
+  the full 75-case render comparison and Folia integration are unaccepted.
+
+Latest complete passing core/diagnostic checkpoint (Gate49):
 
 - Gate49 builds all 13 targets and keeps all 1,029 captured input hashes
   unchanged. Fresh full core passes 345,607 assertions/5,314 tests/170 suites;
   Host, Parser, Regexp and LinkedList tests also pass. All five parser corpora
   match 150/150 whole records, Unicode matches 37/37, and LinkedList matches
   13/13. This is the latest complete passing core/diagnostic checkpoint.
-- The new Foundation runner exits 1: three Lite projection tests pass, but
+- Gate49's then-new Foundation runner exits 1: three Lite projection tests pass, but
   both Scene ownership tests throw during SVG serialization through an unbound
-  LiteAdaptor. Source binding and serializer fixes are saved after release
-  and need a fresh run. See `evidence/shared-gate48-49.md`. Complete native
+  LiteAdaptor. Subsequent fixes pass the focused Scene tests in Gates53 and 55.
+  See `evidence/shared-gate48-49.md`. Complete native
   TeX-to-SVG and Folia integration are still unaccepted.
 
 - Gates45 through 47 progress into actual Common per-kind bodies, output
@@ -23,10 +38,10 @@ Active output/parser checkpoint (2026-10-13, Gate49):
   or executed; remaining errors are in six production files and the Lite
   projection test. Gate46 has one changed input during compilation and is not
   a clean frozen snapshot. See `evidence/shared-gate45-47.md`.
-- Source constructor initialization requires a separate semantic repair:
-  C++ base construction currently prevents the derived virtual dispatch that
-  MathJax performs. Actual derived allocation, canonical identity and ordered
-  initialization phases must be verified before layout acceptance. Full
+- Source constructor initialization required a separate semantic repair:
+  C++ base construction prevented MathJax's derived virtual dispatch.
+  Actual derived allocation, canonical identity and ordered initialization
+  phases now compile and still need real layout verification. Full
   constructor/prototype/method coverage, FontData, remaining wrapper kinds and
   the production session lifetime remain open.
 
