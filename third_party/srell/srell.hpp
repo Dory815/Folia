@@ -122,7 +122,12 @@
 //  lookbehind feature. Uncommenting this line is not recommended.
 #endif
 
-namespace srell
+#ifndef SRELL_NAMESPACE
+#define SRELL_NAMESPACE srell
+#define SRELL_UNDEF_NAMESPACE
+#endif
+
+namespace SRELL_NAMESPACE
 {
 
 #if defined(_MSC_VER)
@@ -1677,6 +1682,10 @@ typedef ucf_constants::unicode_casefolding<ui_l32, ui_l32> ucfdata;
 			static const ui_l32 rev_maxset = 2;
 			static const ui_l32 rev_maxcp = char_alnum::ch_z;
 #endif
+#if defined(SRELL_ECMASCRIPT_LEGACY_ICASE)
+#include "srell_ecma_legacy_icase.h"
+static_assert(ecma_legacy_case_max_group <= rev_maxset);
+#endif
 		}	//  namespace ucf_constants
 
 class unicode_case_folding
@@ -1685,6 +1694,18 @@ public:
 
 	static ui_l32 do_casefolding(const ui_l32 cp)
 	{
+#if defined(SRELL_ECMASCRIPT_LEGACY_ICASE)
+		if (cp <= 0xffffu)
+		{
+			const ucf_constants::ecma_legacy_case_pair *const first = &ucf_constants::ecma_legacy_case_by_unit[0];
+			const ucf_constants::ecma_legacy_case_pair *const last = first + ucf_constants::ecma_legacy_case_pair_count;
+			const ucf_constants::ecma_legacy_case_pair *const found = std::lower_bound(first, last, cp,
+				[](const ucf_constants::ecma_legacy_case_pair &entry, const ui_l32 unit) { return entry.unit < unit; });
+			if (found != last && found->unit == cp)
+				return found->canonical;
+		}
+		return cp;
+#else
 #if !defined(SRELL_NO_UNICODE_ICASE)
 		if (cp <= ucf_internal::ucfdata::ucf_maxcodepoint)
 			return cp + ucf_internal::ucfdata::ucf_deltatable[ucf_internal::ucfdata::ucf_segmenttable[cp >> 8] + (cp & 0xff)];
@@ -1693,10 +1714,30 @@ public:
 			return static_cast<ui_l32>(cp - char_alnum::ch_A + char_alnum::ch_a);	//  - 'A' + 'a'
 #endif
 		return cp;
+#endif
 	}
 
 	static ui_l32 do_caseunfolding(ui_l32 out[ucf_constants::rev_maxset], const ui_l32 cp)
 	{
+#if defined(SRELL_ECMASCRIPT_LEGACY_ICASE)
+		static_assert(ucf_constants::ecma_legacy_case_max_group <= ucf_constants::rev_maxset,
+			"ECMAScript legacy case group exceeds SRELL reverse-fold buffer");
+		const ui_l32 canonical = do_casefolding(cp);
+		const ucf_constants::ecma_legacy_case_pair *const first = &ucf_constants::ecma_legacy_case_by_canonical[0];
+		const ucf_constants::ecma_legacy_case_pair *const last = first + ucf_constants::ecma_legacy_case_pair_count;
+		const ucf_constants::ecma_legacy_case_pair *const begin = std::lower_bound(first, last, canonical,
+			[](const ucf_constants::ecma_legacy_case_pair &entry, const ui_l32 value) { return entry.canonical < value; });
+		ui_l32 count = 0;
+		for (const ucf_constants::ecma_legacy_case_pair *entry = begin; entry != last && entry->canonical == canonical; ++entry)
+		{
+			if (count >= ucf_constants::rev_maxset)
+				return 0;
+			out[count++] = entry->unit;
+		}
+		if (count == 0)
+			out[count++] = cp;
+		return count;
+#else
 #if !defined(SRELL_NO_UNICODE_ICASE)
 		ui_l32 count = 0u;
 
@@ -1723,10 +1764,21 @@ public:
 		}
 		return 1u;
 #endif
+#endif
 	}
 
 	static ui_l32 try_casefolding(const ui_l32 cp)
 	{
+#if defined(SRELL_ECMASCRIPT_LEGACY_ICASE)
+		const ui_l32 canonical = do_casefolding(cp);
+		const ucf_constants::ecma_legacy_case_pair *const first = &ucf_constants::ecma_legacy_case_by_canonical[0];
+		const ucf_constants::ecma_legacy_case_pair *const last = first + ucf_constants::ecma_legacy_case_pair_count;
+		const ucf_constants::ecma_legacy_case_pair *const begin = std::lower_bound(first, last, canonical,
+			[](const ucf_constants::ecma_legacy_case_pair &entry, const ui_l32 value) { return entry.canonical < value; });
+		if (begin != last && begin->canonical == canonical)
+			return canonical;
+		return constants::invalid_u32value;
+#else
 #if !defined(SRELL_NO_UNICODE_ICASE)
 		if (cp <= ucf_internal::ucfdata::rev_maxcodepoint)
 		{
@@ -1742,6 +1794,7 @@ public:
 			return nocase;
 #endif
 		return constants::invalid_u32value;
+#endif
 	}
 
 private:
@@ -11917,7 +11970,12 @@ typedef regex_token_iterator<std::string::const_iterator, std::iterator_traits<s
 #undef SRELL_NO_VCWARNING_END
 #undef SRELL_NO_VCWARNING
 
-}		//  namespace srell
+}		//  namespace SRELL_NAMESPACE
+
+#ifdef SRELL_UNDEF_NAMESPACE
+#undef SRELL_NAMESPACE
+#undef SRELL_UNDEF_NAMESPACE
+#endif
 
 #undef SRELL_AT_SSE42
 #undef SRELL_HAS_SSE42

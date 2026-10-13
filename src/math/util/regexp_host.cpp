@@ -1,13 +1,19 @@
 module;
+#define SRELL_ECMASCRIPT_LEGACY_ICASE 1
+#define SRELL_NAMESPACE folia_math_legacy_srell
 #include <srell.hpp>
+#undef SRELL_NAMESPACE
 module folia.math.util.regexp_host;
 import std;
 namespace folia::math::regexp_host {
-struct CodeUnitTraits:srell::regex_traits<char16_t> {
-    using utf_traits=srell::re_detail::utf_traits_core<char16_t>;
+// The legacy Canonicalize policy must not share inline definitions with the
+// editor search engine's Unicode-folding SRELL instance in the same executable.
+namespace rx = folia_math_legacy_srell;
+struct CodeUnitTraits:rx::regex_traits<char16_t> {
+    using utf_traits=rx::re_detail::utf_traits_core<char16_t>;
 };
 struct RegExp::Compiled {
-    srell::basic_regex<char16_t,CodeUnitTraits> expression;
+    rx::basic_regex<char16_t,CodeUnitTraits> expression;
 };
 namespace {
 std::u16string compilePattern(std::u16string_view source){
@@ -44,13 +50,18 @@ RegExp::RegExp(std::u16string pattern,std::u16string flags)
     }
     if(seen.find(u'u')!=seen.npos&&seen.find(u'v')!=seen.npos)
         throw options::Exception("SyntaxError",u"Incompatible regular expression flags");
-    for(auto flag:flags_)if(flag!=u'g'&&flag!=u'y')
+    for(auto flag:flags_)if(flag!=u'g'&&flag!=u'y'&&flag!=u'i')
         throw options::Exception("Unimplemented",u"Unverified native regular expression flag");
+    std::u16string canonicalFlags;
+    for(const auto flag:std::u16string_view(u"dgimsuvy"))if(seen.find(flag)!=seen.npos)canonicalFlags+=flag;
+    flags_=std::move(canonicalFlags);
     global_=flags_.find(u'g')!=flags_.npos;sticky_=flags_.find(u'y')!=flags_.npos;
     auto compiled=std::make_unique<Compiled>();
     const auto translated=compilePattern(pattern_);
-    try{compiled->expression.assign(translated.begin(),translated.end(),srell::regex_constants::ECMAScript);}
-    catch(const srell::regex_error&){throw options::Exception("SyntaxError",u"Invalid regular expression pattern");}
+    auto syntax=rx::regex_constants::ECMAScript;
+    if(flags_.find(u'i')!=flags_.npos)syntax|=rx::regex_constants::icase;
+    try{compiled->expression.assign(translated.begin(),translated.end(),syntax);}
+    catch(const rx::regex_error&){throw options::Exception("SyntaxError",u"Invalid regular expression pattern");}
     compiled_=std::move(compiled);
 }
 RegExp::~RegExp()=default;
@@ -58,11 +69,11 @@ std::optional<Match> RegExp::exec(const std::u16string&input){
     const bool stateful=global_||sticky_;
     const double cursor=stateful?cursorLength(lastIndex):0;
     if(cursor>static_cast<double>(input.size())){if(stateful)lastIndex=0;return {};}
-    srell::match_results<std::u16string::const_iterator> matches;
-    auto flags=srell::regex_constants::match_default;
-    if(sticky_)flags|=srell::regex_constants::match_continuous;
+    rx::match_results<std::u16string::const_iterator> matches;
+    auto flags=rx::regex_constants::match_default;
+    if(sticky_)flags|=rx::regex_constants::match_continuous;
     // Preserve the whole input as the lookbehind/index base; do not slice it.
-    const bool found=srell::regex_search(input,static_cast<std::size_t>(cursor),matches,compiled_->expression,flags);
+    const bool found=rx::regex_search(input,static_cast<std::size_t>(cursor),matches,compiled_->expression,flags);
     if(!found){if(stateful)lastIndex=0;return {};}
     Match result;result.index=static_cast<std::size_t>(matches.position());result.input=input;
     result.captures.reserve(matches.size());

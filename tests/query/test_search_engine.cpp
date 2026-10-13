@@ -4,6 +4,7 @@
 #include "support/folia_test.hpp"
 import folia.core.search;
 import folia.core.source_editor;
+import folia.math.util.regexp_host;
 
 using namespace folia;
 using namespace boost::ut;
@@ -49,6 +50,22 @@ suite search_engine_tests = [] {
     auto source = search_text(U"before needle after", U"([", regex_options());
     expect(!source.valid());
     expect(bool(source.matches.empty()));
+};
+
+"regex policies remain independent when search and math share the executable"_test = [] {
+    auto options = regex_options();
+    options.case_sensitive = false;
+    const auto kelvin = search_text(U"KK", U"k", options);
+    const auto long_s = search_text(U"Sſ", U"s", options);
+    expect(kelvin.valid() && kelvin.matches.size() == 2u);
+    expect(long_s.valid() && long_s.matches.size() == 2u);
+
+    folia::math::regexp_host::RegExp math_k(u"k", u"i");
+    folia::math::regexp_host::RegExp math_s(u"s", u"i");
+    expect(math_k.exec(u"K").has_value());
+    expect(math_s.exec(u"S").has_value());
+    expect(!math_k.exec(u"K").has_value());
+    expect(!math_s.exec(u"ſ").has_value());
 };
 
 "source replace all is one exact reversible flat-source transaction"_test = [] {
