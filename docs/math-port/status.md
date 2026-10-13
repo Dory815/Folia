@@ -4,7 +4,18 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output checkpoint (2026-10-13, Gate64):
+Active document/font enrollment checkpoint (2026-10-13, Gate66):
+
+- Gates65/66 exit 1 with all 1,127/1,147 captured input hashes unchanged.
+  Gate66 enrolls the real Core/HTML document and item owners, SVG assembly,
+  dynamic NewCM module provider, actual conversion probe and whole-layout
+  driver. Common/Scene observation compiles; document/tool boundary errors
+  still prevent a fresh conversion run. See `evidence/shared-gate65-66.md`.
+- The native session still configures only base. All 38 profile packages and
+  all 75 complete Source output records remain required. No native TeX-to-SVG
+  conversion or full layout parity has been accepted. Mermaid remains paused.
+
+Latest complete passing output build and substrate checkpoint (Gate64):
 
 - Gate64 builds all 13 targets with all 1,120 captured input hashes unchanged.
   Fresh Foundation passes 215 assertions/36 tests. The real SVG Jax now
