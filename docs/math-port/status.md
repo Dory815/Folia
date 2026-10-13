@@ -4,7 +4,24 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output/parser checkpoint (2026-10-13, Gates 36/38):
+Active output/parser checkpoint (2026-10-13, Gate41):
+
+- Gate41 builds all 12 selected targets successfully with all 826 frozen
+  input hashes unchanged. It fixes the Source-order BaseItems static error-table
+  initialization that made Gate40's Core/Host/Parser abort before main. Fresh
+  Host, Parser, Regexp and LinkedList runners all exit 0. All five parser corpora
+  match 150/150 complete original records; LinkedList matches 13/13.
+- Gate41's full core exits 1 with one failed Unicode assertion in
+  `unicode_regexp_u_scans_code_points_and_keeps_utf16_indices`. The other 169
+  suites pass 345,572 assertions/5,301 tests. The actual Unicode observer matches
+  36/37 strict original records; the remaining tag-split record has identical
+  parts and different RegExp `.source` slash spelling. The latest fully passing
+  core remains Gate36. See `evidence/shared-gate39-41.md`.
+- Root is enrolling the current Common/Lite/Scene/SVG module closure for its
+  first full compile. Source-aligned draft bodies and module-closure checks
+  establish neither native rendering parity nor Folia integration.
+
+Previous checkpoints:
 
 - Gate38 is the newest executed combined build and exits 1 with all 826
   input hashes unchanged. The fresh library and diagnostic executables link,

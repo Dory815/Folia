@@ -29,13 +29,13 @@ for(const name of requested)assert.ok(specs.some(spec=>spec.name===name),`unknow
 for(const spec of specs.filter(spec=>!requested.length||requested.includes(spec.name))){
   const executable=path.join(root,'build/core',spec.exe+'.exe');
   const nativePath=path.join(destination,spec.name+'.json');
-  const run=spawnSync(executable,spec.file?[nativePath]:[],{cwd:root,encoding:'utf8',maxBuffer:64*1024*1024});
+  const run=spawnSync(executable,spec.file?[nativePath]:[],{cwd:root,encoding:'utf8',maxBuffer:64*1024*1024,timeout:30000});
   fs.writeFileSync(path.join(destination,spec.name+'.stderr'),run.stderr||'');
   if(!spec.file)fs.writeFileSync(nativePath,run.stdout||'');
   else fs.writeFileSync(path.join(destination,spec.name+'.stdout'),run.stdout||'');
   const record={name:spec.name,executable,executableSha256:digest(executable),
     exitCode:run.status,source:spec.source,sourceSha256:digest(path.join(root,spec.source))};
-  if(run.error||run.status!==0){record.executionError=run.error?.message||run.stderr;results.push(record);continue;}
+  if(run.error||run.status!==0){record.executionError=run.error?.message||run.stderr||`native exit ${run.status}`;results.push(record);continue;}
   const source=JSON.parse(fs.readFileSync(path.join(root,spec.source),'utf8'));
   const native=JSON.parse(fs.readFileSync(nativePath,'utf8'));
   if(spec.tree)assert.equal(native.schema,source.schema);
@@ -61,4 +61,4 @@ for(const spec of specs.filter(spec=>!requested.length||requested.includes(spec.
 }
 fs.writeFileSync(path.join(destination,'summary.json'),JSON.stringify(results,null,2)+'\n');
 process.stdout.write(JSON.stringify(results)+'\n');
-if(results.some(row=>row.executionError||row.failures.length))process.exitCode=1;
+if(results.some(row=>row.executionError||row.failures?.length))process.exitCode=1;
