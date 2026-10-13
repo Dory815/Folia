@@ -68,3 +68,22 @@ Logs/provenance are `build/math-core-gate-36.log`,
 `build/math-port/parser-checkpoint-36-root-fresh/summary.json`,
 `build/math-port/diagnostic-exits-36-root.json` and
 `build/math-port/native-indexed-36-root.log`.
+
+## Work after the accepted snapshot
+
+The constructor replay proposal is not accepted: it mutates the C++ owner before
+Context assignment, so a readonly property or throwing setter can see later
+fields changed too early. An independent actual NullItem.call observation shows
+the ordered writes `_nodes`, startStr, startI, stopI, factory, global, _properties.
+At a startI failure, startStr is reset but stopI and the old global identity remain
+unchanged. The owner is replacing replay with actual ordered field assignments.
+
+The independent DOM node protocol is added to CMake after Gate36; its MathOutput
+and live MathDocument service extensions are pending compilation. The new Unicode
+regexp packet and 37-row observer likewise remain unaccepted. The observer must
+exercise the same production split primitive used by Lite, and preserve exact
+input patterns/UTF-16 units; a private split implementation cannot verify that
+production path. Source escaped code points must remain regex literals rather
+than becoming regex syntax. Unicode table-version parity is still open.
+
+These later worktree edits do not inherit Gate36's build or core-test result.

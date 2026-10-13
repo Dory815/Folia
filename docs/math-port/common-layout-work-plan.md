@@ -80,13 +80,16 @@ source; rendering does not change the editor's source coordinate or history.
 Root's common-layout-original-oracle.cjs executes the pinned original with all
 38 configured packages and the actual NewCM/font extensions. It validates the
 locked entry, 59 common/SVG wrapper TS files, seven principal executable hashes
-and package versions, and records the full loaded dependency hashes. For 18
-cases it observes actual wrapper BBoxes, variants, child associations, place/
+and package versions. The initial 18-case baseline is preserved byte for byte.
+The expanded 75-case corpus validates all 299 executable dependency hashes
+before module execution, then verifies the actual loaded closure exactly.
+It observes compiled MML, wrapper BBoxes, variants, child associations, place/
 placeChar calls and primitive creation before serialization, plus final SVG.
-All cases currently succeed. Two whole-result runs agree exactly; SVG/errors/
-loads also agree with the original when tracing is disabled. This is Source
-evidence, not native layout or renderer acceptance. The corpus will expand
-across all enabled packages and reachable wrapper families.
+Two whole results agree exactly; SVG/errors/loads/MML/warnings agree when layout
+tracing is disabled (the compile observer remains enabled). There are 73 SVG
+results and two actual Lite-host action exceptions, retained as Source behavior.
+This is Source evidence, not native layout or renderer acceptance. Intended
+package labels do not establish complete handler/method coverage.
 
 Acceptance requires exact Source tree/attributes before layout, per-member
 Source inventory and original-driven observations, and a native full pipeline
