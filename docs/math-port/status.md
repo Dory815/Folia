@@ -4,29 +4,39 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output checkpoint (2026-10-13, Gate58):
+Active output checkpoint (2026-10-13, Gate64):
 
-- Gate58 builds all 13 targets, preserving all 1,055 captured input hashes.
-  The Common XML measurement body compiles over the one retained DOM bridge;
-  canonical reduce and Context-backed Lite textContent are enrolled. Fresh
-  Foundation passes 161 assertions/25 tests across Map, Lite, Scene,
-  reduce/textContent and XML node/provider ownership. Host and Parser also pass;
-  five fresh parser corpora match 150/150 whole records. See
-  `evidence/shared-gate56-58.md` and the earlier `evidence/shared-gate50-55.md`.
-- Source constructor phases and binding the actual wrapper identity before
-  initialization now compile. Complete own-field/prototype/method behavior,
-  real service ownership and native Jax-backed layout comparisons remain open.
-  XML/HTML layout/painting comparisons, menclose, FontData class surface and
-  sparse field storage, full textContent coercion, remaining painting,
-  the full 75-case render comparison and Folia integration are unaccepted.
+- Gate64 builds all 13 targets with all 1,120 captured input hashes unchanged.
+  Fresh Foundation passes 215 assertions/36 tests. The real SVG Jax now
+  constructs through NativeRenderSession's actual Context-owned providers;
+  lifecycle tests verify retained public handles and eventual service-graph
+  destruction. Shared primitive/binary-plus coercion, RenderActions and Common
+  menclose enter the compiled closure. Fresh parser corpora match 150/150 whole
+  records and Unicode matches 37/37. See `evidence/shared-gate59-64.md`.
+- This establishes actual construction and substrate behavior. The real
+  MathDocument/HTMLMathItem conversion entry and whole-layout observer are
+  still draft work; no complete native TeX-to-SVG conversion has been accepted.
+  Complete Source own-fields/prototypes/methods, font extension/dynamic loading,
+  XML/HTML and remaining SVG painting, the full 75-case comparison and Folia
+  integration remain required. The enabled Folia profile remains unchanged.
 
-Latest complete passing core/diagnostic checkpoint (Gate49):
+Latest complete passing core/diagnostic execution (Gate63):
+
+- The freshly linked Gate63 full core exits 0 with 345,620 assertions/5,320
+  tests/171 suites. Host, Parser, Regexp and LinkedList also exit 0. Root runs
+  byte-identical copied executables to avoid Windows linker locks during the
+  next build. Gate63's overall build exits 1 because Foundation cannot yet link;
+  Gate64 repairs that closure and executes the real Jax lifecycle tests. The
+  full core has not been re-executed from Gate64, so its latest execution is
+  explicitly Gate63. See `evidence/shared-gate59-64.md`.
+
+Earlier complete passing build and core/diagnostic checkpoint (Gate49):
 
 - Gate49 builds all 13 targets and keeps all 1,029 captured input hashes
   unchanged. Fresh full core passes 345,607 assertions/5,314 tests/170 suites;
   Host, Parser, Regexp and LinkedList tests also pass. All five parser corpora
   match 150/150 whole records, Unicode matches 37/37, and LinkedList matches
-  13/13. This is the latest complete passing core/diagnostic checkpoint.
+  13/13. Gate63 subsequently supplies the latest full core execution.
 - Gate49's then-new Foundation runner exits 1: three Lite projection tests pass, but
   both Scene ownership tests throw during SVG serialization through an unbound
   LiteAdaptor. Subsequent fixes pass the focused Scene tests in Gates53 and 55.
