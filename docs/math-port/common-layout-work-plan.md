@@ -16,6 +16,8 @@ It does not reduce the profile to the current parser or layout samples.
 | output/scene/scene.ixx/.cpp, builder.ixx/.cpp | Backend-independent completed geometry, semantic paint, grouping, clipping, links and their ownership; no second math measurement model |
 | output/scene/wrapper.ixx/.cpp and wrappers/<kind>.ixx/.cpp | Placement and paint portions of corresponding output/svg/Wrapper and Wrappers files lifted to a common scene consumer; preserve a member-level Source mapping |
 | output/svg/serializer.ixx/.cpp | Consume the completed scene and Source serialization metadata, materialize actual Lite output nodes and serialize SVG |
+| output/svg/output_jax.ixx/.cpp | Concrete Source output/svg.ts lifecycle over Common measurement and the one Scene placement pipeline; exposes the completed Scene before serialization |
+| output/svg/font_cache.ixx/.cpp | Source SVG FontCache.ts state owned once per concrete SVG Jax; local/global ids, cache reset and defs lifecycle, without a second font/layout graph |
 
 The Source SVG wrappers mix placements with SVG emission. Preserve their
 equations and branching, but implement each placement algorithm once in the
@@ -72,8 +74,27 @@ need explicit real reachability and implementation gates, not empty output.
 Retained scene resources own their needed data after the temporary layout job
 ends. No scene edge may dangle into a destroyed factory or Context. Returning
 SVG strings to Folia is an API adapter over this result, not a second layout.
+Scene completion freezes a separate read-only graph, including child handles,
+ordered string attributes and outline resources. Mutable Builder or font-owner
+aliases cannot alter a completed result. Geometry remains typed and unrounded;
+hit regions and rules cannot survive only as formatted SVG attribute strings.
 The public TeX input continues to come from the authoritative inline/block
 source; rendering does not change the editor's source coordinate or history.
+
+The locked Folia entry and Root's original profile use `fontCache: 'none'`.
+Implement this actual glyph/outline path first; cached output modes do not block
+its first coherent compilation. Other Source SVG cache members/modes stay in
+their explicit implementation ledger until independently exercised. They must
+use the concrete Jax's one real FontCache, never a per-scene replacement or
+state injected into Common. D2D consumes typed completed Scene resources and
+placements and does not resolve glyphs by parsing SVG ids or XML.
+
+The production RenderSession owns its actual Context and loaded services for
+the parsing/layout operation. Internal Context views may not strongly retain
+their owning Context through a cycle. Scoped borrowed fixtures do not establish
+an independently retained service lease; expired runtime references must be
+detected before invocation. An operation hook or identity payload must retain
+its actual necessary owner, with no no-op shared_ptr or global registry.
 
 ## Original observations and acceptance
 
