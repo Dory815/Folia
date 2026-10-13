@@ -16,6 +16,36 @@ gives the same SVG, errors and font-load requests. The traced output SHA-256 is
 All selected cases have no dynamic font-load requests; loader coverage is open.
 The ignored observations are `build/math-port/common-layout-original-root*.json`.
 
+## Expanded configured-profile corpus
+
+`--profile-corpus` adds 57 cases from
+`tools/math-port/common-layout-reference/profile-cases.json`, for 75 total.
+Its `profile-source-lock.json` validates all 299 executable dependency hashes
+and the scope/corpus hashes, then checks the actual loaded closure exactly.
+The external font loader points to the actual NewCM `cjs/svg/dynamic` directory.
+AsyncLoad and retry implementations remain the original implementations.
+
+The observer also records actual compiled MML before Common wrapping and Source
+warnings. Two complete results and a subsequent locked run agree exactly:
+SHA-256 `9f58d09411512b4682b1f0049e40d6a47844ddffb9794eda52e2700998e0d740`.
+Disabling layout tracing preserves SVG, errors, loads, MML and warnings. The MML
+compile observer remains enabled in that comparison. The original 18-case result
+still has exactly its earlier hash.
+
+The expanded corpus observes 31 wrapper kinds and all 38 configured packages are
+loaded. Intended feature labels are corpus metadata, not proof that every package
+handler or every wrapper method has been exercised. There are 73 SVG outputs and
+two actual Lite-host failures: action-toggle and action-tooltip throw
+`TypeError: node.addEventListener is not a function`. These failures are retained
+as Source observations. Error MML is likewise retained for invalid inputs.
+
+Four actual dynamic font requests are now observed: arrows, symbols, monospace
+and sans-serif. The corresponding cases are extpfeil-arrows, textcomp-symbols,
+verb-literal and unknown-text-families. Source's mhchem variant warning is retained.
+These observations do not establish native dynamic-loader parity.
+
+Ignored results are `build/math-port/common-layout-profile-root*.json`.
+
 `tools/math-port/unicode-regexp-original-oracle.cjs` records 37 actual JavaScript
 host observations, including the pinned LiteParser and NodeMixin patterns read
 from the actual modules. Node is v24.13.0, Unicode 16.0. Two full results agree;

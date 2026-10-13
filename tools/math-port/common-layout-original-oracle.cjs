@@ -36,6 +36,18 @@ for(const folder of ['ts/output/common','ts/output/svg']){
     sourceLocks.push({file,sha256:lock.source_sha256});
   }
 }
+const extended=process.argv.includes('--profile-corpus');
+let corpus=null;
+if(extended){
+  const file=path.join(__dirname,'common-layout-reference/profile-cases.json');
+  corpus=JSON.parse(fs.readFileSync(file));
+  assert.equal(corpus.schema,1);
+  const lock=JSON.parse(fs.readFileSync(path.join(__dirname,'common-layout-reference/profile-source-lock.json')));
+  assert.equal(lock.scopeHash,digest(scopeFile));
+  assert.equal(lock.corpusSha256,digest(file));
+  for(const input of lock.dependencies)
+    assert.equal(digest(path.join(packages,input.file)),input.sha256,input.file);
+}
 const load=file=>require(path.join(src,'cjs',file));
 const {mathjax}=load('mathjax.js');
 const {TeX}=load('input/tex.js');
@@ -51,7 +63,7 @@ RegisterHTMLHandler(adaptor);
 const input=new TeX({packages:scope.profile.tex_packages});
 const output=new SVG({fontData:MathJaxNewcmFont,fontCache:'none',exFactor:.5,
   displayOverflow:'linebreak',linebreaks:{inline:true},
-  dynamicPrefix:path.join(packages,'mathjax-newcm-font/cjs')});
+  dynamicPrefix:path.join(packages,'mathjax-newcm-font/cjs/svg/dynamic')});
 for(const [name,exportName] of [
   ['bboldx','MathJaxBboldxFontExtension'],['bbm','MathJaxBbmFontExtension'],['dsfont','MathJaxDsfontFontExtension']])
   output.addExtension(require(path.join(packages,`mathjax-${name}-font-extension/cjs/svg.js`))[exportName]);
@@ -69,7 +81,7 @@ function wrapperId(wrapper){
 }
 mathjax.asyncIsSynchronous=true;
 mathjax.asyncLoad=name=>{
-  if(active)active.loads.push(String(name).replaceAll(packages,'@mathjax'));
+  if(active)active.loads.push(String(name).replaceAll(packages,'@mathjax').replaceAll(path.sep,'/'));
   const target=path.isAbsolute(name)?name:path.resolve(src,'cjs',name);
   assert.ok(target.startsWith(packages+path.sep),'Source requested a module outside pinned packages');
   return require(target);
@@ -113,19 +125,56 @@ const cases=[
   ['color','\\color{red}{x+1}',false,1280],['bbox','\\bbox[2px,border:1px solid blue]{x}',false,1280],
   ['phantom','a\\phantom{x}+b',false,1280],['linebreak','a+b+c+d+e+f+g+h+i+j',true,100]
 ];
+if(extended){
+  assert.equal(new Set(corpus.cases.map(item=>item.name)).size,corpus.cases.length);
+  for(const item of corpus.cases){
+    assert.equal(typeof item.tex,'string');
+    assert.ok(!cases.some(row=>row[0]===item.name));
+    for(const feature of item.features)assert.ok(scope.profile.tex_packages.includes(feature),feature);
+    cases.push([item.name,item.tex,item.display??false,item.width??1280]);
+  }
+  // Observe the actual compile boundary, before Common creates wrappers.
+  // This extra observation is enabled only for the extended corpus, preserving
+  // the already frozen 18-case baseline byte for byte.
+  const tree=node=>node==null?null:{kind:node.kind,
+    attributes:plain(node.attributes?.getAllAttributes?.()??null),
+    properties:plain(node.getAllProperties?.()??null),
+    ...(typeof node.getText==='function'?{text:node.getText()}:{}),
+    children:(node.childNodes||[]).map(tree)};
+  const compile=input.compile;
+  input.compile=function(){
+    const root=compile.apply(this,arguments);
+    if(active)active.mml=tree(root);
+    return root;
+  };
+  const warn=console.warn;
+  console.warn=function(...args){
+    if(active)active.warnings.push(args.map(value=>value instanceof Error?
+      {name:value.name,message:value.message}:plain(value)));
+    return warn.apply(this,args);
+  };
+}
 (async()=>{
   const records=[];
   for(const [name,tex,display,width] of cases){
-    active={ids:new Map(),calls:[],paint:[],loads:[],wrappers:[],root:null};
+    active={ids:new Map(),calls:[],paint:[],loads:[],wrappers:[],root:null,warnings:[]};
     let svg,error=null;
     try{svg=adaptor.serializeXML(await document.convertPromise(tex,{display,em:16,ex:8,containerWidth:width}));}
     catch(caught){error={name:caught.name||null,message:String(caught.message||caught)};}
     const {calls,paint,loads,wrappers,root:layoutRoot}=active;
-    records.push({name,tex,display,em:16,ex:8,width,layoutRoot,wrappers,calls,paint,loads,svg:svg||null,error});
+    records.push({name,tex,display,em:16,ex:8,width,layoutRoot,wrappers,calls,paint,loads,svg:svg||null,error,
+      ...(extended?{mml:active.mml??null,warnings:active.warnings,
+        intendedFeatures:corpus.cases.find(item=>item.name===name)?.features||[]}:{} )});
     active=null;
   }
   const dependencies=Object.keys(require.cache).filter(file=>file.startsWith(packages+path.sep)).sort().map(file=>({
     file:path.relative(packages,file).replaceAll(path.sep,'/'),sha256:digest(file)}));
+  if(extended){
+    const lock=JSON.parse(fs.readFileSync(path.join(__dirname,'common-layout-reference/profile-source-lock.json')));
+    assert.deepEqual(dependencies,lock.dependencies,'extended profile executable closure changed');
+  }
   process.stdout.write(JSON.stringify({schema:1,version:'4.1.3',scopeHash:digest(scopeFile),
-    sourceLocks,cjsLocks,dependencies,records},null,2)+'\n');
+    sourceLocks,cjsLocks,dependencies,records,
+    ...(extended?{corpusSha256:digest(path.join(__dirname,'common-layout-reference/profile-cases.json')),
+      configuredPackages:scope.profile.tex_packages}:{} )},null,2)+'\n');
 })().catch(error=>{process.stderr.write(error.stack+'\n');process.exitCode=1;});

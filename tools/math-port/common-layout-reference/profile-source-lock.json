@@ -1,0 +1,1203 @@
+{
+  "schema": 1,
+  "scopeHash": "9705d389538b2fc8bf782feea4372ace639b3727304f2971937bbcfb0042a0d1",
+  "corpusSha256": "f8fa7528739dbc51c0cba16b224ea8334ac3e7344984e9dd2c1047d910d838a7",
+  "dependencies": [
+    {
+      "file": "mathjax-bbm-font-extension/cjs/svg.js",
+      "sha256": "4330e4138451f2efd659d6a2bd4038c163e7fa98977474315b138bd5e6e2bf21"
+    },
+    {
+      "file": "mathjax-bboldx-font-extension/cjs/svg.js",
+      "sha256": "9ac39ff107d6291e15e16764f45cb794cf133333ebf268281e651b54ed6ab0d1"
+    },
+    {
+      "file": "mathjax-dsfont-font-extension/cjs/svg.js",
+      "sha256": "7a84404f759fcce1789a62389836245cb7aaf30c37556d1181c281d00a838478"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/common.js",
+      "sha256": "261e30460b9278dd7014f0c97153678c7432b4755e7c4f24f505cb605baba4b9"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg.js",
+      "sha256": "709d6e85113ef44645ad802b8424508d5f836dd61e4d1f2797b5e011a9693734"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/bbold.js",
+      "sha256": "dcd50283ac0fb56af66c8bd18e5eb102ce680e843b8d2ecb94ef0f05a7707d56"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/bold-italic.js",
+      "sha256": "3f521978c37b0d4db3e98411dbd29b0a89be2ddb3a1923f6e925e57609ddc471"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/bold.js",
+      "sha256": "f6aacb1b5ca23d3d67611ea8bd448fec34d33f6cc0fe97c67088438bdada6e43"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/default.js",
+      "sha256": "382936ccaae127b9df64b4c60c2cdfbb9fa3b4cdae66e37438d3dedd60e33d18"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/delimiters.js",
+      "sha256": "8953079426870d36691c43a1a35969064410015b1f21d2f1d8873cf825361785"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/double-struck.js",
+      "sha256": "a350c976456b85bd2a703c925c66ba343675b392fa88621a6c073a0fa243f31f"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/dynamic/arrows.js",
+      "sha256": "0d504196a39400f9d6bfa6ee6f5c249b4f097e025c1f2a5d8bf4e5146225751d"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/dynamic/monospace.js",
+      "sha256": "c7c1cded480a36de8d48a3c609d40974121841b08ea84e1c2f4c9abe16fa90e9"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/dynamic/sans-serif.js",
+      "sha256": "50b066092a6b9ce8cb7e2c50a10d66b11f1f17b1bdc3f99ab6cc764329dae96a"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/dynamic/symbols.js",
+      "sha256": "54ad38049a5a32fc4f31fd556323f3bbeee7af685d38409f0c64295196ab3f3f"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/ex-md.js",
+      "sha256": "e2015241fcca5b684ac05e8e4feac37b3c7b547cbb793507232b845f2314c67a"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/fraktur-bold.js",
+      "sha256": "33d3bc1680099a541fbdd5e9e28595a5bfaec580220c5ed343e56d73a46ccb3b"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/fraktur.js",
+      "sha256": "7dbcce9a97cd9051096dec2be551faddbb8e0a59f26ec5d1231fdb695305efce"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/italic.js",
+      "sha256": "7ed4b84c809f8881435d05855a3f4e9a9fa097f925d1c154ecca4bdad1aa5c87"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/largeop.js",
+      "sha256": "621b7988b83a0a8506be1e7fb613068a5bfadecfc256165ba1cd5c670ed085ae"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/lf-tp.js",
+      "sha256": "420ecaa497a0df25492abc5d3fc38b939de07504ac9aea644fb62168df763ccf"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/monospace.js",
+      "sha256": "9382fcb1cfb9c22d6097f95d6d807aa7748c12b3d690e6c019ec1ca2b179b371"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/normal.js",
+      "sha256": "362fcdbb2b80527ffce7d5918bcb6771b732d0141dc56206fb7b2d3db2a7060d"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/rt-bt.js",
+      "sha256": "0dfd8a0270e8e882775dc7d4702d32478f804157c6d4130ea14e5c41a4e76d19"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/sans-serif-bold-italic.js",
+      "sha256": "8e80bc59483b12d051ada34fd1e65e41bb0b260488e97587297440837283b27a"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/sans-serif-bold.js",
+      "sha256": "0ae2acf2808610318f7ee8c5c71f4b88e7511ebd7d43689309b76c3a241c3e09"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/sans-serif-italic.js",
+      "sha256": "40ebd9404fece00a3f0b26de355a20d066a4a610d1762d4d2edc5f77eb790d23"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/sans-serif.js",
+      "sha256": "a12b794ba87675462fba94fcd7e6f71c8b50cd4ac9fcebf73da64339c00a4fa4"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/script-bold.js",
+      "sha256": "495d6c0fd46aaabc740ab4cbce962a6fe202706c9b9086f3ae3b2baf9f18f130"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/script.js",
+      "sha256": "2aa9325efabc1596a86ae27dbba3bc019e10b86cee6616982a3be3b5e02a4057"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/size3.js",
+      "sha256": "2a7e245ca072ebe93ea4ebc3f8fc79cb5ce2f791b20c5cbadf11a6043364d970"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/size4.js",
+      "sha256": "19f7e229b42ea1a61d3720af750da4ffcc17c246e6065965468414b090cbcaf1"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/size5.js",
+      "sha256": "6b5319fb410c266cf12161700879425c94617f9437cd1c501e781aac8c1ad4bd"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/size6.js",
+      "sha256": "dce36da244c005dae4bca7928fb7dc02447898170d6abf71fa2b0b323efab4a3"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/size7.js",
+      "sha256": "5700513ef14463092fb51d9c0f06c617852f4991d16646befe321e57738f0e92"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/smallop.js",
+      "sha256": "c8bfcb840c856431d77a0c9b7ab8ba7bf2bed2068dd98060ffd40c55d067c3b3"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/tex-calligraphic-bold.js",
+      "sha256": "86f7713a4b4a14eef067fb2cfec20e29979710dacff1b15c200d05209fee69d1"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/tex-calligraphic.js",
+      "sha256": "1753a0fce62c44dd3fa17d9fd7b2165a87c404f63e433b6279e3194a1d4b340a"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/tex-mathit.js",
+      "sha256": "770f8da5ffb7dc01c73be7f572ea28dfed6951a2f2e06233fb4ba8590d678840"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/tex-oldstyle-bold.js",
+      "sha256": "76172f4aced7c13dea4ecb84725fa95d35ba94059e4237f0003f2d7dc4e5a6b1"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/tex-oldstyle.js",
+      "sha256": "eec56e0e75ae363849babe39ef04a182184e2a9a5d541b2ee7e813e95b436a87"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/tex-variant.js",
+      "sha256": "fc36a4a6d1fcde6753c0373e2686dacf5cfafc0b00a6335da62e4cbf492c9d53"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/uplarge.js",
+      "sha256": "1986b66d739081de9a2e6a3eeadc6adf7afe8ca0fdec05cc405b247ec04ac420"
+    },
+    {
+      "file": "mathjax-newcm-font/cjs/svg/upsmall.js",
+      "sha256": "f8d3f2cf129c51dfa462d2231a85aad38aed1024f82e1afc1bf4ecb98e8fdfc6"
+    },
+    {
+      "file": "src/cjs/adaptors/NodeMixin.js",
+      "sha256": "d331d73f054c46dfd3122c41bd6762389935b68c2e89bf1a4011cc70ea42ef3a"
+    },
+    {
+      "file": "src/cjs/adaptors/liteAdaptor.js",
+      "sha256": "e9879de720f356cf8f54c0960102b1e40b4eafc1e34a14481aa896e1e99bd76f"
+    },
+    {
+      "file": "src/cjs/adaptors/lite/Document.js",
+      "sha256": "c679ae2dc90a3c8fdd699d762079fc50f75aed5f48775859ebfb3ee050b69abc"
+    },
+    {
+      "file": "src/cjs/adaptors/lite/Element.js",
+      "sha256": "81626bfcd19aaf7b5d8a0c461d5f9c9f3a3d3c150b283c7641f9c38e6fcca9c6"
+    },
+    {
+      "file": "src/cjs/adaptors/lite/List.js",
+      "sha256": "6d2e9aa67581b15ce657c60081cd1958b882b928e4e1fb016f75e30d8d82e8a2"
+    },
+    {
+      "file": "src/cjs/adaptors/lite/Parser.js",
+      "sha256": "38874dadf30ee0bd60184dde9bdf29a1be9d45755893b2a025d8e1b0190ad8c0"
+    },
+    {
+      "file": "src/cjs/adaptors/lite/Text.js",
+      "sha256": "aab6de43d689d449401990932909c895bc29b76e28bcf22158d6f543a2059ffd"
+    },
+    {
+      "file": "src/cjs/adaptors/lite/Window.js",
+      "sha256": "9feeac0e2f5802cf0e590bd72b2a98cabde368103790fdb50a657155efae9caf"
+    },
+    {
+      "file": "src/cjs/components/version.js",
+      "sha256": "6745428310a6a0e35b9a8fc9fab9d89f181bf5ca8ccc27c169efce14824f9d81"
+    },
+    {
+      "file": "src/cjs/core/DOMAdaptor.js",
+      "sha256": "153998de1ae9f156cc9a5c2323f8840fc10010004ea1dfd2e25c09547e4de15d"
+    },
+    {
+      "file": "src/cjs/core/FindMath.js",
+      "sha256": "d38ba2d6c307ba3a9935e63c0b76fb2ed50e1c56f1b491c8c2872cc9a9271e4d"
+    },
+    {
+      "file": "src/cjs/core/Handler.js",
+      "sha256": "07efb478674f15c2199d728682e7f8dd7b5c6afec5a44fabb8222a4ff74f6746"
+    },
+    {
+      "file": "src/cjs/core/HandlerList.js",
+      "sha256": "499ad4c1b81cbb52abdb74b124e3a691405464881fca347927a8d9d31647a59a"
+    },
+    {
+      "file": "src/cjs/core/InputJax.js",
+      "sha256": "e2e330b4ba637c93bc3d2411e59129d681f865be7ad76297e8ab79d8f0f01f7a"
+    },
+    {
+      "file": "src/cjs/core/MathDocument.js",
+      "sha256": "3a7dad24d15a1137fa0bd8394a42284c690830c751102b6a31785a0f77eee1db"
+    },
+    {
+      "file": "src/cjs/core/MathItem.js",
+      "sha256": "e6ed5008854e4d2ac6b34ab98c53bec6afb34e460895e8320c90a0d8d700d261"
+    },
+    {
+      "file": "src/cjs/core/MathList.js",
+      "sha256": "0d5b387e640a0d52afb8aa3509122fb75f8641623301d7e8a63d39aa656933bd"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/Attributes.js",
+      "sha256": "efa567c0c573f13f136f1d37b0af6bdc1a675f70cc13a9ae1cd7334321f30749"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MML.js",
+      "sha256": "380332b7f0cc13104130affb65532ebca2ac214ccd897b93edda551cea443684"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlFactory.js",
+      "sha256": "d0c4e25237d04a9d21d12ee44776e46d30777e7f284db6f4f3ed1cc625b752d3"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNode.js",
+      "sha256": "86c5eb572dcf2652c3c52a60b66c720d231e17f600cc9aeef3ace4aeafc81d45"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/HtmlNode.js",
+      "sha256": "cd10798f07fbdafb6f2a375b85904a5fdcf0c546cc95ddc955cae5e411ce3eef"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/TeXAtom.js",
+      "sha256": "bf72fd0716f88d144a8ba0befef383de4a0a4fd4d690d37fec9d55b2f15a02e4"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/maction.js",
+      "sha256": "eddcdd2111b4b7cf5ad72937b0a4ff7beb555b98308c6771a013a18121af8ce7"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/maligngroup.js",
+      "sha256": "ec7d583f79bd49dfdd5b69630cf7f52d56e6e34f9f9c7e0963b0e1933cc4176c"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/malignmark.js",
+      "sha256": "9dba71cd21e25a0c43e58e13c02f4ec9629b1b7d4c87991cf62e12415e6a1ad7"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/math.js",
+      "sha256": "44debed089b254bc09e73e22d4c30336db13ff8dad0af140e915a320bdda8e71"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mathchoice.js",
+      "sha256": "659a1e37a309512beaa1636725155aced82dc8195b81c2ebd5a44d5f7cb3a8b7"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/menclose.js",
+      "sha256": "2cea1d1819a2eb545727f37940b341ac0ce802fad4d7daa11f813ce7381f23de"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/merror.js",
+      "sha256": "cd9b48970d5d0878d3806e8ff4e4f091d2db38f5021a63aa043acfc50d952d6a"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mfenced.js",
+      "sha256": "33dee590a2a6c2f104ccfb175e79c5179f422e150625f4b89bf2fa42ec8f69cf"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mfrac.js",
+      "sha256": "b2e053ce68304c03ea740fb22baa5b01a28d540002faeddc30ad5720a4172770"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mglyph.js",
+      "sha256": "1f19fe167f2b606a8bd84b0a82e81313a7a9d0cfef90fef3bfe954ad5cbabe09"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mi.js",
+      "sha256": "47058d7ddb5b24ed530936baffe834a06c0557ec7dbdc03312d3ffa0aca17241"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mmultiscripts.js",
+      "sha256": "db40a3543cffbd706c0070ae0877285ce22b07db3a7e530e56f42eaa7b2d922e"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mn.js",
+      "sha256": "8da61e1b68bfb4abbff2103c04b6fcf6c03b35c6934a3abba55ba1144b4ac142"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mo.js",
+      "sha256": "7c68f0570d82f585eb6ca7e8bbca119b96a02666e0d4b268a413bf4035ff0b2c"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mpadded.js",
+      "sha256": "675aae98959b257582171d58584f220da4543deb8e0e3d3b8b07a48ab6fc23a2"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mphantom.js",
+      "sha256": "dae156634a5a2fd1076af9abd551df195463a2b6db029635b13e9809ddb566f3"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mroot.js",
+      "sha256": "f73d25a1ca793ab21cc78ae73ce6062c925f49c8a51c4484211b8098a1a6bcd8"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mrow.js",
+      "sha256": "5846d2b0334223b759a4059dfb0ac5e31aef1f5a96c041da45b3de94c0689896"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/ms.js",
+      "sha256": "db185825f9f19d22b7ad23e9c75c9e869b3dfc423eb61962f129b8a18781c8eb"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mspace.js",
+      "sha256": "61dc8d544aa9550e3e132dfc1c426c5204fab292ddf9f46171e9baf6f4f35383"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/msqrt.js",
+      "sha256": "5dfe5af23967d82ccc74cf3f187c49d847da21e13ea721a539cb93afcde0ef35"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mstyle.js",
+      "sha256": "49e13c923b88f6b41806c3f030a30edbfe8527beee6350e0e7067fc87707c488"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/msubsup.js",
+      "sha256": "7971b391a8d7c92e0d6115b17c4c394dafc828942fc00591ba6064b871610c18"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mtable.js",
+      "sha256": "89f9cf650c72e146c544efdb640108f6f0b496d74f6bd7258a5ecaf28a284516"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mtd.js",
+      "sha256": "0210a0d98d9098fcdab7362302841a77625341bf1459582e72f57f39314d9699"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mtext.js",
+      "sha256": "1d3f64150977d8a1cfcc95a9974c9ad4c01f7894a0d05b7f68f5bfae5026b1b5"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/mtr.js",
+      "sha256": "d6820d1a7f2ad6cb8ea714c0e73d25993987174d8cf51820fac742204df2bf47"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/munderover.js",
+      "sha256": "104a6ed2f1a8967726c4a0da6ffd0ffb917c23fe0b3847138161c975fa0785b9"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/MmlNodes/semantics.js",
+      "sha256": "61d0e500cbb96d395ef0ac91ae1fb3369a7cebba25204cef1c20d939eaf71f9b"
+    },
+    {
+      "file": "src/cjs/core/MmlTree/OperatorDictionary.js",
+      "sha256": "db65e13a8f3c6290e711303d46cfb6f2fe8ec24e12c499bdf9b1bf4f42027ff8"
+    },
+    {
+      "file": "src/cjs/core/OutputJax.js",
+      "sha256": "9f751917529fdf076b65746a9c910526599944193a9bffcc78c765f7140f8047"
+    },
+    {
+      "file": "src/cjs/core/Tree/Factory.js",
+      "sha256": "739db2e5760c29d7bb4f1bc7baa08ff8d727f4d117522aff5ede017f812cffef"
+    },
+    {
+      "file": "src/cjs/core/Tree/Node.js",
+      "sha256": "94174004b89f19bf3c98e8eec5fabdd0bcbf1e13e0b740963fa69554ad8a12a7"
+    },
+    {
+      "file": "src/cjs/core/Tree/NodeFactory.js",
+      "sha256": "148c9a3a2e469fc464036b88deb7067cd779989a43356812d31365a84ec75c54"
+    },
+    {
+      "file": "src/cjs/core/Tree/Visitor.js",
+      "sha256": "a3778626991afe0bf1cf5930f4944ecab2e3a31123c0023761467c0e2c7c3a54"
+    },
+    {
+      "file": "src/cjs/core/Tree/Wrapper.js",
+      "sha256": "8a0c647c4f22bba75dec4164f03889a29534ddff0129ebffe36439d2f81b7276"
+    },
+    {
+      "file": "src/cjs/core/Tree/WrapperFactory.js",
+      "sha256": "bbeb7c85e0dfd3c8e437d500d37f083a6b031cd9490b58d41c3285e8f7f679d5"
+    },
+    {
+      "file": "src/cjs/handlers/html.js",
+      "sha256": "70428dd9a34b8421da5275bfbf5d8e165c79c5cedf2341aa451dca89b0af9f7d"
+    },
+    {
+      "file": "src/cjs/handlers/html/HTMLDocument.js",
+      "sha256": "72b3352944ba435ccd6748644c48f7fcb129248c65bad895a5b1715726c89494"
+    },
+    {
+      "file": "src/cjs/handlers/html/HTMLDomStrings.js",
+      "sha256": "5dc1b7e3435c21518515286d6ae3ea21831e36a28625a889375f2fe400b9186b"
+    },
+    {
+      "file": "src/cjs/handlers/html/HTMLHandler.js",
+      "sha256": "595fc5ac7b0497c220c1ca7396241b5d0c48ed689230a7ed5a15896b909c438e"
+    },
+    {
+      "file": "src/cjs/handlers/html/HTMLMathItem.js",
+      "sha256": "1f2d77971d95f910d71212cd15eb73169ca5e564b04c7aa077396b70ba502012"
+    },
+    {
+      "file": "src/cjs/handlers/html/HTMLMathList.js",
+      "sha256": "b0279e39487a28f8ff5cc18fa45504dcbb75fb46cc3943edbf1032a2a56e0f9f"
+    },
+    {
+      "file": "src/cjs/input/tex.js",
+      "sha256": "ef2852b197173f373e62326016e980aef01ffc838f5f766ab6076262f944eada"
+    },
+    {
+      "file": "src/cjs/input/tex/ColumnParser.js",
+      "sha256": "9d09d0b921ce50255facfe303d7771309ad71ea473388167535d5acf711feae9"
+    },
+    {
+      "file": "src/cjs/input/tex/Configuration.js",
+      "sha256": "86f62a6f6e44fec20156546b7e8d424cac493c7465c2c8ec621c604332a276f3"
+    },
+    {
+      "file": "src/cjs/input/tex/FilterUtil.js",
+      "sha256": "2e626da51d95be455ddde976660abb8ebab035a8712db0f0820870b95e9b1bd8"
+    },
+    {
+      "file": "src/cjs/input/tex/FindTeX.js",
+      "sha256": "1361bd1171e5ef0c8210342d89c9cebd660dbb9d4810bc571c64172b3a5c3d4b"
+    },
+    {
+      "file": "src/cjs/input/tex/HandlerTypes.js",
+      "sha256": "bf6216270252efca24688a2bf8afda18a9adb762b4a7ae41471d013063bf4103"
+    },
+    {
+      "file": "src/cjs/input/tex/MapHandler.js",
+      "sha256": "d82e3034776d2392689aad86500b5e60dbe0aa5540853b48f308841879f3cf67"
+    },
+    {
+      "file": "src/cjs/input/tex/NodeFactory.js",
+      "sha256": "426e3ca8822d209edc8a22b5e9f11c5631e52213b232220a2a55e81828374db5"
+    },
+    {
+      "file": "src/cjs/input/tex/NodeUtil.js",
+      "sha256": "4a55841fd22167d25f505e8f41adea072715ef024e00ea5ac6df3f199f2cb809"
+    },
+    {
+      "file": "src/cjs/input/tex/ParseMethods.js",
+      "sha256": "2af91730bf39c97e86169c68cdc8c1054c05c58216f60a2f2d8e54ec75294851"
+    },
+    {
+      "file": "src/cjs/input/tex/ParseOptions.js",
+      "sha256": "ff19d70539cb76911c5f1d7673ddfd908183dcf5849c91cb068b19e58da8a9ec"
+    },
+    {
+      "file": "src/cjs/input/tex/ParseUtil.js",
+      "sha256": "adafa18cefad39e8408bcc0e4eb7103dceb6d16c9e7ea2eb013f23602c3f8941"
+    },
+    {
+      "file": "src/cjs/input/tex/Stack.js",
+      "sha256": "78743f9dfcf1ebf9beb890629d908111be5c1e47f49c16d5ffa0877c5935c385"
+    },
+    {
+      "file": "src/cjs/input/tex/StackItem.js",
+      "sha256": "53baa91d7c27475a91a9b6993235071ab32b04a29736c5920bdda2836ab5a91b"
+    },
+    {
+      "file": "src/cjs/input/tex/StackItemFactory.js",
+      "sha256": "2722b21be90f76b48325c22a65b37f80dc283e4bc9f74b644dcae81386d001c2"
+    },
+    {
+      "file": "src/cjs/input/tex/Tags.js",
+      "sha256": "e027c7edb6f7207f3b3ce7e7203dcfc763219b1fa37a3b39925ae83c1beef896"
+    },
+    {
+      "file": "src/cjs/input/tex/TexConstants.js",
+      "sha256": "5c30716472a64ee59b58ddc1c4fe53c7d00baf9d0a37e2288e307996d5dfbcff"
+    },
+    {
+      "file": "src/cjs/input/tex/TexError.js",
+      "sha256": "a5713111ff2ab646740da13ca6273cb5f2a7ceff9d0fb6a2e116185e4994e64f"
+    },
+    {
+      "file": "src/cjs/input/tex/TexParser.js",
+      "sha256": "106d7ff9298dce899d046339eab1996358f3efca3a7ce66f5ca915747dc9c6a8"
+    },
+    {
+      "file": "src/cjs/input/tex/Token.js",
+      "sha256": "d317b026fc1ae0ff93d6939a15041d225385a826f8c33115284464bc2f527e35"
+    },
+    {
+      "file": "src/cjs/input/tex/TokenMap.js",
+      "sha256": "9e3f086080a6ab052b68b22a5d9ee3dbc5e17d7b0c03a31e789664b01df36cf7"
+    },
+    {
+      "file": "src/cjs/input/tex/UnitUtil.js",
+      "sha256": "22fd8e826575bf9cd612b2f85208a49b07eb3cb6d9ace6c6db36e79d6e50bade"
+    },
+    {
+      "file": "src/cjs/input/tex/action/ActionConfiguration.js",
+      "sha256": "cfe9cf324fcda305c163911f99ab30c884d03a1dacaaa6c3da1422da60b2f6fb"
+    },
+    {
+      "file": "src/cjs/input/tex/ams/AmsConfiguration.js",
+      "sha256": "ff8e1aa5936fb48e68da3cc5ff8745f1365d5dbd2416c1a908c6a06842989f79"
+    },
+    {
+      "file": "src/cjs/input/tex/ams/AmsItems.js",
+      "sha256": "24f1b6b0dabb84eddc52150bf5f629fb8203a3e9eeaecb5f425c7df8fe4656d5"
+    },
+    {
+      "file": "src/cjs/input/tex/ams/AmsMappings.js",
+      "sha256": "83337b1aafc4e7431050696abc27a3392c26e5626d70d22595d0b250bc5f2af9"
+    },
+    {
+      "file": "src/cjs/input/tex/ams/AmsMethods.js",
+      "sha256": "1b24b7bfa46c4e8764756ef66972cd788512fbd33bd80eeed18f88a2db72de51"
+    },
+    {
+      "file": "src/cjs/input/tex/amscd/AmsCdConfiguration.js",
+      "sha256": "51de0ea229419ffd74daf8ddabf45469cdd9f258a312d06b6a9f83ebe476f854"
+    },
+    {
+      "file": "src/cjs/input/tex/amscd/AmsCdMappings.js",
+      "sha256": "5e422724181f8473629c0ceccb5b3f0a242a96f65ee06637066d6016922aa25f"
+    },
+    {
+      "file": "src/cjs/input/tex/amscd/AmsCdMethods.js",
+      "sha256": "dabf40b6e66ad1f29572aadc3fd1a90b8aa4b6cc5c011b416560667ab632f032"
+    },
+    {
+      "file": "src/cjs/input/tex/base/BaseConfiguration.js",
+      "sha256": "0feedc60ac600b647cf2a1437c7244196a5aec04715f4a301fe6e9ec09722c57"
+    },
+    {
+      "file": "src/cjs/input/tex/base/BaseItems.js",
+      "sha256": "5310d0429b7b62d405ae9b93c8d21ad17b787e5eb3fd1f01439c62f2094f7d1a"
+    },
+    {
+      "file": "src/cjs/input/tex/base/BaseMappings.js",
+      "sha256": "3522fc3fbb50af2f65442be3b2fbb2623824620899ebe775a87b885928c4acce"
+    },
+    {
+      "file": "src/cjs/input/tex/base/BaseMethods.js",
+      "sha256": "b8d5c74e01f85ae391ec8d16ffcd216a4ca4267bd8ffa091c5bfe1462ad7b491"
+    },
+    {
+      "file": "src/cjs/input/tex/bbm/BbmConfiguration.js",
+      "sha256": "14c57a633454cd1c558fe22c45a90c15c86e69c4960b79375a9737311f8f8901"
+    },
+    {
+      "file": "src/cjs/input/tex/bboldx/BboldxConfiguration.js",
+      "sha256": "ecf0f53871e8f5ac4705132855f09179f9b5c974524c258c5aa87581be1dc8b0"
+    },
+    {
+      "file": "src/cjs/input/tex/bboldx/BboldxMappings.js",
+      "sha256": "0c4ee88f5ad810c075b85e5817b1f50d248bce818c5d857e2dede2d4d713ab6a"
+    },
+    {
+      "file": "src/cjs/input/tex/bboldx/BboldxMethods.js",
+      "sha256": "36fcf862ced456fb8d3ea4b96b75fdd6af9a2c11407c475c67a4c1003c964519"
+    },
+    {
+      "file": "src/cjs/input/tex/bbox/BboxConfiguration.js",
+      "sha256": "f85374d99b29c894624c4ae7e5775ec1290afad514c89fe86499762f59456355"
+    },
+    {
+      "file": "src/cjs/input/tex/begingroup/BegingroupConfiguration.js",
+      "sha256": "4e25653273ff39a916deb4aa8879292fa88f75a49d37af1189d88d02f7cf0789"
+    },
+    {
+      "file": "src/cjs/input/tex/begingroup/BegingroupMethods.js",
+      "sha256": "c13631818b600ab46e28f399731cc8695a0d26472b34271a15106c2fe918e993"
+    },
+    {
+      "file": "src/cjs/input/tex/begingroup/BegingroupStack.js",
+      "sha256": "f4b5408d18a22da1289d9be4ff310b751de0e4703ddd0dbea4d60d6a07294725"
+    },
+    {
+      "file": "src/cjs/input/tex/boldsymbol/BoldsymbolConfiguration.js",
+      "sha256": "b552f0c41e5929e19d967897118cb92960f873eb7a8a21e467d532158f6dfccb"
+    },
+    {
+      "file": "src/cjs/input/tex/braket/BraketConfiguration.js",
+      "sha256": "1c9458a3c4965a298c41ef18f734beb3fb3709d75f287617fcdd2bdeae9ee569"
+    },
+    {
+      "file": "src/cjs/input/tex/braket/BraketItems.js",
+      "sha256": "0750ac6d769dd3ff14488b8a51218f000b812f51d637bb9d65c892aef565fb3e"
+    },
+    {
+      "file": "src/cjs/input/tex/braket/BraketMappings.js",
+      "sha256": "1152d0239e8bee22d930865a30ff77acac3d8b28e63c5f424052bbd5fcec774e"
+    },
+    {
+      "file": "src/cjs/input/tex/braket/BraketMethods.js",
+      "sha256": "c20cb54ca55d1b96d35de30491cd3daf8f7177952b4012bea3d2c936c9e64f9d"
+    },
+    {
+      "file": "src/cjs/input/tex/bussproofs/BussproofsConfiguration.js",
+      "sha256": "249ab0f53fb4ed0c4bcabe8bc20ba39be5c65dc6ab0912acd252b202261310c9"
+    },
+    {
+      "file": "src/cjs/input/tex/bussproofs/BussproofsItems.js",
+      "sha256": "e1b0a23de54c9ed334e30d1c1e679c6dcde24a2d1558ac7645abc21a041ab13a"
+    },
+    {
+      "file": "src/cjs/input/tex/bussproofs/BussproofsMappings.js",
+      "sha256": "237e8be03370951f7dac389d79980454d930fcb82be5d4d821dc93e95fe8aff9"
+    },
+    {
+      "file": "src/cjs/input/tex/bussproofs/BussproofsMethods.js",
+      "sha256": "c671b2b31b229e73454c70c794a82923f8d059f43b5f1af134588b530055c054"
+    },
+    {
+      "file": "src/cjs/input/tex/bussproofs/BussproofsUtil.js",
+      "sha256": "8ed15ce9672065e5d4ae2e3f06703bbb456f836287fa1fb6a0aa45ecfb1a305d"
+    },
+    {
+      "file": "src/cjs/input/tex/cancel/CancelConfiguration.js",
+      "sha256": "646af6c259f13917cb5b85ae79072648afcdc7e7aa8b3230f5a250f404bd694e"
+    },
+    {
+      "file": "src/cjs/input/tex/cases/CasesConfiguration.js",
+      "sha256": "8490555aaf017a0047b6f8edef9167310261b766d921b373e58fbf4075d1b61c"
+    },
+    {
+      "file": "src/cjs/input/tex/centernot/CenternotConfiguration.js",
+      "sha256": "5c147327bf3e1a524bd473b981f18d8b0ea5aea748fd16842ccc6d689a045e58"
+    },
+    {
+      "file": "src/cjs/input/tex/color/ColorConfiguration.js",
+      "sha256": "2b5e9e7b9fb7a1b24fd87854e1b2d900c90a5a502f64f906f7ddf6d6774bf6c1"
+    },
+    {
+      "file": "src/cjs/input/tex/color/ColorConstants.js",
+      "sha256": "d3fd379ec96fd734aacb50df660cb878602052a6f94636c60e572924033508b0"
+    },
+    {
+      "file": "src/cjs/input/tex/color/ColorMethods.js",
+      "sha256": "7590d2cf842e5cf894eabeb9a2a5fab6c16c42fb50e5db1b84245df398bf2632"
+    },
+    {
+      "file": "src/cjs/input/tex/color/ColorUtil.js",
+      "sha256": "2075669f7ddba29a67a0e3f18eb5c2b933293f7f67b6c1aa39f8baaf0e14a7fb"
+    },
+    {
+      "file": "src/cjs/input/tex/colortbl/ColortblConfiguration.js",
+      "sha256": "b2da866632dcecb74b05559fa13c0fdd3d79c9d2b4a927bb22a587ef6c76227e"
+    },
+    {
+      "file": "src/cjs/input/tex/configmacros/ConfigMacrosConfiguration.js",
+      "sha256": "050cfb81fdc2914459e6c4128ab2ba8a3162207f72db921351cc1fb3320914a0"
+    },
+    {
+      "file": "src/cjs/input/tex/dsfont/DsfontConfiguration.js",
+      "sha256": "98decbf37503163e30e0906b30bc825c0cf750db5286c527c399d013d8b39f5a"
+    },
+    {
+      "file": "src/cjs/input/tex/empheq/EmpheqConfiguration.js",
+      "sha256": "4f4401e56b9731108b19f4baed3b36c2e6c163b80dfadd323b565eb23a274134"
+    },
+    {
+      "file": "src/cjs/input/tex/empheq/EmpheqUtil.js",
+      "sha256": "35140a72344dfc9e4de07138259fc0958700348af97ec1f0180be696dd88e714"
+    },
+    {
+      "file": "src/cjs/input/tex/enclose/EncloseConfiguration.js",
+      "sha256": "a7a2c9d3a21a2c5cb7df96c4d3cd68704aca6799cbb28fab01cc0826ae74b232"
+    },
+    {
+      "file": "src/cjs/input/tex/extpfeil/ExtpfeilConfiguration.js",
+      "sha256": "e51f5adac0bf1485dc10a327b30bdb5bb54b1064c692f0ee855b805a4b5941a4"
+    },
+    {
+      "file": "src/cjs/input/tex/fontsizev3/FontSizeV3Configuration.js",
+      "sha256": "a38d1ba7d6200dc42d76c8bf7401b2daaae3b957a08ca9329b54591920961d29"
+    },
+    {
+      "file": "src/cjs/input/tex/gensymb/GensymbConfiguration.js",
+      "sha256": "28899f27e9e56a9f5371f713bf57b5671e7f448397d04760a192b4b2f6d76834"
+    },
+    {
+      "file": "src/cjs/input/tex/html/HtmlConfiguration.js",
+      "sha256": "284d5341c6b8055e540e2a286956ece2deb83925945f204d268d6ece25b408f0"
+    },
+    {
+      "file": "src/cjs/input/tex/html/HtmlMethods.js",
+      "sha256": "fabb2f71a057bf3c6f3f52e23ebd0ea93fbe744500cf3e6792c41dd8c37b8234"
+    },
+    {
+      "file": "src/cjs/input/tex/mathtools/MathtoolsConfiguration.js",
+      "sha256": "863415dfbc384852e5b3b39724d50cc453e1bb6e54f8f6a1073b9e5e43b8734d"
+    },
+    {
+      "file": "src/cjs/input/tex/mathtools/MathtoolsItems.js",
+      "sha256": "89bc6d7f2597a48d231743d06d031c7042f9963798cb514a84dabc52de4e023d"
+    },
+    {
+      "file": "src/cjs/input/tex/mathtools/MathtoolsMappings.js",
+      "sha256": "2bc22670070f957d770adb74bdb0e6795c6373560adadfc62fbe82fec42fc03b"
+    },
+    {
+      "file": "src/cjs/input/tex/mathtools/MathtoolsMethods.js",
+      "sha256": "ec67f90855dec0ab60f4933beffe081799247a2ac01572429b696e4e02ed8a5a"
+    },
+    {
+      "file": "src/cjs/input/tex/mathtools/MathtoolsTags.js",
+      "sha256": "bcdd1c9f8592d5640fa2b8bb8cade19c29e2d8f732e19a2dfbcb5415135e3e2d"
+    },
+    {
+      "file": "src/cjs/input/tex/mathtools/MathtoolsUtil.js",
+      "sha256": "c132df85a45b50812466c8643f9dabd156f5205e5699d514f01292e02469e2d5"
+    },
+    {
+      "file": "src/cjs/input/tex/mhchem/MhchemConfiguration.js",
+      "sha256": "66d7c41c44dfe73d458718edb8ccc3c1577ec2b24b7299b9515f905986d9e279"
+    },
+    {
+      "file": "src/cjs/input/tex/newcommand/NewcommandConfiguration.js",
+      "sha256": "8c4de6d6933fd485916114d588400f2e4b5fb1763e5720db74af9b9b5bc24ab2"
+    },
+    {
+      "file": "src/cjs/input/tex/newcommand/NewcommandItems.js",
+      "sha256": "8772e5089015efc52fedce9e5e9b3968a89d5732a0f480c0c906e424baa73b01"
+    },
+    {
+      "file": "src/cjs/input/tex/newcommand/NewcommandMappings.js",
+      "sha256": "0b52824ee1e59343672612bcd1a0bffd1be922fc4122497a6cbfa7399508838b"
+    },
+    {
+      "file": "src/cjs/input/tex/newcommand/NewcommandMethods.js",
+      "sha256": "7aa2e76b2263b2f12961958c86e2325acba83083334ca54f6949f86a25bd80cb"
+    },
+    {
+      "file": "src/cjs/input/tex/newcommand/NewcommandUtil.js",
+      "sha256": "496a1c7154521e6870c5469b47070323766182150740f2e846cd005460b7e4bf"
+    },
+    {
+      "file": "src/cjs/input/tex/noundefined/NoUndefinedConfiguration.js",
+      "sha256": "572efa297c0f8718bb8c367ae78fcbc58f35904e2483ed8e3a2c275b8407cf4b"
+    },
+    {
+      "file": "src/cjs/input/tex/physics/PhysicsConfiguration.js",
+      "sha256": "119e700d70e7f6fed4854af927e93d8d997fa42d0135f308b8a3ef7bfdc18d12"
+    },
+    {
+      "file": "src/cjs/input/tex/physics/PhysicsItems.js",
+      "sha256": "84e9128b2005c18654844902db643a2c351da6fad22b8475f3fda5cdfed2ba64"
+    },
+    {
+      "file": "src/cjs/input/tex/physics/PhysicsMappings.js",
+      "sha256": "959950867884100b825474824f34051298e9fe6167d7087ae653dc8470e489ad"
+    },
+    {
+      "file": "src/cjs/input/tex/physics/PhysicsMethods.js",
+      "sha256": "ddf56512e6f2c45e3d271dc702cc77dd5fc42fdd85ee137165f930cb332f74fa"
+    },
+    {
+      "file": "src/cjs/input/tex/setoptions/SetOptionsConfiguration.js",
+      "sha256": "dac7cec87b390b199257df54f4942a14f7c5ef0cbef54e75ff4f471551a41852"
+    },
+    {
+      "file": "src/cjs/input/tex/tagformat/TagFormatConfiguration.js",
+      "sha256": "54cb07c08095308bd78d232998366afe0053d74abfe1829cdf2b640921ab29bd"
+    },
+    {
+      "file": "src/cjs/input/tex/texhtml/TexHtmlConfiguration.js",
+      "sha256": "8ee3bfb0d6ecc5a44ee9bec33cc44bafdb35369096ade324603d1e2a10d7db3e"
+    },
+    {
+      "file": "src/cjs/input/tex/textcomp/TextcompConfiguration.js",
+      "sha256": "6a50dc60e8240222bc926771bf7b94a9c4e129ba32a25d5da1a92bf5e92883ac"
+    },
+    {
+      "file": "src/cjs/input/tex/textcomp/TextcompMappings.js",
+      "sha256": "802b1a41f0084b904abd4aab797d3cf3d5f66b80c0662a65038ec155a11b1c31"
+    },
+    {
+      "file": "src/cjs/input/tex/textmacros/TextMacrosConfiguration.js",
+      "sha256": "5803611b187a6256cae6289cfc2f61fafa7f93395432d3a7b365f8089334b5cf"
+    },
+    {
+      "file": "src/cjs/input/tex/textmacros/TextMacrosMappings.js",
+      "sha256": "d331e33a2c3327eeeb2bc1fd5e7e98b0ef17fd7f317aaf91c19f9d665a1a5260"
+    },
+    {
+      "file": "src/cjs/input/tex/textmacros/TextMacrosMethods.js",
+      "sha256": "59e0abbeffeb9c859b2150d705abb1dc0a59a7ec71fb830ae6379d887c499817"
+    },
+    {
+      "file": "src/cjs/input/tex/textmacros/TextParser.js",
+      "sha256": "ec2fa0145f5e90ef231b023a38ed7d9c1064a8cc58a46bb683d46439bd8fb400"
+    },
+    {
+      "file": "src/cjs/input/tex/unicode/UnicodeConfiguration.js",
+      "sha256": "49632603b6d951624795673cd43d631f0c57c6e571d09e08e4abb6e925e6ae9c"
+    },
+    {
+      "file": "src/cjs/input/tex/units/UnitsConfiguration.js",
+      "sha256": "f4e1cf73b7249c87fa767ea640dcab108766c552155227ca92cd791da1fd5a6e"
+    },
+    {
+      "file": "src/cjs/input/tex/upgreek/UpgreekConfiguration.js",
+      "sha256": "04a57e9122035b332654b358597c1b93ee6c5903c8c5d65044ab682c2c24102c"
+    },
+    {
+      "file": "src/cjs/input/tex/verb/VerbConfiguration.js",
+      "sha256": "a1bc5b9827b6dfd1606424cffb71cff73ad11a1667b0a5f80b7a1dd26b6163e9"
+    },
+    {
+      "file": "src/cjs/mathjax.js",
+      "sha256": "17431ff42f26bfca6cc2baee68acb09d551fec8824f392290c5ebf0350df4ec6"
+    },
+    {
+      "file": "src/cjs/output/common.js",
+      "sha256": "b8a58d983e465f21ed36574472140bfd65e2696bb72f6c5647e0a2ae47eb1bd9"
+    },
+    {
+      "file": "src/cjs/output/common/Direction.js",
+      "sha256": "6f807e606d7229d62245ae28e0a98848138b6f05a112de5612668a024ffaa132"
+    },
+    {
+      "file": "src/cjs/output/common/FontData.js",
+      "sha256": "b14584e26fcb9c76d74ae4688b37e0afcc348278dc26126b4baf6662886ff63a"
+    },
+    {
+      "file": "src/cjs/output/common/LineBBox.js",
+      "sha256": "5e6464e467ef82116d6933af020450bacb354d518848049188cd0dde0b2eadd2"
+    },
+    {
+      "file": "src/cjs/output/common/LinebreakVisitor.js",
+      "sha256": "1df824024d443eeae425142d6cada899779cebea9d7190d9aa0807efcf1b1c43"
+    },
+    {
+      "file": "src/cjs/output/common/Notation.js",
+      "sha256": "15b351d807ac3c348c1ce8b8167e6097e5d5a0284bb9e875bf67ea4972760159"
+    },
+    {
+      "file": "src/cjs/output/common/Wrapper.js",
+      "sha256": "9e21f886b91624d170ff89df0eecef31e789ffecda001abc3e5649a38419412b"
+    },
+    {
+      "file": "src/cjs/output/common/WrapperFactory.js",
+      "sha256": "57ce2e232ec1919fa518699226466ceef52cbcb2af75559137d2bb2dc83ea2ab"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/TeXAtom.js",
+      "sha256": "84d821ef425d7a06307e5a5afc8726ff8c22ba55e541eea3fadbcc99a376dcba"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/TextNode.js",
+      "sha256": "0a7528be5df7ebbf2c261e437dd6e2affbfc63a27274ba8c8c7877dde36165ae"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/XmlNode.js",
+      "sha256": "ef66ae37fb3736f54aafebcac194890b9399472523acea730680335c2193de68"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/maction.js",
+      "sha256": "0ff1cc7ec6b74055ddefa93b1e7d27afd3e7344ce6d830877ec4d0bef5f495f9"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/math.js",
+      "sha256": "8271bc3ec9babb16dd2849bbbe458b169ebe8423fd05f246c5bc1b53a7ea82ed"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/menclose.js",
+      "sha256": "12b926073fbc0e86371770ecd470f87de54ead40e36f0439c99344a343ebe6ed"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mfenced.js",
+      "sha256": "a02799dfd87903d59a13c509f9a9593bdc6882c2a0d7c43c1a8220ff35ceb166"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mfrac.js",
+      "sha256": "4deba461704fca1492f630a9e0f712c6e02f4ab9abc9507290be05b2d4df06ea"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mglyph.js",
+      "sha256": "48cb609a11e76dee83f66f3934fc1b2b1d8c3aba598967948e8e2f50dc675196"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mi.js",
+      "sha256": "98b595b520eaa1566720c43a63ef0bc4febd6cef06453a26cb596f6e09687155"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mmultiscripts.js",
+      "sha256": "82802f8b88dc48ffec0439cc8ffc8e5163c21cf82a28dcc84c7c44513bb05c2b"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mn.js",
+      "sha256": "6c551ff9abed78c471e9b26c05e8b41e6802eeef14b316a53f7b5ec2199c57b0"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mo.js",
+      "sha256": "d447975853c750ad94eb3cc5fe4e3ae012fbdc73841d39bbef3080619e765a1c"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mpadded.js",
+      "sha256": "4405c3a0ae4274fb3d0cf015487b56798f9c5781a6274c932c80b0ff823f6c40"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mroot.js",
+      "sha256": "1f0c1f5b864beefae82f40e670afc0413ffb309787981ef5e334465815962f17"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mrow.js",
+      "sha256": "656d226a08412290c90284fa5ab0b311b288e8aaeb33c257d8d99e20ee920776"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/ms.js",
+      "sha256": "5bfa7ffdf07f2bc46375274e4c764d821a08365c224e4adc9aa6f1fdd6051a1b"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mspace.js",
+      "sha256": "f06917de1e5f5d788495789522ee77f3ddea2b096ae740beee64300492edc67a"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/msqrt.js",
+      "sha256": "0b97de1e4817c61b679c8d3cad9ae8542a3876c0edac5eed055030bb08dbd865"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/msubsup.js",
+      "sha256": "10c11393a9ec6273de294cb31fd1c51665f4be8e11a5b830bad9d739def680be"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mtable.js",
+      "sha256": "3b536684d4899f8603fa5db61a081db2bad9ed9d09b4e3de45f7d0f2fbade29c"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mtd.js",
+      "sha256": "57ee84fffc3ad38998ab4572f4b08240a25d529941f8de92cbdcda35eb295c5b"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mtext.js",
+      "sha256": "fbce8b6ed6ab47b74f0c5f53ceba920b36ef77dd12941cc21665ddaee6a85901"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/mtr.js",
+      "sha256": "41d3ffdc6f110e96e48d1d0f5d4cf07a489a299b2884cd81011c80a0260d0c4f"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/munderover.js",
+      "sha256": "6b746b059ad85131b28ca62c755b234e31f0aa4403956eafb8621d4ff0a81d4e"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/scriptbase.js",
+      "sha256": "3781ec869fc7c95bbc6d993a7b5cc82724f1592fe00e9b712cf82d4272c06289"
+    },
+    {
+      "file": "src/cjs/output/common/Wrappers/semantics.js",
+      "sha256": "356b86f1704ed8cd5988ff81ffeb9dc3b5b4be4efa98b0859ac27ff69857de08"
+    },
+    {
+      "file": "src/cjs/output/svg.js",
+      "sha256": "1495e23a9da0bf6b0e8b44d71f54271fa12e902c11444e4f18cdd749ad3b800e"
+    },
+    {
+      "file": "src/cjs/output/svg/DefaultFont.js",
+      "sha256": "2178536649e5481e2c2b54a813db9f393b2964276034f2a72f1ab1fa1af1b3dc"
+    },
+    {
+      "file": "src/cjs/output/svg/FontCache.js",
+      "sha256": "4a85ac93c95a587260967dad89e89ad61a4ac6741848f2fecf3871af264f8303"
+    },
+    {
+      "file": "src/cjs/output/svg/FontData.js",
+      "sha256": "1ff7f2ec5dcc46dc92960f2f6d9c194ee1f86a3cb420adc52dbd704349552ed6"
+    },
+    {
+      "file": "src/cjs/output/svg/Notation.js",
+      "sha256": "31f1c9b6031eb8f61093119f58b5a8af9ee16a0ee96c262142399f20a11515d0"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrapper.js",
+      "sha256": "3ba6e35cf799f0cffe5c555be3f81c12d8a8f81fe36257685ddccb96f4671ee4"
+    },
+    {
+      "file": "src/cjs/output/svg/WrapperFactory.js",
+      "sha256": "f24b66442ed15a4aa54ac9167394975190f35de3d783138cda6201bf43a1a5f7"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers.js",
+      "sha256": "5abcd05f7094165c61b3850ad163a030858d3729b653f3313374526b16ba1eec"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/HtmlNode.js",
+      "sha256": "1f33320e33dad4efec9f1d5f9cdea7404da5a2c75884781ada5ba6a239b36ac3"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/TeXAtom.js",
+      "sha256": "4ac44b86efe4f6fa8899e13ba5a0cba15ce290b9db1281d08b739fac3e0b5bc0"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/TextNode.js",
+      "sha256": "0360179f7bb1b798d03601d62e8e7503bf49fc6f87b6686a9cc42aed111a5be2"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/maction.js",
+      "sha256": "84e662d879ac7ca1e51e88ded9c9d0a4042379420a9c5b9fe676399d237ea867"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/math.js",
+      "sha256": "d54d1222519d5907e8ff35252f0f0bff06b75b2cc4bb00088ef6f2f054f236eb"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/menclose.js",
+      "sha256": "525fa96606a69df73a9854bb626bdb84ff524dafe05964a30c184b730c878f0c"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/merror.js",
+      "sha256": "5e5fd4c8228833ff63f51a83446b79ea687f095ab8170102300a8f98df248a67"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mfenced.js",
+      "sha256": "7a8e121e97ded41f126f66850baf4de107df406bbf6899c9020ba84c421522e2"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mfrac.js",
+      "sha256": "55068c351d419d68b459eca706653c1a95ad6947cbce406eeaabddd627a0a9a6"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mglyph.js",
+      "sha256": "78768469e2e21ebe9526b8f948c11624b1a0ad72c684050f4c1fbba453d55fb1"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mi.js",
+      "sha256": "eea38da4ce0c22e448771bb50c66b694b78a98c16f30b5f6e8f59118f57bc0b1"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mmultiscripts.js",
+      "sha256": "0b45bf08868a91fcf9a0ed876e1e6b96d7a6752f5525f0e9709598b6328ab917"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mn.js",
+      "sha256": "f1875f3146af1e51db575af21bb701fd58ffccc9e79b970039fa1b897d0ee6bc"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mo.js",
+      "sha256": "6ff6cfde9ed7e46e8f1d28b2e5c2507a984651bca00a66d263e1b450a0fc2149"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mpadded.js",
+      "sha256": "49c15f412d2f5b811b9008b7b465453f5d7e6684433fe1b975b8e25703c4d854"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mphantom.js",
+      "sha256": "77b95fe416d42887eeb6f285d192c3cff6555c17d725d387723cbcdb369e4fa8"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mroot.js",
+      "sha256": "938c1b73be3193a49610588f38a23e7634c5d922e9947ddcde3e9a256a4e3de4"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mrow.js",
+      "sha256": "a7602848502a134a8daf0c435473ec48269da36ad9e0cac84ef4f4d560e84981"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/ms.js",
+      "sha256": "642862db40efeacef90d7a3edeb16a012e5be26618b79ed42ab77896229a36f7"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mspace.js",
+      "sha256": "e329befacd87d948ed430deed19371c194662d258fe1a44b4002b91babf78045"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/msqrt.js",
+      "sha256": "c4423e667287af40a89c550a712353a224c732e9c57137b3e54fe9608791adda"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/msubsup.js",
+      "sha256": "c780cb5eca2512b8714b386f982ae8f00bbdcf96121b0641e2303eb4974f7d2b"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mtable.js",
+      "sha256": "ab992608e8971aa29e7d5d21833d93a26451348cb46651a3e8c7492e3175cd3e"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mtd.js",
+      "sha256": "f96a94464bf9cf839218b959b126dbf0777f2e42362ba6b2472c528e54aefa96"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mtext.js",
+      "sha256": "0f1659fccfbf0e867339f615fdc800b008d3c180fa6a175a538d978a1b1aa9d0"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/mtr.js",
+      "sha256": "2089e457a30e74a1588304044113b401879456fd46220fe8445fcd1b642155f6"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/munderover.js",
+      "sha256": "fea19d233928d7660dc695dd6e9e102596330de02f29a9ea956f7ba1811e07e0"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/scriptbase.js",
+      "sha256": "587756a7323e47b03922a3e9ebabd4a4607edda39ab3576b05a184183b18c74e"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/semantics.js",
+      "sha256": "f5a4268643694d42f93f56ab6d1cb0ea78a49b5f072ed9c58de90c57e65a33ab"
+    },
+    {
+      "file": "src/cjs/output/svg/Wrappers/zero.js",
+      "sha256": "26e1c2c031e476d2f8f9a30510437d098897a704ff8bbe9563d426835be2b79e"
+    },
+    {
+      "file": "src/cjs/util/AsyncLoad.js",
+      "sha256": "938fa1d48bf71ccc6b081a4d03f1acbe2b500acb235a2e449d2faf42a626ab0c"
+    },
+    {
+      "file": "src/cjs/util/BBox.js",
+      "sha256": "792428ce9802696fe669aa8a13b1a92f5f2eaadd07e05fc28bd359acd8d2062d"
+    },
+    {
+      "file": "src/cjs/util/BitField.js",
+      "sha256": "013fb7859af70895667478f4f3fce8f5c9ff71ccfb9f814eb0860af12d9c95f9"
+    },
+    {
+      "file": "src/cjs/util/Entities.js",
+      "sha256": "a616936550aa115ad994c5f1f7d3bfb50cb818c2876beaae6b60a6e58a647d07"
+    },
+    {
+      "file": "src/cjs/util/FunctionList.js",
+      "sha256": "571f57801b863b2d9f01a66dc72f2836b7fd06a1a48a3fe0057e4ec3d51a7278"
+    },
+    {
+      "file": "src/cjs/util/LinkedList.js",
+      "sha256": "18eb268740bbbc5ae1ff2b2a05fcd7756eb332769a706f2046c2a6e38a395f6e"
+    },
+    {
+      "file": "src/cjs/util/Options.js",
+      "sha256": "76f3df8a3e899fba1d0944d5b79818b586c1d9f95cc7021c395fbb10295db660"
+    },
+    {
+      "file": "src/cjs/util/PrioritizedList.js",
+      "sha256": "787bd21f3634312af666917d8f140145864f98d09ede1bdde3c957d28ec2bc25"
+    },
+    {
+      "file": "src/cjs/util/Retries.js",
+      "sha256": "0ffe30ec3d65f1d5edfdbb505e5b76cf5b66ec1a920216ab53595df8e666b549"
+    },
+    {
+      "file": "src/cjs/util/StyleJson.js",
+      "sha256": "dfd45381fc15fa9b8a038e8ac782550934b5327871d10534df52af02aa43f11f"
+    },
+    {
+      "file": "src/cjs/util/Styles.js",
+      "sha256": "842ae4900f4075463e0863d7419909f0f398b5ec98f85c2c951588fc5d4de5c2"
+    },
+    {
+      "file": "src/cjs/util/context.js",
+      "sha256": "c3933cc87801c3a87a4a68b19ed845532750d70c14e19dca8252f2416d4a05f7"
+    },
+    {
+      "file": "src/cjs/util/lengths.js",
+      "sha256": "6b6cd0b9fa024c461c730db54f055a6388d095bcb7dd0d794214c4fd48ded860"
+    },
+    {
+      "file": "src/cjs/util/numeric.js",
+      "sha256": "ea8a2810b86707438361be533cc80b9566eb685619abff81990befb3f0fb5b50"
+    },
+    {
+      "file": "src/cjs/util/string.js",
+      "sha256": "e1f09bca257dd268b9483b7310e4c77039dd022f01c5e9f5a62f47a981921e9c"
+    }
+  ]
+}
