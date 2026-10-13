@@ -4,7 +4,21 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output/parser checkpoint (2026-10-13, Gates 34/36):
+Active output/parser checkpoint (2026-10-13, Gates 36/38):
+
+- Gate38 is the newest executed combined build and exits 1 with all 826
+  input hashes unchanged. The fresh library and diagnostic executables link,
+  but the core runner's Unicode test printer and LinkedList dump's cross-module
+  MathLocation type ownership fail. The latest passing full core remains Gate36;
+  repair edits require another build. See `evidence/shared-gate37-38.md`.
+- Gate38's five fresh parser corpora match all 150 original records. HostTests
+  passes 430 assertions/192 tests/10 suites. ParserTests now passes the new
+  readonly/setter constructor-order cases, but fails four assertions in two
+  tests preserving supplied object identities. RegexpTests fails two obsolete
+  expectations that reject the newly implemented Unicode flag; they do not
+  establish complete Unicode behavior. The actual production observer matches
+  27/37 whole original Unicode records, including exact error text and patterns.
+  An actual parser tag pattern fails to compile and remains a production gap.
 
 - OutputJax and its FunctionList Context binding are registered and compiled.
   Gate27's original lifecycle comparison passes all 14 records and its tests
@@ -25,7 +39,8 @@ Active output/parser checkpoint (2026-10-13, Gates 34/36):
   `evidence/shared-gate34-35.md` for exact scope and executable provenance.
 - Three persistent Luna owners now implement Core DOM/Lite/Entities/font
   identities; CommonWrapper/factory/per-kind/linebreak algorithms; and
-  CommonOutputJax/MathList/LinkedList. The two parser owners also resolve their
+  CommonOutputJax and the completed scene/Source SVG placement/serialization.
+  The two parser owners also resolve their
   remaining diagnostic regressions. New output packets are unregistered and
   unaccepted until their actual production graph compiles and compares.
 - Root froze `common-layout-work-plan.md`: common measurement feeds one completed
