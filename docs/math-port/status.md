@@ -4,30 +4,34 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output/parser checkpoint (2026-10-13, Gate24):
+Active output/parser checkpoint (2026-10-13, Gate32):
 
-- OutputJax and its FunctionList Context binding are being implemented; they
-  are not registered or compiled yet. The native indexed-view protocol edits
-  compiled in Gate24 and passed existing core/focused tests, but their new
-  specific tests are unregistered. Later parser/test edits are uncompiled.
-  Gate24 core passes 345,517 assertions/5,291 tests; see
-  `evidence/shared-gate24.md` for snapshot scope and incomplete diagnostics.
-- Root froze the LiteAdaptor file responsibilities and ownership/measurement
-  contract in `lite-adaptor-work-plan.md`. Its 35 original CJS observations
-  repeat exactly, with nine TS and nine CJS source locks. Native LiteAdaptor,
-  CommonOutputJax, wrappers and SVG scene construction remain outstanding.
-- Root independently repeated the Boldsymbol/ConfigMacros original oracle.
-  Its output equals the existing original corpus exactly. Comparing all native
-  emitted fields from Gate24 gives 10/16 matching cases (all ConfigMacros);
-  all six Boldsymbol cases still retain `fixBold` and miss the Source rewrite.
-  The Source oracle uses full `TeX.compile`, not direct `TexParser.mml`.
-- AMS default array spacing was traced to UTF-16 string literals selecting the
-  bool Property constructor. The two caller defaults have been corrected to
-  string Properties and now match. Base37 is 35/37, AMS24 is 23/24 and the
-  supplemental36 is 33/36. Both remaining Base parser states match; an extra
-  `align:'undefined'` attribute has a subsequent uncompiled caller fix. The
-  alignedat supplemental row now matches. AMS tag/factory/filter paths,
-  Begingroup and TextMacros registration remain assigned to the parser owners.
+- OutputJax and its FunctionList Context binding are registered and compiled.
+  Gate27's original lifecycle comparison passes all 14 records and its tests
+  pass 98 assertions in 21 tests. Complete common layout and SVG remain open.
+- Gate32's ordinary core runner passes 345,517 assertions/5,291 tests in 168
+  suites. The combined build exits 1 because only the supplemental Boundary
+  candidate fails compilation; library, core runner and 19 diagnostics linked.
+  Its old executable is not fresh Gate32 evidence. See
+  `evidence/shared-gate32.md` for the exact scope and prior failed checkpoints.
+- Fresh frontend matches all 37 original observations; Bold/ConfigMacros matches
+  all 16 whole emitted records. Begingroup passes 43 assertions/four tests.
+  ParserTests still has three BaseItems reflection/error-spread failures;
+  BoldTests has one failed mtext/unmapped-variant expectation. These failures
+  prevent complete parser/class acceptance. AMS matches 23/24, with a missing
+  display attribute in the tag-reference case. Base's Gate30 comparison is 37/37.
+- Three persistent Luna owners now implement Core DOM/Lite/Entities/font
+  identities; CommonWrapper/factory/per-kind/linebreak algorithms; and
+  CommonOutputJax/MathList/LinkedList. The two parser owners also resolve their
+  remaining diagnostic regressions. New output packets are unregistered and
+  unaccepted until their actual production graph compiles and compares.
+- Root froze `common-layout-work-plan.md`: common measurement feeds one completed
+  backend-independent scene; SVG serialization and future Direct2D consume that
+  scene. Eighteen actual original common-layout observations repeat exactly and
+  tracing does not change SVG. A 37-row actual Unicode host corpus and corrected
+  Entities source oracle also repeat exactly. See
+  `evidence/common-layout-root-observations.md`; these are Source baselines,
+  not native renderer acceptance.
 
 Completed current-state evidence:
 
@@ -238,13 +242,10 @@ Incomplete requirements and current executed checkpoints:
   directly called the same-profile original and found the actual TeXAtom/mstyle/
   mrow wrappers agree with the native results. Their corrected diagnostic tests
   await fresh compilation; required Source wrappers must remain intact.
-- Real TextMacros preprocessing still fails at the actual inner nodeFactory
-  probe before parsing. AMS table attributes, one-sided-arrow postfilter flow,
-  package map registration and Begingroup scope behavior still require fixes.
-  ConfigMacros' extra count digits were traced to an early string conversion in
-  BaseMethods.Macro; its raw argument propagation and ParseUtil boundary are now
-  assigned to the actual owners. Fresh integration failures are not accepted
-  successful Source parses or substitute error fixtures.
+- TextMacros now uses the real configuration list, inner nodeFactory and shared
+  ParseOptions filter payload; its Gate32 37-row frontend comparison passes.
+  ConfigMacros and Bold rewriting also pass their full original corpus. AMS
+  display/tag behavior and supplemental arrow verification remain open.
 - Commit c7dc052 accepts the bounded canonical Symbol-valued Property marker
   bridge: 11 assertions in two executed tests plus a pinned original oracle.
   It does not accept Symbol keys, whole TokenMap reflection or Begingroup.
@@ -252,11 +253,11 @@ Incomplete requirements and current executed checkpoints:
 - Root froze the OutputJax/DOM-host responsibility and interface contract plus
   fourteen repeated original lifecycle/filter observations in commit 7f36040.
   A Luna now owns the complete OutputJax implementation, observer, tests and
-  member ledger. These new files are unregistered/uncompiled and do not inherit
-  earlier build acceptance. Native LiteAdaptor, CommonOutputJax and all common
+  member ledger. The bounded OutputJax packet is registered/compiled and its
+  original observations pass. Native LiteAdaptor, CommonOutputJax and all common
   wrappers remain required; no new glyph or math-item state is permitted.
-- Three persistent Luna owners cover OutputJax/font services, BaseItems/
-  Begingroup/ConfigMacros, and TeX/TextMacros/AMS/Newcommand/shared filters.
+- Three persistent Luna owners cover the DOM/common-layout responsibilities above
+  while finishing their parser/font packets.
   Root owns architecture, registration, shared builds and independent acceptance.
   Configuration allows eight threads, but this active runtime exposes four total
   slots including Root and no tool to raise that injected session limit.
