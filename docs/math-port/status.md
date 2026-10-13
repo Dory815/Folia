@@ -4,26 +4,25 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output/parser checkpoint (2026-10-13, Gate33):
+Active output/parser checkpoint (2026-10-13, Gates 34/36):
 
 - OutputJax and its FunctionList Context binding are registered and compiled.
   Gate27's original lifecycle comparison passes all 14 records and its tests
   pass 98 assertions in 21 tests. Complete common layout and SVG remain open.
-- Gate32's ordinary core runner passes 345,517 assertions/5,291 tests in 168
-  suites. The combined build exits 1 because only the supplemental Boundary
-  candidate fails compilation; library, core runner and 19 diagnostics linked.
-  Its old executable is not fresh Gate32 evidence. See
-  `evidence/shared-gate32.md` for the exact scope and prior failed checkpoints.
-- Fresh frontend matches all 37 original observations; Bold/ConfigMacros matches
-  all 16 whole emitted records. Begingroup passes 43 assertions/four tests.
-  ParserTests still has three BaseItems reflection/error-spread failures;
-  BoldTests has one failed mtext/unmapped-variant expectation. These failures
-  prevent complete parser/class acceptance. AMS matches 23/24, with a missing
-  display attribute in the tag-reference case. Fresh Gate33 Base is 37/37 and
-  Boundary is 34/36: empty-arrow cleanup now matches; the two remaining tag
-  cases share a missing Equation default display=true. Gate33 ParserTests did
-  not link due to a diagnostic Context-value API error. Production inputs are
-  identical to Gate32; no old ParserTests result is attributed to Gate33.
+- Gate34's combined build and ordinary core runner both exit 0. Core passes
+  345,517 assertions/5,291 tests in 168 suites. Fresh Base, Frontend,
+  Bold/ConfigMacros, AMS and AMS Boundary whole-record comparisons pass all
+  150 observations. Equation's actual Source default display=true is restored.
+  BoldTests passes 69 assertions/seven tests. ParserTests still fails two
+  constructor/reflection tests; complete class acceptance remains open.
+- Gate36 fixes Gate35's two compile errors; the complete target build exits 0.
+  Registered RuntimeModules/LinkedList/MathList/MathLocation compile, the 13
+  LinkedList original records match exactly, and lifetime tests pass 27/7.
+  Native indexed-array provider/descriptor tests pass 17 assertions/four tests.
+  All five parser corpora again match all 150 records. The full Gate36 core
+  run passes 345,534 assertions/5,295 tests/169 suites, exit 0. Broader MathList
+  coercion/getter acceptance is still open. See
+  `evidence/shared-gate34-35.md` for exact scope and executable provenance.
 - Three persistent Luna owners now implement Core DOM/Lite/Entities/font
   identities; CommonWrapper/factory/per-kind/linebreak algorithms; and
   CommonOutputJax/MathList/LinkedList. The two parser owners also resolve their
@@ -31,8 +30,11 @@ Active output/parser checkpoint (2026-10-13, Gate33):
   unaccepted until their actual production graph compiles and compares.
 - Root froze `common-layout-work-plan.md`: common measurement feeds one completed
   backend-independent scene; SVG serialization and future Direct2D consume that
-  scene. Eighteen actual original common-layout observations repeat exactly and
-  tracing does not change SVG. A 37-row actual Unicode host corpus and corrected
+  scene. The expanded original corpus has 75 cases, with 299 executable hashes
+  locked, 31 observed wrapper kinds and four actual dynamic font requests.
+  Whole results repeat exactly; tracing does not change the SVG/MML projection.
+  Two actual Lite-host action exceptions remain in the Source records.
+  A 37-row actual Unicode host corpus and corrected
   Entities source oracle also repeat exactly. See
   `evidence/common-layout-root-observations.md`; these are Source baselines,
   not native renderer acceptance.
