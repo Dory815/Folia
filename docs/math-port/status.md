@@ -1,10 +1,33 @@
 # Current native MathJax status
 
 The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
-integration replacing the math QuickJS worker. It is not currently usable as a
-renderer, and Folia still uses the existing QuickJS MathJax path.
+integration replacing the math QuickJS worker. Native conversion runs, but the
+renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Active native execution checkpoint (2026-10-14 local, Gates70–72):
+Active native execution checkpoint (2026-10-14 local, Gates73–75):
+
+- Gate75 builds all 22 targets with all 1,531 captured hashes unchanged.
+  Foundation passes 303 assertions/50 tests. The actual document probe completes
+  an immutable Scene and SVG and verifies release of Context, graph and host;
+  its `x+y` SVG remains unequal to Source.
+- The full38 package request now reaches actual case conversion. Thirteen
+  package handlers are implemented. The whole driver completes cases 1–27, then
+  exits with a native access violation in case28, `braket-delimiters`. It emits
+  no complete75 JSON result, so Gate70 remains the last complete whole-profile
+  run (0/75 exact matches).
+- Full FontData tables, extension merges and every synchronous dynamic glyph,
+  option and delimiter now pass the strict Source comparer. The apparent empty
+  merged arrays were an observer bug: it bypassed the live bound array accessors.
+  Font tests pass 176 assertions/21 tests; lifecycle, methods, tuple and bundled
+  provider observations also pass their exact comparers.
+- The six-package parser observer aborts during token-map reflection with an
+  unbound FunctionRef. Canonical function bindings and an isolated Braket parse
+  mode are being prepared for the next build; they are not yet accepted.
+- Live font Map replacement, SVG menclose instance dispatch, the remaining
+  package handlers, complete75 output parity and Folia integration remain open.
+  Mermaid remains paused. See `evidence/shared-gate73-75.md`.
+
+Earlier native execution checkpoint (2026-10-14 local, Gates70–72):
 
 - Gate71 builds all 21 targets with all 1,147 captured hashes unchanged.
   Actual `x+y` conversion now completes a native SVG and immutable Scene.
