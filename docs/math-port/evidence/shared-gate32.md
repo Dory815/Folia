@@ -47,3 +47,21 @@ every emitted case/declared field against independent original corpora. None of
 these counts establishes coverage of all 38 enabled packages or output layout.
 Native Lite/Common/wrapper/scene/SVG packets remain unregistered or incomplete;
 Folia continues to use its existing math rendering path.
+
+Gate33 changed only two diagnostic CPP inputs relative to Gate32; production
+and generated inputs are identical. All 814 frozen hashes remained unchanged
+during compilation. The build ended with exit 1 because ParserTests' corrected
+fixture called setOwn on an options::Value. ParserTests did not link and its old
+executable was not run as Gate33. All other targets linked, including Boundary.
+The ordinary core acceptance remains the actual Gate32 run; no redundant core
+execution is attributed to Gate33.
+
+Root's fresh Gate33 checkpoint summary records each executable and original
+corpus SHA-256. Base37/37, Frontend37/37 and Bold16/16 pass; AMS23/24 remains.
+Boundary improves to 34/36: actual empty-arrow cleanup now agrees with Source.
+Its two remaining tag cases and the AMS tag-reference case miss root display.
+Root traced the common cause to BaseMethods.Equation losing Source's default
+display=true when its optional argument is omitted. The owner is fixing that
+boundary with omitted/undefined/false/null original observations. BoldTests
+still fails its one mtext/unmapped-variant test. No complete parser acceptance
+or fresh fixed-test result follows from this gate.

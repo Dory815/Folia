@@ -4,7 +4,7 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output/parser checkpoint (2026-10-13, Gate32):
+Active output/parser checkpoint (2026-10-13, Gate33):
 
 - OutputJax and its FunctionList Context binding are registered and compiled.
   Gate27's original lifecycle comparison passes all 14 records and its tests
@@ -19,7 +19,11 @@ Active output/parser checkpoint (2026-10-13, Gate32):
   ParserTests still has three BaseItems reflection/error-spread failures;
   BoldTests has one failed mtext/unmapped-variant expectation. These failures
   prevent complete parser/class acceptance. AMS matches 23/24, with a missing
-  display attribute in the tag-reference case. Base's Gate30 comparison is 37/37.
+  display attribute in the tag-reference case. Fresh Gate33 Base is 37/37 and
+  Boundary is 34/36: empty-arrow cleanup now matches; the two remaining tag
+  cases share a missing Equation default display=true. Gate33 ParserTests did
+  not link due to a diagnostic Context-value API error. Production inputs are
+  identical to Gate32; no old ParserTests result is attributed to Gate33.
 - Three persistent Luna owners now implement Core DOM/Lite/Entities/font
   identities; CommonWrapper/factory/per-kind/linebreak algorithms; and
   CommonOutputJax/MathList/LinkedList. The two parser owners also resolve their
