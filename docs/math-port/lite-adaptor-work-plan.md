@@ -1,7 +1,9 @@
 # Output DOM and LiteAdaptor source contract
 
-Root owns architecture, original observations and acceptance. Implementation
-has not started. Reference: MathJax 4.1.3, source commit
+Root owns architecture, original observations and acceptance. Luna owner
+`math_layout` is beginning the complete packet after the bounded Gate27
+OutputJax checkpoint. No native LiteAdaptor result is accepted yet.
+Reference: MathJax 4.1.3, source commit
 `fb987178c2d279a99b0db5ea02e751691703955e`.
 
 ## File responsibilities
@@ -17,6 +19,7 @@ has not started. Reference: MathJax 4.1.3, source commit
 | `adaptors/lite/Parser.ts` | `adaptors/lite/parser.ixx/.cpp` | Source HTML parser, entity translation, HTML/XML serializers |
 | `adaptors/liteAdaptor.ts` | `adaptors/lite_adaptor.ixx/.cpp` | LiteBase graph mutations, searches, attributes/classes/styles |
 | `adaptors/NodeMixin.ts` | `adaptors/node_mixin.ixx/.cpp` | Reference options, font measurements, Unicode CJK counting, worker boundary |
+| `util/Entities.ts` and `util/entities/*` | `util/entities.ixx/.cpp` plus generated tables | Canonical entity table/options/load state, numeric translation and actual shard loading dependency |
 
 Do not collapse these into a bespoke SVG tree or a single renderer file. The
 graph is the Source output-host graph, separate from input MML and the completed
@@ -26,11 +29,18 @@ to it. Styles reuses the accepted native Styles implementation.
 
 ## Ownership and representation
 
-Use one adaptor-owned node store with stable node identity. Public node handles
+Use one canonical Lite module/runtime node store with stable node identity;
+adaptors in that module share it. Public node handles
 retain the store; internal parent/children/document links identify records in
 that store and must not create C++ reference cycles. Retaining only a child
 handle must keep its parent record queryable. A weak parent that disappears
 when a caller releases its parent handle does not match Source.
+
+Source has no private per-adaptor ownership restriction: nodes made by another
+adaptor must retain their identities through append/replace when the original
+accepts them. Observe these operations before implementing their boundary.
+Independent native runtimes need explicit ownership support before acceptance;
+neither silent cloning nor invented Source errors establish parity.
 
 Fields belong to their actual node records, with one authority for attributes,
 children, parent, styles, document members and arbitrary properties. If Context
@@ -97,6 +107,23 @@ LiteParser also uses Unicode RegExp patterns and Entities translation. Named
 entity loading and retry behavior are part of its dependency closure, including
 texhtml usage. Do not replace it with a standard HTML parser whose repairs
 change Source structure. Follow actual Source malformed-input behavior.
+
+The same Luna owns Entities as a separate utility dependency. Freeze the base
+table and all 26 letter shards plus `fr/opf/scr` against their pinned originals.
+One module instance owns `options`, the live entity table and loaded-file state.
+Preserve `add`, `remove`, numeric parsing/UTF-16 conversion and RangeErrors,
+case-sensitive table lookup, shard selection, and marking a shard loaded before
+the actual async-load/retry request. Preloading every shard changes observable
+state and is not a substitute for this algorithm. Reuse native Retries; an
+AsyncLoad service seam must actually supply and execute the requested shard.
+If asynchronous completion is unimplemented, keep that gate explicitly open.
+
+LiteParser's three Unicode patterns must use the canonical RegExp host after
+an independently verified Unicode extension; removing `u` is not authorized.
+The owner will first audit the backend and propose that host interface. This
+dependency does not block implementing the independent DOMAdaptor and node
+record/store modules. Parser accepts the actual adaptor protocol; type cycles
+do not justify combining Parser, Window, Document and adaptor responsibilities.
 
 `createWorker` is an asynchronous host service backed by `node:worker_threads`
 in Source. No worker lifecycle is accepted by this packet's current observer.

@@ -184,6 +184,24 @@ Completed current-state evidence:
 
 Incomplete requirements and current executed checkpoints:
 
+- Current verified worktree checkpoint is Gate27: all targets build with 814
+  unchanged input hashes, and ordinary core passes 345,517 assertions in 5,291
+  tests/168 suites. OutputJax is registered and freshly linked: strict 14/14
+  original observations and 98 assertions/21 focused tests pass. BaseMethods
+  now matches all 37 tree/parser observations. This supersedes older
+  unregistered/pending-build descriptions below; it is bounded parity, not
+  complete host or renderer acceptance. See evidence/shared-gate27.md.
+- TextMacros' actual configuration count is zero. The parser owner found and
+  is correcting package registration into the canonical configuration list;
+  the correction is after Gate27 and awaits fresh compilation. Begingroup's
+  failing wrapper-text UT expectation is invalid in pinned original CJS and
+  is being corrected without changing production NodeUtil semantics. Empty
+  arrow node-list/retained-tree filtering and tag display differences remain.
+- The OutputJax owner is proceeding with the separate complete LiteAdaptor
+  packet, including Source Entities utility and canonical Unicode-RegExp
+  dependencies. One module/runtime graph store supports shared node identity
+  across adaptors. No native LiteAdaptor/scene/SVG result is accepted yet.
+
 - Gate 21 completes all eighteen focused build targets, exit 0, with unchanged
   registered/generated input hashes. Gates 19 and 20 did not link FontTests;
   their other freshly linked observer programs remain valid evidence for their
