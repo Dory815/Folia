@@ -4,19 +4,20 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output checkpoint (2026-10-13, Gate55):
+Active output checkpoint (2026-10-13, Gate58):
 
-- Gate55 builds all 13 targets, preserving all 1,047 captured input hashes.
-  InferredMrow and the real shared-store XML/HTML adaptor bridge are compiled.
-  Fresh Foundation passes Map (69 assertions/10 tests) and completed Scene
-  ownership/precision (16 assertions/2 tests). Lite projection/lifetime has
-  one failed assertion: a text-node receiver does not throw the original
-  missing-children TypeError. The production repair is outstanding. See
-  `evidence/shared-gate50-55.md`.
+- Gate58 builds all 13 targets, preserving all 1,055 captured input hashes.
+  The Common XML measurement body compiles over the one retained DOM bridge;
+  canonical reduce and Context-backed Lite textContent are enrolled. Fresh
+  Foundation passes 161 assertions/25 tests across Map, Lite, Scene,
+  reduce/textContent and XML node/provider ownership. Host and Parser also pass;
+  five fresh parser corpora match 150/150 whole records. See
+  `evidence/shared-gate56-58.md` and the earlier `evidence/shared-gate50-55.md`.
 - Source constructor phases and binding the actual wrapper identity before
   initialization now compile. Complete own-field/prototype/method behavior,
   real service ownership and native Jax-backed layout comparisons remain open.
-  XML/HTML consumers, menclose, FontData class surface, remaining painting,
+  XML/HTML layout/painting comparisons, menclose, FontData class surface and
+  sparse field storage, full textContent coercion, remaining painting,
   the full 75-case render comparison and Folia integration are unaccepted.
 
 Latest complete passing core/diagnostic checkpoint (Gate49):
