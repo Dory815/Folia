@@ -4,7 +4,30 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active native execution checkpoint (2026-10-13, Gate69):
+Active native execution checkpoint (2026-10-14 local, Gates70–72):
+
+- Gate71 builds all 21 targets with all 1,147 captured hashes unchanged.
+  Actual `x+y` conversion now completes a native SVG and immutable Scene.
+  The completed Scene survives release of the document, Context, graph and
+  host. Its SVG still differs from Source and is not renderer acceptance.
+- Gate70's whole run emits 75 actual records: 58 SVGs and 17 errors, with
+  0/75 complete Source matches. Its base-only TeX selection means many SVGs
+  are parser error output. Gate71 requests all 38 packages and records actual
+  registrations/warnings separately; a missing live TeX.options binding
+  prevents that run from reaching the first case.
+- Fresh Gate71 core passes 345,635 assertions/5,322 tests/171 suites; Host,
+  Parser, Regexp and LinkedList also pass. Foundation passes 295 assertions/
+  49 tests. The rejected-provider fixture now distinguishes the actual NewCM
+  placeholder's first fulfilled load from the subsequent failed-file rejection.
+- Gate72 enrolls six Source-split TeX packages and five script placement pairs.
+  Its 22-target build exits 1 with all 1,525 captured hashes unchanged. Script
+  placements and the shared typed HTML/transform Scene interface compile;
+  package module/import and syntax errors prevent linking and fresh execution.
+- Complete FontData merges still fail the exact comparer. All 38 enabled
+  packages, all 75 complete observations and Folia integration remain required.
+  Mermaid remains paused. See `evidence/shared-gate70-72.md`.
+
+Earlier native execution checkpoint (2026-10-13, Gate69):
 
 - Gates68/69 build all 21 targets with all 1,147 captured hashes unchanged.
   Real document conversion now compiles actual TeX into MML and reaches Scene
