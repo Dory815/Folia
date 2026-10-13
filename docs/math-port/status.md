@@ -4,7 +4,17 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output/parser checkpoint (2026-10-13, Gate41):
+Active output/parser checkpoint (2026-10-13, Gates41/44):
+
+- The first current Common/Lite/Scene/SVG closure is explicitly enrolled in
+  CMake. Gate42 stops on a missing Entities generation rule and has two changed
+  mtr input hashes from Root's enrollment/snapshot communication race; it is not
+  a valid frozen build. Gate43 fixes generation but stops on duplicate C++
+  partition providers. Gate44 fixes those providers and reaches C++ compilation;
+  it exits 1 on actual Lite declarations and CommonWrapper inheritance/imports.
+  Gates43/44 each retain all 1,010 frozen hashes unchanged. Owners have repairs
+  and are continuing the complete module packets. See
+  `evidence/shared-gate42-44.md`; no native SVG path is accepted.
 
 - Gate41 builds all 12 selected targets successfully with all 826 frozen
   input hashes unchanged. It fixes the Source-order BaseItems static error-table
@@ -17,7 +27,7 @@ Active output/parser checkpoint (2026-10-13, Gate41):
   36/37 strict original records; the remaining tag-split record has identical
   parts and different RegExp `.source` slash spelling. The latest fully passing
   core remains Gate36. See `evidence/shared-gate39-41.md`.
-- Root is enrolling the current Common/Lite/Scene/SVG module closure for its
+- Root has enrolled the current Common/Lite/Scene/SVG module closure for its
   first full compile. Source-aligned draft bodies and module-closure checks
   establish neither native rendering parity nor Folia integration.
 
