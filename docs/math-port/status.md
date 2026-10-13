@@ -9,9 +9,12 @@ Completed current-state evidence:
 - MathJax-src 4.1.3 is cloned in .reference/MathJax-src, pinned to
   fb987178c2d279a99b0db5ea02e751691703955e. scope.json inventories 246 reachable
   upstream files for the enabled Folia profile.
-- The C++23 folia_math target contains 132 module interfaces. The normal
-  FoliaTests target builds and links; individual accepted packets have actual
-  Source observations, Native checks and independent acceptance evidence.
+- The C++23 folia_math target uses explicit module/source registration.
+  Individual accepted packets have actual Source observations, Native checks
+  and independent acceptance evidence. The last completed full core baseline
+  was commit 2e58d8a. Gate23 worktree full core passes 345,517 assertions/
+  5,291 tests; later uncompiled edits and failed parser diagnostics do not
+  inherit that snapshot's acceptance.
 - Utility, attribute, factory, tagged child-array/tree and parts of MML/TeX
   token/handler-map foundations exist. The architecture keeps semantic nodes,
   parsing, common layout and output responsibilities separate.
@@ -154,22 +157,73 @@ Completed current-state evidence:
   Configuration/runtime, Tags/ColumnParser and independent original verification
   assignments are recorded in parser-family-work-plan.md.
 
-Incomplete requirements, verified from the current source tree:
+Incomplete requirements and current executed checkpoints:
 
-- ParseOptions, BaseItems and the configuration pipeline have complete native
-  declarations but lack their method bodies. Accepted input utilities do not establish
-  complete TeX/package parsing or whole-source reflection parity.
-- TeXParser and the complete base/AMS/enabled-package command pipeline
-  have not been implemented. Accepted Stack and input foundations do not provide
-  a functioning TeX parser.
-- There is no src/math/output common-wrapper/scene/SVG implementation, nor a
-  native mathematical font service or public complete TeX -> SVG entry.
-- Formula SVG parity and Folia native integration cannot be accepted without
-  those stages. The WinUI project still links QuickJS and retains MathJax assets.
-
+- Gate 21 completes all eighteen focused build targets, exit 0, with unchanged
+  registered/generated input hashes. Gates 19 and 20 did not link FontTests;
+  their other freshly linked observer programs remain valid evidence for their
+  actual source snapshots. Gate 22 builds the official core runner but its execution fails 17 assertions
+  in two regex policy tests. Root isolated the SRELL namespaces in 937f91b;
+  the freshly linked gate23 ordinary runner passes all 345,517 assertions/
+  5,291 tests. Its ParserTests target alone fails on one overload ambiguity;
+  that diagnostic correction and later production edits remain uncompiled.
+  Two diagnostic candidate files were edited during its combined snapshot and
+  their new assertions require a later build. They are not FoliaTests inputs.
+- Fresh gate-19 HostTests passes 420 assertions in 190 tests; RegexpTests passes
+  18,518 assertions in 41 tests. Structured Array.prototype.concat comparisons
+  match 19 of 25 original rows, with zero supported mismatches and six explicit
+  boxed-primitive/species/conversion boundaries. The comparator returns partial
+  status, not complete host acceptance.
+- NewCM/common/SVG FontData and three extensions now use one canonical sparse
+  PropertyArray tuple model. Root's fresh gate-20 full-table comparison passes
+  all four static sources and every synchronous dynamic glyph/options record
+  and delimiter, resolver samples and class merge state. Tuple presence and
+  identity comparisons pass; nine lifecycle traces and supplemental FontMethods
+  observations also pass. Fresh gate-21 FontTests passes 97 assertions/11 tests.
+  Eight independent corrupted output candidates are all rejected; those are
+  comparator sensitivity checks, not compiled production fault tests. Full
+  FontData member/profile acceptance and wrapper consumption remain separate.
+  See evidence/font-styles-gate21.md for provenance and limits.
+- Styles/StyleJson native modules compile. Fresh gate-21 focused tests pass
+  19 assertions in six tests and the strict whole-record comparison passes all
+  37 pinned original observations. The capturing String.split caller hang is
+  fixed without changing shared RegExp.exec. The modules expose the bounded
+  typed interface; dynamic Context constructors and browser CSS are not accepted.
+- BaseMethods' actual gate-19 comparison matches 33/37 original MML/parser cases.
+  Array row controls, column types and two AMS table cases remain mismatched.
+  Some separate BaseItems/ParseUtil tests had guessed flattened shapes; Root
+  directly called the same-profile original and found the actual TeXAtom/mstyle/
+  mrow wrappers agree with the native results. Their corrected diagnostic tests
+  await fresh compilation; required Source wrappers must remain intact.
+- Real TextMacros preprocessing still fails at the actual inner nodeFactory
+  probe before parsing. AMS table attributes, one-sided-arrow postfilter flow,
+  package map registration and Begingroup scope behavior still require fixes.
+  ConfigMacros' extra count digits were traced to an early string conversion in
+  BaseMethods.Macro; its raw argument propagation and ParseUtil boundary are now
+  assigned to the actual owners. Fresh integration failures are not accepted
+  successful Source parses or substitute error fixtures.
+- Commit c7dc052 accepts the bounded canonical Symbol-valued Property marker
+  bridge: 11 assertions in two executed tests plus a pinned original oracle.
+  It does not accept Symbol keys, whole TokenMap reflection or Begingroup.
+  Complete Source constructor/prototype/reflection coverage is still missing.
+- Root froze the OutputJax/DOM-host responsibility and interface contract plus
+  fourteen repeated original lifecycle/filter observations in commit 7f36040.
+  A Luna now owns the complete OutputJax implementation, observer, tests and
+  member ledger. These new files are unregistered/uncompiled and do not inherit
+  earlier build acceptance. Native LiteAdaptor, CommonOutputJax and all common
+  wrappers remain required; no new glyph or math-item state is permitted.
+- Three persistent Luna owners cover OutputJax/font services, BaseItems/
+  Begingroup/ConfigMacros, and TeX/TextMacros/AMS/Newcommand/shared filters.
+  Root owns architecture, registration, shared builds and independent acceptance.
+  Configuration allows eight threads, but this active runtime exposes four total
+  slots including Root and no tool to raise that injected session limit.
+- The remaining enabled packages, common wrappers, completed shared scene,
+  SVG renderer and public TeX -> SVG entry remain outstanding. Folia still links
+  QuickJS and MathJax assets; native Folia integration waits for actual parity.
+  Mermaid remains paused at its documented checkpoint.
 The historical scope ledger marks 54/246 files implemented and 192 not started.
 That is not a reliable 22% completion claim: several historical implementations
 have tagged-tree consumers awaiting restoration, and source-file counts do not
-measure coverage or usability. The 132 interfaces likewise measure compilation
+measure coverage or usability. Module counts likewise measure compilation
 structure, not completed upstream files. No complete-clean-port claim follows
 from the existing build or local test counts.

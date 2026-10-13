@@ -5,11 +5,14 @@ The authoritative current progress and remaining requirements are in status.md.
 Accepted method packets and original observations are recorded under evidence/.
 Their bounded results do not accept a complete upstream file or a working renderer.
 
-The normal FoliaTests target builds and links. Restored tagged-tree consumers
-currently include P33-P39; P40 supplies NodeUtil/TexError and P41 supplies the TeX
+The last fully committed normal FoliaTests baseline is commit 2e58d8a. The
+gate-23 worktree snapshot builds and passes 345,517 assertions in 5,291 tests;
+later uncompiled candidate edits do not inherit that result. The standalone
+parser/package diagnostics and complete renderer remain unaccepted. Restored
+tagged-tree consumers include P33-P39; P40 supplies NodeUtil/TexError and P41 supplies the TeX
 NodeFactory within the frozen typed
-profile. No explicit MML Unimplemented stubs remain and the complete core suite
-passes. The actual Stack and core MathItem lifecycle are accepted prerequisites.
+profile. No explicit MML Unimplemented stubs remained at that accepted
+baseline. The actual Stack and core MathItem lifecycle are accepted prerequisites.
 ParseOptions/configuration and the TeX/package pipeline,
 common wrappers, fonts, scene, SVG and Folia integration still block release.
 Folia currently uses its existing QuickJS math path. The historical 54/246 ledger
@@ -83,6 +86,14 @@ behavior-bearing file has an individually reviewable target and provenance.
 Small registration/data-only files can be generated together only when the
 manifest records every source and generation validates every entry. Semantic
 nodes and layout wrappers must not be merged into a general switch engine.
+
+Loaded package modules retain their own canonical exports and one-time class
+registration. AMS and Newcommand Items exports belong to their respective
+module records; they must not be appended to BaseItems exports. Shared
+`itemClassIdentities` and `StackItemFactoryBindings` own identity/conversion
+only. Configurations consume the actual class exported by their Source import.
+Repeated imports reuse that class; they do not repeat constructors or create a
+parallel compatibility namespace.
 
 | Target files under `src/math/` | Upstream source | Sole responsibility |
 | --- | --- | --- |
