@@ -4,7 +4,25 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active document/font enrollment checkpoint (2026-10-13, Gate66):
+Active native execution checkpoint (2026-10-13, Gate69):
+
+- Gates68/69 build all 21 targets with all 1,147 captured hashes unchanged.
+  Real document conversion now compiles actual TeX into MML and reaches Scene
+  dispatch, where inferredMrow registration is missing. No SVG result is yet
+  accepted. Both whole-profile runs emit 75 actual errors and match 0/75 full
+  Source records. See `evidence/shared-gate67-69.md`.
+- The actual NewCM module-provider trace matches 40 modules, 80 ordered events
+  and 24,646 glyphs exactly. Full FontData option/extension behavior remains
+  open. The Gate69 document probe verifies Context/graph/host release after an
+  actual failed conversion; completed Scene lifetime remains unverified.
+- Gate68's fresh full core exits 1 with one failed dynamic-font placeholder
+  assertion/test; its other 170 suites pass. Host, Parser, Regexp and LinkedList
+  pass. Foundation has two FontData option failures; its eight other packets
+  pass, including the new shared Context numeric conversion witnesses.
+- All 38 enabled profile packages, all 75 whole observations and Folia
+  integration remain required. Mermaid remains paused.
+
+Earlier document/font enrollment checkpoint (Gate66):
 
 - Gates65/66 exit 1 with all 1,127/1,147 captured input hashes unchanged.
   Gate66 enrolls the real Core/HTML document and item owners, SVG assembly,
