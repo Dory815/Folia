@@ -4,7 +4,31 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
-Active output/parser checkpoint (2026-10-13, Gates41/44):
+Active output/parser checkpoint (2026-10-13, Gate49):
+
+- Gate49 builds all 13 targets and keeps all 1,029 captured input hashes
+  unchanged. Fresh full core passes 345,607 assertions/5,314 tests/170 suites;
+  Host, Parser, Regexp and LinkedList tests also pass. All five parser corpora
+  match 150/150 whole records, Unicode matches 37/37, and LinkedList matches
+  13/13. This is the latest complete passing core/diagnostic checkpoint.
+- The new Foundation runner exits 1: three Lite projection tests pass, but
+  both Scene ownership tests throw during SVG serialization through an unbound
+  LiteAdaptor. Source binding and serializer fixes are saved after release
+  and need a fresh run. See `evidence/shared-gate48-49.md`. Complete native
+  TeX-to-SVG and Folia integration are still unaccepted.
+
+- Gates45 through 47 progress into actual Common per-kind bodies, output
+  bindings and Scene/SVG painting. Gate47 exits 1 with all 1,029 input hashes
+  unchanged. Its new actual Scene ownership tests compile but have not linked
+  or executed; remaining errors are in six production files and the Lite
+  projection test. Gate46 has one changed input during compilation and is not
+  a clean frozen snapshot. See `evidence/shared-gate45-47.md`.
+- Source constructor initialization requires a separate semantic repair:
+  C++ base construction currently prevents the derived virtual dispatch that
+  MathJax performs. Actual derived allocation, canonical identity and ordered
+  initialization phases must be verified before layout acceptance. Full
+  constructor/prototype/method coverage, FontData, remaining wrapper kinds and
+  the production session lifetime remain open.
 
 - The first current Common/Lite/Scene/SVG closure is explicitly enrolled in
   CMake. Gate42 stops on a missing Entities generation rule and has two changed
@@ -307,7 +331,7 @@ Incomplete requirements and current executed checkpoints:
 - Three persistent Luna owners cover the DOM/common-layout responsibilities above
   while finishing their parser/font packets.
   Root owns architecture, registration, shared builds and independent acceptance.
-  Configuration allows eight threads, but this active runtime exposes four total
+  Configuration now allows twelve threads, but this active runtime exposes four total
   slots including Root and no tool to raise that injected session limit.
 - The remaining enabled packages, common wrappers, completed shared scene,
   SVG renderer and public TeX -> SVG entry remain outstanding. Folia still links
