@@ -1,0 +1,131 @@
+'use strict';
+// Observe actual MathJax wrapper geometry and placement calls BEFORE SVG
+// serialization. No native renderer or parsed SVG participates in this oracle.
+const fs=require('node:fs');
+const path=require('node:path');
+const crypto=require('node:crypto');
+const assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'../..');
+const sourceRoot=path.join(root,'.reference/MathJax-src');
+const packages=path.join(root,'tools/mathjax-bundle/node_modules/@mathjax');
+const src=path.join(packages,'src');
+const digest=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+const scopeFile=path.join(root,'docs/math-port/scope.json');
+assert.equal(digest(scopeFile),'9705d389538b2fc8bf782feea4372ace639b3727304f2971937bbcfb0042a0d1');
+const scope=JSON.parse(fs.readFileSync(scopeFile));
+assert.equal(digest(path.join(root,scope.profile.file)),scope.profile.sha256);
+const cjsLocks={
+  'src/cjs/output/svg.js':'1495e23a9da0bf6b0e8b44d71f54271fa12e902c11444e4f18cdd749ad3b800e',
+  'src/cjs/output/common.js':'b8a58d983e465f21ed36574472140bfd65e2696bb72f6c5647e0a2ae47eb1bd9',
+  'src/cjs/output/svg/Wrapper.js':'3ba6e35cf799f0cffe5c555be3f81c12d8a8f81fe36257685ddccb96f4671ee4',
+  'src/cjs/output/common/Wrapper.js':'9e21f886b91624d170ff89df0eecef31e789ffecda001abc3e5649a38419412b',
+  'src/cjs/output/svg/Wrappers/mfrac.js':'55068c351d419d68b459eca706653c1a95ad6947cbce406eeaabddd627a0a9a6',
+  'src/cjs/output/common/Wrappers/mfrac.js':'4deba461704fca1492f630a9e0f712c6e02f4ab9abc9507290be05b2d4df06ea',
+  'mathjax-newcm-font/cjs/svg.js':'709d6e85113ef44645ad802b8424508d5f836dd61e4d1f2797b5e011a9693734'
+};
+for(const [file,hash] of Object.entries(cjsLocks))assert.equal(digest(path.join(packages,file)),hash,file);
+for(const packageName of ['src','mathjax-newcm-font','mathjax-bbm-font-extension','mathjax-bboldx-font-extension','mathjax-dsfont-font-extension'])
+  assert.equal(JSON.parse(fs.readFileSync(path.join(packages,packageName,'package.json'))).version,'4.1.3');
+const sourceLocks=[];
+for(const folder of ['ts/output/common','ts/output/svg']){
+  for(const relative of ['Wrapper.ts',...fs.readdirSync(path.join(sourceRoot,folder,'Wrappers')).filter(name=>name.endsWith('.ts')).map(name=>'Wrappers/'+name)]){
+    const file=folder+'/'+relative;
+    const lock=scope.files.find(entry=>entry.source===file);
+    assert.ok(lock,`missing Source scope lock ${file}`);
+    assert.equal(digest(path.join(sourceRoot,file)),lock.source_sha256,file);
+    sourceLocks.push({file,sha256:lock.source_sha256});
+  }
+}
+const load=file=>require(path.join(src,'cjs',file));
+const {mathjax}=load('mathjax.js');
+const {TeX}=load('input/tex.js');
+const {SVG}=load('output/svg.js');
+const {SvgWrapper}=load('output/svg/Wrapper.js');
+const {liteAdaptor}=load('adaptors/liteAdaptor.js');
+const {RegisterHTMLHandler}=load('handlers/html.js');
+const {MathJaxNewcmFont}=require(path.join(packages,'mathjax-newcm-font/cjs/svg.js'));
+const profile=fs.readFileSync(path.join(root,scope.profile.file),'utf8');
+for(const match of profile.matchAll(/require\('@mathjax\/src\/js\/(input\/tex\/[^']+Configuration\.js)'\)/g))load(match[1]);
+const adaptor=liteAdaptor({fontSize:16});
+RegisterHTMLHandler(adaptor);
+const input=new TeX({packages:scope.profile.tex_packages});
+const output=new SVG({fontData:MathJaxNewcmFont,fontCache:'none',exFactor:.5,
+  displayOverflow:'linebreak',linebreaks:{inline:true},
+  dynamicPrefix:path.join(packages,'mathjax-newcm-font/cjs')});
+for(const [name,exportName] of [
+  ['bboldx','MathJaxBboldxFontExtension'],['bbm','MathJaxBbmFontExtension'],['dsfont','MathJaxDsfontFontExtension']])
+  output.addExtension(require(path.join(packages,`mathjax-${name}-font-extension/cjs/svg.js`))[exportName]);
+const document=mathjax.document('',{InputJax:input,OutputJax:output});
+const bboxFields=['w','h','d','scale','rscale','L','R','pwidth','ic','oc','sk','dx'];
+const plain=value=>value===undefined?{$:'undefined'}:typeof value==='number'&&!Number.isFinite(value)?{$:String(value)}:
+  typeof value==='number'&&Object.is(value,-0)?{$:'-0'}:Array.isArray(value)?value.map(plain):
+  value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([key,item])=>[key,plain(item)])):value;
+const box=value=>Object.fromEntries(bboxFields.map(key=>[key,plain(value[key])]));
+let active=null;
+const instrument=!process.argv.includes('--no-trace');
+function wrapperId(wrapper){
+  if(!active.ids.has(wrapper))active.ids.set(wrapper,active.ids.size);
+  return active.ids.get(wrapper);
+}
+mathjax.asyncIsSynchronous=true;
+mathjax.asyncLoad=name=>{
+  if(active)active.loads.push(String(name).replaceAll(packages,'@mathjax'));
+  const target=path.isAbsolute(name)?name:path.resolve(src,'cjs',name);
+  assert.ok(target.startsWith(packages+path.sep),'Source requested a module outside pinned packages');
+  return require(target);
+};
+const originalPlace=SvgWrapper.prototype.place;
+SvgWrapper.prototype.place=function(x,y,element){
+  if(active&&instrument)active.calls.push({method:'place',wrapper:wrapperId(this),x:plain(x),y:plain(y),explicitElement:!!element,kind:element?adaptor.kind(element):null});
+  return originalPlace.apply(this,arguments);
+};
+const originalPlaceChar=SvgWrapper.prototype.placeChar;
+SvgWrapper.prototype.placeChar=function(n,x,y,parent,variant,buffer){
+  const call=active&&instrument&&{method:'placeChar',wrapper:wrapperId(this),codepoint:n,x:plain(x),y:plain(y),variant:plain(variant),buffer:plain(buffer)};
+  if(call)active.calls.push(call);
+  const result=originalPlaceChar.apply(this,arguments);
+  if(call)call.returnedWidth=plain(result);
+  return result;
+};
+const originalSvg=output.svg;
+output.svg=function(kind,attributes,children){
+  if(active&&instrument)active.paint.push({kind,attributes:plain(attributes),childCount:children?.length||0});
+  return originalSvg.apply(this,arguments);
+};
+const originalProcess=output.processMath;
+output.processMath=function(wrapper,node){
+  const result=originalProcess.apply(this,arguments);
+  if(active&&instrument){
+    active.root=wrapperId(wrapper);
+    active.wrappers=Array.from(this.nodeMap.values(),item=>({id:wrapperId(item),kind:item.node.kind,
+      children:item.childNodes.map(wrapperId),variant:plain(item.variant),bbox:box(item.getBBox()),outerBBox:box(item.getOuterBBox())}));
+  }
+  return result;
+};
+const cases=[
+  ['plain','x+y',false,1280],['mathbb','\\mathbb{R}^n',false,1280],
+  ['fraction-inline','\\frac{a+b}{c}',false,1280],['fraction-display','\\frac{a+b}{c}',true,1280],
+  ['atop','{a+b\\atop c}',true,1280],['root','\\sqrt{x^2+1}',true,1280],
+  ['indexed-root','\\sqrt[3]{x}',false,1280],['scripts','x_i^{j^2}',false,1280],
+  ['sum-limits','\\sum_{i=1}^{n} i',true,1280],['stretch-fences','\\left(\\frac{1}{x}\\right)',true,1280],
+  ['accent','\\widehat{abc}+\\overline{x}',false,1280],['matrix','\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}',true,1280],
+  ['arrow','\\xrightarrow[a]{b}',true,1280],['text','\\text{hello }x',false,1280],
+  ['color','\\color{red}{x+1}',false,1280],['bbox','\\bbox[2px,border:1px solid blue]{x}',false,1280],
+  ['phantom','a\\phantom{x}+b',false,1280],['linebreak','a+b+c+d+e+f+g+h+i+j',true,100]
+];
+(async()=>{
+  const records=[];
+  for(const [name,tex,display,width] of cases){
+    active={ids:new Map(),calls:[],paint:[],loads:[],wrappers:[],root:null};
+    let svg,error=null;
+    try{svg=adaptor.serializeXML(await document.convertPromise(tex,{display,em:16,ex:8,containerWidth:width}));}
+    catch(caught){error={name:caught.name||null,message:String(caught.message||caught)};}
+    const {calls,paint,loads,wrappers,root:layoutRoot}=active;
+    records.push({name,tex,display,em:16,ex:8,width,layoutRoot,wrappers,calls,paint,loads,svg:svg||null,error});
+    active=null;
+  }
+  const dependencies=Object.keys(require.cache).filter(file=>file.startsWith(packages+path.sep)).sort().map(file=>({
+    file:path.relative(packages,file).replaceAll(path.sep,'/'),sha256:digest(file)}));
+  process.stdout.write(JSON.stringify({schema:1,version:'4.1.3',scopeHash:digest(scopeFile),
+    sourceLocks,cjsLocks,dependencies,records},null,2)+'\n');
+})().catch(error=>{process.stderr.write(error.stack+'\n');process.exitCode=1;});
