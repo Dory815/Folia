@@ -21,10 +21,23 @@ const locks = {
   'ts/adaptors/lite/Parser.ts':'f3c15592f359cdca1a3c2729c230f8de862e8b67be5ae8f1d2d387e8482fe5d9'
 };
 const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+const cjsLocks = {
+  'cjs/core/DOMAdaptor.js':'153998de1ae9f156cc9a5c2323f8840fc10010004ea1dfd2e25c09547e4de15d',
+  'cjs/adaptors/liteAdaptor.js':'e9879de720f356cf8f54c0960102b1e40b4eafc1e34a14481aa896e1e99bd76f',
+  'cjs/adaptors/NodeMixin.js':'d331d73f054c46dfd3122c41bd6762389935b68c2e89bf1a4011cc70ea42ef3a',
+  'cjs/adaptors/lite/Element.js':'81626bfcd19aaf7b5d8a0c461d5f9c9f3a3d3c150b283c7641f9c38e6fcca9c6',
+  'cjs/adaptors/lite/Text.js':'aab6de43d689d449401990932909c895bc29b76e28bcf22158d6f543a2059ffd',
+  'cjs/adaptors/lite/Document.js':'c679ae2dc90a3c8fdd699d762079fc50f75aed5f48775859ebfb3ee050b69abc',
+  'cjs/adaptors/lite/List.js':'6d2e9aa67581b15ce657c60081cd1958b882b928e4e1fb016f75e30d8d82e8a2',
+  'cjs/adaptors/lite/Window.js':'9feeac0e2f5802cf0e590bd72b2a98cabde368103790fdb50a657155efae9caf',
+  'cjs/adaptors/lite/Parser.js':'38874dadf30ee0bd60184dde9bdf29a1be9d45755893b2a025d8e1b0190ad8c0'
+};
 const sources = Object.entries(locks).map(([file,hash]) => {
   if (digest(path.join(sourceRoot,file)) !== hash) throw new Error(`Pinned source changed: ${file}`);
   const cjs = 'cjs/' + file.slice(3,-3) + '.js';
-  return {file,hash,cjs,cjsHash:digest(path.join(packageRoot,cjs))};
+  const cjsHash=digest(path.join(packageRoot,cjs));
+  if(cjsHash!==cjsLocks[cjs]) throw new Error(`Pinned CJS changed: ${cjs}`);
+  return {file,hash,cjs,cjsHash};
 });
 const load = file => require(path.join(packageRoot,'cjs',file));
 const {AbstractDOMAdaptor} = load('core/DOMAdaptor.js');

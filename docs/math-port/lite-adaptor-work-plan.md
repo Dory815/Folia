@@ -108,10 +108,13 @@ not a port. Browser measurement/adaptors are outside this LiteAdaptor profile.
 
 `tools/math-port/lite-adaptor-original-oracle.cjs` checks nine TS source hashes
 and package version, records the loaded CJS hashes, and generates 35 original
-rows. Root executed it twice into ignored `build/math-port` outputs and compared
+rows. Both TS and CJS hashes are checked before loading the implementation.
+Root executed it twice into ignored `build/math-port` outputs and compared
 the parsed whole documents with `assert.deepStrictEqual`: exact repeat. This
 is original baseline generation, not native implementation or acceptance.
 Upstream TypeErrors in the iterator row are captured as actual errors.
+The complete original JSON baseline SHA-256 is
+`fe899d94b83eed94793a085cfdfe3ed0f89d9465657a43f04fde52f8e355e609`.
 
 Acceptance requires:
 

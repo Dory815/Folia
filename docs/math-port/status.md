@@ -4,6 +4,27 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. It is not currently usable as a
 renderer, and Folia still uses the existing QuickJS MathJax path.
 
+Active output/parser checkpoint (2026-10-13):
+
+- OutputJax and its FunctionList Context binding are being implemented; they
+  are not registered or compiled yet. The native indexed-view protocol edits
+  and later parser fixes are also uncompiled. Gate23's passing core snapshot
+  does not validate those changes.
+- Root froze the LiteAdaptor file responsibilities and ownership/measurement
+  contract in `lite-adaptor-work-plan.md`. Its 35 original CJS observations
+  repeat exactly, with nine TS and nine CJS source locks. Native LiteAdaptor,
+  CommonOutputJax, wrappers and SVG scene construction remain outstanding.
+- Root independently repeated the Boldsymbol/ConfigMacros original oracle.
+  Its output equals the existing original corpus exactly. Comparing all native
+  emitted fields from Gate23 gives 10/16 matching cases (all ConfigMacros);
+  all six Boldsymbol cases still retain `fixBold` and miss the Source rewrite.
+  The Source oracle uses full `TeX.compile`, not direct `TexParser.mml`.
+- AMS default array spacing was traced to UTF-16 string literals selecting the
+  bool Property constructor. The two caller defaults have been corrected to
+  string Properties but have not been compiled or compared yet. Base array
+  column controls, AMS filter paths and TextMacros factory ownership remain
+  assigned to the persistent parser owners.
+
 Completed current-state evidence:
 
 - MathJax-src 4.1.3 is cloned in .reference/MathJax-src, pinned to
