@@ -4,7 +4,24 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Active native execution checkpoint (2026-10-15 local, Gates99–101):
+Current source candidates (2026-10-15 local):
+
+- The public `folia.math` facade compiles against the completed Gate101
+  library. Adding the current table separator correction gives 9/9 exact
+  public SVG/error records against the pinned Source. All nine returned
+  Scenes remain traversable after Renderer destruction (213 nodes).
+- The generic Lite node/create/setAttributes dispatch correction passes an
+  isolated Foundation run: 390 assertions in 59 tests, including the new
+  live-method replacement and exception propagation regression.
+- These are isolated diagnostics over the Gate101 dependency library; they
+  do not certify current shared-module edits or complete package support.
+  The full shared build remains Gate101. Physics's initial isolated compile
+  identifies import and type errors; its owner is correcting the complete
+  package. Canonical parser projections and the shared SVG Scene Context
+  projection remain in progress. Folia has not switched its math path.
+  See `evidence/public-api-isolated-g101.md`.
+
+Active complete shared-build checkpoint (2026-10-15 local, Gates99–101):
 
 - Gate99 fails because an automatically collected draft test imports an
   unregistered module. After moving the draft, Gates100 and 101 build all
