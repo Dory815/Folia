@@ -4,7 +4,26 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Active native execution checkpoint (2026-10-14 local, Gates89–92):
+Active native execution checkpoint (2026-10-14 local, Gates93–94):
+
+- Gate94 builds and links all 27 targets with all 1,628 captured hashes
+  unchanged. Complete75 finishes with 50/75 records exactly equal to Source.
+  Actual registration remains 23/38 packages with 15 warnings; full renderer
+  acceptance still fails.
+- The table/spacing corpus passes 11/14 complete exact records. Remaining
+  differences are column-rule arithmetic order, label placement and colortbl
+  parsing. Actual `x+y` SVG remains byte-exact; detached Scene checks pass.
+- Foundation passes 383 assertions/58 tests; Host passes 465 assertions/197
+  tests. Parser, Regexp and LinkedList pass. Full Core retains one assertion
+  failure in a dynamic-provider retry test; the earlier six provider failures
+  have reduced to one. Gate82 remains the latest fully passing full Core run.
+- Old-six and next-seven parser corpora pass 24/24 and 23/23. Font3 observation
+  metadata and next-six's first-input exit still need fixes and fresh execution;
+  their packages are not newly registered in production.
+- Folia integration remains pending; Mermaid remains paused.
+  See `evidence/shared-gate93-94.md`.
+
+Earlier native execution checkpoint (2026-10-14 local, Gates89–92):
 
 - Gate92 builds and links all 27 targets with all 1,628 captured hashes
   unchanged. Actual `x+y` SVG remains byte-exact and its detached Scene
