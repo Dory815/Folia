@@ -4,7 +4,29 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Active native execution checkpoint (2026-10-14 local, Gates73–75):
+Active native execution checkpoint (2026-10-14 local, Gates76–85):
+
+- Gate85 builds all 26 targets with all 1,581 captured hashes unchanged.
+  Actual `x+y` conversion now retains two SVG lines and their flow break in the
+  completed Scene; Context/graph/host release and detached Scene reads pass.
+  Its SVG still differs from Source, so output parity is not accepted.
+- The six-package observer passes 24/24 complete Source records. The next-seven
+  corpus remains 12/23; the font-package corpus remains 0/12 due to an observer
+  reflection error. Other enabled packages still require implementation.
+- Whole75 currently stops during actual instance font-extension initialization:
+  the Jax font Context field is absent. No complete75 result is emitted.
+  Gate70 remains the latest complete whole-profile run, with 0/75 full matches.
+- Gate82 fresh full core passes 345,646 assertions/5,323 tests/171 suites; Host,
+  Parser, Regexp and LinkedList also pass. Gate85 Foundation has one raw font
+  array-field test failure. Common extension delegation and wrapper length
+  conversion tests pass.
+- Gate81 complete FontData tables and synchronous dynamic glyph/option/delimiter
+  data pass strict comparison; arbitrary raw fields and actual Jax extension
+  execution remain open. Menclose's actual method trace still differs.
+  Folia integration remains pending and Mermaid remains paused.
+  See `evidence/shared-gate76-85.md`.
+
+Earlier native execution checkpoint (2026-10-14 local, Gates73–75):
 
 - Gate75 builds all 22 targets with all 1,531 captured hashes unchanged.
   Foundation passes 303 assertions/50 tests. The actual document probe completes
