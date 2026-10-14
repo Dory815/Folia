@@ -4,7 +4,26 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Active native execution checkpoint (2026-10-14 local, Gates86–88):
+Active native execution checkpoint (2026-10-14 local, Gates89–92):
+
+- Gate92 builds and links all 27 targets with all 1,628 captured hashes
+  unchanged. Actual `x+y` SVG remains byte-exact and its detached Scene
+  lifetime checks pass.
+- The 14-case table/spacing corpus completes: four mpadded records match
+  exactly. Table construction order, labels, the box model and colortbl
+  parsing still have differences under review.
+- Old-six and next-seven parser corpora remain exact at 24/24 and 23/23.
+  Font3 map callables and next-six initialization still require a fresh run
+  after their current fixes; neither corpus is accepted.
+- Foundation and Host each fail a new font/Context test. Full Core also has
+  six dynamic-font-provider failures. Parser, Regexp and LinkedList pass.
+  The iterator test remains unresolved after using the intrinsic Symbol.
+- Complete75 exits during the 59th input, `verb-literal`; its partial output
+  is retained only for diagnosis. Gate88 remains the latest completed75
+  result (16/75), with 23/38 packages registered. Full acceptance and Folia
+  integration remain open. See `evidence/shared-gate89-92.md`.
+
+Earlier native execution checkpoint (2026-10-14 local, Gates86–88):
 
 - Gate88 builds all 26 targets with all 1,581 captured hashes unchanged. The
   whole driver emits 75 complete actual records: 16/75 match every Source field.
