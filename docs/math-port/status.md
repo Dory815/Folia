@@ -4,7 +4,18 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared evaluation (2026-10-16 local, Gate145): all 54 targets compile
+Latest shared evaluation (2026-10-16 local, Gate146): all 54 targets compile
+with 2,002 captured inputs unchanged. All 25 captures pass, including
+StackOwners; layout remains 75/75 with 38 registrations, API 9/9, complete
+texttip and sequential public Renderer SVG 3/3 exact. Host, Parser,
+Foundation, Regexp and LinkedList pass. Core has one new processor-test
+fixture initialization exception; its actual-session replacement is ready.
+Thirteen callback metadata mappings now match Source; fonts 13/16 and
+next-six 18/20 advance to extra stretchy writes in registered token attributes.
+Two XML differences remain. See `evidence/shared-gate146.md`. No runner
+copies are created; the renderer is not accepted, Folia unchanged, Mermaid paused.
+
+Earlier shared evaluation (2026-10-16 local, Gate145): all 54 targets compile
 with 2,000 captured inputs unchanged. One actual public Renderer processes
 proof/formula/proof sequentially; all three complete SVG strings match pinned
 MathJax exactly, with completed Scenes and no errors. StackOwners now passes
