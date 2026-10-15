@@ -14,6 +14,12 @@ its recorded package capture is 219/220, with one Unicode difference absent
 in diagnostic reruns. Physics is 49/63, next-six 15/20, fonts 13/16. No new
 package is accepted. See `evidence/shared-gate107-110.md`.
 
+Gates111–112 enroll 46 targets, including the complete new package packets,
+but have not passed compilation. Inputs remained unchanged in both builds;
+remaining observer/test API corrections are assigned to their Luna owners.
+The shared TextParser list-identity cause is identified and corrected in a
+candidate awaiting the next build. See `evidence/shared-gate111-next.md`.
+
 Current implementation work is primarily Luna. Root owns architecture and
 acceptance. Per-session MapHandler and Bussproofs state, arbitrary Context
 callable identity, HTMLDomStrings/document wiring, and the remaining package

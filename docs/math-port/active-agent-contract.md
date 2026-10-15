@@ -64,6 +64,11 @@ Read `architecture.md`, `status.md`, and the repository AGENTS.md first.
 New packages remain outside production session registration until Root verifies
 their complete original comparison and integration. Mermaid stays paused.
 
+Luna is the default for implementation, diagnosis and tests. Use Sol sparingly
+for a specific, bounded question when needed; the latest callable-boundary Sol
+review is complete and produced no edits. Root retains architecture and final
+acceptance ownership.
+
 The scene_layering owner takes Scene base module declarations/exports,
 `scene/menclose.{ixx,cpp}`, and typed Scene schema additions. scene_context
 keeps the concrete SVG surfaces and their live Context record/array/geometry
@@ -80,9 +85,9 @@ is 219/220 despite clean diagnostic repeats. See
 
 Registered sources are editable after that capture. Root has authorized
 MapHandler changes and HTML document constructor wiring. The next shared gate
-must include their complete updated dependencies. Bussproofs, Mathtools and
-TagFormat/SetOptions are currently excluded as whole CMake work packets;
-re-enroll them only with their complete coherent interfaces/implementations.
+must include their complete updated dependencies. Bussproofs, Mathtools,
+TagFormat/SetOptions, TexHtml and HTMLDomStrings are now enrolled as complete
+CMake work packets for the next gate; they have not yet passed that build.
 No new package is production-registered from isolated compile results.
 
 Parser projection owns the approved ContextFunctionIdentity handle and explicit
