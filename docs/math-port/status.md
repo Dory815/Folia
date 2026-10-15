@@ -4,6 +4,17 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
+Latest shared checkpoint (2026-10-15 local, Gates102–106): Gate106 builds all
+31 targets with 1,804 captured inputs unchanged. Runtime acceptance fails:
+the live parser Array needs the missing generic unshift operation, all75
+renderer records fail, and Core reports two SourceStringMap errors. Host,
+Regexp and LinkedList pass. The seven Scene Context tests pass 56 assertions;
+four typed layout-data tests remain blocked during parsing. Registration stays
+23/38. Gate107 failed one ParseOptions compilation unit with all 1,804 captured
+inputs unchanged; that owner correction and the runtime fixes await Gate108.
+Neither earlier isolated passes nor the successful compile certify these edits. See
+`evidence/shared-gate102-106.md`.
+
 Current source candidates (2026-10-15 local):
 
 - The public `folia.math` facade compiles against the completed Gate101
@@ -15,7 +26,7 @@ Current source candidates (2026-10-15 local):
   live-method replacement and exception propagation regression.
 - These are isolated diagnostics over the Gate101 dependency library; they
   do not certify current shared-module edits or complete package support.
-  The full shared build remains Gate101. Physics's initial isolated compile
+  The latest fully passing Core checkpoint remains Gate101. Physics's initial isolated compile
   identifies import and type errors; its owner is correcting the complete
   package. Canonical parser projections and the shared SVG Scene Context
   projection remain in progress. Folia has not switched its math path.
