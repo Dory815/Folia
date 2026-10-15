@@ -4,7 +4,18 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared builds (2026-10-16 local, Gates161-162): the Scene-only producer,
+Latest shared build (2026-10-16 local, Gate167): all 57 targets compile with
+all 2,075 captured inputs unchanged. The native document probe passes and no
+access violation has occurred in the completed probes. Public API, complete
+SVG and layout capture now stop at TextMacros CONFIG argument decoding.
+Core, Host, Parser and Foundation have current failures under investigation;
+Regexp and LinkedList pass. All evaluation processes have finished and the
+post-evaluation audit also records zero input changes; evaluation exits 1.
+No current complete SVG or paired Scene comparison is claimed. Gates163-166
+were compile failures; descriptor, callback signature and UT formatting
+corrections close those errors. See `evidence/shared-gate167.md`.
+
+Earlier shared builds (2026-10-16 local, Gates161-162): the Scene-only producer,
 native text measurement, cancellation, live factory/filter fields, RegExp
 lastIndex and Promise queue-owner changes are integrated for verification.
 Both builds fail compilation with all 2,073 captured inputs unchanged. The
