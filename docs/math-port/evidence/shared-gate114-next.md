@@ -243,3 +243,33 @@ owner witness remain unregistered and uncompiled. A read-only lifetime review
 also identifies per-conversion object retention in the current renderer; its
 application lifecycle must be resolved against the actual original entry
 before Folia integration. No application or Mermaid code changed.
+
+## Actual Gate120 and Gate121 results
+
+Gate120 terminated with two compile errors in handler-owner diagnostic output:
+`std::cerr` was given UTF-16 strings. Its 1,941 frozen inputs were unchanged.
+Gate121 converts those diagnostics through the existing UTF-8 helper; all 51
+selected targets compile with the same 1,941 inputs unchanged. Core, Host,
+Parser, Foundation, Regexp and LinkedList pass. All runtime handles are terminal;
+the complete comparison orchestration audited inputs before and after running.
+
+Public API passes 9/9. Full rendering matches 60/75 complete records, with
+29/38 registered packages and nine missing-package warnings. Mhchem now passes
+all 220 cases, 63 replacements, six replacement rules, two maps and fourteen
+mutation records, including module aliases. Source/native observations have
+the same SHA-256: `088ce21b19cad12a87bc3b1c6ceb245652b9589edc30b246d61584cd0c5eab85`.
+The BaseMethods/ParseMethods cache regression and canonical MML method/parent
+tests pass. The handler-owner probe passes its full metadata assertions; this
+does not replace a complete Source-record comparison for that probe.
+
+Mathtools, Physics, Colortbl, original/expanded Bussproofs, its utility and exact
+module-scope witness, Tag/SetOptions/defaults, TexHtml/XML, parser projections,
+Attributes, Map sessions and host/layout retain their passing comparisons.
+The invalid-variant console argument envelope now matches Source, accounting
+for the additional complete renderer record. Next-six remains 18/20 and fonts
+13/16. Their current first differences are MathItem `_state`/extra `document`
+fields and the font observer's repeated-identity traversal. Texttip and
+action-toggle reach `Native data field already has an own property`; no root
+cause or fix is accepted from that message alone. Reports/raw provenance are
+under `build/math-port`, notably `checkpoint-comparisons-g121.json` and
+`common-layout-comparison-g121.json`. Folia integration remains pending.

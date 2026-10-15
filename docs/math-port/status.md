@@ -4,7 +4,21 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared checkpoint (2026-10-15 local, Gate119): all 51 selected targets
+Latest shared checkpoint (2026-10-15 local, Gate121): all 51 selected targets
+compile with all 1,941 captured inputs unchanged. Core, Host, Parser,
+Foundation, Regexp and LinkedList pass; public SVG remains 9/9. Complete
+rendering matches 60/75, with 29/38 registered packages and nine warnings.
+Mhchem again passes all 220 cases and every alias/replacement/map/mutation
+record; its native observation is byte-identical to Source. Existing passing
+package comparisons remain passing. The handler-owner probe now passes its
+prototype metadata assertions. Next-six remains 18/20 and fonts 13/16,
+exposing MathItem fields and observer alias traversal respectively. Texttip
+still fails with a native-field binding collision; the exact owner/key needs
+diagnosis. Gate120 ended with a UTF-16 diagnostic streaming compile error;
+Gate121 fixes it without changing assertions. No application or Mermaid code
+changed; complete renderer and lifecycle acceptance are still required.
+
+Earlier shared checkpoint (2026-10-15 local, Gate119): all 51 selected targets
 compile with all 1,937 captured inputs unchanged. Core, Host, Parser,
 Foundation, Regexp and LinkedList pass; public SVG remains 9/9. The Maction
 base-initialization fix removes the native process exit. Complete rendering
