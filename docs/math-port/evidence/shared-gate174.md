@@ -41,6 +41,10 @@ nodeMapAccess()->identity() assertion in common_factory_live_fields.cpp.
 Candidate corrections make the callback mandatory and retain the actual Map
 adapter while the native data field is still installed, checking that retained
 adapter after provider release instead of performing a Source read then.
+An isolated executable built against the stable Gate174 IFCs/library now
+passes both corrected fixture files: 73 assertions in two Common tests and
+52 assertions in eight factory-access tests. This does not yet verify removal
+of the constructor's default argument in a rebuilt module interface.
 
 Parent-related tests still have a helper assertion, a Scene live-field
 assertion and several operation exceptions. The new findIndex test also
@@ -49,6 +53,12 @@ does not test the intended behavior. These are being diagnosed against the
 actual Source operations; existing expectations are not relaxed to accept
 different native behavior. The MML factory bad-kind/children-consumption test
 also fails in Foundation and is required in the pending raw argument bridge.
+The combined ignored diagnostic confirms all three parent/target exceptions
+come from Scene child deletion being unsupported. Correcting the findIndex
+fixture and the direct-array-push parent expectation matches pinned Source.
+Additional before/after diagnostics show bold already has a missing parent
+before raw slot replacement; its import/clone field ownership needs correction
+rather than inferring a parent from the mutated child array.
 
 The complete evaluation is terminal with exit 1 and all 2,081 restored inputs
 unchanged throughout that complete run. Folia remains on math QuickJS;
