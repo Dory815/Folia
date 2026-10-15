@@ -28,8 +28,13 @@ diagnostic assertion reporting locates this at scene_attribute_parity_g145.cpp
 line 527; the expected behavior has not been changed. The Common factory test
 still fails when a live field descriptor is replaced. Frozen factory-null and
 NodeFactory direct-call cases still have different error behavior. The newly
-registered post-filter metadata test has four false assertions and needs
-actual field diagnostics before a correction is chosen.
+registered post-filter metadata test has four false assertions. A subsequent
+standalone diagnostic against the unchanged Gate171 library finds eight
+filters: the Base package inserts filterNonscript at priority -4 before
+moveLimits. A real pinned CJS new TeX() produces the same order, names, arities
+and priorities. The test had omitted that package filter; its correction adds
+the eighth item, total length and priority assertions without changing native
+filter behavior. The corrected test still needs the next shared build.
 
 The two remaining checkpoint groups expose missing Source-visible MmlFactory
 fields (defaultKind, node, nodeMap) and StackItem fields (_nodes, _properties).
