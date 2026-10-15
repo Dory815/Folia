@@ -4,7 +4,22 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed evaluation (2026-10-16 local, Gate169): all 57 targets compile
+Latest completed evaluation (2026-10-16 local, Gate171): all 57 targets compile
+with 2,078 unchanged inputs. Public Renderer full SVG/error comparison passes
+150/150 and API passes 9/9. The Scene route has 146 equal successful frozen
+layout pairs and four equal error pairs, with zero materialize/XML serializer
+calls across all 150 Scene-only records. All 25 package captures succeed.
+Common layout observations now pass 75/75 and the XML comparison passes;
+18 of 20 checkpoint comparisons pass. Core, Host and Foundation retain
+factory/parent and callback metadata failures. MML factory and StackItem own
+fields remain different in the next-six/font observations. Evaluation closes
+with exit 1 and zero changed inputs. See `evidence/shared-gate171.md`.
+
+Gate170 failed compilation at RegExpBindings' use of a private Context field
+API. Gate171 instead retains weak handles to the binder's own fields and
+invalidates them directly during clear; the RegExp lifetime tests now pass.
+
+Earlier completed evaluation (2026-10-16 local, Gate169): all 57 targets compile
 with 2,075 unchanged inputs. Public Renderer full SVG/error comparison passes
 150/150 against the pinned clean Source capture, and API passes 9/9. The paired
 Scene route has 146 equal successful frozen layouts and four equal error pairs;
