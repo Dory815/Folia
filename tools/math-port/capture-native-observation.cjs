@@ -10,13 +10,12 @@ if(state.gate!==gate||state.status!=='terminal'||state.exitCode!==0||state.chang
 const inputPath=`build/math-port/gate-${gate}-inputs-before.json`;
 const auditPath=`build/math-port/gate-${gate}-input-changes.json`;
 const inputs=JSON.parse(fs.readFileSync(inputPath));
-for(const input of inputs)if(hash(input.path)!==input.sha256)throw Error(`Build input changed: ${input.path}`);
+const auditInputs=()=>{for(const input of inputs)if(hash(input.path)!==input.sha256)throw Error(`Build input changed: ${input.path}`);};
+auditInputs();
 const pin=path=>({path,sha256:hash(path)});
-const directory=`build/math-port/gate${gate}-runners`;fs.mkdirSync(directory,{recursive:true});
-const source=`build/core/${target}.exe`,executable=path.resolve(`${directory}/${target}-observation.exe`);
-fs.copyFileSync(source,executable);
-if(hash(source)!==hash(executable))throw Error('Executable copy differs');
-const record={gate,executable,args,sha256:hash(executable),build:{gate,
+const executable=path.resolve(`build/core/${target}.exe`);
+const executableSha256Before=hash(executable);
+const record={gate,executable,args,sha256:executableSha256Before,build:{gate,
  inputs:pin(inputPath),audit:pin(auditPath),log:pin(state.log)},startedAt:new Date().toISOString()};
 record.format=process.env.MATH_OBSERVATION_FORMAT||'json';
 if(!['json','text'].includes(record.format))throw Error('Observation format must be json or text');
@@ -36,6 +35,9 @@ child.on('error',error=>{record.error=error.message;});
 child.on('close',(exitCode,signal)=>{
  clearTimeout(timer);
  Object.assign(record,{endedAt:new Date().toISOString(),exitCode,signal});
+ try{record.sha256After=hash(executable);}catch(error){record.executableHashError=error.message;}
+ record.executableUnchanged=record.sha256After===record.sha256;
+ try{auditInputs();record.build.inputsUnchangedAfter=true;}catch(error){record.build.inputAuditError=error.message;}
  const stdoutBytes=stdoutCapture.bytes(),stderrBytes=stderrCapture.bytes();
  record.stdoutBytes=stdoutBytes.length;record.stderrBytes=stderrBytes.length;
  fs.writeFileSync(output+'.stdout',stdoutBytes);fs.writeFileSync(output+'.stderr',stderrBytes);
@@ -47,5 +49,5 @@ child.on('close',(exitCode,signal)=>{
   catch(error){record.parseError=error.message;}
  }
  fs.writeFileSync(output+'.provenance.json',JSON.stringify(record,null,2)+'\n');
- console.log(JSON.stringify(record));process.exitCode=exitCode===0&&!record.parseError?0:1;
+ console.log(JSON.stringify(record));process.exitCode=exitCode===0&&!record.parseError&&!record.error&&record.executableUnchanged&&!record.build.inputAuditError?0:1;
 });
