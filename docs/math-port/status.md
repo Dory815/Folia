@@ -4,7 +4,21 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed evaluation (2026-10-16 local, Gate175): all 58 targets compile
+Latest completed evaluation (2026-10-16 local, Gate177): all 59 targets compile
+with all 2,087 captured inputs unchanged through evaluation. Public SVG/errors
+pass 150/150, API 9/9, Common layout 75/75, paired Scenes 146 equal successful
+results plus four equal error pairs, and Scene-only materialize/XML counts
+remain zero. All 25 package captures pass; 18/20 checkpoint comparisons pass.
+Host, Parser, Regexp and LinkedList pass; Core has five failing tests and
+Foundation six. Private Renderer wrapper/LayoutJob retirement is integrated:
+both actual owner counts stay zero through 64 repeated renders, with macro,
+explicit tag/reference and saved-result checks passing. Other owners still
+accumulate, and the broader lifetime diagnostic fails both its first run and
+exact repeat. Its cause and the Lite descriptor failures remain under
+diagnosis. Evaluation closes with exit 1; Folia is not yet integrated. See
+`evidence/shared-gate177.md`.
+
+Earlier completed evaluation (2026-10-16 local, Gate175): all 58 targets compile
 and all 2,082 captured inputs remain unchanged. Public SVG/error comparison
 passes 150/150, API 9/9, Common layout 75/75, and paired native routes retain
 146 equal complete Scenes plus four equal error pairs with zero SVG
