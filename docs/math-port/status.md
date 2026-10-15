@@ -4,7 +4,18 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared evaluation (2026-10-16 local, Gate158): all 55 targets compile
+Latest shared evaluation (2026-10-16 local, Gate160): the Source list-operation
+and live Scene-owner changes compile across all 55 targets with 2,050 captured
+inputs unchanged, after fixing the Gate159 type errors. Public API, native
+document, complete SVG capture and Core encounter an access violation; the
+layout capture stops in the first plain conversion. Foundation has two failing
+tests. Host, Parser, Regexp and LinkedList pass, and all 25 package captures
+finish successfully. No current complete SVG comparison is claimed. The
+evaluation is closed as failed; the Scene runtime regression is being diagnosed.
+The last passing public SVG capture remains Gate158. See
+`evidence/shared-gate160.md`. Folia is unchanged and Mermaid remains paused.
+
+Earlier shared evaluation (2026-10-16 local, Gate158): all 55 targets compile
 with 2,042 captured input entries unchanged. Complete Core, Host, Parser,
 Regexp, LinkedList and Foundation suites pass again. A fresh native public
 Renderer capture matches all 150 complete SVG/error records against the
