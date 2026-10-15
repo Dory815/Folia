@@ -4,7 +4,19 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared checkpoint (2026-10-15 local, Gate110): all 38 selected targets
+Latest shared checkpoint (2026-10-15 local, Gate113): all 46 selected targets
+compile with 1,904 captured inputs unchanged. Core passes 345,659 assertions /
+5,325 tests; Host, Regexp and LinkedList pass. Parser and the new TexHtml tests
+still fail. Former Scene layering failures pass. Full renderer is 53/75,
+public SVG 8/9, actual registration 23/38. Colortbl is 29/29, Physics 61/63,
+next-six 16/20, fonts 13/16. Mhchem matches all 220 package cases and 7,960
+dependency records; its intermittent Unicode difference is proven to come
+from chunked stdout decoding, now corrected with a byte-boundary regression.
+Root enrolls Colortbl/Mhchem for the next build; Folia is unchanged. Complete
+handler graph bindings are assigned as explicit Luna packets. See
+`evidence/shared-gate111-next.md` and `canonical-handler-graph-plan.md`.
+
+Earlier shared checkpoint (Gate110): all 38 selected targets
 compile/link with 1,836 captured inputs unchanged. Complete Core passes
 345,659 assertions / 5,325 tests / 171 suites. Host, Regexp and LinkedList pass;
 Parser and three typed Scene tests still fail. The full renderer matches
