@@ -4,7 +4,20 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared evaluation (2026-10-16 local, Gate141): all 53 targets compile
+Latest shared evaluation (2026-10-16 local, Gate143): all 53 targets compile
+with 1,995 captured inputs unchanged through evaluation. The complete layout
+profile now matches 75/75, all 38 packages are actually registered, API is 9/9
+and complete texttip SVG is exact. Host, Parser, Foundation, Regexp and
+LinkedList pass; Core has two new-test failures (ordinary x glyph expectation
+and Bboldx fixture initialization). StackOwners advances past the repaired
+MathItem root and fails its MML Push owner check. Fonts 13/16 and next-six
+18/20 now expose a nested preprocessor callback arity. Two standalone XML
+namespace differences remain. Factory raw fields, replaceable list owners,
+live XML, reclamation and cancellation still need completion and verification.
+No runner copies are created. See `evidence/shared-gate143.md`.
+The renderer is not accepted; Folia is unchanged and Mermaid remains paused.
+
+Earlier shared evaluation (2026-10-16 local, Gate141): all 53 targets compile
 with 1,989 captured inputs unchanged. Complete Core, Host, Parser, Foundation,
 Regexp and LinkedList pass again. The six Stack regressions are fixed;
 ordinary object conversion and captured join length have Source witnesses.
