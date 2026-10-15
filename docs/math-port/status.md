@@ -4,7 +4,20 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared build (2026-10-16 local, Gate167): all 57 targets compile with
+Latest completed evaluation (2026-10-16 local, Gate168): all 57 targets compile
+with 2,075 unchanged inputs. Public API is 9/9 and all 25 package captures
+succeed. The current full SVG comparison is 148/150: only the enabled TeXHTML
+case fails in both owner groups, with `unsupported Lite owner field`. Its
+importer reads children on text/comment leaves; a correction is awaiting the
+next build. A separate paired route capture has 144 identical successful
+frozen Scene pairs and six equal error pairs; the Scene-only route records
+zero materialize/XML serializer calls across all 150 records. These pairs
+establish route equality, not independent Source geometry acceptance.
+Core, Host and Foundation still fail; Parser, Regexp and LinkedList pass.
+Sixteen of twenty checkpoint comparisons pass. All evaluation inputs remain
+unchanged, and the failed evaluation is closed. See `evidence/shared-gate168.md`.
+
+Earlier shared build (2026-10-16 local, Gate167): all 57 targets compile with
 all 2,075 captured inputs unchanged. The native document probe passes and no
 access violation has occurred in the completed probes. Public API, complete
 SVG and layout capture now stop at TextMacros CONFIG argument decoding.
