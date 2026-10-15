@@ -82,3 +82,34 @@ records and nine public SVG/error records; inspect registration and warnings.
 Run the focused canonical binding, identity/mutation/lifetime, moving-child,
 texttip and aligned observations. Keep every remaining difference visible.
 Only a complete accepted native path can replace Folia's existing math worker.
+
+## Gates115–116 and runtime findings
+
+Gate115 selected 51 targets with 1,935 unchanged captured inputs and failed on
+one remaining observer that treated a replaceable configuration-list owner as
+a direct reference. Root changed that observer to retain the public shared
+owner during iteration. Gate116 then built all 51 targets successfully with
+the same 1,935 inputs unchanged.
+
+Gate116 runtime acceptance did not pass. Regexp and LinkedList tests passed;
+Core completed with one failure in the new ordered-map owner-release test.
+The test tracked the first entry while deleting a different entry; its focused
+correction now tracks the actual erased owner. Host encountered a fixture
+callback that captured a hooks object after it had been moved. Parser tests
+reported exceptions. Foundation, public SVG and most package runners exited
+with Windows code 0xC0000005. The three new standalone binding constructors
+used `ownedExecutionLease_` before its declaration-order initialization;
+their member order is now corrected, awaiting a new coherent build.
+
+The Attributes runner exited zero, but its observation JSON lacked a closing
+record brace and stringified a numeric partial-write result. Those probe
+serialization issues are corrected without changing Source expectations.
+
+NodeFactory/ParseOptions projection comparison did pass against both complete
+pinned Source records, including the native owner checks. Report:
+`build/math-port/parser-projection-comparison-g116.json`. This bounded success
+does not accept the renderer or the remaining runtime checks.
+
+All Gate116 Root capture handles are terminal: Core session 74051, SVG/API
+runners, and package session 99121. Their executable hashes, PIDs, timestamps,
+raw output and actual exit codes remain under `build/math-port`.
