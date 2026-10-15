@@ -4,7 +4,19 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared checkpoint (2026-10-15 local, Gate121): all 51 selected targets
+Latest shared checkpoint (2026-10-15 local, Gate123): all 51 selected targets
+compile with all 1,944 captured inputs unchanged. Core, Host, Parser,
+Foundation, Regexp and LinkedList pass; public SVG remains 9/9. Complete
+rendering matches 63/75, with 31/38 registered packages and seven warnings.
+Units and AMSCD now use canonical per-runtime method exports and participate
+in the actual SVG session. All prior passing package comparisons remain
+passing. Next-six and fonts still expose incomplete MML node field projections
+(18/20 and 13/16). Texttip's collision is precisely the factory's `jax` field:
+repeated canonical factory projection attempts to bind it twice. Its narrow
+owner-reuse fix and regression await the next gate. See
+`evidence/shared-gate123.md`. Folia and Mermaid remain unchanged.
+
+Earlier shared checkpoint (2026-10-15 local, Gate121): all 51 selected targets
 compile with all 1,941 captured inputs unchanged. Core, Host, Parser,
 Foundation, Regexp and LinkedList pass; public SVG remains 9/9. Complete
 rendering matches 60/75, with 29/38 registered packages and nine warnings.
