@@ -113,3 +113,50 @@ does not accept the renderer or the remaining runtime checks.
 All Gate116 Root capture handles are terminal: Core session 74051, SVG/API
 runners, and package session 99121. Their executable hashes, PIDs, timestamps,
 raw output and actual exit codes remain under `build/math-port`.
+
+## Actual Gate117 result
+
+All 51 selected targets compiled successfully; the final audit found zero
+changed inputs among 1,935 captured files. All runtime captures are terminal.
+Complete Core, Host, Regexp and LinkedList pass. Parser still reports ten
+exceptions. The declaration-order lease fix restored native document, SVG,
+and package execution without the previous immediate process exits.
+
+The strict full-renderer comparison matches 56/75 complete records, with
+73 successful layouts and two errors. Actual registration is 27/38, with
+11 warnings; neither configured package names nor successful layout alone
+constitute acceptance. The public SVG/error API matches all nine records,
+including the formerly different aligned SVG.
+
+Current complete package comparisons pass Mathtools 42 cases / five maps,
+Physics 63 / eleven, Colortbl 29 / one, original Bussproofs 31 / two, and
+TexHtml/DOMStrings/XML 6+2+4. Attributes, both parser projection records,
+MapHandler module sessions, Array.unshift and getBBox witnesses also pass.
+Expanded Bussproofs matches 17/21: four empty-content records expose an actual
+nested-child emptiness check missing from native padding; its metadata also
+contains a Source hash transcription error. The original corpus did not
+observe these cases or the unbound actual innerStack field.
+
+Two package observers terminate while reflecting unregistered native
+ParseMethod callable identities. Texttip reaches the shared String.trim call
+and fails there. Tag/SetOptions matches 11/23: the earlier twelve cases see a
+SetOptions map loaded too early by the render-session module bootstrap.
+The separate default-methods executable exits zero but writes a file/status
+line rather than JSON stdout, so its standard capture is invalid and no
+current acceptance is claimed for that witness.
+
+Foundation identifies three test setup issues: two Attributes assertions
+expect global red despite defaults blue; one Scene fixture omits its canonical
+property/Lite bindings; the XML lifetime fixture keeps a separate Context
+owner alive beyond the intended scope. Owners are correcting those fixtures
+against independently observed Source semantics, with production unchanged
+for the Attributes and XML corrections.
+
+Evidence includes `common-layout-comparison-g117.json`,
+`math-api-comparison-g117.json`, `parser-projection-comparison-g117.json`,
+`host-layout-comparison-g117.json` and all raw capture provenance under
+`build/math-port`. Mhchem's capture exists, but its strict provenance comparer
+was invoked after source edits resumed and correctly rejected changed build
+inputs; do not claim a fresh Gate117 Mhchem acceptance from that invocation.
+For the next gate, run every provenance comparer before releasing the freeze.
+Folia integration remains pending full acceptance.

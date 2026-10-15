@@ -4,15 +4,28 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Gate114 selected 50 targets and terminated with compilation errors; all 1,932
+Latest shared checkpoint (2026-10-15 local, Gate117): all 51 selected targets
+compile with all 1,935 captured inputs unchanged. Complete Core, Host, Regexp
+and LinkedList pass. The public SVG/error API matches 9/9 complete Source
+records. Full rendering matches 56/75, with 27/38 registered packages and 11
+configuration warnings; it is not accepted. Mathtools matches 42/42 cases and
+5/5 maps, Physics 63/63 and 11/11 maps, Colortbl 29/29 and its map, original
+Bussproofs 31/31 and both maps. TexHtml/DOMStrings/XML matches all 12 records;
+Attributes and both parser projection records match their Source witnesses.
+Expanded Bussproofs exposes four empty-content differences (17/21 matched).
+Parser exceptions, missing callable identities in two package probes, texttip's
+missing shared String.trim intrinsic, module import visibility, and three
+Foundation fixture corrections remain. See `evidence/shared-gate114-next.md`.
+Folia still uses its existing math worker; Mermaid remains paused.
+
+Earlier, Gate114 selected 50 targets and terminated with compilation errors; all 1,932
 captured inputs remained unchanged. The new canonical binding interfaces and
 Runtime wiring are now present. Remaining build repairs concern Map access and
 iteration, string/Property overloads, binding temporaries, and observer/test
 types. No Gate114 runtime result is claimed. See
-`evidence/shared-gate114-next.md`; Gate113 below remains the latest successful
-shared compile and runtime checkpoint.
+`evidence/shared-gate114-next.md`.
 
-Latest shared checkpoint (2026-10-15 local, Gate113): all 46 selected targets
+Earlier shared checkpoint (2026-10-15 local, Gate113): all 46 selected targets
 compile with 1,904 captured inputs unchanged. Core passes 345,659 assertions /
 5,325 tests; Host, Regexp and LinkedList pass. Parser and the new TexHtml tests
 still fail. Former Scene layering failures pass. Full renderer is 53/75,
