@@ -44,11 +44,34 @@ initialize the inner Stack eagerly. Remaining own-field reflection and
 additional behavior observations need separate evidence; the original 31-case
 Source output is unchanged.
 
-The Extpfeil arrow difference is a shared layout issue, not a command mapping
-issue. Source and native MML both contain U+21A6. Source label mpadded width
-1.663 versus native 1.274 changes the requested stretch width and glyph-size
-selection. The responsible Common layout boundary is being diagnosed; do not
-replace the TeX mapping or glyph code point to match this formula.
+The initial Extpfeil layout diagnosis was corrected after inspecting the
+complete MML attributes. Both contain U+21A6, but Source selects Mathtools'
+`xmapsto` parameters (10,10), while Gate113 native selects Extpfeil's (6,7).
+Mathtools was not registered in that native session. The resulting widths
+`+1.111em` and `+0.722em` explain mpadded widths 1.663 and 1.274 and the later
+glyph-size selection. No CommonMpadded algorithm change is supported by this
+evidence. Verify the complete package configuration before changing layout.
+
+## Actual Gate114 result
+
+The build terminated with exit code 1 after selecting 50 targets and capturing
+1,932 inputs; the final audit found zero changed inputs. Its session is
+terminal. No runtime acceptance is claimed and no stale executable is used.
+Log: `build/math-font-package-gate-114.log`.
+
+The failures identify integration work: Property-key/string overload ambiguity,
+generic Map access/range adaptation, new binding code using an obsolete return
+type or taking an address of a temporary, native observer storage inspection,
+and several draft/test expression types. Owners are correcting their modules;
+one Luna owns the consistent observer-storage adaptation across packages.
+
+Root also replaced the stack-item registrar's class-name condition for static
+error tables with explicit `ownsErrors` metadata. The three BaseItems classes
+and Physics AutoOpen declare that metadata; other classes inherit their parent
+table. A focused test checks own fields, inherited identity, prototype links,
+and AutoOpen's Source stop-error tuple. These source changes compiled in
+Gate114, but the tests and Physics 63-case comparison still require a complete
+successful build and run.
 
 ## Acceptance after a successful compile
 
