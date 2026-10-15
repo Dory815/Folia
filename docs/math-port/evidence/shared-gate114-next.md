@@ -160,3 +160,43 @@ was invoked after source edits resumed and correctly rejected changed build
 inputs; do not claim a fresh Gate117 Mhchem acceptance from that invocation.
 For the next gate, run every provenance comparer before releasing the freeze.
 Folia integration remains pending full acceptance.
+
+## Actual Gate118 result
+
+All 51 selected targets compile with zero changed inputs among 1,936 captured
+files. All capture handles and the complete comparison orchestration are
+terminal. The comparers ran before releasing the source freeze; their start
+and final input audits both passed. Summary:
+`build/math-port/checkpoint-comparisons-g118.json`.
+
+Complete Core passes 345,722 assertions / 5,337 tests / 173 suites. Host,
+Parser, Foundation, Regexp and LinkedList all pass. The parser fixtures now
+retain actual shared MmlFactory owners rather than unbound stack objects;
+the TextMacros array witness checks the actual Source Context array and live
+mutation rather than resolving that plain array as a native child-array view.
+The corrected Scene/Attributes/XML fixtures pass, as do the new shared
+String.trim conversion, whitespace, UTF-16, metadata and replacement tests.
+
+Strict complete comparisons pass the public API 9/9, Mathtools 42/42 + five
+maps, Physics 63/63 + eleven, Colortbl 29/29 + one, original Bussproofs 31/31
++ two, expanded Bussproofs 21/21, and Tag/SetOptions 23/23 plus its independent
+default-method witness. Mhchem passes all 220 cases, 63 replacements, six
+replacement rules, two maps and fourteen mutation observations, with exact
+Source/native bytes. TexHtml/DOMStrings/XML, Attributes, parser projections,
+MapHandler module sessions, Array.unshift and getBBox also pass.
+
+Next-six and font package dumps now exit zero, after the actual TextMacros
+methods acquired their canonical Context identities. Their strict comparisons
+remain 18/20 and 13/16: the first differing repeated `handlers` field should
+be the Source cycle sentinel but native exposes another `map` object. The
+handler-owner probe separately fails its complete Source prototype assertion;
+the CJS-emitted enumerable/anonymous method metadata is being corrected.
+
+The shared String.trim implementation advances maction beyond the former
+missing-method exception, exposing a native process exit (0xC0000005) in
+both the 75-case renderer at action-toggle and the texttip witness. The full
+renderer exited at 2026-10-15T11:55:46.587Z, PID 7512; no complete JSON record
+exists. Do not report a Gate118 75-case match count. Physics registration is
+present in this graph, but full renderer acceptance remains pending. A bounded
+Sol diagnosis addresses this runtime failure while Luna owns the remaining
+module/cache, handler and Stack projection work. Folia remains unchanged.
