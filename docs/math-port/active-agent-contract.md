@@ -30,15 +30,20 @@ Read `architecture.md`, `status.md`, and the repository AGENTS.md first.
   and the named owner; do not edit their files unilaterally.
 - Unfinished tests stay in `tools/math-port/drafts`, outside `tests/math`,
   which CMake collects automatically. Use unique package-prefixed tool names.
-- Isolated compilation may read the completed Gate101 IFC/lib artifacts and
+- Isolated compilation may read the latest completed shared IFC/lib artifacts and
   write only to `build/math-port/isolated/<task-name>`. Never update shared
-  artifacts. Capture exact source/library hashes, executable hash, PID, UTC
-  interval and real exit code. Gate101 lacks current API changes: do not add
-  compatibility code for that snapshot or call isolated results a current
+  artifacts. Prefer reading shared artifacts over making large duplicate
+  library/IFC snapshots. Capture exact source/library hashes, executable hash,
+  PID, UTC interval and real exit code. Older gates may lack current API
+  changes: do not add compatibility code for a snapshot or call isolated results a current
   shared-build pass. Ask Root to compile against the new graph when needed.
 - Work autonomously through the full assigned packet. Report coherent compile
   readiness, concrete findings and real observations. A Source comparator
   self-check is not native parity. Do not repeatedly rerun unchanged checks.
+- Do not configure or build a complete separate CMake/FoliaTests graph. Compile
+  only the necessary translation units. Changed native layouts require a new
+  coherent shared build for runtime acceptance; do not mix new IFCs with an
+  older library to claim the current graph passes.
 - Prefer Luna for subsequent implementation and package observations. Root
   owns architecture, review and acceptance; use Sol only for a specific need
   that warrants it. The existing Sol review and Mhchem work remain recorded.
@@ -56,7 +61,10 @@ Read `architecture.md`, `status.md`, and the repository AGENTS.md first.
 | bussproofs | Complete five-file upstream Bussproofs package port and package-specific Source/native observations |
 | texhtml | TexHtml package, actual HTMLDomStrings owner, Common/SVG/Scene XML node path and package-specific Source/native observations |
 | tag_setoptions | TagFormat/SetOptions packages and complete observations; explicit per-runtime MapHandler ownership and coordinated registry callsites/tests |
-| font_packages | bbm, bboldx, dsfont observations; CommonOutputJax getBBox and Array.unshift witnesses; four-record XML native observer, coordinated with texhtml |
+| font_packages | bbm, bboldx, dsfont observations; accepted Common getBBox/Array.unshift witnesses; new Handler/PrioritizedList canonical binding packet |
+| map_storage_design | Generic ordered map storage and live Context Map projection; TokenMap/SubHandlers storage owners, coordinated with binding packets |
+| token_identity_design | Canonical emitted TokenMap/Token/Macro class, field and callback bindings; independent of ParserRuntime integration |
+| mml_attributes | Canonical Attributes class/layer/method bindings and focused observations; parser_projection owns node integration |
 | mhchem_acceptance | Luna owner of Mhchem package, actual pinned parser dependency, and complete Source/native observations; continues the recorded mhchem_native implementation |
 | architecture_review | Sol audit and scene_layering implementation role described above; independent recheck of live Scene fields/append behavior |
 | Root | Public math facade, build integration, baseline tracking, original acceptance rules, remaining output fixes, final verification and Folia integration |
@@ -74,20 +82,32 @@ The scene_layering owner takes Scene base module declarations/exports,
 keeps the concrete SVG surfaces and their live Context record/array/geometry
 behavior; coordinate interface edits rather than overwriting each other's work.
 
+Current shared-file exceptions are explicit: mathtools owns BaseMethods Array
+and AMS AmsEqnArray argument/default corrections; parser_projection owns
+BaseItems/NodeFactory fixes. Texhtml owns the narrow Lite append binding
+property-access correction, coordinated with scene_context. Root owns session
+package enrollment. See `canonical-handler-graph-plan.md` for the new binding
+packet APIs and acceptance requirements.
+
 ## Current evidence and pending changes
 
-Gate110 is the current passing compile: 38 targets and 1,836 unchanged inputs.
-Core, Host, Regexp and LinkedList pass; Parser and three typed Scene tests do
-not. Complete renderer comparison is 47/75, public interface 8/9, registration
-23/38. Official Mhchem dependency comparison is 7,960/7,960. Its package capture
-is 219/220 despite clean diagnostic repeats. See
-`evidence/shared-gate107-110.md` for the complete limits.
+Gate113 is the latest passing shared compile: 46 targets and 1,904 unchanged
+inputs. Core (345,659 assertions), Host, Regexp and LinkedList pass. Parser and
+three new TexHtml/DOM/XML test groups still require corrections. Complete
+renderer comparison is 53/75, public interface 8/9, registration 23/38. Mhchem
+dependency comparison is 7,960/7,960 and its first package capture is 220/220.
+A repeat's single difference came from UTF-8 decoding across output chunks;
+the tracked capture helper now concatenates bytes before decoding. See
+`evidence/shared-gate111-next.md` for evidence and limitations.
 
 Registered sources are editable after that capture. Root has authorized
 MapHandler changes and HTML document constructor wiring. The next shared gate
 must include their complete updated dependencies. Bussproofs, Mathtools,
-TagFormat/SetOptions, TexHtml and HTMLDomStrings are now enrolled as complete
-CMake work packets for the next gate; they have not yet passed that build.
+TagFormat/SetOptions, TexHtml and HTMLDomStrings are enrolled in Gate113.
+Subsequent corrections and the canonical Map, PrioritizedList, Handler,
+TokenMap and Attributes bindings await the next shared build. Isolated
+Bussproofs 31/31 plus 2/2 maps, TagFormat/SetOptions 23/23, and next-six 18/20
+observations remain local evidence, not a current shared pass.
 No new package is production-registered from isolated compile results.
 
 Parser projection owns the approved ContextFunctionIdentity handle and explicit
