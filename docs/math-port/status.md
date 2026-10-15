@@ -4,7 +4,21 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared checkpoint (2026-10-15 local, Gate123): all 51 selected targets
+Latest complete shared checkpoint (2026-10-15 local, Gate126): all 51 targets
+compile with all 1,948 captured inputs unchanged. Core, Host, Parser,
+Foundation, Regexp and LinkedList pass; public SVG remains 9/9. Complete
+rendering matches 69/75, with 36/38 registered packages and two warnings.
+Cases, Centernot, Textcomp, HTML and TexHtml now join the actual session with
+their canonical module owners. Prior passing package comparisons remain
+passing. Gate127 changes only the texttip witness options to match the pinned
+profile: its complete 1,315-character SVG now matches Source exactly; that gate
+does not claim another complete 75-record run. Remaining full-renderer cases
+are math tooltip, Bussproofs, both Empheq examples and both TexHtml examples.
+MML field/factory, Empheq and Stack packets are saved but remain unregistered
+and uncompiled. Repeated-render lifetime acceptance still blocks Folia
+integration. See `evidence/shared-gate126.md`. Mermaid remains paused.
+
+Earlier shared checkpoint (2026-10-15 local, Gate123): all 51 selected targets
 compile with all 1,944 captured inputs unchanged. Core, Host, Parser,
 Foundation, Regexp and LinkedList pass; public SVG remains 9/9. Complete
 rendering matches 63/75, with 31/38 registered packages and seven warnings.
