@@ -13,7 +13,10 @@ Gate126 builds all 51 targets with all 1,948 inputs unchanged. Complete Core,
 Host, Parser, Foundation, Regexp and LinkedList pass. All runtime handles are
 terminal, and the complete comparison runner audits inputs before and after.
 Public API remains 9/9; complete rendering is 69/75 with 36/38 packages and
-two warnings. All previously passing package/identity comparisons stay passing.
+two warnings. Most previously passing package/identity comparisons stay passing;
+the independent XML comparer has two foreignObject namespace failures. The
+initial checkpoint summary overlooked its nonzero exit; Gate129 rechecked the
+saved Gate126 stdout and corrected this report.
 Next-six remains 18/20 and fonts 13/16, exposing the shared missing MML fields.
 
 The factory-repeat binding correction retains the original canonical identity,
@@ -21,7 +24,9 @@ constructor/prototype and mutable jax owner. CommonOutputJax now projects its
 actual factory as a live Context field. Scene creation preserves Source rect
 geometry attributes and inferred-row group transform at the original paint
 observation point, alongside typed geometry/transforms. Removing the extra XML
-foreignObject namespace matches Source's creation attributes. Complete action
+foreignObject namespace matches the full profile's creation attributes, but
+breaks two standalone XML records; namespace serialization remains unresolved.
+Complete action
 toggle and AMSCD records now match. No Lite event-handler substitute was added.
 
 Texttip reaches completion in Gate126, including the original strict Context
@@ -36,7 +41,8 @@ focused comparison only, without relabeling Gate126's complete results.
 The remaining six renderer records are math tooltip, Bussproofs, two Empheq
 and two TexHtml cases. TexHtml's enabled SVG now differs at font-family
 (`undefined` versus `Times`); disabled mode has four additional calls. They
-remain failures even though the independent twelve TexHtml/XML records pass.
+remain failures. The independent twelve TexHtml/XML records also include the
+two namespace failures described above.
 Empheq's actual export/receiver packet, MML raw fields and captured factory
 creation packets, and the Stack array-owner packet are unregistered drafts.
 Root must review and build them before any acceptance claim. The lifetime

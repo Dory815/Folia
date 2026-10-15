@@ -4,13 +4,29 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest complete shared checkpoint (2026-10-15 local, Gate126): all 51 targets
+Latest complete shared checkpoint (2026-10-15 local, Gate129): all 51 targets
+compile with all 1,957 captured inputs unchanged. Complete Core, Host, Parser,
+Foundation, Regexp and LinkedList pass. Public SVG remains 9/9 and texttip's
+complete SVG remains byte-exact. Complete rendering matches 70/75, with 37/38
+registered packages and one warning. MML fields/factory and Empheq now compile
+and participate in the real session; the invalid Empheq option record matches.
+Remaining renderer records are math tooltip, Bussproofs, valid Empheq and both
+TexHtml examples. Next-six remains 18/20 and fonts 13/16, now exposing Tags
+method metadata and a factory alias difference beyond the MML fields.
+The independent TexHtml/XML comparison has two namespace failures; earlier
+Gate126 reporting incorrectly said all twelve records passed. Its raw report
+already contained those failures. Lifetime and cancellation implementation
+packets are drafted, not accepted; Folia integration remains pending. See
+`evidence/shared-gate129.md`. Mermaid remains paused.
+
+Earlier complete shared checkpoint (2026-10-15 local, Gate126): all 51 targets
 compile with all 1,948 captured inputs unchanged. Core, Host, Parser,
 Foundation, Regexp and LinkedList pass; public SVG remains 9/9. Complete
 rendering matches 69/75, with 36/38 registered packages and two warnings.
 Cases, Centernot, Textcomp, HTML and TexHtml now join the actual session with
-their canonical module owners. Prior passing package comparisons remain
-passing. Gate127 changes only the texttip witness options to match the pinned
+their canonical module owners. The independent XML comparison has two
+namespace regressions (corrected reporting after Gate129). Gate127 changes
+only the texttip witness options to match the pinned
 profile: its complete 1,315-character SVG now matches Source exactly; that gate
 does not claim another complete 75-record run. Remaining full-renderer cases
 are math tooltip, Bussproofs, both Empheq examples and both TexHtml examples.
