@@ -4,7 +4,18 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared evaluation (2026-10-16 local, Gate150): all 55 targets compile
+Latest shared evaluation (2026-10-16 local, Gate155): all 55 targets compile
+with 2,040 captured input entries unchanged, but runtime acceptance fails.
+The new shared list owner exposes missing canonical callback argument
+conversion during renderer initialization. API and complete SVG capture exit
+with errors, so no complete SVG parity result exists for this code. Core also
+encounters a null list-record dereference in an existing missing-slot test;
+the focused reproduction confirms the same failure. Host and Parser fail;
+Regexp and LinkedList pass. Failed captures cannot establish rendering
+differences. The evaluation is closed as failed, and repairs are in progress.
+See `evidence/shared-gate155.md`. Folia remains unchanged and Mermaid paused.
+
+Last passing shared test suites (2026-10-16 local, Gate150): all 55 targets compile
 with 2,031 captured input entries unchanged. Complete Core, Host, Parser,
 Regexp and LinkedList pass. Full public SVG/error parity is 150/150 after
 independently capturing fresh Source module runtimes; Gate149's reused-module
