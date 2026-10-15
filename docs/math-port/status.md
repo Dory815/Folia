@@ -4,7 +4,19 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared evaluation (2026-10-16 local, Gate149): all 55 targets compile
+Latest shared evaluation (2026-10-16 local, Gate150): all 55 targets compile
+with 2,031 captured input entries unchanged. Complete Core, Host, Parser,
+Regexp and LinkedList pass. Full public SVG/error parity is 150/150 after
+independently capturing fresh Source module runtimes; Gate149's reused-module
+font-cache differences remain preserved as evidence. Thirty-one unchanged
+native binary observations retain the Gate149 results, including failures:
+Foundation passes, layout 75/75, API 9/9 and complete texttip SVG exact; three
+package/XML comparisons still fail. Fonts remain 13/16 and next-six 18/20
+at live FindTeX properties; two XML differences remain. See
+`evidence/shared-gate150.md`. Full renderer acceptance and Folia integration
+remain incomplete; Mermaid is paused. No runner or directory copies are made.
+
+Earlier shared evaluation (2026-10-16 local, Gate149): all 55 targets compile
 with 2,021 captured inputs unchanged. The new complete public SVG comparison
 matches 146/150: continuous sessions 75/75, fresh sessions 71/75. Four fresh
 differences remain under investigation. Layout remains 75/75 with all 38
