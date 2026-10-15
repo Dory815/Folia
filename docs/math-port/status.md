@@ -4,6 +4,14 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
+Gate114 selected 50 targets and terminated with compilation errors; all 1,932
+captured inputs remained unchanged. The new canonical binding interfaces and
+Runtime wiring are now present. Remaining build repairs concern Map access and
+iteration, string/Property overloads, binding temporaries, and observer/test
+types. No Gate114 runtime result is claimed. See
+`evidence/shared-gate114-next.md`; Gate113 below remains the latest successful
+shared compile and runtime checkpoint.
+
 Latest shared checkpoint (2026-10-15 local, Gate113): all 46 selected targets
 compile with 1,904 captured inputs unchanged. Core passes 345,659 assertions /
 5,325 tests; Host, Regexp and LinkedList pass. Parser and the new TexHtml tests
