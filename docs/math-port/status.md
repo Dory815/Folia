@@ -4,7 +4,20 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest complete shared checkpoint (2026-10-15 local, Gate129): all 51 targets
+Latest shared evaluation (2026-10-15 local, Gate131): all 51 targets compile
+with 1,963 captured inputs unchanged. Complete rendering now matches 73/75;
+both TexHtml examples and valid Empheq match. Public API remains 9/9 and the
+complete texttip SVG stays exact. Remaining renderer records are tooltip
+(missing Context processMath method) and unregistered Bussproofs. This is not
+an accepted checkpoint: Core has four failing new test fixtures/assertions,
+Foundation has one failing new font-family test, and the XML capture exits
+with an eager Lite-node argument check. Tags metadata matches its pinned CJS
+witness; the fonts/next-six comparisons now expose a standalone Jax adaptor
+setup difference and the pending parser/Stack alias. Stack/parser, XML creator,
+factory field, lifetime and cancellation packets remain under review. See
+`evidence/shared-gate131.md`. Folia is unchanged and Mermaid remains paused.
+
+Earlier complete shared checkpoint (2026-10-15 local, Gate129): all 51 targets
 compile with all 1,957 captured inputs unchanged. Complete Core, Host, Parser,
 Foundation, Regexp and LinkedList pass. Public SVG remains 9/9 and texttip's
 complete SVG remains byte-exact. Complete rendering matches 70/75, with 37/38

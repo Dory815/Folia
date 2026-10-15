@@ -43,7 +43,8 @@ This is not an assertion of complete JavaScript object semantics or of the
 entire MathJax feature surface. Stack, bounded-lifetime and cancellation
 packets remain unregistered or unaccepted. Folia and Mermaid are unchanged.
 
-Ignored raw records are gate-specific: `gate-129-inputs-before/after.json`,
+Ignored raw records are gate-specific: `gate-129-inputs-before.json`,
+`gate-129-input-changes.json`,
 `diagnostic-exits-129-root.json`, `common-layout-native/comparison-g129.json`,
 `package-captures-g129.json` and `checkpoint-comparisons-g129.json` under
 `build/math-port`. Full Source observation SHA-256 remains
