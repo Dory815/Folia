@@ -4,7 +4,23 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared evaluation (2026-10-15 local, Gate137): all 53 targets compile
+Latest shared evaluation (2026-10-16 local, Gate141): all 53 targets compile
+with 1,989 captured inputs unchanged. Complete Core, Host, Parser, Foundation,
+Regexp and LinkedList pass again. The six Stack regressions are fixed;
+ordinary object conversion and captured join length have Source witnesses.
+The original Bussproofs comparisons pass, including expanded 21/21 and exact
+session observations. ParserFields passes replacement and alias checks.
+The new StackOwners fixture still fails its unset MathItem root; its repair
+is candidate-only. Full rendering remains 74/75 and 37/38 actual registrations,
+API is 9/9 and complete texttip SVG is exact. Fonts 13/16 and next-six 18/20
+now expose callback name and configurations list projection respectively.
+Two standalone XML differences remain. Gate139's accidental factory-test edit
+was rejected and recovered byte-exactly. A later supplemental Source-witness
+edit occurred after Gate141 evaluation ended and is recorded separately.
+No runner executable copies are made. See `evidence/shared-gate141.md`.
+The renderer is not accepted; Folia is unchanged and Mermaid remains paused.
+
+Earlier shared evaluation (2026-10-15 local, Gate137): all 53 targets compile
 with 1,982 captured inputs unchanged. Stack/parser owners are now in the shared
 graph, but this checkpoint is not accepted: Core has six Stack regressions,
 Host has two outdated boundary expectations needing Source verification, and
