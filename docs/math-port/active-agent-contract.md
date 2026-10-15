@@ -55,8 +55,8 @@ Read `architecture.md`, `status.md`, and the repository AGENTS.md first.
 | mathtools | Complete six-file upstream Mathtools package port and package-specific Source/native observations |
 | bussproofs | Complete five-file upstream Bussproofs package port and package-specific Source/native observations |
 | texhtml | TexHtml package, actual HTMLDomStrings owner, Common/SVG/Scene XML node path and package-specific Source/native observations |
-| tag_setoptions | TagFormat and SetOptions packages and complete Source/native observations |
-| font_packages | bbm, bboldx, dsfont package observations; actual CommonOutputJax getBBox Context bridge and BBox result owner, coordinated with Bussproofs |
+| tag_setoptions | TagFormat/SetOptions packages and complete observations; explicit per-runtime MapHandler ownership and coordinated registry callsites/tests |
+| font_packages | bbm, bboldx, dsfont observations; CommonOutputJax getBBox and Array.unshift witnesses; four-record XML native observer, coordinated with texhtml |
 | mhchem_acceptance | Luna owner of Mhchem package, actual pinned parser dependency, and complete Source/native observations; continues the recorded mhchem_native implementation |
 | architecture_review | Sol audit and scene_layering implementation role described above; independent recheck of live Scene fields/append behavior |
 | Root | Public math facade, build integration, baseline tracking, original acceptance rules, remaining output fixes, final verification and Folia integration |
@@ -70,6 +70,30 @@ keeps the concrete SVG surfaces and their live Context record/array/geometry
 behavior; coordinate interface edits rather than overwriting each other's work.
 
 ## Current evidence and pending changes
+
+Gate110 is the current passing compile: 38 targets and 1,836 unchanged inputs.
+Core, Host, Regexp and LinkedList pass; Parser and three typed Scene tests do
+not. Complete renderer comparison is 47/75, public interface 8/9, registration
+23/38. Official Mhchem dependency comparison is 7,960/7,960. Its package capture
+is 219/220 despite clean diagnostic repeats. See
+`evidence/shared-gate107-110.md` for the complete limits.
+
+Registered sources are editable after that capture. Root has authorized
+MapHandler changes and HTML document constructor wiring. The next shared gate
+must include their complete updated dependencies. Bussproofs, Mathtools and
+TagFormat/SetOptions are currently excluded as whole CMake work packets;
+re-enroll them only with their complete coherent interfaces/implementations.
+No new package is production-registered from isolated compile results.
+
+Parser projection owns the approved ContextFunctionIdentity handle and explicit
+NodeFactory call conversion/lifetime boundary; coordinate parser_runtime.ixx
+with MapHandler's owner. Texhtml owns six parser and two HTMLDomStrings native
+records; font_packages owns the four XML records in a separate new observer.
+Temporary diagnostics may compile instrumented copies of another owner's
+source under the task's ignored isolated directory without changing that
+production file. Such diagnostics do not count as acceptance.
+
+Historical observations below are retained for context.
 
 The latest successful shared compile is Gate106: 31 targets and 1,804 captured
 inputs unchanged. Its runtime acceptance fails: all 75 complete renderer

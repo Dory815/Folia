@@ -4,7 +4,23 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared checkpoint (2026-10-15 local, Gates102–106): Gate106 builds all
+Latest shared checkpoint (2026-10-15 local, Gate110): all 38 selected targets
+compile/link with 1,836 captured inputs unchanged. Complete Core passes
+345,659 assertions / 5,325 tests / 171 suites. Host, Regexp and LinkedList pass;
+Parser and three typed Scene tests still fail. The full renderer matches
+47/75 records (64 layouts, 11 errors); public SVG/error records match 8/9.
+Registration remains 23/38. Mhchem dependency comparison passes 7,960/7,960;
+its recorded package capture is 219/220, with one Unicode difference absent
+in diagnostic reruns. Physics is 49/63, next-six 15/20, fonts 13/16. No new
+package is accepted. See `evidence/shared-gate107-110.md`.
+
+Current implementation work is primarily Luna. Root owns architecture and
+acceptance. Per-session MapHandler and Bussproofs state, arbitrary Context
+callable identity, HTMLDomStrings/document wiring, and the remaining package
+and Scene differences are in progress. One focused Sol review covers only
+the callable boundary. Folia integration and Mermaid remain unchanged.
+
+Earlier shared checkpoint (2026-10-15 local, Gates102–106): Gate106 builds all
 31 targets with 1,804 captured inputs unchanged. Runtime acceptance fails:
 the live parser Array needs the missing generic unshift operation, all75
 renderer records fail, and Core reports two SourceStringMap errors. Host,
