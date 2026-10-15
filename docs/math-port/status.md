@@ -4,7 +4,19 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared evaluation (2026-10-16 local, Gate155): all 55 targets compile
+Latest shared evaluation (2026-10-16 local, Gate157): all 55 targets compile
+with 2,041 captured input entries unchanged. The focused missing-slot,
+canonical callback argument and FindTeX checks pass; the real native document
+entry point also passes. Complete Core finishes without the earlier crash,
+but Core, Host, Parser and Foundation still fail. The complete package profile
+now stops at TextMacros CONFIG argument decoding; API, layout and full SVG
+capture fail, so no current full SVG comparison is available. Five of the
+25 package captures fail. Comparison commands are not run without a working
+public renderer. Candidate fixes cover the remaining CONFIG codecs and list
+iterator/test regressions. Folia remains unchanged; Mermaid remains paused.
+See `evidence/shared-gate157.md`.
+
+Earlier shared evaluation (2026-10-16 local, Gate155): all 55 targets compile
 with 2,040 captured input entries unchanged, but runtime acceptance fails.
 The new shared list owner exposes missing canonical callback argument
 conversion during renderer initialization. API and complete SVG capture exit
