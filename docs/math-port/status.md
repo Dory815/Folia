@@ -4,7 +4,20 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared evaluation (2026-10-16 local, Gate146): all 54 targets compile
+Latest shared evaluation (2026-10-16 local, Gate149): all 55 targets compile
+with 2,021 captured inputs unchanged. The new complete public SVG comparison
+matches 146/150: continuous sessions 75/75, fresh sessions 71/75. Four fresh
+differences remain under investigation. Layout remains 75/75 with all 38
+registrations, API 9/9 and complete texttip SVG exact. All 25 captures pass;
+the existing 20 comparisons still have three failures. Fonts 13/16 and
+next-six 18/20 now differ at missing live jax.findTeX properties after the
+initial BaseMappings generation fix. Two XML differences remain. Parser,
+Regexp, LinkedList and Foundation tests pass; Core and Host stop at a new
+empty-optional runtime assertion and are recorded as failures. See
+`evidence/shared-gate149.md`. The renderer is not accepted, Folia unchanged,
+Mermaid paused; no runner or directory copies are created.
+
+Earlier shared evaluation (2026-10-16 local, Gate146): all 54 targets compile
 with 2,002 captured inputs unchanged. All 25 captures pass, including
 StackOwners; layout remains 75/75 with 38 registrations, API 9/9, complete
 texttip and sequential public Renderer SVG 3/3 exact. Host, Parser,
