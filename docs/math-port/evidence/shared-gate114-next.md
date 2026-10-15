@@ -200,3 +200,46 @@ exists. Do not report a Gate118 75-case match count. Physics registration is
 present in this graph, but full renderer acceptance remains pending. A bounded
 Sol diagnosis addresses this runtime failure while Luna owns the remaining
 module/cache, handler and Stack projection work. Folia remains unchanged.
+
+## Actual Gate119 result
+
+All 51 selected targets compile with 1,937 captured inputs unchanged. Core,
+Host, Parser, Foundation, Regexp and LinkedList pass; all runtime and comparison
+handles are terminal. The comparisons' initial and final input audits pass.
+
+The Maction failure was traced with GDB/PDB to CommonWrapper::getScale reading
+a null parent bbox. CommonMaction::initializeSource omitted the base Source
+initialization. Calling CommonWrapper::initializeSource first restores Source
+super ordering and removes the process exit. The complete renderer now exits
+zero and matches 59/75 complete records, with 29/38 registered packages and
+nine configuration warnings. Texttip now reports a normal TypeError rather
+than a process failure. Source action records still differ: canonical wrapper
+factory/children and MML method/parent projections are incomplete.
+
+Public SVG remains 9/9; Mathtools 42/42 + five maps, Physics 63/63 + eleven,
+Colortbl 29/29 + one, original Bussproofs 31/31 + two, expanded Bussproofs
+21/21, Tag/SetOptions 23/23 and defaults all pass. The new complete Bussproofs
+module-scope comparison passes its exact Source fields and errors. Its native
+implementation now creates the scratch item through the current filter
+document, while bbox reads the module-scoped document, matching Source.
+
+Mhchem's 220 cases and all replacement/map/mutation records still match, but
+the overall comparison fails its macroBase identity assertion. Font comparison
+also loses BaseMethods aliases after Mathtools initialization. BaseMethods and
+ParseMethods rebuild their tables on repeated initialization; their canonical
+cache fixes and a cross-runtime/repeated-import regression are saved for the
+next gate. Do not describe these overall package observations as accepted.
+
+Next-six remains 18/20; correcting actual TeX field publication order reaches
+the next missing field surface, StackItemFactory. The handler-owner prototype
+probe still fails because add/remove arities must follow emitted CJS rather
+than TypeScript default parameter notation; its exact correction is saved.
+The invalid-variant warning text is correct, but the observer needs Source's
+console argument-list envelope through a distinct host console capability.
+
+Reports and raw provenance are under `build/math-port`, including
+`checkpoint-comparisons-g119.json`. The new Stack array/binder modules and
+owner witness remain unregistered and uncompiled. A read-only lifetime review
+also identifies per-conversion object retention in the current renderer; its
+application lifecycle must be resolved against the actual original entry
+before Folia integration. No application or Mermaid code changed.

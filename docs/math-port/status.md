@@ -4,7 +4,24 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest shared checkpoint (2026-10-15 local, Gate118): all 51 selected targets
+Latest shared checkpoint (2026-10-15 local, Gate119): all 51 selected targets
+compile with all 1,937 captured inputs unchanged. Core, Host, Parser,
+Foundation, Regexp and LinkedList pass; public SVG remains 9/9. The Maction
+base-initialization fix removes the native process exit. Complete rendering
+now matches 59/75, with 29/38 registered packages and nine warnings.
+Mathtools, Physics, Colortbl, original/expanded Bussproofs, Tag/SetOptions and
+its defaults retain parity. The new exact Bussproofs module-scope comparison
+passes, including its cleared-document error. Mhchem matches all 220 cases
+but its BaseMethods alias check regresses; font aliases also regress after
+Mathtools loading reveals BaseMethods table reinitialization. Canonical table
+guards and regressions are saved for Gate120. Next-six remains 18/20, now
+exposing missing StackItemFactory fields. Texttip and action records expose
+missing canonical wrapper/MML fields and methods; their owners are correcting
+those shared boundaries. A complete Source comparison and the original scope
+remain required before application integration. The independent Stack binder
+and lifetime/integration reviews are unregistered; Folia and Mermaid are unchanged.
+
+Earlier shared checkpoint (2026-10-15 local, Gate118): all 51 selected targets
 compile with all 1,936 captured inputs unchanged. Complete Core passes
 345,722 assertions / 5,337 tests / 173 suites; Host, Parser, Foundation,
 Regexp and LinkedList all pass. The public SVG/error API matches 9/9.
