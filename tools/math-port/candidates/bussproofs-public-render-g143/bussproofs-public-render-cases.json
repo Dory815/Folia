@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "cases": [
+    {"name":"unary-proof","tex":"\\begin{prooftree}\\AxiomC{A}\\UnaryInfC{B}\\end{prooftree}","display":false,"em":16,"width":1280},
+    {"name":"ordinary-after-proof","tex":"x+1","display":false,"em":16,"width":1280},
+    {"name":"binary-proof-after-formula","tex":"\\begin{prooftree}\\AxiomC{P}\\AxiomC{Q}\\BinaryInfC{C}\\end{prooftree}","display":false,"em":16,"width":1280}
+  ]
+}
