@@ -4,7 +4,21 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed evaluation (2026-10-16 local, Gate187): all 59 targets compile
+Latest completed evaluation (2026-10-16 local, Gate189): all 60 targets compile
+with 2,108 unchanged inputs. The new private Renderer request-owner cleanup
+regresses public conversion: complete SVG/errors match 2/150 and the API
+comparison fails. All three Renderer lifetime drivers exit 1 at a retired
+Context record; a standalone diagnostic confirms the first warm render fails.
+Parser, Regexp and LinkedList pass; Core, Host and Foundation fail. All 25
+captures complete and 17/20 comparisons pass. Common layout remains 75/75;
+the NativeRenderSession route audit remains 146 equal successful Scenes plus
+four error pairs. Those paths do not exercise private Renderer cleanup.
+The source shows nodeLists and nodeArrayIdentities both retire the same
+canonical child-array handle. An owner-classification correction is applied
+for Gate190, whose build is in progress; it is not yet verified. See
+`evidence/shared-gate189.md`. Folia is not integrated.
+
+Earlier completed evaluation (2026-10-16 local, Gate187): all 59 targets compile
 and all 2,102 inputs remain unchanged through evaluation. Public SVG/errors
 remain 150/150, API 9/9 and Common layout 75/75; paired routes retain 146
 equal successful Scenes and four equal error pairs with zero Scene-only
