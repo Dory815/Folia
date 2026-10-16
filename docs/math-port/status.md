@@ -4,7 +4,22 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed evaluation (2026-10-16 local, Gate189): all 60 targets compile
+Latest completed evaluation (2026-10-16 local, Gate190): all 60 targets compile
+with 2,108 unchanged inputs through evaluation. The canonical node-array
+ownership correction restores complete public SVG/errors to 150/150 and API
+to 9/9; Common layout remains 75/75. All 25 captures complete and 18/20
+checkpoint comparisons pass. Host, Parser, Regexp and LinkedList pass; Core
+retains seven raw Stack-field tests and Foundation retains MML bad-kind
+ordering. The two earlier lifetime drivers pass, but the stronger mixed
+64-iteration driver fails actual registry and Lite identity counts. Plain
+renders accumulate one parser registry entry each; the mixed driver grows
+from 123 to 322 entries and retains one extra Lite identity. Cancellation
+also retains one extra parser entry. This is not accepted request cleanup.
+The paired NativeRenderSession routes retain 146 equal successful Scenes
+and four equal error pairs, with zero materialize/XML calls on Scene-only
+routes. See `evidence/shared-gate190.md`. Folia is not integrated.
+
+Earlier completed evaluation (2026-10-16 local, Gate189): all 60 targets compile
 with 2,108 unchanged inputs. The new private Renderer request-owner cleanup
 regresses public conversion: complete SVG/errors match 2/150 and the API
 comparison fails. All three Renderer lifetime drivers exit 1 at a retired
