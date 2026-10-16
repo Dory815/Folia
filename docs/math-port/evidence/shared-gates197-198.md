@@ -54,7 +54,16 @@ live constructor/factory projection, native Symbol property storage and six
 Stack-method packages are still candidates; no passing profile claim substitutes
 for their independent review and native execution. The 150 public records are
 75 inputs repeated in continuous and fresh-session groups, not 150 independent
-feature cases. Selected text-mode BBoldx SVG coverage is being added separately.
+feature cases. A supplementary text-mode BBoldx probe compiles against the
+unchanged Gate198 modules and passes six exact SVG and glyph-path comparisons:
+Latin/Greek commands, dotless aliases and the explicit light option, in both
+continuous and fresh-session groups. The first attempt fails on a test-protocol
+configuration-tag decode mismatch; the rebuilt corrected fixture passes.
+Both attempts are retained. The passing executable/input provenance is
+`build/math-port/bboldx-text-svg-comparison-g198-r2.provenance.json`; its source
+is subsequently promoted to `tools/math-port/regressions/g198/bboldx-text-svg/`
+with a CMake target for the next shared gate. This is six observations of three
+configured inputs and does not establish completeness of the entire font API.
 
 Evidence is under `build/math-port/`, including `diagnostic-exits-198-root.json`,
 the Foundation provenance, `checkpoint-comparisons-g198.json`, each lifetime

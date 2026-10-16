@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "profile": "locked-folia-mathjax-4.1.3",
+  "cases": [
+    {"name":"bboldx-text","tex":"\\text{\\textbb{A} \\textbfbb{B} \\txtbbalpha \\txtbfbbalpha}","features":["textmacros","bboldx","bboldx-font-extension","Greek-alpha","Latin"]},
+    {"name":"bboldx-text-dotless-aliases","tex":"\\text{\\itextbb\\jtextbb\\itextbfbb\\jtextbfbb}","features":["textmacros","bboldx","bboldx-font-extension","dotless-i","dotless-j"]},
+    {"name":"bboldx-text-light-option","tex":"\\text{\\textbb{A} \\textbfbb{B} \\txtbbalpha \\txtbfbbalpha}","options":{"bboldx":{"light":true}},"features":["textmacros","bboldx","bboldx-font-extension","light-option"]}
+  ]
+}
