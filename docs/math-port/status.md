@@ -4,7 +4,18 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Current compilation work (Gates199–205): the shared MML/Tree constructor and
+Latest completed evaluation (2026-10-16 local, Gate207): all 61 targets compile
+with 2,157 unchanged inputs, but the shared MML work has runtime regressions.
+Complete SVG/errors match 0/150, Common layout 0/75, BBoldx text SVG 0/6,
+and 4/20 checkpoint comparisons pass. Core ends with 0xC0000005; Host,
+Parser, Foundation and all three Renderer lifetime drivers fail. Regexp and
+LinkedList pass. The MML argument-record wrapper mismatch from Gate206 is
+corrected; rendering now reaches a missing native-to-Context argument
+projection during initialization. The paired routes agree only on 150 error
+pairs, with zero successful Scenes, so that agreement is not SVG acceptance.
+See `evidence/shared-gates206-207.md`. Folia is not integrated.
+
+Earlier compilation work (Gates199–205): the shared MML/Tree constructor and
 operation-view packet is applied to the working tree, but has not compiled or
 passed native acceptance. All seven builds ended with compiler errors and
 unchanged frozen inputs; no old executables were used to claim results for
@@ -14,7 +25,7 @@ Common factory base-owner signature and MML test type errors. Empty-node
 constructors and Array/Latex methods remain separate, unaccepted candidates.
 See `evidence/shared-gates199-205.md`.
 
-Latest completed evaluation (2026-10-16 local, Gate198): all 60 targets compile
+Earlier completed evaluation (2026-10-16 local, Gate198): all 60 targets compile
 with 2,127 unchanged inputs through evaluation. Core, Host, Parser, Foundation,
 Regexp and LinkedList all pass. Complete public SVG/errors match 150/150,
 API 9/9 and Common layout 75/75. All 25 captures complete; 18/20 comparisons
