@@ -4,7 +4,20 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed evaluation (2026-10-16 local, Gate183): all 59 targets compile
+Latest completed evaluation (2026-10-16 local, Gate185): all 59 targets compile
+with all 2,100 inputs unchanged through evaluation. Public SVG/errors pass
+150/150, API 9/9 and Common layout 75/75. Paired routes retain 146 equal
+successful Scenes plus four equal error pairs; Scene-only materialization
+and XML serialization counts remain zero. All 25 package captures succeed;
+18/20 checkpoint comparisons pass. Host, Parser, Regexp and LinkedList pass.
+Core retains seven raw Stack-field failures, two Scene-parent failures and
+one direct Stack-storage failure; Foundation retains three failing tests.
+Both Renderer lifetime drivers pass, but MML/parser/Lite owners still grow.
+The direct Stack-storage correction is applied after evaluation and remains
+unbuilt. Broader constructor, method-binding and owner-retirement packets
+are still unaccepted. Folia is not integrated. See `evidence/shared-gate185.md`.
+
+Earlier completed evaluation (2026-10-16 local, Gate183): all 59 targets compile
 and all 2,098 captured inputs remain unchanged through evaluation. Host,
 Regexp and LinkedList pass. Core, Parser and Foundation still fail. All 25
 package captures succeed; 12/20 checkpoint comparisons pass. Public SVG/error
