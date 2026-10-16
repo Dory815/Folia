@@ -4,7 +4,20 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed evaluation (2026-10-16 local, Gate177): all 59 targets compile
+Latest completed evaluation (2026-10-16 local, Gate180): all 59 targets compile
+with all 2,096 captured inputs unchanged through evaluation. The generic
+Factory, StackItem and Lite descriptor integration exposes a service-graph
+initialization-order regression: public Renderer initialization fails before
+API, full SVG and paired Scene captures can complete. Core, Host, Parser and
+Foundation fail; Regexp and LinkedList pass. Five of 25 package captures and
+one of 20 checkpoint comparisons pass. The two additional Renderer drivers
+show runtime exception windows and are explicitly terminated; neither passes.
+They now have top-level exception reporting pending the next build. The
+initialization-order fix is being tested separately. Gate177 remains the last
+passing full SVG comparison, not evidence that the current increment passes.
+See `evidence/shared-gate180.md`. Folia is not yet integrated.
+
+Earlier completed evaluation (2026-10-16 local, Gate177): all 59 targets compile
 with all 2,087 captured inputs unchanged through evaluation. Public SVG/errors
 pass 150/150, API 9/9, Common layout 75/75, paired Scenes 146 equal successful
 results plus four equal error pairs, and Scene-only materialize/XML counts
@@ -14,8 +27,10 @@ Foundation six. Private Renderer wrapper/LayoutJob retirement is integrated:
 both actual owner counts stay zero through 64 repeated renders, with macro,
 explicit tag/reference and saved-result checks passing. Other owners still
 accumulate, and the broader lifetime diagnostic fails both its first run and
-exact repeat. Its cause and the Lite descriptor failures remain under
-diagnosis. Evaluation closes with exit 1; Folia is not yet integrated. See
+exact repeat. Post-closure instrumentation identifies pre-session UTF-8
+cancellation in its in-flight fixture; preparing UTF-16 first passes a separate
+run against the existing libraries. The corrected fixture and Lite descriptor
+changes still need a shared build. Evaluation closes with exit 1; Folia is not yet integrated. See
 `evidence/shared-gate177.md`.
 
 Earlier completed evaluation (2026-10-16 local, Gate175): all 58 targets compile
