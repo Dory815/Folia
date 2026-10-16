@@ -53,8 +53,19 @@ accumulate. No overall bounded-memory claim is made.
 The broader registered request-lifetime diagnostic exits 1, including on an
 exact repeat with unchanged executable. A separately rewritten diagnostic
 passes, but changes how checks and recovery calls execute and cannot replace
-the original result. Minimal instrumentation of the original test is the next
-diagnostic step; the cause is not yet established.
+the original result.
+
+Post-closure diagnosis preserves the original expressions and execution order.
+It identifies the sole failing check at the final cancellation assertion:
+`Cancelled: Math rendering cancelled` occurs during the UTF-8 overload's
+pre-session conversion, rather than inside the native session. All preceding
+checks and wrapper/job counts pass. The fixture incorrectly requires the
+in-flight `session is unusable` message for this earlier cancellation.
+Preparing UTF-16 before starting the stop thread keeps the strict in-flight
+expectation and passes in a separate run against the existing Gate177 IFCs
+and libraries. Recovery renders also now execute independently of accumulated
+test failures. This is diagnostic evidence, not a new shared gate result; the
+registered Gate177 failure and exact-repeat evidence remain preserved.
 
 Executable/report SHA-256 values:
 
