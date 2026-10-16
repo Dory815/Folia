@@ -4,6 +4,13 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
+After Gate209, the metadata-only property-copy correction is applied and the
+focused Host build plus five filter groups pass (68 assertions, 2,161 unchanged
+inputs). This closes duplicate native getter reads in the covered copy paths;
+it does not restore or prove public SVG parity. The original G209 Core also
+completes under a debugger with ordinary test failures and no AV, so the
+direct-run access violation remains unlocated. See `evidence/copy-metadata-g209.md`.
+
 Latest completed evaluation (2026-10-16 local, Gate209): all 61 targets compile
 with 2,160 unchanged inputs through evaluation. The native MML constructor
 now converts its actual lexical factory, attributes and children to canonical
