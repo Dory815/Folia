@@ -4,7 +4,22 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed evaluation (2026-10-16 local, Gate207): all 61 targets compile
+Latest completed evaluation (2026-10-16 local, Gate209): all 61 targets compile
+with 2,160 unchanged inputs through evaluation. The native MML constructor
+now converts its actual lexical factory, attributes and children to canonical
+Context values. Rendering progresses past Gate207's conversion exception,
+but still fails: complete SVG/errors match 0/150, Common layout 0/75, BBoldx
+text SVG 0/6, and 4/20 checkpoint comparisons pass. Core still ends with
+0xC0000005; Host, Parser, Foundation and all three lifetime drivers fail.
+Regexp and LinkedList pass. Static tracing identifies a missing inherited
+AbstractFactory prototype on MML factories: getNodeClass is undefined during
+the shared initializer. Correcting that boundary remains pending. Gate208
+failed to compile its new tests; the explicit Descriptor setter argument and
+FactoryArgs overload corrections are verified by Gate209's build. See
+`evidence/shared-gates208-209.md` and
+`evidence/factory-context-base-contract.md`. Folia is not integrated.
+
+Earlier completed evaluation (2026-10-16 local, Gate207): all 61 targets compile
 with 2,157 unchanged inputs, but the shared MML work has runtime regressions.
 Complete SVG/errors match 0/150, Common layout 0/75, BBoldx text SVG 0/6,
 and 4/20 checkpoint comparisons pass. Core ends with 0xC0000005; Host,
