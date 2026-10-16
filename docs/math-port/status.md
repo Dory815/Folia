@@ -4,7 +4,21 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed evaluation (2026-10-16 local, Gate192): all 60 targets compile
+Latest completed evaluation (2026-10-16 local, Gate193): all 60 targets compile
+with 2,119 unchanged inputs. Complete public SVG/errors remain 150/150,
+API 9/9 and Common layout 75/75; all 25 captures complete and 18/20 comparisons
+pass. Host and Foundation now pass. Core retains three failing tests and
+Parser one; a missing dormant-environment guard and two incorrect fixture
+module lookups are corrected after evaluation, not yet rebuilt. TagInfo
+retirement passes its focused tests and all 24 parser identity families stay
+stable through 66 plain renders. The older lifetime drivers pass with their
+180-second allowance; the stronger mixed driver still fails. Source review
+identifies orphan Label placeholders, while the extra Lite identity belongs
+to a pre-existing session element and needs named-record verification.
+Shared MML algorithms and broader package work remain candidates. See
+`evidence/shared-gate193.md`. Folia is not integrated.
+
+Earlier completed evaluation (2026-10-16 local, Gate192): all 60 targets compile
 with 2,114 unchanged inputs. Complete public SVG/errors remain 150/150,
 API 9/9 and Common layout 75/75; all 25 captures complete and 18/20 comparisons
 pass. Foundation now passes. Core's seven raw Stack failures reduce to two,
