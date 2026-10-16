@@ -9,7 +9,11 @@ focused Host build plus five filter groups pass (68 assertions, 2,161 unchanged
 inputs). This closes duplicate native getter reads in the covered copy paths;
 it does not restore or prove public SVG parity. The original G209 Core also
 completes under a debugger with ordinary test failures and no AV, so the
-direct-run access violation remains unlocated. See `evidence/copy-metadata-g209.md`.
+direct-run access violation remained unlocated at that point. A subsequent
+controlled run reproduces its null read at executable RVA 0x22A6F19 and captures
+a 61 KiB minidump; source-stack analysis is still pending. Ordinary Tree-call
+dispatch is also corrected and its focused Host test passes seven assertions
+with 2,163 unchanged inputs. See `evidence/copy-metadata-g209.md`.
 
 Latest completed evaluation (2026-10-16 local, Gate209): all 61 targets compile
 with 2,160 unchanged inputs through evaluation. The native MML constructor

@@ -49,3 +49,38 @@ a second-chance access violation, and no dump was produced. This does not
 explain or resolve Gate209's direct-run 0xC0000005. The exact executable was
 unchanged. Records are build/math-port/g209-core-crash-debugger/run.json and
 debug-events.log, with output in build/math-port/g209-debugger-run.log.
+
+## Subsequent Tree-call focused check and Core capture
+
+Root also applied the independently scoped ordinary Tree-call candidate
+99D352380DB67CF3216FCB4199ACB4B1A967E3749C076C40B25A498D61756235.
+Ordinary member invocation now calls the selected function directly, retaining
+its receiver and original Get point, without reading the function's own call
+property. Emitted explicit .call operations remain separate and observable.
+
+The Host build passed. The new focused test initially opened a CRT runtime
+dialog and timed out. Root added temporary stage output to establish that the
+body reached the copied-constructor case; the callback then indexed its missing
+second argument. Root corrected the test to supply Undefined when that argument
+is omitted, matching Source call semantics, and removed the temporary output.
+The subsequent Host build and exact Tree-call test passed all seven assertions,
+with 2,163 unchanged captured inputs and the original G209 Core executable
+unchanged. The prior five metadata groups also passed after the production
+Tree-call change. The authoritative final Tree record is
+build/math-port/tree-ordinary-focused-g209-r3-result.json.
+
+A controlled debugger child run with _NO_DEBUG_HEAP=1 reproduced the G209 Core
+access violation, twice at the same exact executable RVA 0x22A6F19, reading
+address zero. The first minidump attempt failed because the helper had used
+default eight-byte struct packing. Root checked the installed Windows SDK's
+minidumpapiset.h: it declares MINIDUMP_EXCEPTION_INFORMATION under pshpack4.
+After correcting the helper to size 16 and pointer/BOOL offsets 4/12, the second
+run produced a 62,528-byte MiniDumpNormal with an ExceptionStream. The exact
+executable SHA stayed unchanged. No registry setting or binary copy was used.
+
+The dump is build/math-port/g209-core-crash-original-heap-packed/dumps/
+FoliaTests-43708-20261016-062834-394.dmp. The matching debug-events.log records
+the process, thread, instruction pointer, module base, RVA and read target.
+The old unwind_dump helper prints stack addresses among its frames and cannot
+be treated as a reliable source stack. The source function and actual cause
+remain under investigation; the heap-setting experiment is not a diagnosis.
