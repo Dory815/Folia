@@ -75,6 +75,30 @@ Required observations include:
 - Constructors preserve new/call behavior, inferred rows, static defaults,
   native ownership and every existing descriptor/error-order test.
 
+## Constructor parameters and property keys
+
+The constructor is a distinct Source body. Pinned `MmlNode.js` uses its local
+`factory` parameter for inferred-row creation and both class-default lookups.
+It does not replace that parameter with a read of `this.factory`, even though
+the shared Tree constructor assigns the instance field first. Therefore the
+shared initializer takes the exact raw constructor factory argument explicitly.
+The actual class descriptor still selects the native allocator independently.
+A receiver factory setter/getter may disagree with the argument; test that the
+constructor retains the parameter while later ordinary methods read the field.
+Earlier Root guidance requiring instance factory Gets in this constructor was
+incorrect and is superseded by this pinned-CJS requirement.
+
+Every property-key conversion uses ToPropertyKey, including an object whose
+string-hint primitive conversion returns a Symbol. Native Symbol entries share
+the existing PropertyStorage owner; live Context bindings must also support
+Symbol reads, writes, own enumeration and inherited lookup. A native property
+record whose prototype is a live Context record must retain those keys. Neither
+string coercion nor a silent empty Symbol list is a valid substitute.
+
+Attributes construction must retain its separate argument semantics:
+`Object.create(global)` requires an object or null, while `Object.assign` permits
+nullish sources. Do not normalize missing global defaults to an empty object.
+
 Root owns the formal architecture, source integration and shared build.
 Luna owns candidate implementation and its method/source mapping; the
 independent reviewer checks exact hashes and reachable witnesses. Candidate
