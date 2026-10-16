@@ -4,7 +4,18 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed evaluation (2026-10-16 local, Gate193): all 60 targets compile
+Latest completed evaluation (2026-10-16 local, Gate196): all 60 targets compile
+with 2,125 unchanged inputs, but runtime evaluation fails. Parser, Regexp and
+LinkedList pass; Host, public SVG/API and Renderer lifetime drivers exit
+abnormally. Core is explicitly terminated at its CRT runtime-error dialog.
+The minimal real Renderer diagnostic completes five renders and fails during
+destruction. New RegExp binding teardown accesses Context during its own
+storage destruction; that lifetime boundary is being corrected. Gates194
+and 195 preserve their test-compilation failures. No public parity or owner
+acceptance is claimed for Gate196. See `evidence/shared-gates194-196.md`.
+Folia is not integrated.
+
+Earlier completed evaluation (2026-10-16 local, Gate193): all 60 targets compile
 with 2,119 unchanged inputs. Complete public SVG/errors remain 150/150,
 API 9/9 and Common layout 75/75; all 25 captures complete and 18/20 comparisons
 pass. Host and Foundation now pass. Core retains three failing tests and

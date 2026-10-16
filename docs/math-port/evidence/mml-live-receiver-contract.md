@@ -21,6 +21,13 @@ exact receiver Value and current descriptors. The view stores no field values
 or second semantic tree. Each Source expression performs its read at that
 point; the view must not pre-read or cache arity, kind, factory or attributes.
 
+The private native operation carrier may include an exact raw Context Value
+alongside Property, ChildValue and selected-callable tokens. This is a finite
+carrier for foreign primitive Get/call results and preserves their identity;
+it does not expand the shared Property API with std::any or own another set
+of fields. A Source callback which may be retained must capture its receiver
+view by value, never a reference to the current operation's stack frame.
+
 MmlNodeContextFields remains the sole field bridge for adopted products.
 Class descriptors own allocation of exactly one real native product and its
 actual constructor identity. Neither allocator nor method entry may require
