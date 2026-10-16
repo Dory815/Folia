@@ -4,6 +4,16 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
+Current compilation work (Gates199–205): the shared MML/Tree constructor and
+operation-view packet is applied to the working tree, but has not compiled or
+passed native acceptance. All seven builds ended with compiler errors and
+unchanged frozen inputs; no old executables were used to claim results for
+these gates. Root corrected template lookup, UTF-16/key conversions, Symbol
+copy call sites, and MML container/owner interfaces. Gate205 still reports the
+Common factory base-owner signature and MML test type errors. Empty-node
+constructors and Array/Latex methods remain separate, unaccepted candidates.
+See `evidence/shared-gates199-205.md`.
+
 Latest completed evaluation (2026-10-16 local, Gate198): all 60 targets compile
 with 2,127 unchanged inputs through evaluation. Core, Host, Parser, Foundation,
 Regexp and LinkedList all pass. Complete public SVG/errors match 150/150,
