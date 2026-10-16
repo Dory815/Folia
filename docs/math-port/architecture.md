@@ -81,6 +81,10 @@ does not preserve MathJax's architecture.
 
 ## 3. File mapping and ownership
 
+The pending complete Tree/MML increment must satisfy the root-frozen
+single-algorithm/live-receiver contract in
+`evidence/mml-live-receiver-contract.md`; its current candidate is unaccepted.
+
 Target names follow the upstream tree, translated to snake_case. Each upstream
 behavior-bearing file has an individually reviewable target and provenance.
 Small registration/data-only files can be generated together only when the
