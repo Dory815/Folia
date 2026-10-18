@@ -91,6 +91,7 @@ target_compile_features(folia_math PUBLIC cxx_std_23)
 set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
 target_include_directories(folia_math PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/srell)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+    src/math/util/runtime_modules.ixx
     src/math/cancellation.ixx
     src/math/core/math_item.ixx
     src/math/core/math_item_host.ixx
