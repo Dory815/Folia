@@ -8,11 +8,21 @@ class ContextPropertyBindings {
     struct State;
     std::shared_ptr<State> state_;
 public:
+    using PropertyToObject = std::function<std::optional<options::ObjectRef>(const Property&)>;
+    using ObjectToProperty = std::function<std::optional<Property>(options::ObjectRef)>;
     ContextPropertyBindings(options::Context&,OptionFunctionBindings&);
     ~ContextPropertyBindings();
     ContextPropertyBindings(const ContextPropertyBindings&)=delete;
     ContextPropertyBindings& operator=(const ContextPropertyBindings&)=delete;
+    options::Context& context() const;
     Property from(options::Value);
     options::Value to(const Property&)const;
+    // Register a canonical projection for one existing native Property graph.
+    // The callbacks must return the actual Context object / original Property
+    // handle; this facility never copies or fabricates a wrapper object.
+    void registerProjection(PropertyToObject, ObjectToProperty);
+    // Implements the explicit Source Object.assign({}, source) boundary as a
+    // real new Context-owned record, retaining bound nested identities.
+    Property copyOwnEnumerableProperties(const Property& source);
 };
 }

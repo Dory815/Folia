@@ -2,6 +2,7 @@
 // Copyright (c) 2017-2026 The MathJax Consortium.
 // MathJax source is Apache-2.0 licensed; see ../LICENSE-MathJax.txt.
 module folia.math.util.option_types;
+import folia.math.util.js_numeric_input;
 import std;
 #include "option_storage.hpp"
 
@@ -22,6 +23,34 @@ struct ArrayIteratorState {
 std::u16string index_key(std::uint32_t index) {
     const auto ascii = std::to_string(index);
     return std::u16string(ascii.begin(), ascii.end());
+}
+
+std::u16string ordinary_index_key(std::uint64_t index) {
+    const auto ascii = std::to_string(index);
+    return std::u16string(ascii.begin(), ascii.end());
+}
+
+double number_for_array_length(Context& context, const Value& value) {
+    if (const auto* object = std::get_if<ObjectRef>(&value.data)) {
+        (void)context.kind(*object);
+        // ToPrimitive(number) is deliberately performed through live property
+        // lookup and calls, so user getters and conversion methods retain their
+        // Source order and receiver.
+        for (const auto key : {u"valueOf", u"toString"}) {
+            const Value method = context.get(value, Key(key));
+            const auto* function = std::get_if<ObjectRef>(&method.data);
+            if (!function || context.kind(*function) != ObjectKind::function) continue;
+            const Value primitive = context.call(*function, value);
+            if (std::holds_alternative<ObjectRef>(primitive.data)) continue;
+            if (const auto* text = std::get_if<std::u16string>(&primitive.data))
+                return folia::math::js_input::number(*text);
+            return context.toNumber(primitive);
+        }
+        type_error(u"Cannot convert object to primitive value");
+    }
+    if (const auto* text = std::get_if<std::u16string>(&value.data))
+        return folia::math::js_input::number(*text);
+    return context.toNumber(value);
 }
 
 void require_array(Context& context, ObjectRef array) {
@@ -58,6 +87,44 @@ void register_method(Context& context, ObjectRef prototype, std::u16string name,
     const auto method = context.function(name, std::move(callable));
     context.define(method, Key(u"length"), Descriptor::data(Value(static_cast<double>(arity)), false, false, true));
     context.define(prototype, Key(std::move(name)), Descriptor::data(Value(method), true, false, true));
+}
+
+Value to_array_like_object(Context& context,Value receiver) {
+    if(std::holds_alternative<Undefined>(receiver.data)||
+       std::holds_alternative<Null>(receiver.data))
+        type_error(u"Array.prototype.unshift called on null or undefined");
+    if(const auto* object=std::get_if<ObjectRef>(&receiver.data)){
+        (void)context.kind(*object);
+        return *object;
+    }
+    ObjectRef prototype=context.intrinsics().objectPrototype;
+    if(std::holds_alternative<std::u16string>(receiver.data))
+        prototype=context.intrinsics().stringPrototype;
+    else if(std::holds_alternative<double>(receiver.data))
+        prototype=context.intrinsics().numberPrototype;
+    else if(std::holds_alternative<bool>(receiver.data))
+        prototype=context.intrinsics().booleanPrototype;
+    else if(std::holds_alternative<SymbolRef>(receiver.data))
+        prototype=context.intrinsics().symbolPrototype;
+    const ObjectRef boxed=context.objectWithPrototype(prototype);
+    context.payload(boxed)=receiver;
+    if(const auto* text=std::get_if<std::u16string>(&receiver.data)){
+        context.define(boxed,Key(u"length"),
+            Descriptor::data(Value(static_cast<double>(text->size())),false,false,false));
+        for(std::size_t index=0;index<text->size();++index)
+            context.define(boxed,Key(ordinary_index_key(index)),
+                Descriptor::data(Value(std::u16string(1,(*text)[index])),false,true,false));
+    }
+    return boxed;
+}
+
+std::uint64_t to_array_like_length(Context& context,const Value& receiver) {
+    constexpr double maximum=9007199254740991.0;
+    const double number=number_for_array_length(context,
+        context.get(receiver,Key(u"length")));
+    if(std::isnan(number)||number<=0)return 0;
+    if(number>=maximum)return static_cast<std::uint64_t>(maximum);
+    return static_cast<std::uint64_t>(std::floor(number));
 }
 } // namespace
 
@@ -216,6 +283,61 @@ void Context::initializeArrayIntrinsics() {
             return Undefined{};
         });
 
+    // Array.prototype.reduce is generic: it captures ToLength(receiver.length)
+    // once, then performs live HasProperty/Get operations over that range.
+    register_method(*this, state_->intrinsics.arrayPrototype, u"reduce", 1,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            if (std::holds_alternative<Undefined>(receiver.data) ||
+                std::holds_alternative<Null>(receiver.data))
+                type_error(u"Array.prototype.reduce called on null or undefined");
+
+            const Value raw_length = context.get(receiver, Key(u"length"));
+            const double number = number_for_array_length(context, raw_length);
+            constexpr double max_safe_integer = 9007199254740991.0;
+            const std::uint64_t length = std::isnan(number) || number <= 0
+                ? 0
+                : number >= max_safe_integer
+                    ? static_cast<std::uint64_t>(max_safe_integer)
+                    : static_cast<std::uint64_t>(std::floor(number));
+
+            const Value callback_value = arguments.empty()
+                ? Value(Undefined{}) : arguments.front();
+            const auto* callback = std::get_if<ObjectRef>(&callback_value.data);
+            if (!callback || context.kind(*callback) != ObjectKind::function)
+                type_error(u"callback is not a function");
+
+            std::uint64_t index = 0;
+            Value accumulator = Undefined{};
+            bool initialized = arguments.size() > 1;
+            if (initialized) {
+                accumulator = arguments[1];
+            } else {
+                while (index < length) {
+                    const Key key(ordinary_index_key(index));
+                    if (context.has(receiver, key)) {
+                        accumulator = context.get(receiver, key);
+                        ++index;
+                        initialized = true;
+                        break;
+                    }
+                    ++index;
+                }
+            }
+            if (!initialized)
+                type_error(u"Reduce of empty array with no initial value");
+
+            for (; index < length; ++index) {
+                const Key key(ordinary_index_key(index));
+                if (!context.has(receiver, key)) continue;
+                const Value current = context.get(receiver, key);
+                const std::array<Value, 4> callback_arguments{
+                    accumulator, current, Value(static_cast<double>(index)), receiver
+                };
+                accumulator = context.call(*callback, Value(Undefined{}), callback_arguments);
+            }
+            return accumulator;
+        });
+
     register_method(*this, state_->intrinsics.arrayPrototype, u"map", 1,
         [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
             const auto* array=std::get_if<ObjectRef>(&receiver.data);
@@ -253,11 +375,60 @@ void Context::initializeArrayIntrinsics() {
             if (!array) type_error(u"Array method called on incompatible receiver");
             return Value(static_cast<double>(context.arrayPush(*array, arguments)));
         });
+    register_method(*this,state_->intrinsics.arrayPrototype,u"unshift",1,
+        [](Context& context,Value receiver,std::span<const Value> arguments)->Value{
+            const Value object=to_array_like_object(context,std::move(receiver));
+            const std::uint64_t length=to_array_like_length(context,object);
+            constexpr std::uint64_t maximum=9007199254740991ULL;
+            if(arguments.size()>maximum-length)
+                type_error(u"Array.prototype.unshift length exceeds the maximum safe integer");
+            const std::uint64_t itemCount=static_cast<std::uint64_t>(arguments.size());
+            if(itemCount>0){
+                std::uint64_t index=length;
+                while(index>0){
+                    const std::uint64_t fromIndex=index-1;
+                    const std::uint64_t toIndex=fromIndex+itemCount;
+                    const Key from(ordinary_index_key(fromIndex));
+                    const Key to(ordinary_index_key(toIndex));
+                    if(context.has(object,from))
+                        context.set(object,to,context.get(object,from));
+                    else if(const auto* target=std::get_if<ObjectRef>(&object.data))
+                        context.erase(*target,to);
+                    else
+                        type_error(u"Array.prototype.unshift receiver is not an object");
+                    --index;
+                }
+                for(std::uint64_t item=0;item<itemCount;++item)
+                    context.set(object,Key(ordinary_index_key(item)),
+                        arguments[static_cast<std::size_t>(item)]);
+            }
+            const std::uint64_t newLength=length+itemCount;
+            context.set(object,Key(u"length"),Value(static_cast<double>(newLength)));
+            return Value(static_cast<double>(newLength));
+        });
     register_method(*this, state_->intrinsics.arrayPrototype, u"pop", 0,
         [](Context& context, Value receiver, std::span<const Value>) -> Value {
             const auto* array = std::get_if<ObjectRef>(&receiver.data);
             if (!array) type_error(u"Array method called on incompatible receiver");
             return context.arrayPop(*array);
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"shift", 0,
+        [](Context& context, Value receiver, std::span<const Value>) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            return context.arrayShift(*array);
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"splice", 2,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            const auto* array = std::get_if<ObjectRef>(&receiver.data);
+            if (!array) type_error(u"Array method called on incompatible receiver");
+            const Value start = arguments.empty() ? Value(Undefined{}) : arguments[0];
+            const std::optional<Value> delete_count = arguments.empty()
+                ? std::optional<Value>(Value(0))
+                : arguments.size() == 1 ? std::nullopt : std::optional<Value>(arguments[1]);
+            const std::span<const Value> items = arguments.size() < 2
+                ? std::span<const Value>{} : arguments.subspan(2);
+            return Value(context.arraySplice(*array, start, delete_count, items));
         });
     register_method(*this, state_->intrinsics.arrayPrototype, u"join", 1,
         [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
@@ -283,6 +454,16 @@ void Context::initializeArrayIntrinsics() {
                 arguments.empty() ? Value(Undefined{}) : arguments[0],
                 arguments.size() < 2 ? Value(Undefined{}) : arguments[1]);
         });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"findIndex", 1,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            return context.arrayFindIndex(std::move(receiver),
+                arguments.empty() ? Value(Undefined{}) : arguments[0],
+                arguments.size() < 2 ? Value(Undefined{}) : arguments[1]);
+        });
+    register_method(*this, state_->intrinsics.arrayPrototype, u"concat", 1,
+        [](Context& context, Value receiver, std::span<const Value> arguments) -> Value {
+            return Value(context.arrayConcat(std::move(receiver), arguments));
+        });
 }
 
 ObjectRef Context::array(std::uint32_t length) {
@@ -295,9 +476,25 @@ ObjectRef Context::array(std::uint32_t length) {
     return result;
 }
 
+ObjectRef Context::nativeArray(NativeIndexedViewRef view) {
+    if(!view)type_error(u"Native indexed view is null");
+    const auto lengthDescriptor=view->lengthDescriptor();
+    if(lengthDescriptor.accessor||lengthDescriptor.enumerable||lengthDescriptor.configurable)
+        type_error(u"Native array length descriptor is invalid");
+    const auto* length=std::get_if<double>(&lengthDescriptor.value.data);
+    if(!length||!std::isfinite(*length)||*length<0||*length>4294967295.0||std::trunc(*length)!=*length||static_cast<std::uint32_t>(*length)!=view->length())
+        type_error(u"Native array length is invalid");
+    const auto result=allocate(ObjectKind::array,state_->intrinsics.arrayPrototype);
+    auto& target=record(result);
+    target.nativeRecordView=std::dynamic_pointer_cast<NativeRecordView>(view);
+    target.nativeIndexedView=std::move(view);
+    return result;
+}
+
 std::uint32_t Context::arrayLength(ObjectRef object) const {
     const auto& target = record(object);
     if (target.kind != ObjectKind::array) type_error(u"Array length requested from non-array");
+    if(target.nativeIndexedView)return target.nativeIndexedView->length();
     const auto found = std::find_if(target.properties.begin(), target.properties.end(), [](const auto& property) {
         const auto* name = std::get_if<std::u16string>(&property.first.data);
         return name && *name == u"length";

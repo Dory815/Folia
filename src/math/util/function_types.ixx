@@ -38,6 +38,7 @@ inline std::any invoke(const std::shared_ptr<FunctionListItem>& receiver,Functio
 inline bool isFalse(const std::any& result){
     if(const auto* b=std::any_cast<bool>(&result))return !*b;
     if(const auto* p=std::any_cast<Property>(&result))return *p==Property(false);
+    if(const auto* value=std::any_cast<options::Value>(&result))if(const auto* b=std::get_if<bool>(&value->data))return !*b;
     return false;
 }
 inline async::PromiseRef promise(const std::any& result,const async::QueueRef&queue){

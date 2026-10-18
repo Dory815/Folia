@@ -8,6 +8,13 @@ export namespace folia::math {
 // receiver. They are never copied into a pretend native class or dictionary.
 using FunctionReceiver=std::variant<Missing,NativeObjectRef,options::Value>;
 using FunctionArgs=std::span<const std::any>;
+// Handle to the original callable object in one Source Context. It deliberately
+// carries no body or Context pointer: invocation belongs to an explicit native
+// owner boundary, while Property conversion preserves this exact identity.
+struct ContextFunctionIdentity {
+    options::ObjectRef object;
+    bool operator==(const ContextFunctionIdentity&)const=default;
+};
 class FunctionBody {
     using Callback=std::function<std::any(const FunctionReceiver&,FunctionArgs)>;
     std::shared_ptr<Callback> callback_;
@@ -24,6 +31,8 @@ public:
         return (*active)(receiver,args);
     }
 };
-struct Function {FunctionBody call;};
+// Source-visible metadata travels with the one canonical callback identity.
+struct FunctionSourceMetadata { std::u16string name; std::uint32_t length=0; };
+struct Function {FunctionBody call; std::optional<FunctionSourceMetadata> sourceMetadata;};
 using FunctionRef=std::shared_ptr<Function>;
 }

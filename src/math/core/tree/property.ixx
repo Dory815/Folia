@@ -22,7 +22,8 @@ class PropertyList;
 class PropertyArray;
 struct Property {
     using Value = std::variant<Missing, PropertyNull, bool, double, std::string, BuiltinProperty,
-                               std::shared_ptr<PropertyStorage>, FunctionRef, options::SymbolRef>;
+                               std::shared_ptr<PropertyStorage>, FunctionRef, ContextFunctionIdentity,
+                               options::SymbolRef>;
     Value value = Missing{};
     Property() = default;
     Property(Missing v) : value(v) {}
@@ -37,6 +38,7 @@ struct Property {
     Property(FunctionRef v) : value(v) {
         if(!v)throw options::Exception("TypeError",u"Native callable property is null");
     }
+    Property(ContextFunctionIdentity v):value(std::move(v)){}
     Property(const PropertyList& v);
     Property(const PropertyArray& v);
     bool missing() const { return std::holds_alternative<Missing>(value); }
@@ -50,16 +52,41 @@ struct PropertyRecordBinding {
     virtual Property getOwn(std::string_view)=0;
     virtual bool has(std::string_view)const=0;
     virtual bool hasOwn(std::string_view)const=0;
+    // Descriptor metadata must be inspectable without retrieving the value.
+    // Most typed owners expose only enumerable own properties; Context-backed
+    // records override these methods to preserve the current descriptor flags.
+    virtual bool ownPropertyEnumerable(std::string_view name)const{return hasOwn(name);}
     virtual void set(std::string_view,Property)=0;
     virtual void setOwn(std::string_view,Property)=0;
     virtual void erase(std::string_view)=0;
+    // Symbol properties are part of the same record owner. These methods are
+    // separate from string-key enumeration (Object.keys) and preserve the
+    // exact Symbol identity used by Reflect/assign operations.
+    virtual Property getSymbol(options::SymbolRef){return Missing{};}
+    virtual Property getOwnSymbol(options::SymbolRef){return Missing{};}
+    virtual bool hasSymbol(options::SymbolRef)const{return false;}
+    virtual bool hasOwnSymbol(options::SymbolRef)const{return false;}
+    virtual bool ownSymbolEnumerable(options::SymbolRef symbol)const{return hasOwnSymbol(symbol);}
+    virtual void setSymbol(options::SymbolRef,Property){throw options::Exception("Unimplemented",u"This live property owner does not support Symbol keys");}
+    virtual void setOwnSymbol(options::SymbolRef,Property){throw options::Exception("Unimplemented",u"This live property owner does not support Symbol keys");}
+    virtual void eraseSymbol(options::SymbolRef){throw options::Exception("Unimplemented",u"This live property owner does not support Symbol keys");}
+    virtual std::vector<options::SymbolRef> symbolKeys()const{return {};}
     virtual std::vector<std::string> keys()const=0;
+    // Full own-key enumeration is distinct from Object.keys/Object.assign.
+    // Native Context projections need all descriptor keys, including
+    // non-enumerable Symbols, while PropertyList::keys remains string-only.
+    virtual std::vector<std::string> ownStringKeys()const{return keys();}
+    virtual std::vector<options::SymbolRef> ownSymbolKeys()const{return symbolKeys();}
     virtual Property prototype()const=0;
-    virtual Property primitive(bool)=0;
+    virtual Property primitive(options::PrimitiveHint)=0;
+    // Source Object.assign copy semantics. Context-backed records override this
+    // to preserve enumerable symbol keys as well as string keys.
+    virtual PropertyList copyEnumerableOwn();
 };
 struct PropertyStorage {
     std::shared_ptr<PropertyRecordBinding> binding;
     std::vector<std::pair<std::string, Property>> entries;
+    std::vector<std::pair<options::SymbolRef, Property>> symbolEntries;
     std::shared_ptr<PropertyStorage> prototype;
     bool objectPrototype = true;
     bool arrayPrototype = false;
@@ -147,12 +174,31 @@ public:
         for (const auto& [key, value] : entries) setOwn(key, value);
     }
     static PropertyList withPrototype(const PropertyList& parent) {
-        if(parent.storage_->binding)throw options::Exception("Unimplemented",u"Mixed native/Context Property prototype requires a canonical receiver binding");
+        // PropertyStorage is already the canonical handle for either a native
+        // record or a Context-backed record. Keeping that handle as the
+        // prototype preserves Source Object.create semantics without copying
+        // entries or manufacturing a second property object.
         PropertyList result;
         result.storage_->prototype = parent.storage_;
         return result;
     }
+    static PropertyList withNullPrototype() {
+        PropertyList result;
+        result.storage_->objectPrototype=false;
+        return result;
+    }
     Property get(std::string_view name) const { return resolve(storage_, name); }
+    Property getKey(const Property& name) const {
+        if(const auto* symbol=std::get_if<options::SymbolRef>(&name.value)){
+            for(auto current=storage_;current;current=current->prototype){
+                if(current->binding){if(current->binding->hasOwnSymbol(*symbol))return current->binding->getOwnSymbol(*symbol);continue;}
+                for(const auto& [key,value]:current->symbolEntries)if(key==*symbol)return value;
+            }
+            return Missing{};
+        }
+        if(const auto* text=std::get_if<std::string>(&name.value))return get(*text);
+        throw options::Exception("TypeError",u"Property key must be converted with ToPropertyKey");
+    }
     Property getOwn(std::string_view name) const {
         if(storage_->binding)return storage_->binding->getOwn(name);
         if(storage_->array){if(name=="length")return static_cast<double>(storage_->arrayValues.size());if(auto i=arrayIndex(name);i&&*i<storage_->arrayValues.size()&&storage_->arrayPresent[*i])return storage_->arrayValues[*i];}
@@ -198,6 +244,16 @@ public:
         }
         storage_->entries.emplace_back(name, std::move(value));
     }
+    void setOwnKey(const Property& name,Property value){
+        if(const auto* symbol=std::get_if<options::SymbolRef>(&name.value)){
+            if(storage_->binding){storage_->binding->setOwnSymbol(*symbol,std::move(value));return;}
+            for(auto& [key,old]:storage_->symbolEntries)if(key==*symbol){old=std::move(value);return;}
+            storage_->symbolEntries.emplace_back(*symbol,std::move(value));
+            return;
+        }
+        if(const auto* text=std::get_if<std::string>(&name.value)){setOwn(*text,std::move(value));return;}
+        throw options::Exception("TypeError",u"Property key must be converted with ToPropertyKey");
+    }
     void set(std::string_view name, Property value) {
         if(storage_->binding){storage_->binding->set(name,std::move(value));return;}
         // The inherited Object.prototype __proto__ setter ignores scalar values.
@@ -237,6 +293,15 @@ public:
         }
         setOwn(name, std::move(value));
     }
+    void setKey(const Property& name,Property value){
+        if(const auto* symbol=std::get_if<options::SymbolRef>(&name.value)){
+            if(storage_->binding){storage_->binding->setSymbol(*symbol,std::move(value));return;}
+            setOwnKey(name,std::move(value));
+            return;
+        }
+        if(const auto* text=std::get_if<std::string>(&name.value)){set(*text,std::move(value));return;}
+        throw options::Exception("TypeError",u"Property key must be converted with ToPropertyKey");
+    }
     void erase(std::string_view name) {
         if(storage_->binding){storage_->binding->erase(name);return;}
         if(storage_->array){if(name=="length")return;if(auto i=arrayIndex(name);i&&*i<storage_->arrayValues.size()){storage_->arrayValues[*i]=Missing{};storage_->arrayPresent[*i]=false;}}
@@ -256,8 +321,35 @@ public:
     }
     void assign(const PropertyList& source) {
         for (const auto& key : source.keys()) set(key, source.getOwn(key));
+        for (const auto& key : source.symbolKeys())setKey(Property(key),source.getKey(Property(key)));
+    }
+    std::vector<options::SymbolRef> symbolKeys()const{
+        if(storage_->binding)return storage_->binding->symbolKeys();
+        std::vector<options::SymbolRef> result;
+        result.reserve(storage_->symbolEntries.size());
+        for(const auto& [key,value]:storage_->symbolEntries)result.push_back(key);
+        return result;
+    }
+    // Object.assign({}, source) as used by Tree.Node.copy: copy enumerable
+    // own string keys and symbols from this same storage owner. Bound Context
+    // records retain descriptors, getters and nested identities in place.
+    PropertyList copyOwnEnumerableProperties()const{
+        if(storage_->binding)return storage_->binding->copyEnumerableOwn();
+        PropertyList result;
+        const auto ownKeys=keys();
+        for(const auto& key:ownKeys){
+            if(hasOwn(key))result.setOwn(key,getOwn(key));
+        }
+        for(const auto& key:symbolKeys())result.setOwnKey(Property(key),getKey(Property(key)));
+        return result;
     }
 };
+inline PropertyList PropertyRecordBinding::copyEnumerableOwn(){
+    PropertyList result;
+    const auto ownKeys=keys();
+    for(const auto& key:ownKeys)if(hasOwn(key))result.set(key,getOwn(key));
+    return result;
+}
 inline Property::Property(const PropertyList& v) : value(v.storage_) {}
 
 // Native array storage in the same Property graph as ordinary property objects.

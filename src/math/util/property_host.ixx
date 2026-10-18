@@ -5,6 +5,7 @@ import folia.math.core.tree.factory_types;
 import folia.math.util.js_number;
 import folia.math.util.js_numeric_input;
 import folia.math.util.utf16;
+import folia.math.cancellation;
 import std;
 export namespace folia::math::property_host {
 [[noreturn]] inline void typeError(std::string_view message){throw tree::FactoryError("TypeError",std::u16string(message.begin(),message.end()));}
@@ -21,6 +22,7 @@ inline bool nullish(const Property& p){return p.missing()||std::holds_alternativ
 inline std::string debugText(std::u16string_view text){
     std::string out;
     for(auto cp:utf16::codePoints(text)){
+        cancellation::checkpoint(cancellation::CheckpointStage::Serialization);
         if(cp<=0x7f)out.push_back(static_cast<char>(cp));
         else if(cp<=0x7ff){out.push_back(static_cast<char>(0xc0|(cp>>6)));out.push_back(static_cast<char>(0x80|(cp&63)));}
         else if(cp<=0xffff){out.push_back(static_cast<char>(0xe0|(cp>>12)));out.push_back(static_cast<char>(0x80|((cp>>6)&63)));out.push_back(static_cast<char>(0x80|(cp&63)));}
@@ -32,6 +34,7 @@ inline std::u16string text(std::string_view bytes){
     // surrogate sequence. This is not a permissive external input decoder.
     std::u16string out;
     for(std::size_t i=0;i<bytes.size();){
+        cancellation::checkpoint(cancellation::CheckpointStage::TeX);
         auto lead=static_cast<unsigned char>(bytes[i]);
         std::size_t n=lead<0x80?1:lead<0xe0?2:lead<0xf0?3:4;
         if(n>bytes.size()-i)typeError("Invalid native string encoding");
@@ -64,13 +67,13 @@ inline std::u16string arrayString(Property receiver){
         }else out+=string(value);
     }return out;
 }
-inline Property primitive(const Property& p,bool stringHint){
+inline Property primitive(const Property& p,options::PrimitiveHint hint){
     if(auto storage=std::get_if<std::shared_ptr<PropertyStorage>>(&p.value);storage&&*storage&&(*storage)->binding)
-        return (*storage)->binding->primitive(stringHint);
+        return (*storage)->binding->primitive(hint);
     if(p==Property(BuiltinProperty::arrayPrototype))return "";
     if(p==Property(BuiltinProperty::numberPrototype))return 0;
     auto object=PropertyList::record(p);if(!object)return p;
-    for(auto key:stringHint?std::array{"toString","valueOf"}:std::array{"valueOf","toString"}){
+    for(auto key:hint==options::PrimitiveHint::stringHint?std::array{"toString","valueOf"}:std::array{"valueOf","toString"}){
         auto method=object->get(key);auto fn=std::get_if<BuiltinProperty>(&method.value);if(!fn)continue;
         switch(*fn){
         case BuiltinProperty::toString:return PropertyArray::array(p)?"[object Array]":"[object Object]";
@@ -91,6 +94,10 @@ inline Property primitive(const Property& p,bool stringHint){
         }
     }typeError("Cannot convert native object to primitive value");
 }
+inline Property primitive(const Property& p,bool stringHint){
+    return primitive(p,stringHint?options::PrimitiveHint::stringHint:options::PrimitiveHint::numberHint);
+}
+options::Value add(options::Context&,const options::Value&,const options::Value&);
 inline std::u16string string(const Property& input){
     auto p=primitive(input,true);
     if(p.missing())return u"undefined";
@@ -127,7 +134,9 @@ inline Property get(const Property& value,std::string_view key){
     if(value.missing()||std::holds_alternative<PropertyNull>(value.value))typeError("Cannot read property of null or undefined");
     // This packet binds callable values, not a general function-object host.
     // A missing host must not silently return Object.prototype metadata.
-    if(std::holds_alternative<FunctionRef>(value.value))typeError("Native callable property evaluation is unbound");
+    if(std::holds_alternative<FunctionRef>(value.value)||
+       std::holds_alternative<ContextFunctionIdentity>(value.value))
+        typeError("Native callable property evaluation is unbound");
     if(auto object=PropertyList::record(value))return object->get(key);
     std::uint32_t index=0;auto [end,error]=std::from_chars(key.data(),key.data()+key.size(),index);
     bool numeric=!key.empty()&&(key.size()==1||key.front()!='0')&&error==std::errc{}&&end==key.data()+key.size()&&index!=0xFFFFFFFFU;

@@ -7,9 +7,17 @@ struct Record {
     std::optional<ObjectRef> prototype;
     std::vector<std::pair<Key,Descriptor>> properties;
     std::vector<std::pair<Key,NativeDataFieldRef>> nativeFields;
+    std::vector<std::pair<Key,NativeDataFieldRef>> declaredNativeFields;
+    NativeIndexedViewRef nativeIndexedView;
+    NativeRecordViewRef nativeRecordView;
     NativeCall callable;
     NativeConstruct construct;
     std::any payload;
+    std::vector<std::pair<NativeOwnerPart,NativeOwnerTraceRef>> ownerTraces;
+    bool payloadMutableAliasEscaped = false;
+    // A retired record keeps its slot so stale ObjectRefs can never alias a
+    // later object. Context::record rejects it before exposing any field.
+    bool retired = false;
     std::u16string label;
 };
 struct ContextState {
