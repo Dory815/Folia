@@ -80,7 +80,7 @@ try {
     if (-not $env:RUSTFLAGS -or -not $env:RUSTFLAGS.Contains($StaticCrtFlag)) {
         $env:RUSTFLAGS = (($env:RUSTFLAGS, $StaticCrtFlag) -join ' ').Trim()
     }
-    & cargo build --locked --release --manifest-path $SvgNormalizerManifest --target-dir $SvgNormalizerTarget
+    & cargo build --jobs 4 --locked --release --manifest-path $SvgNormalizerManifest --target-dir $SvgNormalizerTarget
     if ($LASTEXITCODE -ne 0) {
         throw "SVG normalizer build failed with exit code $LASTEXITCODE"
     }

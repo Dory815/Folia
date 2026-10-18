@@ -56,13 +56,13 @@ if ($SkipAssetsDeployment) {
 }
 
 if ($Clean) {
-    & $MSBuild $Project /nologo /m /v:minimal /t:Clean @Properties
+    & $MSBuild $Project /nologo /m:4 /v:minimal /t:Clean @Properties
     if ($LASTEXITCODE -ne 0) {
         throw "Folia clean failed with exit code $LASTEXITCODE"
     }
 }
 
-& $MSBuild $Project /nologo /m /v:minimal /t:Build @Properties
+& $MSBuild $Project /nologo /m:4 /v:minimal /t:Build @Properties
 if ($LASTEXITCODE -ne 0) {
     throw "Folia build failed with exit code $LASTEXITCODE"
 }
