@@ -32,9 +32,11 @@ namespace winrt::Folia
         winrt::Microsoft::UI::Xaml::Controls::ColumnDefinition column{ nullptr };
         std::function<void()> render;
         winrt::event_token valueChangedToken{};
+        winrt::event_token scrollToken{};
         EditorFrameScheduler frameScheduler;
         bool attached = false;
         bool synchronizing = false;
+        bool scrollBarDragging = false;
         float width = 16.0f;
         float selectionAutoScrollVelocity = 0.0f;
         std::function<void()> updateSelectionDuringAutoScroll;
