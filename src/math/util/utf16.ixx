@@ -3,6 +3,7 @@
 // TextEncoder's required U+FFFD replacement at the external UTF-8 boundary.
 export module folia.math.util.utf16;
 export import folia.math.util.utf16_types;
+import folia.math.cancellation;
 import std;
 
 export namespace folia::math::utf16 {
@@ -29,6 +30,7 @@ std::vector<char32_t> codePoints(std::u16string_view text) {
     std::vector<char32_t> result;
     result.reserve(text.size());
     for (std::size_t i = 0; i < text.size();) {
+        cancellation::checkpoint(cancellation::CheckpointStage::Serialization);
         const auto point = codePointAt(text, i);
         if (!point) {
             break;
@@ -64,6 +66,7 @@ Input decode(std::string_view bytes) {
     };
 
     for (std::size_t i = 0; i < bytes.size();) {
+        cancellation::checkpoint(cancellation::CheckpointStage::TeX);
         const std::size_t start = i;
         const std::uint8_t lead = byte(i);
         std::uint32_t cp = 0;
