@@ -382,6 +382,9 @@
     <ClCompile Include="..\platform\windows\editor\interaction\editor_scroll_state.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\platform\windows\editor\interaction\editor_frame_pacing.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\core\query\search.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

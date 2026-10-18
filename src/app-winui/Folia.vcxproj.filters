@@ -117,6 +117,9 @@
     <ClCompile Include="..\platform\windows\editor\interaction\editor_scroll_state.ixx">
       <Filter>Platform Modules\Windows Editor</Filter>
     </ClCompile>
+    <ClCompile Include="..\platform\windows\editor\interaction\editor_frame_pacing.ixx">
+      <Filter>Platform Modules\Windows Editor</Filter>
+    </ClCompile>
     <ClCompile Include="..\core\parsing\block_source.ixx">
       <Filter>Core Modules\Parsing</Filter>
     </ClCompile>
