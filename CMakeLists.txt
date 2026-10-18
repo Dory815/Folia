@@ -91,6 +91,8 @@ target_compile_features(folia_math PUBLIC cxx_std_23)
 set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
 target_include_directories(folia_math PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/srell)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+    src/math/util/ordered_map_storage.ixx
+    src/math/util/map_bindings.ixx
     src/math/util/runtime_modules.ixx
     src/math/cancellation.ixx
     src/math/core/math_item.ixx
@@ -229,6 +231,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/option_types.ixx
     src/math/util/options.ixx)
   target_sources(folia_math PRIVATE
+    src/math/util/map_bindings.cpp
     src/math/cancellation.cpp
     src/math/core/math_item.cpp
     src/math/core/math_item_state.cpp
