@@ -94,6 +94,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/ordered_map_storage.ixx
     src/math/util/map_bindings.ixx
     src/math/util/runtime_modules.ixx
+    src/math/util/prioritized_list_source_operations.ixx
     src/math/cancellation.ixx
     src/math/core/math_item.ixx
     src/math/core/math_item_host.ixx
@@ -232,6 +233,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/options.ixx)
   target_sources(folia_math PRIVATE
     src/math/util/map_bindings.cpp
+    src/math/util/prioritized_list_source_operations.cpp
     src/math/cancellation.cpp
     src/math/core/math_item.cpp
     src/math/core/math_item_state.cpp
