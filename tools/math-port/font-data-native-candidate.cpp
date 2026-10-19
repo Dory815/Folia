@@ -90,11 +90,20 @@ void chars(std::ostream& out,const CharMapMap& maps){
 void glyphValue(std::ostream& out,const Property& glyph){
     property(out,glyph);
 }
-void glyphMap(std::ostream& out,const CharacterMap& map){
+void glyphMap(std::ostream& out,const CharacterMap& map,std::string_view variant){
     out.put('{');bool first=true;
     for(const auto&[cp,data]:map.own){
         const auto* ref=std::get_if<Property>(&data);
-        if(!ref)throw std::runtime_error("non-glyph data remains in fully loaded character table");
+        if(!ref){
+            const auto dynamic=std::get<DynamicFileRef>(data);
+            const auto* file=dynamic?std::get_if<std::u16string>(&dynamic->file.data):nullptr;
+            throw std::runtime_error("non-glyph data remains in fully loaded character table: variant="+
+                std::string(variant)+" cp="+std::to_string(cp)+" file="+
+                (file?property_host::debugText(*file):"<non-string>")+" promise="+
+                (dynamic&&dynamic->promise?"present":"absent")+" setup="+
+                (dynamic&&dynamic->setup?"present":"absent")+" failed="+
+                (dynamic&&dynamic->failed?"true":"false"));
+        }
         if(!first)out.put(',');first=false;out<<'"'<<cp<<"\":";
         glyphValue(out,*ref);
     }
@@ -102,7 +111,7 @@ void glyphMap(std::ostream& out,const CharacterMap& map){
 }
 void loadedGlyphTables(std::ostream& out,const FontVariantMap& variants){
     out.put('{');bool first=true;
-    for(const auto&[name,data]:variants){if(!first)out.put(',');first=false;quoted(out,name);out.put(':');glyphMap(out,*data.chars);}
+    for(const auto&[name,data]:variants){if(!first)out.put(',');first=false;quoted(out,name);out.put(':');glyphMap(out,*data.chars,name);}
     out.put('}');
 }
 void delimiterValue(std::ostream& out,const DelimiterData& d){
@@ -276,6 +285,7 @@ int main(){
     try {
     currentPhase="create options context and NewCM class";
     folia::math::options::Context context;
+    folia::math::regexp_host::RegExpBindings regexp(context);
     folia::math::OptionFunctionBindings functions(context);
     folia::math::ContextPropertyBindings properties(context,functions);
     FontDataContextBindings identities(context);
@@ -287,7 +297,15 @@ int main(){
     auto queue=std::make_shared<folia::math::async::JobQueue>();
     auto hostAnchor=std::make_shared<FontLoadHost>();
     auto& host=*hostAnchor;
-    host.queue=queue;host.asyncIsSynchronous=[] {return true;};
+    host.queue=queue;host.regexp=&regexp;host.asyncIsSynchronous=[] {return true;};
+    host.warn=[](const std::any& reason){
+        const auto* failure=std::any_cast<std::exception_ptr>(&reason);
+        if(!failure){std::cerr<<"font load warning: "<<reason.type().name()<<'\n';return;}
+        try{std::rethrow_exception(*failure);}
+        catch(const options::Exception& error){std::cerr<<"font load warning: "<<error.name<<": "<<property_host::debugText(error.message)<<'\n';}
+        catch(const std::exception& error){std::cerr<<"font load warning: "<<error.what()<<'\n';}
+        catch(...){std::cerr<<"font load warning: non-standard exception\n";}
+    };
     const auto registerFontClass=[&](std::shared_ptr<folia::math::fonts::NewcmFontDataClass> owner,
                                      std::optional<folia::math::options::ObjectRef> parent={}){
         auto constructor=identities.registerClass(u"MathJaxNewcmFont",owner,*hostAnchor,
@@ -296,7 +314,9 @@ int main(){
                folia::math::options::Value options){
                 return std::make_shared<folia::math::fonts::NewcmFontData>(
                     static_cast<folia::math::fonts::NewcmFontDataClass&>(actual),loadHost,cx,std::move(options));
-            },parent);
+            },parent,[&properties](const std::shared_ptr<FontData>& font,options::ObjectRef instance){
+                font->bindSourceIdentity(properties,instance);
+            });
         owner->bindSourceIdentity(properties,constructor,maps);
         owner->dynamicExtensions=folia::math::options::Value(maps.create());
         context.bindData(constructor,folia::math::options::Key(u"dynamicExtensions"),
@@ -319,7 +339,8 @@ int main(){
         moduleProvider->loadSync(font,file,std::move(request));
     };
     currentPhase="construct static font instance";
-    folia::math::fonts::NewcmFontData instance(newcm,host,context);
+    const auto instanceOwner=identities.resolve(context.construct(classConstructor));
+    auto& instance=*instanceOwner;
     std::cout<<"{\"tables\":[";
     table(std::cout,"@mathjax/mathjax-newcm-font",newcm.defaultChars,newcm.defaultDelimiters);
     auto extension=[&](std::string_view name,const auto& value){
@@ -346,13 +367,15 @@ int main(){
     // The original oracle uses a fresh second instance for dynamic loading.
     // This keeps the static instance observations independent of shard setup.
     currentPhase="construct dynamic font instance";
-    folia::math::fonts::NewcmFontData loaded(newcm,host,context);
+    const auto loadedOwner=identities.resolve(context.construct(classConstructor));
+    auto& loaded=*loadedOwner;
     const auto dynamicLatin=loaded.getChar("normal",0xc0);
     samples.seekp(-1,std::ios_base::end);samples<<",\"dynamicLatinAfterLoad\":";optionalGlyph(samples,dynamicLatin);
     currentPhase="load all dynamic font files synchronously";
     loaded.loadDynamicFilesSync();
     samples<<",\"dynamicFileSetup\":[";bool firstFile=true;for(const auto&[name,file]:newcm.dynamicFiles){if(!firstFile)samples.put(',');firstFile=false;samples<<"{\"name\":";quoted(samples,name);samples<<",\"failed\":"<<(file&&file->failed?"true":"false")<<'}';}samples<<"]}";
     std::cout<<"],\"samples\":"<<samples.str()<<",\"instance\":"<<instanceDump.str();
+    currentPhase="serialize fully loaded dynamic character tables";
     std::cout<<",\"dynamic\":{\"chars\":";loadedGlyphTables(std::cout,loaded.variants());
     std::cout<<",\"delimiters\":";delimiters(std::cout,loaded.delimiters());std::cout<<'}';
     currentPhase="merge font extension classes";

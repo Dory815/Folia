@@ -4,17 +4,32 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then verified
 Folia integration replacing the math QuickJS worker. Folia still uses that
 QuickJS path; complete renderer/application acceptance remains open.
 
-Latest verified snapshot: Gate239 passes the complete Host suite (436 tests /
-2,966 assertions), all 150 exact SVG comparisons and four event-position
-comparisons, with 2,200 registered inputs unchanged. The prototype/accessor and
-cross-adapter object identity regressions are fixed. See
-`evidence/shared-gate237.md` and `evidence/shared-gates238-239.md`.
+Latest verified results: Gate247 passes the complete Host suite (455 tests /
+3,185 assertions). Its 75 Common layout records exactly match an independently
+regenerated pinned Source capture with the same register-only event host as
+the SVG reference; the other 73 Source records remain unchanged. Gate251
+passes the full four-source static font tables plus all synchronous dynamic
+glyphs, options and delimiters. Each build uses at most four compile jobs;
+2,204 registered inputs remained unchanged through these observations.
+
+The private Renderer Source allocation domain, prototype getter lifecycle and
+canonical TeX error-formatter returns are committed and focused tests pass.
+General lifetime acceptance remains open: the new Context inventory shows
+live owner-bearing records growing from 2,745 to 39,801 over 192 requests,
+despite the narrower MML/Scene/Lite counts returning to baseline. Canonical
+Attributes, Map and property-projection retention need coordinated cleanup.
+See `evidence/context-record-inventory-g246.md`,
+`evidence/private-source-domain-g247.md`,
+`evidence/tex-format-error-context-g247.md` and
+`evidence/common-font-gates247-251.md`.
 
 Gate236's package comparisons pass 24/24, 23/23, 16/16 and 20/20; Gate233's
 nested SVG corpus passes 12/12. These remain bounded corpus results. Private
-Renderer allocation lifetime, current broader core/layout/font/platform checks,
-the per-file/method acceptance ledger and Folia integration are still required.
-The reviewed request-domain and WinUI C ABI integration packets are drafts.
+Renderer Context lifetime, current complete SVG/Scene and broader core/platform
+checks, font extension/provider checks, the per-file/method acceptance ledger
+and Folia integration are still required. The last complete 150-record SVG and
+four event-position pass remains Gate239; it is not a current-tree acceptance.
+The reviewed WinUI C ABI integration and actual-worker test packets are drafts.
 Mermaid remains paused. Gate238 was rejected after a draft agent changed the
 unregistered scope manifest; Root restored it and included it in Gate239's
 snapshot. No scope acceptance was advanced by that edit.
