@@ -34,6 +34,18 @@ ObjectRef parseOptionsContextIdentity(ParserRuntime& runtime,const ParseOptions&
     if(!identity)throw Exception("TypeError",u"ParseOptions has no canonical Context identity");
     return *identity;
 }
+void clearParseOptions(Context& context,Value receiver){
+    context.set(receiver,key(u"parsers"),Value(context.array()));
+    context.set(receiver,key(u"root"),Value(Null{}));
+    context.set(receiver,key(u"nodeLists"),Value(context.object()));
+    context.set(receiver,key(u"error"),Value(false));
+    const Value tags=context.get(receiver,key(u"tags"));
+    const Value resetTag=context.get(tags,key(u"resetTag"));
+    const auto* method=std::get_if<ObjectRef>(&resetTag.data);
+    if(!method||context.kind(*method)!=ObjectKind::function)
+        throw Exception("TypeError",u"this.tags.resetTag is not a function");
+    (void)context.call(*method,tags,{});
+}
 std::u16string variant(std::string_view name){
     return property_host::string(property_host::get(property_host::get(TexConstant,"Variant"),name));
 }
@@ -462,6 +474,12 @@ void ParseOptions::initializeModule(ParserRuntime& runtime){
     });
     cx.define(popParser,key(u"length"),Descriptor::data(Value(0),false,false,true));
     cx.define(prototype,key(u"popParser"),Descriptor::data(Value(popParser),true,true,true));
+    const ObjectRef clear=cx.function(u"",[](Context& context,Value receiver,std::span<const Value>){
+        clearParseOptions(context,std::move(receiver));
+        return Value(Undefined{});
+    });
+    cx.define(clear,key(u"length"),Descriptor::data(Value(0),false,false,true));
+    cx.define(prototype,key(u"clear"),Descriptor::data(Value(clear),true,true,true));
     const ObjectRef parserGetter=cx.function(u"get",[](Context& context,Value receiver,std::span<const Value>){
         const Value parsers=context.get(receiver,key(u"parsers"));
         return context.get(parsers,key(u"0"));
@@ -660,11 +678,9 @@ ParserShared<TexParser> ParseOptions::parser()const{
     return runtime_.parserIdentities.resolve(*object);
 }
 void ParseOptions::clear(){
-    parsers=runtime_.context().array();
-    root=PropertyNull{};
-    nodeLists=runtime_.context().object();
-    error=false;
-    shared(tags,u"tags")->resetTag();
+    Context& context=runtime_.context();
+    const ObjectRef self=parseOptionsContextIdentity(runtime_,*this);
+    clearParseOptions(context,Value(self));
 }
 void ParseOptions::addNode(Property property,mml::NodeValue node){
     Context& cx=runtime_.context();

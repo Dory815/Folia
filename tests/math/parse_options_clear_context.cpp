@@ -44,7 +44,7 @@ suite parseOptionsClearContext=[] {
         const auto reset=context.function(u"",[&](o::Context&,o::Value self,
                 std::span<const o::Value> args){
             expect(self==o::Value(tags)&&args.empty());
-            events.emplace_back(u"call:reset");return o::Value(o::Undefined{});
+            events.emplace_back(u"call:reset");return o::Value(99);
         });
         const auto resetGetter=context.function(u"",[&](o::Context&,o::Value self,
                 std::span<const o::Value>){
@@ -57,7 +57,9 @@ suite parseOptionsClearContext=[] {
         });
         context.define(receiver,u"tags",o::Descriptor::access(tagsGetter,std::nullopt));
         const auto clear=graph.clear();
-        expect(context.callMember(clear,receiver,{})==o::Value(o::Undefined{}));
+        expect(graph.clear()==clear);
+        const std::array<o::Value,2> ignoredArguments{o::Value(17),o::Value(u"ignored")};
+        expect(context.callMember(clear,receiver,ignoredArguments)==o::Value(o::Undefined{}));
         expect(static_cast<bool>(events==std::vector<std::u16string>{
             u"parsers",u"root",u"nodeLists",u"error",u"get:tags",u"get:reset",u"call:reset"}));
         expect(writes.size()==4u);
