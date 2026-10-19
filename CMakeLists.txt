@@ -154,11 +154,14 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/tree/factory_types.ixx
     src/math/core/tree/factory_class_map_owner.ixx
     src/math/core/tree/factory.ixx
+    src/math/core/tree/factory_context_bindings.ixx
     src/math/util/factory_context_field_views.ixx
     src/math/core/tree/node_factory.ixx
     src/math/core/tree/wrapper_factory.ixx
     src/math/core/tree/node_types.ixx
     src/math/core/tree/node_algorithms.ixx
+    src/math/core/tree/node_context_bindings.ixx
+    src/math/core/tree/node_context_classes.ixx
     src/math/core/tree/node.ixx
     src/math/core/tree/wrapper_types.ixx
     src/math/core/tree/wrapper.ixx
@@ -355,6 +358,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
 target_sources(folia_math PRIVATE
     src/math/util/option_array_iteration.cpp
     src/math/util/context_property_bindings.cpp
+    src/math/core/tree/node_context_classes.cpp
     src/math/util/option_iterator.cpp
     src/math/util/retries.cpp)
 
