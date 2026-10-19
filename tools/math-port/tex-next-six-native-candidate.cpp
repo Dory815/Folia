@@ -40,7 +40,7 @@ import folia.math.util.options;
 import folia.math.util.property_host;
 import folia.math.util.map_bindings;
 import folia.math.util.option_functions;
-#include "drafts/standalone_abstract_math_item.hpp"
+#include "support/standalone_abstract_math_item.hpp"
 #include "diagnostics/textmacros_session_state.hpp"
 
 namespace {

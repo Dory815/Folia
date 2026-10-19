@@ -27,7 +27,7 @@ import folia.math.util.property_host;
 import folia.math.util.map_bindings;
 import folia.math.util.option_functions;
 import folia.math.output.svg.native_document;
-#include "drafts/standalone_abstract_math_item.hpp"
+#include "support/standalone_abstract_math_item.hpp"
 
 namespace {
 namespace tex=folia::math::tex;

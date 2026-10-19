@@ -33,3 +33,14 @@ Renderer owner-level failure/retry are not fully covered.
 Mermaid work remains paused. Its separate checkpoint saves existing
 constructor observation sources and notes only; no additional implementation
 or testing is performed as part of saving them.
+
+## Subsequent validation
+
+The historical checkpoint above describes its original tree. Gates 233–236
+subsequently fixed Context teardown, passed all 17 MML allocator-owner tests,
+and reached 150/150 exact SVG matches plus event-position parity. Standalone
+package comparisons now pass 24/24, 23/23, 16/16, and 20/20. See
+`evidence/shared-gate233.md`, `evidence/shared-gate234.md`, and
+`evidence/shared-gates235-236.md` for the exact scope and remaining failures.
+The full host suite still has three assertion failures in two tests. Private
+Renderer allocation lifetime and Folia integration remain unfinished.

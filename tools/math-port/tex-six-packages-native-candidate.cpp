@@ -15,6 +15,9 @@ import folia.math.input.tex.map_handler;
 import folia.math.input.tex.token_map;
 import folia.math.input.tex.token;
 import folia.math.core.math_item;
+import folia.math.core.math_render_actions;
+import folia.math.core.math_document;
+#include "support/standalone_abstract_math_item.hpp"
 import folia.math.core.mml_tree.mml_factory;
 import folia.math.core.mml_tree.mml_node;
 import folia.math.core.find_math_host;
@@ -131,14 +134,13 @@ opts::Value strings(opts::Context& cx,std::span<const std::u16string_view> value
     const auto a=cx.array(static_cast<std::uint32_t>(values.size()));std::uint32_t i=0;
     for(auto s:values){const auto n=std::to_string(i++);cx.set(a,opts::Key(std::u16string(n.begin(),n.end())),opts::Value(std::u16string(s)));}return a;
 }
-struct Item final:core::AbstractMathItem{
-    Item(Property input,tex::TeX& jax):core::AbstractMathItem(std::move(input),core::MathInputJaxReference{&jax},Property(true)){}
-};
 struct Fixture{
     opts::Context cx;OptionFunctionBindings functions{cx};regexp_host::RegExpBindings regex{cx};Unicode16Normalization unicode;
     core::InputJaxModule input{cx};core::FindMathModule findMath{cx};tex::FindTeXModule findTeX{cx,findMath,regex};
-    tex::ParserRuntime runtime{cx,functions,regex,unicode,input,findTeX};mml::MmlFactory factory;
-    Fixture(){runtime.initializeParserRuntime();(void)tex::BasePackage::initializeModule(runtime);
+    tex::ParserRuntime runtime{cx,functions,regex,unicode,input,findTeX};
+    std::unique_ptr<standalone_math_item::Binding> mathItems;
+    std::unordered_map<const tex::TeX*,opts::ObjectRef> jaxIdentities;
+    Fixture(){runtime.initializeParserRuntime();mathItems=std::make_unique<standalone_math_item::Binding>(cx,runtime.properties,runtime);(void)tex::BasePackage::initializeModule(runtime);
         (void)tex::ActionConfiguration::initializeModule(runtime);(void)tex::BboxConfiguration::initializeModule(runtime);
         (void)tex::BraketConfiguration::initializeModule(runtime);(void)tex::CancelConfiguration::initializeModule(runtime);
         (void)tex::EncloseConfiguration::initializeModule(runtime);
@@ -146,10 +148,24 @@ struct Fixture{
         (void)tex::ColorConfiguration::initializeModule(runtime,std::move(maps));}
     tex::TeXRef jax(std::span<const std::u16string_view> packages){
         const auto config=cx.object();cx.set(config,opts::Key(u"packages"),strings(cx,packages));
-        const auto result=tex::TeX::make(runtime,config);result->setMmlFactory(&factory);return result;
+        auto result=tex::TeX::make(runtime,config);
+        auto factory=std::make_shared<mml::MmlFactory>();
+        result->setMmlFactory(factory);
+        const auto identity=runtime.texIdentities.find(result);
+        if(!identity)throw opts::Exception("TypeError",u"Standalone TeX owner has no canonical Source identity");
+        jaxIdentities.emplace(result.get(),*identity);
+        return result;
     }
     mml::NodeValue compile(std::u16string_view source,tex::TeX& jax){
-        Item item(Property(property_host::debugText(source)),jax);return jax.compile(item,core::MathDocumentReference{PropertyNull{}});
+        const auto inputIdentity=jaxIdentities.find(&jax);
+        if(inputIdentity==jaxIdentities.end())throw opts::Exception("TypeError",u"Standalone Source TeX has no canonical InputJax identity");
+        const std::array<opts::Value,3> arguments{
+            opts::Value(std::u16string(source)),opts::Value(inputIdentity->second),opts::Value(true)};
+        const opts::ObjectRef itemIdentity=cx.construct(mathItems->constructor(),arguments);
+        const auto* native=std::any_cast<std::shared_ptr<NativeObject>>(&cx.payload(itemIdentity));
+        const auto item=native?std::dynamic_pointer_cast<core::MathItem>(*native):nullptr;
+        if(!item)throw opts::Exception("TypeError",u"Standalone AbstractMathItem has no canonical native owner");
+        return jax.compile(*item,core::MathDocumentReference{Missing{}});
     }
 };
 struct Case{const char* name;std::u16string_view input;std::span<const std::u16string_view> packages;};
