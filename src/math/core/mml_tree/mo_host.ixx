@@ -9,7 +9,7 @@ export namespace folia::math::mml::host {
 template<class T>T moStatic(const std::function<T()>& f){if(!f)typeError("Missing native constructor static getter");return f();}
 inline std::shared_ptr<folia::math::Attributes> moAttributes(MmlNode& n){auto p=n.attributes();if(!p)typeError("Cannot read null MML attributes");return p;}
 inline NodeValue moChild(NodeValue value,std::size_t index){
-    const auto nodes=value.requireNode("childNodes")->childNodes;
+    const auto nodes=value.requireNode("childNodes")->childArrayOwner();
     if(!nodes)typeError("Cannot read properties of null (reading '"+std::to_string(index)+"')");
     return nodes->get(index);
 }

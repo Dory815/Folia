@@ -7,7 +7,7 @@ inline MmlNode& multiscriptNode(NodeValue value, std::string_view member) {
     return *value.requireNode(member);
 }
 inline Children multiscriptChildren(MmlNode& node) {
-    auto children = node.childNodes;
+    auto children = node.childArrayOwner();
     if (!children) typeError("Cannot read properties of null (reading 'length')");
     return children;
 }
@@ -16,7 +16,7 @@ inline NodeValue multiscriptSlot(const Children& children, std::size_t index) {
     return children->get(index);
 }
 inline MmlNode& multiscriptChild(MmlNode& node, std::size_t index, std::string_view member) {
-    return multiscriptNode(multiscriptSlot(node.childNodes,index),member);
+    return multiscriptNode(multiscriptSlot(node.childArrayOwner(),index),member);
 }
 inline void multiscriptInsert(const Children& children, std::size_t index, NodeValue value) {
     if (!children) typeError("Cannot read properties of null (reading 'splice')");

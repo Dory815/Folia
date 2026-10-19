@@ -8,7 +8,7 @@ inline MmlNode& tableNode(NodeValue value, std::string_view member) {
     return *value.requireNode(member);
 }
 inline Children tableChildren(MmlNode& node, std::string_view member="Symbol(Symbol.iterator)") {
-    const auto children = node.childNodes;
+    const auto children = node.childArrayOwner();
     if (!children) {
         if (member=="Symbol(Symbol.iterator)")
             typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");

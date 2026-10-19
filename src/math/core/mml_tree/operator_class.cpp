@@ -65,7 +65,7 @@ NodeValue adjustOperatorTeXclass(MmlNode& receiver, NodeValue prev) {
             if (!conditionParent.isNode()) break;
             if (!parentNode.isEmbellished()) break;
 
-            const auto conditionChildren = parentNode.childNodes;
+            const auto conditionChildren = parentNode.childArrayOwner();
             if (!conditionChildren) {
                 host::typeError("Cannot read properties of null (reading 'length')");
             }
@@ -87,9 +87,9 @@ NodeValue adjustOperatorTeXclass(MmlNode& receiver, NodeValue prev) {
         // Source captures the indexed array before evaluating the current
         // length expression, then indexes that captured handle.
         MmlNode& endpoint = host::moRequired(parent, "childNodes");
-        const auto indexedChildren = endpoint.childNodes;
+        const auto indexedChildren = endpoint.childArrayOwner();
         MmlNode& lengthReceiver = host::moRequired(parent, "childNodes");
-        const auto lengthChildren = lengthReceiver.childNodes;
+        const auto lengthChildren = lengthReceiver.childArrayOwner();
         if (!lengthChildren) {
             host::typeError("Cannot read properties of null (reading 'length')");
         }
