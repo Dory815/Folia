@@ -7,6 +7,29 @@ using folia::math::tex::MacroDefinition;
 using folia::math::tex::TexSessionState;
 
 suite native_tex_session_tests = [] {
+    "tex_color_session_lifetime_follows_jax_not_equation_or_tag_reset"_test = [] {
+        TexSessionState session;
+        expect(session.colorModel() == nullptr);
+        auto& colors = session.enableColor();
+        colors.defineColor(u"rgb", u"Stored", u"0,0.5,1");
+        auto first = session.beginEquation();
+        session.finishEquation(first);
+        auto second = session.beginEquation();
+        session.finishEquation(second);
+        expect(session.colorModel() == &colors);
+        expect(session.colorModel()->getColor(u"named", u"Stored") == u"#007fff");
+        session.resetTags();
+        expect(&session.enableColor() == &colors);
+        expect(std::as_const(session).colorModel()->getColor(u"named", u"Stored") == u"#007fff");
+
+        TexSessionState other;
+        expect(other.enableColor().getColor(u"named", u"Stored") == u"Stored");
+        auto copied = session;
+        session.colorModel()->defineColor(u"named", u"Stored", u"blue");
+        expect(copied.colorModel()->getColor(u"named", u"Stored") == u"#007fff");
+        expect(session.colorModel()->getColor(u"named", u"Stored") == u"blue");
+    };
+
     "macro_definition_owns_utf16_replacement_prefix_delimiters_and_default"_test = [] {
         MacroDefinition macro{u"\\frac{#1}{#2}", u"\\foo", {u"", u"+"}, 2, std::u16string{u"x\U0001F600"}};
         macro.validate();

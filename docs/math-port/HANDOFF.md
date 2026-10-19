@@ -26,6 +26,12 @@
   日志 `native-tex-node-registration-source.log`。构建18066已终态exit0；
   四个新UT+原八个factory UT共12项/281断言通过，`native-tex-node-registration-focused.log`。
   这是登记协议组件验收，非ParseOptions列表/完整TeX验收。
+- **ColorModel已推广并验证**：原color/util与constants去掉Context/Map投影，原类直接拥有
+  颜色定义；session optional<ColorModel>经enableColor/colorModel借用，跨equation/reset保留。
+  正式tex-color-source.cjs从C:\Windows通过68 constants/26行为及真实TeX compile/reset/隔离；
+  native-tex-color-source.log。构建49594终态exit0；原生color+session共10项/150断言通过，
+  native-tex-color-focused.log。旧color/configuration、color/methods、colortbl/methods明确待按
+  typed parser服务改造，不进入native依赖图，也不能作为旧路径fallback；本次不声称整包接通。
 - BaseItems原26类声明已交付并经Root要求修订，位置 `tex-base-items-contract/`。
   去掉旧TokenMap primary import、修EndEntry virtual和字段遗漏；Source公开数据现在直接
   用typed成员，去掉冗余getter/setter。Root四份header的:types已加同module CharacterMap forward。

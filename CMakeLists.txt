@@ -152,6 +152,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/tex_scanner.ixx
     src/math/input/tex/parse_util.ixx
     src/math/input/tex/node_factory.ixx
+    src/math/input/tex/color/constants.ixx
+    src/math/input/tex/color/util.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -197,6 +199,8 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/tex_scanner.cpp
     src/math/input/tex/parse_util.cpp
     src/math/input/tex/node_factory.cpp
+    src/math/input/tex/color/constants.cpp
+    src/math/input/tex/color/util.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
@@ -366,6 +370,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_error_utf8.cpp
     tests/math/native_tex_scanner.cpp
     tests/math/native_tex_node_registration.cpp
+    tests/math/native_tex_color.cpp
     tests/math/parse_util_native.cpp
     tests/math/mml_native_factory.cpp
     tests/math/mml_defaults.cpp

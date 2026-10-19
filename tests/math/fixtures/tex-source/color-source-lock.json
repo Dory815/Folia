@@ -1,0 +1,37 @@
+{
+  "version": "4.1.3",
+  "ts": {
+    "input/tex/color/ColorUtil.ts": "087fc20763a5f395a1f8a4e4316a279b7b1223517d593550b902659f88b02c01",
+    "input/tex/color/ColorConstants.ts": "c91774c43396c0ad898557253fca4eeb182465d7ca69ef54f038fd5bb3013a4e",
+    "input/tex/color/ColorConfiguration.ts": "1505cad4afa2c20e0bcc204c3f2254d7c3f601ab105ae09a4c5cd9a0b3426156",
+    "input/tex/color/ColorMethods.ts": "8cbdf4f4de6104c23e323ba34f73fcc9942c05f28ab1b6e9ffc8f4ef9772fc41",
+    "input/tex/Configuration.ts": "8184716579abf3ffa14c64413d276dab4fc721e3e3f43afb0cdccbe2ab782719",
+    "input/tex.ts": "151d3c73697bfbf874001549f6e0c80dbebeabba2b36ab50501a4ffd7753bf06",
+    "input/tex/ParseOptions.ts": "ab60a07dbb24040c0fb9bd67b942755ffc5b0b18980abf1938736d8d90b22209",
+    "input/tex/base/BaseConfiguration.ts": "578d2c6b03f2f3e902476a0b73a5323b12262215fcbdc831a1135c1d9c1737ad",
+    "core/MathDocument.ts": "e5ed39988e00cf896b60c20f1c25aa5a21d33fff52f81caece2504c4e4bfd3e7",
+    "core/MathItem.ts": "c1c7308320ae15514fd1114c3f94642a4e8a8268bfe6f68192e8a557829626ce",
+    "adaptors/liteAdaptor.ts": "6aded576671ae8cf4b1146cc82c793628fa593abdc00d05e3e8880c53fe6a214",
+    "adaptors/lite/Document.ts": "eeb005e7c8c65be48e57b77da7a0e05f0b36b8718a0c8f4d46830d6984e80221",
+    "handlers/html.ts": "8b3b2ecd4e3902aaf06fd53c338050bf8d86042a152d2ec0a5be529ac92215d2",
+    "handlers/html/HTMLMathItem.ts": "1edfeb6976e3475b6342e42851384e191c171ad92cf9218b0d389073ea501db3",
+    "mathjax.ts": "58222a4b55bb4339ed81e46a7256b1400b5a7898ef5a051db3795530b49a7f80"
+  },
+  "cjs": {
+    "input/tex/color/ColorUtil.js": "2075669f7ddba29a67a0e3f18eb5c2b933293f7f67b6c1aa39f8baaf0e14a7fb",
+    "input/tex/color/ColorConstants.js": "d3fd379ec96fd734aacb50df660cb878602052a6f94636c60e572924033508b0",
+    "input/tex/color/ColorConfiguration.js": "2b5e9e7b9fb7a1b24fd87854e1b2d900c90a5a502f64f906f7ddf6d6774bf6c1",
+    "input/tex/color/ColorMethods.js": "7590d2cf842e5cf894eabeb9a2a5fab6c16c42fb50e5db1b84245df398bf2632",
+    "input/tex/Configuration.js": "86f62a6f6e44fec20156546b7e8d424cac493c7465c2c8ec621c604332a276f3",
+    "input/tex.js": "ef2852b197173f373e62326016e980aef01ffc838f5f766ab6076262f944eada",
+    "input/tex/ParseOptions.js": "ff19d70539cb76911c5f1d7673ddfd908183dcf5849c91cb068b19e58da8a9ec",
+    "input/tex/base/BaseConfiguration.js": "0feedc60ac600b647cf2a1437c7244196a5aec04715f4a301fe6e9ec09722c57",
+    "core/MathDocument.js": "3a7dad24d15a1137fa0bd8394a42284c690830c751102b6a31785a0f77eee1db",
+    "core/MathItem.js": "e6ed5008854e4d2ac6b34ab98c53bec6afb34e460895e8320c90a0d8d700d261",
+    "adaptors/liteAdaptor.js": "e9879de720f356cf8f54c0960102b1e40b4eafc1e34a14481aa896e1e99bd76f",
+    "adaptors/lite/Document.js": "c679ae2dc90a3c8fdd699d762079fc50f75aed5f48775859ebfb3ee050b69abc",
+    "handlers/html.js": "70428dd9a34b8421da5275bfbf5d8e165c79c5cedf2341aa451dca89b0af9f7d",
+    "handlers/html/HTMLMathItem.js": "1f2d77971d95f910d71212cd15eb73169ca5e564b04c7aa077396b70ba502012",
+    "mathjax.js": "17431ff42f26bfca6cc2baee68acb09d551fec8824f392290c5ebf0350df4ec6"
+  }
+}

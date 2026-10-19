@@ -1,0 +1,448 @@
+{
+  "constants": [
+    [
+      "Apricot",
+      "#FBB982"
+    ],
+    [
+      "Aquamarine",
+      "#00B5BE"
+    ],
+    [
+      "Bittersweet",
+      "#C04F17"
+    ],
+    [
+      "Black",
+      "#221E1F"
+    ],
+    [
+      "Blue",
+      "#2D2F92"
+    ],
+    [
+      "BlueGreen",
+      "#00B3B8"
+    ],
+    [
+      "BlueViolet",
+      "#473992"
+    ],
+    [
+      "BrickRed",
+      "#B6321C"
+    ],
+    [
+      "Brown",
+      "#792500"
+    ],
+    [
+      "BurntOrange",
+      "#F7921D"
+    ],
+    [
+      "CadetBlue",
+      "#74729A"
+    ],
+    [
+      "CarnationPink",
+      "#F282B4"
+    ],
+    [
+      "Cerulean",
+      "#00A2E3"
+    ],
+    [
+      "CornflowerBlue",
+      "#41B0E4"
+    ],
+    [
+      "Cyan",
+      "#00AEEF"
+    ],
+    [
+      "Dandelion",
+      "#FDBC42"
+    ],
+    [
+      "DarkOrchid",
+      "#A4538A"
+    ],
+    [
+      "Emerald",
+      "#00A99D"
+    ],
+    [
+      "ForestGreen",
+      "#009B55"
+    ],
+    [
+      "Fuchsia",
+      "#8C368C"
+    ],
+    [
+      "Goldenrod",
+      "#FFDF42"
+    ],
+    [
+      "Gray",
+      "#949698"
+    ],
+    [
+      "Green",
+      "#00A64F"
+    ],
+    [
+      "GreenYellow",
+      "#DFE674"
+    ],
+    [
+      "JungleGreen",
+      "#00A99A"
+    ],
+    [
+      "Lavender",
+      "#F49EC4"
+    ],
+    [
+      "LimeGreen",
+      "#8DC73E"
+    ],
+    [
+      "Magenta",
+      "#EC008C"
+    ],
+    [
+      "Mahogany",
+      "#A9341F"
+    ],
+    [
+      "Maroon",
+      "#AF3235"
+    ],
+    [
+      "Melon",
+      "#F89E7B"
+    ],
+    [
+      "MidnightBlue",
+      "#006795"
+    ],
+    [
+      "Mulberry",
+      "#A93C93"
+    ],
+    [
+      "NavyBlue",
+      "#006EB8"
+    ],
+    [
+      "OliveGreen",
+      "#3C8031"
+    ],
+    [
+      "Orange",
+      "#F58137"
+    ],
+    [
+      "OrangeRed",
+      "#ED135A"
+    ],
+    [
+      "Orchid",
+      "#AF72B0"
+    ],
+    [
+      "Peach",
+      "#F7965A"
+    ],
+    [
+      "Periwinkle",
+      "#7977B8"
+    ],
+    [
+      "PineGreen",
+      "#008B72"
+    ],
+    [
+      "Plum",
+      "#92268F"
+    ],
+    [
+      "ProcessBlue",
+      "#00B0F0"
+    ],
+    [
+      "Purple",
+      "#99479B"
+    ],
+    [
+      "RawSienna",
+      "#974006"
+    ],
+    [
+      "Red",
+      "#ED1B23"
+    ],
+    [
+      "RedOrange",
+      "#F26035"
+    ],
+    [
+      "RedViolet",
+      "#A1246B"
+    ],
+    [
+      "Rhodamine",
+      "#EF559F"
+    ],
+    [
+      "RoyalBlue",
+      "#0071BC"
+    ],
+    [
+      "RoyalPurple",
+      "#613F99"
+    ],
+    [
+      "RubineRed",
+      "#ED017D"
+    ],
+    [
+      "Salmon",
+      "#F69289"
+    ],
+    [
+      "SeaGreen",
+      "#3FBC9D"
+    ],
+    [
+      "Sepia",
+      "#671800"
+    ],
+    [
+      "SkyBlue",
+      "#46C5DD"
+    ],
+    [
+      "SpringGreen",
+      "#C6DC67"
+    ],
+    [
+      "Tan",
+      "#DA9D76"
+    ],
+    [
+      "TealBlue",
+      "#00AEB3"
+    ],
+    [
+      "Thistle",
+      "#D883B7"
+    ],
+    [
+      "Turquoise",
+      "#00B4CE"
+    ],
+    [
+      "Violet",
+      "#58429B"
+    ],
+    [
+      "VioletRed",
+      "#EF58A0"
+    ],
+    [
+      "White",
+      "#FFFFFF"
+    ],
+    [
+      "WildStrawberry",
+      "#EE2967"
+    ],
+    [
+      "Yellow",
+      "#FFF200"
+    ],
+    [
+      "YellowGreen",
+      "#98CC70"
+    ],
+    [
+      "YellowOrange",
+      "#FAA21A"
+    ]
+  ],
+  "color_cases": [
+    {
+      "name": "default-model-empty",
+      "value": "#F58137"
+    },
+    {
+      "name": "named-model",
+      "value": "rebeccapurple"
+    },
+    {
+      "name": "rgb-half",
+      "value": "#7f00ff"
+    },
+    {
+      "name": "rgb-decimal-forms",
+      "value": "#33ff00"
+    },
+    {
+      "name": "rgb-unicode-comma-space",
+      "value": "#7f3fff"
+    },
+    {
+      "name": "rgb-leading-zeroes",
+      "value": "#7f00ff"
+    },
+    {
+      "name": "integer-rgb",
+      "value": "#8000ff"
+    },
+    {
+      "name": "integer-rgb-leading-zeroes",
+      "value": "#010203"
+    },
+    {
+      "name": "gray-space",
+      "value": "#7f7f7f"
+    },
+    {
+      "name": "gray-fraction",
+      "value": "#3f3f3f"
+    },
+    {
+      "name": "gray-one",
+      "value": "#ffffff"
+    },
+    {
+      "name": "pass-css-name",
+      "value": "not-a-constant"
+    },
+    {
+      "name": "invalid-name-semicolon",
+      "error": {
+        "id": "BadColorValue",
+        "message": "Invalid color value"
+      }
+    },
+    {
+      "name": "rgb-wrong-count",
+      "error": {
+        "id": "ModelArg1",
+        "message": "Color values for the rgb model require 3 numbers"
+      }
+    },
+    {
+      "name": "rgb-invalid-decimal",
+      "error": {
+        "id": "InvalidDecimalNumber",
+        "message": "Invalid decimal number"
+      }
+    },
+    {
+      "name": "rgb-out-of-range",
+      "error": {
+        "id": "ModelArg2",
+        "message": "Color values for the rgb model must be between 0 and 1"
+      }
+    },
+    {
+      "name": "rgb-negative-syntax",
+      "error": {
+        "id": "InvalidDecimalNumber",
+        "message": "Invalid decimal number"
+      }
+    },
+    {
+      "name": "rgb-large-decimal",
+      "error": {
+        "id": "ModelArg2",
+        "message": "Color values for the rgb model must be between 0 and 1"
+      }
+    },
+    {
+      "name": "RGB-invalid-integer",
+      "error": {
+        "id": "InvalidNumber",
+        "message": "Invalid number"
+      }
+    },
+    {
+      "name": "RGB-out-of-range",
+      "error": {
+        "id": "ModelArg2",
+        "message": "Color values for the RGB model must be between 0 and 255"
+      }
+    },
+    {
+      "name": "RGB-large-integer",
+      "error": {
+        "id": "ModelArg2",
+        "message": "Color values for the RGB model must be between 0 and 255"
+      }
+    },
+    {
+      "name": "gray-invalid",
+      "error": {
+        "id": "InvalidDecimalNumber",
+        "message": "Invalid decimal number"
+      }
+    },
+    {
+      "name": "gray-out-of-range",
+      "error": {
+        "id": "ModelArg2",
+        "message": "Color values for the gray model must be between 0 and 1"
+      }
+    },
+    {
+      "name": "gray-unicode-line-space",
+      "value": "#bfbfbf"
+    },
+    {
+      "name": "gray-underflow",
+      "value": "#000000"
+    },
+    {
+      "name": "unknown-model",
+      "error": {
+        "id": "UndefinedColorModel",
+        "message": "Color model 'CMYK' not defined"
+      }
+    }
+  ],
+  "state_cases": {
+    "custom": "#007fff",
+    "isolated": "Custom",
+    "overridden_constant": "rebeccapurple",
+    "untouched_constant": "#ED1B23",
+    "redefined": "#010203",
+    "invalid_define": {
+      "error": {
+        "id": "ModelArg2",
+        "message": "Color values for the rgb model must be between 0 and 1"
+      }
+    },
+    "unchanged_after_failed_define": "Bad",
+    "invalid_redefine": {
+      "error": {
+        "id": "ModelArg2",
+        "message": "Color values for the rgb model must be between 0 and 1"
+      }
+    },
+    "unchanged_after_failed_redefine": "#040506",
+    "semicolon_name_lookup": "#abc"
+  },
+  "actual_tex_lifecycle": {
+    "after_define": "#007fff",
+    "same_model_after_color": true,
+    "same_model_after_reset": true,
+    "after_reset": "#007fff",
+    "separate_jax_has_distinct_model": true,
+    "separate_jax_lookup": "Stored"
+  }
+}

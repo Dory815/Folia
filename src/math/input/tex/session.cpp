@@ -24,6 +24,16 @@ void TexSessionState::defineMacro(std::u16string name, MacroDefinition definitio
 bool TexSessionState::eraseMacro(std::u16string_view name) {
     return macros_.erase(std::u16string(name)) != 0;
 }
+ColorModel& TexSessionState::enableColor() {
+    if (!color_) color_.emplace();
+    return *color_;
+}
+ColorModel* TexSessionState::colorModel() noexcept {
+    return color_ ? &*color_ : nullptr;
+}
+ColorModel const* TexSessionState::colorModel() const noexcept {
+    return color_ ? &*color_ : nullptr;
+}
 LabelRecord const* TexSessionState::findLabel(std::u16string_view name) const {
     auto const it = all_labels_.find(std::u16string(name));
     return it == all_labels_.end() ? nullptr : &it->second;

@@ -1,4 +1,5 @@
 export module folia.math.input.tex.session;
+export import folia.math.input.tex.color.util;
 import std;
 
 export namespace folia::math::tex {
@@ -67,6 +68,9 @@ private:
     LabelMap all_labels_;
     IdSet all_ids_;
     TagCounterState all_counter_;
+    // Source ColorConfiguration creates one ColorModel per TeX input jax.
+    // It survives individual equations and tag resets without retaining nodes.
+    std::optional<ColorModel> color_;
 public:
     TexSessionState() = default;
     TexSessionState(TexSessionState const&) = default;
@@ -79,6 +83,10 @@ public:
     bool eraseMacro(std::u16string_view name);
     MacroMap const& macros() const noexcept { return macros_; }
     void clearMacros() noexcept { macros_.clear(); }
+
+    ColorModel& enableColor();
+    ColorModel* colorModel() noexcept;
+    ColorModel const* colorModel() const noexcept;
 
     LabelRecord const* findLabel(std::u16string_view name) const;
     LabelMap const& labels() const noexcept { return all_labels_; }
