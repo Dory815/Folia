@@ -1,165 +1,178 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native implementation of MmlMtable semantic methods from MathJax 4.1.3.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- * Source SHA256: 8c701c9e8e55565c7ea905bd2d0e23e8a433547c5ed11bfb868f74e3089a3bda
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mtable;
-import folia.math.core.mml_tree.table_host;
+import folia.math.core.mml_tree.mml_document;
+import folia.math.core.mml_tree.node_defaults;
+import folia.math.util.string;
 import std;
 
 namespace folia::math::mml {
-
-void MmlMtable::inheritAttributes(AttributeList attributes, Property display,
-                                  Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-
-    for (std::size_t index = 0; index < indentAttributes.size(); ++index) {
-        // for-of captures the string value for this iteration before callbacks;
-        // the shared vector itself remains live and may grow during the loop.
-        const std::string name = indentAttributes[index];
-        if (host::truthy(host::get(attributes, name))) {
-            // JavaScript captures the method receiver before evaluating args.
-            const auto receiver = host::arithmeticAttributes(*this);
-            const Property tuple = host::get(attributes, name);
-            const Property value = host::get(tuple, "1");
-            receiver->setInherited(name, value);
-        }
-        if (host::arithmeticAttributes(*this)->hasExplicit(name)) {
-            host::arithmeticAttributes(*this)->unset(name);
-        }
-    }
-
-    AbstractMmlNode::inheritAttributes(
-        std::move(attributes), std::move(display), std::move(level), std::move(prime));
+namespace {
+std::u16string widen(std::string_view value) {
+    std::u16string result;
+    result.reserve(value.size());
+    for (unsigned char c : value)
+        result.push_back(static_cast<char16_t>(c));
+    return result;
 }
 
-void MmlMtable::setChildInheritedAttributes(AttributeList attributes, Property display,
-                                             Property level, Property /*prime*/) {
-    tree::TreeCallGuard<MmlNode> guard;
+bool truthy(const AttributeValue &value) {
+    if (std::holds_alternative<AttributeNull>(value))
+        return false;
+    if (const auto *b = std::get_if<bool>(&value))
+        return *b;
+    if (const auto *n = std::get_if<double>(&value))
+        return *n != 0.0 && !std::isnan(*n);
+    return !std::get<std::u16string>(value).empty();
+}
 
-    const Children originalChildren = host::tableChildren(*this);
-    for (std::size_t index = 0; index < originalChildren->size(); ++index) {
-        const NodeValue childValue = originalChildren->get(index);
-        MmlNode& child = host::tableNode(childValue, "isKind");
-        if (!child.isKind("mtr")) {
-            const NodeValue row = replaceChild(host::tableCreate(factoryOwner(), "mtr"), childValue);
-            row.requireNode("appendChild")->appendChild(childValue);
+const InheritedAttribute *findEntry(const AttributeList &values, std::u16string_view name) {
+    for (auto it = values.rbegin(); it != values.rend(); ++it)
+        if (it->name == name)
+            return &*it;
+    return nullptr;
+}
+
+void setValue(AttributeList &values, std::u16string name, AttributeValue value, NodeKind origin) {
+    for (auto &entry : values)
+        if (entry.name == name) {
+            entry.value = std::move(value);
+            entry.origin = origin;
+            return;
+        }
+    values.push_back({std::move(name), origin, std::move(value)});
+}
+
+std::u16string stringValue(const AttributeValue *value, std::u16string_view key) {
+    if (!value)
+        return {};
+    if (const auto *text = std::get_if<std::u16string>(value))
+        return *text;
+    (void)key;
+    throw std::invalid_argument("mtable alignment attribute must be a UTF-16 string");
+}
+} // namespace
+
+AttributeSet MmlMtable::defaults() {
+    return nodeDefaultAttributes(NodeKind::mtable);
+}
+
+NodeKind MmlMtable::kind() const noexcept {
+    return NodeKind::mtable;
+}
+
+bool MmlMtable::linebreakContainer() const {
+    return true;
+}
+
+std::string MmlMtable::linebreakAlign() const {
+    return "";
+}
+
+void MmlMtable::inheritAttributes(AttributeList const &incoming, bool display, double level,
+                                  bool prime) {
+    for (const auto name : indentAttributes) {
+        const auto key = widen(name);
+        if (const auto *entry = findEntry(incoming, key))
+            attributes().setInherited(key, entry->value);
+        attributes().erase(key);
+    }
+    AbstractMmlNode::inheritAttributes(incoming, display, level, prime);
+}
+
+void MmlMtable::setChildInheritedAttributes(AttributeList const &incoming, bool display,
+                                            double level, bool prime) {
+    auto &factory = document().factory();
+    for (std::size_t i = 0; i < children().size(); ++i) {
+        MmlNode *child = children()[i];
+        if (!child->isKind(NodeKind::mtr) && !child->isKind(NodeKind::mlabeledtr)) {
+            auto &row = factory.make(NodeKind::mtr);
+            replaceChild(row, *child);
+            row.appendChild(*child);
         }
     }
 
-    auto explicitAttributes = this->attributes();
-    if (!explicitAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
-    Property displayValue = explicitAttributes->getExplicit("displaystyle");
-    if (!host::truthy(displayValue)) {
-        auto defaultAttributes = this->attributes();
-        if (!defaultAttributes) host::typeError("Cannot read properties of null (reading 'getDefault')");
-        displayValue = defaultAttributes->getDefault("displaystyle");
-    }
-    display = host::truthy(displayValue);
+    if (const auto *explicitDisplay = attributes().own(u"displaystyle");
+        explicitDisplay && truthy(*explicitDisplay))
+        display = truthy(*explicitDisplay);
+    else if (const auto *defaultDisplay = attributes().effectiveDefault(u"displaystyle"))
+        display = truthy(*defaultDisplay);
 
-    auto columnAttributes = this->attributes();
-    if (!columnAttributes) host::typeError("Cannot read properties of null (reading 'get')");
-    const Property columnAlign = columnAttributes->get("columnalign");
-    auto breakAttributes = this->attributes();
-    if (!breakAttributes) host::typeError("Cannot read properties of null (reading 'get')");
-    const Property breakAlign = breakAttributes->get("data-break-align");
-    PropertyList additions{{"columnalign", columnAlign}, {"rowalign", "center"},
-                           {"data-break-align", breakAlign}};
-    attributes = addInheritedAttributes(std::move(attributes), Property(additions));
+    AttributeAdditions additions;
+    if (const auto *v = attributes().lookup(u"columnalign"))
+        additions.emplace_back(u"columnalign", *v);
+    additions.emplace_back(u"rowalign", std::u16string{u"center"});
+    if (const auto *v = attributes().lookup(u"data-break-align"))
+        additions.emplace_back(u"data-break-align", *v);
+    auto propagated = addInheritedAttributes(incoming, additions);
+    const bool cramped =
+        attributes().own(u"data-cramped") && truthy(*attributes().own(u"data-cramped"));
+    auto alignments =
+        string_util::split(stringValue(attributes().lookup(u"rowalign"), u"rowalign"));
 
-    auto crampedAttributes = this->attributes();
-    if (!crampedAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
-    const Property cramped = crampedAttributes->getExplicit("data-cramped");
-
-    auto rowAttributes = this->attributes();
-    if (!rowAttributes) host::typeError("Cannot read properties of null (reading 'get')");
-    std::deque<Property> rowAlignments = host::tableSplit(rowAttributes->get("rowalign"));
-
-    const Children rows = host::tableChildren(*this);
-    for (std::size_t index = 0; index < rows->size(); ++index) {
-        const NodeValue childValue = rows->get(index);
-        // The assignment receiver is read before evaluating shift()/fallback.
-        const Property tupleReceiver = host::get(attributes, "rowalign");
-        const Property shifted = host::tableShift(rowAlignments);
-        Property rowAlign = shifted;
-        if (!host::truthy(shifted)) {
-            rowAlign = host::get(host::get(attributes, "rowalign"), "1");
-        }
-        host::tableSetIndex(tupleReceiver, "1", rowAlign);
-
-        MmlNode& child = host::tableNode(childValue, "setInheritedAttributes");
-        child.setInheritedAttributes(attributes, display, level, Property(host::truthy(cramped)));
+    for (auto *row : children()) {
+        const auto *previousEntry = findEntry(propagated, u"rowalign");
+        const auto *previous = previousEntry ? &previousEntry->value : nullptr;
+        AttributeValue rowAlign = alignments.empty()
+                                      ? (previous ? *previous : AttributeValue{AttributeNull{}})
+                                      : AttributeValue{std::move(alignments.front())};
+        if (!alignments.empty())
+            alignments.erase(alignments.begin());
+        if (!truthy(rowAlign) && previous)
+            rowAlign = *previous;
+        setValue(propagated, u"rowalign", std::move(rowAlign), kind());
+        row->setInheritedAttributes(propagated, display, level, cramped);
     }
 }
 
-void MmlMtable::verifyChildren(Property options) {
-    tree::TreeCallGuard<MmlNode> guard;
-    NodeValue currentRow = PropertyNull{};
-    Factory& rowFactory = this->factoryOwner();
-
-    std::int64_t index = 0;
-    while (true) {
-        const Children lengthChildren = host::tableChildren(*this, "length");
-        if (static_cast<double>(index) >= static_cast<double>(lengthChildren->size())) break;
-
-        const Children slotChildren = host::tableChildren(*this, std::to_string(index));
-        const NodeValue childValue = host::tableSlot(slotChildren, static_cast<std::size_t>(index));
-        MmlNode& child = host::tableNode(childValue, "isKind");
-        if (child.isKind("mtr")) {
-            currentRow = PropertyNull{};
+void MmlMtable::verifyChildren(VerifyOptions const &options) {
+    auto &factory = document().factory();
+    MmlNode *currentRow = nullptr;
+    std::size_t i = 0;
+    while (i < children().size()) {
+        MmlNode *child = children()[i];
+        if (child->isKind(NodeKind::mtr) || child->isKind(NodeKind::mlabeledtr)) {
+            currentRow = nullptr;
+            ++i;
+            continue;
+        }
+        const bool isCell = child->isKind(NodeKind::mtd);
+        if (currentRow) {
+            removeChild(*child);
+            --i;
         } else {
-            const bool isCell = child.isKind("mtd");
-            if (currentRow.isNode()) {
-                removeChild(childValue);
-                --index;
-            } else {
-                currentRow = replaceChild(host::tableCreate(rowFactory, "mtr"), childValue);
-            }
-
-            MmlNode* const rowReceiver = currentRow.requireNode("appendChild");
-            NodeValue cellValue = childValue;
-            if (!isCell) cellValue = host::tableCreate(rowFactory, "mtd", childValue);
-            rowReceiver->appendChild(cellValue);
-
-            if (options.missing()) host::typeError("Cannot read properties of undefined (reading 'fixMtables')");
-            if (std::holds_alternative<PropertyNull>(options.value))
-                host::typeError("Cannot read properties of null (reading 'fixMtables')");
-            if (!host::truthy(host::get(options, "fixMtables"))) {
-                child.getParent().requireNode("removeChild")->removeChild(childValue);
-                childValue.requireNodeForWrite("parent")->setParent(NodeValue(this));
-                if (isCell) {
-                    MmlNode* const emptyCellRow = currentRow.requireNode("appendChild");
-                    emptyCellRow->appendChild(host::tableCreate(rowFactory, "mtd"));
-                }
-
-                const std::string message = "Children of " + kind() + " must be mtr or mlabeledtr";
-                const NodeValue error(childValue.requireNode("mError")->mError(message, options, isCell));
-
-                const Children rowChildren = currentRow.requireNode("childNodes")->childArrayOwner();
-                if (!rowChildren) host::typeError("Cannot read properties of null (reading 'length')");
-                const Children indexedRowChildren = currentRow.requireNode("childNodes")->childArrayOwner();
-                if (!indexedRowChildren) host::typeError("Cannot read properties of null (reading 'length')");
-                const std::size_t rowLength = indexedRowChildren->size();
-                const NodeValue lastCell = rowLength == 0
-                    ? NodeValue(Missing{})
-                    : rowChildren->get(rowLength - 1);
-                lastCell.requireNode("appendChild")->appendChild(error);
-            }
+            currentRow = &factory.make(NodeKind::mtr);
+            replaceChild(*currentRow, *child);
         }
-        ++index;
+        MmlNode *rowChild = child;
+        if (!isCell) {
+            std::array<MmlNode *, 1> wrapped{child};
+            rowChild = &factory.make(NodeKind::mtd, {}, wrapped);
+        }
+        currentRow->appendChild(*rowChild);
+        if (!options.fixMtables) {
+            // Source detaches the invalid node and gives it a transient parent
+            // reference to the table before calling mError. Keep that relationship
+            // in the document's auxiliary-parent channel; it is never a second
+            // membership in the table's normal children.
+            document().remove(*child);
+            document().attachAuxiliary(*this, *child);
+            if (isCell) {
+                auto &emptyCell = factory.make(NodeKind::mtd);
+                currentRow->appendChild(emptyCell);
+            }
+            const auto message = std::u16string{u"Children of mtable must be mtr or mlabeledtr"};
+            auto *error = child->mError(message, options, isCell);
+            if (error && !currentRow->children().empty())
+                currentRow->children().back()->appendChild(*error);
+        }
+        ++i;
     }
     AbstractMmlNode::verifyChildren(options);
 }
 
-NodeValue MmlMtable::setTeXclass(NodeValue previous) {
-    tree::TreeCallGuard<MmlNode> guard;
+MmlNode *MmlMtable::setTeXclass(MmlNode *previous) {
     getPrevClass(previous);
-    const Children children = host::tableChildren(*this);
-    for (std::size_t index = 0; index < children->size(); ++index) {
-        children->get(index).requireNode("setTeXclass")->setTeXclass(PropertyNull{});
-    }
+    for (auto *child : children())
+        child->setTeXclass(nullptr);
     return this;
 }
-
 } // namespace folia::math::mml

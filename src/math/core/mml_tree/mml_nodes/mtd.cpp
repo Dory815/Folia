@@ -1,32 +1,42 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native port of MathJax 4.1.3 MmlNodes/mtd.ts methods.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mtd;
-import folia.math.core.mml_tree.table_host;
+import folia.math.core.mml_tree.node_defaults;
 import std;
 
 namespace folia::math::mml {
+AttributeSet MmlMtd::defaults() {
+    return nodeDefaultAttributes(NodeKind::mtd);
+}
 
-void MmlMtd::verifyChildren(Property options) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (this->getParent().nodeOrNull()) {
-        const NodeValue parent = this->getParent();
-        if (!host::tableNode(parent, "isKind").isKind("mtr")) {
-            mError(this->kind() + " can only be a child of an mtr or mlabeledtr", options, true);
-            return;
-        }
+NodeKind MmlMtd::kind() const noexcept {
+    return NodeKind::mtd;
+}
+
+double MmlMtd::arity() const {
+    return -1.0;
+}
+
+bool MmlMtd::linebreakContainer() const {
+    return true;
+}
+
+std::string MmlMtd::linebreakAlign() const {
+    return "columnalign";
+}
+
+void MmlMtd::verifyChildren(VerifyOptions const &options) {
+    if (auto *parentNode = parent(); parentNode && !parentNode->isKind(NodeKind::mtr) &&
+                                     !parentNode->isKind(NodeKind::mlabeledtr)) {
+        (void)mError(u"mtd can only be a child of an mtr or mlabeledtr", options, true);
+        return;
     }
     AbstractMmlNode::verifyChildren(options);
 }
 
-NodeValue MmlMtd::setTeXclass(NodeValue previous) {
-    tree::TreeCallGuard<MmlNode> guard;
+MmlNode *MmlMtd::setTeXclass(MmlNode *previous) {
     getPrevClass(previous);
-    const Children children = host::tableChildren(*this, "0");
-    host::tableChild(children, 0, "setTeXclass").setTeXclass(PropertyNull{});
+    if (children().empty() || !children().front())
+        throw std::logic_error("mtd requires its inferred row child before TeX-class traversal");
+    children().front()->setTeXclass(nullptr);
     return this;
 }
-
-}
+} // namespace folia::math::mml

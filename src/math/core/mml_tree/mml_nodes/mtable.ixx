@@ -1,20 +1,21 @@
-// Root-frozen MathJax 4.1.3 mtable.ts interface; Apache-2.0.
 export module folia.math.core.mml_tree.mml_nodes.mtable;
-export import folia.math.core.mml_tree.mml_node;
+export import folia.math.core.mml_tree.mml_document;
 import std;
+
 export namespace folia::math::mml {
-class MmlMtable : public AbstractMmlNode {
-public:
-    using AbstractMmlNode::AbstractMmlNode;
-    static PropertyList& defaults();
-    void initializeClassFields() override;
-    std::string kind() const override;
+class MmlMtable final : public AbstractMmlNode {
+  public:
+    explicit MmlMtable(MmlDocument &document) : AbstractMmlNode(document, NodeKind::mtable) {}
+
+    static AttributeSet defaults();
+    NodeKind kind() const noexcept override;
     bool linebreakContainer() const override;
     std::string linebreakAlign() const override;
-    protected: void inheritAttributes(AttributeList, Property, Property, Property)override; public:
-    NodeValue setTeXclass(NodeValue) override;
-protected:
-    void setChildInheritedAttributes(AttributeList, Property, Property, Property) override;
-    void verifyChildren(Property) override;
+    MmlNode *setTeXclass(MmlNode *) override;
+
+  protected:
+    void inheritAttributes(AttributeList const &, bool, double, bool) override;
+    void setChildInheritedAttributes(AttributeList const &, bool, double, bool) override;
+    void verifyChildren(VerifyOptions const &) override;
 };
-}
+} // namespace folia::math::mml
