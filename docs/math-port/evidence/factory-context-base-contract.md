@@ -29,8 +29,11 @@ Product-specific FactoryContextBindings adapt native allocation, owner lookup,
 field projection and instanceof. A derived receiver resolves to the existing
 base subobject of its canonical shared owner. An adapter does not replace the
 payload, create another identity registry or retain a second copy of nodeMap,
-node or defaultKind. New generic construction must have a valid deterministic
-owner, independent of which product adapter was registered last.
+node or defaultKind. Generic Source construction initializes ordinary Context
+fields and does not select a template product owner. A typed product adapter
+must resolve or allocate its canonical owner independently of which adapter
+was registered last. Ordinary AbstractFactory.call preserves unrelated native
+payloads while performing the Source field assignments.
 
 MML-specific Context methods own only the AbstractNodeFactory create override
 and MML-specific members. Its prototype links to the canonical AbstractFactory
