@@ -23,8 +23,8 @@ utilities retain their existing independent modules.
 | --- | --- |
 | `parser_types.ixx` | same-module forwards and the closed parser/stack control values; no service implementations |
 | `stack_item.ixx`, `stack_item.cpp`, `base_item.cpp` | MmlStack node sequence and BaseItem's actual shared transition algorithm |
-| `stack.ixx`, `stack.cpp` | accepted frame owners, active environment, ordered Push/Pop/replay/Prev |
-| `stack_item_factory.ixx`, `stack_item_factory.cpp` | actual generic Tree Factory specialization returning unique owners, typed registrations, configuration borrow |
+| `stack.ixx`, `stack.cpp` | accepted frame-activation handles, active environment, ordered Push/Pop/replay/Prev |
+| `stack_item_factory.ixx`, `stack_item_factory.cpp` | actual generic Tree Factory specialization constructing unique products and returning shared frame handles, typed registrations, configuration borrow |
 | `base/base_items.ixx`, `base_items.cpp` and existing family implementation units | the original concrete BaseItems and their named fields/checkItem methods |
 | `parse_options.ixx`, `parse_options.cpp` | request services, options, parser scopes, node lists and root/error lifecycle |
 | `configuration.*`, `map_handler.*`, `token_map.*`, `token.*`, `macro.*` | Source configuration composition, handler priority/lookup and typed token/command definitions |
@@ -54,7 +54,7 @@ CommonWrapper pattern. Do not replace every field with redundant setter/getter
 pairs. Stack ownership and control transitions remain encapsulated; real
 Source protected methods and package inheritance remain intact.
 
-`StackEntry` accepts only an owned frame, a borrowed MML node, or an explicit
+`StackEntry` accepts only a frame handle, a borrowed MML node, or an explicit
 empty entry. Source Push skips empty entries and wraps MML in an actual MmlItem.
 It does not clone MML. Frame node sequences borrow nodes from the one document.
 MmlStack.First is the last-pushed node; Last is the first-pushed node. Prev
@@ -73,20 +73,29 @@ that incorrectly forwards those flags. The Stack interface reexports
 :stack_item so consumers destroying returned frame owners see complete types.
 
 `CheckResult` has explicit Accept, Drop and Replay states. Replay owns its
-replacement sequence; entries are newly owned frames, borrowed MML, reuse-top
+replacement sequence; entries are frame handles, borrowed MML, reuse-top
 or reuse-incoming tokens. An empty Replay still pops top. No raw frame pointer
 is adopted into a unique_ptr, and neither replacement storage nor mutable frame
 references escape an owner that will be discarded.
 
-`checkItem(unique_ptr<BaseItem>& incoming)` receives the Push-local owner by
-reference. The current top remains owned and alive throughout its virtual call.
-Ordinary methods borrow incoming. ProofTreeItem instead moves it into its
-actual inner Stack at the Source call site, then returns Drop; outer Push may
-only destroy an owner it still holds. Accept/reuse-incoming require that owner
-to remain available. The returned replay is interpreted only after the Source
-Pop/environment transition; the extracted top and remaining incoming owner stay
-alive until reuse tokens are resolved. Each existing owner is moved at most
-once, and recursive replay finishes before the next original Push argument.
+`FrameHandle` is `shared_ptr<BaseItem>`, confined to actual frame activations.
+New Source evidence supersedes the unique-only declaration draft: NumCases
+pushes one CasesBeginItem twice, and both live slots share its mutable state.
+There is no per-request frame arena or factory product registry. The factory
+converts its newly constructed unique product once; the last slot/local handle
+release destroys it naturally. Frames do not own their parser/factory/outer
+Stack/document, so these real domain aliases add no ownership cycle.
+
+`checkItem(FrameHandle const& incoming)` receives the Push-local handle. The
+current top remains alive throughout its virtual call. ProofTree passes a copy
+into its actual inner Stack at the Source call site, then returns Drop; outer
+Push releases its own local handle. Replay is interpreted only after the
+Source Pop/environment transition, with extracted top and incoming handles
+still alive. Resolve reuse tokens from those handles and recurse in order
+before the next original Push argument. Preserve aliases instead of cloning
+or deduplicating frames. This is typed domain ownership, not JS object-value
+or identity emulation. The old 24+6 witnesses remain valid for their observed
+transitions; the new cases-repush witness covers the additional activation case.
 
 Keep the finite TexEnvironment shared value and separate StackGlobal ownership
 rules in `native-raii-architecture.md`. In particular Pop does not clear a
@@ -142,12 +151,34 @@ observer is added to NodeFactory. Native token-kind preconditions are checked
 before allocation; invalid generic JS API calls are not a native simulation
 requirement.
 
-The proposed core::MathItem dependency also needs its native declaration:
-the old module still imports the generic object and DOM graph. Preserve the
-original expression-state responsibility in core/math_item; do not use that
-old primary as a shortcut or duplicate it in a parser-local item facade.
-The concrete Tags and input-jax lifecycle contract must retain display changes
-and tag recompile state/counter values at this boundary.
+The accepted NodeFactory registration change covers the standard creators.
+The configured profile also overrides token creation in
+boldsymbol/BoldsymbolConfiguration.ts: createBoldToken first performs normal
+token creation, then marks/registers fixBold when the active parser environment
+requests it and the kind is not mtext. This still requires a typed package
+creator binding when ParserConfiguration/ParseOptions are implemented; the
+registration seam alone is not complete configured NodeFactory support.
+
+core::MathItem now has a native declaration and implementation in the original
+core/math_item module, without the former generic object and DOM graph.
+Parser and Tags import this actual module, rather than a foreign-module forward
+or parser-local item facade. Keep display changes and tag recompile state/
+counter values at this boundary. Older inactive bindings and browser consumers
+are not migrated merely because this expression-state component is accepted.
+
+Root has reviewed the native MathItem implementation, replayed its five
+Source lifecycle cases (18 locked files), and passed ten focused native tests.
+Keep the existing MathItem and
+AbstractMathItem classes in core/math_item, with method bodies split between
+math_item.cpp and math_item_state.cpp. The three existing typed input/output/
+render-action service roles borrow the current document; root is a document
+node borrow and typesetRoot owns an optional immutable Scene. Initial metrics
+are absent until explicitly supplied. State rollback clears only Source's
+input/output data at their exact thresholds, retaining roots and metrics.
+Tags captures the current state and pre-commit counter before compile advances
+to COMPILED. The string-convert entrypoint does not invent a document-wide
+second compile pass. Bussproofs' temporary actual MathItem borrows subtrees for
+Common getBBox; it must not clone/reparent them or replace the document root.
 
 For the configured MtMultlined constructor call, retain the observed true
 default-tag behavior as a distinct MultlinedItemInit marker. Source passes a

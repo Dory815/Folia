@@ -15,7 +15,7 @@
   本次已实际重读本文件并核对 Git/代理状态。不能只在摘要中提到文件路径就算读过。
 - **最新完整Math组件基线：292项/33,343断言，exit0**，
   `build/math-port/native-tex-color-math-item-full.log`，native句柄3528已终态。
-  NodeFactory已提交64a06e78，ColorModel/session已提交febc2e4e；MathItem本批已推广。
+  NodeFactory已提交64a06e78，ColorModel/session已提交febc2e4e，MathItem已提交a17e72e7。
   完整TeX→SVG与Folia替换尚未完成，不能把组件suite扩大为端到端验收。
 - Root四份TeX声明候选在 `tools/math-port/drafts/native-raii/tex-parser-declarations/`，
   尚未推广/构建。架构和职责见 `typed-tex-parser-implementation.md`。
@@ -61,10 +61,17 @@
   Root FrameHandle/BaseItem、独立EnvironmentBodyHandler及closed callback variant；
   font_assert_audit在tex-column-parser-contract/审原ColumnParser及newcolumntype跨表达式寿命。
   其余已完成，无live build/native。不要再等旧完成包或重派已消费NodeFactory/Color/MathItem。
+  dispatch四header已收取至headers/并由Root读过，仍需统一DispatchResult等别名、给MacroMap
+  增加真实session borrow/lookup override与typed MacroInvocation definition-source variant；
+  旧版本只有prose声称借用但类声明没有该成员，尚未冻结，不可派body。
+  ColumnParser runtime在tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/ColumnParser.js，
+  不在.reference（那里只有TS），没有已有accepted column witness可等待，不要重编译TS/复制依赖。
 - **下一步明确动作**：收取typed dispatch四header和ColumnParser契约，审Tags与ParseOptions
   完整服务图并冻结，再让Luna按原文件实现Stack/BaseItems/dispatch。Source priority已实际
   证明同priority按配置逆序；source-dispatch-observe.cjs已Root重放exit0（14hash），
   native-tex-dispatch-contract-source.log。不得回到“reverse后恢复原序”的旧错误解释。
+  NodeFactory还要接configured boldsymbol.createBoldToken typed creator，不能把已验收标准
+  creator登记当成全部profile hooks完成；该Source先正常建token，再按当前env标记/登记fixBold。
   完整parser/38包、Common→Scene与Folia切换仍是后续必做；不重做已验收Common家族。
 - Git原13项既有无关修改继续保护，见文末。当前无live build/native句柄，不运行reset。
 

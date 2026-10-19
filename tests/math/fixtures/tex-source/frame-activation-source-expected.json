@@ -1,0 +1,141 @@
+{
+  "environment": "numcases",
+  "bodyPath": "CasesMethods.environment -> CasesMethods.NumCases -> BaseMethods.EqnArray -> actual Stack.Push",
+  "pushes": [
+    {
+      "pushedId": 1,
+      "stack": [
+        {
+          "id": 2,
+          "kind": "start"
+        },
+        {
+          "id": 1,
+          "kind": "cases-begin"
+        }
+      ]
+    },
+    {
+      "pushedId": 1,
+      "stack": [
+        {
+          "id": 2,
+          "kind": "start"
+        },
+        {
+          "id": 1,
+          "kind": "cases-begin"
+        },
+        {
+          "id": 1,
+          "kind": "cases-begin"
+        }
+      ]
+    },
+    {
+      "pushedId": 3,
+      "stack": [
+        {
+          "id": 2,
+          "kind": "start"
+        },
+        {
+          "id": 1,
+          "kind": "cases-begin"
+        },
+        {
+          "id": 1,
+          "kind": "cases-begin"
+        },
+        {
+          "id": 3,
+          "kind": "eqnarray"
+        }
+      ]
+    }
+  ],
+  "finalStack": [
+    {
+      "index": 0,
+      "id": 2,
+      "kind": "start",
+      "name": null,
+      "properties": {},
+      "env": {
+        "marker": "seed-env",
+        "display": true
+      },
+      "global": {
+        "isInner": false
+      },
+      "sameBeginFrame": false
+    },
+    {
+      "index": 1,
+      "id": 1,
+      "kind": "cases-begin",
+      "name": "numcases",
+      "properties": {
+        "name": "numcases",
+        "end": true,
+        "left": "{x}"
+      },
+      "env": {
+        "marker": "seed-env",
+        "display": true
+      },
+      "global": {
+        "isInner": false
+      },
+      "sameBeginFrame": true
+    },
+    {
+      "index": 2,
+      "id": 1,
+      "kind": "cases-begin",
+      "name": "numcases",
+      "properties": {
+        "name": "numcases",
+        "end": true,
+        "left": "{x}"
+      },
+      "env": {
+        "marker": "seed-env",
+        "display": true
+      },
+      "global": {
+        "isInner": false
+      },
+      "sameBeginFrame": true
+    },
+    {
+      "index": 3,
+      "id": 3,
+      "kind": "eqnarray",
+      "name": null,
+      "properties": {
+        "numCases": true
+      },
+      "env": {},
+      "global": {
+        "isInner": false
+      },
+      "sameBeginFrame": false
+    }
+  ],
+  "repeatedBeginIndices": [
+    1,
+    2
+  ],
+  "beginIdentityCount": 2,
+  "beginEnvironment": {
+    "marker": "seed-env",
+    "display": true
+  },
+  "beginGlobal": {
+    "isInner": false
+  },
+  "sharedGlobalAcrossStack": true,
+  "sameBeginEnvironmentAlias": true,
+  "differentEnvironmentOnEqnArray": true
+}

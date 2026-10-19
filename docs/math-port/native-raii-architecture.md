@@ -340,29 +340,39 @@ Extend the existing `FactoryServices` and `AbstractFactory` templates with a
 fourth result type parameter, defaulting to `Product&`. The registry still
 constructs one `unique_ptr<Product>` using the same typed FactoryClass and
 calls `adopt`; both `create` and `adopt` return the selected result type.
-StackItemFactory selects `unique_ptr<BaseItem>` and its adopt operation moves
-that owner to the caller. Existing document/wrapper factories keep their
+StackItemFactory selects `shared_ptr<BaseItem>` and its adopt operation converts
+the newly constructed unique owner once to a frame-activation handle. Existing document/wrapper factories keep their
 current reference-returning ownership contract. This is a compile-time native
 ownership signature, not a runtime migration switch, duplicated registry or
 compatibility path. Construction, registered order, fallback and predicates
 remain the already verified Factory algorithms.
 
-For Stack transitions, the active top stays alive during `checkItem`, which
-receives the Push-local incoming `unique_ptr<BaseItem>&`. Ordinary checks borrow
-the pointed-to frame and may mutate both frames before returning. A package
-that transfers incoming into an actual nested Stack moves that unique owner at
-the Source call site; ProofTreeItem does this before returning Drop. Drop only
-destroys an incoming owner still held by outer Push, never a frame already
-adopted by innerStack. This needs no generic ownership handle or frame arena.
-A typed replacement list can contain new
-unique owners, an explicit reuse-top or reuse-incoming token, and borrowed MML
-nodes. No borrowed BaseItem pointer becomes a unique_ptr. Stack first executes
-the actual Pop/environment transition, then resolves reuse tokens with the two
-original owners still available, then recursively pushes entries in order before
-continuing the outer input sequence. Unselected owners are destroyed by RAII.
-Accept and reuse-incoming require that the incoming owner was not transferred.
-Reuse may occur once per owner; package-family observations must confirm their
-actual transitions before implementation, without silently cloning frames.
+The earlier unique-owner-only frame draft is superseded by new concrete
+Source evidence: CasesMethods.NumCases calls BaseMethods.EqnArray, which pushes
+the begin frame, then pushes that same frame again. The actual stack contains
+two simultaneous slots for one CasesBeginItem; its mutable fields, environment
+and globals are shared. Cloning, deduplicating or moving away the sole handle
+would change this configured package. Root replayed the actual Source methods
+in the formal `tools/math-port/tex-frame-activation-source.cjs`, with explicit argument/
+tag hook limits. This finding concerns activations, beyond the earlier review
+of checkItem replacement lists; it does not invalidate those observations.
+
+Use `FrameHandle = shared_ptr<BaseItem>` only for actual frame activations.
+Factory callers, Stack slots and transition locals may share that handle;
+frames never own their parser, factory, outer Stack or document. There is no
+factory product registry, request frame arena, raw-pointer adoption or
+shared_from_this bridge. The last slot/local release destroys the frame by
+normal RAII. MML remains document-owned and environment remains a finite value.
+
+For Stack transitions the active top stays alive during checkItem, which takes
+`FrameHandle const& incoming`. ProofTree passes a handle into its inner Stack
+at the actual Source call site before returning Drop; outer Drop releases only
+its local reference. A typed replacement list contains newly created handles,
+reuse-top/reuse-incoming tokens and borrowed MML. Stack first executes the
+actual Pop/environment transition, then resolves those tokens with the original
+handles still available, then recursively pushes entries in order before
+continuing the outer input sequence. Aliased slots still see the same frame's
+mutations. Do not add a universal object ownership or identity service.
 
 The actual Source observations are in ignored `tex-stack-transition-source/`:
 24 cases and 88 hash-locked files, replayed by Root. Left/middle reuses top;
@@ -391,12 +401,13 @@ the new open scope. StackGlobal is a separate typed stack-owned record borrowed
 by its frames; it is not an extension namespace in TexEnvironment.
 
 Transition results distinguish Accept, Drop and Replay explicitly. An empty
-Replay still pops the old top and is different from Accept. A result may only
-use each original owner once. Source errors are ordinary TexError exceptions;
+Replay still pops the old top and is different from Accept. Source errors are ordinary TexError exceptions;
 checkItem throws before Stack Pop, so the original owners and active scope
 remain valid while the caller handles the error. Native tests must exercise
 success and throw cleanup, scoped environment aliasing/copying, same-top replay,
 incoming replay and bare-node replay against the actual Source observations.
+They must also check actual CasesBeginItem aliases, shared mutations, and final
+destruction after the last slot/local releases, including nested-stack Drop.
 
 TexParser remains the owner of source positions and stamping StackItem.startStr,
 startI and stopI at the actual Push call. Its existing TexScanner is the sole

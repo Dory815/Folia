@@ -1,0 +1,15 @@
+{
+  ".reference/MathJax-src/ts/input/tex/cases/CasesConfiguration.ts": "6bb2eab1a09eb5773d28dca0c4dcb2b7fc12048807952e6ab32ae6ea5658c484",
+  ".reference/MathJax-src/ts/input/tex/base/BaseMethods.ts": "7336240c8f9c5037f9fdcd5a84ea079312854f1ef3f406aeb5a8b6a8ff765cda",
+  ".reference/MathJax-src/ts/input/tex/base/BaseItems.ts": "0c0d8448f3577be6642c95a412682310362819d2d383ab83b817d2888e4e5f0c",
+  ".reference/MathJax-src/ts/input/tex/Stack.ts": "36be7583b14111961367e9e3f1dd5911456d235b096a2fcee62f438d37c7e11a",
+  "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/cases/CasesConfiguration.js": "8490555aaf017a0047b6f8edef9167310261b766d921b373e58fbf4075d1b61c",
+  "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/base/BaseConfiguration.js": "0feedc60ac600b647cf2a1437c7244196a5aec04715f4a301fe6e9ec09722c57",
+  "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/base/BaseMethods.js": "b8d5c74e01f85ae391ec8d16ffcd216a4ca4267bd8ffa091c5bfe1462ad7b491",
+  "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/base/BaseItems.js": "5310d0429b7b62d405ae9b93c8d21ad17b787e5eb3fd1f01439c62f2094f7d1a",
+  "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/Stack.js": "78743f9dfcf1ebf9beb890629d908111be5c1e47f49c16d5ffa0877c5935c385",
+  "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/StackItemFactory.js": "2722b21be90f76b48325c22a65b37f80dc283e4bc9f74b644dcae81386d001c2",
+  "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/StackItem.js": "53baa91d7c27475a91a9b6993235071ab32b04a29736c5920bdda2836ab5a91b",
+  "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/ParseUtil.js": "adafa18cefad39e8408bcc0e4eb7103dceb6d16c9e7ea2eb013f23602c3f8941",
+  "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/core/Tree/Factory.js": "739db2e5760c29d7bb4f1bc7baa08ff8d727f4d117522aff5ede017f812cffef"
+}
