@@ -10,6 +10,7 @@ using namespace boost::ut;
 using namespace folia::math;
 namespace mml = folia::math::mml;
 namespace common = folia::math::output::common;
+namespace scene = folia::math::output::scene;
 using folia::math::test::SourceTable;
 
 namespace {
@@ -35,6 +36,20 @@ class RejectBreaks final : public common::Linebreaks {
 
 std::unique_ptr<common::Linebreaks> makeBreaks(common::CommonWrapperFactory &factory) {
     return std::make_unique<RejectBreaks>(factory);
+}
+
+void check_point(folia::math::test::SourceRow const &row, scene::Point const &point,
+                 std::string const &prefix) {
+    row.check(point.x, prefix + ".x");
+    row.check(point.y, prefix + ".y");
+}
+
+void check_rect(folia::math::test::SourceRow const &row, scene::Rect const &rect,
+                std::string const &prefix) {
+    row.check(rect.x, prefix + ".x");
+    row.check(rect.y, prefix + ".y");
+    row.check(rect.width, prefix + ".width");
+    row.check(rect.height, prefix + ".height");
 }
 
 class FixtureBBoxWrapper final : public common::CommonWrapper {
@@ -229,8 +244,40 @@ suite native_common_radical_source_pairs = [] {
                 row.box("input.base").h + q + font.required("rule_thickness");
             row.check(measuredHeight, "expected.measuredHeight");
             row.check(radical->rootWidth(), "expected.request.rootWidth");
-            const auto dimensions =
-                radical->getRootDimens(surdBox, row.number("expected.placedHeight"));
+            const double commonScale = radical->bbox.scale;
+            radical->bbox.scale = row.number("input.wrapperScale");
+            auto geometry = radical->layoutGeometry();
+            radical->bbox.scale = commonScale;
+            row.check(geometry.placed_height, "expected.placedHeight");
+            row.check(geometry.placed_surd_height, "expected.placedSurdHeight");
+            check_rect(row, geometry.overbar, "expected.overbar");
+            bool saw_surd = false;
+            bool saw_base = false;
+            bool saw_degree = false;
+            for (int i = 0; i < 3; ++i) {
+                const auto prefix = std::string("expected.placements.") + std::to_string(i);
+                if (!row.present(prefix + ".role"))
+                    continue;
+                const auto role = row.text(prefix + ".role");
+                if (role == "surd") {
+                    check_point(row, geometry.surd_origin, prefix);
+                    saw_surd = true;
+                } else if (role == "base") {
+                    check_point(row, geometry.base_origin, prefix);
+                    saw_base = true;
+                } else if (role == "degree") {
+                    row.require(geometry.degree_origin.has_value(), prefix + ".role");
+                    if (geometry.degree_origin)
+                        check_point(row, *geometry.degree_origin, prefix);
+                    saw_degree = true;
+                } else {
+                    row.require(false, prefix + ".role");
+                }
+            }
+            row.require(saw_surd && saw_base, "expected.placements");
+            row.require(geometry.degree_origin.has_value() == saw_degree,
+                        "expected.degreeOrigin");
+            const auto dimensions = radical->getRootDimens(surdBox, geometry.placed_height);
             row.check(dimensions[0], "expected.rootOffset");
             row.check(dimensions[1], "expected.rootHeight");
             row.check(dimensions[2], "expected.rootDx");

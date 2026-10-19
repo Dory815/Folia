@@ -4,9 +4,19 @@
 export module folia.math.output.common:msqrt;
 export import :wrapper;
 export import :mo;
+export import folia.math.output.scene.types;
 import std;
 
 export namespace folia::math::output::common {
+struct RadicalGeometry {
+    scene::Point surd_origin{};
+    scene::Point base_origin{};
+    std::optional<scene::Point> degree_origin;
+    scene::Rect overbar{};
+    double placed_height{};
+    double placed_surd_height{};
+};
+
 class CommonMsqrt : public CommonWrapper {
   public:
     CommonMo *surd{}; // borrowed from the request-local wrapper factory
@@ -27,6 +37,8 @@ class CommonMsqrt : public CommonWrapper {
     virtual std::array<double, 2> getPQ(BBox const &) const;
     virtual std::array<double, 3> getRootDimens(BBox const &, double) const;
     virtual double rootWidth() const;
+    RadicalGeometry layoutGeometry();
+    virtual double addRoot(RadicalGeometry &, BBox const &surdBox, double height);
     void getStretchedSurd();
     void invalidateBBox(bool bubble = true) override;
 

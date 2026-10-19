@@ -62,4 +62,11 @@ double CommonMroot::rootWidth() const {
     const auto box = requiredRoot(*this).getOuterBBox();
     return .4 + box.w * box.rscale;
 }
+
+double CommonMroot::addRoot(RadicalGeometry &geometry, BBox const &surdBox, double height) {
+    const auto dimensions = getRootDimens(surdBox, height);
+    const auto rootBox = requiredRoot(*this).getOuterBBox();
+    geometry.degree_origin = scene::Point{dimensions[2] * rootBox.rscale, dimensions[1]};
+    return dimensions[0];
+}
 } // namespace folia::math::output::common

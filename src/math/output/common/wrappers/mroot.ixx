@@ -18,5 +18,6 @@ class CommonMroot : public CommonMsqrt {
     std::array<double, 3> getRootDimens(BBox const &, double) const override;
     double rootHeight(BBox const &, BBox const &, double size, double height) const;
     double rootWidth() const override;
+    double addRoot(RadicalGeometry &, BBox const &surdBox, double height) override;
 };
 } // namespace folia::math::output::common

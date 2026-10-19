@@ -135,6 +135,59 @@ CommonMfrac::BevelData CommonMfrac::getBevelData(bool display) const {
     return {height, delta, u, v, numerator, denominator};
 }
 
+CommonMfrac::FractionGeometry CommonMfrac::makeFraction(bool display, double thickness) {
+    const BBox numerator = childBox(*this, 0);
+    const BBox denominator = childBox(*this, 1);
+    const double axis = jax().face().parameters.required("axis_height");
+    const double d = 0.1;
+    const double width = sourceMax((numerator.L + numerator.w + numerator.R) * numerator.rscale,
+                                   (denominator.L + denominator.w + denominator.R) * denominator.rscale);
+    const double numeratorX = getAlignX(width, numerator, getChildAlign(0)) + d + pad;
+    const double denominatorX = getAlignX(width, denominator, getChildAlign(1)) + d + pad;
+    const auto tuv = getTUV(display, thickness);
+    FractionGeometry result;
+    result.numerator_origin = {numeratorX,
+        axis + tuv.T + sourceMax(numerator.d * numerator.rscale, tuv.u)};
+    result.denominator_origin = {denominatorX,
+        axis - tuv.T - sourceMax(denominator.h * denominator.rscale, tuv.v)};
+    result.rule = scene::Rect{pad, axis - thickness / 2, width + 2 * d, thickness};
+    return result;
+}
+
+CommonMfrac::FractionGeometry CommonMfrac::makeAtop(bool display) {
+    const BBox numerator = childBox(*this, 0);
+    const BBox denominator = childBox(*this, 1);
+    const double width = sourceMax((numerator.L + numerator.w + numerator.R) * numerator.rscale,
+                                   (denominator.L + denominator.w + denominator.R) * denominator.rscale);
+    const double numeratorX = getAlignX(width, numerator, getChildAlign(0)) + pad;
+    const double denominatorX = getAlignX(width, denominator, getChildAlign(1)) + pad;
+    const auto data = getUVQ(display);
+    return {{numeratorX, data.u}, {denominatorX, -data.v}, {}, {}};
+}
+
+CommonMfrac::FractionGeometry CommonMfrac::makeBevelled(bool display) {
+    if (!bevel) throw std::logic_error("bevelled CommonMfrac has no slash wrapper");
+    const auto data = getBevelData(display);
+    const BBox slash = bevel->getOuterBBox();
+    const double width = (data.nbox.L + data.nbox.w + data.nbox.R) * data.nbox.rscale;
+    const double slashX = width - data.delta / 2;
+    const double denominatorX = width + slash.w + data.dbox.L * data.dbox.rscale - data.delta;
+    return {{data.nbox.L * data.nbox.rscale, data.u}, {denominatorX, data.v},
+            scene::Point{slashX, 0}, {}};
+}
+
+CommonMfrac::FractionGeometry CommonMfrac::layoutGeometry() {
+    // Keep the actual wrapper's ordinary BBox calculation and child wrappers as
+    // the sole layout state; this returns only the additional SVG child geometry.
+    (void)getBBox();
+    const auto *bevelledValue = node->attributes().lookup(u"bevelled");
+    if (truthy(bevelledValue)) return makeBevelled(isDisplay());
+    const double thickness = length2em(
+        lengthValue(node->attributes().lookup(u"linethickness")), 0.06);
+    if (thickness == 0) return makeAtop(isDisplay());
+    return makeFraction(isDisplay(), thickness);
+}
+
 bool CommonMfrac::isDisplay() const {
     const auto *level = node->attributes().lookup(u"scriptlevel");
     const auto *numericLevel = level ? std::get_if<double>(level) : nullptr;

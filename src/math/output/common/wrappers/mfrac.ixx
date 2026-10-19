@@ -6,11 +6,19 @@ export module folia.math.output.common:mfrac;
 export import :wrapper;
 export import :mo;
 import folia.math.core.mml_tree.mml_nodes.mfrac;
+export import folia.math.output.scene.types;
 import std;
 
 export namespace folia::math::output::common {
 class CommonMfrac : public CommonWrapper {
   public:
+    struct FractionGeometry {
+        scene::Point numerator_origin;
+        scene::Point denominator_origin;
+        std::optional<scene::Point> slash_origin;
+        std::optional<scene::Rect> rule;
+    };
+
     // Borrowed from the same CommonWrapperFactory arena as this wrapper.
     CommonMo *bevel{};
     double pad{};
@@ -40,6 +48,10 @@ class CommonMfrac : public CommonWrapper {
     };
 
     BevelData getBevelData(bool display) const;
+    FractionGeometry layoutGeometry();
+    FractionGeometry makeFraction(bool display, double thickness);
+    FractionGeometry makeAtop(bool display);
+    FractionGeometry makeBevelled(bool display);
     bool isDisplay() const;
     bool canStretch(StretchDirection) override;
     std::string getChildAlign(std::size_t) const override;

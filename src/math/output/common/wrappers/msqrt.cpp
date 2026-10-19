@@ -77,6 +77,30 @@ double CommonMsqrt::rootWidth() const {
     return 1.25;
 }
 
+double CommonMsqrt::addRoot(RadicalGeometry &, BBox const &, double) {
+    return 0;
+}
+
+RadicalGeometry CommonMsqrt::layoutGeometry() {
+    if (!surd)
+        throw std::logic_error("radical operator wrapper has not been initialized");
+    auto &baseWrapper = requiredChild(*this, base());
+    const auto &surdBox = surd->getBBox();
+    const auto baseBox = baseWrapper.getOuterBBox();
+    const double q = getPQ(surdBox)[1];
+    const double placedSurdHeight = face(*this).parameters.required("surd_height") * bbox.scale;
+    const double height = baseBox.h + q + placedSurdHeight;
+    RadicalGeometry geometry;
+    geometry.placed_height = height;
+    geometry.placed_surd_height = placedSurdHeight;
+    const double dx = addRoot(geometry, surdBox, height);
+    geometry.surd_origin = {dx, height - surdBox.h};
+    geometry.base_origin = {dx + surdBox.w, 0};
+    geometry.overbar = {dx + surdBox.w, height - placedSurdHeight,
+                        baseBox.w, placedSurdHeight};
+    return geometry;
+}
+
 void CommonMsqrt::getStretchedSurd() {
     if (!surd)
         throw std::logic_error("radical operator wrapper has not been initialized");
