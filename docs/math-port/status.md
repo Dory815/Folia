@@ -4,7 +4,29 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then verified
 Folia integration replacing the math QuickJS worker. Folia still uses that
 QuickJS path; complete renderer/application acceptance remains open.
 
-Latest verified results: Gate255 passes the complete Host suite (462 tests /
+Latest verified results are Gate267: complete Core passes 5,718 tests /
+350,271 assertions; Host passes 479 / 3,453; output foundation passes
+116 / 1,334. The unchanged pinned profile matches common layout 75/75,
+full SVG bytes 150/150, paired Scene geometry 150/150 and all four
+listener-position pairs. Font tables, instance extensions and provider
+comparisons also pass. All 2,212 registered inputs remained unchanged.
+See [the Gate267 execution record](evidence/shared-gate267.md).
+
+Request-owner growth remains unresolved: owner-bearing records grow by
+28,032 over 192 renders, down by 384 from Gate262 after exact private
+MathItem/reducer cleanup. MML projection growth is unchanged. The new
+Source-constructor properties capture passes its ownership tests but is
+not the native Renderer NodeFactory creation path. Further native-node,
+filter-record and Lite serializer callback ownership work remains open.
+
+The complete per-file/member review, real platform raster acceptance,
+native bridge/worker acceptance and Folia math backend switch remain open.
+Integration candidates are drafts, and Mermaid remains paused. Current
+builds reuse ignored output and run at most four compile jobs.
+
+## Earlier Gate255 checkpoint
+
+Gate255 passes the complete Host suite (462 tests /
 3,269 assertions), the filtered mfenced Core corpus (228 tests / 1,008
 assertions), the font provider (40 modules / 80 requests / 24,646 glyphs), and
 font instance/extension comparison (3/3). An additional 36 SVGs at em 12, 16,
