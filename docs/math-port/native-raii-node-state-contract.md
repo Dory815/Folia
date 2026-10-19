@@ -67,8 +67,8 @@ names in parentheses identify Source spelling.
   and its serialized spelling is identical. Normalize that value once to a
   boolean at the producer boundary, not through generic coercion.
 - TableNodeProperties: optional<bool> use_height(useHeight); initialized true
-  only for mtable by MmlFactory. AnnotationNodeProperties: bool
-  character_data=true for the annotation family; this represents Source isChars
+  only for mtable by MmlFactory. AnnotationNodeProperties: optional<bool>
+  character_data, initialized true only for annotation by MmlFactory; this represents Source isChars
   even though the earlier literal-property scan missed its direct initializer.
 
 `in-lists` is not a string field on MmlNode. ParseOptions owns typed auxiliary
