@@ -81,7 +81,7 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
   原生新增 6 项 / 28 断言，全量 120 项 / 30,752 断言通过：
   `build/math-port/typed-tree-factory-full.log`，构建 `typed-tree-factory-final-build.log`。
   当前 Common/MML 消费者尚未接入这些模板，不代表端到端完成。
-- Typed Tree Node 已在原有 node_types/node 文件中迁移（本记录对应提交）。保留
+- `e4405e62`：Typed Tree Node 已在原有 node_types/node 文件中迁移。保留
   Node/AbstractNode/AbstractEmptyNode 的结构操作、虚拟分派、子类查询、复制、遍历、
   空节点行为；NodeOwner 借用具体文档来执行结构修改，没有第二棵树或通用对象状态。
   Source witness `tools/math-port/tree-node-source-witness.cjs` 跑过固定哈希上游；
@@ -101,8 +101,8 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
    非缓存 BBox/outer BBox 不能返回临时引用。LineBBox 实际算法需要的类型明确、无环共享
    所有权可以保留，不能为了消灭所有 shared_ptr 而破坏算法别名关系。
    完整 MML core/embellished/spacing 语义仍是缺失依赖，不能加空实现掩盖。
-   契约尚未接受：不能直接删掉 tree::AbstractWrapper/AbstractWrapperFactory 的真实
-   kind/wrap/walkTree/工厂分派职责。Root 已纠正，Luna 已在同一草稿中记录。
+   Common 契约尚未接受，但关于删掉 Tree 基类的争议已解决：其真实
+   kind/wrap/walkTree/工厂分派职责已经原地保留并实现，不再重新争论此项。
    工厂登记表已确定并实现，详见架构新增 'Typed factory and actual MML family decision'。
    MML 已决定恢复真实多态家族类，作为 MmlDocument arena 的实际对象。当前正式代码
    仍是 MmlNode final，只含结构，旧类还不能进入 arena；不得用外置门面掩盖。
@@ -113,8 +113,10 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 4. Node/AbstractNode/AbstractEmptyNode 已正式推广并验证，不要重做。MML 接入时继承
    此唯一 parent_/children_ 存储；具体 MmlDocument 的 NodeOwner 接口仍需实现。
 5. MML 基类声明草稿在 `tools/math-port/drafts/native-raii/typed-mml-base-contract/`。
-   尚未接受：Root 正在要求修正错误 module 名、重复 texclass 状态、缺少的 Source 默认
-   虚方法、错误 addInheritedAttributes 参数和继承规则表类型。修复前不能分派家族实现。
+   尚未正式冻结/编译；错误 module 名、重复 texclass 状态、缺少的 Source 默认虚方法、
+   错误 addInheritedAttributes 参数和继承规则表类型均已在草稿修正，不要重新调查。
+   最新待落实的是 typed initializeMml 签名/职责，落实后 Root 复核最终头文件，再分派
+   基类与家族方法实现。不能把未编译的声明稿当作验收。
    已确定的工厂所有权：文档拥有唯一 MmlFactory；NodeFactory/测试借用 doc.factory()。
    doc.make -> factory.allocateRaw -> 单一登记表 -> 实际派生节点 -> doc.adopt；
    MmlFactory.make 做 defaults/arity 再直接 allocateRaw，不能回调 doc.make 形成递归。
@@ -126,7 +128,17 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
    token defaults/walkTree、TextNode 虚拟 setter、verifyTree 省略语义和 factory adopt/friend。
    继承输入已修正为 {name,origin:NodeKind,AttributeValue}，additions 保持普通键值；
    display/level/prime 改为 Source 的 bool/double/bool 默认 false/0/false。
-   完整复核在该 Sol 的最终消息；Root 应将修正落实到草稿再冻结，不得假定已实现。
+   已写入草稿的其余复核修正包括 token defaults/walkTree、TextNode 虚拟 setter、
+   不省略 TEXCLASSNAMES/MATHVARIANTS/indentAttributes、可省略 verifyTree options 的
+   no-op 行为，以及 factory adopt override/doc friend/make 属性与 children 参数。
+   MATHVARIANTS 保留 Source 的 `inital` 拼写，不要擅自“修正”成另一个值。
+   Root 新确定 initializeMml：MmlNode 声明 typed initializeMml(AttributeSet,
+   span<MmlNode*const>)，AbstractMmlNode/Empty 负责各自原有构造/defaults/setChildren
+   初始化；Factory.make 验证输入、allocateRaw/adopt 后调用它，使用实际派生类虚方法。
+   利用现有 node_defaults 的实际 kind 数据，不创建通用 constructor/static-service 记录。
+   原有任意/推断行处理应恢复在 MML 类方法，移除 Factory 中重复职责的 helpers，
+   不把先前最终结构节点设计的所有 helpers 原封不动保留成第二实现。
+   Luna 此时仅在修正同一声明稿并停止；没有开始任何 MML 家族方法实现。
 
 Root 负责正式文件推广、CMake、构建、原生执行和提交；Luna 在各自忽略草稿目录工作。
 给每项任务指定既有 C++ 方法、保留职责、替换类型、调用者和验收，不让代理自行重划架构。
@@ -138,6 +150,6 @@ Root 负责正式文件推广、CMake、构建、原生执行和提交；Luna �
 `math.cpp`、旧 Lite/MML/tree bindings、三份旧 retirement 测试、WinUI SVG 修改及
 inventory 工具另有未提交修改；不要顺手一并提交、删除或覆盖。
 
-最近一次恢复时已核查 Git 状态、Common 当前接口与旧类声明，并重读字体比较日志。
-接下来不要再重复这些检查来代替执行上述下一步。若 HEAD 或相关文件实际变化，
-只核对相应差异并更新本记录。
+字体证据、Common 原接口与旧类声明已经核查。最近两笔 Tree 实现的构建与测试也已完成。
+接下来不要重复这些检查来代替执行上述下一步。若 HEAD 或相关文件实际变化，
+只核对相应差异并更新本记录；继续保持一个构建、总并发 4/math 编译池 2。
