@@ -42,6 +42,11 @@ SVG consumer tests. No abnormal native exit occurred.
 Build/test logs are ignored in `build/math-port/native-raii-*.log`.
 All console tests link `folia_console_test_runtime`.
 
+After the two implementation commits, `cmd /c build_test.bat` also returned 0:
+455 core tests / 40,840 assertions. The broad core runner excludes the historical
+math directory during its typed migration, as explicitly recorded in the build
+transition. This is a core-regression result, not the previous full math suite.
+
 Independent development-time Source witnesses cover the new decimal conversion
 cases and regex expectations. Those are paired with native UT assertions; they
 do not substitute for the complete 150-record SVG comparison.
