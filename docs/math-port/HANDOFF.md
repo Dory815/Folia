@@ -6,13 +6,31 @@
 
 ## 恢复时先看这几行
 
-- **Common 整合正在进行**：Wrapper/Factory/Jax、Mo/Mrow/Inferred/Text 六类及 Mtext/Math
-  已进入工作树构建，尚未完整原生验收；不要拿下方旧 205 项结论证明这些新改动通过。
+- **Common core 首批已验收**：原地 Wrapper/Factory/Jax、Mo/Mrow/Inferred 类、闭合 warning
+  记录，完整原生组件 **220 项 / 32,185 断言** exit0。日志
+  `build/math-port/native-common-core-batch-{build,full}.log`；格式整理后的构建
+  `native-common-core-batch-formatted-build.log` 和完整
+  `native-common-core-batch-final-full.log` 同样 exit0。不要拿下方旧 205 项结论覆盖新进展。
+  文本六类及 Mtext/Math 的实现已在工作树，尚未完整验收，当前 CMake 只接入首批三家族，
+  为独立小批提交暂时保存的全列表在 ignored `build/math-port/common-full-CMakeLists.txt`。
   六个正式 `common-*-source-witness` 已由 Root 运行成功，输出
   `build/math-port/common-{factory,jax,variant,text,row,mo}-formal-source.log`；row reflow
   另见 `common-row-reflow-formal-source.log`。正式工具覆盖与限制见 `common-source-witness-coverage.md`。
   正在补 LayoutJob 的 inline policy/marking 数学生命周期；实际 LinebreakVisitor 和其余家族
   候选均已交付，尚未编译整合。不要重写这些候选，也不要宣称 TeX→SVG 已完成。
+- 本轮确定的修正：cpp 是 `module folia.math.output.common; import :partition;`，
+  不能再声明与 interface 同名的 implementation partition；`coreMO()` 必须返回普通
+  `CommonWrapper*`，非 Mo 的真实 core 不能被 cast 成空；getBBox(false) 已缓存时返回 cache，
+  未缓存时从 BBox.zero() 开始；fontfamily/fontweight/fontstyle 属性优先于移除的 CSS。
+  Mrow.shiftLines 在重新对齐前清 L，重复宽度 6/8/10 的 1em 左缩进不累加，已做 Source 对照。
+  CommonOutputJax 嵌套 mstyle/semantic-added 分支标记 scanned parent；semantic 的递归也可能
+  标记 scanned node，不能断言它始终未标记。正式 Jax Source witness 已覆盖两者。
+- 还未整合的关键包：`common-inline-policy-native-impl`（Source 布局入口生命周期，注意其
+  overflow 候选用了 setDefault，但 Source 实际 getAllInherited，推广应为 setInherited）；
+  `common-fraction-class-native-impl`（实际 Mfrac+288 案例）、`common-radical-class-native-impl`
+  （实际 roots+192 案例）、`common-scripts-native-impl`、`common-fence-action-native-impl`、
+  `common-linebreak-native-impl`（完整 cpp，已改 signed depth，Source 孤立 close: -1/2700）。
+  所有包均已交付，不要重新从头分派。正式 header/source 是推广后的权威，旧 mirrors 不能覆盖。
 - MML 集成基线 `33ea03fb`：43 类实际 MML 已接入唯一工厂和文档 arena。
   后续 exact clone、StyleJson、Common 值类型/字体 CSS 数据也已实现并验收，
   TreeVisitor 也已原生实现并验收；当前组件测试 **205 项 / 32,065 断言**通过。
@@ -184,11 +202,11 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 
 ### 紧接着执行
 
-1. **恢复 Common 实际类协作**：MML family 及 exact clone 已具备基础，
-   不再说“只有 final 结构节点”或“clone 尚未复制家族状态”。
-   复核 `common-wrapper-contract/CONTRACT.md`，冻结 CommonOutputJax / CommonWrapper /
-   Factory 的实际依赖与状态所有权后，复用旧 C++ 方法原地迁移。此前 Jax/jax() 和临时 BBox
-   引用问题仍需处理。分式/根式当前 scalar helper API 不是最终 wrapper 架构。
+1. **继续 Common 下一批整合**：core Wrapper/Factory/Jax、Mo/Mrow/Inferred 已通过
+   220 项 / 32,185 断言。不要再冻结一遍旧草稿或重做其基础。
+   先补 `common-inline-policy-native-impl` 的布局入口步骤并接入工作树已有的 Text/Mtext/Math，
+   完成剩余 UT，再用已交付的实际 fraction/radical/scripts/fence/action 与 visitor 包继续整合。
+   分式/根式当前生产文件仍是 scalar helper API；候选实际类尚未推广，不能当作已完成。
 2. 接通完整 TeX parser/stack/38-package 流程、Common 共享布局、Renderer 和 SVG；
    按固定上游 profile 做真正 TeX→SVG 对照，再替换 Folia 数学 QuickJS worker。
    当前 Folia 仍是旧路径。Mermaid 暂停，不做 D2D 像素对照。
@@ -255,9 +273,9 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
 
 ### Common 当前执行断点（候选实现尚未整合验收）
 
-- 正式责任/模块约定：`common-native-implementation.md`。共享 header mirrors 位于
-  `tools/math-port/drafts/native-raii/common-contract-refresh/headers/`。
-  types 已推广；wrapper/factory/Jax headers 与实现仍候选，没有生产接通或原生测试结论。
+- 正式责任/模块约定：`common-native-implementation.md`。types 与 wrapper/factory/Jax 已推广、
+  构建测试通过；正式 source/header 是权威，不得用旧 `common-contract-refresh/headers` 覆盖。
+  已接入的 Mo/Mrow/Inferred 与尚未接入的 Text/其他家族应按文首断点区分。
 - 已确认的重要 Source 细节：factory adopt 只拥有并初始化；**CommonWrapper::wrapNode**
   才负责显式 parent 时追加和完成后的 nodeMap 登记，base initialize 的默认 child wrap 只追加一次。
   禁止把同一逻辑同时塞进 factory.wrap 和 wrapper.wrap。通用 Common defaultNodes 为空，
@@ -279,7 +297,8 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
 - Root 实际执行过 common-wrapper-native-cases/run.cjs，4 个 Source 案例通过，
   日志 `build/math-port/common-wrapper-native-cases-source.log`。其他新包 Source 执行由 Luna 报告，
   尚不可当作 Root 原生验收。外部 UT 必须 import Common primary，不能 import partitions。
-- 仍需补齐实际 Common LinebreakVisitor（不能用生产 no-op）；目前原 header 仍是旧 any 接口。
+- 仍需整合实际 Common LinebreakVisitor（不能用生产 no-op）；正式 header 已 typed，
+  cpp 当前仍未进入 CMake，完整原生 cpp 已在 `common-linebreak-native-impl` 候选。
   `Linebreaks` 最小纯虚接口已冻结在正式 Common 文档。**TreeVisitor 已完成**，下一步用它改造
   Common visitor 声明/实现，并整合真实 Common core；不要重做 TreeVisitor 或把旧依赖加回。
 - 未解决验收项：无效 mathvariant Source 警告需要闭合诊断值接口；Common 基类 forceInlineBreaks

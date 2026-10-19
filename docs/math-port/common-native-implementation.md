@@ -3,9 +3,11 @@
 Status: Root froze the ownership and shared declaration model on 2026-10-20 and
 assigned method implementations. The declaration packet is
 `tools/math-port/drafts/native-raii/common-contract-refresh/headers/`.
-Only the native `:types` partition has been promoted and compiled so far;
-the wrapper/factory/Jax bodies remain uncompiled candidates. No orchestration
-or end-to-end acceptance is claimed here.
+The native `:types`, CommonWrapper, CommonWrapperFactory, CommonOutputJax and
+Mo/Mrow/InferredMrow classes now compile together in their original partitions.
+The integrated component suite passes 220 tests / 32,185 assertions. Text families,
+the actual linebreak visitor, and the inline-policy lifecycle remain the next
+integration batch; no end-to-end acceptance is claimed here.
 
 This contract reuses the current 43 polymorphic MML classes and arena, committed Tree factory/wrapper APIs, immutable NewCM FontRepository, Styles, StyleJson, LineBBox, and LengthContext. It preserves MathJax 4.1.3 Common responsibilities and method call order while replacing Context/Property/DOM object semantics with typed values. The pinned references are `.reference/MathJax-src/ts/output/common.ts`, `output/common/Wrapper.ts`, `output/common/WrapperFactory.ts`, and `core/Tree/Wrapper{,Factory}.ts`.
 
@@ -77,6 +79,15 @@ The ignored declaration mirrors are:
 
 `CommonWrapper` retains the Source field names and method responsibilities. Tree supplies `node` and `childNodes`; Common supplies public `parent`, `bbox`, `lineBBox`, `bboxComputed`, `_breakCount`, optional styles/styleData, removedStyles, variant, and shared stretch state. `CommonWrapper` uses `bbox.scale/rscale` only. `stretch` is `variant<UnresolvedStretch,NoStretch,ActiveStretch>`; `ActiveStretch` holds only source codepoint and optional selected codepoint. Delimiter direction comes from FontRepository; size selection remains in CommonMo. Per-node `Styles` are not duplicated in Jax.
 
+`coreMO()` returns `CommonWrapper*`: Source MML's default core is the node itself,
+which can be an ordinary row. Only callers requiring Mo-specific methods cast to
+`CommonMo*` after establishing an operator. Narrowing the general lookup to Mo
+would lose valid non-operator cores and break ordinary multiline rows.
+
+Closed `CommonDiagnostic` values retain invalid explicit mathvariant warnings in
+one Jax-owned vector. A record contains code, NodeKind and value, without a node
+pointer or logging callback. The normal-variant fallback remains Source behavior.
+
 `CommonWrapperFactory` derives from the exact typed Tree factory. It borrows only Jax and owns wrappers; its class-style catalog is value-only and keyed by `NodeKind`, beside the single inherited constructor registry. Its `adopt` transfers ownership and runs Source initialization. It inherits Tree `wrap` without index/list side effects. CommonWrapper owns the explicit-parent append and completed-wrapper indexing. Its `creationArguments` returns `{factory,node,parent}` typed borrows. Tree retains traversal behavior.
 
 `CommonOutputJax` remains the named native math/layout service and CommonWrapper's `jax()` target. It is not derived from the current `core::AbstractOutputJax`, whose implementation is Context/options and DOM lifecycle. The public output-Jax lifecycle belongs to Renderer, which delegates mathematical services to this request-local Jax. Jax owns `ExtendedMetrics`, `CommonOptions`, `FontRepository const&`, selected face, factory, visitor, table, node index and unknown metric cache. It exports typed accessors for metrics/options/fonts/factory/visitor/index and preserves the Source math methods listed below.
@@ -116,7 +127,7 @@ root or metrics copy is introduced. `data-semantic-added` is an MML attribute
 (Source common.ts:590), already represented by AttributeSet, not a missing
 NodeProperties field.
 
-FontFaceData's pending immutable CSS metadata consists of `cssFamilyPrefix`,
+FontFaceData's implemented immutable CSS metadata consists of `cssFamilyPrefix`,
 `cssFontMap` and `styles` in the existing font_data owner. Its `getFamily` and
 `getCssFont` methods retain Source's exact prefix and default-font behavior.
 These do not replace glyph metrics or require repeating the completed glyph

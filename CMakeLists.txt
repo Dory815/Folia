@@ -161,6 +161,10 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/common/font_path.ixx
     src/math/output/common/line_bbox.ixx
     src/math/output/common/common.ixx
+    src/math/output/common/wrapper.ixx
+    src/math/output/common/wrapper_factory.ixx
+    src/math/output/common/output_jax.ixx
+    src/math/output/common/linebreak_visitor.ixx
     src/math/output/common/wrappers/mfrac.ixx
     src/math/output/common/wrappers/msqrt.ixx
     src/math/output/common/wrappers/mroot.ixx
@@ -199,6 +203,9 @@ target_sources(folia_math PRIVATE
     src/math/output/common/font_data.cpp
     src/math/output/common/font_path.cpp
     src/math/output/common/line_bbox.cpp
+    src/math/output/common/wrapper.cpp
+    src/math/output/common/wrapper_factory.cpp
+    src/math/output/common/output_jax.cpp
     src/math/output/common/wrappers/mfrac.cpp
     src/math/output/common/wrappers/msqrt.cpp
     src/math/output/common/wrappers/mroot.cpp
@@ -209,6 +216,16 @@ target_sources(folia_math PRIVATE
     src/math/util/styles.cpp
     src/math/util/style_json.cpp
     src/math/util/regexp_host.cpp)
+
+# Native Common classes retain their original family partitions. LinebreakVisitor
+# implementation joins this list after its concrete family dependencies migrate.
+set(FOLIA_COMMON_NATIVE_FAMILIES
+    mo mrow inferred_mrow)
+foreach(family IN LISTS FOLIA_COMMON_NATIVE_FAMILIES)
+    target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+        src/math/output/common/wrappers/${family}.ixx)
+    target_sources(folia_math PRIVATE src/math/output/common/wrappers/${family}.cpp)
+endforeach()
 
 # Actual MathJax MML families share the document-owned native arena. Keep the
 # original per-family modules; only maction and mo have split implementation TUs.
@@ -366,6 +383,10 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/common_styles_source.cpp
     tests/math/native_style_json.cpp
     tests/math/native_line_bbox.cpp
+    tests/math/native_common_factory.cpp
+    tests/math/native_common_jax.cpp
+    tests/math/native_common_mo.cpp
+    tests/math/native_common_mrow.cpp
     tests/math/native_tree_factory.cpp
     tests/math/native_tree_node.cpp
     tests/math/native_tree_visitor.cpp

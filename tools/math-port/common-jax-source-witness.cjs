@@ -76,7 +76,7 @@ async function run() {
     const operator = make('mo');
     operator.attributes.set('linebreak', 'before');
     operator.attributes.set('linebreakstyle', 'before');
-    operator.texclass = 3; // TEXCLASS.REL
+    operator.texClass = 3; // TEXCLASS.REL
     append(operator, factory.create('text').setText('+'));
     append(parent, operator);
   };
@@ -95,6 +95,7 @@ async function run() {
   append(styleMath, styleContainer);
   output.markInlineBreaks(styleContainer);
   const styleParentMarked = !!styleContainer.parent.getProperty('process-breaks');
+  assert.equal(!!styleContainer.getProperty('process-breaks'), false);
   assert.equal(styleParentMarked, true,
     'mstyle branch marks the scanned node parent, as Source does');
 
@@ -109,6 +110,7 @@ async function run() {
   append(semanticMath, semanticContainer);
   output.markInlineBreaks(semanticContainer);
   const semanticParentMarked = !!semanticContainer.parent.getProperty('process-breaks');
+  assert.equal(!!semanticContainer.getProperty('process-breaks'), true);
   assert.equal(semanticParentMarked, true,
     'data-semantic-added branch marks the scanned node parent, as Source does');
 

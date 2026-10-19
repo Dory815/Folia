@@ -11,6 +11,7 @@ class CommonOutputJax;
 class CommonWrapper;
 class CommonWrapperFactory;
 class CommonMo;
+class CommonTextNode;
 class CommonMtable;
 class Linebreaks;
 class LayoutJob;
@@ -88,4 +89,13 @@ struct ActiveStretch {
 };
 
 using StretchState = std::variant<UnresolvedStretch, NoStretch, ActiveStretch>;
+
+enum class CommonDiagnosticCode : std::uint8_t { unknown_math_variant };
+
+struct CommonDiagnostic {
+    CommonDiagnosticCode code;
+    mml::NodeKind node_kind;
+    std::string value;
+    friend bool operator==(CommonDiagnostic const &, CommonDiagnostic const &) = default;
+};
 } // namespace folia::math::output::common
