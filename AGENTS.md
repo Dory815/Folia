@@ -1,5 +1,18 @@
 # Repository instructions
 
+## Math migration continuity
+
+When working on the native MathJax migration, read `docs/math-port/HANDOFF.md`
+at the start of a session and immediately after context compaction, before
+planning, delegation, edits, or repeating an investigation. It records accepted
+decisions, completed checks, known rejected approaches, and the exact next step.
+Update that same file after a material decision, verification, or commit and
+before handing off; do not create successive competing progress notebooks.
+Use the record to resume work, then inspect only changes that could invalidate
+it. Do not repeat completed broad audits or reinterpret settled user decisions
+merely because context was compacted. This record is continuity information,
+not permission to reset Git, overwrite unrelated work, or claim integration.
+
 ## Build and test
 
 - Use C++23 modules and `import std;`.
