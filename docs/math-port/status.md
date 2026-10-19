@@ -1,5 +1,15 @@
 # Current native MathJax status
 
+The user has directed removal of the JS object semantic simulation and a
+native C++/RAII reconstruction. The controlling architecture, ownership,
+file responsibilities and gates are now
+[native-raii-architecture.md](native-raii-architecture.md),
+[native-raii-work-plan.md](native-raii-work-plan.md), and
+[native-raii-acceptance.md](native-raii-acceptance.md).
+The earlier Context retirement and JS-reflection packets are withdrawn from
+promotion. Historical results below describe that previous implementation,
+not acceptance of the reconstruction. Folia has not switched its math worker.
+
 The goal remains native TeX -> shared mathematical layout -> SVG, then verified
 Folia integration replacing the math QuickJS worker. Folia still uses that
 QuickJS path; complete renderer/application acceptance remains open.
