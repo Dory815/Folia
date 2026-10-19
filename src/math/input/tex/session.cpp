@@ -13,16 +13,16 @@ void MacroDefinition::validate() const {
     if (default_first_argument && arity == 0)
         throw std::invalid_argument("A default argument requires at least one parameter");
 }
-MacroDefinition const* TexSessionState::findMacro(std::string_view name) const {
-    auto const it = macros_.find(std::string(name));
+MacroDefinition const* TexSessionState::findMacro(std::u16string_view name) const {
+    auto const it = macros_.find(std::u16string(name));
     return it == macros_.end() ? nullptr : &it->second;
 }
-void TexSessionState::defineMacro(std::string name, MacroDefinition definition) {
+void TexSessionState::defineMacro(std::u16string name, MacroDefinition definition) {
     definition.validate();
     macros_.insert_or_assign(std::move(name), std::move(definition));
 }
-bool TexSessionState::eraseMacro(std::string_view name) {
-    return macros_.erase(std::string(name)) != 0;
+bool TexSessionState::eraseMacro(std::u16string_view name) {
+    return macros_.erase(std::u16string(name)) != 0;
 }
 LabelRecord const* TexSessionState::findLabel(std::u16string_view name) const {
     auto const it = all_labels_.find(std::u16string(name));

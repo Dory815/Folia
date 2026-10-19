@@ -61,7 +61,7 @@ struct EquationFinishResult final {
 // here. Equation scratch is passed explicitly to finishEquation.
 class TexSessionState final {
 public:
-    using MacroMap = std::unordered_map<std::string, MacroDefinition>;
+    using MacroMap = std::unordered_map<std::u16string, MacroDefinition>;
 private:
     MacroMap macros_;
     LabelMap all_labels_;
@@ -74,9 +74,9 @@ public:
     TexSessionState(TexSessionState&&) noexcept = default;
     TexSessionState& operator=(TexSessionState&&) noexcept = default;
 
-    MacroDefinition const* findMacro(std::string_view ascii_name) const;
-    void defineMacro(std::string ascii_name, MacroDefinition definition);
-    bool eraseMacro(std::string_view ascii_name);
+    MacroDefinition const* findMacro(std::u16string_view name) const;
+    void defineMacro(std::u16string name, MacroDefinition definition);
+    bool eraseMacro(std::u16string_view name);
     MacroMap const& macros() const noexcept { return macros_; }
     void clearMacros() noexcept { macros_.clear(); }
 

@@ -74,7 +74,7 @@ suite native_tex_session_tests = [] {
 
     "finish_commits_given_source_effects_and_tag_reset_preserves_macros"_test = [] {
         TexSessionState session;
-        session.defineMacro("foo", MacroDefinition{u"x", {}, {}, 0, std::nullopt});
+        session.defineMacro(u"foo", MacroDefinition{u"x", {}, {}, 0, std::nullopt});
         auto equation = session.beginEquation();
         equation.labels.insert_or_assign(u"kept-after-error", LabelRecord{u"1", u"id"});
         // finishEquation commits the state supplied by its caller; it exposes
@@ -84,8 +84,35 @@ suite native_tex_session_tests = [] {
         session.resetTags(12);
         expect(session.findLabel(u"kept-after-error") == nullptr);
         expect(session.counters().equation == 12_i);
-        expect(session.findMacro("foo") != nullptr);
+        expect(session.findMacro(u"foo") != nullptr);
         session.clearMacros();
-        expect(session.findMacro("foo") == nullptr);
+        expect(session.findMacro(u"foo") == nullptr);
+    };
+
+    "macro_keys_own_full_utf16_control_sequence_names"_test = [] {
+        TexSessionState session;
+        // Source's newcommand accepts one BMP control symbol, while def uses
+        // TexParser.GetCS and also accepts the supplementary pair. The actual
+        // accepted/rejected spellings and Source error are recorded in the
+        // paired source-witness.json fixture.
+        MacroDefinition alpha{u"α-body", {}, {}, 0, std::nullopt};
+        MacroDefinition supplementary{u"😀-body", {}, {}, 0, std::nullopt};
+        MacroDefinition control_symbol{u"%-body", {}, {}, 0, std::nullopt};
+        session.defineMacro(u"α", alpha);
+        session.defineMacro(u"😀", supplementary);
+        session.defineMacro(u"%", control_symbol);
+        expect(std::u16string_view(u"😀").size() == 2_u);
+
+        expect(session.findMacro(u"α") != nullptr);
+        expect(session.findMacro(u"α")->replacement_source == u"α-body");
+        expect(session.findMacro(u"😀") != nullptr);
+        expect(session.findMacro(u"😀")->replacement_source == u"😀-body");
+        expect(session.findMacro(u"%") != nullptr);
+        expect(session.findMacro(u"absent") == nullptr);
+
+        expect(session.eraseMacro(u"😀"));
+        expect(session.findMacro(u"😀") == nullptr);
+        expect(!session.eraseMacro(u"😀"));
+        expect(session.findMacro(u"α") != nullptr);
     };
 };
