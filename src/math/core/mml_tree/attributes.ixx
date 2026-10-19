@@ -9,47 +9,59 @@ struct AttributeNull final {
 using AttributeValue = std::variant<AttributeNull, bool, double, std::u16string>;
 
 class AttributeSet final {
-public:
+  public:
     using Entry = std::pair<std::u16string, AttributeValue>;
 
-private:
+  private:
     std::vector<Entry> own_;
     std::vector<Entry> inherited_;
     std::vector<Entry> defaults_;
     std::vector<Entry> globalDefaults_;
 
-    static const AttributeValue* find(
-        const std::vector<Entry>& entries,
-        std::u16string_view name) noexcept;
-    static void put(
-        std::vector<Entry>& entries,
-        std::u16string name,
-        AttributeValue value);
+    static const AttributeValue *find(const std::vector<Entry> &entries,
+                                      std::u16string_view name) noexcept;
+    static void put(std::vector<Entry> &entries, std::u16string name, AttributeValue value);
 
-public:
+  public:
     void set(std::u16string name, AttributeValue value);
     void setInherited(std::u16string name, AttributeValue value);
     void setDefault(std::u16string name, AttributeValue value);
     void setGlobalDefault(std::u16string name, AttributeValue value);
+    // UTF-16 literals must select text, rather than variant's pointer-to-bool conversion.
+    void set(std::u16string name, char16_t const *value);
+    void setInherited(std::u16string name, char16_t const *value);
+    void setDefault(std::u16string name, char16_t const *value);
+    void setGlobalDefault(std::u16string name, char16_t const *value);
 
     bool erase(std::u16string_view name);
-    const AttributeValue* own(std::u16string_view name) const noexcept;
-    const AttributeValue* inherited(std::u16string_view name) const noexcept;
-    const AttributeValue* defaultValue(std::u16string_view name) const noexcept;
-    const AttributeValue* globalDefault(std::u16string_view name) const noexcept;
+    const AttributeValue *own(std::u16string_view name) const noexcept;
+    const AttributeValue *inherited(std::u16string_view name) const noexcept;
+    const AttributeValue *defaultValue(std::u16string_view name) const noexcept;
+    const AttributeValue *globalDefault(std::u16string_view name) const noexcept;
 
-    const AttributeValue* effectiveInherited(std::u16string_view name) const noexcept;
-    const AttributeValue* effectiveDefault(std::u16string_view name) const noexcept;
+    const AttributeValue *effectiveInherited(std::u16string_view name) const noexcept;
+    const AttributeValue *effectiveDefault(std::u16string_view name) const noexcept;
     // Attribute-layer lookup without resolving MathJax's _inherit_ sentinel,
     // matching a field read from Source getAllAttributes().
-    const AttributeValue* lookupRaw(std::u16string_view name) const noexcept;
-    const AttributeValue* lookup(std::u16string_view name) const noexcept;
+    const AttributeValue *lookupRaw(std::u16string_view name) const noexcept;
+    const AttributeValue *lookup(std::u16string_view name) const noexcept;
     bool isSet(std::u16string_view name) const noexcept;
     bool hasDefault(std::u16string_view name) const noexcept;
 
-    const std::vector<Entry>& ownEntries() const noexcept { return own_; }
-    const std::vector<Entry>& inheritedEntries() const noexcept { return inherited_; }
-    const std::vector<Entry>& defaultEntries() const noexcept { return defaults_; }
-    const std::vector<Entry>& globalDefaultEntries() const noexcept { return globalDefaults_; }
+    const std::vector<Entry> &ownEntries() const noexcept {
+        return own_;
+    }
+
+    const std::vector<Entry> &inheritedEntries() const noexcept {
+        return inherited_;
+    }
+
+    const std::vector<Entry> &defaultEntries() const noexcept {
+        return defaults_;
+    }
+
+    const std::vector<Entry> &globalDefaultEntries() const noexcept {
+        return globalDefaults_;
+    }
 };
-}
+} // namespace folia::math::mml
