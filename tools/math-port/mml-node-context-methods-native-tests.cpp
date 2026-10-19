@@ -57,7 +57,6 @@ suite mmlNodeContextMethods=[] {
         expect(tokenPrototype.has_value());
         if(!parentPrototype||!tokenPrototype)return;
         expect(*parentPrototype!=*tokenPrototype);
-        expect(context.prototype(*tokenPrototype)==parentPrototype);
         expect(context.get(tokenObject,opts::Key(u"parent"))==opts::Value(opts::Null{}));
         expect(context.get(parentObject,opts::Key(u"getText"))==opts::Value(opts::Undefined{}));
         expect(context.get(textObject,opts::Key(u"parent"))==tokenObject);
@@ -72,16 +71,32 @@ suite mmlNodeContextMethods=[] {
         expect(context.get(kindMethod,opts::Key(u"length"))==opts::Value(1));
         expect(context.get(getTextMethod,opts::Key(u"name"))==opts::Value(u""));
         expect(context.get(getTextMethod,opts::Key(u"length"))==opts::Value(0));
-        const auto kindPrototypeDescriptor=context.descriptor(*parentPrototype,opts::Key(u"isKind"));
-        const auto textPrototypeDescriptor=context.descriptor(*tokenPrototype,opts::Key(u"getText"));
+        const auto inheritedDescriptor=[&](opts::ObjectRef prototype,std::u16string_view name)
+            ->std::optional<opts::Descriptor>{
+            for(;;){
+                if(const auto descriptor=context.descriptor(prototype,opts::Key(std::u16string(name))))
+                    return descriptor;
+                const auto parent=context.prototype(prototype);
+                if(!parent)return std::nullopt;
+                prototype=*parent;
+            }
+        };
+        const auto kindPrototypeDescriptor=inheritedDescriptor(*parentPrototype,u"isKind");
+        const auto tokenKindPrototypeDescriptor=inheritedDescriptor(*tokenPrototype,u"isKind");
+        const auto textPrototypeDescriptor=inheritedDescriptor(*tokenPrototype,u"getText");
+        const auto parentTextPrototypeDescriptor=inheritedDescriptor(*parentPrototype,u"getText");
         expect(kindPrototypeDescriptor.has_value());
+        expect(tokenKindPrototypeDescriptor.has_value());
         expect(textPrototypeDescriptor.has_value());
+        expect(!parentTextPrototypeDescriptor.has_value());
         if(kindPrototypeDescriptor){
             expect(kindPrototypeDescriptor->value==kindMethod);
             expect(kindPrototypeDescriptor->writable);
             expect(kindPrototypeDescriptor->enumerable);
             expect(kindPrototypeDescriptor->configurable);
         }
+        if(tokenKindPrototypeDescriptor)
+            expect(tokenKindPrototypeDescriptor->value==kindMethod);
         if(textPrototypeDescriptor){
             expect(textPrototypeDescriptor->value==getTextMethod);
             expect(textPrototypeDescriptor->writable);
