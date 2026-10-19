@@ -1,6 +1,7 @@
 // Generated from pinned actual-CJS call order and identities.
 #include "support/folia_test.hpp"
 import folia.math.core.mml_tree.mml_nodes.mo;
+import folia.math.core.mml_tree.mml_factory;
 import folia.math.core.mml_tree.mo_host;
 import folia.math.core.mml_tree.class_binding;
 import folia.math.core.mml_tree.operator_dictionary;
@@ -10,6 +11,7 @@ import folia.math.core.mml_tree.mml_nodes.mrow;
 import folia.math.core.mml_tree.mml_nodes.mi;
 import folia.math.core.mml_tree.mml_nodes.mstyle;
 import folia.math.core.mml_tree.mml_nodes.mphantom;
+import folia.math.core.mml_tree.mml_nodes.mpadded;
 import folia.math.core.mml_tree.mml_nodes.msubsup;
 import folia.math.core.mml_tree.mml_nodes.munderover;
 namespace m=folia::math::mml;namespace h=m::host;namespace d=m::operator_dict;namespace tr=folia::math::tree;using folia::math::Property;using folia::math::PropertyArray;using folia::math::PropertyList;using folia::math::Missing;using folia::math::PropertyNull;using namespace boost::ut;namespace {
@@ -37,6 +39,25 @@ using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode>clas
 m::MmlNode*create(NF&f,std::string_view k,PropertyList a={},m::Children c=children()){return f.create(k,std::array<std::any,2>{a,c});}m::MmlNode*token(NF&f,std::string_view k,std::u16string s,PropertyList a={}){auto*t=dynamic_cast<m::TextNode*>(f.create("text"));t->setText(std::move(s));return create(f,k,a,children({t}));}Probe*mo(NF&f,std::u16string s,PropertyList a={},std::string_view k="probe"){return dynamic_cast<Probe*>(token(f,k,std::move(s),a));}
 }
 suite math_port_mo_order_tests=[] {
+"math_port_mo_order_spacing_survives_mpadded_phantom_copy"_test=[] {
+    m::MmlFactory f;
+    auto*x=token(f,"mi",u"x");
+    auto*plus=dynamic_cast<m::MmlMo*>(token(f,"mo",u"+"));
+    auto*y=token(f,"mi",u"y");
+    auto*copy=create(f,"inferredMrow",{},children({x,plus,y}));
+    auto*phantom=create(f,"mphantom",{},children({copy}));
+    auto*phantomRow=create(f,"inferredMrow",{},children({phantom}));
+    auto*padded=create(f,"mpadded",PropertyList{{"style",std::string("border: 0.1em solid; border-top: none")},{"height",std::string(".2em")},{"depth",0}},children({phantomRow}));
+    auto*visible=create(f,"mrow",{},children({token(f,"mi",u"x"),token(f,"mo",u"+"),token(f,"mi",u"y")}));
+    auto*under=create(f,"munder",PropertyList{{"displaystyle",true},{"accentunder",true}},children({visible,padded}));
+    under->setInheritedAttributes(PropertyList{},true,0,false);
+    const auto result=under->setTeXclass(PropertyNull{});
+    expect(result==m::NodeValue(under));
+    expect(plus->prevClass()==Property(0.0));
+    expect(plus->texSpacing()==Property(std::string("mediummathspace")));
+    expect(y->prevClass()==Property(2.0));
+    expect(y->texSpacing()==Property(std::string("mediummathspace")));
+};
 "math_port_mo_order_lookup_trace_2b"_test=[] {enabled=false;traceLog.clear();
 NF f(classes());auto*n=mo(f,units({43}));
 traceLog.clear();enabled=true;n->table(units({43}));enabled=false;
