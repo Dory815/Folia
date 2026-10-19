@@ -57,6 +57,19 @@ std::size_t FontFaceData::glyphCount() const noexcept {
     return count;
 }
 
+std::string FontFaceData::getFamily(std::string_view family) const {
+    if (cssFamilyPrefix.empty()) return std::string(family);
+    std::string result;
+    result.reserve(cssFamilyPrefix.size() + 2 + family.size());
+    result.append(cssFamilyPrefix).append(", ").append(family);
+    return result;
+}
+
+CssFontData FontFaceData::getCssFont(std::string_view variant) const {
+    const auto it = cssFontMap.find(variant);
+    return it == cssFontMap.end() ? CssFontData{"serif", false, false} : it->second;
+}
+
 FontFaceData const& FontRepository::face(std::string_view name) const {
     const auto it = faces_.find(name);
     if (it == faces_.end()) throw std::out_of_range("unknown font face");

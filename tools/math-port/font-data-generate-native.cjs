@@ -112,6 +112,11 @@ function delimiters(target, source) {
   for (const [code, d] of Object.entries(source || {})) {
     const allowed = new Set(['dir','sizes','variants','schar','stretch','stretchv','c','ext','min','hd','HDW','fullExt']);
     for (const key of Object.keys(d || {})) if (!allowed.has(key)) throw new Error(`unsupported pinned delimiter field ${key}: U+${Number(code).toString(16)}`);
+    // These optional Source arrays have no presence bit in DelimiterRecipe.
+    // Their absent and empty states therefore must not silently collapse.
+    for (const key of ['variants','stretch','stretchv'])
+      if (Object.hasOwn(d || {}, key) && Array.isArray(d[key]) && d[key].length === 0)
+        throw new Error(`present empty delimiter ${key} has no typed presence representation: U+${Number(code).toString(16)}`);
     for (const [key,length] of [['hd',2],['HDW',3],['fullExt',2]])
       if (d[key] != null && (!Array.isArray(d[key]) || d[key].length !== length))
         throw new Error(`invalid delimiter ${key} tuple: U+${Number(code).toString(16)}`);
@@ -222,6 +227,19 @@ for (const name of extensionPackageNames) {
     if (sourceFont.variant[variant]) sourceFont.variant[variant].cacheID = `NCM-${cacheId}`;
   extensions.push({name, hash, data});
 }
+const expectedCssFontMapSha256 = 'db47e065c8d2a277c6268c1420cfa36bc1f02d1a424c66949baf402624d021e9';
+const cssFontMap = Object.fromEntries(Object.keys(sourceFont.cssFontMap).sort()
+  .map(variant => [variant, sourceFont.cssFontMap[variant]]));
+const cssFontMapSha256 = crypto.createHash('sha256').update(JSON.stringify(cssFontMap)).digest('hex');
+if (Object.keys(cssFontMap).length !== 33 || cssFontMapSha256 !== expectedCssFontMapSha256 ||
+    sourceFont.cssFamilyPrefix !== '' ||
+    JSON.stringify(sourceFont.getCssFont('missing')) !== JSON.stringify(['serif', false, false]))
+  throw new Error(`unexpected pinned NewCM CSS metadata (${Object.keys(cssFontMap).length} rows, ${cssFontMapSha256})`);
+const {StyleJsonSheet} = require(path.join(packages, 'src/cjs/util/StyleJson.js'));
+const sourceStyleSheet = new StyleJsonSheet();
+sourceStyleSheet.addStyles(sourceFont.styles);
+if (sourceFont.styles !== undefined || sourceStyleSheet.cssText !== '')
+  throw new Error('pinned NewCM FontData.styles is no longer undefined with no stylesheet contribution');
 const sourceTupleOwner = new Map();
 function rememberRows(tables) {
   for (const [variant, table] of Object.entries(tables || {}))
@@ -258,6 +276,12 @@ for (const helper of svgAliasHelpers.values()) lines.push(`void ${helper}(SvgFon
 const shardNames = new Map([...registrations.keys()].map(file => [file, `addNewcmShard_${file.replace(/[^A-Za-z0-9_]/g,'_')}`]));
 for (const helper of shardNames.values()) lines.push(`void ${helper}(FontFaceData& face, SvgFontResourcesBuilder& svg);`);
 lines.push('static FontFaceData makeNewcmFace(SvgFontResourcesBuilder& svg) {', '  FontFaceData face; face.name="MathJaxNewcm";');
+lines.push(`  face.cssFamilyPrefix=${quote(sourceFont.cssFamilyPrefix)};`);
+for (const [variant, [family, italic, bold]] of Object.entries(sourceFont.cssFontMap))
+  lines.push(`  face.cssFontMap.insert_or_assign(${quote(variant)},CssFontData{${quote(family)},${italic},${bold}});`);
+// For this pinned profile Source returns undefined; its actual stylesheet
+// consumer treats that as a no-op, represented by the empty typed value.
+lines.push('  face.styles.clear();');
 for (const name of sourceFont.sizeVariants || []) lines.push(`  face.size_variants.push_back(${quote(name)});`);
 for (const name of sourceFont.stretchVariants || []) lines.push(`  face.stretch_variants.push_back(${quote(name)});`);
 for (const [key, value] of Object.entries(sourceFont.params || {})) lines.push(`  face.parameters.values.emplace(${quote(key)},${num(value)});`);

@@ -7,7 +7,8 @@
 ## 恢复时先看这几行
 
 - MML 集成基线 `33ea03fb`：43 类实际 MML 已接入唯一工厂和文档 arena。
-  后续 exact clone 和 StyleJson 也已实现并验收，当前组件测试 **200 项 / 31,805 断言**通过。
+  后续 exact clone、StyleJson、Common 值类型/字体 CSS 数据也已实现并验收，
+  当前组件测试 **201 项 / 32,044 断言**通过。
   不要重新迁移这些类或重跑已完成的大盘点。
 - 下一项是恢复 Common 实际类协作，契约见 `common-native-implementation.md`。
   `MmlClone` / `copyNativeStateTo` 已在原有模块中
@@ -225,6 +226,58 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
   继续使用 compare/ranges::equal 避免 Boost.UT 的 UTF-16 运算符/打印器问题。
 - inactive Common bindings/output bridge 仍引用旧 PropertyList，后续随其真实消费者迁移移除，
   不保留临时转接。StyleJson 完成不代表 CommonOutputJax 或 SVG pipeline 已完成。
+
+### Common 值类型与字体 CSS 数据（2026-10-20 已完成）
+
+- `common:types` 已原地移除 Property/旧反射 class-ref 类型，进入当前构建图并由 primary 导出。
+  它只定义有限的 metrics/options/measurement/stretch 状态和 Common 前置声明，不是 Jax 实现。
+- `CssFontData` 归实际 `font_data` 模块唯一所有；Common 导入，不重复声明跨模块类型。
+  FontFaceData 的 cssFamilyPrefix/cssFontMap/styles 和 getFamily/getCssFont 已原生实现。
+- 正式生成器是 **tools/math-port/font-data-generate-native.cjs**（CMake:98），
+  不是旧 ignored font-data-generate-typed.cjs 或旧非原生生成器。新增 33 条 CSS 元数据，
+  没有复制另一份字形负载。Source `styles===undefined` 经实际 StyleJsonSheet 验证无贡献，
+  故此固定 profile 的原生值为空 CSS 定义；这不是为缺失数据发明 fallback。
+- Root 跑过 `font-css-source-witness.cjs`：33 个实际 NewCM/extension CSS tuple，
+  map SHA-256 `db47e065c8d2a277c6268c1420cfa36bc1f02d1a424c66949baf402624d021e9`。
+  构建/聚焦/完整 exit0：`build/math-port/native-font-css-{build,focused,full}.log`。
+  完整 **201 项 / 32,044 断言**；真实 provider-backed 元数据测试新增 1 项 / 239 断言。
+- Mo 所需 delimiter 数组已做有限 Source presence census：222 条配置记录的
+  sizes/variants/schar/stretch/stretchv 均没有 present-empty。沿用现有原生 vector，
+  生成器拒绝语义不同的 present-empty variants/stretch/stretchv，不能无证据重写 optional。
+  census 见 ignored common-mo-native-impl/delimiter-array-presence.json；不需重复 14M 字形对照。
+
+### Common 当前执行断点（候选实现尚未整合验收）
+
+- 正式责任/模块约定：`common-native-implementation.md`。共享 header mirrors 位于
+  `tools/math-port/drafts/native-raii/common-contract-refresh/headers/`。
+  types 已推广；wrapper/factory/Jax headers 与实现仍候选，没有生产接通或原生测试结论。
+- 已确认的重要 Source 细节：factory adopt 只拥有并初始化；**CommonWrapper::wrapNode**
+  才负责显式 parent 时追加和完成后的 nodeMap 登记，base initialize 的默认 child wrap 只追加一次。
+  禁止把同一逻辑同时塞进 factory.wrap 和 wrapper.wrap。通用 Common defaultNodes 为空，
+  具体 catalog 和 typed LinebreakFactory 由调用方构造输入提供；不注册 generic 未实现 family。
+- Jax 单独借用 document，LayoutJob 只拥有 Jax、转发 document()；Jax 拥有 factory 再 visitor，
+  析构自然为 visitor 再 factory。metrics.containerWidth 是像素，containerWidth_ 是计算后的 em。
+  pxPerEm=metrics.ex/face.params.x_height；getLinebreakWidth 先取 root maxwidth。
+  data-semantic-added 是已有 AttributeSet 属性，不是缺少的 NodeProperties 字段。
+- CommonText stretch 字符：selectedCodepoint 或 recipe.c 非零时直接使用，不再 remap；
+  两者均无则 parent.remapChars(unicodeChars(...))。sourceCodepoint 只是 recipe key。
+- 原生 NewCM bundle 函数 **makeNewcmFontData() 确实存在**，由 newcm_font_module_provider 导出；
+  它内部调用 installNewcmFontData，不要根据较窄 data 模块误判缺失。
+- 以下 ignored 根目录各已有实质代码/UT/Source 证据，需审查整合，不要重新分派从头写：
+  common-wrapper-native-impl（raii_common_font_audit）；common-factory-native-impl
+  （raii_mml_foundation，含合并 Jax 候选）；common-jax-native-impl（fraction_table_runner，
+  math/service 方法原件）；common-mo-native-impl（raii_scene_foundation）；
+  common-row-native-impl（font_assert_audit，Root 已把家族文件移回 packet 的 wrappers 子目录）；
+  common-text-native-impl（layout_fixture_cleanup，6 个实际家族）。
+- Root 实际执行过 common-wrapper-native-cases/run.cjs，4 个 Source 案例通过，
+  日志 `build/math-port/common-wrapper-native-cases-source.log`。其他新包 Source 执行由 Luna 报告，
+  尚不可当作 Root 原生验收。外部 UT 必须 import Common primary，不能 import partitions。
+- 仍需补齐实际 Common LinebreakVisitor（不能用生产 no-op）；目前原 header 仍是旧 any 接口。
+  `Linebreaks` 最小纯虚接口和 TreeVisitor 模板已冻结在正式 Common 文档。TreeVisitor 正在单独
+  原生迁移/构建，下一步先完成它，再用真实类整合 Common core；不要把生产 Common 原样旧依赖加回。
+- 未解决验收项：无效 mathvariant Source 警告需要闭合诊断值接口；Common 基类 forceInlineBreaks
+  是 false，但 Source SVG 返回 options.linebreaks.inline，最终 SVG 对照必须保留这个实际策略。
+  TeX parser/packages、CommonMath/其他家族、fraction/radical 实际类、Scene 发射和 Folia 接入仍未完成。
 
 ## 工作区保护
 

@@ -2,6 +2,7 @@
 export module folia.math.output.common.font_data;
 import std;
 import folia.math.output.scene.types;
+export import folia.math.util.style_json;
 export import folia.math.output.common.font_path;
 
 export namespace folia::math::output::common {
@@ -66,8 +67,19 @@ struct FontParameters {
         return it == values.end() ? std::nullopt : std::optional<double>{it->second};
     }
 };
+// Source FontData.ts CSS tuple after FontData.defineCssFonts resolves the
+// accepted profile's "unknownFamily" option.
+struct CssFontData {
+    std::string family;
+    bool italic{};
+    bool bold{};
+    friend bool operator==(CssFontData const&, CssFontData const&) = default;
+};
 struct FontFaceData {
     std::string name;
+    std::string cssFamilyPrefix;
+    std::map<std::string, CssFontData, std::less<>> cssFontMap;
+    style_json::StyleJson styles;
     // Source profile keys exclude separately registered extension variants.
     std::size_t source_profile_glyph_count{};
     std::size_t source_dynamic_module_count{};
@@ -83,6 +95,8 @@ struct FontFaceData {
     std::map<std::uint32_t, std::u16string> numberRemap;
     std::size_t glyphCount() const noexcept;
     std::size_t sourceProfileGlyphCount() const noexcept { return source_profile_glyph_count; }
+    std::string getFamily(std::string_view family) const;
+    CssFontData getCssFont(std::string_view variant) const;
 };
 
 class FontRepository {

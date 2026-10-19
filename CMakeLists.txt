@@ -172,6 +172,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/styles.ixx
     src/math/util/style_json.ixx
     src/math/util/regexp_host.ixx)
+    src/math/output/common/types.ixx
 target_sources(folia_math PRIVATE
     src/math/core/mml_tree/attributes.cpp
     src/math/core/mml_tree/node_properties.cpp
@@ -361,6 +362,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_string_util.cpp
     tests/math/native_raii_fonts.cpp
     tests/math/common_styles_source.cpp
+    tests/math/font_css_metadata.cpp
     tests/math/native_style_json.cpp
     tests/math/native_line_bbox.cpp
     tests/math/native_tree_factory.cpp
