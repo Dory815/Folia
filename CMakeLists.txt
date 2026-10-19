@@ -407,6 +407,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_common_containers.cpp
     tests/math/native_common_menclose.cpp
     tests/math/native_scene_element_roles.cpp
+    tests/math/native_factory_owned_result.cpp
     tests/math/native_tree_factory.cpp
     tests/math/native_tree_node.cpp
     tests/math/native_tree_visitor.cpp

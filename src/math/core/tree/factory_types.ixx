@@ -16,16 +16,16 @@ template<class Product, class Arguments> struct FactoryClass {
 template<class Product, class Kind, class Arguments>
 using FactoryClassMap = std::vector<std::pair<Kind, FactoryClass<Product, Arguments>>>;
 
-template<class Product, class Kind, class Arguments> class FactoryServices {
+template<class Product, class Kind, class Arguments, class Result = Product&> class FactoryServices {
 public:
     virtual ~FactoryServices() = default;
-    virtual Product& create(const Kind&, const Arguments&) = 0;
+    virtual Result create(const Kind&, const Arguments&) = 0;
     virtual void setNodeClass(Kind, FactoryClass<Product, Arguments>) = 0;
     virtual std::optional<FactoryClass<Product, Arguments>> getNodeClass(const Kind&) const = 0;
     virtual void deleteNodeClass(const Kind&) = 0;
     virtual bool nodeIsKind(const Product&, const Kind&) const = 0;
     virtual std::vector<Kind> getKinds() const = 0;
-    virtual Product& adopt(std::unique_ptr<Product>) = 0;
+    virtual Result adopt(std::unique_ptr<Product>) = 0;
 };
 
 template<class Product, class Source> class WrapperServices {

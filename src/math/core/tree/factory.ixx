@@ -9,8 +9,8 @@ export import folia.math.core.tree.factory_types;
 import std;
 
 export namespace folia::math::tree {
-template<class Product, class Kind, class Arguments>
-class AbstractFactory : public FactoryServices<Product, Kind, Arguments> {
+template<class Product, class Kind, class Arguments, class Result = Product&>
+class AbstractFactory : public FactoryServices<Product, Kind, Arguments, Result> {
 public:
     explicit AbstractFactory(FactoryClassMap<Product, Kind, Arguments> nodes = {},
                              std::optional<Kind> defaultKind = std::nullopt)
@@ -23,7 +23,7 @@ public:
     AbstractFactory(AbstractFactory&&) = delete;
     AbstractFactory& operator=(AbstractFactory&&) = delete;
 
-    Product& create(const Kind& requested, const Arguments& arguments) override {
+    Result create(const Kind& requested, const Arguments& arguments) override {
         auto record = getNodeClass(requested);
         if (!record) {
             if (!defaultKind) throw std::out_of_range("Factory kind is not registered and no default kind is configured");
@@ -66,7 +66,7 @@ public:
         return result;
     }
 
-    Product& adopt(std::unique_ptr<Product>) override = 0;
+    Result adopt(std::unique_ptr<Product>) override = 0;
 
     std::optional<Kind> defaultKind;
 
