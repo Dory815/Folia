@@ -1540,3 +1540,31 @@ if(WIN32 AND MSVC)
         endif()
     endforeach()
 endif()
+
+# Bridge and probe targets are isolated to Windows/MSVC. The bridge target is
+# the sole module-scanning C++ layer between WinUI and folia.math.
+if(WIN32 AND MSVC)
+    add_library(folia_math_winui_bridge STATIC
+        src/math/native_renderer_bridge.cpp)
+    target_compile_features(folia_math_winui_bridge PUBLIC cxx_std_23)
+    set_target_properties(folia_math_winui_bridge PROPERTIES
+        CXX_MODULE_STD ON
+        CXX_SCAN_FOR_MODULES ON)
+    target_include_directories(folia_math_winui_bridge PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(folia_math_winui_bridge PRIVATE folia_math)
+
+    add_executable(FoliaNativeMathBridgeProbe EXCLUDE_FROM_ALL
+        tools/math-port/native-renderer-bridge-probe.cpp)
+    target_compile_features(FoliaNativeMathBridgeProbe PRIVATE cxx_std_23)
+    set_target_properties(FoliaNativeMathBridgeProbe PROPERTIES
+        CXX_MODULE_STD ON
+        CXX_SCAN_FOR_MODULES ON)
+    target_include_directories(FoliaNativeMathBridgeProbe PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(FoliaNativeMathBridgeProbe PRIVATE
+        folia_math_winui_bridge
+        folia_math
+        folia_console_test_runtime)
+    target_link_options(FoliaNativeMathBridgeProbe PRIVATE /STACK:33554432)
+endif()

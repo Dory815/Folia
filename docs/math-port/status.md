@@ -4,7 +4,7 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then verified
 Folia integration replacing the math QuickJS worker. Folia still uses that
 QuickJS path; complete renderer/application acceptance remains open.
 
-Latest verified results are Gate268: complete Core passes 5,723 tests /
+Latest complete-tree verified results are Gate268: complete Core passes 5,723 tests /
 350,295 assertions; Host passes 484 / 3,477; output foundation passes
 116 / 1,334. The unchanged pinned profile matches common layout 75/75,
 full SVG bytes 150/150, paired Scene geometry 150/150 and all four
@@ -12,16 +12,24 @@ listener-position pairs. Font tables, instance extensions and provider
 comparisons also pass. All 2,213 registered inputs remained unchanged.
 See [the Gate268 execution record](evidence/shared-gate268.md).
 
-Request-owner growth remains unresolved: owner-bearing records grow by
-27,264 over 192 renders, down by 768 from Gate267 after document-owned
-filter-record cleanup. MML projection growth is unchanged. The new
-Source-constructor properties capture passes its ownership tests but is
-not the native Renderer NodeFactory creation path. Further native-node,
-filter-record and Lite serializer callback ownership work remains open.
+Gate271's native C ABI probe passes, including UTF-16 input, error SVGs,
+result lifetime, thread checks, cancellation and deadlines. This is a narrow
+bridge result. Gate270 compiled but failed four Host assertions in the new
+MML property capture; its Source-visible factory getter regression and
+persistent mtable defaults baseline still require correction. ParseOptions
+real-owner cases pass 39 assertions, and Foundation passes 116 / 1,334.
+See [the bridge checkpoint](evidence/native-bridge-gate271.md).
+
+Request-owner growth remains unresolved. Gate270 measures 18,816 additional
+owner-bearing records over 192 renders, down from Gate268's 27,264 after
+Lite callback and native MML projection cleanup. The Host failure prevents
+accepting that tree as a complete result. Sparse retired-record storage is
+under review and has not been built or run.
 
 The complete per-file/member review, real platform raster acceptance,
 native bridge/worker acceptance and Folia math backend switch remain open.
-Integration candidates are drafts, and Mermaid remains paused. Current
+The C ABI is committed; raster/worker integration candidates are drafts.
+Mermaid remains paused. Current
 builds reuse ignored output and run at most four compile jobs.
 
 ## Earlier Gate255 checkpoint
