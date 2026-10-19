@@ -26,8 +26,17 @@ Lite callback and native MML projection cleanup. The Host failure prevents
 accepting that tree as a complete result. Sparse retired-record storage is
 under review and has not been built or run.
 
-The complete per-file/member review, real platform raster acceptance,
-native bridge/worker acceptance and Folia math backend switch remain open.
+Gate273 builds successfully. Context checks pass 26 tests / 208 assertions,
+Foundation passes 116 / 1,334, and the C ABI probe passes. Host still has one
+projection cleanup assertion failure; the earlier Source factory getter
+regression is fixed. Live records still grow by 87,296 over 192 renders,
+including 18,816 owner-bearing records. Retired Record storage is reclaimed,
+but the observation takes 526.857 seconds and the teardown algorithm needs
+revision. This tree is not accepted. See [the Gate273 record](evidence/shared-gate273.md).
+
+The complete per-file/member review, actual native worker acceptance and
+Folia math backend switch remain open. The user removed the additional D2D
+pixel comparison: integration continues through the existing SVG path.
 The C ABI is committed; raster/worker integration candidates are drafts.
 Mermaid remains paused. Current
 builds reuse ignored output and run at most four compile jobs.
