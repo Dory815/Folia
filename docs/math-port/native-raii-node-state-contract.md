@@ -10,7 +10,7 @@ Its dynamic copy/enumeration operations become explicit typed transfers.
 
 Luna implements `core/mml_tree/node_properties.ixx/.cpp` with module
 `folia.math.core.mml_tree.node_properties`, namespace `folia::math::mml`.
-It depends only on std. It exports owned records and closed enums, no node
+It depends only on std and the independent NodeKind enum. It exports owned records and closed enums, no node
 pointers, callback or property-name lookup API. MmlNode owns NodeProperties
 and MmlIntrinsicState by value and exposes named `properties()` and `state()`
 references. Algorithms remain in their family modules. These records are data,
@@ -24,7 +24,7 @@ universal variant, reflection API or property enumeration at runtime.
 
 `TexClass` has none=-1, ord=0, op=1, bin=2, rel=3, open=4, close=5, punct=6,
 inner=7. `MmlIntrinsicState` has optional working_tex_class,
-previous_tex_class and previous_script_level. These describe different stages
+previous_tex_class and previous_script_level (optional<double>). These describe different stages
 of TeX spacing. The explicit Source property `texClass` is a separate
 `TexNodeProperties::explicit_tex_class`: it requests a class rather than
 recording the mutable result of class adjustment. Do not maintain a duplicate

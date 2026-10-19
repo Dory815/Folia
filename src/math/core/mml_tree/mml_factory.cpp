@@ -112,6 +112,8 @@ MmlNode& MmlFactory::make(
     auto installedAttributes = installDefaults(kind, attributes);
     auto& node = document_.make(kind);
     node.attributes() = std::move(installedAttributes);
+    initializeNodeProperties(node.kind(), node.properties());
+    node.state() = initialIntrinsicState(node.kind());
 
     if (arity == NodeArityKind::inferred_row) {
         document_.reserveChildren(node, 1);
@@ -144,6 +146,7 @@ MmlNode& MmlFactory::make(
         }
 
         auto& explicitRow = make(NodeKind::mrow, child->attributes());
+        copyNodeProperties(child->properties(), explicitRow.properties());
         ExplicitRowPlan plan{&explicitRow, {}};
         plan.children.reserve(child->children().size());
         collectAnyArityChildren(child->children(), plan.children);

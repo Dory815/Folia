@@ -118,6 +118,8 @@ MmlNode& MmlDocument::cloneSubtree(const MmlNode& source) {
     auto& clone = make(source.kind_);
     clone.text_ = source.text_;
     clone.attributes_ = source.attributes_;
+    clone.properties_ = source.properties_;
+    clone.state_ = source.state_;
     for (auto* child : source.children_) {
         append(clone, cloneSubtree(*child));
     }
