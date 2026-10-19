@@ -1,107 +1,190 @@
 /*************************************************************
- * MathJax 4.1.3 output/common/Wrappers/mmultiscripts.ts.
+ * Candidate typed port of MathJax 4.1.3 output/common/Wrappers/mmultiscripts.ts.
  *************************************************************/
 module folia.math.output.common;
 import :mmultiscripts;
+import :msubsup;
 import :scriptbase;
 import :wrapper;
-import folia.math.core.mml_tree.mml_nodes.mmultiscripts;
+import folia.math.core.mml_tree.node_kind;
 import std;
 
 namespace folia::math::output::common {
 namespace {
-tree::FactoryChildren<CommonWrapper> required(CommonMmultiscripts& wrapper){
-    if(!wrapper.childNodes)throw options::Exception("TypeError",u"Cannot read properties of undefined (reading 'Symbol(Symbol.iterator)')");
-    const auto result=*wrapper.childNodes;
-    if(!result)throw options::Exception("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
-    return result;
+double parameter(CommonWrapper const &wrapper, std::string_view name) {
+    return wrapper.jax().face().parameters.required(name);
 }
+} // namespace
+
+CommonMmultiscripts::CommonMmultiscripts(CommonWrapperFactory &factory, mml::MmlNode &node,
+                                         CommonWrapper *parent)
+    : CommonMsubsup(factory, node, parent) {
 }
 
-CommonMmultiscripts::CommonMmultiscripts(CommonWrapperFactory& factory,mml::MmlNode& node,CommonWrapper* parent)
-    :CommonMsubsup(factory,node,parent){}
-void CommonMmultiscripts::initializeSource(){
+void CommonMmultiscripts::initializeSource() {
     CommonMsubsup::initializeSource();
     getScriptData();
 }
 
-BBox CommonMmultiscripts::combinePrePost(const BBox& pre,const BBox& post)const{
-    BBox result=pre;result.combine(post,0,0);return result;
+BBox CommonMmultiscripts::combinePrePost(const BBox &pre, const BBox &post) const {
+    BBox result = pre;
+    result.combine(post);
+    return result;
 }
-void CommonMmultiscripts::getScriptData(){
-    scriptData_={};scriptData_.sub.empty();scriptData_.sup.empty();scriptData_.psub.empty();scriptData_.psup.empty();
-    const auto lists=getScriptBBoxLists();
-    combineBBoxLists(scriptData_.sub,scriptData_.sup,lists.subList,lists.supList);
-    combineBBoxLists(scriptData_.psub,scriptData_.psup,lists.psubList,lists.psupList);
-    if(!lists.base.empty())scriptData_.base=lists.base[0];
-    scriptData_.numPrescripts=lists.psubList.size();scriptData_.numScripts=lists.subList.size();
+
+void CommonMmultiscripts::getScriptData() {
+    scriptData_ = {};
+    scriptData_.sub.empty();
+    scriptData_.sup.empty();
+    scriptData_.psub.empty();
+    scriptData_.psup.empty();
+    auto lists = getScriptBBoxLists();
+    combineBBoxLists(scriptData_.sub, scriptData_.sup, lists.subList, lists.supList);
+    combineBBoxLists(scriptData_.psub, scriptData_.psup, lists.psubList, lists.psupList);
+    if (!lists.base.empty())
+        scriptData_.base = lists.base.front();
+    scriptData_.numPrescripts = lists.psubList.size();
+    scriptData_.numScripts = lists.subList.size();
 }
-ScriptLists CommonMmultiscripts::getScriptBBoxLists(){
-    ScriptLists lists;enum class Side{base,sub,sup,psub,psup};Side side=Side::base;
-    const auto children=required(*this);
-    for(std::size_t i=0;i<children->size();++i){
-        auto* child=dynamic_cast<CommonWrapper*>(children->get(i).requireNode("getOuterBBox"));
-        if(child->node->isKind("mprescripts")){side=Side::psub;continue;}
-        auto box=child->getOuterBBox();
-        switch(side){
-        case Side::base:lists.base.push_back(*box);side=Side::sub;break;
-        case Side::sub:lists.subList.push_back(*box);side=Side::sup;break;
-        case Side::sup:lists.supList.push_back(*box);side=Side::sub;break;
-        case Side::psub:lists.psubList.push_back(*box);side=Side::psup;break;
-        case Side::psup:lists.psupList.push_back(*box);side=Side::psub;break;
+
+ScriptLists CommonMmultiscripts::getScriptBBoxLists() {
+    ScriptLists lists;
+    enum class Side { base, sub, sup, psub, psup };
+    Side side = Side::base;
+    for (auto *child : childNodes) {
+        if (child->node->kind() == mml::NodeKind::mprescripts) {
+            side = Side::psub;
+            continue;
+        }
+        const auto box = child->getOuterBBox();
+        switch (side) {
+        case Side::base:
+            lists.base.push_back(box);
+            side = Side::sub;
+            break;
+        case Side::sub:
+            lists.subList.push_back(box);
+            side = Side::sup;
+            break;
+        case Side::sup:
+            lists.supList.push_back(box);
+            side = Side::sub;
+            break;
+        case Side::psub:
+            lists.psubList.push_back(box);
+            side = Side::psup;
+            break;
+        case Side::psup:
+            lists.psupList.push_back(box);
+            side = Side::psub;
+            break;
         }
     }
-    firstPrescript_=lists.subList.size()+lists.supList.size()+2;
-    padLists(lists.subList,lists.supList);padLists(lists.psubList,lists.psupList);return lists;
+    firstPrescript_ = lists.subList.size() + lists.supList.size() + 2;
+    padLists(lists.subList, lists.supList);
+    padLists(lists.psubList, lists.psupList);
+    return lists;
 }
-void CommonMmultiscripts::padLists(std::vector<BBox>& first,std::vector<BBox>& second)const{
-    if(first.size()>second.size())second.push_back(BBox::makeEmpty());
+
+void CommonMmultiscripts::padLists(std::vector<BBox> &first, std::vector<BBox> &second) const {
+    if (first.size() > second.size())
+        second.push_back(BBox::makeEmpty());
 }
-void CommonMmultiscripts::combineBBoxLists(BBox& sub,BBox& sup,const std::vector<BBox>& subs,const std::vector<BBox>& sups)const{
-    for(std::size_t i=0;i<subs.size();++i){
-        if(i>=sups.size())throw options::Exception("TypeError",u"Cannot read properties of undefined (reading 'w')");
-        const auto a=getScaledWHD(subs[i]),b=getScaledWHD(sups[i]);const double width=std::max(a[0],b[0]);
-        sub.w+=width;sup.w+=width;sub.h=std::max(sub.h,a[1]);sub.d=std::max(sub.d,a[2]);sup.h=std::max(sup.h,b[1]);sup.d=std::max(sup.d,b[2]);
+
+void CommonMmultiscripts::combineBBoxLists(BBox &sub, BBox &sup, const std::vector<BBox> &subs,
+                                           const std::vector<BBox> &sups) const {
+    for (std::size_t i = 0; i < subs.size(); ++i) {
+        if (i >= sups.size())
+            throw std::logic_error("multiscript side lists have different lengths");
+        const auto a = getScaledWHD(subs[i]);
+        const auto b = getScaledWHD(sups[i]);
+        const double width = std::max(a[0], b[0]);
+        sub.w += width;
+        sup.w += width;
+        sub.h = std::max(sub.h, a[1]);
+        sub.d = std::max(sub.d, a[2]);
+        sup.h = std::max(sup.h, b[1]);
+        sup.d = std::max(sup.d, b[2]);
     }
 }
-std::array<double,3> CommonMmultiscripts::getScaledWHD(const BBox& box)const{return {box.w*box.rscale,box.h*box.rscale,box.d*box.rscale};}
-std::array<double,2> CommonMmultiscripts::getCombinedUV(){
-    const auto sub=combinePrePost(scriptData_.sub,scriptData_.psub),sup=combinePrePost(scriptData_.sup,scriptData_.psup);
-    const auto uvq=getUVQ(&sub,&sup);return {(*uvq)[0],(*uvq)[1]};
+
+std::array<double, 3> CommonMmultiscripts::getScaledWHD(const BBox &box) const {
+    return {box.w * box.rscale, box.h * box.rscale, box.d * box.rscale};
 }
-BBox CommonMmultiscripts::addPrescripts(BBox& box,double u,double v)const{
-    if(scriptData_.numPrescripts){const double space=font->params().scriptspace;box.combine(scriptData_.psup,space,u);box.combine(scriptData_.psub,space,v);}return box;
+
+std::array<double, 2> CommonMmultiscripts::getCombinedUV() {
+    const auto sub = combinePrePost(scriptData_.sub, scriptData_.psub);
+    const auto sup = combinePrePost(scriptData_.sup, scriptData_.psup);
+    const auto uvq = getUVQ(&sub, &sup);
+    return {uvq[0], uvq[1]};
 }
-BBox CommonMmultiscripts::addPostscripts(BBox& box,double u,double v)const{
-    if(scriptData_.numScripts){const double x=box.w;box.combine(scriptData_.sup,x,u);box.combine(scriptData_.sub,x,v);box.w+=font->params().scriptspace;}return box;
-}
-std::shared_ptr<std::array<double,3>> CommonMmultiscripts::getUVQ(const BBox* subValue,const BBox* supValue){
-    const auto sub=subValue?*subValue:*subChild()->getOuterBBox();
-    const auto sup=supValue?*supValue:*supChild()->getOuterBBox();
-    if(UVQ)return UVQ;
-    if(sub.w==0)UVQ=std::make_shared<std::array<double,3>>(std::array<double,3>{getU(),0,0});
-    else if(sup.w==0)UVQ=std::make_shared<std::array<double,3>>(std::array<double,3>{-getV(),0,0});
-    else UVQ=CommonMsubsup::getUVQ(&sub,&sup);
-    return UVQ;
-}
-BBox CommonMmultiscripts::appendScripts(BBox& box)const{
-    box.empty();const auto [u,v]=const_cast<CommonMmultiscripts*>(this)->getCombinedUV();
-    addPrescripts(box,u,v);
-    if(!scriptData_.base)throw options::Exception("TypeError",u"Cannot read properties of undefined (reading 'w')");
-    box.append(*scriptData_.base);addPostscripts(box,u,v);box.clean();return box;
-}
-std::shared_ptr<LineBBox> CommonMmultiscripts::computeLineBBox(std::size_t index){
-    const auto count=baseChild()->breakCount();auto childbox=baseChild()->getLineBBox(index)->copy();
-    const auto [u,v]=getCombinedUV();LineBBox box=childbox;
-    if(index==0){
-        auto leadingValue=jax().optionsContext().get(linebreakOptions(),options::Key(u"lineleading"));
-        std::optional<double> leading;
-        if(!std::holds_alternative<options::Undefined>(leadingValue.data))leading=jax().optionsContext().toNumber(leadingValue);
-        BBox prescriptBox=BBox::zero();
-        auto prescripts=addPrescripts(prescriptBox,u,v);
-        box=LineBBox::from(prescripts,leading);box.append(childbox);addLeftBorders(box);box.L=bbox->L;
+
+BBox CommonMmultiscripts::addPrescripts(BBox &box, double u, double v) const {
+    if (scriptData_.numPrescripts) {
+        const double space = parameter(*this, "scriptspace");
+        box.combine(scriptData_.psup, space, u);
+        box.combine(scriptData_.psub, space, v);
     }
-    else if(index==count){addPostscripts(box,u,v);addRightBorders(box);box.R=bbox->R;}
-    addMiddleBorders(box);return std::make_shared<LineBBox>(std::move(box));
+    return box;
 }
+
+BBox CommonMmultiscripts::addPostscripts(BBox &box, double u, double v) const {
+    if (scriptData_.numScripts) {
+        const double x = box.w;
+        box.combine(scriptData_.sup, x, u);
+        box.combine(scriptData_.sub, x, v);
+        box.w += parameter(*this, "scriptspace");
+    }
+    return box;
 }
+
+std::array<double, 3> CommonMmultiscripts::getUVQ(const BBox *subValue, const BBox *supValue) {
+    const BBox sub = subValue ? *subValue : subChild()->getOuterBBox();
+    const BBox sup = supValue ? *supValue : supChild()->getOuterBBox();
+    if (UVQ)
+        return *UVQ;
+    if (sub.w == 0)
+        UVQ = std::array<double, 3>{getU(), 0, 0};
+    else if (sup.w == 0)
+        UVQ = std::array<double, 3>{-getV(), 0, 0};
+    else
+        UVQ = CommonMsubsup::getUVQ(&sub, &sup);
+    return *UVQ;
+}
+
+BBox CommonMmultiscripts::appendScripts(BBox &box) const {
+    box.empty();
+    const auto uv = const_cast<CommonMmultiscripts *>(this)->getCombinedUV();
+    addPrescripts(box, uv[0], uv[1]);
+    if (!scriptData_.base)
+        throw std::logic_error("multiscripts wrapper has no base box");
+    box.append(*scriptData_.base);
+    addPostscripts(box, uv[0], uv[1]);
+    box.clean();
+    return box;
+}
+
+std::shared_ptr<LineBBox> CommonMmultiscripts::computeLineBBox(std::size_t index) {
+    auto *base = baseChild();
+    if (!base)
+        throw std::logic_error("multiscripts wrapper has no base child");
+    const auto count = base->breakCount();
+    auto childBox = base->getLineBBox(index)->copy();
+    const auto uv = getCombinedUV();
+    LineBBox box = childBox;
+    if (index == 0) {
+        BBox pre = BBox::zero();
+        auto prescripts = addPrescripts(pre, uv[0], uv[1]);
+        box = LineBBox::from(prescripts, linebreakOptions().lineleading);
+        box.append(childBox);
+        addLeftBorders(box);
+        box.L = bbox.L;
+    } else if (index == count) {
+        addPostscripts(box, uv[0], uv[1]);
+        addRightBorders(box);
+        box.R = bbox.R;
+    }
+    addMiddleBorders(box);
+    return std::make_shared<LineBBox>(std::move(box));
+}
+} // namespace folia::math::output::common

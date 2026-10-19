@@ -7,31 +7,34 @@ import std;
 
 export namespace folia::math::output::common {
 class CommonMsub : public CommonScriptbase {
-public:
-    inline static constexpr bool useIC=false;
-    CommonMsub(CommonWrapperFactory&,mml::MmlNode&,CommonWrapper* parent=nullptr,
-               std::optional<std::size_t> scriptChildIndex={});
-    CommonWrapper* scriptChild()const override;
-    std::array<double,2> getOffset()const override;
+  public:
+    inline static constexpr bool useIC = false;
+    CommonMsub(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr,
+               std::optional<std::size_t> scriptChildIndex = {});
+    CommonWrapper *scriptChild() const override;
+    std::array<double, 2> getOffset() const override;
 };
+
 class CommonMsup : public CommonScriptbase {
-public:
-    inline static constexpr bool useIC=true;
-    CommonMsup(CommonWrapperFactory&,mml::MmlNode&,CommonWrapper* parent=nullptr,
-               std::optional<std::size_t> scriptChildIndex={});
-    CommonWrapper* scriptChild()const override;
-    std::array<double,2> getOffset()const override;
+  public:
+    inline static constexpr bool useIC = true;
+    CommonMsup(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr,
+               std::optional<std::size_t> scriptChildIndex = {});
+    CommonWrapper *scriptChild() const override;
+    std::array<double, 2> getOffset() const override;
 };
+
 class CommonMsubsup : public CommonScriptbase {
-public:
-    inline static constexpr bool useIC=false;
-    std::shared_ptr<std::array<double,3>> UVQ;
-    CommonMsubsup(CommonWrapperFactory&,mml::MmlNode&,CommonWrapper* parent=nullptr,
-                  std::optional<std::size_t> scriptChildIndex={});
-    virtual CommonWrapper* subChild()const;
-    virtual CommonWrapper* supChild()const;
-    CommonWrapper* scriptChild()const override;
-    virtual std::shared_ptr<std::array<double,3>> getUVQ(const BBox* subbox=nullptr,const BBox* supbox=nullptr);
-    BBox appendScripts(BBox&)const override;
+  public:
+    inline static constexpr bool useIC = false;
+    std::optional<std::array<double, 3>> UVQ;
+    CommonMsubsup(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr,
+                  std::optional<std::size_t> scriptChildIndex = {});
+    virtual CommonWrapper *subChild() const;
+    virtual CommonWrapper *supChild() const;
+    CommonWrapper *scriptChild() const override;
+    virtual std::array<double, 3> getUVQ(const BBox *subbox = nullptr,
+                                         const BBox *supbox = nullptr);
+    BBox appendScripts(BBox &) const override;
 };
-}
+} // namespace folia::math::output::common

@@ -1,95 +1,142 @@
 /*************************************************************
- * MathJax 4.1.3 output/common/Wrappers/msubsup.ts.
- * Source implementation for msub, msup and msubsup.
+ * Candidate typed port of MathJax 4.1.3 output/common/Wrappers/msubsup.ts.
  *************************************************************/
 module folia.math.output.common;
 import :msubsup;
 import :scriptbase;
 import :wrapper;
 import folia.math.core.mml_tree.mml_nodes.msubsup;
-import folia.math.util.property_host;
+import folia.math.util.lengths;
 import std;
 
 namespace folia::math::output::common {
 namespace {
-CommonWrapper* scriptAt(CommonWrapper& wrapper,std::size_t index){
-    if(!wrapper.childNodes)throw options::Exception("TypeError",u"Cannot read properties of undefined (reading '0')");
-    const auto children=*wrapper.childNodes;
-    if(!children)throw options::Exception("TypeError",u"Cannot read properties of null (reading '0')");
-    return dynamic_cast<CommonWrapper*>(children->get(index).nodeOrNull());
-}
-const mml::MmlMsubsup& msubsupNode(const mml::MmlNode& node){
-    const auto* result=dynamic_cast<const mml::MmlMsubsup*>(&node);
-    if(!result)throw options::Exception("TypeError",u"Script wrapper requires an MmlMsubsup node");
-    return *result;
-}
+mml::MmlMsubsup const &scriptNode(mml::MmlNode const &node) {
+    const auto *script = dynamic_cast<mml::MmlMsubsup const *>(&node);
+    if (!script)
+        throw std::logic_error("script wrapper requires an MmlMsubsup node");
+    return *script;
 }
 
-CommonMsub::CommonMsub(CommonWrapperFactory& factory,mml::MmlNode& node,CommonWrapper* parent,
+double parameter(CommonWrapper const &wrapper, std::string_view name) {
+    return wrapper.jax().face().parameters.required(name);
+}
+
+LengthInput attrLength(CommonWrapper const &wrapper, std::u16string_view name) {
+    const auto *value = wrapper.node->attributes().lookup(name);
+    if (!value)
+        return 0.0;
+    if (const auto *text = std::get_if<std::u16string>(value))
+        return *text;
+    if (const auto *number = std::get_if<double>(value))
+        return *number;
+    if (const auto *boolean = std::get_if<bool>(value))
+        return *boolean ? 1.0 : 0.0;
+    return 0.0;
+}
+} // namespace
+
+CommonMsub::CommonMsub(CommonWrapperFactory &factory, mml::MmlNode &node, CommonWrapper *parent,
                        std::optional<std::size_t> scriptChildIndex)
-    :CommonScriptbase(factory,node,parent,useIC,
-        scriptChildIndex?*scriptChildIndex:msubsupNode(node).sub()){}
-CommonWrapper* CommonMsub::scriptChild()const{return scriptAt(*const_cast<CommonMsub*>(this),msubsupNode(*node).sub());}
-std::array<double,2> CommonMsub::getOffset()const{
-    const double x=baseIsChar?0:getAdjustedIc();
-    return {x,-getV()};
+    : CommonScriptbase(factory, node, parent, useIC,
+                       scriptChildIndex ? *scriptChildIndex : scriptNode(node).sub()) {
 }
 
-CommonMsup::CommonMsup(CommonWrapperFactory& factory,mml::MmlNode& node,CommonWrapper* parent,
+CommonWrapper *CommonMsub::scriptChild() const {
+    const auto index = scriptNode(*node).sub();
+    return index < childNodes.size() ? childNodes[index] : nullptr;
+}
+
+std::array<double, 2> CommonMsub::getOffset() const {
+    return {baseIsChar ? 0 : getAdjustedIc(), -getV()};
+}
+
+CommonMsup::CommonMsup(CommonWrapperFactory &factory, mml::MmlNode &node, CommonWrapper *parent,
                        std::optional<std::size_t> scriptChildIndex)
-    :CommonScriptbase(factory,node,parent,useIC,
-        scriptChildIndex?*scriptChildIndex:msubsupNode(node).sup()){}
-CommonWrapper* CommonMsup::scriptChild()const{return scriptAt(*const_cast<CommonMsup*>(this),msubsupNode(*node).sup());}
-std::array<double,2> CommonMsup::getOffset()const{
-    const double x=getAdjustedIc()-(baseRemoveIc?0:baseIc);
-    return {x,getU()};
+    : CommonScriptbase(factory, node, parent, useIC,
+                       scriptChildIndex ? *scriptChildIndex : scriptNode(node).sup()) {
 }
 
-CommonMsubsup::CommonMsubsup(CommonWrapperFactory& factory,mml::MmlNode& node,CommonWrapper* parent,
-                             std::optional<std::size_t> scriptChildIndex)
-    :CommonScriptbase(factory,node,parent,useIC,
-        scriptChildIndex?*scriptChildIndex:msubsupNode(node).sup()){}
-CommonWrapper* CommonMsubsup::subChild()const{return scriptAt(*const_cast<CommonMsubsup*>(this),msubsupNode(*node).sub());}
-CommonWrapper* CommonMsubsup::supChild()const{return scriptAt(*const_cast<CommonMsubsup*>(this),msubsupNode(*node).sup());}
-CommonWrapper* CommonMsubsup::scriptChild()const{return supChild();}
+CommonWrapper *CommonMsup::scriptChild() const {
+    return childNodes.size() <= scriptNode(*node).sup() ? nullptr
+                                                        : childNodes[scriptNode(*node).sup()];
+}
 
-std::shared_ptr<std::array<double,3>> CommonMsubsup::getUVQ(const BBox* subboxValue,const BBox* supboxValue){
-    // Source default parameters perform both child getter calls before entering
-    // the method, even when the cached UVQ is already populated.
-    const auto subbox=subboxValue?std::make_shared<BBox>(*subboxValue):subChild()->getOuterBBox();
-    const auto supbox=supboxValue?std::make_shared<BBox>(*supboxValue):supChild()->getOuterBBox();
-    const auto base=baseCore;
-    const auto bbox=base->getLineBBox(base->breakCount());
-    if(UVQ)return UVQ;
-    const auto& tex=font->params();const double t=3*tex.rule_thickness;
-    const double subscriptshift=length2em(node->attributes()->get("subscriptshift"),tex.sub2);
-    const double drop=baseCharZero(bbox->d*baseScale+tex.sub_drop*subbox->rscale);
-    const double supd=supbox->d*supbox->rscale;
-    const double subh=subbox->h*subbox->rscale;
-    double u=getU();double v=std::max(drop,subscriptshift);
-    double q=u-supd-(subh-v);
-    if(q<t){
-        v+=t-q;
-        const double p=0.8*tex.x_height-(u-supd);
-        if(p>0){u+=p;v-=p;}
+std::array<double, 2> CommonMsup::getOffset() const {
+    const double x = getAdjustedIc() - (baseRemoveIc ? 0 : baseIc);
+    return {x, getU()};
+}
+
+CommonMsubsup::CommonMsubsup(CommonWrapperFactory &factory, mml::MmlNode &node,
+                             CommonWrapper *parent, std::optional<std::size_t> scriptChildIndex)
+    : CommonScriptbase(factory, node, parent, useIC,
+                       scriptChildIndex ? *scriptChildIndex : scriptNode(node).sup()) {
+}
+
+CommonWrapper *CommonMsubsup::subChild() const {
+    const auto index = scriptNode(*node).sub();
+    return index < childNodes.size() ? childNodes[index] : nullptr;
+}
+
+CommonWrapper *CommonMsubsup::supChild() const {
+    const auto index = scriptNode(*node).sup();
+    return index < childNodes.size() ? childNodes[index] : nullptr;
+}
+
+CommonWrapper *CommonMsubsup::scriptChild() const {
+    return supChild();
+}
+
+std::array<double, 3> CommonMsubsup::getUVQ(const BBox *subboxValue, const BBox *supboxValue) {
+    // Preserve Source default-argument evaluation order: fetch both child boxes
+    // before checking the cache.
+    const BBox subbox = subboxValue ? *subboxValue : subChild()->getOuterBBox();
+    const BBox supbox = supboxValue ? *supboxValue : supChild()->getOuterBBox();
+    const auto bbox = baseCore->getLineBBox(baseCore->breakCount());
+    if (UVQ)
+        return *UVQ;
+    const double rule = parameter(*this, "rule_thickness");
+    const double t = 3 * rule;
+    const double subShift =
+        length2em(attrLength(*this, u"subscriptshift"), parameter(*this, "sub2"));
+    const double drop =
+        baseCharZero(bbox->d * baseScale + parameter(*this, "sub_drop") * subbox.rscale);
+    const double supDepth = supbox.d * supbox.rscale;
+    const double subHeight = subbox.h * subbox.rscale;
+    double u = getU();
+    double v = std::max(drop, subShift);
+    double q = u - supDepth - (subHeight - v);
+    if (q < t) {
+        v += t - q;
+        const double p = .8 * parameter(*this, "x_height") - (u - supDepth);
+        if (p > 0) {
+            u += p;
+            v -= p;
+        }
     }
-    u=std::max(length2em(node->attributes()->get("superscriptshift"),u),u);
-    v=std::max(length2em(node->attributes()->get("subscriptshift"),v),v);
-    q=u-supd-(subh-v);
-    UVQ=std::make_shared<std::array<double,3>>(std::array<double,3>{u,-v,q});
-    return UVQ;
+    u = std::max(length2em(attrLength(*this, u"superscriptshift"), u), u);
+    v = std::max(length2em(attrLength(*this, u"subscriptshift"), v), v);
+    q = u - supDepth - (subHeight - v);
+    UVQ = std::array<double, 3>{u, -v, q};
+    return *UVQ;
 }
 
-BBox CommonMsubsup::appendScripts(BBox& bbox)const{
-    const auto subbox=subChild()->getOuterBBox();
-    const auto supbox=supChild()->getOuterBBox();
-    const double w=getBaseWidth();const double x=getAdjustedIc();
-    const auto uvq=const_cast<CommonMsubsup*>(this)->getUVQ();
-    const auto line=baseChild()->getLineBBox(baseChild()->breakCount());
-    const double y=bbox.d-line->d;
-    bbox.combine(*subbox,w+(baseIsChar?0:x),(*uvq)[1]-y);
-    bbox.combine(*supbox,w+x,(*uvq)[0]-y);
-    bbox.w+=font->params().scriptspace;
-    return bbox;
+BBox CommonMsubsup::appendScripts(BBox &box) const {
+    auto *sub = subChild();
+    auto *sup = supChild();
+    if (!sub || !sup || !baseCore)
+        throw std::logic_error("msubsup requires base, subscript and superscript wrappers");
+    const BBox subbox = sub->getOuterBBox();
+    const BBox supbox = sup->getOuterBBox();
+    const double width = getBaseWidth();
+    const double x = getAdjustedIc();
+    const auto uvq = const_cast<CommonMsubsup *>(this)->getUVQ();
+    auto *base = baseChild();
+    const auto line = base->getLineBBox(base->breakCount());
+    const double y = box.d - line->d;
+    box.combine(subbox, width + (baseIsChar ? 0 : x), uvq[1] - y);
+    box.combine(supbox, width + x, uvq[0] - y);
+    box.w += parameter(*this, "scriptspace");
+    return box;
 }
-}
+} // namespace folia::math::output::common
