@@ -317,6 +317,12 @@ insert_or_assign（Source Map.set），不能抛出“同节点已有不同 wrap
 
 所有本轮构建已结束；Luna 包均已交付，没有需要继续等待的旧 build/agent 句柄。
 
+本轮提交：`8a0ac1e5` exact clone 实现、`a9b5bd51` clone 验收、`ac28a245` StyleJson、
+`a86df3fa` Common 值/字体 CSS、`98f601b2` TreeVisitor 和 CMake 列表修正。
+最终 native C++ HEAD `98f601b2` 已重新 configure/build/full-test，exit0：
+`build/math-port/native-foundation-final-head-{configure,build,full}.log`，205 项 / 32,065 断言。
+随后仅作本交接记录和 Source witness 文件末尾空行整理，不改变原生实现。
+
 ## 工作区保护
 
 字体实现提交包括 `output/common/font_data*`、`font_path*`、`fonts/newcm_font*`、

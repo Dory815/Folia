@@ -159,5 +159,3 @@ fs.mkdirSync(path.dirname(output), { recursive: true });
 fs.writeFileSync(output, JSON.stringify(witness, null, 2) + '\n');
 process.stdout.write(JSON.stringify({ output: path.relative(root, output), kinds: witness.visitor.factory_kind_snapshot,
   liveTraversal: witness.visitor.live_default_preorder, typedResult: result }) + '\n');
-
-
