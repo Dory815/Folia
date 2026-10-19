@@ -4,6 +4,16 @@
 本文件是当前进度入口；架构细则见 `native-raii-architecture.md`，验收规则见
 `native-raii-acceptance.md`。用户后续明确指令优先。不要把本记录当作完整功能验收。
 
+## 每次恢复上下文的执行顺序
+
+1. 先读本文件，确认已解决的问题、用户决定和“下一步”，再规划或分派任务。
+2. 只检查 HEAD、工作区差异和下一步实际依赖的文件；已通过的组件不从头调查。
+   若证据与记录冲突，指出具体变化并修正对应条目，不把整份记录作废。
+3. 将“声明草稿”“已实现”“已构建测试”“已接入”分开记录；未完成的步骤不能
+   因摘要省略而被当作完成，已完成的修正也不能再次当成待办。
+4. 有实质进展后更新本文件的状态、验证日志和下一步，并随相应小批提交保存。
+   不另建多份竞争的进度笔记。忽略目录中的草稿须记录路径与校验值，不能只靠对话记忆。
+
 ## 已确认的用户决定，不要重新讨论
 
 - 复用已经实现过的 C++，原地替换 JS 对象语义与所有权边界；不是重新翻译一遍 TS。
@@ -115,8 +125,8 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 5. MML 基类声明草稿在 `tools/math-port/drafts/native-raii/typed-mml-base-contract/`。
    尚未正式冻结/编译；错误 module 名、重复 texclass 状态、缺少的 Source 默认虚方法、
    错误 addInheritedAttributes 参数和继承规则表类型均已在草稿修正，不要重新调查。
-   最新待落实的是 typed initializeMml 签名/职责，落实后 Root 复核最终头文件，再分派
-   基类与家族方法实现。不能把未编译的声明稿当作验收。
+   typed initializeMml 签名/职责也已由 Luna 补入；下一步是 Root 复核最终头文件，然后
+   分派基类与家族方法实现。不能把未编译的声明稿当作验收。
    已确定的工厂所有权：文档拥有唯一 MmlFactory；NodeFactory/测试借用 doc.factory()。
    doc.make -> factory.allocateRaw -> 单一登记表 -> 实际派生节点 -> doc.adopt；
    MmlFactory.make 做 defaults/arity 再直接 allocateRaw，不能回调 doc.make 形成递归。
@@ -138,7 +148,8 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
    利用现有 node_defaults 的实际 kind 数据，不创建通用 constructor/static-service 记录。
    原有任意/推断行处理应恢复在 MML 类方法，移除 Factory 中重复职责的 helpers，
    不把先前最终结构节点设计的所有 helpers 原封不动保留成第二实现。
-   Luna 此时仅在修正同一声明稿并停止；没有开始任何 MML 家族方法实现。
+   Luna 已完成声明稿修正并停止；没有开始任何 MML 家族方法实现。最终 header SHA256
+   为 F81C2B339165B8C70B7A2ED7A9EE564B022AF643496460DCAA0DA1AB3910DF8F。
 
 Root 负责正式文件推广、CMake、构建、原生执行和提交；Luna 在各自忽略草稿目录工作。
 给每项任务指定既有 C++ 方法、保留职责、替换类型、调用者和验收，不让代理自行重划架构。
