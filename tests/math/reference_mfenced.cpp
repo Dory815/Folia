@@ -17,6 +17,16 @@ std::u16string units(std::initializer_list<char16_t>v){return {v.begin(),v.end()
 m::Children children(std::initializer_list<m::MmlNode*>v={}){auto result=std::make_shared<tr::ChildArray<m::MmlNode>>();for(auto*node:v)result->push_back(m::NodeValue(node));return result;}
 Property clone(const Property&v){if(auto a=PropertyArray::array(v)){PropertyArray r;for(std::size_t i=0;i<a->size();++i)r.push(clone(a->get(i)));return r;}if(auto a=PropertyList::object(v)){PropertyList r;for(const auto&k:a->keys())r.setOwn(k,clone(a->getOwn(k)));return r;}return v;}
 bool deep(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return(std::isnan(*x)&&std::isnan(*y))||(*x==*y&&std::signbit(*x)==std::signbit(*y));auto x=PropertyList::record(a),y=PropertyList::record(b);if(x&&y){if(PropertyArray::array(a).has_value()!=PropertyArray::array(b).has_value()||x->keys()!=y->keys())return false;for(const auto&k:x->keys())if(!deep(x->getOwn(k),y->getOwn(k)))return false;return true;}return a==b;}
+std::string describe(const Property& p){
+ if(p.missing())return "Missing";
+ if(std::holds_alternative<PropertyNull>(p.value))return "null";
+ if(auto a=PropertyArray::array(p)){std::string s="[";for(std::size_t i=0;i<a->size();++i){if(i)s+=", ";s+=a->has(i)?describe(a->get(i)):"<hole>";}return s+"]";}
+ if(auto o=PropertyList::record(p)){std::string s="{";bool first=true;for(const auto&k:o->keys()){if(!first)s+=", ";first=false;s+=k+":"+describe(o->getOwn(k));}return s+"}";}
+ if(auto v=std::get_if<std::string>(&p.value))return "string("+*v+")";
+ if(auto v=std::get_if<double>(&p.value))return std::isnan(*v)?"number(NaN)":"number("+std::to_string(*v)+")";
+ if(auto v=std::get_if<bool>(&p.value))return *v?"bool(true)":"bool(false)";
+ return "property-alternative("+std::to_string(p.value.index())+")";
+}
 bool enabled=false,phase=false;std::string mode;std::vector<std::string>mfencedEvents;m::MmlMfenced*target=nullptr;m::MmlNode*late=nullptr,*moProduct=nullptr;m::TextNode*textProduct=nullptr,*textResult=nullptr;m::Children held;std::vector<Property>calls;std::size_t index=0;
 void note(std::string s){if(enabled)mfencedEvents.push_back(std::move(s));}void fail(){throw m::Error("WitnessError",u"witness");}void reset(){enabled=phase=false;mode.clear();mfencedEvents.clear();target=nullptr;late=moProduct=nullptr;textProduct=textResult=nullptr;held.reset();calls.clear();index=0;}
 std::string label(m::MmlNode*);
@@ -2496,68 +2506,68 @@ enabled=false;};
 "math_port_mfenced_direct_null-text_210"_test=[] {reset();
 Setup s;s.f.setNodeClass("witness-text",m::classBinding<WitnessText>());s.f.setNodeClass("witness-mo",m::classBinding<WitnessMo>());textProduct=dynamic_cast<m::TextNode*>(create(s.f,"witness-text"));textResult=dynamic_cast<m::TextNode*>(create(s.f,"text"))->setText(u"returned");moProduct=create(s.f,"witness-mo");dynamic_cast<Record*>(moProduct)->name="product";moProduct->setParent(m::NodeValue(s.a));mode="direct-null-text";m::MmlNode*result=nullptr;
 {enabled=true;mfencedEvents.clear();std::string failure,detail;try{result=s.n->fake(u"😀");}catch(const m::Error&e){failure=e.name;detail=h::debugText(e.message);}enabled=false;
-expect(bool(failure=="TypeError")) << failure << detail;
-expect(deep(trace(),clone(sourceValues[477])));
+expect(bool(failure=="TypeError")) << "direct-null-text: TypeError" << failure << detail;
+expect(deep(trace(),clone(sourceValues[477]))) << "direct-null-text: trace";
 }
-expect(bool((result==moProduct)==false));
-expect(bool((label(moProduct->getParent().nodeOrNull()))=="first"));
-expect(deep(moProduct->texClass(),clone(sourceValues[6])));
-expect(deep(callValues(),clone(sourceValues[478])));
+expect(bool((result==moProduct)==false)) << "direct-null-text: result is not mo product";
+expect(bool((label(moProduct->getParent().nodeOrNull()))=="first")) << "direct-null-text: mo parent unchanged";
+expect(deep(moProduct->texClass(),clone(sourceValues[6]))) << "direct-null-text: mo texClass unchanged";
+{const auto actual=callValues();const auto expected=clone(sourceValues[478]);expect(deep(actual,expected)) << "direct-null-text: calls actual=" << describe(actual) << " expected=" << describe(expected);}
 enabled=false;};
 "math_port_mfenced_direct_null-text_211"_test=[] {reset();
 Setup s;s.f.setNodeClass("witness-text",m::classBinding<WitnessText>());s.f.setNodeClass("witness-mo",m::classBinding<WitnessMo>());textProduct=dynamic_cast<m::TextNode*>(create(s.f,"witness-text"));textResult=dynamic_cast<m::TextNode*>(create(s.f,"text"))->setText(u"returned");moProduct=create(s.f,"witness-mo");dynamic_cast<Record*>(moProduct)->name="product";moProduct->setParent(m::NodeValue(s.a));mode="direct-null-text";m::MmlNode*result=nullptr;
 {enabled=true;mfencedEvents.clear();std::string failure,detail;try{result=s.n->fake(u"😀",clone(sourceValues[21]),clone(sourceValues[21]));}catch(const m::Error&e){failure=e.name;detail=h::debugText(e.message);}enabled=false;
-expect(bool(failure=="TypeError")) << failure << detail;
-expect(deep(trace(),clone(sourceValues[477])));
+expect(bool(failure=="TypeError")) << "direct-null-text: TypeError" << failure << detail;
+expect(deep(trace(),clone(sourceValues[477]))) << "direct-null-text: trace";
 }
-expect(bool((result==moProduct)==false));
-expect(bool((label(moProduct->getParent().nodeOrNull()))=="first"));
-expect(deep(moProduct->texClass(),clone(sourceValues[6])));
-expect(deep(callValues(),clone(sourceValues[478])));
+expect(bool((result==moProduct)==false)) << "direct-null-text: result is not mo product";
+expect(bool((label(moProduct->getParent().nodeOrNull()))=="first")) << "direct-null-text: mo parent unchanged";
+expect(deep(moProduct->texClass(),clone(sourceValues[6]))) << "direct-null-text: mo texClass unchanged";
+{const auto actual=callValues();const auto expected=clone(sourceValues[478]);expect(deep(actual,expected)) << "direct-null-text: calls actual=" << describe(actual) << " expected=" << describe(expected);}
 enabled=false;};
 "math_port_mfenced_direct_null-text_212"_test=[] {reset();
 Setup s;s.f.setNodeClass("witness-text",m::classBinding<WitnessText>());s.f.setNodeClass("witness-mo",m::classBinding<WitnessMo>());textProduct=dynamic_cast<m::TextNode*>(create(s.f,"witness-text"));textResult=dynamic_cast<m::TextNode*>(create(s.f,"text"))->setText(u"returned");moProduct=create(s.f,"witness-mo");dynamic_cast<Record*>(moProduct)->name="product";moProduct->setParent(m::NodeValue(s.a));mode="direct-null-text";m::MmlNode*result=nullptr;
 {enabled=true;mfencedEvents.clear();std::string failure,detail;try{result=s.n->fake(u"😀",clone(sourceValues[443]),clone(sourceValues[136]));}catch(const m::Error&e){failure=e.name;detail=h::debugText(e.message);}enabled=false;
-expect(bool(failure=="TypeError")) << failure << detail;
-expect(deep(trace(),clone(sourceValues[477])));
+expect(bool(failure=="TypeError")) << "direct-null-text: TypeError" << failure << detail;
+expect(deep(trace(),clone(sourceValues[477]))) << "direct-null-text: trace";
 }
-expect(bool((result==moProduct)==false));
-expect(bool((label(moProduct->getParent().nodeOrNull()))=="first"));
-expect(deep(moProduct->texClass(),clone(sourceValues[6])));
-expect(deep(callValues(),clone(sourceValues[479])));
+expect(bool((result==moProduct)==false)) << "direct-null-text: result is not mo product";
+expect(bool((label(moProduct->getParent().nodeOrNull()))=="first")) << "direct-null-text: mo parent unchanged";
+expect(deep(moProduct->texClass(),clone(sourceValues[6]))) << "direct-null-text: mo texClass unchanged";
+{const auto actual=callValues();const auto expected=clone(sourceValues[479]);expect(deep(actual,expected)) << "direct-null-text: calls actual=" << describe(actual) << " expected=" << describe(expected);}
 enabled=false;};
 "math_port_mfenced_direct_null-text_213"_test=[] {reset();
 Setup s;s.f.setNodeClass("witness-text",m::classBinding<WitnessText>());s.f.setNodeClass("witness-mo",m::classBinding<WitnessMo>());textProduct=dynamic_cast<m::TextNode*>(create(s.f,"witness-text"));textResult=dynamic_cast<m::TextNode*>(create(s.f,"text"))->setText(u"returned");moProduct=create(s.f,"witness-mo");dynamic_cast<Record*>(moProduct)->name="product";moProduct->setParent(m::NodeValue(s.a));mode="direct-null-text";m::MmlNode*result=nullptr;
 {enabled=true;mfencedEvents.clear();std::string failure,detail;try{result=s.n->fake(u"😀",clone(sourceValues[6]),clone(sourceValues[6]));}catch(const m::Error&e){failure=e.name;detail=h::debugText(e.message);}enabled=false;
-expect(bool(failure=="TypeError")) << failure << detail;
-expect(deep(trace(),clone(sourceValues[477])));
+expect(bool(failure=="TypeError")) << "direct-null-text: TypeError" << failure << detail;
+expect(deep(trace(),clone(sourceValues[477]))) << "direct-null-text: trace";
 }
-expect(bool((result==moProduct)==false));
-expect(bool((label(moProduct->getParent().nodeOrNull()))=="first"));
-expect(deep(moProduct->texClass(),clone(sourceValues[6])));
-expect(deep(callValues(),clone(sourceValues[480])));
+expect(bool((result==moProduct)==false)) << "direct-null-text: result is not mo product";
+expect(bool((label(moProduct->getParent().nodeOrNull()))=="first")) << "direct-null-text: mo parent unchanged";
+expect(deep(moProduct->texClass(),clone(sourceValues[6]))) << "direct-null-text: mo texClass unchanged";
+{const auto actual=callValues();const auto expected=clone(sourceValues[480]);expect(deep(actual,expected)) << "direct-null-text: calls actual=" << describe(actual) << " expected=" << describe(expected);}
 enabled=false;};
 "math_port_mfenced_direct_null-text_214"_test=[] {reset();
 Setup s;s.f.setNodeClass("witness-text",m::classBinding<WitnessText>());s.f.setNodeClass("witness-mo",m::classBinding<WitnessMo>());textProduct=dynamic_cast<m::TextNode*>(create(s.f,"witness-text"));textResult=dynamic_cast<m::TextNode*>(create(s.f,"text"))->setText(u"returned");moProduct=create(s.f,"witness-mo");dynamic_cast<Record*>(moProduct)->name="product";moProduct->setParent(m::NodeValue(s.a));mode="direct-null-text";m::MmlNode*result=nullptr;
 {enabled=true;mfencedEvents.clear();std::string failure,detail;try{result=s.n->fake(u"😀",clone(sourceValues[312]),clone(sourceValues[451]));}catch(const m::Error&e){failure=e.name;detail=h::debugText(e.message);}enabled=false;
-expect(bool(failure=="TypeError")) << failure << detail;
-expect(deep(trace(),clone(sourceValues[477])));
+expect(bool(failure=="TypeError")) << "direct-null-text: TypeError" << failure << detail;
+expect(deep(trace(),clone(sourceValues[477]))) << "direct-null-text: trace";
 }
-expect(bool((result==moProduct)==false));
-expect(bool((label(moProduct->getParent().nodeOrNull()))=="first"));
-expect(deep(moProduct->texClass(),clone(sourceValues[6])));
-expect(deep(callValues(),clone(sourceValues[481])));
+expect(bool((result==moProduct)==false)) << "direct-null-text: result is not mo product";
+expect(bool((label(moProduct->getParent().nodeOrNull()))=="first")) << "direct-null-text: mo parent unchanged";
+expect(deep(moProduct->texClass(),clone(sourceValues[6]))) << "direct-null-text: mo texClass unchanged";
+{const auto actual=callValues();const auto expected=clone(sourceValues[481]);expect(deep(actual,expected)) << "direct-null-text: calls actual=" << describe(actual) << " expected=" << describe(expected);}
 enabled=false;};
 "math_port_mfenced_direct_null-text_215"_test=[] {reset();
 Setup s;s.f.setNodeClass("witness-text",m::classBinding<WitnessText>());s.f.setNodeClass("witness-mo",m::classBinding<WitnessMo>());textProduct=dynamic_cast<m::TextNode*>(create(s.f,"witness-text"));textResult=dynamic_cast<m::TextNode*>(create(s.f,"text"))->setText(u"returned");moProduct=create(s.f,"witness-mo");dynamic_cast<Record*>(moProduct)->name="product";moProduct->setParent(m::NodeValue(s.a));mode="direct-null-text";m::MmlNode*result=nullptr;
 {enabled=true;mfencedEvents.clear();std::string failure,detail;try{result=s.n->fake(u"😀",clone(sourceValues[7]),clone(sourceValues[312]));}catch(const m::Error&e){failure=e.name;detail=h::debugText(e.message);}enabled=false;
-expect(bool(failure=="TypeError")) << failure << detail;
-expect(deep(trace(),clone(sourceValues[477])));
+expect(bool(failure=="TypeError")) << "direct-null-text: TypeError" << failure << detail;
+expect(deep(trace(),clone(sourceValues[477]))) << "direct-null-text: trace";
 }
-expect(bool((result==moProduct)==false));
-expect(bool((label(moProduct->getParent().nodeOrNull()))=="first"));
-expect(deep(moProduct->texClass(),clone(sourceValues[6])));
-expect(deep(callValues(),clone(sourceValues[482])));
+expect(bool((result==moProduct)==false)) << "direct-null-text: result is not mo product";
+expect(bool((label(moProduct->getParent().nodeOrNull()))=="first")) << "direct-null-text: mo parent unchanged";
+expect(deep(moProduct->texClass(),clone(sourceValues[6]))) << "direct-null-text: mo texClass unchanged";
+{const auto actual=callValues();const auto expected=clone(sourceValues[482]);expect(deep(actual,expected)) << "direct-null-text: calls actual=" << describe(actual) << " expected=" << describe(expected);}
 enabled=false;};
 "math_port_mfenced_direct_null-mo_216"_test=[] {reset();
 Setup s;s.f.setNodeClass("witness-text",m::classBinding<WitnessText>());s.f.setNodeClass("witness-mo",m::classBinding<WitnessMo>());textProduct=dynamic_cast<m::TextNode*>(create(s.f,"witness-text"));textResult=dynamic_cast<m::TextNode*>(create(s.f,"text"))->setText(u"returned");moProduct=create(s.f,"witness-mo");dynamic_cast<Record*>(moProduct)->name="product";moProduct->setParent(m::NodeValue(s.a));mode="direct-null-mo";m::MmlNode*result=nullptr;

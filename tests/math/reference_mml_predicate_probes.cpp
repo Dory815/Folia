@@ -12,7 +12,7 @@ struct MiHook:MmlMi{using MmlMi::MmlMi;std::function<void()> after;bool isEmpty(
 struct MoHook:MmlMo{using MmlMo::MmlMo;std::function<void()> after;bool isEmbellished()const override{auto v=MmlMo::isEmbellished();if(after)after();return v;}};
 struct SpaceHook:MmlMspace{using MmlMspace::MmlMspace;std::function<void()> after;bool isSpacelike()const override{auto v=MmlMspace::isSpacelike();if(after)after();return v;}};
 struct TextHook:TextNode{using TextNode::TextNode;std::function<void()> after;std::u16string getText()const override{auto v=TextNode::getText();if(after)after();return v;}};
-struct RowObserver:MmlMrow{using MmlMrow::MmlMrow;std::optional<std::size_t> observedCore()const{return core_;}};
+struct RowObserver:MmlMrow{using MmlMrow::MmlMrow;Property observedCore()const{return core_;}};
 struct Observed:MmlFactory{
  std::vector<MmlNode*> nodes;
  Observed(){setNodeClass("mi",classBinding<MiHook>());setNodeClass("mo",classBinding<MoHook>());setNodeClass("mspace",classBinding<SpaceHook>());setNodeClass("text",classBinding<TextHook>());setNodeClass("mrow",classBinding<RowObserver>());}
@@ -21,6 +21,7 @@ struct Observed:MmlFactory{
 };
 struct Case{std::string kind,shape,member,hook,mutation,prototype;bool arrayNull,second;std::string expected;};
 std::string ascii(std::u16string_view s){std::string v;for(auto c:s)v+=static_cast<char>(c);return v;}
+std::string observedCoreText(const Property& core){if(core.missing()||std::holds_alternative<PropertyNull>(core.value))return "N";if(const auto* number=std::get_if<double>(&core.value))return std::to_string(static_cast<std::size_t>(*number));return "UNBOUND";}
 std::string array(const Children& a,const Observed& f){if(!a)return "N";std::string own,has,values;for(std::size_t i=0;i<a->size();++i){own+=a->hasOwn(i)?'1':'0';has+=a->has(i)?'1':'0';if(i)values+=',';values+=f.tag(a->get(i));}return std::to_string(a->size())+':'+own+':'+has+':'+values;}
 std::string run(const Case& c){Observed f;std::map<char,MmlNode*> nodes;for(const auto& [label,kind]:std::array<std::pair<char,const char*>,7>{{{'a',"mi"},{'b',"mo"},{'c',"mi"},{'s',"mspace"},{'e',"text"},{'t',"text"},{'z',"text"}}})nodes[label]=f.create(kind,{});
  dynamic_cast<TextNode*>(nodes['e'])->setText(u"");dynamic_cast<TextNode*>(nodes['t'])->setText(u"x");dynamic_cast<TextNode*>(nodes['z'])->setText(u"\U0001F600");
@@ -29,7 +30,7 @@ std::string run(const Case& c){Observed f;std::map<char,MmlNode*> nodes;for(cons
  const auto change=[&]{char label=c.hook=="isEmpty"?'a':c.hook=="isSpacelike"?'s':c.hook=="isEmbellished"?'b':'e';trace.push_back(c.hook+':'+label);if(mutated)return;mutated=true;if(c.mutation=="append")original->push_back(nodes['c']);if(c.mutation=="delete")original->erase(1);if(c.mutation=="shrink")original->resize(1);if(c.mutation=="rebind")node->childNodes=shape("c");if(c.mutation=="rebind-long")node->childNodes=shape("cc");if(c.mutation=="replace")original->set(1,nodes['c']);};
  if(c.hook=="isEmpty")dynamic_cast<MiHook*>(nodes['a'])->after=change;if(c.hook=="isSpacelike")dynamic_cast<SpaceHook*>(nodes['s'])->after=change;if(c.hook=="isEmbellished")dynamic_cast<MoHook*>(nodes['b'])->after=change;if(c.hook=="getText")dynamic_cast<TextHook*>(nodes['e'])->after=change;
  std::string result,error="ok";const auto predicate=[&]{return c.member=="isEmpty"?node->isEmpty():c.member=="isSpacelike"?node->isSpacelike():node->isEmbellished();};try{result=predicate()?"true":"false";if(c.second){node->childNodes=shape("a");result+=predicate()?",true":",false";}}catch(const Error& e){error=e.name+'|'+ascii(e.message);}
- std::string core="-";if(auto* row=dynamic_cast<RowObserver*>(node)){auto index=row->observedCore();core=index?std::to_string(*index):"N";}
+ std::string core="-";if(auto* row=dynamic_cast<RowObserver*>(node)){core=observedCoreText(row->observedCore());}
  std::string out=error+'|'+result+'|'+core+'|';for(std::size_t i=0;i<f.nodes.size();++i){if(i)out+=';';auto* n=f.nodes[i];out+=f.tag(n)+':'+n->kind()+':'+f.tag(n->getParent())+':'+array(n->childNodes,f);}out+='|'+array(original,f)+'|';for(std::size_t i=0;i<trace.size();++i){if(i)out+=',';out+=trace[i];}return out;
 }
 suite mml_predicate_probes=[] {"math_port_mml_predicates_positive_callbacks"_test=[] {const Case cases[]={

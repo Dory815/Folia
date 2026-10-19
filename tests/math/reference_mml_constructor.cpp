@@ -13,7 +13,7 @@ struct Factory:m::MmlFactory{
  std::string tag(m::NodeValue v){if(v.kind()==tr::ChildKind::Undefined)return "U";if(v.kind()==tr::ChildKind::Null)return "N";auto* n=v.requireNode();registerNode(n);return "n"+std::to_string(std::find(nodes.begin(),nodes.end(),n)-nodes.begin());}
  m::MmlNode* seed(){return create("mi",{});}
 };
-struct Trace:m::MmlMi{using MmlMi::MmlMi;void setChildren(m::Children c)override{dynamic_cast<Factory&>(factory).trace.push_back(std::string("children:attrs=")+(attributes()?"true":"false"));MmlMi::setChildren(std::move(c));}};
+struct Trace:m::MmlMi{using MmlMi::MmlMi;void setChildren(m::Children c)override{dynamic_cast<Factory&>(factoryOwner()).trace.push_back(std::string("children:attrs=")+(attributes()?"true":"false"));MmlMi::setChildren(std::move(c));}};
 std::string scalar(const fm::Property& p){if(p.missing())return "U";if(std::holds_alternative<fm::PropertyNull>(p.value))return "N";if(const auto* b=std::get_if<bool>(&p.value))return *b?"T":"F";if(const auto* n=std::get_if<double>(&p.value))return "D"+std::to_string(static_cast<int>(*n));return "S"+std::get<std::string>(p.value);}
 struct Input{std::string_view kind,properties,children;bool trace;std::string_view expected;};const Input inputs[]={{"math","empty","",false,"ok|n1|n0:inferredMrow:n1:0::::true:;n1:math:N:1:1:1:n0:true:;|"},
 {"mi","empty","",false,"ok|n0|n0:mi:N:0::::true:;|"},
