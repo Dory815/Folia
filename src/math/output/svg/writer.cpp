@@ -124,11 +124,37 @@ void append_path(std::string& out, scene::PathGeometry const& path) {
     }
 }
 
-std::string transform_operation(scene::TransformOperation const& operation) {
-    return std::visit([](auto const& value) -> std::string {
+std::string_view translation_separator(scene::ElementRole role) {
+    switch (role) {
+    case scene::ElementRole::math_wrapper:
+    case scene::ElementRole::id_alignment_box:
+    case scene::ElementRole::unknown_text:
+        return ",";
+    case scene::ElementRole::enclosure_content:
+        return ", ";
+    case scene::ElementRole::operator_adjustment:
+    case scene::ElementRole::inferred_row_adjustment:
+    case scene::ElementRole::enclosure_mark:
+    case scene::ElementRole::table_content_viewport:
+    case scene::ElementRole::table_label_frame:
+    case scene::ElementRole::image_glyph:
+    case scene::ElementRole::foreign_content_viewport:
+        return " ";
+    }
+    throw std::invalid_argument("unknown Scene element role");
+}
+
+std::string transform_operation(scene::TransformOperation const& operation,
+    scene::ElementRole role) {
+    return std::visit([&](auto const& value) -> std::string {
         using T = std::decay_t<decltype(value)>;
         if constexpr (std::is_same_v<T, scene::Translation>) {
-            return "translate(" + number(value.x * 1000) + "," + number(value.y * 1000) + ")";
+            std::string result = "translate(";
+            result += number(value.x * 1000);
+            result += translation_separator(role);
+            result += number(value.y * 1000);
+            result += ')';
+            return result;
         } else if constexpr (std::is_same_v<T, scene::Scaling>) {
             if (value.x == value.y) return "scale(" + number(value.x, 3) + ")";
             return "scale(" + number(value.x, 3) + "," + number(value.y, 3) + ")";
@@ -143,11 +169,12 @@ std::string transform_operation(scene::TransformOperation const& operation) {
     }, operation);
 }
 
-void append_transform(std::string& out, scene::Transform const& transform) {
+void append_transform(std::string& out, scene::Transform const& transform,
+    scene::ElementRole role) {
     std::string serialized;
     for (auto const& operation : transform.operations()) {
         if (!serialized.empty()) serialized.push_back(' ');
-        serialized += transform_operation(operation);
+        serialized += transform_operation(operation, role);
     }
     if (!serialized.empty()) detail::append_attribute(out, "transform", serialized);
 }
@@ -243,7 +270,7 @@ void open_group(std::string& out, scene::Group const& group, SvgWriteOptions con
     static constexpr std::array<std::string_view, 1> reserved{"data-mml-node"};
     if (!group.metadata.source_tag.empty()) detail::append_attribute(out, "data-mml-node", group.metadata.source_tag);
     else detail::append_attribute(out, "data-mml-node", "mrow");
-    if (!group.transform.operations().empty()) append_transform(out, group.transform);
+    if (!group.transform.operations().empty()) append_transform(out, group.transform, group.role);
     if (group.clip) detail::append_attribute(out, "clip-path", "url(#clip-" + std::to_string(group.id) + ")");
     detail::append_metadata(out, group.metadata, reserved);
     out += '>';

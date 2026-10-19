@@ -7,6 +7,22 @@ export namespace folia::math::output::scene {
 using Unit = double;
 using NodeId = std::uint64_t;
 
+// Describes why a completed element exists so the SVG serializer can retain
+// Source transform spelling without inspecting node names or recomputing layout.
+enum class ElementRole {
+    math_wrapper,
+    id_alignment_box,
+    operator_adjustment,
+    inferred_row_adjustment,
+    enclosure_content,
+    enclosure_mark,
+    table_content_viewport,
+    table_label_frame,
+    image_glyph,
+    unknown_text,
+    foreign_content_viewport,
+};
+
 struct Point { Unit x{}, y{}; friend bool operator==(Point const&, Point const&) = default; };
 struct Size { Unit width{}, height{}; friend bool operator==(Size const&, Size const&) = default; };
 struct Rect { Unit x{}, y{}, width{}, height{}; friend bool operator==(Rect const&, Rect const&) = default; };

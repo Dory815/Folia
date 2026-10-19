@@ -18,7 +18,8 @@ public:
 
     [[nodiscard]] NodeId add_group(NodeId parent = 0, Transform transform = {},
         std::optional<Clip> clip = {}, std::optional<Link> link = {},
-        std::optional<Tooltip> tooltip = {}, SemanticMetadata metadata = {});
+        std::optional<Tooltip> tooltip = {}, SemanticMetadata metadata = {},
+        ElementRole role = ElementRole::math_wrapper);
     void add_primitive(NodeId group, Primitive primitive);
     void set_metrics(Metrics metrics);
     void set_font_metrics(FontMetrics metrics);

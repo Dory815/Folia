@@ -12,6 +12,7 @@ struct Builder::State {
         std::optional<Tooltip> tooltip;
         SemanticMetadata metadata;
         std::vector<Entry> entries;
+        ElementRole role{ElementRole::math_wrapper};
     };
     std::vector<MutableGroup> groups;
     Metrics metrics{};
@@ -32,6 +33,7 @@ struct Builder::State {
         out.link = std::move(source->link);
         out.tooltip = std::move(source->tooltip);
         out.metadata = std::move(source->metadata);
+        out.role = source->role;
         for (auto& entry : source->entries) {
             if (auto* primitive = std::get_if<Primitive>(&entry.value))
                 out.entries.emplace_back(std::move(*primitive));
@@ -50,7 +52,8 @@ Builder::Builder(Builder&&) noexcept = default;
 Builder& Builder::operator=(Builder&&) noexcept = default;
 
 NodeId Builder::add_group(NodeId parent, Transform transform, std::optional<Clip> clip,
-    std::optional<Link> link, std::optional<Tooltip> tooltip, SemanticMetadata metadata) {
+    std::optional<Link> link, std::optional<Tooltip> tooltip, SemanticMetadata metadata,
+    ElementRole role) {
     if (!state_) throw std::logic_error("Scene builder is moved from");
     auto* owner = state_->find(parent);
     if (!owner) throw std::out_of_range("Scene parent group does not exist");
@@ -58,7 +61,7 @@ NodeId Builder::add_group(NodeId parent, Transform transform, std::optional<Clip
     auto const id = state_->next_id++;
     state_->groups.push_back(State::MutableGroup{.id=id, .transform=transform,
         .clip=std::move(clip), .link=std::move(link), .tooltip=std::move(tooltip),
-        .metadata=std::move(metadata)});
+        .metadata=std::move(metadata), .role=role});
     owner = state_->find(parent); // vector growth can invalidate the previous pointer
     owner->entries.push_back(State::Entry{NodeId{id}});
     return id;

@@ -123,6 +123,7 @@ Group clone_group(Group const& source, std::unordered_set<Group const*>& active,
     copy.link = source.link;
     copy.tooltip = source.tooltip;
     copy.metadata = source.metadata;
+    copy.role = source.role;
     copy.entries.reserve(source.entries.size());
     for (auto const& entry : source.entries) {
         if (auto const* primitive = std::get_if<Primitive>(&entry))

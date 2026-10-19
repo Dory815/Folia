@@ -11,6 +11,7 @@ struct Group {
     std::optional<Tooltip> tooltip;
     SemanticMetadata metadata;
     std::vector<std::variant<Primitive, std::shared_ptr<Group const>>> entries;
+    ElementRole role{ElementRole::math_wrapper};
 };
 
 // A Scene is a completed immutable value. All content is owned by value;
