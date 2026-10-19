@@ -100,6 +100,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
+    src/math/output/svg/writer.ixx
     src/math/util/constants.ixx
     src/math/util/bbox.ixx
     src/math/util/lengths.ixx
@@ -111,6 +112,8 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/session.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
+    src/math/output/svg/writer.cpp
+    src/math/output/svg/node_metadata.cpp
     src/math/util/lengths.cpp
     src/math/util/regexp_host.cpp)
 
@@ -205,7 +208,8 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_raii_scene.cpp
     tests/math/lengths_native.cpp
     tests/math/native_raii_regexp.cpp
-    tests/math/native_tex_session.cpp)
+    tests/math/native_tex_session.cpp
+    tests/math/native_svg_writer.cpp)
 target_compile_features(FoliaMathTests PRIVATE cxx_std_23)
 set_target_properties(FoliaMathTests PROPERTIES CXX_MODULE_STD ON CXX_SCAN_FOR_MODULES ON)
 target_include_directories(FoliaMathTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
