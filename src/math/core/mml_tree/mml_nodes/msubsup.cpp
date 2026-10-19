@@ -18,7 +18,7 @@ std::size_t MmlMsubsup::sup() const { return 2; }
 void MmlMsubsup::setChildInheritedAttributes(
     AttributeList attributes, Property display, Property level, Property prime) {
     tree::TreeCallGuard<MmlNode> guard;
-    const auto nodes = this->childNodes;
+    const auto nodes = this->childArrayOwner();
     if (!nodes) host::typeError("Cannot read properties of null (reading '0')");
 
     nodes->get(0).requireNode("setInheritedAttributes")->setInheritedAttributes(

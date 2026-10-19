@@ -46,16 +46,16 @@ NodeValue MmlMfenced::setTeXclass(NodeValue previous) {
     tree::TreeCallGuard<MmlNode> guard;
     getPrevClass(previous);
     if (open) previous = open->setTeXclass(previous);
-    const NodeValue first = childAt(childNodes, 0);
+    const NodeValue first = childAt(childArrayOwner(), 0);
     if (first.isNode()) previous = first.requireNode("setTeXclass")->setTeXclass(previous);
 
-    const Children loopChildren = childNodes;
+    const Children loopChildren = childArrayOwner();
     if (!loopChildren) host::typeError("Cannot read properties of null (reading 'length')");
     const std::size_t count = loopChildren->size();
     for (std::size_t i = 1; i < count; ++i) {
         const NodeValue separator = childAt(separators, i - 1);
         if (separator.isNode()) previous = separator.requireNode("setTeXclass")->setTeXclass(previous);
-        const NodeValue child = childAt(childNodes, i);
+        const NodeValue child = childAt(childArrayOwner(), i);
         if (child.isNode()) previous = child.requireNode("setTeXclass")->setTeXclass(previous);
     }
     if (close) previous = close->setTeXclass(previous);
@@ -65,7 +65,7 @@ NodeValue MmlMfenced::setTeXclass(NodeValue previous) {
         if (open) {
             updateTarget = NodeValue(open);
         } else {
-            const NodeValue currentFirst = childAt(childNodes, 0);
+            const NodeValue currentFirst = childAt(childArrayOwner(), 0);
             updateTarget = currentFirst.isNode() ? currentFirst : NodeValue(close);
         }
         updateTeXclass(updateTarget);
@@ -120,13 +120,13 @@ void MmlMfenced::addFakeNodes() {
 
     if (!separatorText.empty()) {
         while (true) {
-            const Children currentChildren = childNodes;
+            const Children currentChildren = childArrayOwner();
             if (!currentChildren) host::typeError("Cannot read properties of null (reading 'length')");
             const double requiredLength = static_cast<double>(currentChildren->size()) - 1.0;
             if (!(static_cast<double>(separatorText.size()) < requiredLength)) break;
             separatorText.push_back(separatorText.back());
         }
-        const Children currentChildren = childNodes;
+        const Children currentChildren = childArrayOwner();
         if (!currentChildren) host::typeError("Cannot read properties of null (reading 'slice')");
         const Children slicedChildren = currentChildren->slice(1);
         std::size_t index = 0;

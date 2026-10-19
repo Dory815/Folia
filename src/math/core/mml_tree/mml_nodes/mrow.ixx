@@ -4,8 +4,9 @@ export import folia.math.core.mml_tree.mml_node;
 import std;
 export namespace folia::math::mml {
 class MmlMrow:public AbstractMmlNode{
-protected:mutable std::optional<std::size_t> core_;
+protected:mutable Property core_=PropertyNull{};
 public:using AbstractMmlNode::AbstractMmlNode;static PropertyList& defaults();void initializeClassFields()override;
+Property sourceCoreField()const{return core_;}void setSourceCoreField(Property value){core_=std::move(value);}
 std::string kind()const override;bool isSpacelike()const override;bool isEmbellished()const override;
 NodeValue core()override;NodeValue coreMO()override;
 virtual std::size_t nonSpaceLength();virtual MmlNode* firstNonSpace();virtual MmlNode* lastNonSpace();NodeValue setTeXclass(NodeValue)override;

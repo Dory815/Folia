@@ -13,7 +13,7 @@ namespace folia::math::mml {
 NodeValue MmlMfrac::setTeXclass(NodeValue previous) {
     tree::TreeCallGuard<MmlNode> guard;
     getPrevClass(previous);
-    const auto children = this->childNodes;
+    const auto children = this->childArrayOwner();
     if (!children) {
         host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
     }

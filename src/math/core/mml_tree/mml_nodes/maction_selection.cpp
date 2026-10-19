@@ -14,11 +14,11 @@ namespace folia::math::mml {
 MmlNode* MmlMaction::selected() const {
     tree::TreeCallGuard<MmlNode> guard;
     const Property selection = host::arithmeticAttributes(*this)->get("selection");
-    const auto lengthNodes = childNodes;
+    const auto lengthNodes = childArrayOwner();
     if (!lengthNodes) host::typeError("Cannot read properties of null (reading 'length')");
     const double length = static_cast<double>(lengthNodes->size());
     const double index = host::mathMax(1.0, host::mathMin(length, host::number(selection))) - 1.0;
-    const NodeValue child = host::numericChild(childNodes, index);
+    const NodeValue child = host::numericChild(childArrayOwner(), index);
     if (child.isNode()) return child.nodeOrNull();
     return this->factoryOwner().create("mrow", {});
 }

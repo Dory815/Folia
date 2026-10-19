@@ -136,9 +136,9 @@ void MmlMtable::verifyChildren(Property options) {
                 const std::string message = "Children of " + kind() + " must be mtr or mlabeledtr";
                 const NodeValue error(childValue.requireNode("mError")->mError(message, options, isCell));
 
-                const Children rowChildren = currentRow.requireNode("childNodes")->childNodes;
+                const Children rowChildren = currentRow.requireNode("childNodes")->childArrayOwner();
                 if (!rowChildren) host::typeError("Cannot read properties of null (reading 'length')");
-                const Children indexedRowChildren = currentRow.requireNode("childNodes")->childNodes;
+                const Children indexedRowChildren = currentRow.requireNode("childNodes")->childArrayOwner();
                 if (!indexedRowChildren) host::typeError("Cannot read properties of null (reading 'length')");
                 const std::size_t rowLength = indexedRowChildren->size();
                 const NodeValue lastCell = rowLength == 0

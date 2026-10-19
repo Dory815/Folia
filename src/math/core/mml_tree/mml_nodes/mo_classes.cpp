@@ -44,8 +44,8 @@ std::u16string MmlMo::coreText(NodeValue parent) {
     };
     tree::TreeWalkBudget<MmlNode> walkBudget;
     while (((isUnwrappable(*parent.requireNode("isKind")) && ([&] {
-                if (!node->childNodes) throw Error("TypeError",u"Cannot read properties of null (reading 'length')");
-                return node->childNodes->size() == 1;
+                if (!node->childArrayOwner()) throw Error("TypeError",u"Cannot read properties of null (reading 'length')");
+                return node->childArrayOwner()->size() == 1;
             })()) ||
             node->isKind("munderover")) &&
            host::moChild(NodeValue(node), 0).isNode()) {
@@ -68,7 +68,7 @@ Property MmlMo::isAccent() {
         if (node->isKind("mover")) {
             auto* mover = dynamic_cast<MmlMunderover*>(node);
             if (!mover) {
-                if (!node->childNodes) host::typeError("Cannot read properties of null (reading 'undefined')");
+                if (!node->childArrayOwner()) host::typeError("Cannot read properties of null (reading 'undefined')");
                 NodeValue(Missing{}).requireNode("coreMO");
             }
             const auto index = mover->over();
@@ -77,7 +77,7 @@ Property MmlMo::isAccent() {
         } else if (node->isKind("munder")) {
             auto* munder = dynamic_cast<MmlMunderover*>(node);
             if (!munder) {
-                if (!node->childNodes) host::typeError("Cannot read properties of null (reading 'undefined')");
+                if (!node->childArrayOwner()) host::typeError("Cannot read properties of null (reading 'undefined')");
                 NodeValue(Missing{}).requireNode("coreMO");
             }
             const auto index = munder->under();
@@ -86,7 +86,7 @@ Property MmlMo::isAccent() {
         } else if (node->isKind("munderover")) {
             auto* multi = dynamic_cast<MmlMunderover*>(node);
             if (!multi) {
-                if (!node->childNodes) host::typeError("Cannot read properties of null (reading 'undefined')");
+                if (!node->childArrayOwner()) host::typeError("Cannot read properties of null (reading 'undefined')");
                 NodeValue(Missing{}).requireNode("coreMO");
             }
             if (NodeValue(this) == host::moChild(NodeValue(node), multi->over())

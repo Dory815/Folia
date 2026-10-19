@@ -82,7 +82,7 @@ void MmlMo::checkMathAccent(std::u16string_view mo) {
     MmlNode* const parent = parentValue.nodeOrNull();
     if (!parent->isKind("munderover")) return;
 
-    const auto nodes = parent->childNodes;
+    const auto nodes = parent->childArrayOwner();
     if (!nodes) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
     const auto next = [&](std::size_t index) -> NodeValue {
         if (index >= nodes->size()) return Missing{};

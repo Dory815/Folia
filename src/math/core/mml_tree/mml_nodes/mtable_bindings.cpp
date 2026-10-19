@@ -26,7 +26,7 @@ value.setOwn("minlabelspacing","0.8em");
 value.setOwn("data-break-align","top");
 return value;}();}
 PropertyList& MmlMtable::defaults(){return MmlMtableDefaults;}
-void MmlMtable::initializeClassFields(){properties=PropertyList{{"useHeight",true}};initializeTexClass(TEXCLASS.ORD);}
+void MmlMtable::initializeClassFields(){propertyOwner(PropertyList{{"useHeight",true}});initializeTexClass(TEXCLASS.ORD);}
 std::string MmlMtable::kind()const{return "mtable";}
 bool MmlMtable::linebreakContainer()const{return true;}
 std::string MmlMtable::linebreakAlign()const{return "";}

@@ -12,18 +12,18 @@ namespace folia::math::mml {
 std::string MmlMstyle::kind() const { return "mstyle"; }
 
 Property MmlMstyle::notParent() const {
-    const auto firstArray = this->childNodes;
+    const auto firstArray = this->childArrayOwner();
     if (!firstArray) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
     const NodeValue first = firstArray->get(0);
     if (!first.isNode()) {
         return first.kind() == tree::ChildKind::Null ? Property(PropertyNull{}) : Property(Missing{});
     }
 
-    const auto currentArray = this->childNodes;
+    const auto currentArray = this->childArrayOwner();
     if (!currentArray) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
     const NodeValue current = currentArray->get(0);
     MmlNode* const child = current.requireNode("childNodes");
-    const auto grandchildren = child->childNodes;
+    const auto grandchildren = child->childArrayOwner();
     if (!grandchildren) throw Error("TypeError",u"Cannot read properties of null (reading 'length')");
     return Property(grandchildren->size() == 1);
 }
@@ -74,7 +74,7 @@ void MmlMstyle::setChildInheritedAttributes(AttributeList attributes, Property d
     if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getAllAttributes')");
     attributes = addInheritedAttributes(std::move(attributes), Property(currentAttributes->getAllAttributes()));
 
-    const auto children = this->childNodes;
+    const auto children = this->childArrayOwner();
     if (!children) host::typeError("Cannot read properties of null (reading '0')");
     children->get(0).requireNode("setInheritedAttributes")
         ->setInheritedAttributes(std::move(attributes), display, level, prime);

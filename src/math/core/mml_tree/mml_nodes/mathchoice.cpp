@@ -21,7 +21,7 @@ void MathChoice::inheritAttributes(AttributeList attributes, Property display,
     }
 
     // Keep the selected tagged slot even if factory callbacks mutate this node.
-    NodeValue child = host::numericChild(this->childNodes, selection);
+    NodeValue child = host::numericChild(this->childArrayOwner(), selection);
     if (!child.isNode()) {
         child = NodeValue(this->factoryOwner().create("mrow", tree::FactoryArgs{}));
     }

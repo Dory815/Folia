@@ -16,7 +16,7 @@ NodeValue MmlMenclose::setTeXclass(NodeValue previous) {
 
     // The upstream method reads childNodes[0] again after the callback, so
     // retain the live-array receiver only for this fresh slot lookup.
-    const auto children = this->childNodes;
+    const auto children = this->childArrayOwner();
     if (!children) host::typeError("Cannot read properties of null (reading '0')");
     updateTeXclass(children->get(0));
     return previous;

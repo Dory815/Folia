@@ -25,8 +25,8 @@ void MmlMmultiscripts::setChildInheritedAttributes(
             if (!prescripts) {
                 prescripts = true;
                 if (i % 2 == 0) {
-                    MmlNode* const created = host::multiscriptCreate(factory, "none");
-                    host::multiscriptInsert(childNodes, i, NodeValue(created));
+                    MmlNode* const created = host::multiscriptCreate(factoryOwner(), "none");
+                    host::multiscriptInsert(childArrayOwner(), i, NodeValue(created));
                     NodeValue(created).requireNodeForWrite("parent")
                         ->setParent(NodeValue(this));
                     ++i;
@@ -43,7 +43,7 @@ void MmlMmultiscripts::setChildInheritedAttributes(
 
     const auto currentChildren = host::multiscriptChildren(*this);
     if (currentChildren->size() % 2 == (prescripts ? 1u : 0u)) {
-        (void)appendChild(NodeValue(host::multiscriptCreate(factory, "none")));
+        (void)appendChild(NodeValue(host::multiscriptCreate(factoryOwner(), "none")));
 
         // Source evaluates the indexed receiver's array before re-reading the
         // current array for its length expression.

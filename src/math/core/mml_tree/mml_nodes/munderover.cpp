@@ -14,10 +14,9 @@ std::string property_key(const Property& value) {
     return host::debugText(host::string(value));
 }
 
-Property accent_at(const std::shared_ptr<std::vector<Property>>& accents,
-                   std::size_t index) {
-    if (!accents) host::typeError("Cannot read properties of null (reading '"+std::to_string(index)+"')");
-    return index < accents->size() ? (*accents)[index] : Property(Missing{});
+Property accent_at(const PropertyArray& accents,std::size_t index) {
+    if(index>=accents.size())return Missing{};
+    return accents.get(index);
 }
 
 NodeValue child_slot(const Children& nodes, std::size_t index) {
@@ -50,7 +49,7 @@ void MmlMunderover::setChildInheritedAttributes(AttributeList attributes,
                                                Property level,
                                                Property prime) {
     tree::TreeCallGuard<MmlNode> guard;
-    const Children nodes = this->childNodes;
+    const Children nodes = this->childArrayOwner();
 
     MmlNode* const baseNode = require_child(nodes, 0, "setInheritedAttributes");
     const bool basePrimePresent = host::truthy(prime)
@@ -100,7 +99,7 @@ void MmlMunderover::setInheritedAccent(std::size_t index, Property accent,
                                       Property display, Property level,
                                       Property prime, bool force) {
     tree::TreeCallGuard<MmlNode> guard;
-    const Children nodes = this->childNodes;
+    const Children nodes = this->childArrayOwner();
     const NodeValue child = child_slot(nodes, index);
     const auto initialAttributes = this->attributes();
     if (!initialAttributes) host::typeError("Cannot read properties of null (reading 'hasExplicit')");
