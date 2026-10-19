@@ -4,6 +4,15 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
+Latest completed focused evaluation (Gate218): all 61 targets compile with
+2,183 unchanged registered input entries. Every focused test/capture exits 0,
+including 100 Maction host assertions, 55 TextMacros assertions, 36 mfenced
+assertions and all 2,821 Host assertions. The package comparators still reject
+next-six (18/20) and font packages (13/16): remaining differences include
+packageData live-state identity and a ParseMethod receiver exception. These
+test results do not establish complete layout/SVG or lifetime acceptance. See
+`evidence/shared-g218.md`. Folia integration remains pending.
+
 Latest completed focused evaluation (Gate217): all 61 targets compile with
 2,181 unchanged registered input entries and at most four compile jobs. Full
 Host passes 2,821 assertions; focused property-copy, TextMacros preprocessor,
