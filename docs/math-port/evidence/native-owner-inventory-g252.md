@@ -35,11 +35,13 @@ while constructing its NewCM graph; it still directly constructs unregistered
 font classes/instances and lacks the host setup used by the accepted full-font
 observer. No provider parity is claimed. Broad evaluation stopped there.
 
-Both Core mfenced filters exited 0 but executed zero matching assertions; their
-logs do not even enumerate the expected mfenced test names. The object is linked
-and its test names exist in the executable. These are inconclusive discovery
-results, not passing regressions. Registration/discovery requires diagnosis
-before a full Core run. No full Core or platform pass is claimed.
+Both Core mfenced filters passed: the null-text selection executed 6 tests and
+36 assertions; the complete mfenced selection executed 228 tests and 1,008
+assertions. An earlier wrapper misread ANSI-colored summaries and incorrectly
+reported zero assertions. Boost.UT hides successful test names by default;
+their absence is not evidence of missing suite registration. The temporary
+`/OPT:NOREF` experiment was unnecessary and has been removed. No full Core or
+platform pass is claimed.
 
 All actual processes were terminal and all registered inputs were rechecked
 before releasing the gate. Combined evaluation exit is 1. Details are in
