@@ -21,6 +21,9 @@ point, live agent/build handles, candidate paths, verification limits, and next
 concrete action there. On recovery, use the latest checkpoint rather than old
 agent completion messages; search ignored candidate directories with
 `rg --no-ignore` before declaring a delivered file missing.
+Keep one authoritative current checkpoint at the top; label superseded status
+and next-action sections as historical. An instruction to read the notebook is
+not enough: update stale entries before handoff and actually read it on recovery.
 
 ## Build and test
 

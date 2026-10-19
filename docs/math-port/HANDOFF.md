@@ -4,7 +4,88 @@
 本文件是当前进度入口；架构细则见 `native-raii-architecture.md`，验收规则见
 `native-raii-acceptance.md`。用户后续明确指令优先。不要把本记录当作完整功能验收。
 
-## 恢复时先看这几行
+## 当前唯一执行断点（2026-10-20；恢复时先读）
+
+用户再次指出压缩后重复处理已解决的问题。本轮实际重读本文件、核对 HEAD/工作区和
+live agents，发现旧阶段的“最新/下一步”与文首并存。下文旧阶段已标为历史；
+当前状态和操作顺序只以本节为准。不能仅在摘要中提到文件名而不读正文。
+
+- **已提交基线：HEAD `b92b6f0c`。** 上一批完整组件测试
+  **251 项 / 26,461 断言** exit0，日志
+  `build/math-port/native-common-scripts-lines-fixed-full.log`。MML、字体、Common 基础、
+  分式/根式实际类、scripts/limits、fence/action、递归 LinebreakVisitor 已验收，
+  不能重新作为未实现任务分派。下节保留该批修正与证据。
+- **本轮正式工作区已整合、尚未原生验收：** table/mtr/mtd、mpadded/semantics/tex_atom，
+  CMake 与 Common primary 导出；CommonWrapper::containerWidth 已 virtual，Mpadded override。
+  分式/根式共享 placement geometry 已进入原家族类，runner 已恢复 origins/rule/overbar
+  等 Source 字段检查。没有新增第二棵数学树或 Scene 家族布局类。
+- **本轮构建已完成：** `build/math-port/native-common-shared-geometry-build.log` exit0，
+  build session 99925 已终止，无待轮询 native/build 句柄。
+  构建过程中 Root 修了 fraction UT 的 em 厚度输入；下一次增量构建确认该修正被编译后
+  再执行测试。目前不能把“构建通过”报告为新组件测试通过。
+- **新发现并已修改、待原生验证：** CommonOutputJax::containerWidth_ 原生初始值 0
+  导致普通 overflow 下 auto 表格被收窄。实际 Source 此时尚未设置 width，相关算术为 NaN；
+  原生改为 quiet_NaN 数值域内的无约束值。Source 见
+  `tools/math-port/common-jax-source-witness.cjs`，已运行 exit0：
+  `build/math-port/common-unconstrained-width-source.log`。inline policy UT 已改为 isnan。
+- **当前失败边界：** table focused 普通 UT exit1（38 断言/3 失败），日志
+  `native-common-table-base-focused.log`；前两项与上述宽度初值有关，最后一项为
+  Source sum(H.concat(D,rLines,rSpace)) 的浮点运算顺序。另有 UT 的树/attrs/options
+  与 Source 不同。Luna 已交付修正包，尚未推广或执行；不能靠修改期望或放宽误差掩盖。
+  Mpadded focused 普通 UT exit1（23 断言/3 失败），日志
+  `native-common-padded-focused.log`；已知 UT getAlignX 输入和期望运算顺序不匹配 Source，
+  正由容器 owner 生成实际 MathML→SVG/NewCM 观测。未出现本轮 abort。
+- **Root 已作的 runner 修正，禁止被旧包覆盖：** fraction linethickness 输入是
+  `std::format` 数字加 `em`，配对数据给的是已转换 em 值；slash 字符串观察用
+  `std::string_view("slash")`，避免 SourceRow 的 const char* 误选 bool overload。
+  Radical runner 临时设置 wrapper bbox.scale 观察 SVG geometry，测量 BBox 前恢复。
+
+### 现存 Luna 任务与交付（状态在本次实际 list_agents 后核对）
+
+ignored 根目录均为 `tools/math-port/drafts/native-raii/`，只由 Root 推广、构建和提交。
+
+- `fraction_table_runner`：刚交付 `common-table-native-impl` 修正；真实 Math display=block、
+  inferred row/cell 树、array attrs、两种 linebreak options/metrics 与 Source 匹配，
+  computeBBox 按 Source concat 顺序累加。八条 Source 记录通过；尚无 native 运行。
+  数值 UT 仍用 synthetic mspace 提供对应几何，未复制全部 Source TeX token/label 和
+  data-latex；不能称为完整同构 Source 树的 native 验收。owner 现已完成，无需等待。
+  下一步读差异定点推广，不能整包覆盖 Root 正式修改。
+- `raii_scene_foundation`：仍在 `common-containers-native-impl` 处理五个同构 MML 案例
+  的真实 Source/NewCM 期望，替换公式型测试；不改生产算法迎合错误 UT。
+- `raii_common_font_audit`：仍在 `common-menclose-native-impl` 加强 29 notation × 两种
+  extent 的实际 Source SVG handler 几何观察。候选尚未推广、编译或 native 验收。
+- `raii_graph_inventory`：`common-scripts-real-source` 已交付，四个真实 Source/NewCM
+  树及固定观测。候选尚未推广；需修 const getOuterBBox 调用、移除 expectNear 隐含容差、
+  明确 font 生命周期，并匹配现有 LayoutJob inline policy。保留已有四个合成数值 UT，
+  替换现有 formula/isfinite 型真实字体 UT。不要从头重派整包。
+- `math_structure_audit` / `radical_table_runner` 的 geometry 包已交付并推广，
+  Source 288×84 / 192×89 通过；尚未运行新增原生 placement 检查。
+  其他旧 completed 消息仅是历史，不应触发重复等待或分派。
+
+本次恢复时的关键候选 SHA-256（相对上述 ignored 根目录；owner 后续修改则重读差异）：
+
+- `common-table-native-impl/src/math/output/common/wrappers/mtable.cpp`：
+  `99894832E4C9F0FF00AAC38095E363F1E1CD0153AFD91C7360AFF0B660D799F7`。
+- `common-containers-native-impl/src/math/output/common/wrappers/mpadded.cpp`：
+  `167359DBF7486A698200D2DE76A229BD219A963AE55923D4D1895341C6CF51F9`。
+- `common-scripts-real-source/native-test-candidate.cpp`：
+  `8ACAEBE056F4447660E9CE3D9CEBEDCF20A91E6FCDD9AFF5D2154D7C1979A728`。
+
+### 接着执行的具体顺序
+
+1. 增量构建（单次一个构建，--parallel 4，math pool 2），先执行分式 288/根式 192
+   的新增 placement 聚焦测试；逐字段对照，不能用 isfinite 或自行计算期望替代。
+2. 审查 table 最新包的 Source 树快照与差异，推广修正；容器 Source 期望交付后推广。
+   先各自聚焦通过，再运行完整组件 suite。没有新全量通过前保留 251/26461 为已验收基线。
+3. Script 真字体候选修好接口/生命周期/精确期望后整合；menclose geometry 证据齐后整合。
+   Menclose 候选已知机械错误待修：SVG catalog import common.notation 模块名错误；
+   projectedBaseNode 的 &child.node 多取一层指针；const child 调用非 const getBBox。
+   其 msqrt 可选 projectedBaseNode 必须定点合并，不能覆盖已推广的根式 geometry。
+4. 按职责小批提交通过验收的代码并同步本文件，保护下文列出的无关修改。
+   之后继续 TeX parser/stack/38-package、Renderer→Common→Scene→SVG 与 Folia。
+   **Folia 仍使用旧 QuickJS，尚未完成 TeX→SVG；Mermaid 暂停，不做 D2D 像素对照。**
+
+## 上一批已验收结论与证据（保留，不是当前待办）
 
 - **最新：实际算术、scripts/limits、fence/action、LinebreakVisitor 已原生整合验收。**
   完整组件 **251 项 / 26,461 断言** exit0：
@@ -34,12 +115,12 @@
   均由Root运行exit0，日志 `build/math-port/common-<family>-formal-source.log`。
   fraction288×84、radical192×89逐字段重现tracked表（忽略旧provenance注释），fixtures未改。
   范围与受控输入见 `common-source-witness-coverage.md`，不能称作完整SVG文档对照。
-- **下一具体动作：整合已交付table/containers/menclose包，不重写。** ignored根目录为
+- **上一批结束时的候选：table/containers/menclose。** ignored根目录为
   `tools/math-port/drafts/native-raii/`；对应 `common-table-native-impl`、
   `common-containers-native-impl`、`common-menclose-native-impl`。下一批先table/containers。
   table已修coreMO显式Mo cast、复用原生string.split/js_number、span借用唯一children；
   有label/百分比/fixed/equal/frame/stretch/实际visitor的UT和8条Source记录，但尚未native执行。
-  containers需将正式CommonWrapper::containerWidth改virtual，Mpadded声明override；
+  containers所需virtual/override本轮已整合，验收状态看文首；
   menclose类已移回原wrappers目录，不能另建common/menclose并遗留旧文件。
 - **Menclose已冻结接口**：Common `notation`对应Source Notation.ts，闭合29种spec；
   immutable catalog由具体creator传span，固定catalog为静态constexpr数据。Common仅依赖
@@ -48,11 +129,11 @@
   通过wrapNode重新wrap同一源MML作为childNodes[0]，保留源parent，按Source覆盖nodeMap；
   不clone子树、不共享旧base wrapper、不attachAuxiliary改变Source父链。其数学走现有根式方法。
   候选sqrt改动必须定点合并，不能整包覆盖Root已修普通根式实现。
-- **当前运行状态**：所有本轮build/native句柄已结束。其他Luna包均交付；
-  `raii_graph_inventory`正在准备 `common-scripts-real-source`，用真实Source/NewCM同构树
-  替换formula/isfinite型UT期望，尚未交付；恢复后读live状态，不重新分派整包。
+- **该批结束时运行状态（已被文首更新）**：`common-scripts-real-source`当时仍在准备，
+  现在已交付；恢复后读文首及live状态，不重新分派整包。
   搜索ignored包须用 `rg --no-ignore` 或直接读明确路径，无默认rg结果不能判缺失。
-- **仍未完成**：Shared Scene需恢复288/192表的SVG child origins/rules/overbar等输出验收；
+- **该批未完成项（当前状态见文首）**：288/192表的SVG origins/rules/overbar等
+  runner现已整合，尚待原生执行；
   Common的BBox测试不覆盖全部原输出字段，断言从旧32338降为当前26461不能称覆盖增加。
   完整TeX parser/stack/38-package流程、Renderer→Common→Scene→SVG和Folia替换仍未完成；
   Folia仍旧QuickJS路径。Mermaid暂停；不要D2D像素对照。无关dirty work保护见文末。
@@ -91,9 +172,9 @@ reset。用户询问是否需要 reset 不是执行授权，目前没有执行 r
 保留已验证的数据、算法修正和紧凑测试；修正类职责与生产调用关系；撤掉被替代的职责。
 旧 Common 类可从 Git 读取，不能把整套旧 JS 模拟恢复回来，也不能覆盖无关改动。
 
-明确的问题：`b23b2b46` 将分式/根式数学函数移回原 Common 文件，并移除了重复的
-placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函数，只有组件测试调用。
-这只是整理，不满足用户要求的原有 Common 类协作，不能再以“路径已经正确”报告完成。
+历史问题：`b23b2b46` 只将分式/根式数学函数移回原 Common 文件，仍为独立输入/结果/函数。
+该问题已由 `95a119b1` 复用实际 Common 类解决；本轮在这些类上继续共享 placement。
+不能再把它当作当前缺失，也不能把类已整合等同于完整渲染入口完成。
 
 原始 CommonMfrac / CommonMsqrt / CommonMroot C++ 基线可用：
 `git show b030b874:src/math/output/common/wrappers/<family>.<ixx|cpp>`。
@@ -103,7 +184,8 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 ## 当前实际完成与未完成
 
 - 已有原生 MML 基础、部分 TeX 状态/工具、BBox/长度/正则、Scene 和 SVG 组件。
-- 完整 TeX parser/stack/package 流程、CommonWrapper 编排、Renderer 门面尚未接通。
+- 完整 TeX parser/stack/package 流程与 Renderer 门面尚未接通；CommonWrapper 基础编排
+  已验收，家族接入进度以文首为准。
 - Folia 数学渲染仍使用旧 QuickJS 路径；原生目标不能端到端完成 TeX → SVG。
 - 旧 inactive 源码仍有模拟依赖；不在 CMake 中不等于已经清理。不要把旧 runtime
   retirement 补丁作为接下来要提交的实现。
@@ -167,7 +249,7 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
   空文本在 Source 中是显式 ORD infix 项，不是 REL fallback。
   本次仅是运算符数据/查询/有限模式，不代表 Mo 行为类已接入。
 
-## 最新集成结果和下一步（以本节为准）
+## 历史阶段：MML 集成结果（当前状态只以文首为准）
 
 本轮已复用原有 MML 基类和所有 43 类，完成原生类型迁移并进入实际 arena/唯一工厂。
 不是外置语义门面，也没有保留结构节点与数学节点双轨。文件分工见
@@ -216,7 +298,7 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
   UTF-16 vector 比较用 ranges::equal/native bool；测试文件使用共享 support/folia_test.hpp。
 - 所有构建进程已结束，没有待轮询的 live build；代理本轮包均已交付，不需要等旧状态。
 
-### 紧接着执行
+### 当时的后续计划（历史，已完成部分不得重复分派）
 
 1. **继续 Common 下一批整合**：core 与 Text/Mtext/Math/inline 入口已通过
    235 项 / 32,338 断言。不要再冻结一遍旧草稿或重做其基础。
@@ -286,7 +368,7 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
   生成器拒绝语义不同的 present-empty variants/stretch/stretchv，不能无证据重写 optional。
   census 见 ignored common-mo-native-impl/delimiter-array-presence.json；不需重复 14M 字形对照。
 
-### Common 当前执行断点（候选实现尚未整合验收）
+### 历史阶段：Common 基础整合前断点（不是当前待办）
 
 - 正式责任/模块约定：`common-native-implementation.md`。types 与 wrapper/factory/Jax 已推广、
   构建测试通过；正式 source/header 是权威，不得用旧 `common-contract-refresh/headers` 覆盖。
@@ -334,7 +416,7 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
 - 这不代表 Common LinebreakVisitor 已移植；其余 inactive Tree/MML visitor 消费者尚需原生改造，
   不增兼容别名，也不宣称 inactive 老源码已清理。
 
-### Common 候选关键文件校验值（避免拿旧包覆盖 Root 已修结果）
+### 历史候选关键文件校验值（不是当前包版本或推广指令）
 
 以下路径均相对 `tools/math-port/drafts/native-raii/`；均未原生整合验收。
 
@@ -377,8 +459,8 @@ insert_or_assign（Source Map.set），不能抛出“同节点已有不同 wrap
 `math.cpp`、旧 Lite/MML/tree bindings、三份旧 retirement 测试、WinUI SVG 修改及
 inventory 工具另有未提交修改；不要顺手一并提交、删除或覆盖。
 
-字体证据、Common 原接口与旧类声明已经核查。最近两笔 Tree 实现的构建与测试也已完成。
-接下来不要重复这些检查来代替执行上述下一步。若 HEAD 或相关文件实际变化，
+字体证据、Common 原接口与旧类声明已经核查，Tree 实现的构建与测试也已完成。
+接下来不要重复这些检查来代替执行文首下一步。若 HEAD 或相关文件实际变化，
 只核对相应差异并更新本记录；继续保持一个构建、总并发 4/math 编译池 2。
 
 分批暂存 CMake 不要过滤 zero-context diff 的前部 hunk 后直接应用后部绝对行号；
