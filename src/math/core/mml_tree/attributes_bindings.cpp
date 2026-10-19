@@ -60,6 +60,16 @@ struct AttributesContextBindings::State:std::enable_shared_from_this<State>{
         if(field=="defaults")return owner.defaultsLayer();
         return owner.globalLayer();
     }
+    // Call only for the pinned Source methods whose return statements create
+    // a new object: getList()'s fresh record and the Object.keys() arrays.
+    // Values returned by get/getInherited/getDefault and getAll* are aliases
+    // or arbitrary nested values and must never be enrolled here.
+    void captureFreshAttributeResult(const Property& result){
+        if(activeCaptures.empty())return;
+        const auto* storage=std::get_if<std::shared_ptr<PropertyStorage>>(&result.value);
+        if(!storage||!*storage||(*storage)->binding)return;
+        captures.at(activeCaptures.back()).storages.push_back(*storage);
+    }
     void installLayer(const std::shared_ptr<Attributes>& owner,ObjectRef object,
                       std::string field){
         const auto self=shared_from_this();
@@ -227,7 +237,9 @@ struct AttributesContextBindings::State:std::enable_shared_from_this<State>{
         method(u"getList",0,[self](Context&,Value receiver,std::span<const Value> args){
             std::vector<std::string> names;names.reserve(args.size());
             for(const auto& value:args)names.push_back(name(self->properties,value));
-            return self->properties.to(Property(self->receiver(receiver)->getList(names)));
+            const Property result(self->receiver(receiver)->getList(names));
+            self->captureFreshAttributeResult(result);
+            return self->properties.to(result);
         });
         method(u"setInherited",2,[self](Context&,Value receiver,std::span<const Value> args){
             self->receiver(receiver)->setInherited(name(self->properties,arg(args,0)),self->properties.from(arg(args,1)));
@@ -246,16 +258,24 @@ struct AttributesContextBindings::State:std::enable_shared_from_this<State>{
             return Value(self->receiver(receiver)->hasDefault(name(self->properties,arg(args,0))));
         });
         method(u"getExplicitNames",0,[self](Context&,Value receiver,std::span<const Value>){
-            return self->properties.to(namesArray(self->receiver(receiver)->getExplicitNames()));
+            const auto result=namesArray(self->receiver(receiver)->getExplicitNames());
+            self->captureFreshAttributeResult(result);
+            return self->properties.to(result);
         });
         method(u"getInheritedNames",0,[self](Context&,Value receiver,std::span<const Value>){
-            return self->properties.to(namesArray(self->receiver(receiver)->getInheritedNames()));
+            const auto result=namesArray(self->receiver(receiver)->getInheritedNames());
+            self->captureFreshAttributeResult(result);
+            return self->properties.to(result);
         });
         method(u"getDefaultNames",0,[self](Context&,Value receiver,std::span<const Value>){
-            return self->properties.to(namesArray(self->receiver(receiver)->getDefaultNames()));
+            const auto result=namesArray(self->receiver(receiver)->getDefaultNames());
+            self->captureFreshAttributeResult(result);
+            return self->properties.to(result);
         });
         method(u"getGlobalNames",0,[self](Context&,Value receiver,std::span<const Value>){
-            return self->properties.to(namesArray(self->receiver(receiver)->getGlobalNames()));
+            const auto result=namesArray(self->receiver(receiver)->getGlobalNames());
+            self->captureFreshAttributeResult(result);
+            return self->properties.to(result);
         });
         method(u"getAllAttributes",0,[self](Context&,Value receiver,std::span<const Value>){
             return self->properties.to(Property(self->receiver(receiver)->getAllAttributes()));

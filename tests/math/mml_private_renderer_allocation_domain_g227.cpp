@@ -49,6 +49,170 @@ std::weak_ptr<m::MmlFactory> productFactory(const o::Context& context,o::ObjectR
 }
 
 suite mmlPrivateRendererAllocationDomainG227=[] {
+    "private_attributes_fresh_source_results_retire_but_alias_values_survive"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();
+        runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);
+        if(!bindings)return;
+
+        const auto sharedObject=graph.context.object();
+        auto getterCalls=std::make_shared<std::size_t>(0);
+        const auto getter=graph.context.function(u"get probe",[getterCalls](o::Context&,o::Value,std::span<const o::Value>){
+            ++*getterCalls;return o::Value(1);
+        });
+        graph.context.define(sharedObject,o::Key(u"probe"),o::Descriptor::access(getter,std::nullopt,true,true));
+        folia::math::PropertyList global;
+        global.set("g",folia::math::Property("global-value"));
+        auto owner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},global);
+        const auto sharedProperty=runtime->attributeBindings.fromValue(o::Value(sharedObject));
+        owner->set("shared",sharedProperty);
+        owner->setInherited("inheritedShared",sharedProperty);
+        owner->defaultsLayer().set("defaultShared",sharedProperty);
+        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        std::weak_ptr<folia::math::Attributes> weakOwner=owner;
+        const auto identity=runtime->attributeBindings.bind(owner);
+
+        auto call0=[&](std::u16string_view methodName){
+            const auto method=std::get<o::ObjectRef>(graph.context.get(o::Value(identity),o::Key(std::u16string(methodName))).data);
+            const std::array<o::Value,0> args{};
+            return graph.context.callMember(method,o::Value(identity),args,methodName);
+        };
+        auto call1=[&](std::u16string_view methodName,const o::Value& argument){
+            const auto method=std::get<o::ObjectRef>(graph.context.get(o::Value(identity),o::Key(std::u16string(methodName))).data);
+            const std::array<o::Value,1> args{argument};
+            return graph.context.callMember(method,o::Value(identity),args,methodName);
+        };
+        const auto attributesField=std::get<o::ObjectRef>(graph.context.get(o::Value(identity),o::Key(u"attributes")).data);
+        const auto defaultsField=std::get<o::ObjectRef>(graph.context.get(o::Value(identity),o::Key(u"defaults")).data);
+        const auto inheritedField=std::get<o::ObjectRef>(graph.context.get(o::Value(identity),o::Key(u"inherited")).data);
+        const auto allAttributes=call0(u"getAllAttributes");
+        const auto allDefaults=call0(u"getAllDefaults");
+        const auto allInherited=call0(u"getAllInherited");
+        expect(static_cast<bool>(allAttributes==o::Value(attributesField)));
+        expect(static_cast<bool>(allDefaults==o::Value(defaultsField)));
+        expect(static_cast<bool>(allInherited==o::Value(inheritedField)));
+        const auto globalAlias=std::get<o::ObjectRef>(call0(u"getAllGlobals").data);
+        const auto globalNamesField=std::get<o::ObjectRef>(graph.context.get(o::Value(identity),o::Key(u"global")).data);
+        expect(globalAlias==globalNamesField);
+
+        const auto list1=std::get<o::ObjectRef>(call1(u"getList",o::Value(u"shared")).data);
+        const auto list2=std::get<o::ObjectRef>(call1(u"getList",o::Value(u"shared")).data);
+        const auto explicit1=std::get<o::ObjectRef>(call0(u"getExplicitNames").data);
+        const auto explicit2=std::get<o::ObjectRef>(call0(u"getExplicitNames").data);
+        const auto inheritedNames=std::get<o::ObjectRef>(call0(u"getInheritedNames").data);
+        const auto defaultNames=std::get<o::ObjectRef>(call0(u"getDefaultNames").data);
+        const auto globalNames=std::get<o::ObjectRef>(call0(u"getGlobalNames").data);
+        const std::array<o::ObjectRef,7> fresh{list1,list2,explicit1,explicit2,inheritedNames,defaultNames,globalNames};
+        expect(static_cast<bool>(list1!=list2));
+        expect(static_cast<bool>(explicit1!=explicit2));
+        expect(static_cast<bool>(graph.context.get(o::Value(list1),o::Key(u"shared"))==o::Value(sharedObject)));
+        expect(static_cast<bool>(graph.context.get(o::Value(list2),o::Key(u"shared"))==o::Value(sharedObject)));
+        const auto getValue=call1(u"get",o::Value(u"shared"));
+        const auto inheritedValue=call1(u"getInherited",o::Value(u"inheritedShared"));
+        const auto defaultValue=call1(u"getDefault",o::Value(u"defaultShared"));
+        expect(static_cast<bool>(getValue==o::Value(sharedObject)));
+        expect(static_cast<bool>(inheritedValue==o::Value(sharedObject)));
+        expect(static_cast<bool>(defaultValue==o::Value(sharedObject)));
+        expect(static_cast<bool>(graph.context.get(o::Value(explicit1),o::Key(u"length"))==o::Value(1)));
+        expect(static_cast<bool>(graph.context.get(o::Value(explicit1),o::Key(u"0"))==o::Value(u"shared")));
+        expect(static_cast<bool>(graph.context.get(o::Value(inheritedNames),o::Key(u"length"))==o::Value(1)));
+        expect(static_cast<bool>(graph.context.get(o::Value(inheritedNames),o::Key(u"0"))==o::Value(u"inheritedShared")));
+        expect(static_cast<bool>(graph.context.get(o::Value(defaultNames),o::Key(u"length"))==o::Value(1)));
+        expect(static_cast<bool>(graph.context.get(o::Value(defaultNames),o::Key(u"0"))==o::Value(u"defaultShared")));
+        expect(static_cast<bool>(graph.context.get(o::Value(globalNames),o::Key(u"length"))==o::Value(1)));
+        expect(static_cast<bool>(graph.context.get(o::Value(globalNames),o::Key(u"0"))==o::Value(u"g")));
+
+        std::array<std::weak_ptr<folia::math::PropertyStorage>,7> weakFresh{};
+        for(std::size_t i=0;i<fresh.size();++i){
+            const auto storage=runtime->attributeBindings.fromValue(o::Value(fresh[i]));
+            const auto* handle=std::get_if<std::shared_ptr<folia::math::PropertyStorage>>(&storage.value);
+            expect(handle!=nullptr);
+            if(handle)weakFresh[i]=*handle;
+        }
+        owner.reset();
+        bindings->retirePrivateRendererAttributesCapture(capture);
+        expect(weakOwner.expired());
+        for(const auto object:fresh){
+            bool retired=false;
+            try{(void)graph.context.kind(object);}
+            catch(const o::Exception& error){retired=error.name=="TypeError";}
+            expect(retired);
+        }
+        expect(std::all_of(weakFresh.begin(),weakFresh.end(),[](const auto& storage){return storage.expired();}));
+        expect(graph.context.kind(sharedObject)==o::ObjectKind::object);
+        expect(graph.context.kind(globalAlias)==o::ObjectKind::object);
+        expect(static_cast<bool>(getValue==o::Value(sharedObject)));
+        expect(static_cast<bool>(inheritedValue==o::Value(sharedObject)));
+        expect(static_cast<bool>(defaultValue==o::Value(sharedObject)));
+        expect(*getterCalls==0u);
+        for(const auto originalLayer:{attributesField,defaultsField,inheritedField}){
+            bool retired=false;
+            try{(void)graph.context.kind(originalLayer);}
+            catch(const o::Exception& error){retired=error.name=="TypeError";}
+            expect(retired);
+        }
+    };
+
+    "private_attributes_fresh_projection_failure_retains_pending_capture_after_stale_projection"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();
+        runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);
+        if(!bindings)return;
+
+        const auto countBefore=runtime->attributeBindings.canonicalHandleCountForDiagnostics();
+        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        auto owner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
+        std::weak_ptr<folia::math::Attributes> weakOwner=owner;
+        const auto identity=runtime->attributeBindings.bind(owner);
+        const auto listMethod=std::get<o::ObjectRef>(graph.context.get(o::Value(identity),o::Key(u"getList")).data);
+        const std::array<o::Value,1> listArgs{o::Value(u"missing")};
+        const auto list=std::get<o::ObjectRef>(graph.context.callMember(listMethod,o::Value(identity),listArgs).data);
+        const auto namesMethod=std::get<o::ObjectRef>(graph.context.get(o::Value(identity),o::Key(u"getExplicitNames")).data);
+        const std::array<o::Value,0> noArgs{};
+        const auto names=std::get<o::ObjectRef>(graph.context.callMember(namesMethod,o::Value(identity),noArgs).data);
+        std::weak_ptr<folia::math::PropertyStorage> weakNames,weakList;
+        {
+            const auto namesProperty=runtime->attributeBindings.fromValue(o::Value(names));
+            const auto listProperty=runtime->attributeBindings.fromValue(o::Value(list));
+            weakNames=std::get<std::shared_ptr<folia::math::PropertyStorage>>(namesProperty.value);
+            weakList=std::get<std::shared_ptr<folia::math::PropertyStorage>>(listProperty.value);
+        }
+        owner.reset();
+
+        // The names array is registered last and retires first. The stale list
+        // record then makes cleanup stop after that earlier projection and the
+        // canonical Attributes identity have already retired.
+        graph.context.retireObjectRecord(list);
+        std::optional<std::string> firstName,secondName;
+        std::optional<std::u16string> firstMessage,secondMessage;
+        try{bindings->retirePrivateRendererAttributesCapture(capture);}
+        catch(const o::Exception& error){firstName=error.name;firstMessage=error.message;}
+        expect(static_cast<bool>(firstName&&*firstName=="TypeError"));
+        expect(firstMessage.has_value());
+        expect(weakOwner.expired());
+        expect(runtime->attributeBindings.canonicalHandleCountForDiagnostics()==countBefore);
+        expect(weakNames.expired());
+        expect(!weakList.expired());
+        bool namesRetired=false,identityRetired=false;
+        try{(void)graph.context.kind(names);}catch(const o::Exception& error){namesRetired=error.name=="TypeError";}
+        try{(void)graph.context.kind(identity);}catch(const o::Exception& error){identityRetired=error.name=="TypeError";}
+        expect(namesRetired&&identityRetired);
+
+        try{bindings->retirePrivateRendererAttributesCapture(capture);}
+        catch(const o::Exception& error){secondName=error.name;secondMessage=error.message;}
+        expect(secondName&&firstName&&*secondName==*firstName);
+        expect(static_cast<bool>(secondMessage&&firstMessage&&*secondMessage==*firstMessage));
+        expect(runtime->attributeBindings.canonicalHandleCountForDiagnostics()==countBefore);
+        expect(!weakList.expired());
+    };
+
+
     "private_renderer_attributes_projection_failure_preserves_post_identity_retry_progress"_test=[] {
         SharedGraph graph;
         auto runtime=graph.makeRuntime();
