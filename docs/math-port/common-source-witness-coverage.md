@@ -92,3 +92,39 @@ Root replayed the formal tool from `C:\Windows`, exit0, recorded in
 `common-scripts-real-formal-source.log`. This is stronger than the isolated
 scripts method witness for these four trees; it does not establish every script
 shape, final native SVG, or application integration.
+
+## Menclose notation and projected radical
+
+`common-menclose-source-witness.cjs --repo-root <repository>` locks the profile
+and relevant TS/CJS files, then executes CommonNotation and CommonMenclose
+methods. The parameter observation uses actual CommonWrapper.length2em and
+the pinned lengths utility: `2mu` becomes exactly `0.1111111111111111`, with
+box extenders `0.6111111111111112`. Its scale, rule thickness and pxPerEm are
+explicit fixture inputs. The separate createMsqrt observation uses controlled
+wrapper/factory services; native projection tests additionally exercise the
+actual document arena, original MML parent links and wrapper index replacement.
+
+`common-menclose-geometry-source.cjs` executes all 28 decorative SVG handlers
+for two controlled child boxes (positive and negative height). It uses the
+actual Source zero-initialized CommonWrapper.getBBox/computeBBox lifecycle,
+BBox and fixed formatting. The 29th catalog entry, radical, is the projected
+child case rather than a decorative handler. Raw Source SVG, BBox, TRBL and
+ordered geometry are retained in the locked JSON. Normal replay compares it
+read-only and writes observations/header only under ignored build output.
+
+`common-menclose-compare-svg.cjs --repo-root <repository> --dump <tsv>` compares
+the 56 actual native Scene-to-SVG fragments with those raw handler outputs.
+Decimal values use exact reduced rationals: relative and absolute path forms
+are equivalent without floating-point summation artifacts, rounding or epsilon.
+Rectangles/ellipses are expanded by explicit path rules, and Source `mitre`
+maps to typed `miter`; ordered transforms, paint inheritance, cap/join and arc
+flags remain checked. This is semantic geometry equality, not byte equality.
+`common-menclose-comparator-selftest.cjs` verifies an equivalent baseline and
+13 rejected changes, including a `1e-15` coordinate change; direct parser tests
+also check negative arc radii, overflow and raw fill semantics.
+
+Root replayed all four formal tools from `C:\Windows`, exit0. Logs are
+`common-menclose-formal-source.log`, `common-menclose-geometry-formal-source.log`,
+`common-menclose-formal-selftest.log`, `native-menclose-formal-svg-compare.log`
+under `build/math-port/`. These 56 controlled fragments do not establish every
+notation combination, a full native TeX-to-SVG document, or Folia integration.

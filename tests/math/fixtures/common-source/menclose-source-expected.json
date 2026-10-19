@@ -1,0 +1,402 @@
+{
+  "constants": [
+    0.2,
+    0.067,
+    4,
+    2,
+    1
+  ],
+  "full_bbox": [
+    0.267,
+    0.267,
+    0.267,
+    0.267
+  ],
+  "full_padding": [
+    0.2,
+    0.2,
+    0.2,
+    0.2
+  ],
+  "full_border": [
+    0.067,
+    0.067,
+    0.067,
+    0.067
+  ],
+  "arrow_head": 0.402,
+  "arrow_bbox": {
+    "up": [
+      0.402,
+      0,
+      0.2,
+      0
+    ],
+    "down": [
+      0.2,
+      0,
+      0.402,
+      0
+    ],
+    "right": [
+      0,
+      0.402,
+      0,
+      0.2
+    ],
+    "left": [
+      0,
+      0.2,
+      0,
+      0.402
+    ],
+    "updown": [
+      0.402,
+      0,
+      0.402,
+      0
+    ],
+    "leftright": [
+      0,
+      0.402,
+      0,
+      0.402
+    ]
+  },
+  "one_side": {
+    "top": {
+      "bbox": [
+        0.267,
+        0,
+        0,
+        0
+      ],
+      "border": [
+        0.067,
+        0,
+        0,
+        0
+      ]
+    },
+    "right": {
+      "bbox": [
+        0,
+        0.267,
+        0,
+        0
+      ],
+      "border": [
+        0,
+        0.067,
+        0,
+        0
+      ]
+    },
+    "bottom": {
+      "bbox": [
+        0,
+        0,
+        0.267,
+        0
+      ],
+      "border": [
+        0,
+        0,
+        0.067,
+        0
+      ]
+    },
+    "left": {
+      "bbox": [
+        0,
+        0,
+        0,
+        0.267
+      ],
+      "border": [
+        0,
+        0,
+        0,
+        0.067
+      ]
+    }
+  },
+  "two_side_actuarial": {
+    "bbox": [
+      0.267,
+      0.267,
+      0,
+      0
+    ],
+    "border": [
+      0.067,
+      0.067,
+      0,
+      0
+    ],
+    "remove": "top right"
+  },
+  "arrow_def": {
+    "up": [
+      -1.5707963267948966,
+      false,
+      true,
+      "verticalstrike"
+    ],
+    "down": [
+      1.5707963267948966,
+      false,
+      true,
+      "verticakstrike"
+    ],
+    "right": [
+      0,
+      false,
+      false,
+      "horizontalstrike"
+    ],
+    "left": [
+      3.141592653589793,
+      false,
+      false,
+      "horizontalstrike"
+    ],
+    "updown": [
+      1.5707963267948966,
+      true,
+      true,
+      "verticalstrike uparrow downarrow"
+    ],
+    "leftright": [
+      0,
+      true,
+      false,
+      "horizontalstrike leftarrow rightarrow"
+    ]
+  },
+  "diagonal_arrow_def": {
+    "updiagonal": [
+      -1,
+      0,
+      false,
+      "updiagonalstrike northeastarrow"
+    ],
+    "northeast": [
+      -1,
+      0,
+      false,
+      "updiagonalstrike updiagonalarrow"
+    ],
+    "southeast": [
+      1,
+      0,
+      false,
+      "downdiagonalstrike"
+    ],
+    "northwest": [
+      1,
+      3.141592653589793,
+      false,
+      "downdiagonalstrike"
+    ],
+    "southwest": [
+      -1,
+      3.141592653589793,
+      false,
+      "updiagonalstrike"
+    ],
+    "northeastsouthwest": [
+      -1,
+      0,
+      true,
+      "updiagonalstrike northeastarrow updiagonalarrow southwestarrow"
+    ],
+    "northwestsoutheast": [
+      1,
+      0,
+      true,
+      "downdiagonalstrike northwestarrow southeastarrow"
+    ]
+  },
+  "catalog_names": [
+    "top",
+    "right",
+    "bottom",
+    "left",
+    "actuarial",
+    "madruwb",
+    "updiagonalstrike",
+    "downdiagonalstrike",
+    "horizontalstrike",
+    "verticalstrike",
+    "box",
+    "roundedbox",
+    "circle",
+    "phasorangle",
+    "uparrow",
+    "downarrow",
+    "leftarrow",
+    "rightarrow",
+    "updownarrow",
+    "leftrightarrow",
+    "updiagonalarrow",
+    "northeastarrow",
+    "southeastarrow",
+    "northwestarrow",
+    "southwestarrow",
+    "northeastsouthwestarrow",
+    "northwestsoutheastarrow",
+    "longdiv",
+    "radical"
+  ],
+  "source_svg_line_data_local": {
+    "top": [
+      0,
+      0.9665,
+      3,
+      0.9665
+    ],
+    "right": [
+      2.9665,
+      -0.5,
+      2.9665,
+      1
+    ],
+    "bottom": [
+      0,
+      -0.4665,
+      3,
+      -0.4665
+    ],
+    "left": [
+      0.0335,
+      -0.5,
+      0.0335,
+      1
+    ],
+    "vertical": [
+      1.5,
+      1,
+      1.5,
+      -0.5
+    ],
+    "horizontal": [
+      0,
+      0.25,
+      3,
+      0.25
+    ],
+    "up": [
+      0.0335,
+      -0.4665,
+      2.9665,
+      0.9665
+    ],
+    "down": [
+      0.0335,
+      0.9665,
+      2.9665,
+      -0.4665
+    ]
+  },
+  "scene_line_data_y_up": {
+    "top": [
+      0,
+      0.9665,
+      3,
+      0.9665
+    ],
+    "right": [
+      2.9665,
+      -0.5,
+      2.9665,
+      1
+    ],
+    "bottom": [
+      0,
+      -0.4665,
+      3,
+      -0.4665
+    ],
+    "left": [
+      0.0335,
+      -0.5,
+      0.0335,
+      1
+    ],
+    "vertical": [
+      1.5,
+      1,
+      1.5,
+      -0.5
+    ],
+    "horizontal": [
+      0,
+      0.25,
+      3,
+      0.25
+    ],
+    "up": [
+      0.0335,
+      -0.4665,
+      2.9665,
+      0.9665
+    ],
+    "down": [
+      0.0335,
+      0.9665,
+      2.9665,
+      -0.4665
+    ]
+  },
+  "phasor_bbox_source": [
+    0.2,
+    0.1,
+    0.167,
+    0.36700000000000005
+  ],
+  "projected_sqrt": {
+    "child_replaced": true,
+    "source_child_parent_unchanged": "menclose-mml-parent",
+    "wrapper_parent_is_menclose": true,
+    "node_map_points_to_new_sqrt": true,
+    "source_menclose_children_unchanged": true
+  },
+  "parameter_parse": [
+    0.5,
+    0.1111111111111111,
+    5,
+    0.25,
+    2
+  ],
+  "parameter_bbox": [
+    0.6111111111111112,
+    0.6111111111111112,
+    0.6111111111111112,
+    0.6111111111111112
+  ],
+  "parameter_padding": [
+    0.5,
+    0.5,
+    0.5,
+    0.5
+  ],
+  "menclose": {
+    "offset_x": -0.09999999999999999,
+    "offset_y": -0.1,
+    "argmod": [
+      0.9272952180016122,
+      5
+    ],
+    "arrow_data": {
+      "a": 0.485706245871551,
+      "W": 4.0699775561813185,
+      "x": 0.29963310898497186,
+      "y": 0.2
+    },
+    "arrow_aw": [
+      0.5532943253222926,
+      3.996248240537617
+    ]
+  }
+}
