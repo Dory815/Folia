@@ -365,6 +365,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_error_source.cpp
     tests/math/native_tex_error_utf8.cpp
     tests/math/native_tex_scanner.cpp
+    tests/math/native_tex_node_registration.cpp
     tests/math/parse_util_native.cpp
     tests/math/mml_native_factory.cpp
     tests/math/mml_defaults.cpp

@@ -3,13 +3,23 @@ export import folia.math.core.mml_tree.mml_document;
 import std;
 
 export namespace folia::math::tex {
+class NodeKindRegistration {
+public:
+    virtual ~NodeKindRegistration() = default;
+    virtual void addNode(mml::NodeKind kind, mml::MmlNode &node) = 0;
+};
+
 class NodeFactory final {
     mml::MmlFactory& mmlFactory_;
+    NodeKindRegistration* registration_;
 
     static bool isTokenKind(mml::NodeKind) noexcept;
+    void notifyCreated(mml::NodeKind, mml::MmlNode&) const;
 
 public:
-    explicit NodeFactory(mml::MmlFactory& factory) noexcept : mmlFactory_(factory) {}
+    explicit NodeFactory(mml::MmlFactory& factory,
+                         NodeKindRegistration* registration = nullptr) noexcept
+        : mmlFactory_(factory), registration_(registration) {}
     NodeFactory(NodeFactory const&) = delete;
     NodeFactory& operator=(NodeFactory const&) = delete;
     NodeFactory(NodeFactory&&) = delete;

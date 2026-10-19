@@ -16,11 +16,19 @@ bool NodeFactory::isTokenKind(mml::NodeKind kind) noexcept {
     }
 }
 
+void NodeFactory::notifyCreated(mml::NodeKind kind, mml::MmlNode& node) const {
+    if (registration_) registration_->addNode(kind, node);
+}
+
 mml::MmlNode& NodeFactory::makeNode(
     mml::NodeKind kind,
     std::span<mml::MmlNode* const> children,
     mml::AttributeSet attributes) const {
-    return mmlFactory_.make(kind, std::move(attributes), children);
+    auto& node = mmlFactory_.make(kind, std::move(attributes), children);
+    // Source NodeFactory.create registers only calls whose public request kind
+    // is "node", and only after the creator has returned successfully.
+    notifyCreated(kind, node);
+    return node;
 }
 
 mml::MmlNode& NodeFactory::makeToken(
@@ -32,7 +40,7 @@ mml::MmlNode& NodeFactory::makeToken(
     }
     auto& textNode = makeText(text);
     mml::MmlNode* children[]{&textNode};
-    return mmlFactory_.make(kind, std::move(attributes), children);
+    return makeNode(kind, children, std::move(attributes));
 }
 
 mml::MmlNode& NodeFactory::makeText(std::u16string_view text) const {
@@ -44,12 +52,11 @@ mml::MmlNode& NodeFactory::makeText(std::u16string_view text) const {
 mml::MmlNode& NodeFactory::makeError(std::u16string_view message) const {
     auto& text = makeText(message);
     mml::MmlNode* textChildren[]{&text};
-    auto& token = mmlFactory_.make(mml::NodeKind::mtext, {}, textChildren);
+    auto& token = makeNode(mml::NodeKind::mtext, textChildren);
 
     mml::AttributeSet errorAttributes;
     errorAttributes.set(u"data-mjx-error", std::u16string(message));
     mml::MmlNode* errorChildren[]{&token};
-    return mmlFactory_.make(
-        mml::NodeKind::merror, std::move(errorAttributes), errorChildren);
+    return makeNode(mml::NodeKind::merror, errorChildren, std::move(errorAttributes));
 }
 }

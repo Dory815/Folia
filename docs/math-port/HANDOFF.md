@@ -13,19 +13,33 @@
 
 - 用户再次指出压缩后重复调查。AGENTS.md 的连续性规则已经存在，问题在执行；
   本次已实际重读本文件并核对 Git/代理状态。不能只在摘要中提到文件路径就算读过。
-- 正式代码最近提交为 `7a632b73`。273项/33,051断言是此前完整基线；随后scanner
+- 此前正式代码基线为 `7a632b73`。273项/33,051断言是此前完整基线；随后scanner
   仅运行10项/96断言。完整TeX→SVG与Folia替换尚未完成，不能扩大验收结论。
 - Root四份TeX声明候选在 `tools/math-port/drafts/native-raii/tex-parser-declarations/`，
   尚未推广/构建。架构和职责见 `typed-tex-parser-implementation.md`。
 - `raii_session`已完成修订并交付 `tex-parse-options-contract/README.md`，
   SHA256 `68EEDEA26DD1E0B919CB37931B30925F2ED79A4EFBFD045AA8F2040373D4E487`。
   Root尚未审查此最新修订；它仍是声明提案，不是可推广的完整parser。
-- 唯一运行中的代理是 `radical_table_runner`，写 `tex-base-items-contract/` 的
-  原26个base类声明。实际枚举名为 `StackKind`，不要沿用任务文字中的RootStackKind。
-  其他代理均已完成；旧完成消息不是新的待办。当前无live build/native句柄。
-- **下一步明确动作**：审最新ParseOptions提案，收取并审BaseItems声明，冻结原文件职责、
-  所有权和服务接口后再派实现。复用已验证C++，不重写已完成家族、不恢复JS对象模拟。
-- Git目前13项既有无关修改，见文末保护清单；只提交本次交接记录，不运行reset。
+- **NodeFactory登记已推广并验证**：原node_factory文件增加借用NodeKindRegistration，
+  保留唯一MmlFactory；text不登记，token登记外层，error按mtext/merror顺序登记。
+  正式工具 `tools/math-port/tex-node-factory-source.cjs` Root从C:\Windows重放exit0，
+  日志 `native-tex-node-registration-source.log`。构建18066已终态exit0；
+  四个新UT+原八个factory UT共12项/281断言通过，`native-tex-node-registration-focused.log`。
+  这是登记协议组件验收，非ParseOptions列表/完整TeX验收。
+- BaseItems原26类声明已交付并经Root要求修订，位置 `tex-base-items-contract/`。
+  去掉旧TokenMap primary import、修EndEntry virtual和字段遗漏；Source公开数据现在直接
+  用typed成员，去掉冗余getter/setter。Root四份header的:types已加同module CharacterMap forward。
+  这两包仍未推广/构建；不能引用旧canonical StackKind不存在来重查已说明的状态。
+- 正在运行/审查：`math_structure_audit`写tex-dispatch-contract/；`raii_session`修
+  tex-tags-contract/（Root拒绝跨module core::MathItem forward、将CasesTags字段全塞入
+  equation和把package Tags类搬进主tags文件）；`mml_base_contract_review`写
+  tex-math-item-contract/。`raii_common_font_audit`修tex-color-native/，Root已读代码，
+  正在修多余test右括号、locale无关数字转换及固定Source用例。其余代理已完成。
+- **下一步明确动作**：审并构建ColorModel候选；收齐并审Tags/MathItem/typed dispatch，
+  冻结ParseOptions和26类的服务接口后派Stack/BaseItems实现。颜色持续状态使用原ColorModel
+  类作为session的optional owner，不造另一份ColorPackageState map。MathItem旧primary仍含
+  Context/DOM，不得作为native依赖捷径。原文件职责在typed-tex-parser-implementation.md。
+- Git原13项既有无关修改继续保护，见文末。当前无live build/native句柄，不运行reset。
 
 ### 最新完成与证据
 

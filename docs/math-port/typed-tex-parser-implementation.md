@@ -13,6 +13,11 @@ Tags, configuration and dispatch declarations. Its existing family files
 become or remain partitions of that module; implementations use
 `module folia.math.input.tex.parser; import :<partition>;`. Do not forward
 declare a parser-owned class in a different named module and define it here.
+Token, Macro, TokenMap and MapHandler participate in that same cyclic graph:
+their original files become partitions too. Importing the old standalone
+TokenMap primary would reintroduce its Context/Property dependencies and is
+not an acceptable declaration dependency. Pure environment, session and scanner
+utilities retain their existing independent modules.
 
 | Existing files | Responsibility |
 | --- | --- |
@@ -43,6 +48,11 @@ Constructors accept named domain initialization records, selected from a
 closed variant matching real Source constructor signatures. Attributes belong
 to MML attribute values; frame properties become concrete members of the
 responsible subclass, never an all-frame property bag or a string-keyed map.
+Keep Source-public frame data as named typed public members where no C++
+ownership invariant requires encapsulation, following the existing native
+CommonWrapper pattern. Do not replace every field with redundant setter/getter
+pairs. Stack ownership and control transitions remain encapsulated; real
+Source protected methods and package inheritance remain intact.
 
 `StackEntry` accepts only an owned frame, a borrowed MML node, or an explicit
 empty entry. Source Push skips empty entries and wraps MML in an actual MmlItem.
@@ -112,11 +122,32 @@ already listed in the closed inventory.
 
 Source ParseOptions itself lives with its TeX jax, and clear() does not clear
 packageData. In the native ownership split, persistent color definitions belong
-to a named ColorPackageState on the renderer/session, and persistent group/
+to the original ColorModel class owned optionally by the renderer/session, and persistent group/
 definition scope data belongs to a named BegingroupSessionState. These records
 must not retain a request's parser, MML nodes or mutable environment. Request
 ParseOptions borrows those explicitly typed states. A per-render scratch
 replacement of all package state would change the continuous-session profile.
+The earlier ColorPackageState sketch does not justify a second color map:
+ColorModel already has precisely this responsibility in ColorUtil.ts. Keep its
+original color/util and color/constants files and native value ownership.
+
+The existing NodeFactory module exposes only a typed NodeKindRegistration
+borrow for standard-kind registration. makeNode notifies after successful
+construction; makeToken registers its outer node, and makeError registers
+mtext then merror. Text and MmlFactory's implicit inferred rows do not notify.
+ParseOptions implements this protocol using its one node-list store; auxiliary
+lists remain its direct typed overload. Standalone document construction may
+omit registration. No parser primary import, duplicate node index or owning
+observer is added to NodeFactory. Native token-kind preconditions are checked
+before allocation; invalid generic JS API calls are not a native simulation
+requirement.
+
+The proposed core::MathItem dependency also needs its native declaration:
+the old module still imports the generic object and DOM graph. Preserve the
+original expression-state responsibility in core/math_item; do not use that
+old primary as a shortcut or duplicate it in a parser-local item facade.
+The concrete Tags and input-jax lifecycle contract must retain display changes
+and tag recompile state/counter values at this boundary.
 
 For the configured MtMultlined constructor call, retain the observed true
 default-tag behavior as a distinct MultlinedItemInit marker. Source passes a
