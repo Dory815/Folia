@@ -14,6 +14,7 @@
   再构造 wrappers 的 Source 顺序；继承与输入解析仍属输入流程。SVG 使用 forced，Common 默认
   opportunistic。正式 `common-inline-policy-source-witness.cjs` 已由 Root 运行 exit0。
   当前没有实际 LinebreakVisitor 算法运行：本批服务 UT 是明确的拒绝/观测 fixture。
+  已提交 `d7f7a2a9`。本轮全部编译/原生进程已结束，全部 Luna 包已交付；没有旧句柄要等待。
 - **Common core 首批已验收**：原地 Wrapper/Factory/Jax、Mo/Mrow/Inferred 类、闭合 warning
   记录，完整原生组件 **220 项 / 32,185 断言** exit0。日志
   `build/math-port/native-common-core-batch-{build,full}.log`；格式整理后的构建
@@ -37,6 +38,16 @@
   （实际 roots+192 案例）、`common-scripts-native-impl`、`common-fence-action-native-impl`、
   `common-linebreak-native-impl`（完整 cpp，已改 signed depth，Source 孤立 close: -1/2700）。
   所有包均已交付，不要重新从头分派。正式 header/source 是推广后的权威，旧 mirrors 不能覆盖。
+- 下一批推广前已实际读到的依赖问题（应具体修正，不要从零调查）：
+  Source Wrapper.ts:1457 的 createMo 使用 physical `this.node.parent`，当前正式 C++ 仍用
+  `Parent()`，整合分式/根式时改为 `parent()` 并检查生成 Mo 的辅助父链接。
+  fence/action packet 的 Maction::breakCount 仍把 coreMO 当 CommonMo，需显式 cast；其 UT 仍有旧
+  module imports，并用 Mrow 假作 open/separator/close，不符合真实 typed MML，须用真实 Mo 修正。
+  scripts UT 的 partition imports/相对 test include 也待换成 Common primary/shared header。
+  fraction/radical class UT 分别是 packet `tests/native_common_mfrac.cpp` 和
+  `tests/math/common_radical_native.cpp`；不能误读为文件缺失。推广后应替换现有 compact runner，
+  保留 288/192 对照数据。它们只验 class 数学的部分量，旧表中的 SVG origins/rules 等输出检查
+  仍须在共享几何/Scene 接通时恢复验收，不能因 scalar API 撤掉就声称这些检查已替代完成。
 - 本轮文本/入口纠正：Source physical `parent` 与 logical `Parent()` 不可混用；
   isTopEmbellished 和 getMathMLSpacing 用前者，Mtext 的 merror 查询用后者。
   Ms quotes 用 wrapNode 后手动前/后插入；Mglyph charWrapper 用 wrapNode 登记但不追加普通 children；
