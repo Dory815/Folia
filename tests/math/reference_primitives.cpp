@@ -1248,63 +1248,63 @@ PrioritizedList<double> list;
 expect(bool((list.end() == list.end())));
 expect(bool((PrioritizedList<int>::iterator{} == PrioritizedList<int>::iterator{})));
 list.add(1.0, 5.0);
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{1.0};
 const std::vector<double> expectedPriorities{5.0};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 list.add(2.0, 5.0);
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{1.0, 2.0};
 const std::vector<double> expectedPriorities{5.0, 5.0};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 list.add(3.0, -7.0);
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 1.0, 2.0};
 const std::vector<double> expectedPriorities{-7.0, 5.0, 5.0};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 list.add(1.0, 9.0);
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 1.0, 2.0, 1.0};
 const std::vector<double> expectedPriorities{-7.0, 5.0, 5.0, 9.0};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 list.add(4.0, 0.0);
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 2.0, 1.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, 5.0, 9.0};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 list.add(5.0, std::numeric_limits<double>::quiet_NaN());
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 2.0, 1.0, 5.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, 5.0, 9.0, std::numeric_limits<double>::quiet_NaN()};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 list.add(6.0, std::numeric_limits<double>::infinity());
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 2.0, 1.0, 5.0, 6.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, 5.0, 9.0, std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::infinity()};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 list.add(7.0, -std::numeric_limits<double>::infinity());
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 2.0, 1.0, 5.0, 7.0, 6.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, 5.0, 9.0, std::numeric_limits<double>::quiet_NaN(), -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 list.add(std::numeric_limits<double>::quiet_NaN(), 2.0);
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 2.0, 1.0, 5.0, 7.0, std::numeric_limits<double>::quiet_NaN(), 6.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, 5.0, 9.0, std::numeric_limits<double>::quiet_NaN(), -std::numeric_limits<double>::infinity(), 2.0, std::numeric_limits<double>::infinity()};
 expect(bool(items.size() == expectedItems.size()));
@@ -1312,61 +1312,61 @@ if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) 
 }
 expect(bool((list.end() == list.end())));
 expect(bool((&list.remove(1.0) == &list)));
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 2.0, 5.0, 7.0, std::numeric_limits<double>::quiet_NaN(), 6.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, 5.0, std::numeric_limits<double>::quiet_NaN(), -std::numeric_limits<double>::infinity(), 2.0, std::numeric_limits<double>::infinity()};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 expect(bool((&list.remove(std::numeric_limits<double>::quiet_NaN()) == &list)));
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 2.0, 5.0, 7.0, std::numeric_limits<double>::quiet_NaN(), 6.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, 5.0, std::numeric_limits<double>::quiet_NaN(), -std::numeric_limits<double>::infinity(), 2.0, std::numeric_limits<double>::infinity()};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 expect(bool((&list.remove(99.0) == &list)));
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 2.0, 5.0, 7.0, std::numeric_limits<double>::quiet_NaN(), 6.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, 5.0, std::numeric_limits<double>::quiet_NaN(), -std::numeric_limits<double>::infinity(), 2.0, std::numeric_limits<double>::infinity()};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 expect(bool((&list.remove(2.0) == &list)));
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 1.0, 5.0, 7.0, std::numeric_limits<double>::quiet_NaN(), 6.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, 5.0, std::numeric_limits<double>::quiet_NaN(), -std::numeric_limits<double>::infinity(), 2.0, std::numeric_limits<double>::infinity()};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 expect(bool((&list.remove(1.0) == &list)));
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 5.0, 7.0, std::numeric_limits<double>::quiet_NaN(), 6.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, std::numeric_limits<double>::quiet_NaN(), -std::numeric_limits<double>::infinity(), 2.0, std::numeric_limits<double>::infinity()};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 PrioritizedList<double>::DEFAULTPRIORITY=13; list.add(88);
-{ std::vector<double> items, priorities; for (auto& value : list) { items.push_back(value.item); priorities.push_back(value.priority); }
+{ std::vector<double> items, priorities; for (auto value : list) { items.push_back(std::get<double>(value.readItem())); priorities.push_back(value.readPriority()); }
 const std::vector<double> expectedItems{3.0, 4.0, 5.0, 7.0, std::numeric_limits<double>::quiet_NaN(), 88.0, 6.0};
 const std::vector<double> expectedPriorities{-7.0, 0.0, std::numeric_limits<double>::quiet_NaN(), -std::numeric_limits<double>::infinity(), 2.0, 13.0, std::numeric_limits<double>::infinity()};
 expect(bool(items.size() == expectedItems.size()));
 if (items.size() == expectedItems.size()) for (size_t i=0; i<items.size(); ++i) { expect(same_number(items[i], expectedItems[i])); expect(same_number(priorities[i], expectedPriorities[i])); }
 }
 { PrioritizedList<int> crossType; crossType.add(17);
-expect(bool((*crossType.begin()).priority == 13.0));
+expect(bool((*crossType.begin()).readPriority() == 13.0));
 }
 PrioritizedList<double>::DEFAULTPRIORITY=5;
-{ PrioritizedList<int> dynamic; dynamic.add(1,0); dynamic.add(2,1); auto it=dynamic.begin(); std::vector<int> seen; seen.push_back((*it).item); ++it; dynamic.remove(1); dynamic.add(3,2); for (; it!=dynamic.end(); ++it) seen.push_back((*it).item);
+{ PrioritizedList<int> dynamic; dynamic.add(1,0); dynamic.add(2,1); auto it=dynamic.begin(); std::vector<int> seen; seen.push_back(std::get<int>((*it).readItem())); ++it; dynamic.remove(1); dynamic.add(3,2); for (; it!=dynamic.end(); ++it) seen.push_back(std::get<int>((*it).readItem()));
 expect(bool(seen == std::vector<int>{1, 3}));
 }
-{ PrioritizedList<int> retaining; retaining.add(1); retaining.add(2); auto it=retaining.begin(); auto& yielded=*it; retaining.remove(1); yielded.priority=37;
-expect(bool(yielded.item == 1));
-expect(bool(yielded.priority == 37.0));
-expect(bool((&*it == &yielded)));
+{ PrioritizedList<int> retaining; retaining.add(1); retaining.add(2); auto it=retaining.begin(); auto yielded=*it; retaining.remove(1); yielded.writePriority(37);
+expect(bool(std::get<int>(yielded.readItem()) == 1));
+expect(bool(yielded.readPriority() == 37.0));
+expect(bool((it.record().nativeRecord() == yielded.nativeRecord())));
 }
 { auto a=std::make_shared<int>(7), b=std::make_shared<int>(7); PrioritizedList<std::shared_ptr<int>> identities; identities.add(a); identities.add(b); identities.remove(a);
-expect(bool((*identities.begin()).item == b));
+expect(bool(std::get<std::shared_ptr<int>>((*identities.begin()).readItem()) == b));
 }
 };
 };

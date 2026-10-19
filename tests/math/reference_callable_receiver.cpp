@@ -45,16 +45,16 @@ namespace {suite callable_receivers=[] {
  flags.push_back(std::get<Property>(t::invokeParseMethod(t::ParseMethod{map->parser},FunctionReceiver{map},parser,t::ParseAtom{Property("x")},rest))==Property(false));compare(flags,source_environment);
 };
 "math_port_callable_fallback"_test=[] {
- Parser parser;FunctionList list;NativeObjectRef saved;std::shared_ptr<FunctionListItem>record;std::vector<bool>flags;FunctionRef callback;
+ Parser parser;FunctionList list;NativeObjectRef saved;FunctionList::ItemRef record;std::vector<bool>flags;FunctionRef callback;
  auto other=t::makeParseCallable([](const auto&,auto&,const auto&,auto)->t::ParseResult{return Property(Missing{});});
- callback=t::makeParseCallable([&](const FunctionReceiver&r,t::ParserContext&p,const t::ParseAtom&atom,t::ParseRest)->t::ParseResult{saved=objectReceiver(r);auto actual=std::dynamic_pointer_cast<FunctionListItem>(saved);flags.insert(flags.end(),{actual==record,actual&&std::get<FunctionRef>(actual->item)==callback,actual&&actual->priority==13,&p==&parser,std::get<Property>(atom)==Property("x")});list.remove(callback);if(actual){actual->item=other;actual->priority=81;}return Property(false);});
- t::Macro macro("x",t::ParseMethod{callback});list.add(callback,13);record=list.begin().record();flags.push_back(std::get<FunctionRef>(macro.func())==std::get<FunctionRef>(record->item));
- std::array<std::any,2>slots{std::ref(static_cast<t::ParserContext&>(parser)),t::ParseAtom{Property("x")}};functions::invoke(record,slots);
- flags.insert(flags.end(),{saved==record,std::get<FunctionRef>(record->item)==other,record->priority==81,list.begin()==list.end()});compare(flags,source_fallback);
+ callback=t::makeParseCallable([&](const FunctionReceiver&r,t::ParserContext&p,const t::ParseAtom&atom,t::ParseRest)->t::ParseResult{saved=objectReceiver(r);auto actual=std::dynamic_pointer_cast<FunctionListItem>(saved);flags.insert(flags.end(),{actual==record.nativeRecord(),std::get<FunctionRef>(std::get<FunctionValue>(record.readItem()))==callback,record.readPriority()==13,&p==&parser,std::get<Property>(atom)==Property("x")});list.remove(callback);record.writeItem(FunctionValue{other});record.writePriority(81);return Property(false);});
+ t::Macro macro("x",t::ParseMethod{callback});list.add(callback,13);record=list.begin().record();flags.push_back(std::get<FunctionRef>(macro.func())==std::get<FunctionRef>(std::get<FunctionValue>(record.readItem())));
+ std::array<std::any,2>slots{std::ref(static_cast<t::ParserContext&>(parser)),t::ParseAtom{Property("x")}};functions::invoke(record.nativeRecord(),slots);
+ flags.insert(flags.end(),{saved==std::static_pointer_cast<NativeObject>(record.nativeRecord()),std::get<FunctionRef>(std::get<FunctionValue>(record.readItem()))==other,record.readPriority()==81,list.begin()==list.end()});compare(flags,source_fallback);
 };
 "math_port_callable_typed_false"_test=[] {
- Parser parser;auto token=std::make_shared<t::Token>("x","y");PropertyList rest;std::vector<bool>flags;FunctionList list;std::shared_ptr<FunctionListItem>record;FunctionRef callback;
- callback=t::makeParseCallable([&](const FunctionReceiver&r,t::ParserContext&p,const t::ParseAtom&atom,t::ParseRest args)->t::ParseResult{auto actual=std::dynamic_pointer_cast<FunctionListItem>(objectReceiver(r));flags.insert(flags.end(),{actual==record,actual&&std::get<FunctionRef>(actual->item)==callback,&p==&parser,std::get<t::TokenRef>(atom)==token,std::any_cast<Property>(args[0])==Property(rest)});return Property(false);});
+ Parser parser;auto token=std::make_shared<t::Token>("x","y");PropertyList rest;std::vector<bool>flags;FunctionList list;FunctionList::ItemRef record;FunctionRef callback;
+ callback=t::makeParseCallable([&](const FunctionReceiver&r,t::ParserContext&p,const t::ParseAtom&atom,t::ParseRest args)->t::ParseResult{auto actual=std::dynamic_pointer_cast<FunctionListItem>(objectReceiver(r));flags.insert(flags.end(),{actual==record.nativeRecord(),std::get<FunctionRef>(std::get<FunctionValue>(record.readItem()))==callback,&p==&parser,std::get<t::TokenRef>(atom)==token,std::any_cast<Property>(args[0])==Property(rest)});return Property(false);});
  auto second=t::makeParseCallable([&](const auto&,auto&,const auto&,auto)->t::ParseResult{flags.push_back(false);return Property(true);});list.add(callback,5);list.add(second,10);record=list.begin().record();
  std::array<std::any,3>slots{std::ref(static_cast<t::ParserContext&>(parser)),t::ParseAtom{token},Property(rest)};flags.push_back(list.execute(slots)==false);compare(flags,source_typed_false);
 };
@@ -65,7 +65,7 @@ namespace {suite callable_receivers=[] {
 };
 "math_port_callable_owned_receiver"_test=[] {
  NativeObjectRef saved;std::weak_ptr<FunctionListItem>weak;
- {FunctionList list;auto fn=std::make_shared<Function>();fn->call=[&](const FunctionReceiver&r,FunctionArgs)->std::any{saved=objectReceiver(r);return true;};list.add(fn);{auto record=list.begin().record();weak=record;}list.execute({});list.remove(fn);expect(!weak.expired());}
+ {FunctionList list;auto fn=std::make_shared<Function>();fn->call=[&](const FunctionReceiver&r,FunctionArgs)->std::any{saved=objectReceiver(r);return true;};list.add(fn);{auto record=list.begin().record();weak=record.nativeRecord();}list.execute({});list.remove(fn);expect(!weak.expired());}
  expect(!weak.expired());saved.reset();expect(weak.expired());
 };
 "math_port_callable_invalid_native_protocol"_test=[] {

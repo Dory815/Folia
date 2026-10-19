@@ -1192,7 +1192,8 @@ suite regexp_ignore_case=[] {
   auto result_sticky_3=sticky.exec(u"BAaA");expect(result_sticky_3.has_value()==false);expect(eq(sticky.lastIndex,0.0));
 };
 "math_port_nonunicode_ignore_case_unsupported_flags_remain_explicit"_test=[] {
-  for(const auto flag:{u"d",u"m",u"s",u"u",u"v"}){bool rejected=false;try{host::RegExp re(u"x",flag);}catch(const folia::math::options::Exception&error){rejected=error.name=="Unimplemented";}expect(rejected);}
+  for(const auto flag:{u"d",u"m",u"s",u"v"}){bool rejected=false;try{host::RegExp re(u"x",flag);}catch(const folia::math::options::Exception&error){rejected=error.name=="Unimplemented";}expect(rejected);}
+  bool unicodeSupported=false;try{host::RegExp re(u"x",u"u");unicodeSupported=true;}catch(...){}expect(unicodeSupported);
 };
 "math_port_regexp_flags_reflection_uses_source_canonical_order"_test=[] {
   expect(host::RegExp(u"a",u"").flags()==u"");

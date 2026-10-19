@@ -50,7 +50,7 @@ struct Scenario {
  void mutate(std::string which){
   if(which=="remove_self")list.remove(fa);if(which=="remove_next")list.remove(fb);
   if(which=="append")list.add(fd,30);if(which=="insert_before")list.add(fd,-10);
-  if(which=="rebind"||which=="rebind_append")list.storage()=std::make_shared<Probe::Storage>(Probe::Storage{std::make_shared<FunctionListItem>(FunctionListItem{40,fd})});
+  if(which=="rebind"||which=="rebind_append")list.rebindStorage(std::make_shared<Probe::Storage>(Probe::Storage{std::make_shared<FunctionListItem>(FunctionListItem{40,fd})}));
   if(which=="rebind_append")old->push_back(std::make_shared<FunctionListItem>(FunctionListItem{50,fd}));
   if(which=="clear")old->clear();if(which=="null_next")(*old)[1]=nullptr;
   if(which=="replace_next")(*old)[1]->item=fd;if(which=="priority_next")(*old)[1]->priority=-99;
@@ -78,7 +78,7 @@ Property construction(std::string kind){
  if(kind=="mixed")*defs={FunctionValue(list->fa),tuple(list->fb,2),tuple(list->fa,2),tuple(list->fc,{}),std::make_shared<FunctionTuple>(),FunctionValue(Property(PropertyNull{}))};
  if(kind=="numeric")*defs={tuple(list->fa,std::numeric_limits<double>::quiet_NaN()),tuple(list->fb,-std::numeric_limits<double>::infinity()),tuple(list->fc,std::numeric_limits<double>::infinity()),tuple(list->fa,-0.0),tuple(list->fb,0),tuple(list->fc,2),tuple(list->fa,2)};
  if(kind=="live"||kind=="shrink"||kind=="default")*defs={FunctionValue(list->fa),tuple(list->fb,{}),FunctionValue(list->fc)};
- list->defs=defs;list->initializeFunctions(kind=="null"?nullptr:defs);PropertyArray items;for(auto&r:*list){auto f=std::get_if<FunctionRef>(&r.item);items.push(PropertyList{{"item",f?Property(list->ids[*f]):Property("raw")},{"priority",r.priority}});}return PropertyList{{"calls",list->calls},{"items",items}};
+ list->defs=defs;list->initializeFunctions(kind=="null"?nullptr:defs);PropertyArray items;for(auto r:*list){const auto item=std::get<FunctionValue>(r.readItem());auto f=std::get_if<FunctionRef>(&item);items.push(PropertyList{{"item",f?Property(list->ids[*f]):Property("raw")},{"priority",r.readPriority()}});}return PropertyList{{"calls",list->calls},{"items",items}};
 }
 Property promiseHost(std::string kind){auto q=std::make_shared<a::JobQueue>();auto first=a::Promise::create(q),second=a::Promise::create(q);PropertyArray trace,states;Property result="pending";auto output=first;auto named=[&](std::string name){return [&,name](const std::any&v){trace.push(PropertyArray{name,value(v)});return v;};};
  if(kind=="handlers"){first->then(named("a"));first->then(named("b"));first->resolve(Property(7));first->reject(Property(8));first->resolve(Property(9));first->then(named("c"));}
@@ -93,7 +93,7 @@ Property promiseHost(std::string kind){auto q=std::make_shared<a::JobQueue>();au
  if(kind=="late"){first->resolve(Property(23));output=first->catchError([](const auto&){return std::any(Property(99));})->then(named("late"));}
  output->then([&](const auto&v){result=value(v);return std::any{};},[&](const auto&e){result=value(e);return std::any{};});auto snap=[&]{states.push(PropertyList{{"trace",clone(trace)},{"result",clone(result)}});};snap();for(int i=0;i<7;++i){tick(q);snap();}return states;
 }
-Property priorityCapture(){struct P:PrioritizedList<Property>{StorageRef&storage(){return itemStorage();}}list;list.add("a",1);list.add("b",2);auto old=list.storage();auto it=list.begin();PropertyArray events;auto next=[&]{bool done=it==list.end();Property v=Missing{};if(!done){auto r=it.record();v=PropertyList{{"item",std::get<std::string>(r->item.value)},{"priority",r->priority}};}events.push(PropertyList{{"value",v},{"done",done}});++it;};next();list.storage()=std::make_shared<P::Storage>(P::Storage{std::make_shared<PrioritizedListItem<Property>>(PrioritizedListItem<Property>{9,"new"})});old->push_back(std::make_shared<PrioritizedListItem<Property>>(PrioritizedListItem<Property>{3,"c"}));next();old->erase(old->begin());next();return events;}
+Property priorityCapture(){struct P:PrioritizedList<Property>{StorageRef&storage(){return itemStorage();}}list;list.add("a",1);list.add("b",2);auto old=list.storage();auto it=list.begin();PropertyArray events;auto next=[&]{bool done=it==list.end();Property v=Missing{};if(!done){auto r=it.record();v=PropertyList{{"item",std::get<std::string>(r.nativeRecord()->item.value)},{"priority",r.readPriority()}};}events.push(PropertyList{{"value",v},{"done",done}});++it;};next();list.rebindStorage(std::make_shared<P::Storage>(P::Storage{std::make_shared<PrioritizedListItem<Property>>(PrioritizedListItem<Property>{9,"new"})}));old->push_back(std::make_shared<PrioritizedListItem<Property>>(PrioritizedListItem<Property>{3,"c"}));next();old->erase(old->begin());next();return events;}
 Property invalid(std::string kind,std::string mode){Scenario s(kind,"none");PropertyArray calls;auto first=std::make_shared<Function>(),last=std::make_shared<Function>();first->call=[&](auto&,auto){calls.push("before");return std::any(true);};last->call=[&](auto&,auto){calls.push("after");return std::any(true);};Probe list;list.add(first,0);list.add(value(s.result()),1);list.add(last,2);if(kind=="null_storage")list.storage().reset();Property outcome="pending";try{if(mode=="sync")outcome=list.execute();else{auto output=list.asyncExecute(s.queue);output->then([&](const auto&v){outcome=value(v);return std::any{};},[&](const auto&e){outcome=value(e);return std::any{};});for(int i=0;i<5;++i)tick(s.queue);}}catch(...){outcome=value(a::currentReason());}return PropertyList{{"calls",calls},{"outcome",outcome}};}
 suite function_native_host_tests=[] {
  "math_port_function_native_lifetime"_test=[] {
@@ -128,7 +128,7 @@ suite function_native_host_tests=[] {
   expect(weakQueue.expired());expect(weakToken.expired());bool expired=false;try{first->state();}catch(const tree::FactoryError&e){expired=e.name=="TypeError";}expect(expired);
  };
  "math_port_function_native_iterator_owner_lifetime"_test=[] {
-  auto list=std::make_unique<Probe>();auto f=std::make_shared<Function>();list->add(f,7);auto it=list->begin(),end=list->end();std::weak_ptr<Probe::Storage>storage=list->storage();list.reset();expect(!storage.expired());expect(it!=end);expect(it.record()->priority==7);++it;expect(it==end);it={};end={};expect(storage.expired());
+  auto list=std::make_unique<Probe>();auto f=std::make_shared<Function>();list->add(f,7);auto it=list->begin(),end=list->end();std::weak_ptr<Probe::Storage>storage=list->storage();list.reset();expect(!storage.expired());expect(it!=end);expect(it.record().readPriority()==7);++it;expect(it==end);it={};end={};expect(storage.expired());
  };
  "math_port_function_native_independent_runs"_test=[] {
   auto queue=std::make_shared<a::JobQueue>();Probe list;auto pause=a::Promise::create(queue);auto first=std::make_shared<Function>(),second=std::make_shared<Function>();std::vector<int>calls;

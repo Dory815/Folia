@@ -670,7 +670,7 @@ suite function_property=[] {
  PropertyArray tuple{Property(f),Missing{}};auto args=tuple.slice(1);tex::Macro macro("x",functions::fromProperty(tuple.get(0)),Property(args));FunctionList list;list.add(macro.func());bool first=list.execute();std::vector<bool>flags;
  std::string keys;for(const auto&[k,v]:snapshot){if(!keys.empty())keys+=',';keys+=k;}flags={keys=="2,9,x",snapshot[2].second==Property(f),graph.get("x")==Property(g),functions::reference(macro.func())==f,PropertyArray::array(macro.args())->get(0).missing(),tuple.get(0)==Property(f),property_host::truthy(Property(f)),!PropertyArray::array(Property(f)).has_value(),first==true,count==1};
  list.remove(functions::fromProperty(graph.get("9")));flags.push_back(list.begin()==list.end());list.add(functions::fromProperty(graph.get("x")));list.execute();flags.push_back(count==2);Parser parser;const auto callback=functions::reference(macro.func());expect(static_cast<bool>(callback));if(!callback)return;auto result=callback->call(FunctionReceiver{Missing{}},{});flags.push_back(std::any_cast<Property>(result)==Property(3));NativeObjectRef saved;
- auto fn=std::make_shared<Function>();fn->call=[&](const FunctionReceiver&r,auto)->std::any{saved=std::get<NativeObjectRef>(r);return Property(false);};FunctionList l;l.add(fn,13);auto record=l.begin().record();flags.push_back(l.execute()==false);flags.push_back(saved==record);flags.push_back(functions::reference(record->item)==fn);expect(flags.size()==source_flags.size());if(flags.size()==source_flags.size())for(std::size_t i=0;i<flags.size();++i)expect(flags[i]==source_flags[i]);
+ auto fn=std::make_shared<Function>();fn->call=[&](const FunctionReceiver&r,auto)->std::any{saved=std::get<NativeObjectRef>(r);return Property(false);};FunctionList l;l.add(fn,13);auto record=l.begin().record();flags.push_back(l.execute()==false);flags.push_back(saved==std::static_pointer_cast<NativeObject>(record.nativeRecord()));flags.push_back(functions::reference(record.nativeRecord()->item)==fn);expect(flags.size()==source_flags.size());if(flags.size()==source_flags.size())for(std::size_t i=0;i<flags.size();++i)expect(flags[i]==source_flags[i]);
  // Typed/raw binding roundtrip and actual TeX invocation retain one owner/body.
  auto method=tex::makeParseCallable([&](const auto&,auto&,const auto&,auto)->tex::ParseResult{return Property(++count);});Property raw(method);expect(functions::reference(functions::fromProperty(raw))==method);expect(functions::toProperty(FunctionValue{method})==raw);auto parsed=tex::invokeParseMethod(FunctionValue{raw},FunctionReceiver{Missing{}},parser,tex::ParseAtom{Property("x")});expect(std::get<Property>(parsed)==Property(4));
 };
@@ -682,7 +682,7 @@ suite function_property=[] {
  // Same Source function/data record reached through a raw Property slot.
  auto callback=std::make_shared<Function>();NativeObjectRef receiver;
  callback->call=[&](const FunctionReceiver&r,auto)->std::any{receiver=std::get<NativeObjectRef>(r);return Property(false);};
- list.add(FunctionValue{Property(callback)});auto record=list.begin().record();expect(list.execute()==false);expect(receiver==record);
+ list.add(FunctionValue{Property(callback)});auto record=list.begin().record();expect(list.execute()==false);expect(receiver==std::static_pointer_cast<NativeObject>(record.nativeRecord()));
 };
 "math_port_callable_property_retains_same_closure"_test=[] {
  std::weak_ptr<Function>weak;Property retained;{

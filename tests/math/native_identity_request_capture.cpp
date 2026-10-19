@@ -9,12 +9,12 @@ suite native_identity_request_capture=[] {
     auto promoted=std::make_shared<int>(3);
     const auto durableObject=bindings.instance(durable,type);
     expect(bindings.ownsHandle(durableObject));
-    bindings.beginRequestCapture();
+    const auto capture=bindings.beginRequestCapture();
     const auto transientObject=bindings.instance(transient,type);
     const auto promotedObject=bindings.instance(promoted,type);
     expect(bindings.ownsHandle(transientObject));expect(bindings.ownsHandle(promotedObject));
-    bindings.promoteFromRequestCapture(promoted);
-    bindings.retireCapturedRequestBindings();
+    bindings.promoteFromRequestCapture(capture,promoted);
+    bindings.retireCapturedRequestBindings(capture);
     expect(bindings.resolve(durableObject)==durable);
     expect(bindings.resolve(promotedObject)==promoted);
     expect(bindings.ownsHandle(durableObject));expect(bindings.ownsHandle(promotedObject));
@@ -93,5 +93,42 @@ suite native_identity_request_capture=[] {
         expect(error.message==u"Context object has no binding for this native reference type");
     }
     expect(caughtBase);
+};
+
+"math_port_native_identity_nested_capture_tokens_retire_exact_owner_records"_test=[] {
+    opts::Context context;NativeIdentityBindings<std::shared_ptr<int>> bindings(context);
+    const auto type=context.constructor(u"identity");
+    auto outerValue=std::make_shared<int>(10),innerValue=std::make_shared<int>(20),laterValue=std::make_shared<int>(30);
+    const auto outer=bindings.beginRequestCapture();
+    const auto outerObject=bindings.instance(outerValue,type);
+    const auto inner=bindings.beginRequestCapture();
+    const auto innerObject=bindings.instance(innerValue,type);
+    bindings.retireCapturedRequestBindings(inner);
+    expect(bindings.ownsHandle(outerObject));expect(!bindings.ownsHandle(innerObject));
+    const auto laterObject=bindings.instance(laterValue,type);
+    bindings.retireCapturedRequestBindings(outer);
+    expect(!bindings.ownsHandle(outerObject));expect(!bindings.ownsHandle(laterObject));
+
+    auto olderValue=std::make_shared<int>(31),newerValue=std::make_shared<int>(32),stillNewer=std::make_shared<int>(33);
+    const auto older=bindings.beginRequestCapture();
+    const auto olderObject=bindings.instance(olderValue,type);
+    const auto newer=bindings.beginRequestCapture();
+    const auto newerObject=bindings.instance(newerValue,type);
+    bindings.retireCapturedRequestBindings(older);
+    expect(!bindings.ownsHandle(olderObject));expect(bindings.ownsHandle(newerObject));
+    const auto afterOlder=bindings.instance(stillNewer,type);
+    bindings.retireCapturedRequestBindings(newer);
+    expect(!bindings.ownsHandle(newerObject));expect(!bindings.ownsHandle(afterOlder));
+};
+"math_port_native_identity_failed_capture_retirement_keeps_same_token_retryable"_test=[] {
+    opts::Context context;NativeIdentityBindings<std::shared_ptr<int>> bindings(context);
+    const auto type=context.constructor(u"identity");auto value=std::make_shared<int>(40);
+    const auto token=bindings.beginRequestCapture();const auto object=bindings.instance(value,type);
+    const auto original=std::any_cast<NativeBindingPayload<std::shared_ptr<int>>>(context.payload(object));
+    context.setPayload(object,std::string("wrong payload"));
+    expect(throws<opts::Exception>([&]{bindings.retireCapturedRequestBindings(token);}));
+    context.setPayload(object,original);
+    bindings.retireCapturedRequestBindings(token);
+    expect(!bindings.ownsHandle(object));
 };
 };}
