@@ -15,6 +15,17 @@ class HTMLMathDocument final : public core::MathDocument, public HTMLMathItemHos
     std::vector<options::ObjectRef> privateRequestItems_;
     std::size_t privateRequestItemRetireIndex_=0;
     regexp_host::RegExpBindings* regexp_;
+    struct FilterHandle {
+        std::shared_ptr<core::JaxFilterRecordOwnerScope> owner;
+        core::JaxFilterRecordOwnerScope::Token token;
+        FilterHandle(std::shared_ptr<core::JaxFilterRecordOwnerScope> tracker,
+                     core::JaxFilterRecordOwnerScope::Token&& opened) noexcept
+            :owner(std::move(tracker)),token(std::move(opened)){}
+        FilterHandle(FilterHandle&&)=default;
+        FilterHandle& operator=(FilterHandle&&)=delete;
+    };
+    std::vector<FilterHandle> filterHandles_;
+    std::vector<core::InputJax*> requestTexOwners_;
 
     HTMLMathDocument(options::Context&,ContextPropertyBindings&,util::RuntimeModules&,
         regexp_host::RegExpBindings&,
@@ -29,6 +40,7 @@ class HTMLMathDocument final : public core::MathDocument, public HTMLMathItemHos
     options::ObjectRef constructItem(options::Value,options::Value,
         options::Value,options::Value,options::Value);
     void retireRequestItems();
+    void retireRequestScopes();
     void beginRequestOwnerScopeImpl();
     static HTMLMathItem& requireItem(options::Context&,options::Value);
     core::MathItem& resolveMathItem(options::ObjectRef) override;

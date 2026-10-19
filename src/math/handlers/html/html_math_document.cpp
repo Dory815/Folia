@@ -194,19 +194,52 @@ ObjectRef HTMLMathDocument::constructItem(Value mathValue,Value inputValue,
 }
 
 void HTMLMathDocument::beginRequestOwnerScopeImpl(){
-    if(!privateRequestItems_.empty())
-        throw Exception("TypeError",u"HTMLMathDocument request item cleanup is pending");
+    if(!privateRequestItems_.empty()||!filterHandles_.empty()||!requestTexOwners_.empty())
+        throw Exception("TypeError",u"HTML document request owner cleanup is pending");
     beginPrivateRequestOwnerScope();
     privateRequestItemRetireIndex_=0;
-    for(const auto& input:inputJax_){
-        if(auto* tex=dynamic_cast<tex::TeX*>(input.owner.get()))tex->beginRequestOwnerScope();
+    const auto open=[this](std::shared_ptr<core::JaxFilterRecordOwnerScope> owner){
+        if(!owner)return;
+        if(std::ranges::any_of(filterHandles_,[&](const FilterHandle& existing){
+            return existing.owner.get()==owner.get();}))return;
+        auto token=owner->begin(sourceIdentity());
+        filterHandles_.emplace_back(std::move(owner),std::move(token));
+    };
+    try{
+        filterHandles_.reserve(inputJax_.size()+1);
+        requestTexOwners_.reserve(inputJax_.size());
+        for(const auto& input:inputJax_)
+            if(auto* jax=dynamic_cast<core::AbstractInputJax*>(input.owner.get()))
+                open(jax->filterRecordOwner());
+        if(auto* jax=dynamic_cast<core::AbstractOutputJax*>(output_.get()))
+            open(jax->filterRecordOwner());
+        for(const auto& input:inputJax_){
+            if(auto* tex=dynamic_cast<tex::TeX*>(input.owner.get())){
+                tex->beginRequestOwnerScope();
+                requestTexOwners_.push_back(input.owner.get());
+            }
+        }
+    }catch(...){
+        // Only the tokens and TeX scopes opened by this document are saved.
+        try{retireRequestItems();}catch(...){}
+        throw;
+    }
+}
+void HTMLMathDocument::retireRequestScopes(){
+    while(!filterHandles_.empty()){
+        auto& handle=filterHandles_.back();
+        handle.owner->close(handle.token);
+        filterHandles_.pop_back();
+    }
+    while(!requestTexOwners_.empty()){
+        auto* tex=dynamic_cast<tex::TeX*>(requestTexOwners_.back());
+        tex->releaseRequestReferences();
+        requestTexOwners_.pop_back();
     }
 }
 void HTMLMathDocument::retireRequestItems(){
     if(!privateRequestOwnerScopeActive_)return;
-    for(const auto& input:inputJax_){
-        if(auto* tex=dynamic_cast<tex::TeX*>(input.owner.get()))tex->releaseRequestReferences();
-    }
+    retireRequestScopes();
     while(privateRequestItemRetireIndex_<privateRequestItems_.size()){
         const auto identity=privateRequestItems_[privateRequestItemRetireIndex_];
         context_->retireObjectRecord(identity);

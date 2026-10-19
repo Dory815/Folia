@@ -89,7 +89,8 @@ void InputJaxFilterData::bindSourceRecord(options::Context& context,const InputJ
         {filterKey(u"data"),[owner](){return owner->rawDataValue();},[owner](options::Value value){owner->data_=std::move(value);},[owner](){owner->data_=std::any(options::Value(options::Undefined{}));}}
     }};
     sourceRecord=bindJaxFilterRecord(context,std::static_pointer_cast<NativeObject>(owner),std::move(lease),fields);
-    context.payload(sourceRecord->identity())=owner;
+    try{context.payload(sourceRecord->identity())=owner;}
+    catch(...){context.retireObjectRecord(sourceRecord->identity());sourceRecord.reset();throw;}
 }
 void InputJaxFilterData::initialize(MathItemReference math,MathDocumentReference document,std::any data){
     if(std::holds_alternative<Missing>(math))math_=Missing{};
@@ -111,19 +112,33 @@ void AbstractInputJax::setMmlFactory(InputMmlFactoryReference value){mmlFactory=
 void AbstractInputJax::bindFilterRecordValueCodec(
     std::function<options::Value(const std::any&)> encode,
     std::function<std::any(options::Value)> decode,
-    std::weak_ptr<std::atomic_bool> lease){
+    std::weak_ptr<std::atomic_bool> lease,
+    std::shared_ptr<JaxFilterRecordOwnerScope> owner){
     if(!encode||!decode)throw options::Exception("TypeError",u"Input filter record requires its data codec");
+    if(owner && &owner->context()!=&optionsContext())
+        throw options::Exception("TypeError",u"Input filter owner belongs to another Context");
     filterDataEncoder_=std::move(encode);filterDataDecoder_=std::move(decode);
     filterExecutionLease_=std::move(lease);
+    filterRecordOwner_=std::move(owner);
 }
 void AbstractInputJax::initialize(){}
 void AbstractInputJax::reset(FunctionArgs){}
 ProtoMathItems AbstractInputJax::findMath(std::any,options::Value){return std::make_shared<std::vector<ProtoMathItem>>();}
 std::any AbstractInputJax::executeFilters(FunctionList& filters,MathItemReference math,MathDocumentReference document,std::any value){
+    std::optional<options::ObjectRef> captureDocument;
+    if(filterRecordOwner_){
+        if(const auto* actual=std::get_if<MathDocumentService*>(&document);
+           actual && *actual && &(*actual)->sourceContext()==&optionsContext())
+            captureDocument=(*actual)->sourceIdentity();
+    }
     auto record=std::make_shared<InputJaxFilterData>();
     record->initialize(std::move(math),std::move(document),std::move(value));
     record->encodeData=filterDataEncoder_;record->decodeData=filterDataDecoder_;
     record->bindSourceRecord(optionsContext(),record,filterExecutionLease_);
+    if(captureDocument){
+        try{filterRecordOwner_->capture(*captureDocument,record->sourceIdentity());}
+        catch(...){optionsContext().retireObjectRecord(record->sourceIdentity());throw;}
+    }
     std::array<std::any,1> arguments{InputJaxFilterDataRef(record)};
     filters.execute(arguments);
     // Source returns data.data. Re-enter the same live Context descriptor, then

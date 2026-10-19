@@ -8,9 +8,11 @@ export namespace folia::math::core {
 class InputJaxModule {
     options::Context& context_;
     options::ObjectRef abstractClass_;
+    std::shared_ptr<JaxFilterRecordOwnerScope> filterRecordOwner_;
 public:
     explicit InputJaxModule(options::Context& context):context_(context),
-        abstractClass_(context.constructor(u"AbstractInputJax")){
+        abstractClass_(context.constructor(u"AbstractInputJax")),
+        filterRecordOwner_(std::make_shared<JaxFilterRecordOwnerScope>(context)){
         auto defaults=context.object();
         context.set(defaults,options::Key(u"preFilters"),context.array());
         context.set(defaults,options::Key(u"postFilters"),context.array());
@@ -20,6 +22,7 @@ public:
     InputJaxModule(const InputJaxModule&)=delete;
     InputJaxModule& operator=(const InputJaxModule&)=delete;
     options::ObjectRef abstractClass()const{return abstractClass_;}
+    std::shared_ptr<JaxFilterRecordOwnerScope> filterRecordOwner()const noexcept{return filterRecordOwner_;}
 };
 template<class T>std::shared_ptr<T> makeInputJax(OptionFunctionBindings& bindings,
     options::ObjectRef actualConstructor,options::Value supplied=options::Undefined{}){

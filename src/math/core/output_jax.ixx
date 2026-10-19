@@ -55,10 +55,16 @@ class AbstractOutputJax:public OutputJax {
     OptionFunctionBindings& bindings_;
     options::ObjectRef identity_;
     FunctionListContextBindings& filterBindings_;
+    std::shared_ptr<JaxFilterRecordOwnerScope> filterRecordOwner_;
 protected:
     AbstractOutputJax(OptionFunctionBindings& bindings,options::ObjectRef identity,
-                      FunctionListContextBindings& filterBindings)
-        :bindings_(bindings),identity_(identity),filterBindings_(filterBindings){}
+                      FunctionListContextBindings& filterBindings,
+                      std::shared_ptr<JaxFilterRecordOwnerScope> owner={})
+        :bindings_(bindings),identity_(identity),filterBindings_(filterBindings),
+         filterRecordOwner_(std::move(owner)){
+        if(filterRecordOwner_ && &filterRecordOwner_->context()!=&bindings_.context())
+            throw options::Exception("TypeError",u"Output filter owner belongs to another Context");
+    }
     std::any executeFilters(FunctionList&,OutputMathItemReference,
                             MathDocumentReference,std::any);
 public:
@@ -68,6 +74,7 @@ public:
     void initializeOutputJax(options::Value supplied,std::shared_ptr<void> owner);
     options::Context& optionsContext()const{return bindings_.context();}
     options::ObjectRef instanceIdentity()const{return identity_;}
+    std::shared_ptr<JaxFilterRecordOwnerScope> filterRecordOwner()const noexcept{return filterRecordOwner_;}
     options::Value name()override;
     void setAdaptor(OutputAdaptorReference)override;
     void initialize()override;
@@ -81,12 +88,14 @@ public:
 class OutputJaxModule {
     options::ObjectRef abstractClass_;
     FunctionListContextBindings filterBindings_;
+    std::shared_ptr<JaxFilterRecordOwnerScope> filterRecordOwner_;
 public:
     OutputJaxModule(options::Context& context,OptionFunctionBindings& bindings);
     OutputJaxModule(const OutputJaxModule&)=delete;
     OutputJaxModule& operator=(const OutputJaxModule&)=delete;
     options::ObjectRef abstractClass()const{return abstractClass_;}
     FunctionListContextBindings& filterBindings(){return filterBindings_;}
+    std::shared_ptr<JaxFilterRecordOwnerScope> filterRecordOwner()const noexcept{return filterRecordOwner_;}
 };
 template<class T>std::shared_ptr<T> makeOutputJax(OptionFunctionBindings& bindings,
     FunctionListContextBindings& filterBindings,options::ObjectRef actualConstructor,

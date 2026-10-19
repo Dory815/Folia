@@ -232,7 +232,8 @@ void SvgRenderServiceGraph::initialize(){
 
     svgFactories_=std::make_shared<SvgWrapperFactoryContextBindings>(context,*commonFactories_);
     svgJax_=std::make_shared<SvgOutputJaxContextBindings>(
-        *commonClasses_,*commonRuntime_,*svgFactories_,*functions_,outputJax_->filterBindings(),*maps_);
+        *commonClasses_,*commonRuntime_,*svgFactories_,*functions_,outputJax_->filterBindings(),
+        outputJax_->filterRecordOwner(),*maps_);
     wrapperSet_=loadSvgWrapperConstructors(*modules_,*parser_,*commonFactories_);
     wrapperConstructors_=wrapperSet_.constructors;
     wrapperMethods_=std::make_shared<SvgWrapperSourceMethods>(

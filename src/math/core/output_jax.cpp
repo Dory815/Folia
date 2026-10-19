@@ -41,8 +41,10 @@ void bindFilterRecord(options::Context& context,
         {options::Key(u"document"),[record](){return record->rawDocumentValue();},[record](options::Value value){record->assignDocument(std::move(value));},[record](){record->removeDocument();}},
         {options::Key(u"data"),[record](){return record->rawDataValue();},[record](options::Value value){record->assignData(std::move(value));},[record](){record->removeData();}}
     }};
-    record->sourceRecord=bindJaxFilterRecord(context,std::static_pointer_cast<NativeObject>(record),std::move(executionLease),fields,object);
-    context.payload(object)=record;
+    try{
+        record->sourceRecord=bindJaxFilterRecord(context,std::static_pointer_cast<NativeObject>(record),std::move(executionLease),fields,object);
+        context.payload(object)=record;
+    }catch(...){context.retireObjectRecord(object);throw;}
 }
 }
 options::Value OutputJaxFilterData::rawMathValue()const{
@@ -122,7 +124,8 @@ void OutputJaxFilterData::initialize(OutputMathItemReference mathValue,
     encodeProperty=std::move(encoder);
 }
 OutputJaxModule::OutputJaxModule(options::Context& context,OptionFunctionBindings& bindings)
-    :abstractClass_(context.constructor(u"AbstractOutputJax")),filterBindings_(context,bindings){
+    :abstractClass_(context.constructor(u"AbstractOutputJax")),filterBindings_(context,bindings),
+     filterRecordOwner_(std::make_shared<JaxFilterRecordOwnerScope>(context)){
     filterBindings_.addNativeArgumentEncoder([](const std::any& argument)->std::optional<options::Value>{
         if(const auto* record=std::any_cast<OutputJaxFilterDataRef>(&argument);record&&*record)
             return options::Value((*record)->sourceIdentity());
@@ -165,11 +168,17 @@ OutputJaxModule::OutputJaxModule(options::Context& context,OptionFunctionBinding
     });
     auto toPropertyValue=filterBindings_.toValueConverter();
     auto executionLease=filterBindings_.executionLifetime();
-    installMethod(context,prototype,u"executeFilters",[toPropertyValue=std::move(toPropertyValue),executionLease](options::Context& cx,options::Value,std::span<const options::Value> args){
+    installMethod(context,prototype,u"executeFilters",[toPropertyValue=std::move(toPropertyValue),executionLease,
+        tracker=filterRecordOwner_](options::Context& cx,options::Value,std::span<const options::Value> args){
+        const auto documentArgument=argument(args,2);
         auto owner=std::make_shared<OutputJaxFilterData>();
-        owner->initialize(argument(args,1),argument(args,2),std::any(argument(args,3)),toPropertyValue);
+        owner->initialize(argument(args,1),documentArgument,std::any(argument(args,3)),toPropertyValue);
         const auto record=cx.object();
         bindFilterRecord(cx,executionLease,owner,record);
+        if(const auto* document=std::get_if<options::ObjectRef>(&documentArgument.data)){
+            try{tracker->capture(*document,record);}
+            catch(...){cx.retireObjectRecord(record);throw;}
+        }
         const auto filters=argument(args,0);
         const auto execute=cx.get(filters,options::Key(u"execute"));
         const std::array<options::Value,1> callArguments{options::Value(record)};
@@ -256,6 +265,12 @@ MathOutput AbstractOutputJax::styleSheet(MathDocumentReference){return PropertyN
 MathOutput AbstractOutputJax::pageElements(MathDocumentReference){return PropertyNull{};}
 std::any AbstractOutputJax::executeFilters(FunctionList& filters,OutputMathItemReference math,
                                           MathDocumentReference document,std::any data){
+    std::optional<options::ObjectRef> captureDocument;
+    if(filterRecordOwner_){
+        if(const auto* actual=std::get_if<MathDocumentService*>(&document);
+           actual && *actual && &(*actual)->sourceContext()==&optionsContext())
+            captureDocument=(*actual)->sourceIdentity();
+    }
     auto record=std::make_shared<OutputJaxFilterData>();
     OutputJaxDocumentReference filterDocument=Missing{};
     if(std::holds_alternative<Missing>(document))filterDocument=Missing{};
@@ -263,6 +278,10 @@ std::any AbstractOutputJax::executeFilters(FunctionList& filters,OutputMathItemR
     else if(const auto* native=std::get_if<MathDocumentService*>(&document))filterDocument=*native;
     record->initialize(std::move(math),std::move(filterDocument),std::move(data),filterBindings_.toValueConverter());
     bindFilterRecord(optionsContext(),filterBindings_.executionLifetime(),record,optionsContext().object());
+    if(captureDocument){
+        try{filterRecordOwner_->capture(*captureDocument,record->sourceIdentity());}
+        catch(...){optionsContext().retireObjectRecord(record->sourceIdentity());throw;}
+    }
     const std::array<std::any,1> arguments{OutputJaxFilterDataRef(record)};
     filters.execute(arguments);
     return std::any(record->dataValue());

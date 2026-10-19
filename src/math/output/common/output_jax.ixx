@@ -79,7 +79,8 @@ public:
     DOMNodeRef testInline, testDisplay;
 
     CommonOutputJax(OptionFunctionBindings&,options::ObjectRef,
-                    FunctionListContextBindings&,AbstractDOMAdaptor* adaptor=nullptr);
+                    FunctionListContextBindings&,AbstractDOMAdaptor* adaptor=nullptr,
+                    std::shared_ptr<core::JaxFilterRecordOwnerScope> owner={});
     virtual ~CommonOutputJax()=default;
     void initializeCommon(options::Value supplied,options::ObjectRef defaultFactory,
                           options::ObjectRef defaultFont,CommonRuntimeBindings&,

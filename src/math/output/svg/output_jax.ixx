@@ -62,7 +62,8 @@ protected:
 public:
     double minwidth=0,shift=0;
     SvgOutputJax(OptionFunctionBindings&,options::ObjectRef,
-                 FunctionListContextBindings&,AbstractDOMAdaptor* adaptor=nullptr);
+                 FunctionListContextBindings&,AbstractDOMAdaptor* adaptor=nullptr,
+                 std::shared_ptr<core::JaxFilterRecordOwnerScope> owner={});
     void initializeSvg(options::Value supplied,options::ObjectRef defaultFactory,
                        options::ObjectRef defaultFont,common::CommonRuntimeBindings&,
                        std::shared_ptr<void> owner);

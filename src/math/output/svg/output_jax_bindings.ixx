@@ -25,6 +25,7 @@ public:
     SvgOutputJaxContextBindings(common::CommonJaxClassBindings&,
         common::CommonRuntimeBindings&,SvgWrapperFactoryContextBindings&,
         OptionFunctionBindings&,FunctionListContextBindings&,
+        std::shared_ptr<core::JaxFilterRecordOwnerScope>,
         options::MapContextBindings&);
     ~SvgOutputJaxContextBindings();
     SvgOutputJaxContextBindings(const SvgOutputJaxContextBindings&)=delete;

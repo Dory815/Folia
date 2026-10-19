@@ -367,7 +367,7 @@ TeXRef TeX::make(ParserRuntime& runtime,Value supplied){
         const auto* object=std::get_if<ObjectRef>(&value.data);
         if(!object)throw Exception("TypeError",u"TeX filter data is not ParseOptions");
         return std::any(runtime.parseOptionsIdentities.resolve(*object));
-    },runtime.executionLifetime());
+    },runtime.executionLifetime(),runtime.inputJaxModule().filterRecordOwner());
     runtime.texIdentities.bind(result,identity,result);
     const auto bind=[&](std::u16string_view name,
                         std::function<Value()> read,

@@ -16,6 +16,7 @@ struct SvgOutputJaxContextBindings::State
     SvgWrapperFactoryContextBindings& factories;
     OptionFunctionBindings& functions;
     FunctionListContextBindings& filters;
+    std::shared_ptr<core::JaxFilterRecordOwnerScope> filterRecordOwner;
     Context& context;
     MapContextBindings& maps;
     math::tex::ParserRuntime* parser=nullptr;
@@ -31,14 +32,17 @@ struct SvgOutputJaxContextBindings::State
     State(common::CommonJaxClassBindings& common,common::CommonRuntimeBindings& rt,
           SvgWrapperFactoryContextBindings& factoryBindings,
           OptionFunctionBindings& optionBindings,FunctionListContextBindings& filterBindings,
+          std::shared_ptr<core::JaxFilterRecordOwnerScope> recordOwner,
           MapContextBindings& mapBindings)
         :commonClasses(common),runtime(rt),factories(factoryBindings),functions(optionBindings),
-         filters(filterBindings),context(optionBindings.context()),
+         filters(filterBindings),filterRecordOwner(std::move(recordOwner)),context(optionBindings.context()),
          maps(mapBindings){
         if(&context!=&runtime.context()||&context!=&factories.context()||&context!=&optionBindings.context())
             throw Exception("TypeError",u"SVG output bindings must share one actual Context");
         if(&context!=&mapBindings.context())
             throw Exception("TypeError",u"SVG output and Map bindings must share one actual Context");
+        if(!filterRecordOwner||&filterRecordOwner->context()!=&context)
+            throw Exception("TypeError",u"SVG output filter owner must share the actual Context");
     }
 
     void copyEnumerable(Value source,ObjectRef target){
@@ -101,7 +105,7 @@ struct SvgOutputJaxContextBindings::State
     }
     ObjectRef create(ObjectRef actualClass,Value supplied){
         const auto identity=context.instance(actualClass);
-        auto owner=std::make_shared<SvgOutputJax>(functions,identity,filters);
+        auto owner=std::make_shared<SvgOutputJax>(functions,identity,filters,nullptr,filterRecordOwner);
         context.payload(identity)=std::static_pointer_cast<NativeObject>(owner);
         owner->bindOutputJaxFields(std::static_pointer_cast<void>(owner));
         owner->bindMencloseSurface(mencloseSurface);
@@ -139,8 +143,10 @@ struct SvgOutputJaxContextBindings::State
 SvgOutputJaxContextBindings::SvgOutputJaxContextBindings(
     common::CommonJaxClassBindings& commonClasses,common::CommonRuntimeBindings& runtime,
     SvgWrapperFactoryContextBindings& factories,OptionFunctionBindings& functions,
-    FunctionListContextBindings& filters,MapContextBindings& maps)
-    :state_(std::make_shared<State>(commonClasses,runtime,factories,functions,filters,maps)){}
+    FunctionListContextBindings& filters,
+    std::shared_ptr<core::JaxFilterRecordOwnerScope> recordOwner,MapContextBindings& maps)
+    :state_(std::make_shared<State>(commonClasses,runtime,factories,functions,filters,
+        std::move(recordOwner),maps)){}
 SvgOutputJaxContextBindings::~SvgOutputJaxContextBindings()=default;
 Context& SvgOutputJaxContextBindings::context()const{return state_->context;}
 MapContextBindings& SvgOutputJaxContextBindings::mapBindings()const{return state_->maps;}

@@ -72,8 +72,9 @@ std::optional<DOMNodeRef> parentOfMath(core::MathItem& item,core::MathDocumentSe
 }
 
 CommonOutputJax::CommonOutputJax(OptionFunctionBindings& functions,ObjectRef identity,
-    FunctionListContextBindings& filters,AbstractDOMAdaptor* adaptor)
-    :core::AbstractOutputJax(functions,identity,filters),domAdaptor_(adaptor){}
+    FunctionListContextBindings& filters,AbstractDOMAdaptor* adaptor,
+    std::shared_ptr<core::JaxFilterRecordOwnerScope> owner)
+    :core::AbstractOutputJax(functions,identity,filters,std::move(owner)),domAdaptor_(adaptor){}
 
 AbstractDOMAdaptor& CommonOutputJax::domAdaptor()const{
     if(!domAdaptor_)throw Exception("TypeError",u"Cannot read properties of undefined (reading 'node')");

@@ -63,8 +63,9 @@ void setSceneStyle(const scene::NodeRef& node,std::u16string_view name,std::stri
 }
 
 SvgOutputJax::SvgOutputJax(OptionFunctionBindings& functions,ObjectRef identity,
-    FunctionListContextBindings& filters,AbstractDOMAdaptor* adaptor)
-    :CommonOutputJax(functions,identity,filters,adaptor){}
+    FunctionListContextBindings& filters,AbstractDOMAdaptor* adaptor,
+    std::shared_ptr<core::JaxFilterRecordOwnerScope> owner)
+    :CommonOutputJax(functions,identity,filters,adaptor,std::move(owner)){}
 
 void SvgOutputJax::initializeSvg(Value supplied,ObjectRef defaultFactory,
     ObjectRef defaultFont,common::CommonRuntimeBindings& runtime,std::shared_ptr<void> owner){

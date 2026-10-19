@@ -59,6 +59,7 @@ class AbstractInputJax:public InputJax {
     std::function<options::Value(const std::any&)> filterDataEncoder_;
     std::function<std::any(options::Value)> filterDataDecoder_;
     std::weak_ptr<std::atomic_bool> filterExecutionLease_;
+    std::shared_ptr<JaxFilterRecordOwnerScope> filterRecordOwner_;
 protected:
     AbstractInputJax(OptionFunctionBindings& bindings,options::ObjectRef identity)
         :bindings_(bindings),identity_(identity){}
@@ -71,7 +72,9 @@ public:
     options::Context& optionsContext()const{return bindings_.context();}
     options::ObjectRef instanceIdentity()const{return identity_;}
     void bindFilterRecordValueCodec(std::function<options::Value(const std::any&)>,
-        std::function<std::any(options::Value)>,std::weak_ptr<std::atomic_bool>);
+        std::function<std::any(options::Value)>,std::weak_ptr<std::atomic_bool>,
+        std::shared_ptr<JaxFilterRecordOwnerScope> owner={});
+    std::shared_ptr<JaxFilterRecordOwnerScope> filterRecordOwner()const noexcept{return filterRecordOwner_;}
     options::Value name()override;
     bool processStrings()const override;
     void setAdaptor(InputAdaptorReference)override;
