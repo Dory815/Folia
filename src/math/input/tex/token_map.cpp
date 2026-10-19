@@ -124,6 +124,10 @@ ParseResult invokeBare(const ParseMethod& method, ParserContext& parser,
 
 } // namespace
 
+bool TokenPropertyEqual::operator()(const Property& left,const Property& right)const{
+    return property_host::sameValueZero(left,right);
+}
+
 ParseResult parseResult(ParseResult result) {
     if (const auto* value = std::get_if<Property>(&result); value && value->missing()) {
         return Property(true);
@@ -131,10 +135,10 @@ ParseResult parseResult(ParseResult result) {
     return result;
 }
 
-void AbstractTokenMap::initializeSource(Property name, ParseMethod parser) {
+void AbstractTokenMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser) {
     name_ = std::move(name);
     parser_ = std::move(parser);
-    MapHandler::registerMap(std::static_pointer_cast<TokenMap>(shared_from_this()));
+    registry.registerMap(std::static_pointer_cast<TokenMap>(shared_from_this()));
 }
 
 Property AbstractTokenMap::name() const {
@@ -164,8 +168,8 @@ ParseResult AbstractTokenMap::parse(const ParseInput& input) {
     return parseResult(result);
 }
 
-void RegExpMap::initializeSource(Property name, ParseMethod parser, RegExpRef regexp) {
-    AbstractTokenMap::initializeSource(std::move(name), std::move(parser));
+void RegExpMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser, RegExpRef regexp) {
+    AbstractTokenMap::initializeSource(registry,std::move(name), std::move(parser));
     regexp_ = std::move(regexp);
 }
 
@@ -179,50 +183,47 @@ TokenLookup RegExpMap::lookup(const Property& token) {
                            : TokenLookup{Property(PropertyNull{})};
 }
 
-void AbstractParseMap::initializeSource(Property name, ParseMethod parser) {
-    AbstractTokenMap::initializeSource(std::move(name), std::move(parser));
-    map_.emplace();
+void AbstractParseMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser) {
+    AbstractTokenMap::initializeSource(registry,std::move(name), std::move(parser));
+    map_.emplace(std::make_shared<TokenLookupOrderedStorage>());
 }
 
 TokenLookup AbstractParseMap::lookup(const Property& token) {
     if (!map_) typeError("TokenMap map is uninitialized");
-    for (const auto& [key, value] : *map_) {
-        if (property_host::sameValueZero(key, token)) return value;
-    }
+    if(auto value=(*map_)->get(token))return std::move(*value);
     return Property(Missing{});
 }
 
 bool AbstractParseMap::contains(const Property& token) {
     if (!map_) typeError("TokenMap map is uninitialized");
-    return std::any_of(map_->begin(), map_->end(), [&](const auto& entry) {
-        return property_host::sameValueZero(entry.first, token);
-    });
+    return (*map_)->has(token);
 }
 
 void AbstractParseMap::add(Property token, TokenLookup object) {
     if (!map_) typeError("TokenMap map is uninitialized");
-    if (const auto* number = std::get_if<double>(&token.value); number && *number == 0) {
-        token = Property(0.0);
-    }
-    for (auto& [key, value] : *map_) {
-        if (property_host::sameValueZero(key, token)) {
-            value = std::move(object);
-            return;
-        }
-    }
-    map_->emplace_back(std::move(token), std::move(object));
+    if(const auto* number=std::get_if<double>(&token.value);number&&*number==0)token=Property(0.0);
+    (*map_)->set(std::move(token),std::move(object));
 }
 
 void AbstractParseMap::remove(const Property& token) {
     if (!map_) typeError("TokenMap map is uninitialized");
-    const auto found = std::find_if(map_->begin(), map_->end(), [&](const auto& entry) {
-        return property_host::sameValueZero(entry.first, token);
-    });
-    if (found != map_->end()) map_->erase(found);
+    (*map_)->erase(token);
 }
 
-void CharacterMap::initializeSource(Property name, ParseMethod parser, Property json) {
-    AbstractParseMap::initializeSource(std::move(name), std::move(parser));
+std::shared_ptr<TokenLookupStorage> AbstractParseMap::mapStorage()const{
+    if(!map_)typeError("TokenMap map is uninitialized");
+    if(!*map_)typeError("TokenMap map storage is null");
+    return *map_;
+}
+
+void AbstractParseMap::rebindMapStorage(std::shared_ptr<TokenLookupStorage> storage){
+    if(!map_)typeError("TokenMap map is uninitialized");
+    if(!storage)typeError("TokenMap map storage is null");
+    *map_=std::move(storage);
+}
+
+void CharacterMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser, Property json) {
+    AbstractParseMap::initializeSource(registry,std::move(name), std::move(parser));
     const std::vector<std::string> keys = property_host::ownKeys(json);
     for (const auto& key : keys) {
         const Property value = property_host::get(json, key);
@@ -248,9 +249,9 @@ ParseResult DelimiterMap::parse(const ParseInput& input) {
     return AbstractTokenMap::parse(modified);
 }
 
-void MacroMap::initializeSource(Property name, Property json, Property functionMap) {
+void MacroMap::initializeSource(MapHandler& registry,Property name, Property json, Property functionMap) {
     if (functionMap.missing()) functionMap = Property(PropertyList{});
-    AbstractParseMap::initializeSource(std::move(name), ParseMethod{Property(PropertyNull{})});
+    AbstractParseMap::initializeSource(registry,std::move(name), ParseMethod{Property(PropertyNull{})});
 
     const auto capturedEntries = entries(json);
     for (const auto& [key, value] : capturedEntries) {
@@ -306,9 +307,9 @@ ParseResult CommandMap::parse(const ParseInput& input) {
     return parseResult(result);
 }
 
-void EnvironmentMap::initializeSource(Property name, ParseMethod parser,
+void EnvironmentMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser,
                                        Property json, Property functionMap) {
-    MacroMap::initializeSource(std::move(name), std::move(json), std::move(functionMap));
+    MacroMap::initializeSource(registry,std::move(name), std::move(json), std::move(functionMap));
     this->parser(std::move(parser));
 }
 
