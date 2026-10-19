@@ -228,6 +228,22 @@ suite common_mo_native_impl = [] {
         expect(mo.getBaseline({}, 4, *recipe) == std::array<double, 2>{3, 1});
     };
 
+    "CommonMo nonaccent remapping does not require a source parent"_test = [] {
+        auto fonts = makeRepository();
+        RejectUnexpectedMeasurement measurement;
+        mml::MmlDocument document;
+        auto& source = makeMo(document, u"x");
+        common::CommonOptions options;
+        common::ExtendedMetrics metrics;
+        common::CommonOutputJax jax(document, {metrics, options, fonts, "test-face"}, measurement,
+                                    catalog(), &makeLinebreaks);
+        auto& mo = dynamic_cast<common::CommonMo&>(jax.factory().wrap(source));
+        expect(source.parent() == nullptr);
+        expect(!mo.isAccent);
+        const std::array<std::uint32_t, 1> plus{0x2B};
+        expect(mo.remapChars(plus) == std::vector<std::uint32_t>{0x2295});
+    };
+
     "CommonMo non-delimiter and typed MML remap outcomes remain distinct"_test = [] {
         auto fonts = makeRepository();
         RejectUnexpectedMeasurement measurement;

@@ -45,6 +45,10 @@ const factory={font,jax:{options:{mathmlSpacing:false},currentLinebreakOptions:{
 const Mo=CommonMoMixin((await import(stubsUrl.href)).CommonWrapper);
 const mo=new Mo(factory,node,null);
 mo.node=node; mo.font=font; mo.stretch=recipe; mo.size=null;
+// A detached synthetic radical's operator has no physical source parent.
+// Source only inspects parent.isKind when the operator is an accent.
+mo.isAccent=false;
+assert.deepEqual(mo.remapChars([0x2B]),[0x2B]);
 assert.equal(mo.getWH([]),0);
 assert.equal(mo.getWH([2,1]),3);
 attrs.values.set('symmetric',true);
@@ -94,7 +98,7 @@ assert.equal(mo.getBreakStyle(),'before');
 attrs.values.set('linebreakstyle','infixlinebreakstyle');
 attrs.values.set('infixlinebreakstyle','duplicate');
 assert.equal(mo.getBreakStyle(),'duplicate');
-const evidence={package:packageJson.name,version:packageJson.version,sourceFile:path.relative(root,sourceFile).replaceAll('\\','/'),sourceSha256,cases:['dimension and symmetry','baseline','full-extent rounding','fixed size and schar selection','size-zero truthiness','mathaccent size decrement','assembly metrics','linebreak style resolution'],status:'passed'};
+const evidence={package:packageJson.name,version:packageJson.version,sourceFile:path.relative(root,sourceFile).replaceAll('\\','/'),sourceSha256,cases:['nonaccent remap without a source parent','dimension and symmetry','baseline','full-extent rounding','fixed size and schar selection','size-zero truthiness','mathaccent size decrement','assembly metrics','linebreak style resolution'],status:'passed'};
 const output=path.join(root,'build/math-port/common-source/mo.json');fs.mkdirSync(path.dirname(output),{recursive:true});
 fs.writeFileSync(output,JSON.stringify(evidence,null,2)+'\n');
 console.log(`Source CommonMo witness passed: ${evidence.cases.length} cases; ${path.relative(root,output)}`);

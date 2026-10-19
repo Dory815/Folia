@@ -160,12 +160,14 @@ std::vector<std::uint32_t> CommonMo::remapChars(std::span<std::uint32_t const> c
     if (chars.size() != 1)
         return std::vector<std::uint32_t>(chars.begin(), chars.end());
     auto const &face = jax().face();
-    auto *coreParent = mo().coreParent();
-    if (!coreParent || !coreParent->parent())
-        throw std::logic_error("CommonMo remap requires its Source core parent");
-    auto const &remaps = isAccent && !coreParent->parent()->isKind(mml::NodeKind::mrow)
-                             ? face.accentRemap
-                             : face.operatorRemap;
+    bool accentOutsideRow = false;
+    if (isAccent) {
+        auto *coreParent = mo().coreParent();
+        if (!coreParent || !coreParent->parent())
+            throw std::logic_error("CommonMo accent remap requires its Source core parent");
+        accentOutsideRow = !coreParent->parent()->isKind(mml::NodeKind::mrow);
+    }
+    auto const &remaps = accentOutsideRow ? face.accentRemap : face.operatorRemap;
     if (auto it = remaps.find(chars.front()); it != remaps.end())
         return unicodeChars(it->second);
     return std::vector<std::uint32_t>(chars.begin(), chars.end());
