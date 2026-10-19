@@ -2,6 +2,7 @@
 import folia.math.output.svg.native_document;
 import folia.math.output.svg.render_session;
 import folia.math.util.option_types;
+import folia.math.util.property_host;
 
 namespace {
 using namespace boost::ut;
@@ -59,7 +60,7 @@ suite svg_processmath_methods = [] {
     expect(context.toNumber(context.get(Value(*function),Key(u"length")))==2.0);
 };
 
-"svg_maction_mathtip_reaches_source_event_handler_error"_test=[] {
+"svg_maction_mathtip_registers_source_events"_test=[] {
     auto trace=std::make_shared<ProcessMathTestHost>();
     auto host=processMathHost(trace);
     host.asyncIsSynchronous=[] {return true;};
@@ -83,14 +84,36 @@ suite svg_processmath_methods = [] {
     cx.set(Value(settings),Key(u"em"),Value(16.0));
     cx.set(Value(settings),Key(u"ex"),Value(8.0));
     cx.set(Value(settings),Key(u"containerWidth"),Value(1280.0));
-    bool reachedSourceEventHandler=false;
+    bool converted=false;
     try{
         (void)document->convert(Value(u"\\mathtip{x+1}{y^2}"),Value(settings));
+        converted=true;
     }catch(const Exception& error){
-        reachedSourceEventHandler=error.name=="TypeError"&&
-            error.message==u"node.addEventListener is not a function";
+        expect(false) << error.name << ": "
+                      << folia::math::property_host::debugText(error.message);
     }
-    expect(reachedSourceEventHandler);
+    expect(converted);
+    const auto actualJax=session.outputJax();
+    expect(actualJax!=nullptr);
+    const auto* completed=actualJax?actualJax->completedScene():nullptr;
+    expect(completed!=nullptr);
+    bool sawMouseover=false,sawMouseout=false;
+    if(completed){
+        const auto hasEvent=[](const auto& self,const auto& node,std::u16string_view type)->bool{
+            if(!node)return false;
+            for(const auto& registered:node->eventTypes)
+                if(registered==type)return true;
+            for(const auto& child:node->children)
+                if(self(self,child,type))return true;
+            return false;
+        };
+        for(const auto& root:completed->roots()){
+            sawMouseover=sawMouseover||hasEvent(hasEvent,root,u"mouseover");
+            sawMouseout=sawMouseout||hasEvent(hasEvent,root,u"mouseout");
+        }
+    }
+    expect(sawMouseover);
+    expect(sawMouseout);
     expect(trace->requests.empty());
 };
 
