@@ -13,13 +13,6 @@ import std;
 namespace folia::math::tex {
 namespace {
 
-using Registry = std::vector<std::pair<Property, TokenMapRef>>;
-
-Registry& mapRegistry() {
-    static Registry maps;
-    return maps;
-}
-
 bool sameValueZero(const Property& left, const Property& right) {
     return property_host::sameValueZero(left, right);
 }
@@ -127,24 +120,29 @@ ParseResult SubHandler::FALLBACK = ParseSymbolRef(std::make_shared<ParseSymbol>(
 
 void MapHandler::registerMap(TokenMapRef map) {
     const Property name = mapName(map); // Source reads map.name once before Map.set.
-    auto& maps = mapRegistry();
-    for (auto& entry : maps) {
+    for (auto& entry : maps_) {
         if (sameValueZero(entry.first, name)) {
             entry.second = std::move(map);
             return;
         }
     }
-    maps.emplace_back(name, std::move(map));
+    maps_.emplace_back(name, std::move(map));
 }
 
-TokenMapRef MapHandler::getMap(const Property& name) {
-    for (const auto& [key, map] : mapRegistry()) {
+TokenMapRef MapHandler::getMap(const Property& name)const {
+    for (const auto& [key, map] : maps_) {
         if (sameValueZero(key, name)) return map;
     }
     return {};
 }
 
-SubHandler::SubHandler(WarningSink warning) : warning_(std::move(warning)) {}
+SubHandler::SubHandler(MapHandler& registry,WarningSink warning)
+    :warning_(std::move(warning)),registry_(&registry),registryLifetime_(registry.lifetimeToken()){}
+
+void SubHandler::ensureRegistryAlive()const{
+    if(!registry_||registryLifetime_.expired())
+        throw options::Exception("TypeError",u"SubHandler map registry owner has ended");
+}
 
 void SubHandler::warn(std::u16string message) {
     std::u16string output = u"TexParser Warning: ";
@@ -157,6 +155,7 @@ void SubHandler::warn(std::u16string message) {
 }
 
 void SubHandler::add(const Property& maps, ParseMethod fallback, double priority) {
+    ensureRegistryAlive();
     auto input = PropertyArray::array(maps);
     if (!input) property_host::typeError("MapHandler.add expects an array of map names");
 
@@ -169,6 +168,7 @@ void SubHandler::add(const Property& maps, ParseMethod fallback, double priority
 }
 
 void SubHandler::add(options::Context& context, options::Value maps, ParseMethod fallback, double priority) {
+    ensureRegistryAlive();
     const auto* array = std::get_if<options::ObjectRef>(&maps.data);
     if (!array || context.kind(*array) != options::ObjectKind::array)
         throw options::Exception("TypeError", u"maps.slice is not a function");
@@ -222,8 +222,9 @@ void SubHandler::add(options::Context& context, options::Value maps, ParseMethod
 
 void SubHandler::addMapIterator(const std::function<std::optional<Property>()>& next,
                                ParseMethod fallback, double priority) {
+    ensureRegistryAlive();
     while (const auto name = next()) {
-        const TokenMapRef map = MapHandler::getMap(*name);
+        const TokenMapRef map = registry_->getMap(*name);
         if (!map) {
             std::u16string message = u"Configuration '";
             message += interpolation(*name);
@@ -231,12 +232,13 @@ void SubHandler::addMapIterator(const std::function<std::optional<Property>()>& 
             warn(std::move(message));
             return;
         }
-        configuration_.add(map, priority);
+        configuration_->add(map, priority);
     }
-    if (truthy(fallback)) fallback_.add(std::move(fallback), priority);
+    if (truthy(fallback)) fallback_->add(std::move(fallback), priority);
 }
 
 void SubHandler::remove(const Property& maps, ParseMethod fallback) {
+    ensureRegistryAlive();
     auto input = PropertyArray::array(maps);
     if (!input) property_host::typeError("MapHandler.remove expects an array of map names");
 
@@ -248,6 +250,7 @@ void SubHandler::remove(const Property& maps, ParseMethod fallback) {
 }
 
 void SubHandler::remove(options::Context& context, options::Value maps, ParseMethod fallback) {
+    ensureRegistryAlive();
     const auto* array = std::get_if<options::ObjectRef>(&maps.data);
     if (!array || context.kind(*array) != options::ObjectKind::array)
         throw options::Exception("TypeError", u"maps is not iterable");
@@ -261,18 +264,22 @@ void SubHandler::remove(options::Context& context, options::Value maps, ParseMet
 }
 
 void SubHandler::removeMapIterator(const std::function<std::optional<Property>()>& next, ParseMethod fallback) {
+    ensureRegistryAlive();
     while (const auto name = next()) {
         const TokenMapRef map = retrieve(*name);
-        if (map) configuration_.remove(map);
+        if (map) configuration_->remove(map);
     }
-    if (truthy(fallback)) fallback_.remove(fallback);
+    if (truthy(fallback)) fallback_->remove(fallback);
 }
 
 ParseResult SubHandler::parse(const ParseInput& input) {
-    for (auto current = configuration_.begin(), finish = configuration_.end(); current != finish; ++current) {
-        const auto record = current.record();
-        if (!record) property_host::typeError("Null token map configuration record");
-        const TokenMapRef map = record->item;
+    ensureRegistryAlive();
+    const ConfigurationRef configuration=configuration_;
+    for (auto current = configuration->begin();; ) {
+        auto step=current.next();if(step.done)break;
+        const auto handle=step.value;
+        if(!handle.native()||!handle.nativeRecord())property_host::typeError("Null token map configuration record");
+        const TokenMapRef map=handle.nativeRecord()->item;
         if (!map) property_host::typeError("Null token map configuration item");
         ParseResult result = map->parse(input);
         if (fallbackIdentity(result)) break;
@@ -281,26 +288,42 @@ ParseResult SubHandler::parse(const ParseInput& input) {
 
     // Source materializes Array.from(_fallback) only after map parsing. Keep
     // the selected record itself so invoke supplies the real item receiver.
-    std::vector<std::shared_ptr<FunctionListItem>> snapshot;
-    for (auto current = fallback_.begin(), finish = fallback_.end(); current != finish; ++current) {
-        snapshot.push_back(current.record());
+    std::vector<FunctionList::ItemRef> snapshot;
+    const FallbackRef fallback=fallback_;
+    for (auto current = fallback->begin();; ) {
+        auto step=current.next();if(step.done)break;
+        snapshot.push_back(std::move(step.value));
     }
     if (snapshot.empty()) functions::typeError(u"Cannot read properties of undefined (reading 'item')");
-    if (!snapshot.front()) functions::typeError(u"FunctionList item record is null");
-
     const ParseAtom atom(input.token);
-    const std::array<std::any, 2> arguments{std::ref(input.parser), atom};
-    (void)functions::invoke(snapshot.front(), arguments);
+    if(snapshot.front().native()&&!snapshot.front().contextBacked()){
+        const auto record=snapshot.front().nativeRecord();
+        const std::array<std::any, 2> arguments{std::ref(input.parser), atom};
+        (void)functions::invoke(record, arguments);
+    }else{
+        auto* context=snapshot.front().context();
+        if(!context)functions::typeError(u"Context parser fallback has no live Context owner");
+        // ParserContext is the live Source-visible TexParser instance.  Never
+        // manufacture a payload wrapper: Source callbacks may read fields and
+        // methods through this exact identity.
+        const auto parserIdentity=input.parser.contextIdentity();
+        if(parserIdentity.context!=context)functions::typeError(u"Context fallback parser belongs to a different Context");
+        const auto parserObject=parserIdentity.object;
+        const std::array<options::Value,2> arguments{options::Value(parserObject),snapshot.front().encodeAux(std::any(input.token))};
+        (void)snapshot.front().invoke(arguments);
+    }
     return Property(Missing{}); // Source returns undefined, irrespective of callback result.
 }
 
 TokenLookup SubHandler::lookup(const Property& token) {
+    ensureRegistryAlive();
     const TokenMapRef map = applicable(token);
     if (map) return map->lookup(token);
     return Property(PropertyNull{});
 }
 
 bool SubHandler::contains(const Property& token) {
+    ensureRegistryAlive();
     const TokenMapRef map = applicable(token);
     if (!map) return false;
     if (!dynamic_cast<CharacterMapIdentity*>(map.get())) return true;
@@ -308,20 +331,26 @@ bool SubHandler::contains(const Property& token) {
 }
 
 std::string SubHandler::toString() {
+    ensureRegistryAlive();
     std::vector<Property> names;
-    for (auto current = configuration_.begin(), finish = configuration_.end(); current != finish; ++current) {
-        const auto record = current.record();
-        if (!record) property_host::typeError("Null token map configuration record");
-        names.push_back(mapName(record->item));
+    const ConfigurationRef configuration=configuration_;
+    for (auto current = configuration->begin();; ) {
+        auto step=current.next();if(step.done)break;
+        const auto handle=step.value;
+        if(!handle.native()||!handle.nativeRecord())property_host::typeError("Null token map configuration record");
+        names.push_back(mapName(handle.nativeRecord()->item));
     }
     return property_host::debugText(joinMapNames(names));
 }
 
 TokenMapRef SubHandler::applicable(const Property& token) {
-    for (auto current = configuration_.begin(), finish = configuration_.end(); current != finish; ++current) {
-        const auto record = current.record();
-        if (!record) property_host::typeError("Null token map configuration record");
-        const TokenMapRef map = record->item;
+    ensureRegistryAlive();
+    const ConfigurationRef configuration=configuration_;
+    for (auto current = configuration->begin();; ) {
+        auto step=current.next();if(step.done)break;
+        const auto handle=step.value;
+        if(!handle.native()||!handle.nativeRecord())property_host::typeError("Null token map configuration record");
+        const TokenMapRef map=handle.nativeRecord()->item;
         if (!map) property_host::typeError("Null token map configuration item");
         if (map->contains(token)) return map;
     }
@@ -329,19 +358,33 @@ TokenMapRef SubHandler::applicable(const Property& token) {
 }
 
 TokenMapRef SubHandler::retrieve(const Property& name) {
-    for (auto current = configuration_.begin(), finish = configuration_.end(); current != finish; ++current) {
-        const auto record = current.record();
-        if (!record) property_host::typeError("Null token map configuration record");
-        const TokenMapRef map = record->item;
+    ensureRegistryAlive();
+    const ConfigurationRef configuration=configuration_;
+    for (auto current = configuration->begin();; ) {
+        auto step=current.next();if(step.done)break;
+        const auto handle=step.value;
+        if(!handle.native()||!handle.nativeRecord())property_host::typeError("Null token map configuration record");
+        const TokenMapRef map=handle.nativeRecord()->item;
         if (!map) property_host::typeError("Null token map configuration item");
         if (strictEqual(mapName(map), name)) return map;
     }
     return {};
 }
 
-SubHandlers::SubHandlers(WarningSink warning) : warning_(std::move(warning)) {}
+SubHandlers::SubHandlers(MapHandler& registry,WarningSink warning)
+    :registry_(&registry),registryLifetime_(registry.lifetimeToken()),warning_(std::move(warning)){}
+
+bool SubHandlers::HandlerKeyEqual::operator()(const Property& left,const Property& right)const{
+    return property_host::sameValueZero(left,right);
+}
+
+void SubHandlers::ensureRegistryAlive()const{
+    if(!registry_||registryLifetime_.expired())
+        throw options::Exception("TypeError",u"SubHandlers map registry owner has ended");
+}
 
 void SubHandlers::add(const HandlerConfig& handlers, const FallbackConfig& fallbacks, double priority) {
+    ensureRegistryAlive();
     const std::vector<std::string> keys = handlers.keys();
     addHandlerNames(keys, [&](SubHandler& handler, std::string_view name) {
         const Property maps = handlers.get(name);
@@ -352,6 +395,7 @@ void SubHandlers::add(const HandlerConfig& handlers, const FallbackConfig& fallb
 
 void SubHandlers::add(options::Context& context, OptionFunctionBindings& bindings,
                       options::Value handlers, options::Value fallbacks, double priority) {
+    ensureRegistryAlive();
     if (&context != &bindings.context())
         throw options::Exception("TypeError", u"SubHandlers Context does not match callable bindings");
     std::vector<std::string> names;
@@ -366,10 +410,11 @@ void SubHandlers::add(options::Context& context, OptionFunctionBindings& binding
 
 void SubHandlers::addHandlerNames(std::span<const std::string> keys,
                                   const std::function<void(SubHandler&, std::string_view)>& apply) {
+    ensureRegistryAlive();
     for (const std::string& name : keys) {
         SubHandlerRef handler = get(name);
         if (!handler) {
-            handler = std::make_shared<SubHandler>(warning_);
+            handler = std::make_shared<SubHandler>(*registry_,warning_);
             set(name, handler);
         }
         apply(*handler, name);
@@ -377,6 +422,7 @@ void SubHandlers::addHandlerNames(std::span<const std::string> keys,
 }
 
 void SubHandlers::remove(const HandlerConfig& handlers, const FallbackConfig& fallbacks) {
+    ensureRegistryAlive();
     const std::vector<std::string> keys = handlers.keys();
     removeHandlerNames(keys, [&](SubHandler& handler, std::string_view name) {
         const Property maps = handlers.get(name);
@@ -387,6 +433,7 @@ void SubHandlers::remove(const HandlerConfig& handlers, const FallbackConfig& fa
 
 void SubHandlers::remove(options::Context& context, OptionFunctionBindings& bindings,
                          options::Value handlers, options::Value fallbacks) {
+    ensureRegistryAlive();
     if (&context != &bindings.context())
         throw options::Exception("TypeError", u"SubHandlers Context does not match callable bindings");
     std::vector<std::string> names;
@@ -401,6 +448,7 @@ void SubHandlers::remove(options::Context& context, OptionFunctionBindings& bind
 
 void SubHandlers::removeHandlerNames(std::span<const std::string> keys,
                                      const std::function<void(SubHandler&, std::string_view)>& apply) {
+    ensureRegistryAlive();
     for (const std::string& name : keys) {
         const SubHandlerRef handler = get(name);
         if (handler) {
@@ -410,23 +458,44 @@ void SubHandlers::removeHandlerNames(std::span<const std::string> keys,
 }
 
 void SubHandlers::set(std::string name, SubHandlerRef handler) {
-    for (auto& entry : *map_) {
-        if (entry.first == name) {
-            entry.second = std::move(handler);
-            return;
-        }
-    }
-    map_->emplace_back(std::move(name), std::move(handler));
+    set(Property(std::move(name)),std::move(handler));
+}
+
+void SubHandlers::set(const char* name,SubHandlerRef handler){
+    if(!name)property_host::typeError("SubHandlers string key is null");
+    set(std::string(name),std::move(handler));
 }
 
 SubHandlerRef SubHandlers::get(std::string_view name) {
-    for (const auto& entry : *map_) if (entry.first == name) return entry.second;
-    return {};
+    return get(Property(std::string(name)));
+}
+
+SubHandlerRef SubHandlers::get(const std::string& name){
+    return get(std::string_view(name));
+}
+
+SubHandlerRef SubHandlers::get(const char* name){
+    if(!name)property_host::typeError("SubHandlers string key is null");
+    return get(std::string_view(name));
+}
+
+void SubHandlers::set(Property key,SubHandlerRef handler){
+    ensureRegistryAlive();
+    map_->set(std::move(key),std::move(handler));
+}
+
+SubHandlerRef SubHandlers::get(const Property& key){
+    ensureRegistryAlive();
+    const auto handler=map_->get(key);
+    return handler?std::move(*handler):SubHandlerRef{};
 }
 
 TokenMapRef SubHandlers::retrieve(const Property& name) {
-    for (std::size_t index = 0; index < map_->size(); ++index) {
-        const SubHandlerRef handler = (*map_)[index].second;
+    ensureRegistryAlive();
+    for (std::size_t index = 0; index < map_->slotCount(); ++index) {
+        const auto entry=map_->entryAt(index);
+        if(!entry)continue;
+        const SubHandlerRef handler = entry->value;
         if (!handler) property_host::typeError("Cannot read properties of null (reading 'retrieve')");
         const TokenMapRef map = handler->retrieve(name);
         if (map) return map;
@@ -435,13 +504,24 @@ TokenMapRef SubHandlers::retrieve(const Property& name) {
 }
 
 std::optional<std::string> SubHandlers::KeyIterator::next() {
+    const auto property=nextProperty();
+    if(!property)return std::nullopt;
+    const auto* name=std::get_if<std::string>(&property->value);
+    if(!name)property_host::typeError("SubHandlers key iterator encountered a non-string key");
+    return *name;
+}
+
+std::optional<Property> SubHandlers::KeyIterator::nextProperty() {
     if (done_) return std::nullopt;
     if (!storage_) property_host::typeError("SubHandlers key iterator storage is null");
-    if (index_ >= storage_->size()) {
-        done_ = true;
-        return std::nullopt;
+    while(index_<storage_->slotCount()){
+        const auto entry=storage_->entryAt(index_++);
+        if(!entry)continue;
+        return entry->key;
     }
-    return (*storage_)[index_++].first;
+    done_=true;
+    storage_.reset();
+    return std::nullopt;
 }
 
 } // namespace folia::math::tex

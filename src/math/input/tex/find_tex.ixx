@@ -25,6 +25,8 @@ public:
         :AbstractFindMath(context,identity),regexp_(regexp){
         if(&regexp.context()!=&context)throw options::Exception("TypeError",u"FindTeX bindings belong to another Context");
     }
+    // Publish Source's own writable data fields on the same Context identity.
+    void bindContextFields(const std::shared_ptr<FindTeX>& owner);
     void initializeFindTeX();
     core::ProtoMathItems findMath(std::any strings)override;
 };

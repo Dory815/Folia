@@ -147,17 +147,38 @@ void FindTeX::initializeFindTeX(){
     this->getPatterns();
 }
 
+void FindTeX::bindContextFields(const std::shared_ptr<FindTeX>& owner){
+    auto& context=optionsContext();
+    const auto identity=instanceIdentity();
+    auto cell=[&]<class Owner>(Value Owner::* member){
+        return std::make_shared<options::NativeDataField>(owner,
+            [this,member]()->Value{return this->*member;},
+            [this,member](Value value){this->*member=std::move(value);},
+            [this,member]{this->*member=Undefined{};});
+    };
+    // Base FindMath has already assigned options. Bind it now; derived fields
+    // remain declared-but-absent until getPatterns performs each Source write.
+    context.bindData(identity,Key(u"options"),cell(&FindTeX::options_),true,true,true);
+    context.declareNativeData(identity,Key(u"end"),cell(&FindTeX::end_));
+    context.declareNativeData(identity,Key(u"sub"),cell(&FindTeX::sub_));
+    context.declareNativeData(identity,Key(u"env"),cell(&FindTeX::env_));
+    context.declareNativeData(identity,Key(u"start"),cell(&FindTeX::start_));
+    context.declareNativeData(identity,Key(u"hasPatterns"),cell(&FindTeX::hasPatterns_));
+}
+
 void FindTeX::getPatterns(){
-    const Value options=this->options_;
+    auto& context=optionsContext();
+    const Value identity(instanceIdentity());
+    const Value options=context.get(identity,Key(u"options"));
     const auto starts=std::make_shared<std::vector<std::u16string>>();
     std::vector<std::u16string> parts;
     std::vector<std::u16string> subparts;
 
     // Source replaces end before resetting the two numeric capture indexes.
-    const auto new_end=optionsContext().object();
-    this->end_=Value(new_end);
-    this->sub_=Value(0);
-    this->env_=Value(0);
+    const auto new_end=context.object();
+    context.set(identity,Key(u"end"),Value(new_end));
+    context.set(identity,Key(u"sub"),Value(0));
+    context.set(identity,Key(u"env"),Value(0));
     double i=1;
 
     auto run_for_each=[&](std::u16string_view option_name,bool display){
@@ -194,7 +215,7 @@ void FindTeX::getPatterns(){
 
     if (options::truthy(optionsContext().get(options,Key(u"processEnvironments")))) {
         parts.emplace_back(u"\\\\begin\\s*\\{([^}]*)\\}");
-        this->env_=Value(i);
+        context.set(identity,Key(u"env"),Value(i));
         i++;
     }
     if (options::truthy(optionsContext().get(options,Key(u"processEscapes"))))
@@ -203,11 +224,11 @@ void FindTeX::getPatterns(){
         subparts.emplace_back(u"(\\\\(?:eq)?ref\\s*\\{[^}]*\\})");
     if (!subparts.empty()) {
         parts.push_back(u"("+join(subparts)+u")");
-        this->sub_=Value(i);
+        context.set(identity,Key(u"sub"),Value(i));
     }
 
-    this->start_=Value(regexp_.create(join(parts),u"g"));
-    this->hasPatterns_=Value(!parts.empty());
+    context.set(identity,Key(u"start"),Value(regexp_.create(join(parts),u"g")));
+    context.set(identity,Key(u"hasPatterns"),Value(!parts.empty()));
 }
 
 void FindTeX::addPattern(StringArray starts,Delims delims,bool display){
@@ -226,7 +247,7 @@ void FindTeX::addPattern(StringArray starts,Delims delims,bool display){
 
     // Evaluate the assignment receiver/key before its RHS, since endPattern is
     // virtual and can observe or replace the current end table.
-    const Value end_receiver=this->end_;
+    const Value end_receiver=optionsContext().get(Value(instanceIdentity()),Key(u"end"));
     const Key key(open_text);
     const Value pattern=this->endPattern(close,Undefined{});
     const ObjectRef end_tuple=optionsContext().array(3);
@@ -288,20 +309,32 @@ Property FindTeX::findEnd(Value text,double n,const Match& start,EndItem end){
 }
 
 void FindTeX::findMathInString(core::ProtoMathItems math,double n,Value text){
-    regexp_.setLastIndex(this->start_,0);
+    auto& context=optionsContext();
+    const Value identity(instanceIdentity());
+    regexp_.setLastIndex(context.get(identity,Key(u"start")),0);
     for (;;) {
-        const auto start=regexp_.exec(this->start_,primitive_string(text));
+        const auto start=regexp_.exec(context.get(identity,Key(u"start")),primitive_string(text));
         if (!start) break;
 
         Property match=PropertyNull{};
-        const std::size_t env_index=capture_index(this->env_);
+        const Value env_index_value=context.get(identity,Key(u"env"));
+        const std::size_t env_index=capture_index(env_index_value);
         const auto environment=start->at(env_index);
-        if (environment && options::truthy(this->env_)) {
+        if (environment && options::truthy(context.get(identity,Key(u"env")))) {
+            const Value pattern_env_index_value=context.get(identity,Key(u"env"));
+            const auto pattern_environment=start->at(capture_index(pattern_env_index_value));
+            const Value pattern_environment_value=pattern_environment?Value(*pattern_environment):Value(Undefined{});
+            if (std::holds_alternative<Undefined>(pattern_environment_value.data))
+                (void)context.get(pattern_environment_value,Key(u"replace"));
             const std::u16string ending=u"\\\\end\\s*(\\{"+
-                string_util::quotePattern(*environment)+u"\\})";
+                string_util::quotePattern(require_text(pattern_environment_value,u"text.replace"))+u"\\})";
+            const Value close_env_index_value=context.get(identity,Key(u"env"));
+            const auto close_environment=start->at(capture_index(close_env_index_value));
+            const Value close_value=close_environment?Value(*close_environment):Value(Undefined{});
+            const Value close_primitive=context.toPrimitive(close_value,options::PrimitiveHint::defaultHint);
+            const std::u16string close=u"{"+primitive_string(close_primitive)+u"}";
             const Value end_pattern=this->endPattern(Value(Null{}),Value(ending));
             const ObjectRef tuple=optionsContext().array(3);
-            const std::u16string close=u"{"+*environment+u"}";
             optionsContext().set(tuple,Key(u"0"),Value(close));
             optionsContext().set(tuple,Key(u"1"),Value(true));
             optionsContext().set(tuple,Key(u"2"),end_pattern);
@@ -321,35 +354,46 @@ void FindTeX::findMathInString(core::ProtoMathItems math,double n,Value text){
                 record->setOwn("open","");
             }
         } else {
-            const std::size_t sub_index=capture_index(this->sub_);
+            const Value sub_index_value=context.get(identity,Key(u"sub"));
+            const std::size_t sub_index=capture_index(sub_index_value);
             const auto sub=start->at(sub_index);
-            if (sub && options::truthy(this->sub_)) {
-                const double end=static_cast<double>(start->index+sub->size());
-                if (sub->size()==2) {
-                    match=core::protoItem(Property("\\"),Property(property_host::debugText(sub->substr(1))),
+            if (sub && options::truthy(context.get(identity,Key(u"sub")))) {
+                const Value math_index_value=context.get(identity,Key(u"sub"));
+                const auto math=start->at(capture_index(math_index_value));
+                const Value end_index_value=context.get(identity,Key(u"sub"));
+                const auto end_math=start->at(capture_index(end_index_value));
+                const Value end_math_value=end_math?Value(*end_math):Value(Undefined{});
+                const Value end_length=context.get(end_math_value,Key(u"length"));
+                const double end=static_cast<double>(start->index+primitive_number(end_length));
+                const Value math_value=math?Value(*math):Value(Undefined{});
+                const Value math_length_value=context.get(math_value,Key(u"length"));
+                const double math_length=primitive_number(math_length_value);
+                if (math_length==2) {
+                    if (!math) type_error(u"Cannot read properties of undefined (reading 'substring')");
+                    match=core::protoItem(Property("\\"),Property(property_host::debugText(math->substr(1))),
                         Property(""),Property(n),Property(static_cast<double>(start->index)),Property(end));
                 } else {
-                    match=core::protoItem(Property(""),Property(property_host::debugText(*sub)),
+                    match=core::protoItem(Property(""),Property(property_host::debugText(*math)),
                         Property(""),Property(n),Property(static_cast<double>(start->index)),Property(end),Property(false));
                 }
             } else {
                 const auto open=start->at(0);
                 if (!open) type_error(u"RegExp match is missing its full match");
-                const Value end_item=optionsContext().get(this->end_,Key(*open));
+                const Value end_item=context.get(context.get(identity,Key(u"end")),Key(*open));
                 match=this->findEnd(text,n,*start,end_item);
             }
         }
 
         if (property_host::truthy(match)) {
             math->emplace_back(match);
-            regexp_.setLastIndex(this->start_,item_end_n(match));
+            regexp_.setLastIndex(context.get(identity,Key(u"start")),item_end_n(match));
         }
     }
 }
 
 core::ProtoMathItems FindTeX::findMath(std::any strings){
     auto math=std::make_shared<std::vector<core::ProtoMathItem>>();
-    if (!options::truthy(this->hasPatterns_)) return math;
+    if (!options::truthy(optionsContext().get(Value(instanceIdentity()),Key(u"hasPatterns")))) return math;
 
     Value input=Undefined{};
     if (const auto* supplied=std::any_cast<Value>(&strings)) input=*supplied;

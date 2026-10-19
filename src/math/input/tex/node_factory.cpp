@@ -103,7 +103,7 @@ void NodeFactory::setMmlFactory(MmlFactoryReference value) {
 }
 void NodeFactory::set(std::string_view kind,Property creator) {
     tree::TreeCallGuard<mml::MmlNode> guard;
-    factory_.set(kind, std::move(creator));
+    property_host::set(factory_,kind,std::move(creator));
 }
 void NodeFactory::installCreators(
     std::span<const std::string> names,
@@ -119,29 +119,43 @@ void NodeFactory::setCreators(Property maps) {
         return mml::host::get(maps, kind);
     });
 }
-void NodeFactory::setCreators(options::Context& context,OptionFunctionBindings& bindings,options::Value maps) {
+void NodeFactory::setCreators(options::Context& context,ContextPropertyBindings& properties,options::Value maps) {
     tree::TreeCallGuard<mml::MmlNode> guard;
-    if (&context != &bindings.context()) {
-        throw options::Exception("TypeError",u"NodeFactory creator record and callable bindings belong to different Contexts");
+    if (&context != &properties.context()) {
+        throw options::Exception("TypeError",u"NodeFactory creator record and Property bindings belong to different Contexts");
     }
     const std::vector<CreatorSlot> slots = enumerateCreatorSlots(context, maps);
     std::vector<std::string> names;
     names.reserve(slots.size());
     for (const auto& slot : slots) names.push_back(slot.name);
-    installCreators(names, [&context,&bindings,maps,&slots](std::string_view name) -> std::optional<Property> {
+    installCreators(names, [&context,&properties,maps,&slots](std::string_view name) -> std::optional<Property> {
         const auto slot = std::find_if(slots.begin(), slots.end(), [name](const CreatorSlot& candidate) {
             return candidate.name == name;
         });
         if (slot == slots.end() || !context.has(maps, slot->key)) return std::nullopt;
         const auto value = context.get(maps, slot->key);
-        return functions::toProperty(bindings.functionValue(value));
+        return properties.from(value);
     });
+}
+void NodeFactory::bindContextExecution(std::weak_ptr<std::atomic_bool> lifetime,ContextNodeCreatorInvoker invoker){
+    if(!invoker)throw options::Exception("TypeError",u"NodeFactory requires a Context creator invocation boundary");
+    executionLifetime_=std::move(lifetime);contextCreatorInvoker_=std::move(invoker);runtimeBound_=true;
 }
 mml::NodeValue NodeFactory::create(std::string_view kind,FunctionArgs rest) {
     tree::TreeCallGuard<mml::MmlNode> guard;
-    Property creator = factory_.get(kind);
-    if (!mml::host::truthy(creator)) creator = factory_.get("node");
-    const mml::NodeValue node = node_factory_host::invoke(creator, identity(), rest);
+    if(runtimeBound_){
+        const auto lifetime=executionLifetime_.lock();
+        if(!lifetime||!lifetime->load(std::memory_order_acquire))
+            throw options::Exception("TypeError",u"NodeFactory runtime has been released");
+    }
+    Property creator = property_host::get(factory_,kind);
+    if (!mml::host::truthy(creator)) creator = property_host::get(factory_,"node");
+    mml::NodeValue node;
+    if(const auto* contextFunction=std::get_if<ContextFunctionIdentity>(&creator.value)){
+        if(!runtimeBound_||!contextCreatorInvoker_)
+            throw options::Exception("TypeError",u"Context NodeFactory creator has no runtime invocation boundary");
+        node=contextCreatorInvoker_(contextFunction->object,rest);
+    }else node=node_factory_host::invoke(creator, identity(), rest);
     if (kind == "node") {
         const Property requestedKind = node_factory_host::scalar(rest, 0);
         requireConfiguration().addNode(requestedKind, node);
@@ -150,6 +164,6 @@ mml::NodeValue NodeFactory::create(std::string_view kind,FunctionArgs rest) {
 }
 Property NodeFactory::get(std::string_view kind) const {
     tree::TreeCallGuard<mml::MmlNode> guard;
-    return factory_.get(kind);
+    return property_host::get(factory_,kind);
 }
 }

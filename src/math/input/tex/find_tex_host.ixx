@@ -39,6 +39,7 @@ public:
     template<class T=FindTeX>std::shared_ptr<T> make(options::Value supplied){
         static_assert(std::is_base_of_v<FindTeX,T>);
         auto result=core::makeFindMath<T>(context_,constructor_,std::move(supplied),regexp_);
+        result->bindContextFields(result);
         result->initializeFindTeX();return result;
     }
 };

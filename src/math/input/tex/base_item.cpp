@@ -4,20 +4,38 @@ import folia.math.util.property_host;
 import std;
 namespace folia::math::tex {
 std::string BaseItem::kind()const{return "base";}
-Property BaseItem::env()const{return env_;}
-void BaseItem::setEnv(Property value){env_=std::move(value);}
-bool BaseItem::copyEnv()const{return true;}
-StackProperty BaseItem::getProperty(std::string_view key)const{
-    return base_item_host::properties(properties_).get(key);
+Property BaseItem::env()const{return hasSourceNodesOwner()?sourceAccess().environment():env_;}
+void BaseItem::setEnv(Property value){
+    if(hasSourceNodesOwner()){sourceAccess().setEnvironment(std::move(value));return;}
+    env_=std::move(value);
 }
-BaseItem* BaseItem::setProperty(std::string_view key,StackProperty value){
-    base_item_host::properties(properties_).set(key,std::move(value));
-    return this;
+bool BaseItem::copyEnv()const{return true;}
+StackProperty BaseItem::getProperty(std::string_view name)const{
+    if(hasSourceNodesOwner()){
+        auto& access=sourceAccess();const std::u16string field=property_host::text(name);
+        const auto props=access.getReceiver(u"_properties");return access.decodeProperty(access.get(props,options::Key(field)));
+    }
+    return base_item_host::properties(properties_).get(name);
+}
+BaseItem* BaseItem::setProperty(std::string_view name,StackProperty value){
+    if(hasSourceNodesOwner()){
+        auto& access=sourceAccess();const std::u16string field=property_host::text(name);
+        const auto props=access.getReceiver(u"_properties");access.set(props,options::Key(field),access.encodeProperty(std::move(value)));return this;
+    }
+    base_item_host::properties(properties_).set(name,std::move(value));return this;
 }
 BaseItem* BaseItem::setProperties(StackProperty values){
-    auto target=base_item_host::properties(properties_);
-    stack_property_host::assign(target,values);
-    return this;
+    if(hasSourceNodesOwner()){
+        auto& access=sourceAccess();const auto target=access.getReceiver(u"_properties");const auto source=access.encodeProperty(std::move(values));
+        if(std::holds_alternative<options::Undefined>(target.data)||std::holds_alternative<options::Null>(target.data))property_host::typeError("Cannot convert undefined or null to object");
+        if(std::holds_alternative<options::Undefined>(source.data)||std::holds_alternative<options::Null>(source.data))return this;
+        for(const auto& property:access.ownKeys(source)){
+            const auto descriptor=access.descriptor(source,property);
+            if(descriptor&&descriptor->enumerable)access.set(target,property,access.get(source,property));
+        }
+        return this;
+    }
+    auto target=base_item_host::properties(properties_);stack_property_host::assign(target,values);return this;
 }
 bool BaseItem::isOpen()const{return false;}
 bool BaseItem::isClose()const{return false;}
@@ -73,6 +91,12 @@ void BaseItem::clearEnv(){
 }
 StackProperty BaseItem::getName()const{return this->getProperty("name");}
 std::string BaseItem::toString()const{
+    if(this->hasSourceNodesOwner()){
+        auto& access=this->sourceAccess();const auto sourceKind=access.getReceiver(u"kind");const std::string currentKind=access.sourceString(sourceKind);
+        const auto array=this->sourceNodesPropertyValue();const auto join=access.get(array,options::Key(u"join"));
+        const std::array<options::Value,1> args{options::Value(u"; ")};const auto joined=access.callMember(join,array,args);
+        return currentKind+"["+access.sourceString(joined)+"]";
+    }
     const std::string currentKind=this->kind();
     const mml::Children currentNodes=this->nodes();
     const std::string contents=base_item_host::join(currentNodes,"; ");
@@ -83,7 +107,8 @@ Property BaseItem::getErrors(std::string_view key)const{
     const Property currentErrors=currentClass->errorsBinding();
     const Property value=base_item_host::get(currentErrors,key);
     if(property_host::truthy(value))return value;
-    const Property base=BaseItem::baseErrors();
+    const Property base=currentClass->baseErrorsBinding
+        ?currentClass->baseErrorsBinding():BaseItem::baseErrors();
     return base_item_host::get(base,key);
 }
 void BaseItem::addLatexItem(mml::NodeValue node,Property prefix){

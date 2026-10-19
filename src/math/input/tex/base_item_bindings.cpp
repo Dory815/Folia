@@ -20,6 +20,11 @@ void BaseItem::initializeBaseItem(StackFactoryReference factory,mml::Children no
     properties_=StackPropertyList{};
     if(isOpen())env_=PropertyList{};
 }
+void BaseItem::prepareSourceBaseItem(tree::FactoryClassRef<BaseItem> constructor,
+                                    mml::Children nodes){
+    constructor_=std::move(constructor);
+    initializeMmlStackNodes(std::move(nodes));
+}
 std::shared_ptr<StackItemClassInfo> BaseItem::classInfo()const{
     if(!constructor_)mml::host::typeError("Native stack constructor is not bound");
     auto* info=std::any_cast<std::shared_ptr<StackItemClassInfo>>(&constructor_->staticData);
