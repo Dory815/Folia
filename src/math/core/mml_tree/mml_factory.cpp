@@ -1,4 +1,5 @@
 module folia.math.core.mml_tree.mml_factory;
+import folia.math.core.mml_tree.node_defaults;
 import std;
 
 namespace folia::math::mml {
@@ -51,6 +52,51 @@ struct ExplicitRowPlan final {
     MmlNode* row;
     std::vector<MmlNode*> children;
 };
+
+AttributeValue materializeDefaultValue(const AttributeDefaultValue& value) {
+    return std::visit(
+        [](const auto& item) -> AttributeValue {
+            using Value = std::remove_cvref_t<decltype(item)>;
+            if constexpr (std::same_as<Value, std::u16string_view>) {
+                return std::u16string(item);
+            } else {
+                return item;
+            }
+        },
+        value);
+}
+
+AttributeSet installDefaults(NodeKind kind, const AttributeSet& supplied) {
+    AttributeSet result;
+    const auto defaults = nodeDefaults(kind);
+    if (!defaults.empty()) {
+        // The three Source leaf-content nodes have no Attributes instance.
+        for (const auto& entry : globalDefaults()) {
+            result.setGlobalDefault(
+                std::u16string(entry.name), materializeDefaultValue(entry.value));
+        }
+        for (const auto& entry : defaults) {
+            result.setDefault(
+                std::u16string(entry.name), materializeDefaultValue(entry.value));
+        }
+    }
+
+    // Preserve caller-provided data in every layer, with caller entries taking
+    // precedence over the installed Source defaults in their respective layer.
+    for (const auto& entry : supplied.globalDefaultEntries()) {
+        result.setGlobalDefault(entry.first, entry.second);
+    }
+    for (const auto& entry : supplied.defaultEntries()) {
+        result.setDefault(entry.first, entry.second);
+    }
+    for (const auto& entry : supplied.inheritedEntries()) {
+        result.setInherited(entry.first, entry.second);
+    }
+    for (const auto& entry : supplied.ownEntries()) {
+        result.set(entry.first, entry.second);
+    }
+    return result;
+}
 }
 
 MmlNode& MmlFactory::make(
@@ -63,21 +109,13 @@ MmlNode& MmlFactory::make(
     validateChildren(document_, children);
 
     const auto arity = nodeTraits(kind).arityKind;
+    auto installedAttributes = installDefaults(kind, attributes);
     auto& node = document_.make(kind);
-    node.attributes() = std::move(attributes);
+    node.attributes() = std::move(installedAttributes);
 
     if (arity == NodeArityKind::inferred_row) {
-        auto& inferredRow = document_.make(NodeKind::inferred_mrow);
-        std::vector<MmlNode*> rowChildren;
-        rowChildren.reserve(children.size());
-        collectAnyArityChildren(children, rowChildren);
-        validateChildren(document_, rowChildren);
-
         document_.reserveChildren(node, 1);
-        document_.reserveChildren(inferredRow, rowChildren.size());
-        for (auto* child : rowChildren) {
-            document_.append(inferredRow, *child);
-        }
+        auto& inferredRow = make(NodeKind::inferred_mrow, {}, children);
         document_.append(node, inferredRow);
         return node;
     }
@@ -105,8 +143,7 @@ MmlNode& MmlFactory::make(
             continue;
         }
 
-        auto& explicitRow = document_.make(NodeKind::mrow);
-        explicitRow.attributes() = child->attributes();
+        auto& explicitRow = make(NodeKind::mrow, child->attributes());
         ExplicitRowPlan plan{&explicitRow, {}};
         plan.children.reserve(child->children().size());
         collectAnyArityChildren(child->children(), plan.children);

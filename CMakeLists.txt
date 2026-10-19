@@ -97,6 +97,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_node.ixx
     src/math/core/mml_tree/mml_document.ixx
     src/math/core/mml_tree/node_traits.ixx
+    src/math/core/mml_tree/node_defaults.ixx
     src/math/core/mml_tree/mml_factory.ixx
     src/math/input/tex/session.ixx
     src/math/input/tex/tex_error.ixx
@@ -116,6 +117,7 @@ target_sources(folia_math PRIVATE
     src/math/core/mml_tree/mml_node.cpp
     src/math/core/mml_tree/mml_document.cpp
     src/math/core/mml_tree/mml_factory.cpp
+    src/math/core/mml_tree/node_defaults.cpp
     src/math/input/tex/session.cpp
     src/math/input/tex/tex_error.cpp
     src/math/input/tex/tex_scanner.cpp
@@ -225,7 +227,8 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_error_utf8.cpp
     tests/math/native_tex_scanner.cpp
     tests/math/parse_util_native.cpp
-    tests/math/mml_native_factory.cpp)
+    tests/math/mml_native_factory.cpp
+    tests/math/mml_defaults.cpp)
 target_compile_features(FoliaMathTests PRIVATE cxx_std_23)
 set_target_properties(FoliaMathTests PROPERTIES CXX_MODULE_STD ON CXX_SCAN_FOR_MODULES ON)
 target_include_directories(FoliaMathTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
