@@ -4,7 +4,7 @@ import std;
 import folia.math.input.tex.tex_error;
 export namespace folia::math::tex {
 class TexScanner {
-    std::u16string source_;
+    std::shared_ptr<std::u16string const> source_;
     std::size_t position_ = 0;
     std::u16string currentControlSequence_;
     [[noreturn]] void fail(std::string id, std::u16string format,
@@ -12,6 +12,7 @@ class TexScanner {
 public:
     explicit TexScanner(std::u16string source = {});
     std::u16string_view source() const noexcept;
+    std::shared_ptr<std::u16string const> sourceSnapshot() const noexcept;
     std::size_t position() const noexcept;
     void setPosition(std::size_t position) noexcept;
     void replaceSource(std::u16string source);

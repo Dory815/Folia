@@ -18,11 +18,15 @@ bool isEcmaWhitespace(char16_t c) noexcept {
 }
 }
 
-TexScanner::TexScanner(std::u16string source) : source_(std::move(source)) {}
-std::u16string_view TexScanner::source() const noexcept { return source_; }
+TexScanner::TexScanner(std::u16string source)
+    : source_(std::make_shared<std::u16string const>(std::move(source))) {}
+std::u16string_view TexScanner::source() const noexcept { return *source_; }
+std::shared_ptr<std::u16string const> TexScanner::sourceSnapshot() const noexcept { return source_; }
 std::size_t TexScanner::position() const noexcept { return position_; }
 void TexScanner::setPosition(std::size_t position) noexcept { position_ = position; }
-void TexScanner::replaceSource(std::u16string source) { source_ = std::move(source); }
+void TexScanner::replaceSource(std::u16string source) {
+    source_ = std::make_shared<std::u16string const>(std::move(source));
+}
 std::u16string_view TexScanner::currentControlSequence() const noexcept { return currentControlSequence_; }
 void TexScanner::setCurrentControlSequence(std::u16string value) { currentControlSequence_ = std::move(value); }
 
@@ -32,18 +36,18 @@ void TexScanner::setCurrentControlSequence(std::u16string value) { currentContro
 }
 
 std::u16string TexScanner::getCodePoint() const {
-    if (position_ >= source_.size()) return {};
-    const auto first = static_cast<std::uint32_t>(source_[position_]);
-    if (first >= 0xD800 && first <= 0xDBFF && position_ + 1 < source_.size()) {
-        const auto second = static_cast<std::uint32_t>(source_[position_ + 1]);
+    if (position_ >= source_->size()) return {};
+    const auto first = static_cast<std::uint32_t>((*source_)[position_]);
+    if (first >= 0xD800 && first <= 0xDBFF && position_ + 1 < source_->size()) {
+        const auto second = static_cast<std::uint32_t>((*source_)[position_ + 1]);
         if (second >= 0xDC00 && second <= 0xDFFF)
-            return source_.substr(position_, 2);
+            return source_->substr(position_, 2);
     }
-    return source_.substr(position_, 1);
+    return source_->substr(position_, 1);
 }
 
 bool TexScanner::nextIsSpace() const noexcept {
-    return position_ < source_.size() && isEcmaWhitespace(source_[position_]);
+    return position_ < source_->size() && isEcmaWhitespace((*source_)[position_]);
 }
 
 std::u16string TexScanner::getNext() {
@@ -52,26 +56,26 @@ std::u16string TexScanner::getNext() {
 }
 
 std::u16string TexScanner::getCS() {
-    if (position_ >= source_.size()) {
+    if (position_ >= source_->size()) {
         ++position_;
         return u" ";
     }
     const auto start = position_;
-    const auto first = source_[position_];
+    const auto first = (*source_)[position_];
     if (isAsciiLetter(first)) {
-        while (position_ < source_.size() && isAsciiLetter(source_[position_])) ++position_;
+        while (position_ < source_->size() && isAsciiLetter((*source_)[position_])) ++position_;
         const auto lettersEnd = position_;
-        if (position_ < source_.size() && source_[position_] == u' ') ++position_;
-        return source_.substr(start, lettersEnd - start);
+        if (position_ < source_->size() && (*source_)[position_] == u' ') ++position_;
+        return source_->substr(start, lettersEnd - start);
     }
-    if (first >= 0xD800 && first <= 0xDBFF && position_ + 1 < source_.size() &&
-        !isLineTerminator(source_[position_ + 1])) {
+    if (first >= 0xD800 && first <= 0xDBFF && position_ + 1 < source_->size() &&
+        !isLineTerminator((*source_)[position_ + 1])) {
         position_ += 2;
-        return source_.substr(start, 2);
+        return source_->substr(start, 2);
     }
     if (!isLineTerminator(first)) {
         ++position_;
-        return source_.substr(start, 1);
+        return source_->substr(start, 1);
     }
     ++position_;
     return u" ";
@@ -94,14 +98,14 @@ std::optional<std::u16string> TexScanner::getArgument(std::u16string_view, bool 
     if (next == u"{") {
         const auto begin = ++position_;
         std::size_t depth = 1;
-        while (position_ < source_.size()) {
-            const auto c = source_[position_++];
+        while (position_ < source_->size()) {
+            const auto c = (*source_)[position_++];
             if (c == u'\\') {
                 ++position_;
             } else if (c == u'{') {
                 ++depth;
             } else if (c == u'}' && --depth == 0) {
-                return source_.substr(begin, position_ - begin - 1);
+                return source_->substr(begin, position_ - begin - 1);
             }
         }
         fail("MissingCloseBrace", u"Missing close brace");
@@ -116,8 +120,8 @@ std::optional<std::u16string> TexScanner::getBrackets(
     if (getNext() != u"[") return fallback;
     const auto begin = ++position_;
     std::size_t braces = 0, brackets = 0;
-    while (position_ < source_.size()) {
-        const auto c = source_[position_++];
+    while (position_ < source_->size()) {
+        const auto c = (*source_)[position_++];
         switch (c) {
         case u'{': ++braces; break;
         case u'\\': ++position_; break;
@@ -131,7 +135,7 @@ std::optional<std::u16string> TexScanner::getBrackets(
         case u'[': if (braces == 0) ++brackets; break;
         case u']':
             if (braces == 0) {
-                if (!matchBrackets || brackets == 0) return source_.substr(begin, position_ - begin - 1);
+                if (!matchBrackets || brackets == 0) return source_->substr(begin, position_ - begin - 1);
                 --brackets;
             }
             break;
@@ -145,7 +149,7 @@ std::u16string TexScanner::getUpTo(std::u16string_view, std::u16string_view toke
     while (nextIsSpace()) ++position_;
     const auto begin = position_;
     std::size_t braces = 0;
-    while (position_ < source_.size()) {
+    while (position_ < source_->size()) {
         const auto beforeSpace = position_;
         auto c = getNext();
         position_ += c.size();
@@ -157,7 +161,7 @@ std::u16string TexScanner::getUpTo(std::u16string_view, std::u16string_view toke
                      std::array<std::u16string,1>{std::u16string(token)});
             --braces;
         }
-        if (braces == 0 && c == token) return source_.substr(begin, beforeSpace - begin);
+        if (braces == 0 && c == token) return source_->substr(begin, beforeSpace - begin);
     }
     fail("TokenNotFoundForCommand", u"Could not find %1 for %2",
          std::array<std::u16string,2>{std::u16string(token), currentControlSequence_});

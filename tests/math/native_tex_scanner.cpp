@@ -7,6 +7,30 @@ using folia::math::tex::TexScanner;
 using folia::math::tex::TexError;
 
 suite native_tex_scanner_tests = [] {
+    "immutable source snapshots outlive replacements and scanner while UTF16 cursor rules remain unchanged"_test = [] {
+        std::shared_ptr<std::u16string const> snapshot;
+        std::weak_ptr<std::u16string const> retired;
+        {
+            TexScanner scan(u"𝑥e\u0301");
+            snapshot = scan.sourceSnapshot();
+            retired = snapshot;
+            expect(*snapshot == u"𝑥e\u0301");
+            expect(scan.source() == u"𝑥e\u0301");
+            scan.setPosition(2);
+            expect(scan.getCodePoint() == u"e");
+            scan.replaceSource(u"new");
+            expect(scan.source() == u"new");
+            expect(scan.position() == 2u);
+            expect(*snapshot == u"𝑥e\u0301");
+            scan.replaceSource(u"final");
+            expect(scan.source() == u"final");
+            expect(*snapshot == u"𝑥e\u0301");
+        }
+        expect(!retired.expired());
+        expect(*snapshot == u"𝑥e\u0301");
+        snapshot.reset();
+        expect(retired.expired());
+    };
     "code point and get next retain source UTF16 cursor rules"_test = [] {
         TexScanner scan(u"𝑥 y");
         expect(scan.getCodePoint() == u"𝑥");
