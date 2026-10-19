@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "source": {
+    "version": "4.1.3",
+    "commit": "fb987178c2d279a99b0db5ea02e751691703955e",
+    "stackTs": "ts/input/tex/Stack.ts",
+    "stackTsSha256": "36be7583b14111961367e9e3f1dd5911456d235b096a2fcee62f438d37c7e11a",
+    "stackCjs": "cjs/input/tex/Stack.js",
+    "stackCjsSha256": "78743f9dfcf1ebf9beb890629d908111be5c1e47f49c16d5ffa0877c5935c385"
+  },
+  "operation": "Stack.Push(compiled MmlNode)",
+  "before": {
+    "length": 1,
+    "topKind": "start"
+  },
+  "after": {
+    "length": 1,
+    "topKind": "start",
+    "topIsInitialTop": true,
+    "firstIsExactCompiledRoot": true,
+    "arrayIsOriginal": true
+  }
+}
