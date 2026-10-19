@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "purpose": "Focused Source/native placement observations for table rows, labels, spacing, rules, and cell backgrounds.",
+  "cases": [
+    {"name":"array-basic","tex":"\\begin{array}{cc}a&b\\\\c&d\\end{array}","display":true},
+    {"name":"matrix-parentheses","tex":"\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}","display":true},
+    {"name":"array-column-rules","tex":"\\begin{array}{c|c||r}a&b&c\\\\d&e&f\\end{array}","display":true},
+    {"name":"array-row-rules","tex":"\\begin{array}{cc}\\hline a&b\\\\\\hline c&d\\\\\\hline\\end{array}","display":true},
+    {"name":"array-cell-padding","tex":"\\begin{array}{c@{\\quad}r}x&1\\\\longer&22\\end{array}","display":true},
+    {"name":"array-paragraph-column","tex":"\\begin{array}{p{3em}c}a+b+c&x\\\\d+e+f&y\\end{array}","display":true},
+    {"name":"aligned-labels","tex":"\\begin{align}x&=1\\tag{A}\\\\y&=2\\tag{B}\\end{align}","display":true},
+    {"name":"aligned-no-tags","tex":"\\begin{aligned}a&=b+c\\\\x&=y+z\\end{aligned}","display":true},
+    {"name":"row-and-cell-colors","tex":"\\begin{array}{cc}\\rowcolor{yellow}a&b\\\\c&\\cellcolor{red}d\\end{array}","display":true},
+    {"name":"boxed-array","tex":"\\bbox[2px,border:1px solid blue]{\\begin{array}{c|c}a&b\\\\c&d\\end{array}}", "display":true},
+    {"name":"mpadded-smash","tex":"\\smash[b]{\\frac{a}{b}}+\\smash[t]{x}","display":false},
+    {"name":"mpadded-over-under","tex":"\\overbrace{a+b}^{n}+\\underbrace{x+y}_{m}","display":false},
+    {"name":"mpadded-raise","tex":"\\raise1em\\hbox{up}+\\lower.5ex\\hbox{down}","display":false},
+    {"name":"mpadded-phantom","tex":"a+\\hphantom{wide}+\\vphantom{\\frac{x}{y}}+b","display":false}
+  ]
+}
