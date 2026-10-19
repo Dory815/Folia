@@ -12,6 +12,10 @@ Use the record to resume work, then inspect only changes that could invalidate
 it. Do not repeat completed broad audits or reinterpret settled user decisions
 merely because context was compacted. This record is continuity information,
 not permission to reset Git, overwrite unrelated work, or claim integration.
+Actually read the file contents after compaction; a summary mentioning its path
+does not satisfy this step. Before reopening a settled issue, identify the code
+change or new evidence that invalidates the recorded conclusion. Keep a short
+current-state and next-action checkpoint at the top of the same handoff file.
 
 ## Build and test
 
