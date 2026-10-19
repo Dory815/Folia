@@ -61,6 +61,25 @@ and three obsolete Scene family pairs/registrations were removed. This is a
 preparatory arithmetic consolidation, not completed CommonWrapper orchestration
 or a layout-to-Scene consumer. Those remain the next implementation boundary.
 
+The user's subsequent review also rejects treating the numerical free-function
+surface as the final design. Restoring paths alone is insufficient. Implement
+the Source CommonWrapperFactory/CommonWrapper family and the
+CommonMfrac/CommonMsqrt/CommonMroot class responsibilities, inheritance and
+calls before claiming this layer complete. Root must resolve the actual base
+state, constructor order, typed services and child/font/stretch consumers first;
+do not promote additional independently exported mathematical helper modules.
+
+Use the existing C++ implementation as the migration baseline. For the Common
+fraction/root classes, the pre-consolidation implementation is available at
+b030b874; the other original wrapper files are still in the tree. Preserve
+their classes, methods and mathematical bodies while replacing the JS-runtime
+type/ownership boundary. Do not translate the same algorithms afresh from TS
+when their C++ implementation already exists. Keep specific Source discrepancies
+revealed by the newer paired tests fixed (for example the radical temporary
+BBox reset); reusing the old code does not mean undoing verified corrections.
+Every assignment must identify the existing C++ methods retained and the exact
+Context/Property/ObjectRef or ownership dependency being removed.
+
 Root also rejects the generated 4,241/3,954-line test form in `b030b874`.
 Retain all 288/192 Source case observations as data, with a reproducible witness
 and compact runner. The witness candidates are drafts; no cleanup or native

@@ -72,6 +72,15 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
   `tools/math-port/line-bbox-source-witness.cjs` 对固定哈希的 Source 运行通过；
   原生 LineBBox 3 项 / 25 断言通过，全量 114 项 / 30,724 断言通过：
   `build/math-port/line-bbox-native-reuse-full.log`，构建 `line-bbox-native-reuse-final-build.log`。
+- Typed Tree Factory/Wrapper 已在原有五个文件中迁移（本记录对应提交）。保留
+  FactoryServices/AbstractFactory/WrapperServices/Wrapper/AbstractWrapper/
+  AbstractWrapperFactory 类职责：一个有序类型登记表，明确 Arguments，构造后移交
+  unique_ptr 给具体 owner；没有 Context、any、通用 Property 或第二 creator 对象。
+  保留构造登记、替换顺序、默认类别、子类实例判断、源节点/父 wrapper 转发和先序遍历。
+  Source witness `tools/math-port/tree-factory-source-witness.cjs` 对固定哈希上游运行通过。
+  原生新增 6 项 / 28 断言，全量 120 项 / 30,752 断言通过：
+  `build/math-port/typed-tree-factory-full.log`，构建 `typed-tree-factory-final-build.log`。
+  当前 Common/MML 消费者尚未接入这些模板，不代表端到端完成。
 
 ## 下一步，按此接续
 
@@ -88,13 +97,25 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
    完整 MML core/embellished/spacing 语义仍是缺失依赖，不能加空实现掩盖。
    契约尚未接受：不能直接删掉 tree::AbstractWrapper/AbstractWrapperFactory 的真实
    kind/wrap/walkTree/工厂分派职责。Root 已纠正，Luna 已在同一草稿中记录。
-   下次需要明确两项，而非重新盘点：原生泛型工厂的有类型创建参数/登记表，以及
-   MML 家族类如何成为 MmlDocument 真正拥有的节点。当前 MmlNode final 只含结构，
-   旧 MmlMrow/MmlMfrac 等类无法用于这个 arena；不得用另一套外置门面掩盖。
+   工厂登记表已确定并实现，详见架构新增 'Typed factory and actual MML family decision'。
+   MML 已决定恢复真实多态家族类，作为 MmlDocument arena 的实际对象。当前正式代码
+   仍是 MmlNode final，只含结构，旧类还不能进入 arena；不得用外置门面掩盖。
    复用旧 MML 基类的 C++ 可从 `f4d04f25:src/math/core/mml_tree/mml_node.ixx` 及
    对应实现读取（dc287b48 之前）；具体家族文件仍在当前树中。
    注意：当前 util/lengths 已是纯原生 LengthContext API，草稿所称仍依赖 Property
    是过时信息，不能据此重做长度模块。
+4. 当前 Node/AbstractNode/AbstractEmptyNode 原生候选在
+   `tools/math-port/drafts/native-raii/typed-tree-node/`，已按 Root 复核修正虚方法、模块
+   重导出、KindName 签名、子类测试和 aliased setChildren；待正式推广/构建/原生验收。
+   NodeOwner 是借用的文档结构操作接口，Node 拥有唯一 parent_/children_；不是第二棵树。
+5. MML 基类声明草稿在 `tools/math-port/drafts/native-raii/typed-mml-base-contract/`。
+   尚未接受：Root 正在要求修正错误 module 名、重复 texclass 状态、缺少的 Source 默认
+   虚方法、错误 addInheritedAttributes 参数和继承规则表类型。修复前不能分派家族实现。
+   已确定的工厂所有权：文档拥有唯一 MmlFactory；NodeFactory/测试借用 doc.factory()。
+   doc.make -> factory.allocateRaw -> 单一登记表 -> 实际派生节点 -> doc.adopt；
+   MmlFactory.make 做 defaults/arity 再直接 allocateRaw，不能回调 doc.make 形成递归。
+   doc.make 仍是原有无 defaults 的底层构造，保持现有 absent 属性测试语义。
+   外来 XML 值类型尚需确定，不能临时发明一个 DOM/对象语义框架。
 
 Root 负责正式文件推广、CMake、构建、原生执行和提交；Luna 在各自忽略草稿目录工作。
 给每项任务指定既有 C++ 方法、保留职责、替换类型、调用者和验收，不让代理自行重划架构。

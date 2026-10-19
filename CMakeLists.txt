@@ -128,6 +128,11 @@ target_include_directories(folia_math PRIVATE ${FOLIA_FONT_GENERATED_DIR})
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS folia_math_compile=2)
 set_property(TARGET folia_math PROPERTY JOB_POOL_COMPILE folia_math_compile)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+    src/math/core/tree/factory_types.ixx
+    src/math/core/tree/factory.ixx
+    src/math/core/tree/wrapper_types.ixx
+    src/math/core/tree/wrapper.ixx
+    src/math/core/tree/wrapper_factory.ixx
     src/math/core/mml_tree/node_kind.ixx
     src/math/core/mml_tree/attributes.ixx
     src/math/core/mml_tree/node_properties.ixx
@@ -297,6 +302,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_raii_fonts.cpp
     tests/math/common_styles_source.cpp
     tests/math/native_line_bbox.cpp
+    tests/math/native_tree_factory.cpp
     tests/math/fraction_native.cpp
     tests/math/radical_native.cpp)
 target_compile_features(FoliaMathTests PRIVATE cxx_std_23)

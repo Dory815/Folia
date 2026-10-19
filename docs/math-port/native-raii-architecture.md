@@ -77,7 +77,100 @@ Family implementation details and numerical intermediates remain private
 unless a real production consumer needs them. Native ownership changes remain
 typed values, unique owners and explicit borrowed references within a request.
 
+The Source class collaborations are requirements too, not only the file paths:
+`CommonWrapperFactory` owns request-local wrappers; `CommonWrapper` owns common
+wrapper state and algorithms; `CommonMfrac` specializes fractions;
+`CommonMsqrt` specializes shared radical behavior; `CommonMroot` extends
+`CommonMsqrt` with degree behavior. Preserve their Source method responsibilities
+and initialization/call order using native C++ classes and RAII. Do not replace
+this collaboration with a public collection of scalar-input/result functions.
+The numerical consolidation in b23b2b46 does not implement these classes and
+does not satisfy wrapper architecture acceptance. Reusable equations may become
+private implementation details of their owning family during that port; their
+current exported input/result/function surface is not the final wrapper API.
+
 ## Ownership
+
+### Typed factory and actual MML family decision (2026-10-20)
+
+The generic `Tree/Factory` and `Tree/Wrapper` class roles remain. Replace their
+reflective records in the existing files; do not bypass these bases in Common.
+`FactoryServices<Product, Kind, Arguments>` and
+`AbstractFactory<Product, Kind, Arguments>` use one ordered registry of
+`FactoryClass<Product, Arguments>` values. Each record contains only a typed
+`unique_ptr<Product>(Arguments const&)` creator and a typed instance predicate.
+There is no second creator object/cache, universal argument vector, class-object
+identity, source-call bridge or lifecycle lease. Replacing an entry retains its
+position; deleting and re-registering appends it. `getNodeClass` returns an
+optional record value, avoiding a registry reference that could be invalidated.
+An explicit optional default kind preserves requested-kind/default-kind
+selection; absence of both is an error. `nodeIsKind` uses the registered C++
+instance predicate, preserving subclass checks rather than comparing kind names.
+
+The generic factory constructs and passes the unique owner to a concrete
+`adopt(unique_ptr<Product>)` hook. Common's concrete factory owns the wrapper
+arena. Node factories transfer ownership to their document. A null creator or
+product is an error, never a placeholder node. Product initialization and MML
+indexing remain the concrete factory's responsibility after ownership transfer.
+
+`WrapperServices<Product, Source>::wrap(Source&, Product* parent)` and
+`AbstractWrapperFactory<Product, Source, Arguments>` retain the source-kind
+dispatch and delegate to this same registry. The wrapper-factory base calls a
+typed `creationArguments(Source&, Product*)` override; concrete Common arguments
+contain its actual factory reference, MML node reference and borrowed parent.
+`Wrapper`/`AbstractWrapper` retain `kind`, `wrap` and preorder `walkTree` in their
+existing files. The base stores the one borrowed source pointer and one vector
+of borrowed wrapper children. A native visitor captures any typed caller state;
+it does not take `std::any` or a simulated JS argument/array. Common must not add
+a parallel child collection or creator registry.
+
+For MML, retain the current nonmovable document arena, typed attributes,
+properties, intrinsic state and tree invariants. Restore the original C++
+`MmlNode`/`AbstractMmlNode`/token/layout/base/empty classes and concrete family
+inheritance as actual polymorphic arena objects. `MmlDocument` keeps one
+`vector<unique_ptr<MmlNode>>`; its destructor uses the virtual node destructor.
+The current final structural `MmlNode` is not the final representation. Do not
+add a separate semantic façade, detached family object, NodeKind switch in each
+consumer, or a fallback implementation of missing semantic methods.
+
+Reuse the original C++ methods and replace their typed inputs/ownership in
+place. Node-kind identity becomes `NodeKind`; family/class tests retain the
+Source subclass relation. Parent and child storage have one authority, and
+structural mutations use the document's existing ownership/cycle checks. The
+MML family owns core/embellished/spacing, TeX classification and inherited
+attribute algorithms. Common calls these real methods. The document/node named
+module may keep the shared base declarations in its existing `:node` partition;
+concrete family modules import that primary, and document implementation units
+may import the families for construction without creating interface cycles.
+
+Acceptance of this boundary requires typed factory registration/replacement/
+fallback/subclass/ownership tests paired with pinned Source, and real factory
+construction of family objects with Source semantic cases. Passing generic
+factory tests alone is not Common/MML pipeline acceptance. Native MML family
+signatures and the tree-node ownership interface must be reviewed before family
+implementation assignments; do not independently invent these in each packet.
+
+The existing `tree/node_types.ixx` and `tree/node.ixx` retain `Node`,
+`AbstractNode` and `AbstractEmptyNode`. Their native template shape is
+`Node<Product, Kind>` and `AbstractNode<Product, Kind, Base=Node<Product,Kind>>`
+(likewise Empty). The one protected `Product* parent_` and
+`vector<Product*> children_` live in `Node`, not again in MML. A borrowed
+`NodeOwner<Product,Kind>` interface supplies document operations: `setChildren`,
+`append`, `replace(parent, oldChild, replacement)`, `remove`, `clone(source,
+keepIds)`, `nodeIsKind` and `kindName`. The base node's protected `treeOwner()`
+returns that owner; `MmlDocument` implements the interface using its existing
+checked tree algorithms. This is a typed ownership boundary, not a second tree
+implementation or a lifetime registry. Source per-node methods delegate to it.
+
+`AbstractNode` retains typed `isKind`, `setChildren`, `appendChild`,
+`replaceChild(newChild, oldChild)`, `removeChild`, `childIndex`, `copy`,
+`findNodes`, `walkTree` and `toString`. Subclass checks delegate to the same
+registered native class predicates. Missing-child replace/remove remain Source
+no-ops; document ownership/cycle checks still apply to actual edits.
+`AbstractEmptyNode` retains its Source no-child overrides. Generic JS property
+methods are retired; mathematical property values remain in the existing typed
+MML `NodeProperties`, and cloning them belongs to the document. No `std::any`,
+property bags, source readers/writers or callable receiver abstraction remain.
 
 | Lifetime | Owner | Owned contents | Permitted references |
 |---|---|---|---|
