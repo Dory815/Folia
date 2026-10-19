@@ -1,17 +1,16 @@
-/*************************************************************
- * MathJax 4.1.3 output/common/Wrappers/mroot.ts.
- *************************************************************/
+// Degree-placement equations from Source CommonMroot. Kept independent of radical request state.
 export module folia.math.output.common:mroot;
-export import :msqrt;
 import std;
+import folia.math.util.bbox;
+
 export namespace folia::math::output::common {
-class CommonMroot : public CommonMsqrt {
-public:
-    using CommonMsqrt::CommonMsqrt;
-    std::optional<std::size_t> root()const override{return 1;}
-    void combineRootBBox(BBox&,const BBox&,double)const override;
-    std::array<double,3> getRootDimens(const BBox&,double)const override;
-    double rootHeight(const BBox&,const BBox&,double size,double H)const;
-    double rootWidth()const override;
+struct RootDimensions {
+    double x = 0;
+    double height = 0;
+    double dx = 0;
 };
+
+RootDimensions root_dimensions(BBox const& degree, BBox const& surd,
+                               int surd_size, double whole_height);
+double root_width(BBox const& degree);
 }

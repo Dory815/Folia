@@ -1,53 +1,96 @@
 module folia.math.output.common;
 import :msqrt;
-import :wrapper;
-import :mo;
-import folia.math.util.property_host;
+import :mroot;
 import std;
+import folia.math.util.bbox;
+
 namespace folia::math::output::common {
-CommonMsqrt::CommonMsqrt(CommonWrapperFactory& factory,mml::MmlNode& node,CommonWrapper* parentValue)
-    :CommonWrapper(factory,node,parentValue){}
-void CommonMsqrt::initializeSource(){
-    CommonWrapper::initializeSource();
-    surd=&createMo(u"\u221A");
-    (void)surd->canStretch(VERTICAL);
-    getStretchedSurd();
+namespace {
+double radical_p(RadicalStretchRequest const& request) {
+    return request.display ? request.font.x_height : request.font.rule_thickness;
 }
-void CommonMsqrt::combineRootBBox(BBox&,const BBox&,double)const{}
-std::array<double,2> CommonMsqrt::getPQ(const BBox& surdBox)const{
-    if(!font)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'params')");
-    const auto& params=font->params();const double t=params.rule_thickness,s=params.surd_height;
-    const double p=property_host::truthy(node->attributes()->get("displaystyle"))?params.x_height:t;
-    const double q=surdBox.h+surdBox.d>surdH
-        ?(surdBox.h+surdBox.d-(surdH-t-s-p/2))/2:s+p/4;
-    return {p,q};
+
+double radical_q(RadicalStretchRequest const& request, BBox const& surd_bbox, double p) {
+    const double rule = request.font.rule_thickness;
+    const double surd_height = request.font.surd_height;
+    if (surd_bbox.h + surd_bbox.d > request.required_surd_height) {
+        return (surd_bbox.h + surd_bbox.d -
+            (request.required_surd_height - rule - surd_height - p / 2)) / 2;
+    }
+    return surd_height + p / 4;
 }
-std::array<double,3> CommonMsqrt::getRootDimens(const BBox&,double)const{return {0,0,0};}
-double CommonMsqrt::rootWidth()const{return 1.25;}
-void CommonMsqrt::getStretchedSurd(){
-    if(!font)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'params')");
-    const auto& params=font->params();const double t=params.rule_thickness,s=params.surd_height;
-    const double p=property_host::truthy(node->attributes()->get("displaystyle"))?params.x_height:t;
-    if(!childNodes||!(*childNodes))throw options::Exception("TypeError",u"Cannot read properties of undefined (reading '0')");
-    const auto child=(*childNodes)->get(base());
-    const auto box=child.requireNode("getOuterBBox")->getOuterBBox();
-    surdH=box->h+box->d+t+s+p/4;
-    surd->getStretchedVariant(std::array<double,2>{surdH-box->d,box->d},true);
 }
-void CommonMsqrt::computeBBox(BBox& box,bool recompute){
-    box.empty();const auto surdBox=surd->getBBox();
-    if(!childNodes||!(*childNodes))throw options::Exception("TypeError",u"Cannot read properties of undefined (reading '0')");
-    const auto baseBox=(*childNodes)->get(base()).requireNode("getOuterBBox")->getOuterBBox();
-    const double q=getPQ(*surdBox)[1];
-    if(!font)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'params')");
-    const double t=font->params().rule_thickness,s=font->params().surd_height;
-    const double H=baseBox->h+q+t;const auto dims=getRootDimens(*surdBox,H);const double x=dims[0];
-    box.h=H+s;combineRootBBox(box,*surdBox,H);box.combine(*surdBox,x,H-surdBox->h);
-    box.combine(*baseBox,x+surdBox->w,0);box.clean();setChildPWidths(recompute);
+
+RadicalStretchRequest request_radical(RadicalInput const& input) {
+    RadicalStretchRequest request;
+    request.base = input.base;
+    request.degree = input.degree;
+    request.font = input.font;
+    request.display = input.display;
+    request.wrapper_bbox_scale = input.wrapper_bbox_scale;
+
+    const double p = radical_p(request);
+    request.required_surd_height = input.base.h + input.base.d +
+        request.font.rule_thickness + request.font.surd_height + p / 4;
+    request.stretch_height = request.required_surd_height - input.base.d;
+    request.stretch_depth = input.base.d;
+    request.stretch_exact = true;
+    if (request.degree.has_value())
+        request.root_width = folia::math::output::common::root_width(*request.degree);
+    else
+        request.root_width = 1.25;
+    return request;
 }
-void CommonMsqrt::invalidateBBox(bool bubble){
-    CommonWrapper::invalidateBBox(bubble);
-    if(!surd||!surd->childNodes||!(*surd->childNodes))throw options::Exception("TypeError",u"Cannot read properties of undefined (reading '0')");
-    (*surd->childNodes)->get(0).requireNode("invalidateBBox")->invalidateBBox();
+
+RadicalLayout finish_radical(RadicalStretchRequest const& request,
+                             BBox const& actual_surd_bbox, int actual_surd_size) {
+    RadicalLayout result;
+    result.bbox.empty();
+    result.p = radical_p(request);
+    result.q = radical_q(request, actual_surd_bbox, result.p);
+    result.required_surd_height = request.required_surd_height;
+
+    // Source uses `new BBox(baseOuter)`, keeping only w, h, and d.
+    BBox measured_base(BBoxData{
+        .w = request.base.w,
+        .h = request.base.h,
+        .d = request.base.d,
+    });
+    result.measured_height = measured_base.h + result.q + request.font.rule_thickness;
+    RootDimensions const measured_root = request.degree
+        ? root_dimensions(*request.degree, actual_surd_bbox, actual_surd_size, result.measured_height)
+        : RootDimensions{};
+
+    result.bbox.h = result.measured_height + request.font.surd_height;
+    if (request.degree)
+        result.bbox.combine(*request.degree, 0, measured_root.height);
+    result.bbox.combine(actual_surd_bbox, measured_root.x,
+                        result.measured_height - actual_surd_bbox.h);
+    result.bbox.combine(measured_base, measured_root.x + actual_surd_bbox.w, 0);
+    result.bbox.clean();
+
+    result.placed_surd_height = request.font.surd_height * request.wrapper_bbox_scale;
+    result.placed_height = request.base.h + result.q + result.placed_surd_height;
+    RootDimensions const placed_root = request.degree
+        ? root_dimensions(*request.degree, actual_surd_bbox, actual_surd_size, result.placed_height)
+        : RootDimensions{};
+    result.root_offset = placed_root.x;
+    result.root_height = placed_root.height;
+    result.root_dx = placed_root.dx;
+    result.surd_origin = {placed_root.x, result.placed_height - actual_surd_bbox.h};
+    result.base_origin = {placed_root.x + actual_surd_bbox.w, 0};
+    if (request.degree) {
+        result.degree_origin = {
+            placed_root.dx * request.degree->rscale,
+            placed_root.height,
+        };
+    }
+    result.overbar = {
+        placed_root.x + actual_surd_bbox.w,
+        result.placed_height - result.placed_surd_height,
+        request.base.w,
+        result.placed_surd_height,
+    };
+    return result;
 }
 }

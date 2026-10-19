@@ -36,14 +36,17 @@ The upstream file responsibilities are the starting architecture, not merely
 algorithm references. Removing JS object semantics does not justify replacing
 the Common/MML/TeX family structure with a new collection of helper modules.
 This section supersedes the earlier `output/common/placement/` allocation and
-the fraction/radical packet paths. No source relocation has been performed yet.
+the fraction/radical packet paths. The numerical portions now replace those
+canonical Common family files. The standalone placement files and corresponding
+old Scene family files/registrations have been removed.
 
-Review of `b030b874` found two problems: the new fraction/radical services have
-only test callers, and their equations coexist on disk with the superseded
-Common and Scene family implementations. They are component experiments, not
-an integrated shared layout implementation. The active target excludes the old
-wrappers and renderer facade; it cannot render TeX end to end. A successful
-component build does not resolve these responsibility or integration gaps.
+Review of `b030b874` found two problems: the new fraction/radical services had
+only test callers, and their equations coexisted on disk with the superseded
+Common and Scene family implementations. Duplicate family arithmetic has now
+been consolidated, but the numerical APIs still have only component-test
+callers. Complete CommonWrapper orchestration and the renderer facade remain
+outside the active graph; it cannot render TeX end to end. A successful
+component build does not resolve that integration gap.
 
 | Pinned upstream responsibility | Native owning files | Required boundary |
 |---|---|---|

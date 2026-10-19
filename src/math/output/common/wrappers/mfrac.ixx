@@ -1,45 +1,62 @@
-/*************************************************************
- * MathJax 4.1.3 output/common/Wrappers/mfrac.ts.
- * Source-aligned fraction wrapper.
- *************************************************************/
+// Numerical portion of Source CommonMfrac; wrapper orchestration remains unimplemented.
 export module folia.math.output.common:mfrac;
-export import :wrapper;
-export import :mo;
-import folia.math.core.mml_tree.mml_nodes.mfrac;
 import std;
+import folia.math.util.bbox;
 
 export namespace folia::math::output::common {
-class CommonMfrac : public CommonWrapper {
-public:
-    CommonMo* bevel=nullptr;
-    double pad=0;
-    CommonMfrac(CommonWrapperFactory&,mml::MmlNode&,CommonWrapper* parent=nullptr);
-    void initializeSource() override;
-    void getFractionBBox(BBox&,bool display,double thickness);
-    struct TUV { double T=0,u=0,v=0; };
-    TUV getTUV(bool display,double thickness)const;
-    void getAtopBBox(BBox&,bool display);
-    struct UVQ { double u=0,v=0,q=0; BBox nbox,dbox; };
-    UVQ getUVQ(bool display)const;
-    void getBevelledBBox(BBox&,bool display);
-    struct BevelData { double H=0,delta=0,u=0,v=0; BBox nbox,dbox; };
-    BevelData getBevelData(bool display)const;
-    bool isDisplay()const;
-    bool canStretch(std::string_view)override;
-    std::string getChildAlign(std::size_t)const override;
-    double getWrapWidth(std::size_t)override;
-    double sourceAlignX(double,const BBox&,std::string_view) const;
-    double sourceLength2em(const Property&,double size=1,std::optional<double> scale={}) const;
-    // Source-call bridge used by SVG placement; delegates to the same
-    // CommonWrapper alignment/length algorithms.
-    double getAlignXForSource(double width,const BBox& box,std::string_view align) const {
-        return sourceAlignX(width,box,align);
-    }
-    double length2emForSource(const Property& value,double size=1,
-                              std::optional<double> scale={}) const {
-        return sourceLength2em(value,size,scale);
-    }
-protected:
-    void computeBBox(BBox&,bool recompute=false)override;
-};
+    enum class FractionAlignment { left, center, right };
+    enum class FractionKind { ruled, atop, bevelled };
+
+    struct FractionFontParameters {
+        double axis_height = 0;
+        double num1 = 0;
+        double num2 = 0;
+        double num3 = 0;
+        double denom1 = 0;
+        double denom2 = 0;
+        double rule_thickness = 0;
+        double nulldelimiterspace = 0;
+    };
+
+    struct FractionInput {
+        BBox numerator;
+        BBox denominator;
+        FractionFontParameters font;
+        bool display = false;
+        bool with_delimiters = false;
+        double line_thickness = 0;
+        FractionAlignment numerator_alignment = FractionAlignment::center;
+        FractionAlignment denominator_alignment = FractionAlignment::center;
+    };
+
+    struct FractionPoint { double x = 0; double y = 0; };
+    struct FractionRule { double x = 0; double y = 0; double width = 0; double height = 0; };
+
+    struct BevelRequest {
+        double required_slash_height = 0;
+        double delta = 0;
+        double numerator_y = 0;
+        double denominator_y = 0;
+        BBox numerator;
+        BBox denominator;
+        FractionFontParameters font;
+        bool display = false;
+    };
+
+    struct FractionLayout {
+        FractionKind kind = FractionKind::ruled;
+        BBox bbox;
+        FractionPoint numerator_origin;
+        FractionPoint denominator_origin;
+        std::optional<FractionPoint> slash_origin;
+        std::optional<FractionPoint> bbox_denominator_origin;
+        std::optional<FractionRule> rule;
+        std::optional<double> content_width;
+        double numerator_wrap_width = 0;
+        double denominator_wrap_width = 0;
+    };
+
+    using FractionResult = std::variant<FractionLayout, BevelRequest>;
+    FractionResult measure_fraction(FractionInput const& input, FractionKind kind);
+    FractionLayout finish_bevelled_fraction(BevelRequest const& request, BBox const& actual_slash_bbox);
 }

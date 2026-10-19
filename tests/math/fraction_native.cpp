@@ -1,11 +1,11 @@
 #include "../support/folia_test.hpp"
 import folia.math.util.bbox;
-import folia.math.output.common.placement.fraction;
+import folia.math.output.common;
 #include "support/layout_source_table.hpp"
 
 using namespace boost::ut;
 using folia::math::BBox;
-using namespace folia::math::output::common::placement;
+using namespace folia::math::output::common;
 using folia::math::test::SourceRow;
 using folia::math::test::SourceTable;
 namespace {

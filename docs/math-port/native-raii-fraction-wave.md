@@ -1,8 +1,10 @@
 # Shared fraction placement packet
 
-Owner: Luna, canonical `output/common/placement/fraction.ixx/.cpp`, module
-`folia.math.output.common.placement.fraction`, namespace
-`folia::math::output::common::placement`.
+Owner: Luna, canonical `output/common/wrappers/mfrac.ixx/.cpp`, partition
+`folia.math.output.common:mfrac`, namespace `folia::math::output::common`.
+The earlier standalone placement allocation is withdrawn. The current code
+implements numerical records/equations only; complete native CommonWrapper
+orchestration and its layout-to-Scene consumer remain unimplemented.
 
 This is the single numerical implementation of the Source fraction family.
 It combines CommonMfrac measurement with the placement currently located in

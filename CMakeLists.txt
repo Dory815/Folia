@@ -110,8 +110,10 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
     src/math/output/svg/writer.ixx
-    src/math/output/common/placement/fraction.ixx
-    src/math/output/common/placement/radical.ixx
+    src/math/output/common/common.ixx
+    src/math/output/common/wrappers/mfrac.ixx
+    src/math/output/common/wrappers/msqrt.ixx
+    src/math/output/common/wrappers/mroot.ixx
     src/math/util/constants.ixx
     src/math/util/bbox.ixx
     src/math/util/lengths.ixx
@@ -133,8 +135,9 @@ target_sources(folia_math PRIVATE
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
     src/math/output/svg/node_metadata.cpp
-    src/math/output/common/placement/fraction.cpp
-    src/math/output/common/placement/radical.cpp
+    src/math/output/common/wrappers/mfrac.cpp
+    src/math/output/common/wrappers/msqrt.cpp
+    src/math/output/common/wrappers/mroot.cpp
     src/math/util/lengths.cpp
     src/math/util/regexp_host.cpp)
 

@@ -1,8 +1,11 @@
 # Shared radical placement contract
 
-Luna owns `output/common/placement/radical.ixx/.cpp`, module
-`folia.math.output.common.placement.radical`, namespace
-`folia::math::output::common::placement`. This service contains the one numerical
+Luna owns canonical `output/common/wrappers/msqrt.ixx/.cpp` and
+`mroot.ixx/.cpp`, partitions `folia.math.output.common:msqrt` and `:mroot`,
+namespace `folia::math::output::common`. The earlier standalone radical
+placement allocation is withdrawn. Current code implements the numerical
+portion only; full native wrapper orchestration remains unimplemented.
+These files contain the one numerical
 implementation of CommonMsqrt/CommonMroot and their SVG placement equations.
 No parser, MML, Scene, font repository or SVG writer dependency is allowed.
 

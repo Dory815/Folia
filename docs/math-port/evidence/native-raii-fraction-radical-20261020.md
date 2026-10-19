@@ -29,8 +29,14 @@ the native math module.
 
 These remain numerical component tests. Canonical Common wrapper orchestration
 and actual layout-to-Scene integration are still incomplete. The additional
-`placement/` family introduced in b030b874 is superseded by the canonical
-Common-family ownership correction in `native-raii-architecture.md`.
+`placement/` family introduced in b030b874 has been removed. The numerical
+implementations now replace canonical Common `wrappers/mfrac`, `msqrt`, and
+`mroot` files, exported through the existing Common primary module/partitions.
+Degree formulas live only in mroot and are called from the shared radical
+implementation; old Scene fraction/root pairs and registrations were deleted.
+The post-consolidation build, both paired tests, and the full 101-test / 30,564
+assertion native component suite returned 0. Logs:
+`build/math-port/common-family-consolidation-{build,focused,full}.log`.
 
 ## Earlier component observations
 

@@ -1,118 +1,149 @@
 module folia.math.output.common;
 import :mfrac;
-import :wrapper;
-import :mo;
-import folia.math.util.property_host;
-import folia.math.core.mml_tree.mml_nodes.mfrac;
 import std;
+import folia.math.util.bbox;
 
 namespace folia::math::output::common {
-double CommonMfrac::sourceAlignX(double width,const BBox& box,std::string_view align)const{
-    return getAlignX(width,box,align);
-}
-double CommonMfrac::sourceLength2em(const Property& value,double size,std::optional<double> scale)const{
-    return length2em(value,size,scale);
-}
-CommonMfrac::CommonMfrac(CommonWrapperFactory& factory,mml::MmlNode& source,CommonWrapper* parentValue)
-    :CommonWrapper(factory,source,parentValue){}
-void CommonMfrac::initializeSource(){
-    CommonWrapper::initializeSource();
-    const auto* node=dynamic_cast<mml::MmlMfrac*>(this->node);
-    if(!node)throw options::Exception("TypeError",u"CommonMfrac requires an MmlMfrac node");
-    pad=property_host::truthy(node->getProperty("withDelims"))?0:font->params().nulldelimiterspace;
-    if(property_host::truthy(node->attributes()->get("bevelled"))){
-        const auto H=getBevelData(isDisplay()).H;
-        bevel=&createMo(u"/");
-        bevel->node->attributes()->set("symmetric",true);
-        (void)bevel->canStretch(VERTICAL);
-        bevel->getStretchedVariant(std::array<double,1>{H},true);
+namespace {
+    constexpr double kRulePadding = 0.2;
+    constexpr double kRuleHalfPadding = 0.1;
+
+    double source_max(double left, double right) {
+        if (std::isnan(left) || std::isnan(right)) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+        return std::max(left, right);
+    }
+
+    double align_x(double width, BBox const& box, FractionAlignment alignment) {
+        if (alignment == FractionAlignment::right) {
+            return width - (box.w + box.R) * box.rscale;
+        }
+        if (alignment == FractionAlignment::left) {
+            return box.L * box.rscale;
+        }
+        return (width - box.w * box.rscale) / 2;
+    }
+
+    double combined_child_width(BBox const& box) {
+        return (box.L + box.w + box.R) * box.rscale;
+    }
+
+    double child_wrap_width(BBox const& box) {
+        return box.w;
+    }
+
+    double pad_for(FractionInput const& input) {
+        return input.with_delimiters ? 0.0 : input.font.nulldelimiterspace;
+    }
+
+    BBox empty_bbox() {
+        BBox result;
+        result.empty();
+        return result;
     }
 }
-void CommonMfrac::getFractionBBox(BBox& box,bool display,double thickness){
-    if(!childNodes||!(*childNodes))throw options::Exception("TypeError",u"Cannot read properties of undefined (reading '0')");
-    const auto children=*childNodes;
-    const auto nbox=children->get(0).requireNode("getOuterBBox")->getOuterBBox();
-    const auto dbox=children->get(1).requireNode("getOuterBBox")->getOuterBBox();
-    if(!font)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'params')");
-    const auto& tex=font->params();const double axis=tex.axis_height;
-    const auto tuv=getTUV(display,thickness);
-    box.combine(*nbox,0,axis+tuv.T+std::max(nbox->d*nbox->rscale,tuv.u));
-    box.combine(*dbox,0,axis-tuv.T-std::max(dbox->h*dbox->rscale,tuv.v));
-    box.w+=2*pad+0.2;
-}
-CommonMfrac::TUV CommonMfrac::getTUV(bool display,double thickness)const{
-    if(!font)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'params')");
-    const auto& tex=font->params();const double axis=tex.axis_height;
-    const double T=(display?3.5:1.5)*thickness;
-    return {T,(display?tex.num1:tex.num2)-axis-T,(display?tex.denom1:tex.denom2)+axis-T};
-}
-void CommonMfrac::getAtopBBox(BBox& box,bool display){
-    const auto data=getUVQ(display);
-    box.combine(data.nbox,0,data.u);box.combine(data.dbox,0,-data.v);box.w+=2*pad;
-}
-CommonMfrac::UVQ CommonMfrac::getUVQ(bool display)const{
-    if(!childNodes||!(*childNodes))throw options::Exception("TypeError",u"Cannot read properties of undefined (reading '0')");
-    const auto children=*childNodes;
-    const auto nbox=children->get(0).requireNode("getOuterBBox")->getOuterBBox();
-    const auto dbox=children->get(1).requireNode("getOuterBBox")->getOuterBBox();
-    if(!font)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'params')");
-    const auto& tex=font->params();
-    double u=display?tex.num1:tex.num3,v=display?tex.denom1:tex.denom2;
-    const double p=(display?7:3)*tex.rule_thickness;
-    double q=u-nbox->d*nbox->scale-(dbox->h*dbox->scale-v);
-    if(q<p){u+=(p-q)/2;v+=(p-q)/2;q=p;}
-    return {u,v,q,*nbox,*dbox};
-}
-void CommonMfrac::getBevelledBBox(BBox& box,bool display){
-    const auto data=getBevelData(display);const auto lbox=bevel->getOuterBBox();
-    box.combine(data.nbox,0,data.u);box.combine(*lbox,box.w-data.delta/2,0);
-    box.combine(data.dbox,box.w-data.delta/2,data.v);
-}
-CommonMfrac::BevelData CommonMfrac::getBevelData(bool display)const{
-    if(!childNodes||!(*childNodes))throw options::Exception("TypeError",u"Cannot read properties of undefined (reading '0')");
-    const auto children=*childNodes;
-    const auto nbox=children->get(0).requireNode("getOuterBBox")->getOuterBBox();
-    const auto dbox=children->get(1).requireNode("getOuterBBox")->getOuterBBox();
-    const double delta=display?0.4:0.15;
-    const double H=std::max(nbox->scale*(nbox->h+nbox->d),dbox->scale*(dbox->h+dbox->d))+2*delta;
-    if(!font)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'params')");
-    const double axis=font->params().axis_height;
-    const double u=nbox->scale*(nbox->d-nbox->h)/2+axis+delta;
-    const double v=dbox->scale*(dbox->d-dbox->h)/2+axis-delta;
-    return {H,delta,u,v,*nbox,*dbox};
-}
-bool CommonMfrac::isDisplay()const{
-    const auto attributes=node->attributes();
-    return property_host::truthy(attributes->get("displaystyle"))&&attributes->get("scriptlevel")==Property(0);
-}
-void CommonMfrac::computeBBox(BBox& box,bool recompute){
-    box.empty();const auto attributes=node->attributes();
-    const Property thicknessValue=attributes->get("linethickness");
-    const bool bevelled=property_host::truthy(attributes->get("bevelled"));
-    const bool display=isDisplay();std::optional<double> width;
-    if(bevelled)getBevelledBBox(box,display);
-    else{
-        width=-2*pad;
-        const double thickness=length2em(Property(property_host::debugText(property_host::string(thicknessValue))),0.06);
-        if(thickness==0)getAtopBBox(box,display);
-        else{getFractionBBox(box,display,thickness);*width-=0.2;}
-        *width+=box.w;
+
+FractionResult measure_fraction(FractionInput const& input, FractionKind kind) {
+    if (kind == FractionKind::bevelled) {
+        const double delta = input.display ? 0.4 : 0.15;
+        const double required_height = source_max(
+            input.numerator.scale * (input.numerator.h + input.numerator.d),
+            input.denominator.scale * (input.denominator.h + input.denominator.d)) + 2 * delta;
+        const double numerator_y = input.numerator.scale *
+            (input.numerator.d - input.numerator.h) / 2 + input.font.axis_height + delta;
+        const double denominator_y = input.denominator.scale *
+            (input.denominator.d - input.denominator.h) / 2 + input.font.axis_height - delta;
+        return BevelRequest{required_height, delta, numerator_y, denominator_y,
+            input.numerator, input.denominator, input.font, input.display};
     }
-    box.clean();
-    setChildPWidths(recompute,width);
+
+    FractionLayout result;
+    result.kind = kind;
+    result.bbox = empty_bbox();
+    const double pad = pad_for(input);
+    const double width = source_max(combined_child_width(input.numerator),
+                                    combined_child_width(input.denominator));
+
+    if (kind == FractionKind::atop || input.line_thickness == 0) {
+        result.kind = FractionKind::atop;
+        double u = input.display ? input.font.num1 : input.font.num3;
+        double v = input.display ? input.font.denom1 : input.font.denom2;
+        double q = u - input.numerator.d * input.numerator.scale -
+            (input.denominator.h * input.denominator.scale - v);
+        const double minimum_gap = (input.display ? 7.0 : 3.0) * input.font.rule_thickness;
+        if (q < minimum_gap) {
+            u += (minimum_gap - q) / 2;
+            v += (minimum_gap - q) / 2;
+            q = minimum_gap;
+        }
+        (void)q;
+        result.bbox.combine(input.numerator, 0, u);
+        result.bbox.combine(input.denominator, 0, -v);
+        result.bbox.w += 2 * pad;
+        result.bbox.clean();
+        result.numerator_origin = {
+            align_x(width, input.numerator, input.numerator_alignment) + pad, u};
+        result.denominator_origin = {
+            align_x(width, input.denominator, input.denominator_alignment) + pad, -v};
+        double percent_width = -2 * pad;
+        percent_width += result.bbox.w;
+        result.content_width = percent_width;
+        const double wrap_width = result.bbox.w - 0.0 - 2 * pad;
+        result.numerator_wrap_width = wrap_width;
+        result.denominator_wrap_width = wrap_width;
+        return result;
+    }
+
+    const double axis = input.font.axis_height;
+    const double thickness = input.line_thickness;
+    const double T = (input.display ? 3.5 : 1.5) * thickness;
+    const double u = (input.display ? input.font.num1 : input.font.num2) - axis - T;
+    const double v = (input.display ? input.font.denom1 : input.font.denom2) + axis - T;
+    const double numerator_y = axis + T + source_max(input.numerator.d * input.numerator.rscale, u);
+    const double denominator_y = axis - T - source_max(input.denominator.h * input.denominator.rscale, v);
+    result.bbox.combine(input.numerator, 0, numerator_y);
+    result.bbox.combine(input.denominator, 0, denominator_y);
+    result.bbox.w += 2 * pad + kRulePadding;
+    result.bbox.clean();
+    result.numerator_origin = {
+        align_x(width, input.numerator, input.numerator_alignment) + kRuleHalfPadding + pad,
+        numerator_y};
+    result.denominator_origin = {
+        align_x(width, input.denominator, input.denominator_alignment) + kRuleHalfPadding + pad,
+        denominator_y};
+    result.rule = FractionRule{pad, axis - thickness / 2, width + kRulePadding, thickness};
+    double percent_width = -2 * pad;
+    percent_width -= kRulePadding;
+    percent_width += result.bbox.w;
+    result.content_width = percent_width;
+    const double wrap_width = result.bbox.w - kRulePadding - 2 * pad;
+    result.numerator_wrap_width = wrap_width;
+    result.denominator_wrap_width = wrap_width;
+    return result;
 }
-bool CommonMfrac::canStretch(std::string_view){return false;}
-std::string CommonMfrac::getChildAlign(std::size_t index)const{
-    const auto attributes=node->attributes();
-    if(property_host::truthy(attributes->get("bevelled")))return "left";
-    const auto name=index==0?"numalign":index==1?"denomalign":"undefined";
-    return property_host::debugText(property_host::string(attributes->get(name)));
-}
-double CommonMfrac::getWrapWidth(std::size_t index){
-    const auto attributes=node->attributes();
-    if(property_host::truthy(attributes->get("bevelled"))){if(!childNodes||!(*childNodes))throw options::Exception("TypeError",u"Cannot read properties of undefined (reading '0')");return (*childNodes)->get(index).requireNode("getOuterBBox")->getOuterBBox()->w;}
-    const double width=getBBox()->w;
-    const double thickness=length2em(attributes->get("linethickness"));
-    return width-(thickness?0.2:0)-2*pad;
+
+FractionLayout finish_bevelled_fraction(BevelRequest const& request, BBox const& actual_slash_bbox) {
+    FractionLayout result;
+    result.kind = FractionKind::bevelled;
+    result.bbox = empty_bbox();
+    const double numerator_width = combined_child_width(request.numerator);
+    const double slash_x = numerator_width - request.delta / 2;
+    result.bbox.combine(request.numerator, 0, request.numerator_y);
+    result.bbox.combine(actual_slash_bbox, result.bbox.w - request.delta / 2, 0);
+    const double bbox_denominator_x = result.bbox.w - request.delta / 2;
+    result.bbox.combine(request.denominator, bbox_denominator_x, request.denominator_y);
+    result.bbox.clean();
+    result.numerator_origin = {
+        request.numerator.L * request.numerator.rscale, request.numerator_y};
+    result.slash_origin = FractionPoint{slash_x, 0};
+    result.denominator_origin = {
+        numerator_width + actual_slash_bbox.w + request.denominator.L * request.denominator.rscale - request.delta,
+        request.denominator_y};
+    result.bbox_denominator_origin = FractionPoint{bbox_denominator_x, request.denominator_y};
+    result.content_width = std::nullopt;
+    result.numerator_wrap_width = child_wrap_width(request.numerator);
+    result.denominator_wrap_width = child_wrap_width(request.denominator);
+    return result;
 }
 }

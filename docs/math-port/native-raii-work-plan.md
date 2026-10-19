@@ -55,7 +55,11 @@ promotion until Root has mapped the upstream methods, canonical owning files,
 current callers, inactive duplicate implementations and removal/rewiring sites.
 Use `common/wrappers/mfrac`, `msqrt` and `mroot` as the family owners; do not
 create another hierarchy because an agent packet is independently assignable.
-No file moves or wrapper completion are implied by this planning correction.
+The numerical code now replaces those canonical files in the existing Common
+primary module's :mfrac/:msqrt/:mroot partitions. The separate placement files
+and three obsolete Scene family pairs/registrations were removed. This is a
+preparatory arithmetic consolidation, not completed CommonWrapper orchestration
+or a layout-to-Scene consumer. Those remain the next implementation boundary.
 
 Root also rejects the generated 4,241/3,954-line test form in `b030b874`.
 Retain all 288/192 Source case observations as data, with a reproducible witness

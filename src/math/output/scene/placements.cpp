@@ -11,9 +11,6 @@ void registerScenePlacements(WrapperFactory& factory){
     registerMtrPlacement(factory);
     registerMtdPlacement(factory);
     registerTextNodePlacement(factory);
-    registerMfracPlacement(factory);
-    registerMsqrtPlacement(factory);
-    registerMrootPlacement(factory);
     registerMerrorPlacement(factory);
     registerMathPlacement(factory);
     registerMfencedPlacement(factory);
