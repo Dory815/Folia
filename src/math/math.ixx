@@ -65,6 +65,7 @@ public:
 struct RendererDiagnosticsProbe {
     static void print(const Renderer&,std::string_view stage);
     static std::array<std::size_t,4> contextRecordCounts(const Renderer&);
+    static std::array<std::size_t,5> nativeBindingCounts(const Renderer&);
     static std::array<std::size_t,9> snapshot(const Renderer&);
     static std::array<std::size_t,24> parserIdentitySnapshot(const Renderer&);
     static std::array<std::size_t,3> sceneOwnerSnapshot(const Renderer&);

@@ -321,6 +321,11 @@ MmlContextBindings::ActiveSourceAllocation MmlContextBindings::activateSourceAll
     return ActiveSourceAllocation{weak_from_this(),id};
 }
 Context& MmlContextBindings::context()const{return context_;}
+std::array<std::size_t,3> MmlContextBindings::nativeOwnerCountsForDiagnostics()const{
+    const auto projections=nodeModule_->properties().projectionCountsForDiagnostics();
+    return {nodeModule_->attributes().canonicalHandleCountForDiagnostics(),
+            projections[0],projections[1]};
+}
 NativeIdentityBindings<MmlNode*>& MmlContextBindings::nodes(){return nodes_;}
 NativeIdentityBindings<MmlFactory*>& MmlContextBindings::factories(){return factories_;}
 NativeIdentityBindings<Children>& MmlContextBindings::arrays(){return arrays_;}

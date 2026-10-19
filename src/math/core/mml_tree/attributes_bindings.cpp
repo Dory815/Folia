@@ -252,6 +252,9 @@ ObjectRef AttributesContextBindings::constructor()const{return state_->ctor;}
 ObjectRef AttributesContextBindings::prototype()const{return state_->proto;}
 ObjectRef AttributesContextBindings::bind(const std::shared_ptr<Attributes>& owner){return state_->bind(owner);}
 std::shared_ptr<Attributes> AttributesContextBindings::resolve(ObjectRef object)const{return state_->resolve(object);}
+std::size_t AttributesContextBindings::canonicalHandleCountForDiagnostics()const noexcept{
+    return state_->identities.canonicalHandleCount();
+}
 Value AttributesContextBindings::toValue(const Property& value)const{state_->requireActive();return state_->properties.to(value);}
 Property AttributesContextBindings::fromValue(Value value){state_->requireActive();return state_->properties.from(std::move(value));}
 std::function<Value(const Property&)> AttributesContextBindings::toValueConverter()const{

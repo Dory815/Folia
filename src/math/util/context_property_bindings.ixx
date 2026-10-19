@@ -17,6 +17,8 @@ public:
     options::Context& context() const;
     Property from(options::Value);
     options::Value to(const Property&)const;
+    // Diagnostic inventory of projection registry entries and still-live storage owners.
+    std::array<std::size_t,2> projectionCountsForDiagnostics()const noexcept;
     // Register a canonical projection for one existing native Property graph.
     // The callbacks must return the actual Context object / original Property
     // handle; this facility never copies or fabricates a wrapper object.

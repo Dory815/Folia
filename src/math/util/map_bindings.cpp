@@ -285,4 +285,5 @@ ObjectRef MapContextBindings::set(ObjectRef object,Value key,Value value)const{s
 bool MapContextBindings::erase(ObjectRef object,Value key)const{state_->validateValue(key);return resolve(object)->erase(key);}
 void MapContextBindings::clear(ObjectRef object)const{resolve(object)->clear();}
 std::size_t MapContextBindings::size(ObjectRef object)const{return resolve(object)->size();}
+std::size_t MapContextBindings::canonicalStorageCountForDiagnostics()const noexcept{return state_->instances.size();}
 }

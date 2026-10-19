@@ -272,6 +272,13 @@ std::array<std::size_t,4> RendererDiagnosticsProbe::contextRecordCounts(const Re
     const auto counts=renderer.state_->session.context().recordCountsForDiagnostics();
     return {counts.slots,counts.live,counts.retired,counts.ownerBearing};
 }
+std::array<std::size_t,5> RendererDiagnosticsProbe::nativeBindingCounts(const Renderer& renderer){
+    const auto mml=renderer.state_->mmlBindings->nativeOwnerCountsForDiagnostics();
+    const auto& parser=renderer.state_->session.services().parser();
+    return {mml[0],mml[1],mml[2],
+            parser.maps.canonicalStorageCountForDiagnostics(),
+            parser.functions().canonicalBindingCountForDiagnostics()};
+}
 std::array<std::size_t,9> RendererDiagnosticsProbe::snapshot(const Renderer& renderer){
     const auto c=renderer.diagnosticsForTest();
     return {c.contextObjectSlots,c.contextSymbolSlots,c.mmlFactoryProducts,
@@ -281,12 +288,18 @@ std::array<std::size_t,9> RendererDiagnosticsProbe::snapshot(const Renderer& ren
 void RendererDiagnosticsProbe::print(const Renderer& renderer,std::string_view stage){
     const auto c=renderer.diagnosticsForTest();
     const auto records=contextRecordCounts(renderer);
+    const auto nativeBindings=nativeBindingCounts(renderer);
     std::cout<<stage
         <<" context_object_slots="<<c.contextObjectSlots
         <<" context_record_slots="<<records[0]
         <<" context_live_records="<<records[1]
         <<" context_retired_records="<<records[2]
         <<" context_owner_bearing_records="<<records[3]
+        <<" mml_attributes_canonical_handles="<<nativeBindings[0]
+        <<" mml_property_projection_records="<<nativeBindings[1]
+        <<" mml_property_projection_live="<<nativeBindings[2]
+        <<" parser_map_canonical_storages="<<nativeBindings[3]
+        <<" parser_function_canonical_bindings="<<nativeBindings[4]
         <<" context_symbol_slots="<<c.contextSymbolSlots
         <<" mml_factory_products="<<c.mmlFactoryProducts
         <<" parser_registry_entries="<<c.parserRegistryEntries

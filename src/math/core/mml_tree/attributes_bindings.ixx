@@ -21,6 +21,7 @@ public:
     options::ObjectRef prototype() const;
     options::ObjectRef bind(const std::shared_ptr<Attributes>&);
     std::shared_ptr<Attributes> resolve(options::ObjectRef) const;
+    std::size_t canonicalHandleCountForDiagnostics() const noexcept;
     options::Value toValue(const Property&) const;
     Property fromValue(options::Value);
     std::function<options::Value(const Property&)> toValueConverter() const;

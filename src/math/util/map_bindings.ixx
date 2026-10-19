@@ -169,5 +169,6 @@ public:
     bool erase(ObjectRef object,Value key)const;
     void clear(ObjectRef object)const;
     std::size_t size(ObjectRef object)const;
+    std::size_t canonicalStorageCountForDiagnostics()const noexcept;
 };
 }

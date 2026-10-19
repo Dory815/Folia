@@ -577,4 +577,9 @@ Property ContextPropertyBindings::copyOwnEnumerableProperties(const Property& so
     }
     return state_->from(Value(target));
 }
+std::array<std::size_t,2> ContextPropertyBindings::projectionCountsForDiagnostics()const noexcept{
+    std::size_t live=0;
+    for(const auto& entry:state_->records)if(entry.second.use_count()>0)++live;
+    return {state_->records.size(),live};
+}
 }

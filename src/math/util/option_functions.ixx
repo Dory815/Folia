@@ -21,6 +21,7 @@ public:
     OptionFunctionBindings(const OptionFunctionBindings&)=delete;
     OptionFunctionBindings& operator=(const OptionFunctionBindings&)=delete;
     options::Context& context()const{return context_;}
+    std::size_t canonicalBindingCountForDiagnostics()const noexcept{return bindings_.size();}
     std::optional<options::ObjectRef> find(FunctionRef function)const{
         for(const auto& [known,object]:bindings_)if(known==function)return object;
         return {};

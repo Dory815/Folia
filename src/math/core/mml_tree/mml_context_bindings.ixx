@@ -81,6 +81,7 @@ public:
     MmlContextBindings(const MmlContextBindings&)=delete;
     MmlContextBindings& operator=(const MmlContextBindings&)=delete;
     options::Context& context()const;
+    std::array<std::size_t,3> nativeOwnerCountsForDiagnostics()const;
     NativeIdentityBindings<MmlNode*>& nodes();
     NativeIdentityBindings<MmlFactory*>& factories();
     NativeIdentityBindings<Children>& arrays();
