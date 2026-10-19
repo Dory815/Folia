@@ -1,0 +1,1762 @@
+{
+  "mathjax": "4.1.3",
+  "font": "@mathjax/mathjax-newcm-font 4.1.3",
+  "metrics": {
+    "em": 16,
+    "ex": 8,
+    "containerWidth": 640,
+    "display": false
+  },
+  "cases": {
+    "msub": {
+      "input": "<msub><mi>x</mi><mi>i</mi></msub>",
+      "setup": {
+        "root": "math",
+        "inferredChild": "inferredMrow",
+        "display": false,
+        "inlineBreaks": true,
+        "inlineMarked": true,
+        "inlineForced": true,
+        "inheritedInputTree": {
+          "kind": "math",
+          "text": "",
+          "texClass": 0,
+          "inherited": {
+            "displaystyle": false,
+            "scriptlevel": 0,
+            "mathvariant": "normal",
+            "dir": "ltr"
+          },
+          "children": [
+            {
+              "kind": "inferredMrow",
+              "text": "",
+              "texClass": 0,
+              "inherited": {
+                "displaystyle": false,
+                "scriptlevel": 0,
+                "mathvariant": "normal",
+                "dir": "_inherit_"
+              },
+              "children": [
+                {
+                  "kind": "msub",
+                  "text": "",
+                  "texClass": 0,
+                  "inherited": {
+                    "displaystyle": false,
+                    "scriptlevel": 0,
+                    "mathvariant": "normal",
+                    "dir": "_inherit_"
+                  },
+                  "children": [
+                    {
+                      "kind": "mi",
+                      "text": "x",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 0,
+                        "mathvariant": "italic",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "x",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "mi",
+                      "text": "i",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 1,
+                        "mathvariant": "italic",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "i",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "rootBBox": {
+        "w": 0.8989518395093589,
+        "h": 0.442,
+        "d": 0.15777817459305202,
+        "ic": 0,
+        "sk": 0,
+        "dx": 0,
+        "rscale": 1,
+        "scale": 1
+      },
+      "mmlTree": {
+        "kind": "math",
+        "text": "",
+        "bbox": {
+          "w": 0.8989518395093589,
+          "h": 0.442,
+          "d": 0.15777817459305202,
+          "ic": 0,
+          "sk": 0,
+          "dx": 0,
+          "rscale": 1,
+          "scale": 1
+        },
+        "texClass": 0,
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": "",
+            "bbox": {
+              "w": 0.8989518395093589,
+              "h": 0.442,
+              "d": 0.15777817459305202,
+              "ic": 0,
+              "sk": 0,
+              "dx": 0,
+              "rscale": 1,
+              "scale": 1
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "msub",
+                "text": "",
+                "bbox": {
+                  "w": 0.8989518395093589,
+                  "h": 0.442,
+                  "d": 0.15777817459305202,
+                  "ic": 0,
+                  "sk": 0,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": 0,
+                "children": [
+                  {
+                    "kind": "mi",
+                    "text": "x",
+                    "bbox": {
+                      "w": 0.572,
+                      "h": 0.442,
+                      "d": 0.011,
+                      "ic": 0,
+                      "sk": 0.043,
+                      "dx": 0,
+                      "rscale": 1,
+                      "scale": 1
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "x",
+                        "bbox": {
+                          "w": 0.572,
+                          "h": 0.442,
+                          "d": 0.011,
+                          "ic": 0,
+                          "sk": 0.043,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mi",
+                    "text": "i",
+                    "bbox": {
+                      "w": 0.345,
+                      "h": 0.661,
+                      "d": 0.011,
+                      "ic": 0,
+                      "sk": 0.074,
+                      "dx": 0,
+                      "rscale": 0.7071067811865475,
+                      "scale": 0.7071067811865475
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "i",
+                        "bbox": {
+                          "w": 0.345,
+                          "h": 0.661,
+                          "d": 0.011,
+                          "ic": 0,
+                          "sk": 0.074,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  }
+                ],
+                "offset": [
+                  0,
+                  -0.15
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "script": {
+        "kind": "msub",
+        "text": "",
+        "bbox": {
+          "w": 0.8989518395093589,
+          "h": 0.442,
+          "d": 0.15777817459305202,
+          "ic": 0,
+          "sk": 0,
+          "dx": 0,
+          "rscale": 1,
+          "scale": 1
+        },
+        "texClass": 0,
+        "children": [
+          {
+            "kind": "mi",
+            "text": "x",
+            "bbox": {
+              "w": 0.572,
+              "h": 0.442,
+              "d": 0.011,
+              "ic": 0,
+              "sk": 0.043,
+              "dx": 0,
+              "rscale": 1,
+              "scale": 1
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "x",
+                "bbox": {
+                  "w": 0.572,
+                  "h": 0.442,
+                  "d": 0.011,
+                  "ic": 0,
+                  "sk": 0.043,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "kind": "mi",
+            "text": "i",
+            "bbox": {
+              "w": 0.345,
+              "h": 0.661,
+              "d": 0.011,
+              "ic": 0,
+              "sk": 0.074,
+              "dx": 0,
+              "rscale": 0.7071067811865475,
+              "scale": 0.7071067811865475
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "i",
+                "bbox": {
+                  "w": 0.345,
+                  "h": 0.661,
+                  "d": 0.011,
+                  "ic": 0,
+                  "sk": 0.074,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          }
+        ],
+        "offset": [
+          0,
+          -0.15
+        ]
+      }
+    },
+    "msup": {
+      "input": "<msup><mi>x</mi><mn>2</mn></msup>",
+      "setup": {
+        "root": "math",
+        "inferredChild": "inferredMrow",
+        "display": false,
+        "inlineBreaks": true,
+        "inlineMarked": true,
+        "inlineForced": true,
+        "inheritedInputTree": {
+          "kind": "math",
+          "text": "",
+          "texClass": 0,
+          "inherited": {
+            "displaystyle": false,
+            "scriptlevel": 0,
+            "mathvariant": "normal",
+            "dir": "ltr"
+          },
+          "children": [
+            {
+              "kind": "inferredMrow",
+              "text": "",
+              "texClass": 0,
+              "inherited": {
+                "displaystyle": false,
+                "scriptlevel": 0,
+                "mathvariant": "normal",
+                "dir": "_inherit_"
+              },
+              "children": [
+                {
+                  "kind": "msup",
+                  "text": "",
+                  "texClass": 0,
+                  "inherited": {
+                    "displaystyle": false,
+                    "scriptlevel": 0,
+                    "mathvariant": "normal",
+                    "dir": "_inherit_"
+                  },
+                  "children": [
+                    {
+                      "kind": "mi",
+                      "text": "x",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 0,
+                        "mathvariant": "italic",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "x",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "mn",
+                      "text": "2",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 1,
+                        "mathvariant": "normal",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "2",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "rootBBox": {
+        "w": 1.0085533905932738,
+        "h": 0.8339331162702406,
+        "d": 0.011,
+        "ic": 0,
+        "sk": 0,
+        "dx": 0,
+        "rscale": 1,
+        "scale": 1
+      },
+      "mmlTree": {
+        "kind": "math",
+        "text": "",
+        "bbox": {
+          "w": 1.0085533905932738,
+          "h": 0.8339331162702406,
+          "d": 0.011,
+          "ic": 0,
+          "sk": 0,
+          "dx": 0,
+          "rscale": 1,
+          "scale": 1
+        },
+        "texClass": 0,
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": "",
+            "bbox": {
+              "w": 1.0085533905932738,
+              "h": 0.8339331162702406,
+              "d": 0.011,
+              "ic": 0,
+              "sk": 0,
+              "dx": 0,
+              "rscale": 1,
+              "scale": 1
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "msup",
+                "text": "",
+                "bbox": {
+                  "w": 1.0085533905932738,
+                  "h": 0.8339331162702406,
+                  "d": 0.011,
+                  "ic": 0,
+                  "sk": 0,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": 0,
+                "children": [
+                  {
+                    "kind": "mi",
+                    "text": "x",
+                    "bbox": {
+                      "w": 0.572,
+                      "h": 0.442,
+                      "d": 0.011,
+                      "ic": 0,
+                      "sk": 0.043,
+                      "dx": 0,
+                      "rscale": 1,
+                      "scale": 1
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "x",
+                        "bbox": {
+                          "w": 0.572,
+                          "h": 0.442,
+                          "d": 0.011,
+                          "ic": 0,
+                          "sk": 0.043,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mn",
+                    "text": "2",
+                    "bbox": {
+                      "w": 0.5,
+                      "h": 0.666,
+                      "d": 0,
+                      "ic": 0,
+                      "sk": 0,
+                      "dx": 0,
+                      "rscale": 0.7071067811865475,
+                      "scale": 0.7071067811865475
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "2",
+                        "bbox": {
+                          "w": 0.5,
+                          "h": 0.666,
+                          "d": 0,
+                          "ic": 0,
+                          "sk": -0.01,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  }
+                ],
+                "offset": [
+                  0,
+                  0.363
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "script": {
+        "kind": "msup",
+        "text": "",
+        "bbox": {
+          "w": 1.0085533905932738,
+          "h": 0.8339331162702406,
+          "d": 0.011,
+          "ic": 0,
+          "sk": 0,
+          "dx": 0,
+          "rscale": 1,
+          "scale": 1
+        },
+        "texClass": 0,
+        "children": [
+          {
+            "kind": "mi",
+            "text": "x",
+            "bbox": {
+              "w": 0.572,
+              "h": 0.442,
+              "d": 0.011,
+              "ic": 0,
+              "sk": 0.043,
+              "dx": 0,
+              "rscale": 1,
+              "scale": 1
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "x",
+                "bbox": {
+                  "w": 0.572,
+                  "h": 0.442,
+                  "d": 0.011,
+                  "ic": 0,
+                  "sk": 0.043,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "kind": "mn",
+            "text": "2",
+            "bbox": {
+              "w": 0.5,
+              "h": 0.666,
+              "d": 0,
+              "ic": 0,
+              "sk": 0,
+              "dx": 0,
+              "rscale": 0.7071067811865475,
+              "scale": 0.7071067811865475
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "2",
+                "bbox": {
+                  "w": 0.5,
+                  "h": 0.666,
+                  "d": 0,
+                  "ic": 0,
+                  "sk": -0.01,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          }
+        ],
+        "offset": [
+          0,
+          0.363
+        ]
+      }
+    },
+    "msubsup": {
+      "input": "<msubsup><mi>x</mi><mi>i</mi><mn>2</mn></msubsup>",
+      "setup": {
+        "root": "math",
+        "inferredChild": "inferredMrow",
+        "display": false,
+        "inlineBreaks": true,
+        "inlineMarked": true,
+        "inlineForced": true,
+        "inheritedInputTree": {
+          "kind": "math",
+          "text": "",
+          "texClass": 0,
+          "inherited": {
+            "displaystyle": false,
+            "scriptlevel": 0,
+            "mathvariant": "normal",
+            "dir": "ltr"
+          },
+          "children": [
+            {
+              "kind": "inferredMrow",
+              "text": "",
+              "texClass": 0,
+              "inherited": {
+                "displaystyle": false,
+                "scriptlevel": 0,
+                "mathvariant": "normal",
+                "dir": "_inherit_"
+              },
+              "children": [
+                {
+                  "kind": "msubsup",
+                  "text": "",
+                  "texClass": 0,
+                  "inherited": {
+                    "displaystyle": false,
+                    "scriptlevel": 0,
+                    "mathvariant": "normal",
+                    "dir": "_inherit_"
+                  },
+                  "children": [
+                    {
+                      "kind": "mi",
+                      "text": "x",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 0,
+                        "mathvariant": "italic",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "x",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "mi",
+                      "text": "i",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 1,
+                        "mathvariant": "italic",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "i",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "mn",
+                      "text": "2",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 1,
+                        "mathvariant": "normal",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "2",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "rootBBox": {
+        "w": 1.0085533905932738,
+        "h": 0.8339331162702406,
+        "d": 0.2921757569573599,
+        "ic": 0,
+        "sk": 0,
+        "dx": 0,
+        "rscale": 1,
+        "scale": 1
+      },
+      "mmlTree": {
+        "kind": "math",
+        "text": "",
+        "bbox": {
+          "w": 1.0085533905932738,
+          "h": 0.8339331162702406,
+          "d": 0.2921757569573599,
+          "ic": 0,
+          "sk": 0,
+          "dx": 0,
+          "rscale": 1,
+          "scale": 1
+        },
+        "texClass": 0,
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": "",
+            "bbox": {
+              "w": 1.0085533905932738,
+              "h": 0.8339331162702406,
+              "d": 0.2921757569573599,
+              "ic": 0,
+              "sk": 0,
+              "dx": 0,
+              "rscale": 1,
+              "scale": 1
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "msubsup",
+                "text": "",
+                "bbox": {
+                  "w": 1.0085533905932738,
+                  "h": 0.8339331162702406,
+                  "d": 0.2921757569573599,
+                  "ic": 0,
+                  "sk": 0,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": 0,
+                "children": [
+                  {
+                    "kind": "mi",
+                    "text": "x",
+                    "bbox": {
+                      "w": 0.572,
+                      "h": 0.442,
+                      "d": 0.011,
+                      "ic": 0,
+                      "sk": 0.043,
+                      "dx": 0,
+                      "rscale": 1,
+                      "scale": 1
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "x",
+                        "bbox": {
+                          "w": 0.572,
+                          "h": 0.442,
+                          "d": 0.011,
+                          "ic": 0,
+                          "sk": 0.043,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mi",
+                    "text": "i",
+                    "bbox": {
+                      "w": 0.345,
+                      "h": 0.661,
+                      "d": 0.011,
+                      "ic": 0,
+                      "sk": 0.074,
+                      "dx": 0,
+                      "rscale": 0.7071067811865475,
+                      "scale": 0.7071067811865475
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "i",
+                        "bbox": {
+                          "w": 0.345,
+                          "h": 0.661,
+                          "d": 0.011,
+                          "ic": 0,
+                          "sk": 0.074,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mn",
+                    "text": "2",
+                    "bbox": {
+                      "w": 0.5,
+                      "h": 0.666,
+                      "d": 0,
+                      "ic": 0,
+                      "sk": 0,
+                      "dx": 0,
+                      "rscale": 0.7071067811865475,
+                      "scale": 0.7071067811865475
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "2",
+                        "bbox": {
+                          "w": 0.5,
+                          "h": 0.666,
+                          "d": 0,
+                          "ic": 0,
+                          "sk": -0.01,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  }
+                ],
+                "offset": [
+                  0,
+                  0
+                ],
+                "uvq": [
+                  0.363,
+                  -0.2843975823643079,
+                  0.18
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "script": {
+        "kind": "msubsup",
+        "text": "",
+        "bbox": {
+          "w": 1.0085533905932738,
+          "h": 0.8339331162702406,
+          "d": 0.2921757569573599,
+          "ic": 0,
+          "sk": 0,
+          "dx": 0,
+          "rscale": 1,
+          "scale": 1
+        },
+        "texClass": 0,
+        "children": [
+          {
+            "kind": "mi",
+            "text": "x",
+            "bbox": {
+              "w": 0.572,
+              "h": 0.442,
+              "d": 0.011,
+              "ic": 0,
+              "sk": 0.043,
+              "dx": 0,
+              "rscale": 1,
+              "scale": 1
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "x",
+                "bbox": {
+                  "w": 0.572,
+                  "h": 0.442,
+                  "d": 0.011,
+                  "ic": 0,
+                  "sk": 0.043,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "kind": "mi",
+            "text": "i",
+            "bbox": {
+              "w": 0.345,
+              "h": 0.661,
+              "d": 0.011,
+              "ic": 0,
+              "sk": 0.074,
+              "dx": 0,
+              "rscale": 0.7071067811865475,
+              "scale": 0.7071067811865475
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "i",
+                "bbox": {
+                  "w": 0.345,
+                  "h": 0.661,
+                  "d": 0.011,
+                  "ic": 0,
+                  "sk": 0.074,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "kind": "mn",
+            "text": "2",
+            "bbox": {
+              "w": 0.5,
+              "h": 0.666,
+              "d": 0,
+              "ic": 0,
+              "sk": 0,
+              "dx": 0,
+              "rscale": 0.7071067811865475,
+              "scale": 0.7071067811865475
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "2",
+                "bbox": {
+                  "w": 0.5,
+                  "h": 0.666,
+                  "d": 0,
+                  "ic": 0,
+                  "sk": -0.01,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          }
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "uvq": [
+          0.363,
+          -0.2843975823643079,
+          0.18
+        ]
+      }
+    },
+    "mmultiscripts": {
+      "input": "<mmultiscripts><mi>x</mi><mi>i</mi><mn>2</mn><mprescripts/><mi>j</mi><mn>3</mn></mmultiscripts>",
+      "setup": {
+        "root": "math",
+        "inferredChild": "inferredMrow",
+        "display": false,
+        "inlineBreaks": true,
+        "inlineMarked": true,
+        "inlineForced": true,
+        "inheritedInputTree": {
+          "kind": "math",
+          "text": "",
+          "texClass": 0,
+          "inherited": {
+            "displaystyle": false,
+            "scriptlevel": 0,
+            "mathvariant": "normal",
+            "dir": "ltr"
+          },
+          "children": [
+            {
+              "kind": "inferredMrow",
+              "text": "",
+              "texClass": 0,
+              "inherited": {
+                "displaystyle": false,
+                "scriptlevel": 0,
+                "mathvariant": "normal",
+                "dir": "_inherit_"
+              },
+              "children": [
+                {
+                  "kind": "mmultiscripts",
+                  "text": "",
+                  "texClass": 0,
+                  "inherited": {
+                    "displaystyle": false,
+                    "scriptlevel": 0,
+                    "mathvariant": "normal",
+                    "dir": "_inherit_"
+                  },
+                  "children": [
+                    {
+                      "kind": "mi",
+                      "text": "x",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 0,
+                        "mathvariant": "italic",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "x",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "mi",
+                      "text": "i",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 1,
+                        "mathvariant": "italic",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "i",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "mn",
+                      "text": "2",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 1,
+                        "mathvariant": "normal",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "2",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "mprescripts",
+                      "text": "",
+                      "texClass": null,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 0,
+                        "mathvariant": "normal",
+                        "dir": "_inherit_"
+                      },
+                      "children": []
+                    },
+                    {
+                      "kind": "mi",
+                      "text": "j",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 1,
+                        "mathvariant": "italic",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "j",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "kind": "mn",
+                      "text": "3",
+                      "texClass": 0,
+                      "inherited": {
+                        "displaystyle": false,
+                        "scriptlevel": 1,
+                        "mathvariant": "normal",
+                        "dir": "_inherit_"
+                      },
+                      "children": [
+                        {
+                          "kind": "text",
+                          "text": "3",
+                          "texClass": -1,
+                          "inherited": {},
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "rootBBox": {
+        "w": 1.3791067811865474,
+        "h": 0.8400894654563447,
+        "d": 0.43875447250755006,
+        "ic": 0,
+        "sk": 0,
+        "dx": 0,
+        "rscale": 1,
+        "scale": 1
+      },
+      "mmlTree": {
+        "kind": "math",
+        "text": "",
+        "bbox": {
+          "w": 1.3791067811865474,
+          "h": 0.8400894654563447,
+          "d": 0.43875447250755006,
+          "ic": 0,
+          "sk": 0,
+          "dx": 0,
+          "rscale": 1,
+          "scale": 1
+        },
+        "texClass": 0,
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": "",
+            "bbox": {
+              "w": 1.3791067811865474,
+              "h": 0.8400894654563447,
+              "d": 0.43875447250755006,
+              "ic": 0,
+              "sk": 0,
+              "dx": 0,
+              "rscale": 1,
+              "scale": 1
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "mmultiscripts",
+                "text": "",
+                "bbox": {
+                  "w": 1.3791067811865474,
+                  "h": 0.8400894654563447,
+                  "d": 0.43875447250755006,
+                  "ic": 0,
+                  "sk": 0,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": 0,
+                "children": [
+                  {
+                    "kind": "mi",
+                    "text": "x",
+                    "bbox": {
+                      "w": 0.572,
+                      "h": 0.442,
+                      "d": 0.011,
+                      "ic": 0,
+                      "sk": 0.043,
+                      "dx": 0,
+                      "rscale": 1,
+                      "scale": 1
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "x",
+                        "bbox": {
+                          "w": 0.572,
+                          "h": 0.442,
+                          "d": 0.011,
+                          "ic": 0,
+                          "sk": 0.043,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mi",
+                    "text": "i",
+                    "bbox": {
+                      "w": 0.345,
+                      "h": 0.661,
+                      "d": 0.011,
+                      "ic": 0,
+                      "sk": 0.074,
+                      "dx": 0,
+                      "rscale": 0.7071067811865475,
+                      "scale": 0.7071067811865475
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "i",
+                        "bbox": {
+                          "w": 0.345,
+                          "h": 0.661,
+                          "d": 0.011,
+                          "ic": 0,
+                          "sk": 0.074,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mn",
+                    "text": "2",
+                    "bbox": {
+                      "w": 0.5,
+                      "h": 0.666,
+                      "d": 0,
+                      "ic": 0,
+                      "sk": 0,
+                      "dx": 0,
+                      "rscale": 0.7071067811865475,
+                      "scale": 0.7071067811865475
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "2",
+                        "bbox": {
+                          "w": 0.5,
+                          "h": 0.666,
+                          "d": 0,
+                          "ic": 0,
+                          "sk": -0.01,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mprescripts",
+                    "text": "",
+                    "bbox": {
+                      "w": 0,
+                      "h": 0,
+                      "d": 0,
+                      "ic": 0,
+                      "sk": 0,
+                      "dx": 0,
+                      "rscale": 1,
+                      "scale": 1
+                    },
+                    "texClass": null,
+                    "children": []
+                  },
+                  {
+                    "kind": "mi",
+                    "text": "j",
+                    "bbox": {
+                      "w": 0.412,
+                      "h": 0.661,
+                      "d": 0.205,
+                      "ic": 0,
+                      "sk": 0.153,
+                      "dx": 0,
+                      "rscale": 0.7071067811865475,
+                      "scale": 0.7071067811865475
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "j",
+                        "bbox": {
+                          "w": 0.412,
+                          "h": 0.661,
+                          "d": 0.205,
+                          "ic": 0,
+                          "sk": 0.153,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mn",
+                    "text": "3",
+                    "bbox": {
+                      "w": 0.5,
+                      "h": 0.666,
+                      "d": 0.022,
+                      "ic": 0,
+                      "sk": 0,
+                      "dx": 0,
+                      "rscale": 0.7071067811865475,
+                      "scale": 0.7071067811865475
+                    },
+                    "texClass": 0,
+                    "children": [
+                      {
+                        "kind": "text",
+                        "text": "3",
+                        "bbox": {
+                          "w": 0.5,
+                          "h": 0.666,
+                          "d": 0.022,
+                          "ic": 0,
+                          "sk": 0,
+                          "dx": 0,
+                          "rscale": 1,
+                          "scale": 1
+                        },
+                        "texClass": -1,
+                        "children": []
+                      }
+                    ]
+                  }
+                ],
+                "offset": [
+                  0,
+                  0
+                ],
+                "uvq": [
+                  0.36915634918610407,
+                  -0.29379758236430786,
+                  0.18
+                ],
+                "scripts": {
+                  "numScripts": 1,
+                  "numPrescripts": 1,
+                  "base": {
+                    "w": 0.572,
+                    "h": 0.442,
+                    "d": 0.011,
+                    "ic": 0,
+                    "sk": 0.043,
+                    "dx": 0,
+                    "rscale": 1,
+                    "scale": 1
+                  },
+                  "sub": {
+                    "w": 0.35355339059327373,
+                    "h": 0.4673975823643079,
+                    "d": 0.007778174593052021,
+                    "ic": 0,
+                    "sk": 0,
+                    "dx": 0,
+                    "rscale": 1,
+                    "scale": 1
+                  },
+                  "sup": {
+                    "w": 0.35355339059327373,
+                    "h": 0.47093311627024065,
+                    "d": 0,
+                    "ic": 0,
+                    "sk": 0,
+                    "dx": 0,
+                    "rscale": 1,
+                    "scale": 1
+                  },
+                  "psub": {
+                    "w": 0.35355339059327373,
+                    "h": 0.4673975823643079,
+                    "d": 0.14495689014324223,
+                    "ic": 0,
+                    "sk": 0,
+                    "dx": 0,
+                    "rscale": 1,
+                    "scale": 1
+                  },
+                  "psup": {
+                    "w": 0.35355339059327373,
+                    "h": 0.47093311627024065,
+                    "d": 0.015556349186104042,
+                    "ic": 0,
+                    "sk": 0,
+                    "dx": 0,
+                    "rscale": 1,
+                    "scale": 1
+                  },
+                  "firstPrescript": 4
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "script": {
+        "kind": "mmultiscripts",
+        "text": "",
+        "bbox": {
+          "w": 1.3791067811865474,
+          "h": 0.8400894654563447,
+          "d": 0.43875447250755006,
+          "ic": 0,
+          "sk": 0,
+          "dx": 0,
+          "rscale": 1,
+          "scale": 1
+        },
+        "texClass": 0,
+        "children": [
+          {
+            "kind": "mi",
+            "text": "x",
+            "bbox": {
+              "w": 0.572,
+              "h": 0.442,
+              "d": 0.011,
+              "ic": 0,
+              "sk": 0.043,
+              "dx": 0,
+              "rscale": 1,
+              "scale": 1
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "x",
+                "bbox": {
+                  "w": 0.572,
+                  "h": 0.442,
+                  "d": 0.011,
+                  "ic": 0,
+                  "sk": 0.043,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "kind": "mi",
+            "text": "i",
+            "bbox": {
+              "w": 0.345,
+              "h": 0.661,
+              "d": 0.011,
+              "ic": 0,
+              "sk": 0.074,
+              "dx": 0,
+              "rscale": 0.7071067811865475,
+              "scale": 0.7071067811865475
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "i",
+                "bbox": {
+                  "w": 0.345,
+                  "h": 0.661,
+                  "d": 0.011,
+                  "ic": 0,
+                  "sk": 0.074,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "kind": "mn",
+            "text": "2",
+            "bbox": {
+              "w": 0.5,
+              "h": 0.666,
+              "d": 0,
+              "ic": 0,
+              "sk": 0,
+              "dx": 0,
+              "rscale": 0.7071067811865475,
+              "scale": 0.7071067811865475
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "2",
+                "bbox": {
+                  "w": 0.5,
+                  "h": 0.666,
+                  "d": 0,
+                  "ic": 0,
+                  "sk": -0.01,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "kind": "mprescripts",
+            "text": "",
+            "bbox": {
+              "w": 0,
+              "h": 0,
+              "d": 0,
+              "ic": 0,
+              "sk": 0,
+              "dx": 0,
+              "rscale": 1,
+              "scale": 1
+            },
+            "texClass": null,
+            "children": []
+          },
+          {
+            "kind": "mi",
+            "text": "j",
+            "bbox": {
+              "w": 0.412,
+              "h": 0.661,
+              "d": 0.205,
+              "ic": 0,
+              "sk": 0.153,
+              "dx": 0,
+              "rscale": 0.7071067811865475,
+              "scale": 0.7071067811865475
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "j",
+                "bbox": {
+                  "w": 0.412,
+                  "h": 0.661,
+                  "d": 0.205,
+                  "ic": 0,
+                  "sk": 0.153,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "kind": "mn",
+            "text": "3",
+            "bbox": {
+              "w": 0.5,
+              "h": 0.666,
+              "d": 0.022,
+              "ic": 0,
+              "sk": 0,
+              "dx": 0,
+              "rscale": 0.7071067811865475,
+              "scale": 0.7071067811865475
+            },
+            "texClass": 0,
+            "children": [
+              {
+                "kind": "text",
+                "text": "3",
+                "bbox": {
+                  "w": 0.5,
+                  "h": 0.666,
+                  "d": 0.022,
+                  "ic": 0,
+                  "sk": 0,
+                  "dx": 0,
+                  "rscale": 1,
+                  "scale": 1
+                },
+                "texClass": -1,
+                "children": []
+              }
+            ]
+          }
+        ],
+        "offset": [
+          0,
+          0
+        ],
+        "uvq": [
+          0.36915634918610407,
+          -0.29379758236430786,
+          0.18
+        ],
+        "scripts": {
+          "numScripts": 1,
+          "numPrescripts": 1,
+          "base": {
+            "w": 0.572,
+            "h": 0.442,
+            "d": 0.011,
+            "ic": 0,
+            "sk": 0.043,
+            "dx": 0,
+            "rscale": 1,
+            "scale": 1
+          },
+          "sub": {
+            "w": 0.35355339059327373,
+            "h": 0.4673975823643079,
+            "d": 0.007778174593052021,
+            "ic": 0,
+            "sk": 0,
+            "dx": 0,
+            "rscale": 1,
+            "scale": 1
+          },
+          "sup": {
+            "w": 0.35355339059327373,
+            "h": 0.47093311627024065,
+            "d": 0,
+            "ic": 0,
+            "sk": 0,
+            "dx": 0,
+            "rscale": 1,
+            "scale": 1
+          },
+          "psub": {
+            "w": 0.35355339059327373,
+            "h": 0.4673975823643079,
+            "d": 0.14495689014324223,
+            "ic": 0,
+            "sk": 0,
+            "dx": 0,
+            "rscale": 1,
+            "scale": 1
+          },
+          "psup": {
+            "w": 0.35355339059327373,
+            "h": 0.47093311627024065,
+            "d": 0.015556349186104042,
+            "ic": 0,
+            "sk": 0,
+            "dx": 0,
+            "rscale": 1,
+            "scale": 1
+          },
+          "firstPrescript": 4
+        }
+      }
+    }
+  }
+}

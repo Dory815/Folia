@@ -119,4 +119,3 @@ mathjax.asyncLoad=name=>{const target=path.isAbsolute(name)?name:path.resolve(sr
   fs.writeFileSync(output,JSON.stringify(evidence,null,2)+'\n');
   process.stdout.write(`verified ${observed.length} exact Common table branches; evidence ${path.relative(root,output)}\n`);
 })().catch(error=>{process.stderr.write(error.stack+'\n');process.exitCode=1;});
-

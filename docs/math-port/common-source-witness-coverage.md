@@ -81,3 +81,14 @@ and do not depend on ignored implementation packets. These Source observations
 do not by themselves establish native behavior, full family coverage, or Folia
 integration. Root replayed both formal tools from `C:\Windows`, exit0; logs are
 `build/math-port/common-{table,containers}-formal-source.log`.
+
+`common-scripts-real-source-witness.cjs --repo-root <repository>` additionally
+executes four actual MathML→SVG/NewCM trees (msub, msup, msubsup, mmultiscripts).
+It locks Source/CJS/font dependencies in `scripts-real-source-lock.json` and
+deep-compares all captured child/role/root boxes, inherited attributes, inline
+policy, and offsets against `scripts-real-source-expected.json`. Generated
+observations go only to `build/math-port/common-scripts-real-source-actual.json`.
+Root replayed the formal tool from `C:\Windows`, exit0, recorded in
+`common-scripts-real-formal-source.log`. This is stronger than the isolated
+scripts method witness for these four trees; it does not establish every script
+shape, final native SVG, or application integration.

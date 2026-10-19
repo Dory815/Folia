@@ -125,5 +125,3 @@ function selected(record, kind, predicate = () => true) {
   fs.writeFileSync(output,JSON.stringify(compact,null,2)+'\n');
   process.stdout.write(`verified MathML/TeX to SVG/NewCM source geometry (${compact.length} cases); evidence ${path.relative(root,output)}\n`);
 })().catch(error => { process.stderr.write(error.stack + '\n'); process.exitCode = 1; });
-
-

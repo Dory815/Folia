@@ -1,0 +1,28 @@
+{
+  "sha256": {
+    "core/MmlTree/MmlFactory.js": "d0c4e25237d04a9d21d12ee44776e46d30777e7f284db6f4f3ed1cc625b752d3",
+    "core/MmlTree/MmlNodes/msubsup.js": "7971b391a8d7c92e0d6115b17c4c394dafc828942fc00591ba6064b871610c18",
+    "core/MmlTree/MmlNodes/mmultiscripts.js": "db40a3543cffbd706c0070ae0877285ce22b07db3a7e530e56f42eaa7b2d922e",
+    "input/mathml.js": "8fc5382e4a81b8be02484c9f6de91618ce8a5c859af97b5175df6badf35035db",
+    "output/common.js": "b8a58d983e465f21ed36574472140bfd65e2696bb72f6c5647e0a2ae47eb1bd9",
+    "output/common/Wrappers/scriptbase.js": "3781ec869fc7c95bbc6d993a7b5cc82724f1592fe00e9b712cf82d4272c06289",
+    "output/common/Wrappers/msubsup.js": "10c11393a9ec6273de294cb31fd1c51665f4be8e11a5b830bad9d739def680be",
+    "output/common/Wrappers/mmultiscripts.js": "82802f8b88dc48ffec0439cc8ffc8e5163c21cf82a28dcc84c7c44513bb05c2b",
+    "output/svg.js": "1495e23a9da0bf6b0e8b44d71f54271fa12e902c11444e4f18cdd749ad3b800e",
+    "output/svg/Wrappers/msubsup.js": "c780cb5eca2512b8714b386f982ae8f00bbdcf96121b0641e2303eb4974f7d2b",
+    "output/svg/Wrappers/mmultiscripts.js": "0b45bf08868a91fcf9a0ed876e1e6b96d7a6752f5525f0e9709598b6328ab917",
+    "newcm/cjs/svg.js": "709d6e85113ef44645ad802b8424508d5f836dd61e4d1f2797b5e011a9693734",
+    "newcm/cjs/common.js": "261e30460b9278dd7014f0c97153678c7432b4755e7c4f24f505cb605baba4b9",
+    "ts/core/MmlTree/MmlFactory.ts": "5e7338cd3eed5a4002243b7371dc5098c6433ff4ba4345cb2d50cf0385b2abdb",
+    "ts/core/MmlTree/MmlNodes/msubsup.ts": "37fd01fa0c44ceab5b4ed30ba3d95ab43ffb8aed55db27c7290d6d786131f6e7",
+    "ts/core/MmlTree/MmlNodes/mmultiscripts.ts": "bb8d8d2180ef483b86b0b1570b919ba424ed54db1f30ef6e0e697cfab0bf5cf7",
+    "ts/input/mathml.ts": "e027607ae93b8dedf7b8312b1b814c50cf8cd0c6b332f56edba02d1d3bd7be1b",
+    "ts/output/common.ts": "3686a8e803e26ae59d03c096ac2e6e5b1ab1332a5c4bcaa083cb9a02c2c61096",
+    "ts/output/common/Wrappers/scriptbase.ts": "f63e12bd993ff76bd1717d73e3a9c9f57831bdcc8cbc80f2e01b7d4de0cbb02e",
+    "ts/output/common/Wrappers/msubsup.ts": "b9ef3b9eb31e7a011e0f0d8d45048fbe15cb0614f8acbd970ceb96afdeb0a0b5",
+    "ts/output/common/Wrappers/mmultiscripts.ts": "1dbfa29bf392f4ee668a516797bc93a01a8d72b1297c93e7c8587180415414b6",
+    "ts/output/svg.ts": "557acc55adc39e849864c61a92ac9e253bce5c13fbfd16603f143cf9c85ee9e5",
+    "ts/output/svg/Wrappers/msubsup.ts": "e5522bee1f416c83c33e28d3f403242ef8a7261f86356a32e6bb1858bd7134d2",
+    "ts/output/svg/Wrappers/mmultiscripts.ts": "be1c6ac56269ec96f84515d07028aea15e5c2bb68158f6f691183e1600c08b1e"
+  }
+}
