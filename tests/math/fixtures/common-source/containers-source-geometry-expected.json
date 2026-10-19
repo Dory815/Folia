@@ -1,0 +1,169 @@
+[
+  {
+    "name": "mpadded-relative",
+    "error": null,
+    "targets": [
+      {
+        "kind": "mpadded",
+        "text": null,
+        "bbox": {
+          "w": 0.8579999999999999,
+          "h": 0.221,
+          "d": 0.013749999999999998,
+          "ic": 0,
+          "sk": 0
+        },
+        "children": [
+          "inferredMrow"
+        ],
+        "dimensions": [
+          0.442,
+          0.011,
+          0.572,
+          -0.221,
+          0.002749999999999999,
+          0.2859999999999999,
+          0.25,
+          -0.125,
+          0.2859999999999999
+        ],
+        "align": "right",
+        "wrapWidth": 0.8579999999999999,
+        "childBBox": {
+          "w": 0.572,
+          "h": 0.442,
+          "d": 0.011,
+          "ic": 0,
+          "sk": 0
+        }
+      }
+    ]
+  },
+  {
+    "name": "mpadded-overflow",
+    "error": null,
+    "targets": [
+      {
+        "kind": "mpadded",
+        "text": null,
+        "bbox": {
+          "w": 0,
+          "h": 0.442,
+          "d": 0.011,
+          "ic": 0,
+          "sk": 0
+        },
+        "children": [
+          "inferredMrow"
+        ],
+        "dimensions": [
+          0.442,
+          0.011,
+          0.572,
+          0,
+          0,
+          -0.572,
+          0,
+          0,
+          0
+        ],
+        "align": "left",
+        "wrapWidth": 0,
+        "childBBox": {
+          "w": 0.572,
+          "h": 0.442,
+          "d": 0.011,
+          "ic": 0,
+          "sk": 0
+        }
+      }
+    ]
+  },
+  {
+    "name": "semantics-presentation",
+    "error": null,
+    "targets": [
+      {
+        "kind": "semantics",
+        "text": null,
+        "bbox": {
+          "w": 0.572,
+          "h": 0.442,
+          "d": 0.011,
+          "ic": 0,
+          "sk": 0
+        },
+        "children": [
+          "mi",
+          "annotation-xml"
+        ],
+        "breakCount": 0,
+        "embellished": false
+      }
+    ]
+  },
+  {
+    "name": "semantics-embellished-mo",
+    "error": null,
+    "targets": [
+      {
+        "kind": "semantics",
+        "text": null,
+        "bbox": {
+          "w": 0.778,
+          "h": 0.583,
+          "d": 0.083,
+          "ic": 0,
+          "sk": 0
+        },
+        "children": [
+          "mo",
+          "annotation-xml"
+        ],
+        "breakCount": 0,
+        "embellished": true
+      }
+    ]
+  },
+  {
+    "name": "mi-italic-bang",
+    "error": null,
+    "targets": [
+      {
+        "kind": "mi",
+        "text": "!",
+        "bbox": {
+          "w": 0.375,
+          "h": 0.716,
+          "d": 0,
+          "ic": 0.068,
+          "sk": 0
+        },
+        "children": [
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "tex-atom",
+    "error": null,
+    "targets": [
+      {
+        "kind": "TeXAtom",
+        "text": null,
+        "bbox": {
+          "w": 0.375,
+          "h": 0.716,
+          "d": 0,
+          "ic": 0,
+          "sk": 0
+        },
+        "children": [
+          "inferredMrow"
+        ],
+        "childIC": 0
+      }
+    ]
+  }
+]

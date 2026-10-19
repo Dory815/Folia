@@ -1,0 +1,26 @@
+{
+  "version": "4.1.3",
+  "scopeSha256": "9705d389538b2fc8bf782feea4372ace639b3727304f2971937bbcfb0042a0d1",
+  "sourceTsSha256": {
+    "core/MmlTree/MmlNodes/TeXAtom.ts": "bad114224392b94852456a4636b85ad90a5a2c96b63e6c7911d155db299f7028",
+    "output/common/Wrappers/mpadded.ts": "b34393bce01ad32b95b9b4f32ff2bf90616e9caacb93c25a033e8253798a435e",
+    "output/common/Wrappers/semantics.ts": "527f49600e0caede0c95ed954d246a344d4027238b471a779cc55b66ba015927",
+    "output/common/Wrappers/TeXAtom.ts": "4c607387e28e172e83b0cf22718e6966b99e2ce8528d288deef31bcb3ba36f8f"
+  },
+  "cjsSha256": {
+    "src/cjs/input/mathml.js": "8fc5382e4a81b8be02484c9f6de91618ce8a5c859af97b5175df6badf35035db",
+    "src/cjs/input/mathml/MathMLCompile.js": "0b190d56a673941b6b4d1c8e8632dfa894ed50ddccce484e9e8d142c6d1e8880",
+    "src/cjs/input/tex.js": "ef2852b197173f373e62326016e980aef01ffc838f5f766ab6076262f944eada",
+    "src/cjs/core/MmlTree/MmlFactory.js": "d0c4e25237d04a9d21d12ee44776e46d30777e7f284db6f4f3ed1cc625b752d3",
+    "src/cjs/core/MmlTree/MmlNode.js": "86c5eb572dcf2652c3c52a60b66c720d231e17f600cc9aeef3ace4aeafc81d45",
+    "src/cjs/core/MmlTree/MmlNodes/TeXAtom.js": "bf72fd0716f88d144a8ba0befef383de4a0a4fd4d690d37fec9d55b2f15a02e4",
+    "src/cjs/output/svg.js": "1495e23a9da0bf6b0e8b44d71f54271fa12e902c11444e4f18cdd749ad3b800e",
+    "src/cjs/output/common.js": "b8a58d983e465f21ed36574472140bfd65e2696bb72f6c5647e0a2ae47eb1bd9",
+    "src/cjs/output/svg/Wrapper.js": "3ba6e35cf799f0cffe5c555be3f81c12d8a8f81fe36257685ddccb96f4671ee4",
+    "src/cjs/output/common/Wrapper.js": "9e21f886b91624d170ff89df0eecef31e789ffecda001abc3e5649a38419412b",
+    "src/cjs/output/common/Wrappers/mpadded.js": "4405c3a0ae4274fb3d0cf015487b56798f9c5781a6274c932c80b0ff823f6c40",
+    "src/cjs/output/common/Wrappers/semantics.js": "356b86f1704ed8cd5988ff81ffeb9dc3b5b4be4efa98b0859ac27ff69857de08",
+    "src/cjs/output/common/Wrappers/TeXAtom.js": "84d821ef425d7a06307e5a5afc8726ff8c22ba55e541eea3fadbcc99a376dcba",
+    "mathjax-newcm-font/cjs/svg.js": "709d6e85113ef44645ad802b8424508d5f836dd61e4d1f2797b5e011a9693734"
+  }
+}

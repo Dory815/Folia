@@ -54,3 +54,30 @@ node <repo>/tools/math-port/common-linebreak-source-witness.cjs --repo-root <rep
 ```
 
 All generated reports are under ignored `build/math-port/common-source/`; none of the witnesses edits Source or tracked expectations.
+
+## Table and containers
+
+`common-table-source-witness.cjs` checks locked table TypeScript/CJS, the
+unchanged 14-case SVG corpus, and NewCM versions/hashes. It preserves all 14
+renderer observations in `table-svg-source.json`; those observations do not
+have a checked-in whole-output SVG baseline. The companion branch witness
+exactly compares eight table records against `table-branch-source-expected.json`
+and writes actual MML tree snapshots and measurements to `table-branch-source.json`.
+The branch cases cover labels, fixed/percent/equal widths, frame spacing,
+stretching, text breaks, and expression breaks. Several width cases deliberately
+replace cell content with measured mspaces; these are explicit numerical inputs.
+
+`common-containers-source-witness.cjs` runs the isolated Mpadded/Semantics/TeXAtom
+method checks and six actual MathML/TeX→SVG/NewCM observations against
+`containers-source-geometry-expected.json`. The real cases cover relative padding,
+overflow, semantics presentation/operator projection, italic glyph correction,
+and the TeXAtom inferred-row boundary. Method fixtures use supplied child boxes;
+the six renderer cases use real upstream wrappers and fonts.
+
+Both entrypoints accept `--repo-root`, use locks/expectations in
+`tests/math/fixtures/common-source/`, and write only ignored evidence under
+`build/math-port/common-source/`. The helper tools reside beside the entrypoints
+and do not depend on ignored implementation packets. These Source observations
+do not by themselves establish native behavior, full family coverage, or Folia
+integration. Root replayed both formal tools from `C:\Windows`, exit0; logs are
+`build/math-port/common-{table,containers}-formal-source.log`.
