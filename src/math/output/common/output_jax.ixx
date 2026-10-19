@@ -116,7 +116,7 @@ public:
     // either its active job (failed/in-flight layout) or completed job
     // (serialization/result-copy failure) without changing Source session
     // behavior.
-    std::shared_ptr<LayoutJob> takeCurrentLayoutJobForPrivateRendererRetirement() noexcept;
+    std::shared_ptr<LayoutJob> takeCurrentLayoutJobForPrivateRendererRetirement();
     virtual CommonWrapper* adoptWrapper(std::unique_ptr<CommonWrapper>);
     virtual ExtendedMetrics currentMetrics() const;
     virtual LinebreakOptions currentLinebreakOptions() const;

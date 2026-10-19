@@ -306,12 +306,14 @@ void CommonOutputJax::finishLayoutJob(){
     clearPublishedNodeMap();
     table=nullptr;
 }
-std::shared_ptr<LayoutJob> CommonOutputJax::takeCurrentLayoutJobForPrivateRendererRetirement()noexcept{
-    auto result=std::exchange(activeJob_,std::shared_ptr<LayoutJob>{});
-    if(!result)result=completedJob_.lock();
+std::shared_ptr<LayoutJob> CommonOutputJax::takeCurrentLayoutJobForPrivateRendererRetirement(){
+    // Keep the active/completed owner and Source-visible Map until the
+    // publisher confirms detachment. A failed publish leaves this operation
+    // retryable by the private Renderer with the same exact job identity.
+    auto result=activeJob_?activeJob_:completedJob_.lock();
+    clearPublishedNodeMap();
+    activeJob_.reset();
     completedJob_.reset();
-    try{clearPublishedNodeMap();}
-    catch(...){nodeMap.reset();nodeMapPublished_=false;}
     table=nullptr;
     math=nullptr;
     document=Missing{};

@@ -38,6 +38,144 @@ struct FactoryMethodFixture {
     }
 };
 
+// Insert this helper and suite inside the existing anonymous namespace,
+// after `FactoryMethodFixture` and before the existing test suite. No new
+// imports are required by this fragment.
+struct LayoutMapRetirementItem final:folia::math::core::AbstractMathItem {
+    LayoutMapRetirementItem() : AbstractMathItem(folia::math::Property(u"x"),
+        folia::math::core::MathInputJaxReference{folia::math::Missing{}}) {}
+};
+
+suite common_factory_layout_map_retirement=[] {
+"private_renderer_retires_only_the_closed_jobs_exact_wrapper_map"_test=[] {
+    opts::Context context;
+    opts::MapContextBindings maps{context};
+    folia::math::OptionFunctionBindings functions{context};
+    folia::math::ContextPropertyBindings properties{context,functions};
+    folia::math::util::RuntimeModules modules{context};
+    common::CommonFactoryContextBindings bindings{context};
+    auto active=std::make_shared<std::atomic_bool>(true);
+    bindings.bindFactoryMethods(modules,properties,maps,
+        [](opts::ObjectRef)->folia::math::mml::MmlNode&{
+            throw opts::Exception("TypeError",u"unexpected node resolution");
+        },
+        [&](folia::math::mml::MmlNode&)->opts::ObjectRef{return context.object();},active);
+
+    LayoutMapRetirementItem item;
+    auto makeJob=[&]{
+        auto job=std::make_shared<common::LayoutJob>(item,folia::math::core::MathDocumentReference{folia::math::Missing{}},folia::math::DOMNodeRef{});
+        job->nodeMap->initialize(context,maps,
+            [&](folia::math::mml::MmlNode&)->opts::ObjectRef{return context.object();},
+            [&](common::CommonWrapper&)->opts::ObjectRef{return context.object();},
+            [&](opts::ObjectRef)->common::CommonWrapper&{
+                throw opts::Exception("TypeError",u"unexpected wrapper resolution");
+            });
+        return job;
+    };
+    const auto baseline=maps.canonicalStorageCountForDiagnostics();
+    auto first=makeJob();
+    auto second=makeJob();
+    const auto firstObject=first->nodeMap->contextObject();
+    const auto secondObject=second->nodeMap->contextObject();
+    auto firstStorage=first->nodeMap->storage();
+    const std::weak_ptr<opts::MapStorage> firstWeak=firstStorage;
+    firstStorage.reset();
+    expect(maps.canonicalStorageCountForDiagnostics()==baseline+2u);
+    auto wrongStorage=maps.createStorage();
+    context.setPayload(firstObject,wrongStorage);
+    expect(throws<opts::Exception>([&]{(void)bindings.retireRendererLayoutJob(first);}));
+    expect(context.kind(firstObject)==opts::ObjectKind::instance);
+    expect(maps.canonicalStorageCountForDiagnostics()==baseline+2u)
+        << "a wrong payload leaves the canonical Map registered for retry";
+    context.setPayload(firstObject,first->nodeMap->storage());
+
+    expect(bindings.retireRendererLayoutJob(first)==0u);
+    expect(throws<opts::Exception>([&]{(void)context.kind(firstObject);}));
+    expect(context.kind(secondObject)==opts::ObjectKind::instance);
+    expect(maps.canonicalStorageCountForDiagnostics()==baseline+1u);
+    first.reset();
+    expect(firstWeak.expired());
+    expect(bindings.retireRendererLayoutJob(second)==0u);
+    expect(throws<opts::Exception>([&]{(void)context.kind(secondObject);}));
+    second.reset();
+    expect(maps.canonicalStorageCountForDiagnostics()==baseline);
+};
+};
+// Insert this suite after `common_factory_layout_map_retirement` in the same
+// anonymous namespace of tests/math/common_factory_context_methods.cpp.
+suite common_factory_layout_job_detachment_retry=[] {
+"private_renderer_detaches_source_node_map_before_retiring_active_or_completed_job"_test=[] {
+    common::FontLoadHost host;
+    host.asyncIsSynchronous=[] {return true;};
+    host.warn=[](const std::any&) {};
+    svg::NativeRenderSession session{std::move(host)};
+    auto& context=session.context();
+    auto& maps=session.services().mapBindings();
+    auto jax=session.construct();
+    opts::Value published=opts::Undefined{};
+    bool failClear=false;
+    jax->bindNodeMap(
+        [&]{return std::make_shared<common::WrapperNodeMap>(context,maps,
+            [&](folia::math::mml::MmlNode&)->opts::ObjectRef{return context.object();},
+            [&](common::CommonWrapper&)->opts::ObjectRef{return context.object();},
+            [&](opts::ObjectRef)->common::CommonWrapper&{
+                throw opts::Exception("TypeError",u"unexpected wrapper resolution");
+            });},
+        [&](opts::Value value){
+            if(failClear&&std::holds_alternative<opts::Null>(value.data))
+                throw opts::Exception("TypeError",u"injected nodeMap detach failure");
+            published=std::move(value);
+        });
+
+    LayoutMapRetirementItem item;
+    const auto startJob=[&]{return jax->beginLayoutJob(item,
+        folia::math::core::MathDocumentReference{folia::math::Missing{}},
+        folia::math::DOMNodeRef{});};
+    const auto checkPublished=[&]{
+        const auto* object=std::get_if<opts::ObjectRef>(&published.data);
+        expect(object!=nullptr);
+        return object?*object:opts::ObjectRef{};
+    };
+
+    // Active-job path: failed detach leaves both the source Map and active
+    // LayoutJob intact; retry returns that same job before Map retirement.
+    auto activeJob=startJob();
+    const auto activeMap=checkPublished();
+    const auto baseline=maps.canonicalStorageCountForDiagnostics();
+    failClear=true;
+    expect(throws<opts::Exception>([&]{(void)jax->takeCurrentLayoutJobForPrivateRendererRetirement();}));
+    expect(jax->activeLayoutJob()==activeJob);
+    expect(context.kind(activeMap)==opts::ObjectKind::instance);
+    expect(checkPublished()==activeMap);
+    failClear=false;
+    auto takenActive=jax->takeCurrentLayoutJobForPrivateRendererRetirement();
+    expect(takenActive==activeJob);
+    expect(std::holds_alternative<opts::Null>(published.data));
+    expect(context.kind(activeMap)==opts::ObjectKind::instance)
+        << "the Source Map remains live until the caller retires the returned job";
+    (void)session.services().commonFactories().retireRendererLayoutJob(takenActive);
+    expect(throws<opts::Exception>([&]{(void)context.kind(activeMap);}));
+    takenActive.reset();activeJob.reset();
+    expect(maps.canonicalStorageCountForDiagnostics()==baseline-1u);
+
+    // Completed-job path: finish moves ownership to completedJob_ before its
+    // publication callback; a failed take must preserve that weak-token path.
+    auto completedJob=startJob();
+    const auto completedMap=checkPublished();
+    failClear=true;
+    expect(throws<opts::Exception>([&]{jax->finishLayoutJob();}));
+    expect(throws<opts::Exception>([&]{(void)jax->takeCurrentLayoutJobForPrivateRendererRetirement();}));
+    expect(checkPublished()==completedMap);
+    expect(context.kind(completedMap)==opts::ObjectKind::instance);
+    failClear=false;
+    auto takenCompleted=jax->takeCurrentLayoutJobForPrivateRendererRetirement();
+    expect(takenCompleted==completedJob);
+    expect(std::holds_alternative<opts::Null>(published.data));
+    (void)session.services().commonFactories().retireRendererLayoutJob(takenCompleted);
+    expect(throws<opts::Exception>([&]{(void)context.kind(completedMap);}));
+};
+};
+
 suite common_factory_context_methods=[] {
     "native_render_session_initializes_generic_factory_before_common_constructors"_test=[] {
         common::FontLoadHost host;

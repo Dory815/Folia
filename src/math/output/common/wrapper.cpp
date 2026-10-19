@@ -34,6 +34,7 @@ void WrapperNodeMap::initialize(options::Context& context,
     if(!nodeIdentity||!wrapperIdentity||!wrapperResolver)
         throw options::Exception("TypeError",u"Wrapper nodeMap requires canonical identity resolvers");
     context_=&context;
+    maps_=&maps;
     storage_=maps.createStorage();
     object_=maps.bind(storage_);
     nodeIdentity_=std::move(nodeIdentity);
@@ -43,6 +44,15 @@ void WrapperNodeMap::initialize(options::Context& context,
 options::ObjectRef WrapperNodeMap::contextObject()const{
     if(!storage_)throw options::Exception("Unimplemented",u"Wrapper nodeMap has no Context Map identity");
     return object_;
+}
+bool WrapperNodeMap::retireContextBinding(){
+    if(!storage_)return false;
+    if(contextBindingRetired_)return false;
+    if(!maps_)throw options::Exception("Unimplemented",u"Wrapper nodeMap has no canonical Map owner");
+    if(!maps_->retireBinding(object_,storage_->identity()))
+        throw options::Exception("TypeError",u"Wrapper nodeMap canonical Context Map binding is not registered");
+    contextBindingRetired_=true;
+    return true;
 }
 void WrapperNodeMap::insert_or_assign(mml::MmlNode* node,CommonWrapper* wrapper){
     if(!storage_)throw options::Exception("Unimplemented",u"Wrapper nodeMap has no canonical Map storage");

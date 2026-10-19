@@ -456,6 +456,11 @@ std::size_t CommonFactoryContextBindings::retireRendererLayoutJob(const std::sha
     });
     std::size_t count=0;
     for(auto* wrapper:retired)if(state_->wrappers.erase(wrapper))++count;
+    // The private Renderer calls this only after CommonOutputJax has detached
+    // the Source-visible nodeMap. Keep Source/common session lifecycle intact.
+    // Retire the Map last so a failure above or here leaves the LayoutJob
+    // token intact for Renderer retry.
+    if(job->nodeMap)(void)job->nodeMap->retireContextBinding();
     return count;
 }
 CommonOutputJax& CommonFactoryContextBindings::resolveJax(const Value& value)const{return state_->resolveJax(value);}

@@ -21,6 +21,7 @@ import std;
 export namespace folia::math::output::common {
 class CommonMo;
 class CommonMrow;
+class CommonFactoryContextBindings;
 
 using StringMap = std::map<std::string,std::string,std::less<>>;
 struct StyleData {
@@ -228,9 +229,13 @@ private:
     options::Context* context_ = nullptr;
     options::MapStorageRef storage_;
     options::ObjectRef object_{};
+    options::MapContextBindings* maps_ = nullptr;
+    bool contextBindingRetired_ = false;
     NodeIdentity nodeIdentity_;
     WrapperIdentity wrapperIdentity_;
     WrapperResolver wrapperResolver_;
+    friend class CommonFactoryContextBindings;
+    bool retireContextBinding();
 public:
     WrapperNodeMap()=default;
     WrapperNodeMap(options::Context&,options::MapContextBindings&,
