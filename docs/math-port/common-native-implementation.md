@@ -1,18 +1,19 @@
 # Common native implementation contract
 
-Status: Root froze the ownership and shared declaration model on 2026-10-20 and
-assigned method implementations. The declaration packet is
-`tools/math-port/drafts/native-raii/common-contract-refresh/headers/`.
-The native `:types`, CommonWrapper, CommonWrapperFactory, CommonOutputJax and
-Mo/Mrow/InferredMrow classes now compile together in their original partitions.
-TextNode/Mi/Mn/Ms/Mspace/Mglyph/Mtext/Math and the inline-policy lifecycle also
-compile and pass the integrated component suite: 235 tests / 32,338 assertions.
-CommonMfrac/Msqrt/Mroot, scripts/limits, Mfenced/Maction and the actual
-LinebreakVisitor now compile and pass the integrated component suite:
-251 tests / 26,461 assertions. The compact fraction/radical runners preserve
-288/192 inputs but do not yet cover every original SVG placement observation.
-Tables, containers and menclose have delivered candidate packets awaiting
-native integration. No end-to-end acceptance is claimed here.
+Status: Root froze ownership and the shared declaration model on 2026-10-20.
+Canonical interfaces are authoritative; `common-contract-refresh/headers/` is
+a historical ignored packet, not a source to overwrite integrated code from.
+Common core, text/rows/math, fraction/radical classes and placement geometry,
+scripts/limits, fence/action, recursive LinebreakVisitor, tables and containers
+now compile together in their original partitions. Integrated component suite:
+**263 tests / 32,397 assertions**, exit0,
+`build/math-port/native-common-table-containers-shared-full.log`; final build
+`native-common-math-percent-width-build.log`. The compact 288/192 runners now
+also compare Source child origins, rules, overbars and placed heights exactly.
+Four actual NewCM script trees use fixed Source values rather than formulas
+recomputed from native results. Menclose remains an uncompiled candidate; its
+56-case native SVG writer comparison is still required. Complete TeX input,
+Renderer/Scene emission, final SVG and Folia integration remain unproven.
 
 This contract reuses the current 43 polymorphic MML classes and arena, committed Tree factory/wrapper APIs, immutable NewCM FontRepository, Styles, StyleJson, LineBBox, and LengthContext. It preserves MathJax 4.1.3 Common responsibilities and method call order while replacing Context/Property/DOM object semantics with typed values. The pinned references are `.reference/MathJax-src/ts/output/common.ts`, `output/common/Wrapper.ts`, `output/common/WrapperFactory.ts`, and `core/Tree/Wrapper{,Factory}.ts`.
 
@@ -93,7 +94,7 @@ The ignored declaration mirrors are:
 
 `LayoutJob` has exactly one owned `CommonOutputJax`, with document access forwarded to Jax's sole borrow. Jax declares `unique_ptr<CommonWrapperFactory>` before `unique_ptr<Linebreaks>` so destruction order is correct. Jax owns the `unordered_map<MmlNode*,CommonWrapper*>` index and borrowed `CommonWrapper* table`. Its factory accessor and CommonWrapper's `jax()` preserve the Source relationship. No `clearWrappers`, manual service retirement, duplicate factory in LayoutJob, table setter used by generic registration, root cache, or layout observer is added.
 
-`CommonWrapper` retains the Source field names and method responsibilities. Tree supplies `node` and `childNodes`; Common supplies public `parent`, `bbox`, `lineBBox`, `bboxComputed`, `_breakCount`, optional styles/styleData, removedStyles, variant, and shared stretch state. `CommonWrapper` uses `bbox.scale/rscale` only. `stretch` is `variant<UnresolvedStretch,NoStretch,ActiveStretch>`; `ActiveStretch` holds only source codepoint and optional selected codepoint. Delimiter direction comes from FontRepository; size selection remains in CommonMo. Per-node `Styles` are not duplicated in Jax.
+`CommonWrapper` retains the Source field names and method responsibilities. Tree supplies `node` and `childNodes`; Common supplies public `parent`, `bbox`, `lineBBox`, `bboxComputed`, `_breakCount`, optional styles/styleData, removedStyles, variant, and shared stretch state. `CommonWrapper` uses `bbox.scale/rscale` only. `stretch` is `variant<NoStretch,ActiveStretch>`, initially NoStretch just like Source Wrapper.ts:421 (`NOSTRETCH`); `ActiveStretch` holds only source codepoint and optional selected codepoint. The previously proposed UnresolvedStretch had no real consumer and incorrectly excluded nonstretching fraction siblings from row delimiter sizing. Delimiter direction comes from FontRepository; size selection remains in CommonMo. Per-node `Styles` are not duplicated in Jax.
 
 `coreMO()` returns `CommonWrapper*`: Source MML's default core is the node itself,
 which can be an ordinary row. Only callers requiring Mo-specific methods cast to
@@ -181,6 +182,68 @@ base with `Argument=size_t,Result=void`, not a second dispatch mechanism.
 Keep `Linebreaks` and `LinebreakVisitor` as the source-aligned request service. Preserve `addWidth`, `processBreak`, `pushBreak`, `breakLineToWidth`, `createState`, `borderLR`, `moPenalty`, `getPrevious`, `mspacePenalty`, `mtextPenalty`, and the visitor responsibilities for embellished operators, mo/mspace/mtext/mrow/inferred-row/fraction/radicals/scripts/fences/actions. Replace the current `std::any` arguments/results and `MethodLookup` dynamic receiver dispatch with typed visitor state and actual wrapper-family dispatch. No second algorithm or generic callback/variant invocation service. Visitor reads the one Jax `LinebreakOptions`; wrappers do not cache a second copy.
 
 ## Ordered implementation assignments
+
+### Shared fraction and radical geometry (2026-10-20 next integration contract)
+
+Keep mathematical placement on the actual Common family classes. Move only
+the numerical portions of Source SVG `makeFraction/makeAtop/makeBevelled` and
+radical `toSVG/addRoot` into those existing family partitions. They consume
+the existing wrapped children, selected Mo, immutable face, and current BBox;
+they must not accept a second public scalar input model or own another tree.
+
+`CommonMfrac::layoutGeometry()` returns an owned `FractionGeometry`: numerator
+and denominator points, an optional slash point and an optional rule rectangle.
+The ruled/atop/bevelled calculations remain named family methods matching the
+Source operations. Use existing pure `scene::Point/Rect` values; no DOM nodes,
+SVG formatting, Scene builder, backend handle, font lookup copy, or generic
+geometry callback. The result is a value for the future Scene-freezing caller,
+not another mutable cache beside BBox.
+
+`CommonMsqrt::layoutGeometry()` returns an owned `RadicalGeometry`: surd/base
+points, an optional degree point, overbar rectangle, placed height and placed
+surd height. Its virtual `addRoot(RadicalGeometry&, BBox const&, double height)`
+returns the horizontal root offset; the default sqrt case returns zero and
+Mroot overrides it using its existing `getRootDimens`. Both use the same actual
+child wrappers and existing surd selection as measurement. Preserve the
+Source distinction between Common measured height (rule thickness) and SVG
+placement height (surd height times wrapper scale); do not unify them to make
+tests simpler. Menclose's projected-base constructor change is a separate
+narrow edit and must not overwrite this work.
+
+Acceptance extends the existing compact 288/192 runners in place: compare all
+Source child placements by role and rule/overbar coordinates and dimensions,
+plus the existing BBox and layout quantities. Preserve signed extents, exact
+floating-point operation order, child rscale/scale distinctions and the original
+fixture hashes. Establish each coordinate against Source's actual enclosing
+transforms; do not apply a blanket SVG y-flip to already mathematical values.
+The same completed values later feed both SVG and Direct2D through Scene.
+These methods alone do not prove Renderer or Folia integration.
+
+### Stroke paint required by notation Source output (2026-10-20)
+
+The existing backend-independent `scene::Paint` owns optional `line_cap` and
+`line_join` values. Use the closed enums `StrokeCap { butt, round, square }` and
+`StrokeJoin { miter, round, bevel }`; absence preserves inheritance and is not
+the same as an explicit default. Append these members after the existing Paint
+members to preserve aggregate initialization order. The SVG writer serializes
+these values; it does not infer them from a notation name or perform layout.
+Common notation sets phasorangle and longdiv caps/joins from their actual pinned
+Source handler behavior. Compare all 56 notation observations, including absent
+and explicit paint values, and verify writer spelling with owned Scene inputs.
+Do not revive the inactive ShapePaint/Context path to express these fields.
+
+### Root percentage width finalization (2026-10-20)
+
+Move the numerical `SvgMath.setChildPWidths` override (Source
+`output/svg/Wrappers/math.ts:227`) to the actual `CommonMath` class. This is
+container-width layout, with no DOM dependency: root math always forwards
+`metrics.containerWidth / jax.pxPerEm`, nested math forwards the caller's width,
+and both preserve the Source `clear=false` argument. The ordinary root
+`getBBox()` request invokes it through existing CommonWrapper computation.
+The SVG writer and future Direct2D consumer must not independently determine
+percentage widths. LayoutJob prepares/wraps; the layout consumer requests the
+root BBox before freezing geometry. Tests mirror this real request, rather than
+calling table setters by hand.
 
 1. Root reviews and freezes the four ignored declaration mirrors; no method-body work before this interface review.
 2. Implement CommonWrapper and CommonWrapperFactory in their existing module partitions, adapting old C++ method bodies to typed MML/Tree, existing Styles/StyleJson/LineBBox/LengthContext/FontRepository, and the field/ownership contract above. Prove factory adoption and exact initialization order with real MML wrappers.

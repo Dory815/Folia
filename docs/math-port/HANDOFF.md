@@ -6,84 +6,80 @@
 
 ## 当前唯一执行断点（2026-10-20；恢复时先读）
 
-用户再次指出压缩后重复处理已解决的问题。本轮实际重读本文件、核对 HEAD/工作区和
-live agents，发现旧阶段的“最新/下一步”与文首并存。下文旧阶段已标为历史；
-当前状态和操作顺序只以本节为准。不能仅在摘要中提到文件名而不读正文。
+本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
+不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-- **已提交基线：HEAD `b92b6f0c`。** 上一批完整组件测试
-  **251 项 / 26,461 断言** exit0，日志
-  `build/math-port/native-common-scripts-lines-fixed-full.log`。MML、字体、Common 基础、
-  分式/根式实际类、scripts/limits、fence/action、递归 LinebreakVisitor 已验收，
-  不能重新作为未实现任务分派。下节保留该批修正与证据。
-- **本轮正式工作区已整合、尚未原生验收：** table/mtr/mtd、mpadded/semantics/tex_atom，
-  CMake 与 Common primary 导出；CommonWrapper::containerWidth 已 virtual，Mpadded override。
-  分式/根式共享 placement geometry 已进入原家族类，runner 已恢复 origins/rule/overbar
-  等 Source 字段检查。没有新增第二棵数学树或 Scene 家族布局类。
-- **本轮构建已完成：** `build/math-port/native-common-shared-geometry-build.log` exit0，
-  build session 99925 已终止，无待轮询 native/build 句柄。
-  构建过程中 Root 修了 fraction UT 的 em 厚度输入；下一次增量构建确认该修正被编译后
-  再执行测试。目前不能把“构建通过”报告为新组件测试通过。
-- **新发现并已修改、待原生验证：** CommonOutputJax::containerWidth_ 原生初始值 0
-  导致普通 overflow 下 auto 表格被收窄。实际 Source 此时尚未设置 width，相关算术为 NaN；
-  原生改为 quiet_NaN 数值域内的无约束值。Source 见
-  `tools/math-port/common-jax-source-witness.cjs`，已运行 exit0：
-  `build/math-port/common-unconstrained-width-source.log`。inline policy UT 已改为 isnan。
-- **当前失败边界：** table focused 普通 UT exit1（38 断言/3 失败），日志
-  `native-common-table-base-focused.log`；前两项与上述宽度初值有关，最后一项为
-  Source sum(H.concat(D,rLines,rSpace)) 的浮点运算顺序。另有 UT 的树/attrs/options
-  与 Source 不同。Luna 已交付修正包，尚未推广或执行；不能靠修改期望或放宽误差掩盖。
-  Mpadded focused 普通 UT exit1（23 断言/3 失败），日志
-  `native-common-padded-focused.log`；已知 UT getAlignX 输入和期望运算顺序不匹配 Source，
-  正由容器 owner 生成实际 MathML→SVG/NewCM 观测。未出现本轮 abort。
-- **Root 已作的 runner 修正，禁止被旧包覆盖：** fraction linethickness 输入是
-  `std::format` 数字加 `em`，配对数据给的是已转换 em 值；slash 字符串观察用
-  `std::string_view("slash")`，避免 SourceRow 的 const char* 误选 bool overload。
-  Radical runner 临时设置 wrapper bbox.scale 观察 SVG geometry，测量 BBox 前恢复。
+### 最新完成与证据
 
-### 现存 Luna 任务与交付（状态在本次实际 list_agents 后核对）
+- **完整 Math 组件 263 项 / 32,397 断言，exit0**：
+  `build/math-port/native-common-table-containers-shared-full.log`。
+  最终构建 `native-common-math-percent-width-build.log` exit0。
+  native session32008已终态exit0；build17356/42125/99455/67191均已结束，无live句柄。
+  该结果覆盖下列已提交实现，但不是端到端TeX/SVG/Folia验收。
+- **最新实现提交9cbbb155**：实际Common Table/Mtr/Mtd、Mpadded/Semantics/TeXAtom，
+  CMake/primary导出与真实MML wrapper tests。保留原家族文件职责，未创建另一套树/家族层。
+- 75705931：修shared defaults及root width。Source Wrapper.ts:421默认NOSTRETCH；
+  native无消费者的UnresolvedStretch导致分式被排除于mrow尺寸计算，已删除并默认NoStretch。
+  没在Mfrac加补丁。table括号已精确选中Source size3/-size3和全部尺寸。
+  Source SvgMath.setChildPWidths的纯数值override已移到CommonMath：root传metrics容器宽/
+  pxPerEm，nested转发w，clear=false，无DOM；正常root.getBBox最终确定百分比列宽53.04。
+  Jax未设置linebreak width时初值NaN（Source unset算术行为），修auto表被初始0收窄。
+  Mpadded containerWidth已通过base virtual dispatch。正式Source table工具锁新增对应TS/CJS，
+  before/after lifecycle实际观测验证，`common-table-shared-math-contract-source.log` exit0。
+- e8c504b2：CommonMfrac/Msqrt/Mroot共享placement geometry；原288/192输入未改，
+  native origins/rule/overbar/placed height精确比较通过。单独focused日志
+  `native-common-fraction-shared-geometry-focused.log` 8928断言、
+  `native-common-radical-shared-geometry-focused.log` 16224断言，均exit0。
+- 9c91ccad：Scene Paint追加optional StrokeCap/StrokeJoin，SVG writer纯序列化；
+  继承与三组显式值UT通过。Common不import SVG/DOM。
+- a56a54bf：四真实NewCM scripts树用固定Source数值替换formula/isfinite期望，
+  189断言通过；原四synthetic UT保留22断言通过。多重脚标问题已解决：
+  去掉getUVQ默认空参数，未cache时要求combined boxes，getCombinedUV返回完整array3。
+  未采用“无参自动补偿”方案；不要重查旧msup继承slot问题。
+- 7d8b7491 / 20d57b20：table/containers与真实scripts正式Source工具/锁/观测已提交，
+  Root从C:\Windows重放exit0：`common-{table,containers}-formal-source.log`、
+  `common-scripts-real-formal-source.log`。generated evidence只写ignored build，无draft依赖。
+  table14个SVG观测不是whole-output baseline；8个branch有固定精确期望。容器6个真实Source
+  情景及native5项/62断言，均不等于所有输入覆盖。详见common-source-witness-coverage.md。
+- 43 MML类、exact clone、StyleJson、TreeVisitor、字体14,568,049字段零差异、Common core、
+  texts/rows/inline、scripts/limits、fence/action、递归LinebreakVisitor均已组件验收。勿重做。
 
-ignored 根目录均为 `tools/math-port/drafts/native-raii/`，只由 Root 推广、构建和提交。
+### 当前候选与代理（未推广，不能冒充验收）
 
-- `fraction_table_runner`：刚交付 `common-table-native-impl` 修正；真实 Math display=block、
-  inferred row/cell 树、array attrs、两种 linebreak options/metrics 与 Source 匹配，
-  computeBBox 按 Source concat 顺序累加。八条 Source 记录通过；尚无 native 运行。
-  数值 UT 仍用 synthetic mspace 提供对应几何，未复制全部 Source TeX token/label 和
-  data-latex；不能称为完整同构 Source 树的 native 验收。owner 现已完成，无需等待。
-  下一步读差异定点推广，不能整包覆盖 Root 正式修改。
-- `raii_scene_foundation`：仍在 `common-containers-native-impl` 处理五个同构 MML 案例
-  的真实 Source/NewCM 期望，替换公式型测试；不改生产算法迎合错误 UT。
-- `raii_common_font_audit`：仍在 `common-menclose-native-impl` 加强 29 notation × 两种
-  extent 的实际 Source SVG handler 几何观察。候选尚未推广、编译或 native 验收。
-- `raii_graph_inventory`：`common-scripts-real-source` 已交付，四个真实 Source/NewCM
-  树及固定观测。候选尚未推广；需修 const getOuterBBox 调用、移除 expectNear 隐含容差、
-  明确 font 生命周期，并匹配现有 LayoutJob inline policy。保留已有四个合成数值 UT，
-  替换现有 formula/isfinite 型真实字体 UT。不要从头重派整包。
-- `math_structure_audit` / `radical_table_runner` 的 geometry 包已交付并推广，
-  Source 288×84 / 192×89 通过；尚未运行新增原生 placement 检查。
-  其他旧 completed 消息仅是历史，不应触发重复等待或分派。
+ignored根目录 `tools/math-port/drafts/native-raii/`；Root推广/构建/native/Git，Luna只候选。
+所有旧table/containers/scripts/geometry包都已消费，canonical是权威，不能重新整包覆盖。
 
-本次恢复时的关键候选 SHA-256（相对上述 ignored 根目录；owner 后续修改则重读差异）：
+- **下一包 common-menclose-native-impl**：29名immutable catalog、notation/CommonMenclose、
+  窄sqrt projection；实际Source fixed格式化后的28×2 handler输出，以及native Scene→SVG
+  dump/comparer已交付。尚未推广/构建/native执行，不能宣称56条geometry已通过。
+- Root已发现并要求修：原blanket y翻转（坐标已在Source根scale(1,-1)内）、phasor额外bottom线、
+  替代fixed(toPrecision15)、两侧round1e12。这些候选已改：保留local y/rotation/sweep，
+  phasor单path，执行实际Source fixed，BBox/TRBL用原始double精确比较。
+  原生SVG比较仍须Root运行，不能以删除几何断言、只BBox通过代替。
+- **raii_common_font_audit当前正做最后机械修正**（已发followup；恢复先查其live/交付）：
+  notation.cpp必须 `module folia.math.output.common; import :notation;`；
+  test catalog不能先实例化3参registration<CommonMenclose>（该类需4参），须专门组装creator。
+  其SVGcatalog .cpp/.ixx import Common primary，const getBBox和多取&child.node已修。
+  其他Luna均completed，无需等旧消息或重派整包。
+- Menclose UT环境变量 `FOLIA_MENCLOSE_SVG_DUMP`写native SVG，之后运行
+  `source/compare-svg-dump.cjs`；完整参数见packet README。
+  仅Source `mitre`→typed `miter`拼写正规化；rect/ellipse可按明示规则转换等价path，
+  不能round或放宽容差。保留实际paths、ordered transforms、paint及显式/继承cap/join。
+- msqrt projectedBaseNode只定点合并，不能覆盖正式radical geometry。辅助MML detached、
+  document arena唯一拥有；重新wrap同一base MML、不clone/reparent/共享旧wrapper/attachAuxiliary。
+  factory.wrap(root)不登记root是Source原行为；子wrapNode才Map.set，不能添加self fallback。
 
-- `common-table-native-impl/src/math/output/common/wrappers/mtable.cpp`：
-  `99894832E4C9F0FF00AAC38095E363F1E1CD0153AFD91C7360AFF0B660D799F7`。
-- `common-containers-native-impl/src/math/output/common/wrappers/mpadded.cpp`：
-  `167359DBF7486A698200D2DE76A229BD219A963AE55923D4D1895341C6CF51F9`。
-- `common-scripts-real-source/native-test-candidate.cpp`：
-  `8ACAEBE056F4447660E9CE3D9CEBEDCF20A91E6FCDD9AFF5D2154D7C1979A728`。
+### 下一步
 
-### 接着执行的具体顺序
-
-1. 增量构建（单次一个构建，--parallel 4，math pool 2），先执行分式 288/根式 192
-   的新增 placement 聚焦测试；逐字段对照，不能用 isfinite 或自行计算期望替代。
-2. 审查 table 最新包的 Source 树快照与差异，推广修正；容器 Source 期望交付后推广。
-   先各自聚焦通过，再运行完整组件 suite。没有新全量通过前保留 251/26461 为已验收基线。
-3. Script 真字体候选修好接口/生命周期/精确期望后整合；menclose geometry 证据齐后整合。
-   Menclose 候选已知机械错误待修：SVG catalog import common.notation 模块名错误；
-   projectedBaseNode 的 &child.node 多取一层指针；const child 调用非 const getBBox。
-   其 msqrt 可选 projectedBaseNode 必须定点合并，不能覆盖已推广的根式 geometry。
-4. 按职责小批提交通过验收的代码并同步本文件，保护下文列出的无关修改。
-   之后继续 TeX parser/stack/38-package、Renderer→Common→Scene→SVG 与 Folia。
-   **Folia 仍使用旧 QuickJS，尚未完成 TeX→SVG；Mermaid 暂停，不做 D2D 像素对照。**
+1. 读取menclose owner最后交付，审查并推广其原类/notation/catalog及窄sqrt projection。
+   Native UT使用正式boost.ut模块；新增console目标若有必须console runtime。先focused构建/执行，
+   再跑56条native writer dump对照，修真实字段差异后再完整suite、小批提交。
+2. 接通其余Common数学placement到已有immutable Scene与SVG writer；Source数值算法仍归原
+   Common家族，Scene无家族数学层，SVG/D2D只消费一次完成的布局。
+3. 完整TeX parser/stack/38-package与Renderer门面仍未接通。继续复用已有C++，不从头重译，
+   不恢复Context/Property/ObjectRef/通用JS模拟。Folia仍使用QuickJS，尚不能原生端到端TeX→SVG。
+4. Mermaid暂停，不做D2D像素对照；保持单次一个构建、--parallel4、math pool2；
+   保护文末13项无关dirty work，不reset、不推广旧retirement补丁。
 
 ## 上一批已验收结论与证据（保留，不是当前待办）
 
