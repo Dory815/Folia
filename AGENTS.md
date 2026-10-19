@@ -16,6 +16,11 @@ Actually read the file contents after compaction; a summary mentioning its path
 does not satisfy this step. Before reopening a settled issue, identify the code
 change or new evidence that invalidates the recorded conclusion. Keep a short
 current-state and next-action checkpoint at the top of the same handoff file.
+Before context compaction or ending a work session, save the exact stopping
+point, live agent/build handles, candidate paths, verification limits, and next
+concrete action there. On recovery, use the latest checkpoint rather than old
+agent completion messages; search ignored candidate directories with
+`rg --no-ignore` before declaring a delivered file missing.
 
 ## Build and test
 

@@ -6,6 +6,25 @@
 
 ## 恢复时先看这几行
 
+- **2026-10-20 当前停点（优先于下方历史 agent 状态）**：正式源码仍为
+  `ebcb915b` 基线，最新原生验收仍是 235 项 / 32,338 断言。本次仅更新恢复记录，
+  尚未推广新的 Common 家族，也没有启动构建或原生测试。
+  fraction/radical/fence-action 的定点修正包已交付；`font_assert_audit` 正在核对
+  LinebreakVisitor，`raii_graph_inventory` 正在补 scripts 测试，其余本批代理已交付。
+  恢复后核对这两个代理的实际状态，不等待历史完成消息，也不重新分派整包。
+  候选目录被忽略，必须用 `rg --no-ignore` 或直接读明确路径；默认 rg 无结果不能证明缺失。
+  分式类实际路径是 `tools/math-port/drafts/native-raii/common-fraction-class-native-impl/`
+  下的 `src/math/output/common/wrappers/mfrac.{ixx,cpp}`，不是旧 placement 目录。
+- **下一具体动作**：核对旧 scalar API 的真实消费者，将已交付的 Mfrac/Msqrt/Mroot
+  原地推广，替换现有 fraction_native/radical_native 紧凑 runner；修正 createMo 的
+  physical parent。根式候选还有一个明确 TU 问题：`selectedSurdSize` 定义在
+  msqrt.cpp 匿名 namespace，却由 mroot.cpp 使用，应移到后者，不能新造公共 helper。
+  然后单次构建、聚焦测试。不要重做字体、MML、TreeVisitor 或已验收 Common 基础。
+- **本次候选修正的验收界限**：分式测试已移除隐藏非 virtual 方法的空实现，实际调用
+  CommonMo 的初始化与伸展选择；根式测试移除 `check(true)` 并检查真实 MML 父链；
+  fence/action 已改用真实 Mo/Text、NewCM 和辅助算符。以上尚未由 Root 编译或原生执行。
+  288/192 数据保留，但最终 BBox 不能替代 SVG child origins/rules/overbar 等输出检查。
+  根式 placedHeight/placedSurdHeight 与逐项 bboxReset 同样仍有验收缺口，后续必须补齐。
 - **最新：Common 文本和 inline 数学入口已验收**，完整原生组件 **235 项 / 32,338 断言**
   exit0；构建 `build/math-port/native-common-text-policy-final-build.log`，完整运行
   `native-common-text-policy-final-full.log`。TextNode/Mi/Mn/Ms/Mspace/Mglyph/Mtext/Math
@@ -348,6 +367,10 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
 
 | 文件 | SHA-256 |
 | --- | --- |
+| common-fraction-class-native-impl/src/math/output/common/wrappers/mfrac.cpp | 70F6FB35EE6E24AFB0267B40A2A9C0C948A04B9B956560B6B15DD3194977EBAF |
+| common-fraction-class-native-impl/tests/native_common_mfrac.cpp | 28EA161E9E4DB7EAE2133AEA78C952CCAAD46329EBF1C5773689942320950E01 |
+| common-radical-class-native-impl/tests/math/common_radical_native.cpp | 35A17966956A83EBA129141A78D5878D8CF9FFFA1D5D899C4F361CC7CD30A04C |
+| common-fence-action-native-impl/tests/math/common_fence_action_native.cpp | 3C6A5E8C8AF42CBF138D84CF4E038D05E8FD732D8557723805FDD17BE331F194 |
 | common-contract-refresh/headers/types.ixx | 58DC2CFEA8B0AE29766B14C5B197C5B7E63FE3ACBA958A628B78A2478683332B |
 | common-contract-refresh/headers/wrapper.ixx | 1F1FD1D6C83909B8E2ADD3AEAFF6BD0FA58EAA69946C58C79E347917359D01C4 |
 | common-contract-refresh/headers/wrapper_factory.ixx | D1AED312E89EC4147FA4C81AECD53AB2CB129C87B66025D0D57F8FF9C6714339 |
