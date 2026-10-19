@@ -30,7 +30,14 @@ suite mmlNodeToString=[] {
         const auto prototype=graph.context.prototype(*identity);
         expect(prototype.has_value());
         if(!prototype)return;
-        const auto descriptor=graph.context.descriptor(o::Value(*prototype),o::Key(u"toString"));
+        auto owner=*prototype;
+        auto descriptor=graph.context.descriptor(o::Value(owner),o::Key(u"toString"));
+        while(!descriptor){
+            const auto parent=graph.context.prototype(owner);
+            if(!parent)break;
+            owner=*parent;
+            descriptor=graph.context.descriptor(o::Value(owner),o::Key(u"toString"));
+        }
         expect(descriptor.has_value());
         if(!descriptor)return;
         expect(!descriptor->accessor&&descriptor->enumerable&&descriptor->writable&&descriptor->configurable);

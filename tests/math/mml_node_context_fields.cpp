@@ -109,7 +109,7 @@ suite mmlNodeContextFields=[] {
         expect(row->core().requireNode()==op);
         expect(graph.context.get(*identity,u"_core")==o::Value(0));
     };
-    "foreign_child_arrays_and_factory_replacement_fail_at_the_owner_boundary"_test=[] {
+    "mml_source_fields_preserve_replacement_child_arrays_and_factory_identity"_test=[] {
         Graph graph;
         auto factory=std::make_shared<m::MmlFactory>();
         const auto factoryIdentity=graph.runtime.bindMmlFactory(factory);
@@ -117,16 +117,14 @@ suite mmlNodeContextFields=[] {
         const auto identity=graph.runtime.mmlNodeIdentities.find(row);
         expect(identity.has_value());
         if(!identity)return;
-        bool foreignArray=false;
-        try{graph.context.set(*identity,u"childNodes",o::Value(graph.context.array()));}
-        catch(const o::Exception& error){foreignArray=error.name=="Unimplemented";}
+        const auto children=graph.context.array();
+        graph.context.set(*identity,u"childNodes",o::Value(children));
+        expect(graph.context.get(*identity,u"childNodes")==o::Value(children));
         auto other=std::make_shared<m::MmlFactory>();
         const auto otherIdentity=graph.runtime.bindMmlFactory(other);
-        bool foreignFactory=false;
-        try{graph.context.set(*identity,u"factory",o::Value(otherIdentity));}
-        catch(const o::Exception& error){foreignFactory=error.name=="Unimplemented";}
-        expect(foreignArray&&foreignFactory);
-        expect(graph.context.get(*identity,u"factory")==o::Value(factoryIdentity));
+        graph.context.set(*identity,u"factory",o::Value(otherIdentity));
+        expect(graph.context.get(*identity,u"factory")==o::Value(otherIdentity));
+        expect(otherIdentity!=factoryIdentity);
     };
 };
 }

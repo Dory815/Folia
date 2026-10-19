@@ -1,5 +1,4 @@
-// Native factory-family contract: reject incompatible storage before downcast.
-// This is not a JavaScript Source-equivalence assertion.
+// A registry replacement may return another implementation of the same Product.
 #include "support/folia_test.hpp"
 import folia.math.core.tree.node;
 import folia.math.core.tree.node_factory;
@@ -17,11 +16,19 @@ template<class T>tr::FactoryClassRef<Product> nodeClass(){
 }
 }
 suite math_native_tree_binding=[] {
- "math_native_tree_binding_foreign_factory_product_is_checked"_test=[] {
+ "math_native_tree_binding_copy_uses_current_product_implementation"_test=[] {
   tr::AbstractNodeFactory<Product> f(tr::FactoryClassMap<Product>{{"unknown",nodeClass<Ordinary>()}});
-  auto* original=f.create("unknown");auto originalChildren=original->childNodes;
-  f.setNodeClass("unknown",nodeClass<OtherFamily>());bool caught=false;
-  try{(void)original->copy();}catch(const tr::FactoryError& e){caught=true;expect(e.name=="TypeError");}
-  expect(caught);expect(original->childNodes==originalChildren);
+  f.setNodeClass("child",nodeClass<Ordinary>());
+  auto* original=f.create("unknown");original->setProperty("tag",folia::math::Property("original"));
+  auto* child=f.create("child");original->appendChild(tr::ChildValue<Product>(child));
+  auto originalChildren=original->childNodes;
+  f.setNodeClass("unknown",nodeClass<OtherFamily>());
+  auto* copied=original->copy();
+  expect(dynamic_cast<OtherFamily*>(copied)!=nullptr);
+  expect(copied->getProperty("tag")==folia::math::Property("original"));
+  expect(copied->childNodes!=originalChildren);expect(copied->childNodes->size()==1);
+  expect((*copied->childNodes).get(0).nodeOrNull()!=child);
+  expect(original->childNodes==originalChildren);expect(original->childNodes->size()==1);
+  expect(original->getProperty("tag")==folia::math::Property("original"));
  };
 };

@@ -28,6 +28,7 @@ struct Fixture {
     std::shared_ptr<std::atomic_bool> active=std::make_shared<std::atomic_bool>(true);
     std::shared_ptr<mml::MmlFactory> factory=std::make_shared<mml::MmlFactory>();
     opts::ObjectRef factoryObject=context.object();
+    opts::ObjectRef nodeObject=context.object();
     mml::MmlFactoryContextMethods methods;
     Fixture()
         :methods(context,properties,nodes,factoryBase,active,
@@ -46,6 +47,7 @@ struct Fixture {
             if(!nodes.find(&node))
                 nodes.bind(&node,context.object(),std::static_pointer_cast<void>(owner));
         });
+        context.set(opts::Value(factoryObject),opts::Key(u"node"),opts::Value(nodeObject));
         methods.bind(factoryObject,factory);
     }
 };
@@ -132,10 +134,8 @@ suite g190_factory_create_diagnostic=[] {
     };
     "mml_factory_non_callable_kind_does_not_observe_children_before_type_error"_test=[] {
         Fixture f;
-        auto creator=f.factory->creatorView();
-        creator->entries.emplace_back(opts::Key(u"non-callable-kind"),
-            tree::FactoryCreatorSlot<mml::MmlNode>{ {},
-                opts::Descriptor::data(opts::Value(0.0)) });
+        f.context.set(opts::Value(f.nodeObject),opts::Key(u"non-callable-kind"),
+                      opts::Value(0.0));
         std::string trace;
         const auto children=f.context.object();
         const auto lengthGetter=f.context.function(u"get length",
@@ -159,6 +159,12 @@ suite g190_factory_create_diagnostic=[] {
         const auto lengthGetter=f.context.function(u"get length",
             [&trace](auto&,auto,std::span<const opts::Value>){trace="children.length";return opts::Value(0.0);});
         f.context.define(children,opts::Key(u"length"),opts::Descriptor::access(lengthGetter,{}));
+        const auto creator=f.context.function(u"mi creator",
+            [](opts::Context& context,opts::Value,std::span<const opts::Value> args){
+                (void)context.get(args[1],opts::Key(u"length"));
+                return opts::Value(opts::Undefined{});
+            });
+        f.context.set(opts::Value(f.nodeObject),opts::Key(u"mi"),opts::Value(creator));
         const auto create=f.context.get(f.factoryObject,opts::Key(u"create"));
         const std::array<opts::Value,3> args{
             opts::Value(u"mi"),opts::Value(f.context.object()),opts::Value(children)};
