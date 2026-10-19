@@ -130,6 +130,7 @@ struct MmlFactoryContextFields::State:std::enable_shared_from_this<State>{
     std::vector<std::tuple<tree::FactoryCreatorRef<MmlNode>,MmlFactory*,ObjectRef>> creatorFunctions;
     std::vector<std::pair<ObjectRef,std::shared_ptr<const std::uint8_t>>> sourceMapIdentities;
     ObjectRef nodePrototype{},tokenPrototype{},abstractMmlNodePrototype{};
+    std::optional<ObjectRef> prototypeWithMmlGetter;
 
     State(Context& c,MapContextBindings& m,ContextPropertyBindings& p,
           NativeIdentityBindings<MmlNode*>& n,NativeIdentityBindings<Children>& a,
@@ -783,6 +784,11 @@ struct MmlFactoryContextFields::State:std::enable_shared_from_this<State>{
         return replacement;
     }
     void installPrototypeGetter(ObjectRef prototype){
+        if(prototypeWithMmlGetter){
+            if(*prototypeWithMmlGetter!=prototype)
+                throw Exception("TypeError",u"MmlFactory MML getter was rebound to a different prototype");
+            return;
+        }
         const auto self=shared_from_this();
         const auto getter=context.function(u"get",[self](Context& cx,Value receiver,
                 std::span<const Value>)->Value{
@@ -792,6 +798,9 @@ struct MmlFactoryContextFields::State:std::enable_shared_from_this<State>{
             return cx.get(receiver,Key(u"node"));
         });
         context.define(prototype,Key(u"MML"),Descriptor::access(getter,std::nullopt,false,true));
+        // Only commit the once-per-prototype marker after define succeeds. A
+        // failed first installation can then be retried by completion-aware bind.
+        prototypeWithMmlGetter=prototype;
     }
 };
 
@@ -814,6 +823,20 @@ std::shared_ptr<MmlClassInfo> MmlFactoryContextFields::sourceClassInfo(
         const tree::FactoryClassRef<MmlNode>& cls){return state_->classInfo(cls);}
 void MmlFactoryContextFields::detach(const std::shared_ptr<MmlFactory>& factory){
     if(factory)factory->clearSourceClassInfoResolver(state_.get());
+}
+void MmlFactoryContextFields::retireFactoryOwner(const std::shared_ptr<MmlFactory>& factory){
+    if(!factory)return;
+    auto& state=*state_;state.requireActive();
+    for(auto it=state.nodeObjects.begin();it!=state.nodeObjects.end();){
+        if(it->first!=factory.get()){++it;continue;}
+        state.context.retireObjectRecord(it->second);
+        it=state.nodeObjects.erase(it);
+    }
+    for(auto it=state.creatorFunctions.begin();it!=state.creatorFunctions.end();){
+        if(std::get<1>(*it)!=factory.get()){++it;continue;}
+        state.context.retireObjectRecord(std::get<2>(*it));
+        it=state.creatorFunctions.erase(it);
+    }
 }
 
 void MmlFactoryContextFields::bind(ObjectRef identity,const std::shared_ptr<MmlFactory>& owner,
@@ -846,7 +869,7 @@ void MmlFactoryContextFields::bind(ObjectRef identity,const std::shared_ptr<MmlF
             self->requireActive();
             if(const auto raw=retained->nodeMapSourceValue())return *raw;
             auto storage=tree::projectFactoryClassMap<MmlNode>(retained->nodeMapAccess(),
-                [self,retained](const tree::FactoryClassMapValue<MmlNode>& mapped){
+                [self](const tree::FactoryClassMapValue<MmlNode>& mapped){
                     return self->classToValue(mapped);
                 });
             return Value(self->maps.bind(storage));

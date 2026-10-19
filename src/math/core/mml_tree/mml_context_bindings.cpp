@@ -118,6 +118,11 @@ void MmlContextBindings::initialize(util::RuntimeModules& runtimeModules){
         (void)self->bindNode(identity,node,owner);
     });
     sourceAllocator_=std::make_shared<MmlSourceAllocator>(context_,sourceBackend_,lease_,
+        [weakOwner]{
+            const auto self=weakOwner.lock();
+            if(!self)throw Exception("TypeError",u"MML Context binding owner has expired");
+            return self->selectedSourceBackend();
+        },
         [weakOwner](ObjectRef object){
             const auto self=weakOwner.lock();
             if(!self)throw Exception("TypeError",u"MML Context binding owner has expired");
@@ -223,6 +228,97 @@ MmlContextBindings::~MmlContextBindings(){
     if(sourceBackend_){sourceBackend_->clearIdentityBinder(this);sourceBackend_->clearSourceClassInfoResolver(this);}
     if(treeNodes_)nodeModule_->detachContextBindings(*treeNodes_);
     arrays_.clear();factories_.clear();nodes_.clear();
+}
+MmlContextBindings::SourceAllocationDomain::SourceAllocationDomain(
+        std::weak_ptr<MmlContextBindings> owner,std::shared_ptr<MmlFactory> factory,
+        ObjectRef factoryIdentity)
+    :owner_(std::move(owner)),factory_(std::move(factory)),factoryIdentity_(factoryIdentity){}
+MmlFactory& MmlContextBindings::SourceAllocationDomain::factory()const{
+    if(!factory_||retired_)throw Exception("TypeError",u"MML Source allocation domain has been released");
+    return *factory_;
+}
+MmlContextBindings::ActiveSourceAllocation::ActiveSourceAllocation(
+        std::weak_ptr<MmlContextBindings> owner,std::uint64_t activationId)noexcept
+    :owner_(std::move(owner)),activationId_(activationId){}
+MmlContextBindings::ActiveSourceAllocation::ActiveSourceAllocation(
+        ActiveSourceAllocation&& other)noexcept
+    :owner_(std::move(other.owner_)),activationId_(std::exchange(other.activationId_,0)){}
+MmlContextBindings::ActiveSourceAllocation::~ActiveSourceAllocation(){
+    if(!activationId_)return;
+    if(auto owner=owner_.lock())owner->deactivateSourceAllocation(activationId_);
+}
+std::shared_ptr<MmlFactory> MmlContextBindings::selectedSourceBackend()const{
+    return activeSourceBackends_.empty()?sourceBackend_:activeSourceBackends_.back().second;
+}
+void MmlContextBindings::deactivateSourceAllocation(std::uint64_t id)noexcept{
+    const auto frame=std::find_if(activeSourceBackends_.begin(),activeSourceBackends_.end(),
+        [id](const auto& entry){return entry.first==id;});
+    if(frame!=activeSourceBackends_.end())activeSourceBackends_.erase(frame);
+}
+MmlContextBindings::SourceAllocationDomain MmlContextBindings::makePrivateSourceAllocationDomain(){
+    if(!initialized_)throw Exception("TypeError",u"MML Context bindings are not initialized");
+    auto factory=std::make_shared<MmlFactory>();
+    return SourceAllocationDomain{weak_from_this(),std::move(factory),{}};
+}
+void MmlContextBindings::bindSourceAllocationDomain(SourceAllocationDomain& domain){
+    if(domain.owner_.lock().get()!=this||!domain.factory_||domain.retired_)
+        throw Exception("TypeError",u"MML Source allocation domain belongs to another Context");
+    if(domain.factoryIdentity_.context){
+        const auto current=factories_.find(domain.factory_.get());
+        if(!current||*current!=domain.factoryIdentity_)
+            throw Exception("TypeError",u"Private MML Source factory identity no longer matches its Context owner");
+    }
+    try{
+        const auto identity=bindFactory(domain.factory_);
+        if(domain.factoryIdentity_.context&&identity!=domain.factoryIdentity_)
+            throw Exception("TypeError",u"Private MML Source factory identity changed during binding retry");
+        domain.factoryIdentity_=identity;
+    }
+    catch(...){
+        // bindFactory is completion-aware. Preserve any identity it installed
+        // so a later call can finish binding before the domain is activated,
+        // or failure cleanup can retire this same exact domain.
+        if(const auto current=factories_.find(domain.factory_.get()))
+            domain.factoryIdentity_=*current;
+        throw;
+    }
+}
+void MmlContextBindings::retireSourceAllocationDomain(SourceAllocationDomain& domain){
+    const auto owner=domain.owner_.lock();
+    if(owner.get()!=this||!domain.factory_)
+        throw Exception("TypeError",u"MML Source allocation domain belongs to another Context");
+    if(domain.retired_)return;
+    if(std::any_of(activeSourceBackends_.begin(),activeSourceBackends_.end(),
+        [&](const auto& entry){return entry.second.get()==domain.factory_.get();}))
+        throw Exception("TypeError",u"Cannot retire an active MML Source allocation domain");
+    if(domain.factoryIdentity_.context){
+        const auto current=factories_.find(domain.factory_.get());
+        if(!current||*current!=domain.factoryIdentity_||!factories_.retire(domain.factory_.get()))
+            throw Exception("TypeError",u"Private MML Source factory identity no longer matches its Context owner");
+        domain.factoryIdentity_={};
+    }
+    // Factory.node and its per-creator functions are separate Context records
+    // whose callbacks retain this factory. Retire them individually so a
+    // failure leaves the domain handle available for an idempotent retry.
+    if(factoryFields_)factoryFields_->retireFactoryOwner(domain.factory_);
+    domain.factory_->clearIdentityBinder(this);
+    if(factoryFields_)factoryFields_->detach(domain.factory_);
+    std::erase_if(boundFactories_,[&](const auto& weak){
+        const auto factory=weak.lock();
+        return !factory||factory==domain.factory_;
+    });
+    domain.retired_=true;
+}
+MmlContextBindings::ActiveSourceAllocation MmlContextBindings::activateSourceAllocation(
+        SourceAllocationDomain& domain){
+    if(domain.owner_.lock().get()!=this||!domain.factory_||domain.retired_||!domain.factoryIdentity_.context)
+        throw Exception("TypeError",u"MML Source allocation domain belongs to another Context");
+    if(nextSourceActivationId_==0)
+        throw Exception("RangeError",u"MML Source allocation activation space is exhausted");
+    const auto id=nextSourceActivationId_;
+    activeSourceBackends_.emplace_back(id,domain.factory_);
+    ++nextSourceActivationId_;
+    return ActiveSourceAllocation{weak_from_this(),id};
 }
 Context& MmlContextBindings::context()const{return context_;}
 NativeIdentityBindings<MmlNode*>& MmlContextBindings::nodes(){return nodes_;}
@@ -369,8 +465,8 @@ ObjectRef MmlContextBindings::bindFactory(std::shared_ptr<MmlFactory> factory){
             const auto target=owner->takeAdoptIdentityTarget();
             const auto object=target?*target:self->context_.object();
             if(!target){
-                // Register the canonical payload first, then expose the actual
-                // class prototype before node field binders inspect descriptors.
+                // Keep the current canonical-record-first order: node
+                // field binders rely on the actual class prototype.
                 (void)self->nodes_.bind(&node,object,std::static_pointer_cast<void>(owner));
                 self->factoryFields_->bindNodePrototype(object,node);
             }

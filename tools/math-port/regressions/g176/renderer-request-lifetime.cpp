@@ -19,6 +19,30 @@ bool hasMathError(const RenderResult& result) {
     return result.svg.find("data-mjx-error=")!=std::string::npos||
         result.svg.find("data-mml-node=\"merror\"")!=std::string::npos;
 }
+bool hasPositiveActionRect(const output::scene::FrozenNodeRef& node) {
+    if(!node)return false;
+    if(node->kind==u"rect")if(const auto* rect=std::get_if<output::scene::RectGeometry>(&node->geometry))
+        if(rect->width>0&&rect->height>0)return true;
+    for(const auto& child:node->children)if(hasPositiveActionRect(child))return true;
+    return false;
+}
+bool hasActionListenerAndGeometry(const output::scene::Scene& scene,
+                                  std::span<const std::u16string_view> expected) {
+    bool found=false;
+    const auto visit=[&](const auto& self,const output::scene::FrozenNodeRef& node)->void {
+        if(!node)return;
+        bool isAction=false;
+        for(const auto& [key,value]:node->attributes)
+            if(key=="data-mml-node"&&value=="maction"){isAction=true;break;}
+        if(isAction&&node->eventTypes.size()==expected.size()&&
+           std::equal(node->eventTypes.begin(),node->eventTypes.end(),expected.begin(),
+               [](const std::u16string& actual,std::u16string_view wanted){return actual==wanted;})&&
+           hasPositiveActionRect(node))found=true;
+        for(const auto& child:node->children)self(self,child);
+    };
+    for(const auto& root:scene.roots())visit(visit,root);
+    return found;
+}
 void collectGlyphs(const output::scene::FrozenNodeRef& node,std::vector<std::uint32_t>& result) {
     if(!node)return;
     if(const auto* glyph=std::get_if<output::scene::GlyphPrimitive>(&node->semantic))
@@ -63,22 +87,27 @@ int main() try {
         ok=ok&&hasMathError(parseError);
         const auto afterError=RendererDiagnosticsProbe::snapshot(renderer);
         ok=ok&&afterError[4]==wrapperHandles&&afterError[5]==retainedJobs;
+        const auto afterParseErrorRetry=renderer.render("x");
+        ok=ok&&!afterParseErrorRetry.svg.empty();
 
-        // These exact profile cases throw from the Lite event binding during
-        // layout. Unlike merror, they unwind an active wrapper job.
-        for(const auto formula:{R"(\toggle{x}{y}\endtoggle)",R"(\mathtip{x+1}{y^2})"}) {
-            bool gotLayoutError=false;
-            try {(void)renderer.render(formula);}
-            catch(const RenderError& error) {
-                gotLayoutError=error.name=="TypeError"&&
-                    std::string_view(error.what())=="node.addEventListener is not a function";
-            }
-            const auto afterLayoutError=RendererDiagnosticsProbe::snapshot(renderer);
-            ok=ok&&gotLayoutError&&afterLayoutError[4]==wrapperHandles&&
-                afterLayoutError[5]==retainedJobs;
-            const auto recovered=renderer.render("x");
-            ok=!recovered.svg.empty()&&ok;
-        }
+        // Pinned Source renders both action nodes successfully. Their event
+        // registrations and positive action rectangle are frozen in the Scene.
+        const std::array<std::u16string_view,1> toggleEvents{u"click"};
+        const auto toggle=renderer.render(R"(\toggle{x}{y}\endtoggle)");
+        ok=ok&&!toggle.svg.empty()&&!hasMathError(toggle)&&
+            toggle.svg.find("data-toggle=\"1\"")!=std::string::npos&&
+            hasActionListenerAndGeometry(toggle.scene,toggleEvents);
+        const auto afterToggle=RendererDiagnosticsProbe::snapshot(renderer);
+        ok=ok&&afterToggle[4]==wrapperHandles&&afterToggle[5]==retainedJobs;
+
+        const std::array<std::u16string_view,2> tooltipEvents{u"mouseover",u"mouseout"};
+        const auto tooltip=renderer.render(R"(\mathtip{x+1}{y^2})");
+        ok=ok&&!tooltip.svg.empty()&&!hasMathError(tooltip)&&
+            tooltip.svg.find("<foreignObject")!=std::string::npos&&
+            tooltip.svg.find("<mjx-tip>")!=std::string::npos&&
+            hasActionListenerAndGeometry(tooltip.scene,tooltipEvents);
+        const auto afterTooltip=RendererDiagnosticsProbe::snapshot(renderer);
+        ok=ok&&afterTooltip[4]==wrapperHandles&&afterTooltip[5]==retainedJobs;
 
         for(std::size_t i=0;i<16;++i) {
             const auto scene=renderer.renderScene("x+1");

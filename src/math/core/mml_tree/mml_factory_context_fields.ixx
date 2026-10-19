@@ -37,6 +37,7 @@ public:
     options::ObjectRef nodeObject(const std::shared_ptr<MmlFactory>&);
     std::shared_ptr<MmlClassInfo> sourceClassInfo(const tree::FactoryClassRef<MmlNode>&);
     void detach(const std::shared_ptr<MmlFactory>&);
+    void retireFactoryOwner(const std::shared_ptr<MmlFactory>&);
     bool isAbstractMmlNode(options::Value);
     std::function<bool(options::Value)> abstractMmlNodePredicate()const;
     std::function<bool(options::Value)> textNodePredicate()const;

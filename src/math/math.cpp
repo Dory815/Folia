@@ -1,5 +1,6 @@
 module folia.math;
 import folia.math.output.svg.native_document;
+import folia.math.core.mml_tree.mml_context_bindings;
 import folia.math.cancellation;
 import folia.math.util.native_identities;
 import folia.math.util.property_host;
@@ -52,9 +53,12 @@ common::FontLoadHost fontHost() {
 
 struct Renderer::State {
     svg::NativeRenderSession session;
+    std::shared_ptr<mml::MmlContextBindings> mmlBindings;
+    std::optional<mml::MmlContextBindings::SourceAllocationDomain> requestSourceDomain;
     std::shared_ptr<handlers::html::HTMLMathDocument> document;
     std::shared_ptr<common::LayoutJob> pendingLayoutRetirement;
     bool unusable=false;
+    bool requestCallActive=false;
     std::optional<mml::MmlFactory::ProductMark> requestMmlMark;
     std::optional<RequestIdentityCapture> requestMmlCapture;
     std::optional<RequestIdentityCapture> requestNodeArrayCapture;
@@ -62,7 +66,8 @@ struct Renderer::State {
     std::optional<svg::SceneContextNodes::RequestMark> requestSceneMark;
     bool requestOwnersActive=false;
     bool requestItemRetired=false,requestMmlIdentitiesRetired=false,
-         requestNodeArraysRetired=false,requestSceneRetired=false,requestProductsRetired=false,requestLiteRetired=false;
+         requestNodeArraysRetired=false,requestSceneRetired=false,requestProductsRetired=false,
+         requestLiteRetired=false,requestSourceDomainRetired=false;
 
     std::array<std::size_t,3> sceneOwnerDiagnostics()const {
         const auto counts=session.services().sceneContextNodes().requestOwnerCountsForDiagnostics();
@@ -84,6 +89,10 @@ struct Renderer::State {
 
     State():session(fontHost(),{svg::NewcmFontExtension::bboldx,
             svg::NewcmFontExtension::bbm,svg::NewcmFontExtension::dsfont}) {
+        mmlBindings=session.services().modules().find<mml::MmlContextBindings>(
+            u"core/MmlTree/ContextBindings");
+        if(!mmlBindings)
+            throw opts::Exception("TypeError",u"Renderer has no canonical MML Context bindings");
         auto& context=session.context();
         const auto outputOptions=context.object();
         context.set(outputOptions,opts::Key(u"fontCache"),opts::Value(u"none"));
@@ -134,8 +143,13 @@ struct Renderer::State {
             requestSceneMark.reset();throw;
         }
         requestItemRetired=requestMmlIdentitiesRetired=requestNodeArraysRetired=
-            requestSceneRetired=requestProductsRetired=requestLiteRetired=false;
+            requestSceneRetired=requestProductsRetired=requestLiteRetired=requestSourceDomainRetired=false;
         requestOwnersActive=true;
+        try{
+            requestSourceDomain.emplace(mmlBindings->makePrivateSourceAllocationDomain());
+            mmlBindings->bindSourceAllocationDomain(*requestSourceDomain);
+        }
+        catch(...){retireCurrentRequestOwners();throw;}
     }
 
     void retireCurrentRequestOwners(){
@@ -149,6 +163,11 @@ struct Renderer::State {
         if(!requestLiteRetired){services.lite().retireRequestNodesSince(*requestLiteMark);requestLiteRetired=true;}
         (void)runtime.retireTagInfoOwnersOutsidePrivateRendererRoots();
         (void)runtime.retireLabelOwnersOutsidePrivateRendererRoots();
+        if(requestSourceDomain&&!requestSourceDomainRetired){
+            mmlBindings->retireSourceAllocationDomain(*requestSourceDomain);
+            requestSourceDomainRetired=true;
+        }
+        requestSourceDomain.reset();
         requestMmlMark.reset();requestLiteMark.reset();requestSceneMark.reset();requestOwnersActive=false;
     }
 
@@ -156,9 +175,13 @@ struct Renderer::State {
         State& state;
         bool closed=false;
         explicit RequestLayoutScope(State& value):state(value){
-            state.retireCurrentLayoutJob();state.retireCurrentRequestOwners();state.beginRequestOwners();
+            if(state.requestCallActive)
+                throw opts::Exception("TypeError",u"Renderer request is already active");
+            state.requestCallActive=true;
+            try{state.retireCurrentLayoutJob();state.retireCurrentRequestOwners();state.beginRequestOwners();}
+            catch(...){state.requestCallActive=false;throw;}
         }
-        void close(){state.retireCurrentLayoutJob();state.retireCurrentRequestOwners();closed=true;}
+        void close(){state.retireCurrentLayoutJob();state.retireCurrentRequestOwners();closed=true;state.requestCallActive=false;}
         ~RequestLayoutScope(){
             if(!closed){
                 bool layoutRetired=false;
@@ -167,10 +190,14 @@ struct Renderer::State {
                 // may leave wrappers pointing into the request product suffix.
                 if(layoutRetired)try{state.retireCurrentRequestOwners();}catch(...){}
             }
+            state.requestCallActive=false;
         }
     };
 
     DOMNodeRef convertMath(std::u16string_view tex,RenderOptions options) {
+        if(!requestSourceDomain)
+            throw opts::Exception("TypeError",u"Renderer request has no Source allocation domain");
+        auto activeSourceAllocation=mmlBindings->activateSourceAllocation(*requestSourceDomain);
         auto& context=session.context();
         const auto settings=context.object();
         const double em=options.em&&!std::isnan(options.em)?options.em:16;

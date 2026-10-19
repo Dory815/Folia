@@ -7,13 +7,14 @@ using namespace options;
 
 MmlSourceAllocator::MmlSourceAllocator(Context& context,
         std::shared_ptr<MmlFactory> backend,std::weak_ptr<std::atomic_bool> lease,
-        ResolveNode resolveNode,ResolveProductOwner resolveProductOwner,
+        SelectBackend selectBackend,ResolveNode resolveNode,ResolveProductOwner resolveProductOwner,
         BindProduct bindProduct,InitializeTreeBase initializeTreeBase)
-    :context_(context),backend_(std::move(backend)),resolveNode_(std::move(resolveNode)),
+    :context_(context),backend_(std::move(backend)),selectBackend_(std::move(selectBackend)),
+     resolveNode_(std::move(resolveNode)),
      resolveProductOwner_(std::move(resolveProductOwner)),bindProduct_(std::move(bindProduct)),
      initializeTreeBase_(std::move(initializeTreeBase)),
      contextLease_(std::move(lease)){
-    if(!backend_||!resolveNode_||!resolveProductOwner_||!bindProduct_||!initializeTreeBase_)
+    if(!backend_||!selectBackend_||!resolveNode_||!resolveProductOwner_||!bindProduct_||!initializeTreeBase_)
         throw Exception("TypeError",u"MML Source allocator requires one complete Context binding service");
 }
 void MmlSourceAllocator::requireActive()const{
@@ -37,16 +38,17 @@ MmlNode& MmlSourceAllocator::initializeReceiver(ObjectRef receiver,
     if(node)productOwner=resolveProductOwner_(receiver,*node);
     initializeTreeBase_(receiver,lexicalFactory);
     if(!node){
-        productOwner=backend_;
-        node=backend_->constructInto(receiver,[&]{
-            return descriptor->construct(*backend_,tree::FactoryArgs{});
+        productOwner=selectBackend_();
+        if(!productOwner)throw Exception("TypeError",u"MML Context has no active Source allocation owner");
+        node=productOwner->constructInto(receiver,[&]{
+            return descriptor->construct(*productOwner,tree::FactoryArgs{});
         });
         if(!node)throw Exception("TypeError",u"MML Source descriptor did not allocate a native product");
     }
     // Binding is completion-aware: retry after a later Source initializer
     // failure completes adapters on the same product without allocating again.
     bindProduct_(receiver,*node,productOwner);
-    descriptor->initializeSource(*backend_,*node,std::move(lexicalFactory),
+    descriptor->initializeSource(*productOwner,*node,std::move(lexicalFactory),
                                  std::move(rawAttributes),std::move(rawChildren));
     return *node;
 }

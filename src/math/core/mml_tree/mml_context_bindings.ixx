@@ -13,6 +13,34 @@ import std;
 
 export namespace folia::math::mml {
 class MmlContextBindings:public std::enable_shared_from_this<MmlContextBindings> {
+public:
+    class SourceAllocationDomain {
+        friend class MmlContextBindings;
+        std::weak_ptr<MmlContextBindings> owner_;
+        std::shared_ptr<MmlFactory> factory_;
+        options::ObjectRef factoryIdentity_{};
+        bool retired_=false;
+        SourceAllocationDomain(std::weak_ptr<MmlContextBindings>,std::shared_ptr<MmlFactory>,
+                               options::ObjectRef);
+    public:
+        SourceAllocationDomain(SourceAllocationDomain&&)=default;
+        SourceAllocationDomain& operator=(SourceAllocationDomain&&)=delete;
+        SourceAllocationDomain(const SourceAllocationDomain&)=delete;
+        SourceAllocationDomain& operator=(const SourceAllocationDomain&)=delete;
+        MmlFactory& factory()const;
+    };
+    class ActiveSourceAllocation {
+        friend class MmlContextBindings;
+        std::weak_ptr<MmlContextBindings> owner_;
+        std::uint64_t activationId_=0;
+        ActiveSourceAllocation(std::weak_ptr<MmlContextBindings>,std::uint64_t)noexcept;
+    public:
+        ActiveSourceAllocation(ActiveSourceAllocation&&)noexcept;
+        ActiveSourceAllocation& operator=(ActiveSourceAllocation&&)=delete;
+        ActiveSourceAllocation(const ActiveSourceAllocation&)=delete;
+        ActiveSourceAllocation& operator=(const ActiveSourceAllocation&)=delete;
+        ~ActiveSourceAllocation();
+    };
 private:
     options::Context& context_;
     std::shared_ptr<MmlNodeContextModule> nodeModule_;
@@ -28,6 +56,8 @@ private:
     std::unique_ptr<MmlNodeContextMethods> nodeMethods_;
     std::shared_ptr<MmlFactory> sourceBackend_;
     std::shared_ptr<MmlSourceAllocator> sourceAllocator_;
+    std::vector<std::pair<std::uint64_t,std::shared_ptr<MmlFactory>>> activeSourceBackends_;
+    std::uint64_t nextSourceActivationId_=1;
     std::shared_ptr<tree::FactoryContextBaseModule> factoryBaseModule_;
     std::vector<std::weak_ptr<MmlFactory>> boundFactories_;
     struct NodeBindingState { bool fields=false; bool methods=false; };
@@ -39,6 +69,8 @@ private:
                        std::shared_ptr<options::MapContextBindings>);
     void initialize(util::RuntimeModules&);
     void rollbackInitialization() noexcept;
+    std::shared_ptr<MmlFactory> selectedSourceBackend()const;
+    void deactivateSourceAllocation(std::uint64_t)noexcept;
     std::shared_ptr<MmlFactory> resolveProductOwner(options::ObjectRef,MmlNode&)const;
 public:
     static std::shared_ptr<MmlContextBindings> create(options::Context&,
@@ -58,6 +90,10 @@ public:
     MmlFactoryContextFields& factoryFields();
     MmlNodeContextMethods& nodeMethods();
     MmlSourceAllocator& sourceAllocator();
+    SourceAllocationDomain makePrivateSourceAllocationDomain();
+    void bindSourceAllocationDomain(SourceAllocationDomain&);
+    void retireSourceAllocationDomain(SourceAllocationDomain&);
+    ActiveSourceAllocation activateSourceAllocation(SourceAllocationDomain&);
     options::ObjectRef bindFactory(std::shared_ptr<MmlFactory>);
     std::shared_ptr<MmlFactory> resolveFactory(options::ObjectRef)const;
     MmlNode& bindNode(options::ObjectRef,MmlNode&,
