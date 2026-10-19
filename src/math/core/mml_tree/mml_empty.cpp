@@ -1,98 +1,185 @@
-// MathJax MmlNode.ts Empty/Text/XML semantic branch (4.1.3).
-// Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
-module folia.math.core.mml_tree.mml_node;
-import folia.math.core.mml_tree.mml_node_host;
+// MathJax MmlNode.ts Empty/Text/XML semantic branch (4.1.3), Apache-2.0.
+module folia.math.core.mml_tree.mml_document;
+import folia.math.util.utf16;
 import std;
 
 namespace folia::math::mml {
+AbstractMmlEmptyNode::AbstractMmlEmptyNode(MmlDocument &d, NodeKind k)
+    : tree::AbstractEmptyNode<MmlNode, NodeKind, MmlNode>(d, k) {}
 
-bool AbstractMmlEmptyNode::isToken() const { return false; }
-bool AbstractMmlEmptyNode::isEmbellished() const { return false; }
-bool AbstractMmlEmptyNode::isSpacelike() const { return false; }
-bool AbstractMmlEmptyNode::linebreakContainer() const { return false; }
-std::string AbstractMmlEmptyNode::linebreakAlign() const { return {}; }
-bool AbstractMmlEmptyNode::isEmpty() const { return true; }
-double AbstractMmlEmptyNode::arity() const { return 0; }
-bool AbstractMmlEmptyNode::isInferred() const { return false; }
-Property AbstractMmlEmptyNode::notParent() const { return false; }
-NodeValue AbstractMmlEmptyNode::Parent() const { return getParent(); }
+void AbstractMmlEmptyNode::inheritAttributes(AttributeList const &, bool, double, bool) {}
 
-Property AbstractMmlEmptyNode::texClass() { return TEXCLASS.NONE; }
-void AbstractMmlEmptyNode::setTexClass(Property) {
-    host::typeError("Cannot set read only texClass");
-}
-Property AbstractMmlEmptyNode::prevClass() { return TEXCLASS.NONE; }
-void AbstractMmlEmptyNode::setPrevClass(Property) {
-    host::typeError("Cannot set read only prevClass");
-}
-Property AbstractMmlEmptyNode::prevLevel() const { return 0.0; }
-void AbstractMmlEmptyNode::setPrevLevel(Property) {
-    host::typeError("Cannot set read only prevLevel");
-}
-std::shared_ptr<Attributes> AbstractMmlEmptyNode::attributes() const { return nullptr; }
-void AbstractMmlEmptyNode::setAttributes(std::shared_ptr<Attributes>) {
-    host::typeError("Cannot set read only attributes");
+void AbstractMmlEmptyNode::initializeMml(AttributeSet, std::span<MmlNode *const>) {}
+
+bool AbstractMmlEmptyNode::isToken() const {
+    return false;
 }
 
-NodeValue AbstractMmlEmptyNode::core() { return this; }
-NodeValue AbstractMmlEmptyNode::coreMO() { return this; }
-std::size_t AbstractMmlEmptyNode::coreIndex() { return 0; }
-std::optional<std::size_t> AbstractMmlEmptyNode::childPosition() { return 0; }
-NodeValue AbstractMmlEmptyNode::setTeXclass(NodeValue previous) { return previous; }
-Property AbstractMmlEmptyNode::texSpacing() { return ""; }
-bool AbstractMmlEmptyNode::hasSpacingAttributes() { return false; }
-void AbstractMmlEmptyNode::inheritAttributes(AttributeList, Property, Property, Property) {}
-void AbstractMmlEmptyNode::inheritAttributesFrom(NodeValue) {
-    // MathJax AbstractMmlEmptyNode deliberately ignores this operation.
+bool AbstractMmlEmptyNode::isEmbellished() const {
+    return false;
 }
-void AbstractMmlEmptyNode::verifyTree(Property) {}
-MmlNode* AbstractMmlEmptyNode::mError(std::string, Property, bool) { return nullptr; }
 
-std::string TextNode::kind() const { return "text"; }
-std::u16string TextNode::getText() const { return sourceTextReader_?sourceTextReader_():text_; }
-TextNode* TextNode::setText(std::u16string text) {
-    if(sourceTextAssignment_)sourceTextAssignment_(text);
-    text_ = std::move(text);
+bool AbstractMmlEmptyNode::isSpacelike() const {
+    return false;
+}
+
+bool AbstractMmlEmptyNode::linebreakContainer() const {
+    return false;
+}
+
+std::string AbstractMmlEmptyNode::linebreakAlign() const {
+    return {};
+}
+
+bool AbstractMmlEmptyNode::isEmpty() const {
+    return true;
+}
+
+double AbstractMmlEmptyNode::arity() const {
+    return 0;
+}
+
+bool AbstractMmlEmptyNode::isInferred() const {
+    return false;
+}
+
+bool AbstractMmlEmptyNode::notParent() const {
+    return false;
+}
+
+MmlNode *AbstractMmlEmptyNode::Parent() const noexcept {
+    return parent();
+}
+
+std::optional<TexClass> AbstractMmlEmptyNode::texClass() {
+    return TexClass::none;
+}
+
+void AbstractMmlEmptyNode::setTexClass(std::optional<TexClass>) {
+    throw std::logic_error("read-only texClass");
+}
+
+std::optional<TexClass> AbstractMmlEmptyNode::prevClass() const noexcept {
+    return TexClass::none;
+}
+
+void AbstractMmlEmptyNode::setPrevClass(std::optional<TexClass>) {
+    throw std::logic_error("read-only prevClass");
+}
+
+std::optional<double> AbstractMmlEmptyNode::prevLevel() const noexcept {
+    return 0.0;
+}
+
+void AbstractMmlEmptyNode::setPrevLevel(std::optional<double>) {
+    throw std::logic_error("read-only prevLevel");
+}
+
+MmlNode *AbstractMmlEmptyNode::core() {
     return this;
 }
-MmlNode* TextNode::copy(bool keepIds) {
-    tree::TreeCallGuard<MmlNode> guard;
-    (void)keepIds;
 
-    // Preserve the source order: create by current kind, then call the source
-    // virtual getter and the result's virtual setter.
-    MmlNode* const created = factoryOwner().create(kind(), {});
-    std::u16string const text = getText();
-    auto* const result = dynamic_cast<TextNode*>(created);
-    if (!result) host::typeError("Factory product has no TextNode setText method");
-    return result->setText(text);
-}
-std::string TextNode::toString() const { return host::debugText(text_); }
-
-std::string XMLNode::kind() const { return "XML"; }
-XmlRef XMLNode::getXML() const { return xml_; }
-XMLNode* XMLNode::setXML(XmlRef xml, XmlAdaptor* adaptor) {
-    xml_ = std::move(xml);
-    adaptor_ = adaptor;
+MmlNode *AbstractMmlEmptyNode::coreMO() {
     return this;
 }
+
+std::size_t AbstractMmlEmptyNode::coreIndex() {
+    return 0;
+}
+
+std::optional<std::size_t> AbstractMmlEmptyNode::childPosition() {
+    return 0;
+}
+
+MmlNode *AbstractMmlEmptyNode::setTeXclass(MmlNode *previous) {
+    return previous;
+}
+
+std::string AbstractMmlEmptyNode::texSpacing() {
+    return {};
+}
+
+bool AbstractMmlEmptyNode::hasSpacingAttributes() {
+    return false;
+}
+
+void AbstractMmlEmptyNode::setInheritedAttributes(AttributeList const &, bool, double, bool) {}
+
+void AbstractMmlEmptyNode::inheritAttributesFrom(MmlNode &) {}
+
+void AbstractMmlEmptyNode::verifyTree(std::optional<VerifyOptions> const &) {}
+
+MmlNode *AbstractMmlEmptyNode::mError(std::u16string, VerifyOptions const &, bool) {
+    return nullptr;
+}
+
+MmlNode &AbstractMmlEmptyNode::copy(bool) const {
+    auto &result = document().make(kind());
+    result.properties() = properties();
+    return result;
+}
+
+TextNode::TextNode(MmlDocument &d) : AbstractMmlEmptyNode(d, NodeKind::text) {}
+
+NodeKind TextNode::kind() const noexcept {
+    return NodeKind::text;
+}
+
+std::u16string TextNode::getText() const {
+    return std::u16string(text());
+}
+
+TextNode &TextNode::setText(std::u16string value) {
+    MmlNode::setText(std::move(value));
+    return *this;
+}
+
+MmlNode &TextNode::copy(bool) const {
+    auto &raw = document().make(kind());
+    auto *result = dynamic_cast<TextNode *>(&raw);
+    if (!result)
+        throw std::logic_error("text factory kind mismatch");
+    return result->setText(getText());
+}
+
+std::string TextNode::toString() const {
+    return folia::math::utf16::encode(text());
+}
+
+XMLNode::XMLNode(MmlDocument &d) : AbstractMmlEmptyNode(d, NodeKind::xml) {}
+
+NodeKind XMLNode::kind() const noexcept {
+    return NodeKind::xml;
+}
+
+XmlRef XMLNode::getXML() const {
+    return xml_;
+}
+
+XMLNode *XMLNode::setXML(XmlRef value, std::shared_ptr<XmlAdaptor const> adaptor) {
+    xml_ = std::move(value);
+    adaptor_ = std::move(adaptor);
+    return this;
+}
+
 std::string XMLNode::getSerializedXML() const {
-    if (!adaptor_) host::typeError("Cannot read properties of null (reading 'serializeXML')");
+    if (!adaptor_)
+        throw std::logic_error("XML adaptor is absent");
     return adaptor_->serializeXML(xml_);
 }
-MmlNode* XMLNode::copy(bool keepIds) {
-    tree::TreeCallGuard<MmlNode> guard;
-    (void)keepIds;
 
-    // The factory result is allocated first. Source adaptor.clone runs next;
-    // setXML receives only the clone, so the result's adaptor remains null.
-    MmlNode* const created = factoryOwner().create(kind(), {});
-    if (!adaptor_) host::typeError("Cannot read properties of null (reading 'clone')");
-    XmlRef const clone = adaptor_->clone(xml_);
-    auto* const result = dynamic_cast<XMLNode*>(created);
-    if (!result) host::typeError("Factory product has no XMLNode setXML method");
-    return result->setXML(clone);
+MmlNode &XMLNode::copy(bool) const {
+    auto &raw = document().make(kind());
+    auto *result = dynamic_cast<XMLNode *>(&raw);
+    if (!result)
+        throw std::logic_error("XML factory kind mismatch");
+    if (!adaptor_)
+        throw std::logic_error("XML clone adaptor is absent");
+    auto cloned = adaptor_->clone(xml_);
+    return *result->setXML(std::move(cloned));
 }
-std::string XMLNode::toString() const { return "XML data"; }
 
+std::string XMLNode::toString() const {
+    return "XML data";
+}
 } // namespace folia::math::mml
