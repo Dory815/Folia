@@ -91,6 +91,42 @@ add_library(folia_math STATIC)
 target_compile_features(folia_math PUBLIC cxx_std_23)
 set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
 target_include_directories(folia_math PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/srell)
+# Font tables are generated offline from the pinned Source package data. The
+# generator verifies every locked input and preserves unchanged output mtimes.
+find_program(FOLIA_NODE_EXECUTABLE NAMES node REQUIRED)
+execute_process(
+    COMMAND ${FOLIA_NODE_EXECUTABLE} tools/math-port/font-data-generate-native.cjs
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    RESULT_VARIABLE FOLIA_FONT_GENERATE_RESULT
+    OUTPUT_VARIABLE FOLIA_FONT_GENERATE_OUTPUT
+    ERROR_VARIABLE FOLIA_FONT_GENERATE_ERROR)
+if(NOT FOLIA_FONT_GENERATE_RESULT EQUAL 0)
+    message(FATAL_ERROR "Native font data generation failed: ${FOLIA_FONT_GENERATE_ERROR}")
+endif()
+set(FOLIA_FONT_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build/math-port/font-generated-native-raii")
+file(READ "${FOLIA_FONT_GENERATED_DIR}/font-data-source-dependencies.json" FOLIA_FONT_DEPENDENCIES)
+string(JSON FOLIA_FONT_DEPENDENCY_COUNT LENGTH "${FOLIA_FONT_DEPENDENCIES}" source_dependencies)
+math(EXPR FOLIA_FONT_DEPENDENCY_LAST "${FOLIA_FONT_DEPENDENCY_COUNT} - 1")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/math-port/font-data-generate-native.cjs"
+    "${CMAKE_CURRENT_SOURCE_DIR}/docs/math-port/evidence/font-data-source-lock.json")
+foreach(FOLIA_FONT_INDEX RANGE 0 ${FOLIA_FONT_DEPENDENCY_LAST})
+    string(JSON FOLIA_FONT_DEPENDENCY GET "${FOLIA_FONT_DEPENDENCIES}" source_dependencies ${FOLIA_FONT_INDEX} path)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/${FOLIA_FONT_DEPENDENCY}")
+endforeach()
+string(JSON FOLIA_FONT_GENERATED_COUNT LENGTH "${FOLIA_FONT_DEPENDENCIES}" generated_cpp)
+math(EXPR FOLIA_FONT_GENERATED_LAST "${FOLIA_FONT_GENERATED_COUNT} - 1")
+set(FOLIA_FONT_GENERATED_CPP)
+foreach(FOLIA_FONT_INDEX RANGE 0 ${FOLIA_FONT_GENERATED_LAST})
+    string(JSON FOLIA_FONT_GENERATED_FILE GET "${FOLIA_FONT_DEPENDENCIES}" generated_cpp ${FOLIA_FONT_INDEX})
+    if(FOLIA_FONT_GENERATED_FILE MATCHES "[.]cpp$")
+        list(APPEND FOLIA_FONT_GENERATED_CPP "${CMAKE_CURRENT_SOURCE_DIR}/${FOLIA_FONT_GENERATED_FILE}")
+    endif()
+endforeach()
+target_include_directories(folia_math PRIVATE ${FOLIA_FONT_GENERATED_DIR})
+set_property(GLOBAL APPEND PROPERTY JOB_POOLS folia_math_compile=2)
+set_property(TARGET folia_math PROPERTY JOB_POOL_COMPILE folia_math_compile)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/node_kind.ixx
     src/math/core/mml_tree/attributes.ixx
@@ -111,10 +147,14 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/scene/builder.ixx
     src/math/output/svg/writer.ixx
     src/math/output/svg/font_data.ixx
+    src/math/output/common/font_data.ixx
+    src/math/output/common/font_path.ixx
     src/math/output/common/common.ixx
     src/math/output/common/wrappers/mfrac.ixx
     src/math/output/common/wrappers/msqrt.ixx
     src/math/output/common/wrappers/mroot.ixx
+    src/math/fonts/newcm_font_data.ixx
+    src/math/fonts/newcm_font_module_provider.ixx
     src/math/util/constants.ixx
     src/math/util/bbox.ixx
     src/math/util/lengths.ixx
@@ -135,11 +175,16 @@ target_sources(folia_math PRIVATE
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
-    src/math/output/svg/font_data.cpp
     src/math/output/svg/node_metadata.cpp
+    src/math/output/svg/font_data.cpp
+    src/math/output/common/font_data.cpp
+    src/math/output/common/font_path.cpp
     src/math/output/common/wrappers/mfrac.cpp
     src/math/output/common/wrappers/msqrt.cpp
     src/math/output/common/wrappers/mroot.cpp
+    src/math/fonts/newcm_font_data.cpp
+    src/math/fonts/newcm_font_module_provider.cpp
+    ${FOLIA_FONT_GENERATED_CPP}
     src/math/util/lengths.cpp
     src/math/util/regexp_host.cpp)
 
@@ -244,6 +289,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mml_native_factory.cpp
     tests/math/mml_defaults.cpp
     tests/math/mml_node_state.cpp
+    tests/math/native_raii_fonts.cpp
     tests/math/fraction_native.cpp
     tests/math/radical_native.cpp)
 target_compile_features(FoliaMathTests PRIVATE cxx_std_23)
@@ -253,9 +299,15 @@ target_compile_definitions(FoliaMathTests PRIVATE
     FOLIA_MATH_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/math/fixtures")
 target_link_libraries(FoliaMathTests PRIVATE folia_math Boost::ut_module)
 add_test(NAME FoliaMathTests COMMAND FoliaMathTests)
+add_executable(FoliaMathFontDump EXCLUDE_FROM_ALL
+    tools/math-port/font-data-dump.cpp)
+target_compile_features(FoliaMathFontDump PRIVATE cxx_std_23)
+set_target_properties(FoliaMathFontDump PROPERTIES CXX_MODULE_STD ON CXX_SCAN_FOR_MODULES ON)
+target_link_libraries(FoliaMathFontDump PRIVATE folia_math)
 if(MSVC)
     target_link_options(FoliaTests PRIVATE /DEBUG:NONE /INCREMENTAL:NO)
     target_link_options(FoliaMathTests PRIVATE /DEBUG:NONE /INCREMENTAL:NO)
+    target_link_options(FoliaMathFontDump PRIVATE /DEBUG:NONE /INCREMENTAL:NO)
 endif()
 
 if(TARGET folia_platform)

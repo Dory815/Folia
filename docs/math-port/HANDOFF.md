@@ -45,7 +45,7 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 
 - HEAD 在记录时为 `47eaaa2c`：Scene 变换和 SVG 字体资源语义键修正。
 - `1a31f62e`：将巨大分式/根式测试整理为数据和紧凑 runner，保留 288/192 对照案例。
-- 字体生成/原生数据实现仍有未提交修改；完整 Source 对照已跑过：
+- 字体生成/原生数据实现已整理提交（见本记录对应的字体提交）；完整 Source 对照已跑过：
   14,568,049 个字段，0 差异。日志 `build/math-port/font-semantic-keys-compare.log`。
   对照包含 24,307 个直接字形记录、2,624 个 remap、238,666 个 SVG alias。
 - 原生组件测试 102 项 / 30,600 条断言通过：
@@ -57,7 +57,7 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 
 ## 下一步，按此接续
 
-1. 独立整理并提交已验证的字体实现/生成器/对照工具及对应 CMake，保留无关修改。
+1. 字体实现已独立整理提交，不要重复提交或重新做完整对照。
 2. 原地迁移现有 Styles 类作为依赖工作，保留已有解析和 shorthand 方法。
    Luna 草稿在忽略目录
    `tools/math-port/drafts/native-raii/styles-native-reuse/`，尚未推广、构建或验收。
@@ -72,7 +72,7 @@ Root 负责正式文件推广、CMake、构建、原生执行和提交；Luna �
 
 ## 工作区保护
 
-字体待提交文件主要在 `output/common/font_data*`、`font_path*`、`fonts/newcm_font*`、
+字体实现提交包括 `output/common/font_data*`、`font_path*`、`fonts/newcm_font*`、
 `tests/math/native_raii_fonts.cpp` 和 `tools/math-port/font-data-*`。
 `math.cpp`、旧 Lite/MML/tree bindings、三份旧 retirement 测试、WinUI SVG 修改及
 inventory 工具另有未提交修改；不要顺手一并提交、删除或覆盖。

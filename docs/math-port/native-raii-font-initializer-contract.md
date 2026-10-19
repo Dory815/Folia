@@ -30,3 +30,33 @@ nullable recipe, duplicate keys and extension cache ids. Main/default/dynamic/
 extension geometry and backend catalogs must remain unchanged. Root rebuilds
 with two math compiler jobs, checks focused profile initialization at the normal
 console stack reserve, then resumes native dump comparison and broader tests.
+
+## Verified implementation (2026-10-20)
+
+The generator now emits constant POD glyph tables and bounded ingestion loops
+for the default font, 40 dynamic modules and three extension fonts. SVG aliases
+use the same table/loop form. Native construction, dump and tests pass with the
+normal executable stack reserve; no stack-reserve increase was added.
+
+The independent Source/native comparison passed 14,568,049 field comparisons
+with zero mismatches (`build/math-port/font-semantic-keys-compare.log`). It
+checks all visible glyph lookups, metrics, remaps, delimiter recipes, composition,
+outline prefixes/diagnostics, exact SVG path bytes and semantic alias targets.
+Measured native data includes 24,307 direct glyph records, 2,624 remap records,
+24,305 outline resource objects and 238,666 SVG aliases. Shared cache IDs do
+not merge distinct semantic variants such as `-bbm-bold` and `-bboldx`.
+
+Reproduce after configuring and building `FoliaMathFontDump`:
+
+```bat
+cmd /c "build\core\FoliaMathFontDump.exe > build\math-port\native-raii-font-dump.json 2> build\math-port\native-raii-font-dump.stderr.log"
+node tools/math-port/font-data-compare-native.cjs build/math-port/font-generated-native-raii/font-source-expected.json build/math-port/native-raii-font-dump.json
+```
+
+The full current native component suite also passed 102 tests / 30,600
+assertions (`build/math-port/native-raii-font-resource-full.log`). These results
+verify the font data and component contracts, not completed CommonWrapper
+orchestration, TeX-to-SVG rendering or Folia integration. The pinned Source has
+four malformed path fragments: SVG preserves their original bytes, while the
+typed outline retains the valid prefix and an explicit diagnostic. No guessed
+path correction is applied.
