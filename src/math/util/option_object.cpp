@@ -805,16 +805,80 @@ void Context::retireObjectRecord(ObjectRef object_ref){
 Context::RecordCounts Context::recordCountsForDiagnostics() const noexcept {
     RecordCounts counts;
     counts.slots=state_->objects.size();
+    const char* detailValue=std::getenv("FOLIA_MATH_CONTEXT_OWNER_DETAIL");
+    const bool ownerDetail=detailValue&&std::string_view(detailValue)=="1";
+    std::map<std::string,std::size_t> ownerGroups;
+    std::size_t metadataUnavailable=0;
     for(const auto& slot:state_->objects){
         if(!slot)continue;
         const auto& value=*slot;
         if(value.retired){++counts.retired;continue;}
         ++counts.live;
-        if(value.payload.has_value()||value.callable||value.construct||
+        const bool ownerBearing=value.payload.has_value()||value.callable||value.construct||
            value.nativeIndexedView||value.nativeRecordView||
            !value.nativeFields.empty()||!value.declaredNativeFields.empty()||
-           value.attachedOwner||!value.ownerTraces.empty())
-            ++counts.ownerBearing;
+           value.attachedOwner||!value.ownerTraces.empty();
+        if(!ownerBearing)continue;
+        ++counts.ownerBearing;
+        if(!ownerDetail)continue;
+        try{
+            const auto ascii=[](std::u16string_view text){
+                std::string result;
+                result.reserve(text.size());
+                for(const auto ch:text)result.push_back(ch>=0x20&&ch<=0x7e?static_cast<char>(ch):'?');
+                return result;
+            };
+            std::string group="kind="+std::to_string(static_cast<unsigned>(value.kind));
+            group+=";payload="+(value.payload.has_value()?std::string(value.payload.type().name()):"-");
+            group+=";recordView="+(value.nativeRecordView?std::string(typeid(*value.nativeRecordView).name()):"-");
+            group+=";arrayView="+(value.nativeIndexedView?std::string(typeid(*value.nativeIndexedView).name()):"-");
+            std::string callableName;
+            if((value.callable||value.construct)&&!value.label.empty())callableName=ascii(value.label);
+            else for(const auto& [key,descriptor]:value.properties){
+                const auto* keyText=std::get_if<std::u16string>(&key.data);
+                if(!keyText||*keyText!=u"name"||descriptor.accessor)continue;
+                if(const auto* name=std::get_if<std::u16string>(&descriptor.value.data))callableName=ascii(*name);
+                break;
+            }
+            group+=";callableName="+(callableName.empty()?"-":callableName);
+            group+=";nativeFields=";
+            bool first=true;
+            const auto addFields=[&](const auto& fields){
+                for(const auto& [name,field]:fields){
+                    (void)field;
+                    if(!first)group+=",";
+                    first=false;
+                    if constexpr(std::is_same_v<std::remove_cvref_t<decltype(name)>,Key>){
+                        if(const auto* text=std::get_if<std::u16string>(&name.data))group+=ascii(*text);
+                        else group+="[symbol]";
+                    }else group+=ascii(name);
+                }
+            };
+            addFields(value.nativeFields);
+            addFields(value.declaredNativeFields);
+            if(first)group+="-";
+            ++ownerGroups[group];
+        }catch(...){
+            ++metadataUnavailable;
+        }
+    }
+    if(ownerDetail){
+        try{
+            std::vector<std::pair<std::string,std::size_t>> ordered(ownerGroups.begin(),ownerGroups.end());
+            std::sort(ordered.begin(),ordered.end(),[](const auto& left,const auto& right){
+                return left.second!=right.second?left.second>right.second:left.first<right.first;
+            });
+            std::cerr<<"Context owner detail groups (top 20; total="<<counts.ownerBearing<<")\n";
+            const auto limit=std::min<std::size_t>(20,ordered.size());
+            for(std::size_t index=0;index<limit;++index)
+                std::cerr<<ordered[index].second<<"\t"<<ordered[index].first<<"\n";
+            if(metadataUnavailable)std::cerr<<metadataUnavailable<<"\tmetadata-unavailable\n";
+            std::size_t grouped=metadataUnavailable;
+            for(const auto& entry:ordered)grouped+=entry.second;
+            std::cerr<<"Context owner detail grouped="<<grouped<<"\n";
+        }catch(...){
+            // Diagnostics must never change the ordinary record-count result.
+        }
     }
     return counts;
 }
