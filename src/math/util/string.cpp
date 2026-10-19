@@ -14,13 +14,18 @@ bool is_line_terminator(char16_t unit) {
 }
 
 int hex_value(char16_t unit) {
-    if (unit >= u'0' && unit <= u'9') return static_cast<int>(unit - u'0');
-    if (unit >= u'a' && unit <= u'f') return static_cast<int>(unit - u'a') + 10;
-    if (unit >= u'A' && unit <= u'F') return static_cast<int>(unit - u'A') + 10;
+    if (unit >= u'0' && unit <= u'9')
+        return static_cast<int>(unit - u'0');
+    if (unit >= u'a' && unit <= u'f')
+        return static_cast<int>(unit - u'a') + 10;
+    if (unit >= u'A' && unit <= u'F')
+        return static_cast<int>(unit - u'A') + 10;
     return -1;
 }
 
-bool is_hex(char16_t unit) { return hex_value(unit) >= 0; }
+bool is_hex(char16_t unit) {
+    return hex_value(unit) >= 0;
+}
 
 std::u16string code_point_string(std::uint32_t point) {
     std::u16string result;
@@ -44,14 +49,13 @@ std::u16string code_point_string(std::uint32_t point) {
         for (const auto byte : folia::math::js_number::toString(point))
             message.push_back(static_cast<char16_t>(byte));
     }
-    throw Error("RangeError", std::move(message));
+    throw std::range_error(folia::math::utf16::encode(message));
 }
 
 std::uint32_t parse_code_point(std::u16string_view digits) {
-    const auto value = folia::math::js_input::parseInt(
-        digits, folia::math::js_input::IntegerRadix::Hex);
-    if (!std::isfinite(value) || value < 0 || value > 0x10FFFF ||
-        std::trunc(value) != value) {
+    const auto value =
+        folia::math::js_input::parseInt(digits, folia::math::js_input::IntegerRadix::Hex);
+    if (!std::isfinite(value) || value < 0 || value > 0x10FFFF || std::trunc(value) != value) {
         invalid_code_point(value);
     }
     return static_cast<std::uint32_t>(value);
@@ -62,7 +66,8 @@ std::uint32_t parse_code_point(std::u16string_view digits) {
 double sortLength(std::u16string_view a, std::u16string_view b) {
     if (a.size() != b.size())
         return static_cast<double>(b.size()) - static_cast<double>(a.size());
-    if (a == b) return 0;
+    if (a == b)
+        return 0;
     return a < b ? -1 : 1;
 }
 
@@ -71,7 +76,8 @@ std::u16string quotePattern(std::u16string_view text) {
     std::u16string result;
     result.reserve(text.size() * 2);
     for (const auto unit : text) {
-        if (quoted.find(unit) != std::u16string_view::npos) result.push_back(u'\\');
+        if (quoted.find(unit) != std::u16string_view::npos)
+            result.push_back(u'\\');
         result.push_back(unit);
     }
     return result;
@@ -81,15 +87,15 @@ std::vector<double> unicodeChars(std::u16string_view text) {
     const auto points = folia::math::utf16::codePoints(text);
     std::vector<double> result;
     result.reserve(points.size());
-    for (const auto point : points) result.push_back(static_cast<double>(point));
+    for (const auto point : points)
+        result.push_back(static_cast<double>(point));
     return result;
 }
 
 std::u16string unicodeString(std::span<const double> data) {
     std::u16string result;
     for (const auto point : data) {
-        if (!std::isfinite(point) || point < 0 || point > 0x10FFFF ||
-            std::trunc(point) != point) {
+        if (!std::isfinite(point) || point < 0 || point > 0x10FFFF || std::trunc(point) != point) {
             invalid_code_point(point);
         }
         result += code_point_string(static_cast<std::uint32_t>(point));
@@ -108,14 +114,16 @@ std::vector<std::u16string> split(std::u16string_view text) {
         text.remove_prefix(1);
     while (!text.empty() && folia::math::js_input::isWhitespace(text.back()))
         text.remove_suffix(1);
-    if (text.empty()) return {std::u16string{}};
+    if (text.empty())
+        return {std::u16string{}};
 
     std::vector<std::u16string> result;
     std::size_t cursor = 0;
     while (cursor < text.size()) {
         while (cursor < text.size() && folia::math::js_input::isWhitespace(text[cursor]))
             ++cursor;
-        if (cursor == text.size()) break;
+        if (cursor == text.size())
+            break;
         const auto start = cursor;
         while (cursor < text.size() && !folia::math::js_input::isWhitespace(text[cursor]))
             ++cursor;
@@ -143,8 +151,7 @@ std::u16string replaceUnicode(std::u16string_view text) {
         // braced one-to-six-digit form with ECMAScript whitespace.
         if (text[i + 1] == u'U') {
             const auto after_u = i + 2;
-            if (text.size() - after_u >= 4 &&
-                is_hex(text[after_u]) && is_hex(text[after_u + 1]) &&
+            if (text.size() - after_u >= 4 && is_hex(text[after_u]) && is_hex(text[after_u + 1]) &&
                 is_hex(text[after_u + 2]) && is_hex(text[after_u + 3])) {
                 const auto digits = text.substr(after_u, 4);
                 result += code_point_string(parse_code_point(digits));
@@ -153,17 +160,17 @@ std::u16string replaceUnicode(std::u16string_view text) {
             }
             if (after_u < text.size() && text[after_u] == u'{') {
                 auto cursor = after_u + 1;
-                while (cursor < text.size() &&
-                       folia::math::js_input::isWhitespace(text[cursor])) ++cursor;
+                while (cursor < text.size() && folia::math::js_input::isWhitespace(text[cursor]))
+                    ++cursor;
                 const auto digits_start = cursor;
-                while (cursor < text.size() && cursor - digits_start < 6 &&
-                       is_hex(text[cursor])) ++cursor;
+                while (cursor < text.size() && cursor - digits_start < 6 && is_hex(text[cursor]))
+                    ++cursor;
                 const auto digits_end = cursor;
-                while (cursor < text.size() &&
-                       folia::math::js_input::isWhitespace(text[cursor])) ++cursor;
+                while (cursor < text.size() && folia::math::js_input::isWhitespace(text[cursor]))
+                    ++cursor;
                 if (digits_end != digits_start && cursor < text.size() && text[cursor] == u'}') {
-                    result += code_point_string(parse_code_point(
-                        text.substr(digits_start, digits_end - digits_start)));
+                    result += code_point_string(
+                        parse_code_point(text.substr(digits_start, digits_end - digits_start)));
                     i = cursor + 1;
                     continue;
                 }
@@ -180,7 +187,7 @@ std::u16string replaceUnicode(std::u16string_view text) {
 std::u16string toEntity(std::u16string_view text) {
     const auto point = folia::math::utf16::codePointAt(text, 0);
     if (!point) {
-        throw Error("TypeError", u"Cannot read properties of undefined (reading 'toString')");
+        throw std::invalid_argument("Cannot read properties of undefined (reading 'toString')");
     }
     constexpr char16_t digits[] = u"0123456789ABCDEF";
     auto value = static_cast<std::uint32_t>(*point);
