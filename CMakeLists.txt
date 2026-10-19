@@ -143,6 +143,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/node_traits.ixx
     src/math/core/mml_tree/node_defaults.ixx
     src/math/core/mml_tree/mml_factory.ixx
+    src/math/core/mml_tree/operator_dictionary.ixx
+    src/math/core/mml_tree/mo_patterns.ixx
     src/math/input/tex/session.ixx
     src/math/input/tex/environment.ixx
     src/math/input/tex/tex_error.ixx
@@ -176,6 +178,10 @@ target_sources(folia_math PRIVATE
     src/math/core/mml_tree/mml_document.cpp
     src/math/core/mml_tree/mml_factory.cpp
     src/math/core/mml_tree/node_defaults.cpp
+    src/math/core/mml_tree/operator_dictionary.cpp
+    src/math/core/mml_tree/operator_dictionary_data.cpp
+    src/math/core/mml_tree/mo_patterns.cpp
+    src/math/core/mml_tree/mo_pattern_data.cpp
     src/math/input/tex/session.cpp
     src/math/input/tex/environment.cpp
     src/math/input/tex/tex_error.cpp
@@ -301,6 +307,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mml_native_factory.cpp
     tests/math/mml_defaults.cpp
     tests/math/mml_node_state.cpp
+    tests/math/operator_dictionary_native.cpp
     tests/math/native_raii_fonts.cpp
     tests/math/common_styles_source.cpp
     tests/math/native_line_bbox.cpp

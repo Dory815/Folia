@@ -101,6 +101,14 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
   默认数据；当前工厂已使用它，后续实际 MML 类初始化也使用它，避免各家族重复。
   构建 `build/math-port/typed-mml-defaults-build.log`，组件全量 123 项 / 30,795 断言通过：
   `build/math-port/typed-mml-defaults-full.log`。这仍不代表 MML 家族已切换。
+- OperatorDictionary/mo_patterns 已按闭合原生记录和不可变表迁移，保留 27 个命名
+  定义、50 个区间、8 行 spacing、1,252 个 operator 表项和 5 个有限字符模式。
+  `node tools/math-port/operator-data.cjs --check` 重现并逐字比较固定 Source 生成结果，
+  同时实际执行 30 项模式对照（包括五类末尾换行）；生成证据只写 ignored build。
+  全量 129 项 / 30,902 断言通过：`build/math-port/typed-operator-full.log`；
+  构建 `typed-operator-final-build.log`。Root 修正了 UT 错误期望：infix + 左间距为 4，
+  空文本在 Source 中是显式 ORD infix 项，不是 REL fallback。
+  本次仅是运算符数据/查询/有限模式，不代表 Mo 行为类已接入。
 
 ## 下一步，按此接续
 

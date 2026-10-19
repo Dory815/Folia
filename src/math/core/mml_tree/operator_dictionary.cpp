@@ -1,71 +1,46 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native host methods for MathJax 4.1.3 OperatorDictionary.ts.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- *************************************************************/
+// Typed lookups preserving OperatorDictionary.ts form precedence and ranges.
 module folia.math.core.mml_tree.operator_dictionary;
-import folia.math.core.mml_tree.mml_node;
-import folia.math.core.mml_tree.mml_node_host;
-import folia.math.util.utf16;
 import std;
 
 namespace folia::math::mml::operator_dict {
+OperatorDef OPDEF(double left, double right, TexClass texClass,
+                  std::vector<AttributeSet::Entry> properties) {
+    return {left, right, texClass, std::move(properties)};
+}
 
-OperatorDef OPDEF(Property left, Property right, Property texClass, Property properties) {
-    if (texClass.missing()) texClass = static_cast<double>(TEXCLASS.BIN);
-    if (properties.missing()) properties = PropertyNull{};
-    return PropertyArray{std::move(left), std::move(right),
-                         std::move(texClass), std::move(properties)};
+const OperatorDef* findOperatorDefinition(std::u16string_view form,
+                                          std::u16string_view text) {
+    for (const auto& entry : OPTABLE()) {
+        if (entry.form == form && entry.text == text) return &entry.definition;
+    }
+    return nullptr;
 }
 
 RangeDef getRange(std::u16string_view text) {
-    const std::string key = host::debugText(text);
-
-    // Preserve JavaScript's ordered `a || b || c` reads. In particular, an
-    // inherited truthy Object.prototype value is a dictionary hit.
-    Property infix = host::get(Property(OPTABLE()), "infix");
-    Property definition = host::get(infix, key);
-    if (!host::truthy(definition)) {
-        Property prefix = host::get(Property(OPTABLE()), "prefix");
-        definition = host::get(prefix, key);
-    }
-    if (!host::truthy(definition)) {
-        Property postfix = host::get(Property(OPTABLE()), "postfix");
-        definition = host::get(postfix, key);
-    }
-    if (host::truthy(definition)) {
-        Property texClass = host::get(definition, "2");
-        return PropertyArray{Property(0.0), Property(0.0),
-                             std::move(texClass), Property("mo")};
-    }
-
-    const auto first = utf16::codePointAt(text, 0);
-    const Property codepoint = first
-        ? Property(static_cast<double>(*first))
-        : Property(Missing{});
-
-    // MathJax's for-of captures the RANGES array once; its array iterator
-    // consults the current length and current indexed slots on each step.
-    const PropertyArray ranges = RANGES();
-    for (std::size_t i = 0; i < ranges.size(); ++i) {
-        Property row = ranges.get(i);
-
-        // Source reads and compares the upper endpoint first. It reads the
-        // lower endpoint only when the upper comparison succeeds, and then
-        // breaks even if that lower comparison fails.
-        Property upper = host::get(row, "1");
-        const double pointValue = host::number(codepoint);
-        const double upperValue = host::number(upper);
-        if (pointValue <= upperValue) {
-            Property lower = host::get(row, "0");
-            const double lowerValue = host::number(lower);
-            if (pointValue >= lowerValue) return row;
-            break;
+    constexpr std::array<std::u16string_view, 3> forms{u"infix", u"prefix", u"postfix"};
+    for (const auto form : forms) {
+        if (const auto* definition = findOperatorDefinition(form, text)) {
+            return {0, 0, definition->texClass, u"mo"};
         }
     }
-    return PropertyArray{Property(0.0), Property(0.0),
-                         Property(static_cast<double>(TEXCLASS.REL)),
-                         Property("mo")};
-}
 
-} // namespace folia::math::mml::operator_dict
+    char32_t codepoint = 0;
+    if (!text.empty()) {
+        const auto first = static_cast<std::uint16_t>(text.front());
+        if (first >= 0xd800 && first <= 0xdbff && text.size() > 1) {
+            const auto second = static_cast<std::uint16_t>(text[1]);
+            if (second >= 0xdc00 && second <= 0xdfff) {
+                codepoint = 0x10000 + ((first - 0xd800) << 10) + (second - 0xdc00);
+            } else {
+                codepoint = first;
+            }
+        } else {
+            codepoint = first;
+        }
+    }
+    for (const auto& range : RANGES()) {
+        if (range.first <= codepoint && codepoint <= range.last) return range;
+    }
+    return {0, 0, TexClass::rel, u"mo"};
+}
+}
