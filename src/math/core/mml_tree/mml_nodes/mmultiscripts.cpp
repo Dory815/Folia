@@ -1,111 +1,143 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native implementation of MmlNodes/mmultiscripts.ts (MathJax 4.1.3).
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- * Source SHA-256: bb8d8d2180ef483b86b0b1570b919ba424ed54db1f30ef6e0e697cfab0bf5cf7
- *************************************************************/
+// Native port of MathJax 4.1.3 MmlNodes/mmultiscripts.ts; licensed under Apache-2.0.
 module folia.math.core.mml_tree.mml_nodes.mmultiscripts;
-import folia.math.core.mml_tree.multiscript_host;
+import folia.math.core.mml_tree.mml_document;
+import folia.math.core.mml_tree.node_defaults;
 import std;
 
 namespace folia::math::mml {
+namespace {
+bool truthy(AttributeValue const *value) {
+    if (!value)
+        return false;
+    return std::visit(
+        [](auto const &item) {
+            using T = std::decay_t<decltype(item)>;
+            if constexpr (std::is_same_v<T, AttributeNull>)
+                return false;
+            else if constexpr (std::is_same_v<T, bool>)
+                return item;
+            else if constexpr (std::is_same_v<T, double>)
+                return item != 0 && !std::isnan(item);
+            else
+                return !item.empty();
+        },
+        *value);
+}
+} // namespace
 
-void MmlMmultiscripts::setChildInheritedAttributes(
-    AttributeList attributes, Property display, Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
+MmlMmultiscripts::MmlMmultiscripts(MmlDocument &document)
+    : MmlMsubsup(document, NodeKind::mmultiscripts) {}
 
-    MmlNode& base = host::multiscriptChild(*this, 0, "setInheritedAttributes");
-    base.setInheritedAttributes(attributes, display, level, prime);
+AttributeSet MmlMmultiscripts::defaults() {
+    return nodeDefaultAttributes(NodeKind::mmultiscripts);
+}
+
+NodeKind MmlMmultiscripts::kind() const noexcept {
+    return NodeKind::mmultiscripts;
+}
+
+double MmlMmultiscripts::arity() const {
+    return 1;
+}
+
+void MmlMmultiscripts::setChildInheritedAttributes(AttributeList const &attributes, bool display,
+                                                   double level, bool prime) {
+    auto nodes = children();
+    nodes[0]->setInheritedAttributes(attributes, display, level, prime);
 
     bool prescripts = false;
-    for (std::size_t i = 1, n = 0;
-         i < host::multiscriptChildren(*this)->size(); ++i) {
-        MmlNode& child = host::multiscriptChild(*this, i, "isKind");
-        if (child.isKind("mprescripts")) {
+    for (std::size_t i = 1, n = 0; i < children().size(); ++i) {
+        MmlNode *const child = children()[i];
+        if (child->isKind(NodeKind::mprescripts)) {
             if (!prescripts) {
                 prescripts = true;
                 if (i % 2 == 0) {
-                    MmlNode* const created = host::multiscriptCreate(factoryOwner(), "none");
-                    host::multiscriptInsert(childArrayOwner(), i, NodeValue(created));
-                    NodeValue(created).requireNodeForWrite("parent")
-                        ->setParent(NodeValue(this));
+                    MmlNode &none = document().factory().make(NodeKind::none);
+                    document().insert(*this, i, none);
                     ++i;
                 }
             }
         } else {
-            const Property nextLevel = host::add(level, 1);
-            const Property primeStyle = host::truthy(prime)
-                ? prime : Property(n % 2 == 0);
-            child.setInheritedAttributes(attributes, false, nextLevel, primeStyle);
+            child->setInheritedAttributes(attributes, false, level + 1, prime || n % 2 == 0);
             ++n;
         }
     }
 
-    const auto currentChildren = host::multiscriptChildren(*this);
-    if (currentChildren->size() % 2 == (prescripts ? 1u : 0u)) {
-        (void)appendChild(NodeValue(host::multiscriptCreate(factoryOwner(), "none")));
-
-        // Source evaluates the indexed receiver's array before re-reading the
-        // current array for its length expression.
-        const auto indexedChildren = host::multiscriptChildren(*this);
-        const auto lengthChildren = host::multiscriptChildren(*this);
-        const std::size_t length = lengthChildren->size();
-        const NodeValue last = length == 0
-            ? NodeValue(Missing{})
-            : host::multiscriptSlot(indexedChildren, length - 1);
-        MmlNode& lastChild = host::multiscriptNode(last, "setInheritedAttributes");
-        const Property nextLevel = host::add(level, 1);
-        lastChild.setInheritedAttributes(attributes, false, nextLevel, prime);
+    nodes = children();
+    if (nodes.size() % 2 == (prescripts ? 1u : 0u)) {
+        MmlNode &none = document().factory().make(NodeKind::none);
+        appendChild(none);
+        const auto current = children();
+        current.back()->setInheritedAttributes(attributes, false, level + 1, prime);
     }
 }
 
-void MmlMmultiscripts::verifyChildren(Property options) {
-    tree::TreeCallGuard<MmlNode> guard;
-
+void MmlMmultiscripts::verifyChildren(VerifyOptions const &options) {
     bool prescripts = false;
-    if (options.missing()) host::typeError("Cannot read properties of undefined (reading 'fixMmultiscripts')");
-    if (std::holds_alternative<PropertyNull>(options.value))
-        host::typeError("Cannot read properties of null (reading 'fixMmultiscripts')");
-    const Property fix = host::get(options, "fixMmultiscripts");
-    for (std::size_t i = 0; i < host::multiscriptChildren(*this)->size(); ++i) {
-        MmlNode& child = host::multiscriptChild(*this, i, "isKind");
-        if (child.isKind("mprescripts")) {
+    const auto nodes = children();
+    for (std::size_t i = 0; i < nodes.size(); ++i) {
+        MmlNode &child = *nodes[i];
+        if (child.isKind(NodeKind::mprescripts)) {
             if (prescripts) {
-                const std::string childKind = child.kind();
-                const std::string ownerKind = kind();
-                (void)child.mError(childKind + " can only appear once in " + ownerKind,
-                                   options, true);
+                (void)child.mError(u"mprescripts can only appear once in mmultiscripts", options,
+                                   true);
             } else {
                 prescripts = true;
-                if (i % 2 == 0 && !host::truthy(fix)) {
-                    (void)mError("There must be an equal number of prescripts of each type",
+                if (i % 2 == 0 && !options.fixMmultiscripts) {
+                    (void)mError(u"There must be an equal number of prescripts of each type",
                                  options);
                 }
             }
         }
     }
-    const auto currentChildren = host::multiscriptChildren(*this);
-    if (currentChildren->size() % 2 == (prescripts ? 1u : 0u) &&
-        !host::truthy(fix)) {
-        (void)mError("There must be an equal number of scripts of each type", options);
+    if (nodes.size() % 2 == (prescripts ? 1u : 0u) && !options.fixMmultiscripts) {
+        (void)mError(u"There must be an equal number of scripts of each type", options);
     }
     AbstractMmlNode::verifyChildren(options);
 }
 
-void MmlMprescripts::verifyTree(Property options) {
-    tree::TreeCallGuard<MmlNode> guard;
+MmlMprescripts::MmlMprescripts(MmlDocument &document)
+    : AbstractMmlNode(document, NodeKind::mprescripts) {}
+
+AttributeSet MmlMprescripts::defaults() {
+    return nodeDefaultAttributes(NodeKind::mprescripts);
+}
+
+NodeKind MmlMprescripts::kind() const noexcept {
+    return NodeKind::mprescripts;
+}
+
+double MmlMprescripts::arity() const {
+    return 0;
+}
+
+void MmlMprescripts::verifyTree(std::optional<VerifyOptions> const &options) {
     AbstractMmlNode::verifyTree(options);
-    if (getParent().isNode() && !getParent().requireNode("isKind")->isKind("mmultiscripts")) {
-        (void)mError(kind() + " must be a child of mmultiscripts", options, true);
+    MmlNode *const parent = Parent();
+    if (options && parent && !parent->isKind(NodeKind::mmultiscripts)) {
+        (void)mError(u"mprescripts must be a child of mmultiscripts", *options, true);
     }
 }
 
-void MmlNone::verifyTree(Property options) {
-    tree::TreeCallGuard<MmlNode> guard;
-    AbstractMmlNode::verifyTree(options);
-    if (getParent().isNode() && !getParent().requireNode("isKind")->isKind("mmultiscripts")) {
-        (void)mError(kind() + " must be a child of mmultiscripts", options, true);
-    }
+MmlNone::MmlNone(MmlDocument &document) : AbstractMmlNode(document, NodeKind::none) {}
+
+AttributeSet MmlNone::defaults() {
+    return nodeDefaultAttributes(NodeKind::none);
 }
 
+NodeKind MmlNone::kind() const noexcept {
+    return NodeKind::none;
+}
+
+double MmlNone::arity() const {
+    return 0;
+}
+
+void MmlNone::verifyTree(std::optional<VerifyOptions> const &options) {
+    AbstractMmlNode::verifyTree(options);
+    MmlNode *const parent = Parent();
+    if (options && parent && !parent->isKind(NodeKind::mmultiscripts)) {
+        (void)mError(u"none must be a child of mmultiscripts", *options, true);
+    }
+}
 } // namespace folia::math::mml
