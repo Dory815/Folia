@@ -378,9 +378,11 @@ Stack and BaseItem share a `shared_ptr<TexEnvironment>` only where Source has
 one active environment scope: a non-open accepted frame aliases that scope;
 an open frame starts with a fresh empty record and overlays present fields from
 the previous scope when copyEnv is true. ArrayItem has copyEnv=false. Start
-receives the already copied parser seed. A frame's clearEnv replaces its record
-with a fresh empty record, preserving references to the previous scope until
-their actual users release them. Pop restores the remaining top's scope or a
+receives the already copied parser seed. BaseItem.clearEnv clears the existing
+record in place (`*env = TexEnvironment{}`), so existing scope aliases observe
+the cleared fields. The distinct explicit `this.env = {}` in Left/middle
+installs a fresh record before replay; do not conflate those operations.
+Pop restores the remaining top's scope or a
 fresh empty scope; it does not erase the popped frame's record. This finite
 domain value contains only the declared bool/number/string optionals, with no
 parser/frame/MML owner, callbacks or universal property lookup, so it cannot
@@ -395,6 +397,16 @@ checkItem throws before Stack Pop, so the original owners and active scope
 remain valid while the caller handles the error. Native tests must exercise
 success and throw cleanup, scoped environment aliasing/copying, same-top replay,
 incoming replay and bare-node replay against the actual Source observations.
+
+TexParser remains the owner of source positions and stamping StackItem.startStr,
+startI and stopI at the actual Push call. Its existing TexScanner is the sole
+owner of the current UTF-16 source through `shared_ptr<const u16string>` and
+exposes a `sourceSnapshot()` value for those immutable frame snapshots. There
+is no parallel current string in TexParser. `replaceSource` installs one new
+immutable buffer and retains its existing cursor semantics (no implicit reset);
+old frame snapshots remain valid until their last owner releases them. Cursor
+reset is the explicit parser expansion operation, not a scanner side effect.
+The buffer contains text only, never parser/MML/frame owners or callbacks.
 
 There will be one native math implementation and one `folia_math` target.
 No `native2`, old/new selector, runtime compatibility adapter or legacy fallback
