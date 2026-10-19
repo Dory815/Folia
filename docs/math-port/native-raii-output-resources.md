@@ -14,23 +14,31 @@ consumer needs one; it is not a separately mutable layout result. SVG can spell
 the same operations in Source order, and a future D2D consumer composes them.
 Source-specific XML punctuation and number formatting remain in SVG.
 
-The initial affine-only foundation is pending this refinement before common
-family placement is ported. This is not a second Scene or layout hierarchy.
+The native Scene now retains this sequence. It remains one Scene and one
+layout result; complete Common-family production of the sequence is pending.
 
 ## Finite SVG font resources
 
 The common immutable font repository owns metrics, resolved glyph selection,
 typed outlines, stretch recipes and remap/inheritance data. Scene glyphs retain
-immutable typed outline resources and an owned `GlyphKey { variant_cache_id,
-codepoint }`. The key describes the requested resolved font variant, separately
-from the shared outline's provenance. Inherited outlines can be shared while
-requested variants retain their distinct Source cache identities. Normal and
-bold instances of the same codepoint must not collide in a cache.
+immutable typed outline resources and an owned `GlyphKey { variant,
+variant_cache_id, codepoint }`. Semantic `variant` and the terminal codepoint
+select the exact font data; `variant_cache_id` preserves Source SVG cache
+identity separately. The shared outline's provenance is separate from both.
+Inherited outlines can be shared while requested variants retain their identity.
+
+Pinned Source exposes a necessary distinction: `-bbm-bold` and `-bboldx` both
+use cache ID `NCM-MB-BB`, but their U+0021 paths differ. A resource catalog keyed
+only by cache ID loses data. A font-cache-none render must emit each selected
+variant's path. Cache reuse inside a math item follows the Source cache's
+first-use order; that serialization behavior must not determine font selection.
+Do not skip conflicting rows in the Source comparison to accommodate the old
+catalog shape.
 
 `output/svg/font_data.ixx/.cpp` becomes an immutable SVG resource catalog,
 module `folia.math.output.svg.font_data`, namespace `output::svg`, replacing
 its withdrawn class/runtime projection. `SvgFontResources` maps a typed glyph
-key `(variant cache ID, codepoint)` to the original pinned path data spelling.
+key `(semantic variant, codepoint)` to the original pinned path data spelling.
 That string is font data, not an SVG element or executable program. There are
 no layout calculations, MML references, callbacks or mutable font loaders.
 

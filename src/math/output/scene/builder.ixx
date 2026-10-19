@@ -16,7 +16,7 @@ public:
     Builder(Builder&&) noexcept;
     Builder& operator=(Builder&&) noexcept;
 
-    [[nodiscard]] NodeId add_group(NodeId parent = 0, Affine transform = {},
+    [[nodiscard]] NodeId add_group(NodeId parent = 0, Transform transform = {},
         std::optional<Clip> clip = {}, std::optional<Link> link = {},
         std::optional<Tooltip> tooltip = {}, SemanticMetadata metadata = {});
     void add_primitive(NodeId group, Primitive primitive);

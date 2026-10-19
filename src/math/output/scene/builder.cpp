@@ -6,7 +6,7 @@ struct Builder::State {
     struct Entry { std::variant<Primitive, NodeId> value; };
     struct MutableGroup {
         NodeId id{};
-        Affine transform{};
+        Transform transform{};
         std::optional<Clip> clip;
         std::optional<Link> link;
         std::optional<Tooltip> tooltip;
@@ -49,7 +49,7 @@ Builder::~Builder() = default;
 Builder::Builder(Builder&&) noexcept = default;
 Builder& Builder::operator=(Builder&&) noexcept = default;
 
-NodeId Builder::add_group(NodeId parent, Affine transform, std::optional<Clip> clip,
+NodeId Builder::add_group(NodeId parent, Transform transform, std::optional<Clip> clip,
     std::optional<Link> link, std::optional<Tooltip> tooltip, SemanticMetadata metadata) {
     if (!state_) throw std::logic_error("Scene builder is moved from");
     auto* owner = state_->find(parent);

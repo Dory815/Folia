@@ -51,6 +51,83 @@ suite scene_freeze = [] {
         expect(result.b*point.x + result.d*point.y + result.f == 9.0_d);
     };
 
+    "ordered transforms preserve operations and derive SVG-order matrix"_test = [] {
+        Transform identity;
+        expect(identity.operations().empty());
+        expect(identity.matrix() == Affine{});
+        Transform transform{std::vector<TransformOperation>{
+            Translation{3,4}, Scaling{2,3}, Rotation{90,{1,2}}, Affine{1,0,0,1,-2,1}}};
+        auto const operations = transform.operations();
+        expect(operations.size() == 4_u);
+        expect(std::holds_alternative<Translation>(operations[0]));
+        expect(std::holds_alternative<Scaling>(operations[1]));
+        expect(std::holds_alternative<Rotation>(operations[2]));
+        expect(std::holds_alternative<Affine>(operations[3]));
+
+        auto const translation = Transform{std::vector<TransformOperation>{Translation{3,4}}}.matrix();
+        auto const scaling = Transform{std::vector<TransformOperation>{Scaling{2,3}}}.matrix();
+        auto const rotation = Transform{std::vector<TransformOperation>{Rotation{90,{1,2}}}}.matrix();
+        auto expected = compose(Affine{}, translation);
+        expected = compose(expected, scaling);
+        expected = compose(expected, rotation);
+        expected = compose(expected, Affine{1,0,0,1,-2,1});
+        expect(transform.matrix() == expected);
+
+        // SVG list order gives T*S, so the point is scaled then translated.
+        Transform ordered{std::vector<TransformOperation>{Translation{3,4}, Scaling{2,3}}};
+        auto const result = ordered.matrix();
+        expect(result.a*1 + result.c*1 + result.e == 5.0_d);
+        expect(result.b*1 + result.d*1 + result.f == 7.0_d);
+
+        Transform reflection{std::vector<TransformOperation>{Scaling{-2,1}}};
+        auto const reflected = reflection.matrix();
+        expect(reflected.a*2 + reflected.c*3 + reflected.e == -4.0_d);
+        expect(reflected.b*2 + reflected.d*3 + reflected.f == 3.0_d);
+    };
+
+    "center rotation is counterclockwise in y-up scene coordinates"_test = [] {
+        Transform rotation{std::vector<TransformOperation>{Rotation{90,{1,2}}}};
+        auto const matrix = rotation.matrix();
+        Point const source{2,2};
+        auto const x = matrix.a*source.x + matrix.c*source.y + matrix.e;
+        auto const y = matrix.b*source.x + matrix.d*source.y + matrix.f;
+        expect(std::abs(x - 1) < 1e-12);
+        expect(std::abs(y - 3) < 1e-12);
+    };
+
+    "affine convenience creates one explicit operation"_test = [] {
+        Affine const affine{1,0,0,1,2,3};
+        Transform transform = affine;
+        expect(transform.operations().size() == 1_u);
+        expect(std::holds_alternative<Affine>(transform.operations().front()));
+        expect(transform.matrix() == affine);
+    };
+
+    "scene rejects non-finite transform data at freeze"_test = [] {
+        auto const infinity = std::numeric_limits<Unit>::infinity();
+        auto rejects = [infinity](Transform transform) {
+            Builder builder;
+            (void)builder.add_group(0, std::move(transform));
+            try { [[maybe_unused]] auto scene = std::move(builder).freeze(); }
+            catch (std::invalid_argument const&) { return true; }
+            return false;
+        };
+        expect(rejects(Transform{std::vector<TransformOperation>{Translation{infinity,0}}}));
+        expect(rejects(Transform{std::vector<TransformOperation>{Scaling{1,infinity}}}));
+        expect(rejects(Transform{std::vector<TransformOperation>{Rotation{infinity,{0,0}}}}));
+        expect(rejects(Transform{std::vector<TransformOperation>{Rotation{0,{0,infinity}}}}));
+        expect(rejects(Transform{Affine{infinity,0,0,1,0,0}}));
+    };
+
+    "scene rejects a glyph without an immutable outline resource"_test = [] {
+        Builder builder;
+        builder.add_primitive(0, GlyphRun{{Glyph{}}});
+        bool rejected = false;
+        try { [[maybe_unused]] auto scene = std::move(builder).freeze(); }
+        catch (std::invalid_argument const&) { rejected = true; }
+        expect(rejected);
+    };
+
     "scene retains immutable glyph resource beyond builder lifetime"_test = [] {
         std::weak_ptr<GlyphResource const> weak;
         std::shared_ptr<GlyphOutline> caller_outline;
@@ -59,7 +136,7 @@ suite scene_freeze = [] {
             caller_outline = std::make_shared<GlyphOutline>(GlyphOutline{PathGeometry{{MoveTo{{0,0}}, LineTo{{0.5,1}}, ClosePath{}}}});
             auto resource = GlyphResource::make("NewCM", *caller_outline);
             weak = resource;
-            Glyph glyph{resource, 42, {0.1,0}, -0.55, {}};
+            Glyph glyph{resource, GlyphKey{"normal", "NCM-N", 0x78}, {0.1,0}, -0.55, {}};
             builder.add_primitive(0, GlyphRun{{std::move(glyph)}});
             return std::move(builder).freeze();
         }();
@@ -67,6 +144,7 @@ suite scene_freeze = [] {
         caller_outline->outline.segments[0] = MoveTo{{99,99}};
         auto const& run = std::get<GlyphRun>(std::get<Primitive>(scene.root().entries.front()));
         expect(run.glyphs.front().resource->font_id() == "NewCM");
+        expect(run.glyphs.front().key == GlyphKey{"normal", "NCM-N", 0x78});
         expect(run.glyphs.front().advance == -0.55_d);
         expect(run.glyphs.front().resource->outline().outline.segments.size() == 3_u);
         auto const& first = std::get<MoveTo>(run.glyphs.front().resource->outline().outline.segments.front());
@@ -130,15 +208,15 @@ suite scene_freeze = [] {
         Group root;
         auto child = std::make_shared<Group>();
         child->id = 1;
-        child->transform.e = 2;
+        child->transform = Transform{Affine{1,0,0,1,2,0}};
         child->entries.emplace_back(Primitive{TextRun{"before", {}, {}, {}, {}}});
         root.entries.emplace_back(std::shared_ptr<Group const>{child});
         Scene scene{root, Metrics{1,1,0}, FontMetrics{}};
 
-        child->transform.e = 99;
+        child->transform = Transform{Affine{1,0,0,1,99,0}};
         child->entries.clear();
         auto const& frozen = std::get<std::shared_ptr<Group const>>(scene.root().entries.front());
-        expect(frozen->transform.e == 2.0_d);
+        expect(frozen->transform.matrix().e == 2.0_d);
         expect(frozen->entries.size() == 1_u);
         expect(std::get<TextRun>(std::get<Primitive>(frozen->entries.front())).utf8 == "before");
     };

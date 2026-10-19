@@ -110,6 +110,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
     src/math/output/svg/writer.ixx
+    src/math/output/svg/font_data.ixx
     src/math/output/common/common.ixx
     src/math/output/common/wrappers/mfrac.ixx
     src/math/output/common/wrappers/msqrt.ixx
@@ -134,6 +135,7 @@ target_sources(folia_math PRIVATE
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
+    src/math/output/svg/font_data.cpp
     src/math/output/svg/node_metadata.cpp
     src/math/output/common/wrappers/mfrac.cpp
     src/math/output/common/wrappers/msqrt.cpp

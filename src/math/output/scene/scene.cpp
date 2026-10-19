@@ -9,10 +9,27 @@ void validate(Point value) {
         throw std::invalid_argument("Scene point coordinates must be finite");
 }
 bool valid(FillRule rule) noexcept { return rule == FillRule::nonzero || rule == FillRule::evenodd; }
-void validate(Affine const& transform) {
+Affine validate_affine(Affine const& transform) {
     if (!(finite(transform.a) && finite(transform.b) && finite(transform.c) &&
           finite(transform.d) && finite(transform.e) && finite(transform.f)))
         throw std::invalid_argument("Scene transform must be finite");
+    return transform;
+}
+void validate(Transform const& transform) {
+    for (auto const& operation : transform.operations()) std::visit([](auto const& value) {
+        using T = std::remove_cvref_t<decltype(value)>;
+        if constexpr (std::same_as<T, Translation>) {
+            if (!finite(value.x) || !finite(value.y))
+                throw std::invalid_argument("Scene translation must be finite");
+        } else if constexpr (std::same_as<T, Scaling>) {
+            if (!finite(value.x) || !finite(value.y))
+                throw std::invalid_argument("Scene scale must be finite");
+        } else if constexpr (std::same_as<T, Rotation>) {
+            if (!finite(value.degrees)) throw std::invalid_argument("Scene rotation angle must be finite");
+            validate(value.center);
+        } else validate_affine(value);
+    }, operation);
+    (void)validate_affine(transform.matrix());
 }
 Metrics validate(Metrics metrics) {
     if (!(finite(metrics.width) && finite(metrics.height) && finite(metrics.depth)))

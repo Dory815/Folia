@@ -102,10 +102,32 @@ void append_path(std::string& out, scene::PathGeometry const& path) {
     }
 }
 
-void append_transform(std::string& out, scene::Affine const& t) {
-    detail::append_attribute(out, "transform", "matrix(" + number(t.a, 6) + " " +
-        number(t.b, 6) + " " + number(t.c, 6) + " " + number(t.d, 6) + " " +
-        number(t.e * 1000) + " " + number(t.f * 1000) + ")");
+std::string transform_operation(scene::TransformOperation const& operation) {
+    return std::visit([](auto const& value) -> std::string {
+        using T = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, scene::Translation>) {
+            return "translate(" + number(value.x * 1000) + "," + number(value.y * 1000) + ")";
+        } else if constexpr (std::is_same_v<T, scene::Scaling>) {
+            if (value.x == value.y) return "scale(" + number(value.x, 3) + ")";
+            return "scale(" + number(value.x, 3) + "," + number(value.y, 3) + ")";
+        } else if constexpr (std::is_same_v<T, scene::Rotation>) {
+            return "rotate(" + number(value.degrees, 3) + " " +
+                number(value.center.x * 1000) + " " + number(value.center.y * 1000) + ")";
+        } else {
+            return "matrix(" + number(value.a, 6) + " " + number(value.b, 6) + " " +
+                number(value.c, 6) + " " + number(value.d, 6) + " " +
+                number(value.e * 1000) + " " + number(value.f * 1000) + ")";
+        }
+    }, operation);
+}
+
+void append_transform(std::string& out, scene::Transform const& transform) {
+    std::string serialized;
+    for (auto const& operation : transform.operations()) {
+        if (!serialized.empty()) serialized.push_back(' ');
+        serialized += transform_operation(operation);
+    }
+    if (!serialized.empty()) detail::append_attribute(out, "transform", serialized);
 }
 
 using Cache = std::vector<std::pair<std::string, std::string>>;
@@ -121,19 +143,29 @@ std::string codepoint(std::uint32_t value) {
     return result;
 }
 
+std::string path_data(scene::Glyph const& glyph, SvgWriteOptions const& options) {
+    if (!glyph.resource)
+        throw UnsupportedError("Scene glyph has no immutable common outline resource");
+    if (!options.font_resources)
+        throw UnsupportedError("SVG glyph output requires the immutable Source font resource catalog");
+    const auto* source = options.font_resources->find(
+        {glyph.key.variant, glyph.key.codepoint});
+    if (!source)
+        throw UnsupportedError("SVG glyph has no exact Source font resource key");
+    if (!source->path_defined)
+        throw UnsupportedError("SVG glyph has no Source path; composition must be completed in Scene");
+    return source->path_data;
+}
+
 std::string cache_id(scene::Glyph const& glyph, SvgWriteOptions const& options) {
-    if (!glyph.resource) throw std::invalid_argument("Scene glyph has no resource");
     return "MJX-" + (options.local_id.empty() ? std::string{} : options.local_id + "-") +
-        std::string(glyph.resource->font_id()) + "-" + codepoint(glyph.glyph_id);
+        glyph.key.variant_cache_id + "-" + codepoint(glyph.key.codepoint);
 }
 
 void add_glyph_cache(scene::Glyph const& glyph, SvgWriteOptions const& options, Cache& cache) {
-    if (!glyph.resource) throw std::invalid_argument("Scene glyph has no immutable outline");
     auto id = cache_id(glyph, options);
     if (std::ranges::find(cache, id, &Cache::value_type::first) != cache.end()) return;
-    std::string path;
-    append_path(path, glyph.resource->outline().outline);
-    cache.emplace_back(std::move(id), std::move(path));
+    cache.emplace_back(std::move(id), path_data(glyph, options));
 }
 
 void collect_cache(scene::Group const& group, SvgWriteOptions const& options, Cache& cache) {
@@ -189,7 +221,7 @@ void open_group(std::string& out, scene::Group const& group, SvgWriteOptions con
     static constexpr std::array<std::string_view, 1> reserved{"data-mml-node"};
     if (!group.metadata.source_tag.empty()) detail::append_attribute(out, "data-mml-node", group.metadata.source_tag);
     else detail::append_attribute(out, "data-mml-node", "mrow");
-    if (!(group.transform == scene::Affine{})) append_transform(out, group.transform);
+    if (!group.transform.operations().empty()) append_transform(out, group.transform);
     if (group.clip) detail::append_attribute(out, "clip-path", "url(#clip-" + std::to_string(group.id) + ")");
     detail::append_metadata(out, group.metadata, reserved);
     out += '>';
@@ -214,16 +246,13 @@ void open_group(std::string& out, scene::Group const& group, SvgWriteOptions con
                         for (auto const& glyph : primitive.glyphs) {
                             if (options.font_cache == FontCacheMode::none) {
                                 out += "<path";
-                                detail::append_attribute(out, "data-c", codepoint(glyph.glyph_id));
-                                out += " d=\"";
-                                if (!glyph.resource) throw std::invalid_argument("Scene glyph has no outline");
-                                append_path(out, glyph.resource->outline().outline);
-                                out += '"';
+                                detail::append_attribute(out, "data-c", codepoint(glyph.key.codepoint));
+                                detail::append_attribute(out, "d", path_data(glyph, options));
                                 if (glyph.origin.x || glyph.origin.y) detail::append_attribute(out, "transform", "translate(" + number(glyph.origin.x * 1000) + " " + number(glyph.origin.y * 1000) + ")");
                                 append_paint(out, glyph.paint); out += "/>";
                             } else {
                                 out += "<use";
-                                detail::append_attribute(out, "data-c", codepoint(glyph.glyph_id));
+                                detail::append_attribute(out, "data-c", codepoint(glyph.key.codepoint));
                                 detail::append_attribute(out, options.use_xlink ? "xlink:href" : "href", "#" + cache_id(glyph, options));
                                 if (glyph.origin.x || glyph.origin.y) detail::append_attribute(out, "transform", "translate(" + number(glyph.origin.x * 1000) + " " + number(glyph.origin.y * 1000) + ")");
                                 append_paint(out, glyph.paint); out += "/>";

@@ -5,7 +5,7 @@ import std;
 export namespace folia::math::output::scene {
 struct Group {
     NodeId id{};
-    Affine transform{};
+    Transform transform{};
     std::optional<Clip> clip;
     std::optional<Link> link;
     std::optional<Tooltip> tooltip;

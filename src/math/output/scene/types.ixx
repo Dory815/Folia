@@ -26,6 +26,52 @@ struct Affine {
         parent.b*local.e + parent.d*local.f + parent.f
     };
 }
+struct Translation { Unit x{}, y{}; friend bool operator==(Translation const&, Translation const&) = default; };
+struct Scaling { Unit x{1}, y{1}; friend bool operator==(Scaling const&, Scaling const&) = default; };
+// Degrees are positive counterclockwise in Scene's y-up coordinate system;
+// center is interpreted in the operation's current local coordinates.
+struct Rotation { Unit degrees{}; Point center{}; friend bool operator==(Rotation const&, Rotation const&) = default; };
+using TransformOperation = std::variant<Translation, Scaling, Rotation, Affine>;
+
+// The ordered operations are authoritative. matrix() derives the composed
+// result when needed; it is never stored as a parallel transform state.
+class Transform {
+    std::vector<TransformOperation> operations_;
+public:
+    Transform() = default;
+    Transform(Affine affine) : operations_{std::move(affine)} {}
+    explicit Transform(std::vector<TransformOperation> operations)
+        : operations_(std::move(operations)) {}
+    [[nodiscard]] std::span<TransformOperation const> operations() const noexcept {
+        return operations_;
+    }
+    [[nodiscard]] Affine matrix() const noexcept {
+        auto as_affine = [](TransformOperation const& operation) {
+            return std::visit([](auto const& value) -> Affine {
+                using T = std::remove_cvref_t<decltype(value)>;
+                if constexpr (std::same_as<T, Translation>)
+                    return {1,0,0,1,value.x,value.y};
+                else if constexpr (std::same_as<T, Scaling>)
+                    return {value.x,0,0,value.y,0,0};
+                else if constexpr (std::same_as<T, Rotation>) {
+                    auto const radians = value.degrees * std::numbers::pi_v<Unit> / 180.0;
+                    auto const cosine = std::cos(radians);
+                    auto const sine = std::sin(radians);
+                    auto const cx = value.center.x;
+                    auto const cy = value.center.y;
+                    return {cosine,sine,-sine,cosine,
+                        cx - cosine*cx + sine*cy,
+                        cy - sine*cx - cosine*cy};
+                } else return value;
+            }, operation);
+        };
+        auto result = Affine{};
+        for (auto const& operation : operations_)
+            result = compose(result, as_affine(operation));
+        return result;
+    }
+    friend bool operator==(Transform const&, Transform const&) = default;
+};
 
 // Baseline is y=0, x increases right, y increases up. Signed values preserve
 // completed common-layout BBox metrics, including negative extents.
@@ -63,6 +109,14 @@ using PathSegment = std::variant<MoveTo, LineTo, QuadTo, CubicTo, ArcTo, ClosePa
 struct PathGeometry { std::vector<PathSegment> segments; };
 
 struct GlyphOutline { PathGeometry outline; };
+struct GlyphKey {
+    // Semantic selection is distinct from the Source SVG cache namespace:
+    // extensions can share cache IDs while supplying different outlines.
+    std::string variant;
+    std::string variant_cache_id;
+    std::uint32_t codepoint{};
+    friend bool operator==(GlyphKey const&, GlyphKey const&) = default;
+};
 class GlyphResource final {
     std::string font_id_;
     std::shared_ptr<GlyphOutline const> outline_;
@@ -82,7 +136,7 @@ public:
 };
 struct Glyph {
     std::shared_ptr<GlyphResource const> resource;
-    std::uint32_t glyph_id{};
+    GlyphKey key;
     Point origin{};
     Unit advance{};
     Paint paint{};
