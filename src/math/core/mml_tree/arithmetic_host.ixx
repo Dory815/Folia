@@ -9,7 +9,7 @@ inline PropertyList arithmeticCopy(const Property& input) {
     return objectAssign(input);
 }
 inline MmlNode& arithmeticChild(MmlNode& node, std::size_t index, std::string_view member) {
-    const auto children = node.childNodes;
+    const auto children = node.childArrayOwner();
     if (!children) {
         const std::string message = "Cannot read properties of null (reading '" +
                                    std::to_string(index) + "')";

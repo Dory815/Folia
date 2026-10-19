@@ -5,6 +5,7 @@
  *************************************************************/
 export module folia.math.core.mml_tree.mml_node;
 export import folia.math.core.tree.node;
+export import folia.math.core.mml_tree.mml_node_algorithms;
 export import folia.math.core.mml_tree.attributes;
 import std;
 
@@ -15,13 +16,37 @@ using Children = tree::FactoryChildren<MmlNode>;
 using NodeValue = tree::ChildValue<MmlNode>;
 using Factory = tree::FactoryServices<MmlNode>;
 using Error = tree::FactoryError;
+using NativeMmlValue = MmlNativeDynamic<MmlNode>;
+struct MmlSourceArgumentValues {
+    std::function<options::Value(Factory*)> factory;
+    std::function<options::Value(Property)> attributes;
+    std::function<options::Value(Children)> children;
+};
 struct MmlClassInfo {
+    // Pinned MML.js constructor identity metadata. These strings are supplied
+    // by the ordered Source export table, never inferred from RTTI.
+    std::u16string sourceConstructorName;
+    std::u16string sourceKind;
+    // Exact pinned Source prototype base: an abstract MML base or an exported class.
+    std::u16string sourcePrototypeParent;
+    std::uint8_t sourceConstructorArity=0;
+    // Constant Source prototype getter overrides that are needed before an
+    // ordinary `.call` receiver has acquired its native payload.
+    std::optional<double> sourceArity;
+    std::optional<bool> sourceIsInferred;
+    // Source constructor-object own static fields. These flags describe the
+    // pinned class declaration, not the presence of inherited C++ helpers.
+    bool sourceOwnDefaults=false;
+    bool sourceOwnAccents=false;
     std::optional<PropertyList> defaults;
     std::function<std::optional<PropertyList>()> defaultsBinding;
     std::optional<PropertyList> getDefaults()const{return defaultsBinding?defaultsBinding():defaults;}
     // Captured constructor static binding; Munder inherits the parent's array,
     // Mover owns another one. Replacement is live, captured handles stay live.
     std::function<std::shared_ptr<std::vector<Property>>()> accentsBinding;
+    // Context-bound class objects provide the same live JavaScript array to
+    // typed consumers through PropertyArray's canonical PropertyStorage view.
+    std::function<PropertyArray()> sourceAccentsPropertyBinding;
     // Family-owned typed static services of the captured actual constructor.
     std::any staticServices;
 };
@@ -36,6 +61,12 @@ std::pair<Property,Property> unpackAttribute(const Property& value);
 
 class MmlNode : public tree::Node<MmlNode> {
     tree::FactoryClassRef<MmlNode> nativeConstructorClass_;
+    std::function<void()> sourceInitializationComplete_;
+    std::function<MmlNodeReceiver<MmlNode,options::Value>()> sourceOperationView_;
+    std::function<MmlNode*(options::Value)> sourceNodeProjection_;
+    std::optional<MmlSourceArgumentValues> sourceArgumentValues_;
+    tree::TreeNodeAccessRef<MmlNode> sourceTreeAccess_;
+    std::optional<options::ObjectRef> sourceIdentity_;
 public:
     using tree::Node<MmlNode>::Node;
     // Internal identity of the constructor that actually allocated this node.
@@ -50,6 +81,26 @@ public:
         return nativeConstructorClass_;
     }
     virtual bool isToken() const=0;
+    void sourceInitializationComplete(std::function<void()> value){sourceInitializationComplete_=std::move(value);}
+    void completeSourceInitialization(){if(sourceInitializationComplete_){sourceInitializationComplete_();sourceInitializationComplete_={};}}
+    void sourceOperationView(std::function<MmlNodeReceiver<MmlNode,options::Value>()> value,
+                             std::function<MmlNode*(options::Value)> project){
+        sourceOperationView_=std::move(value);sourceNodeProjection_=std::move(project);
+    }
+    const auto& sourceOperationView()const noexcept{return sourceOperationView_;}
+    void sourceArgumentValues(MmlSourceArgumentValues value){sourceArgumentValues_=std::move(value);}
+    const auto& sourceArgumentValues()const noexcept{return sourceArgumentValues_;}
+    void sourceTreeAccess(tree::TreeNodeAccessRef<MmlNode> value){sourceTreeAccess_=std::move(value);}
+    const tree::TreeNodeAccessRef<MmlNode>& sourceTreeAccess()const noexcept{return sourceTreeAccess_;}
+    MmlNode* projectSourceNode(options::Value value)const{
+        if(!sourceNodeProjection_)throw Error("TypeError",u"MML Context node has no native result projection");
+        return sourceNodeProjection_(std::move(value));
+    }
+    void sourceIdentity(options::ObjectRef value){sourceIdentity_=value;}
+    options::Value sourceValue()const override{
+        if(!sourceIdentity_)return tree::Node<MmlNode>::sourceValue();
+        return options::Value(*sourceIdentity_);
+    }
     virtual bool isEmbellished() const=0;
     virtual bool isSpacelike() const=0;
     virtual bool linebreakContainer() const=0;
@@ -93,6 +144,9 @@ class AbstractMmlNode : public tree::AbstractNode<MmlNode,MmlNode> {
     Property texclass_=Missing{},prevClass_=Missing{};
     Property prevLevel_=Missing{};
     std::shared_ptr<Attributes> attributes_;
+    std::optional<MmlSourceValue<MmlNode>> sourceAttributesRaw_;
+    std::function<std::shared_ptr<Attributes>(std::shared_ptr<Attributes>)> sourceAttributeAssignment_;
+    std::function<std::shared_ptr<Attributes>()> sourceAttributeReader_;
     std::shared_ptr<MmlClassInfo> constructorInfo_;
 public:
     static PropertyList& defaults();
@@ -101,19 +155,36 @@ public:
     static PropertyList& alwaysInherit();
     static PropertyList& verifyDefaults();
     explicit AbstractMmlNode(Factory& factory):Generic(factory){}
-    void initializeMml(tree::FactoryArgs args={});
+    void initializeMml(tree::FactoryArgs args={},
+        std::function<void(Children)> setChildren={},Factory* constructorFactory=nullptr);
+    MmlNodeReceiver<MmlNode,NativeMmlValue> nativeOperationView();
     // Native class binding preserves this.constructor independently of registry.
     void bindConstructorClass(std::shared_ptr<MmlClassInfo> info){constructorInfo_=std::move(info);}
     virtual void initializeClassFields(){}
     MmlNode* copy(bool keepIds=false) override;
     Property texClass()override;
     void setTexClass(Property)override;
+    // Raw own fields used by the pinned Source object projection.
+    Property sourceTexclassField()const{return texclass_;}
+    void setSourceTexclassField(Property value){texclass_=std::move(value);}
+    Property sourcePrevClassField()const{return prevClass_;}
+    void setSourcePrevClassField(Property value){prevClass_=std::move(value);}
+    Property sourcePrevLevelField()const{return prevLevel_;}
+    void setSourcePrevLevelField(Property value){prevLevel_=std::move(value);}
     Property prevClass()override;
     void setPrevClass(Property)override;
     Property prevLevel()const override;
     void setPrevLevel(Property)override;
     std::shared_ptr<Attributes> attributes()const override;
+    void sourceAttributeAssignment(std::function<std::shared_ptr<Attributes>(std::shared_ptr<Attributes>)> value){sourceAttributeAssignment_=std::move(value);}
+    void sourceAttributeReader(std::function<std::shared_ptr<Attributes>()> value){sourceAttributeReader_=std::move(value);}
     void setAttributes(std::shared_ptr<Attributes>)override;
+    std::shared_ptr<Attributes> sourceAttributesField()const{return attributes_;}
+    void setSourceAttributesField(std::shared_ptr<Attributes> value){sourceAttributesRaw_.reset();attributes_=std::move(value);}
+    std::optional<MmlSourceValue<MmlNode>> sourceAttributesRawField()const{return sourceAttributesRaw_;}
+    void setSourceAttributesRawField(options::Value value,tree::TreeNodeAccessRef<MmlNode> provider={}){
+        sourceAttributesRaw_=MmlSourceValue<MmlNode>{std::move(value),std::move(provider)};
+    }
     bool isToken()const override;
     bool isEmbellished()const override;
     bool isSpacelike()const override;
@@ -144,10 +215,15 @@ protected:
         return constructorInfo_->staticServices;
     }
     PropertyList constructorDefaults()const;
-    std::shared_ptr<std::vector<Property>> constructorAccents()const {
+    PropertyArray constructorAccents()const {
+        if(constructorInfo_&&constructorInfo_->sourceAccentsPropertyBinding)
+            return constructorInfo_->sourceAccentsPropertyBinding();
         if(!constructorInfo_||!constructorInfo_->accentsBinding)
             throw Error("TypeError",u"Constructor has no ACCENTS binding");
-        return constructorInfo_->accentsBinding();
+        PropertyArray result;
+        const auto values=constructorInfo_->accentsBinding();
+        if(values)for(const auto& value:*values)result.push(value);
+        return result;
     }
     void initializeTexClass(Property value){texclass_=std::move(value);}
     virtual void updateTeXclass(NodeValue);
@@ -165,6 +241,8 @@ public:
     bool isEmpty()const override;
     virtual std::u16string getText()const;
     std::any walkTree(const tree::TreeVisitor<MmlNode>&,const std::any& data={})override;
+    std::any walkTreeRaw(const tree::TreeRawVisitor<MmlNode>&,const std::any& data={},
+                         const std::any& visitorIdentity={})override;
 protected:
     void setChildInheritedAttributes(AttributeList,Property,Property,Property)override;
 };
@@ -223,10 +301,20 @@ public:
 };
 class TextNode : public AbstractMmlEmptyNode {
     std::u16string text_;
+    std::function<void(const std::u16string&)> sourceTextAssignment_;
+    std::function<std::u16string()> sourceTextReader_;
 public:
     using AbstractMmlEmptyNode::AbstractMmlEmptyNode;
+    void initializeSourceFields(){(void)TextNode::setText({});}
     std::string kind()const override;
     virtual std::u16string getText()const;
+    void sourceTextAccessors(std::function<void(const std::u16string&)> assign,
+                             std::function<std::u16string()> read){
+        sourceTextAssignment_=std::move(assign);sourceTextReader_=std::move(read);
+    }
+    void sourceTextReader(std::function<std::u16string()> read){sourceTextReader_=std::move(read);}
+    const std::u16string& sourceTextField()const{return text_;}
+    void setSourceTextField(std::u16string value){text_=std::move(value);}
     virtual TextNode* setText(std::u16string);
     MmlNode* copy(bool keepIds=false)override;
     std::string toString()const override;
@@ -245,6 +333,7 @@ protected:
     XmlAdaptor* adaptor_=nullptr;
 public:
     using AbstractMmlEmptyNode::AbstractMmlEmptyNode;
+    void initializeSourceFields(){xml_.reset();adaptor_=nullptr;}
     std::string kind()const override;
     virtual XmlRef getXML()const;
     virtual XMLNode* setXML(XmlRef,XmlAdaptor* adaptor=nullptr);

@@ -49,8 +49,9 @@ void AbstractMmlEmptyNode::verifyTree(Property) {}
 MmlNode* AbstractMmlEmptyNode::mError(std::string, Property, bool) { return nullptr; }
 
 std::string TextNode::kind() const { return "text"; }
-std::u16string TextNode::getText() const { return text_; }
+std::u16string TextNode::getText() const { return sourceTextReader_?sourceTextReader_():text_; }
 TextNode* TextNode::setText(std::u16string text) {
+    if(sourceTextAssignment_)sourceTextAssignment_(text);
     text_ = std::move(text);
     return this;
 }
@@ -66,7 +67,7 @@ MmlNode* TextNode::copy(bool keepIds) {
     if (!result) host::typeError("Factory product has no TextNode setText method");
     return result->setText(text);
 }
-std::string TextNode::toString() const { return host::debugText(text_); }
+std::string TextNode::toString() const { return host::debugText(getText()); }
 
 std::string XMLNode::kind() const { return "XML"; }
 XmlRef XMLNode::getXML() const { return xml_; }

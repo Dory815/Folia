@@ -35,17 +35,30 @@ class Attributes {
     PropertyList inherited_;
     PropertyList defaults_;
     PropertyList global_;
+    Property globalValue_;
+    bool globalNull_=false;
 
 public:
     virtual ~Attributes() = default;
     Attributes(const PropertyList& defaults, const PropertyList& global)
-        : global_(global) {
-        defaults_ = PropertyList::withPrototype(global_);
-        // Object.assign(this.defaults, defaults) copies own enumerable entries
-        // while preserving the global prototype and JS key ordering.
-        defaults_.assign(defaults);
+        : Attributes(defaults,Property(global)) {}
+
+    // Source permits null as Object.create's prototype. Keep that actual field
+    // value while using a null-prototype PropertyList as the lookup layer.
+    Attributes(const PropertyList& defaults, Property global)
+        : globalValue_(std::move(global)) {
+        if (auto layer=PropertyList::record(globalValue_)) global_=*layer;
+        else if (std::holds_alternative<PropertyNull>(globalValue_.value)) {
+            globalNull_=true;
+            global_=PropertyList::withNullPrototype();
+        } else
+            throw options::Exception("TypeError",u"Attributes global must be an object or null");
+        defaults_ = globalNull_?PropertyList::withNullPrototype():PropertyList::withPrototype(global_);
         inherited_ = PropertyList::withPrototype(defaults_);
         attributes_ = PropertyList::withPrototype(inherited_);
+        // The pinned Source constructor assigns all four fields before calling
+        // Object.assign, so getters in defaults can observe the completed tree.
+        defaults_.assign(defaults);
     }
 
     void set(std::string_view name, Property value) {
@@ -63,6 +76,8 @@ public:
     virtual Property get(std::string_view name) const {
         Property value = attributes_.get(name);
         if (value == Property{std::string(INHERIT)}) {
+            if(globalNull_)
+                throw options::Exception("TypeError",u"Cannot read properties of null");
             value = global_.get(name);
         }
         return value;
@@ -124,11 +139,37 @@ public:
     }
 
     std::vector<std::string> getGlobalNames() const {
+        if(globalNull_)
+            throw options::Exception("TypeError",u"Cannot convert undefined or null to object");
         return global_.keys();
     }
 
     PropertyList getAllAttributes() const {
         return attributes_;
+    }
+
+    // Context binding accessors expose the actual four Source-owned layer
+    // cells.  Replacing a field changes only that cell; the other PropertyList
+    // prototype links remain exactly as they were at construction time.
+    PropertyList& attributesLayer() { return attributes_; }
+    PropertyList& inheritedLayer() { return inherited_; }
+    PropertyList& defaultsLayer() { return defaults_; }
+    PropertyList& globalLayer() { return global_; }
+    Property globalValue() const { return globalValue_; }
+    void replaceGlobal(Property value) {
+        if(auto layer=PropertyList::record(value)){
+            global_=*layer;
+            globalNull_=false;
+            globalValue_=std::move(value);
+            return;
+        }
+        if(std::holds_alternative<PropertyNull>(value.value)){
+            globalNull_=true;
+            global_=PropertyList::withNullPrototype();
+            globalValue_=std::move(value);
+            return;
+        }
+        throw options::Exception("TypeError",u"Attributes.global must be an object or null");
     }
 
     PropertyList getAllInherited() const {
@@ -142,5 +183,6 @@ public:
     PropertyList getAllGlobals() const {
         return global_;
     }
+    Property getAllGlobalsValue() const { return globalValue_; }
 };
 }

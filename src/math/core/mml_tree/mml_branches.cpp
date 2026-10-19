@@ -11,19 +11,19 @@ import std;
 namespace folia::math::mml {
 namespace {
 NodeValue child_zero(AbstractMmlNode& node) {
-    const auto children = node.childNodes;
+    const auto children = node.childArrayOwner();
     if (!children) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
     return children->get(0);
 }
 
 MmlNode& required_child_zero(const AbstractMmlNode& node, std::string_view member) {
-    const auto children = node.childNodes;
+    const auto children = node.childArrayOwner();
     if (!children) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
     return *children->get(0).requireNode(member);
 }
 
 void require_child_list(AbstractMmlNode& node) {
-    if (!node.childNodes) host::typeError("this.childNodes is not iterable");
+    if (!node.childArrayOwner()) host::typeError("this.childNodes is not iterable");
 }
 }
 
@@ -33,7 +33,7 @@ bool AbstractMmlTokenNode::isToken() const {
 
 bool AbstractMmlTokenNode::isEmpty() const {
     tree::TreeCallGuard<MmlNode> guard;
-    const auto children = this->childNodes;
+    const auto children = this->childArrayOwner();
     if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
     for (std::size_t i = 0; i < children->size(); ++i) {
         const NodeValue child = children->get(i);
@@ -46,7 +46,7 @@ bool AbstractMmlTokenNode::isEmpty() const {
 
 std::u16string AbstractMmlTokenNode::getText() const {
     tree::TreeCallGuard<MmlNode> guard;
-    const Children children = this->childNodes;
+    const Children children = this->childArrayOwner();
     if (!children) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
 
     std::u16string text;
@@ -69,7 +69,7 @@ std::u16string AbstractMmlTokenNode::getText() const {
 
 void AbstractMmlTokenNode::setChildInheritedAttributes(
     AttributeList attributes, Property display, Property level, Property prime) {
-    const Children children = this->childNodes;
+    const Children children = this->childArrayOwner();
     if (!children) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
     for (std::size_t index = 0; index < children->size(); ++index) {
         MmlNode* const node = children->get(index).nodeOrNull();
@@ -81,20 +81,16 @@ void AbstractMmlTokenNode::setChildInheritedAttributes(
 
 std::any AbstractMmlTokenNode::walkTree(
     const tree::TreeVisitor<MmlNode>& visit, const std::any& data) {
-    tree::TreeCallGuard<MmlNode> guard;
-    visit(this, data);
+    walkTreeRaw([&visit](NodeValue child,const std::any& state){visit(child.requireNode("walkTree"),state);},data);
+    return data;
+}
 
-    const Children children = this->childNodes;
-    if (!children) {
-        host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
-    }
-    for (std::size_t index = 0; index < children->size(); ++index) {
-        const NodeValue child = children->get(index);
-        MmlNode* const node = child.nodeOrNull();
-        if (auto* const mmlNode = node ? dynamic_cast<AbstractMmlNode*>(node) : nullptr) {
-            mmlNode->walkTree(visit, data);
-        }
-    }
+std::any AbstractMmlTokenNode::walkTreeRaw(const tree::TreeRawVisitor<MmlNode>& visit,
+    const std::any& data,const std::any& visitorIdentity) {
+    if(const auto access=sourceTreeAccess())
+        return access->walkTreeRaw(visit,data,visitorIdentity);
+    tree::TreeNodeAlgorithms<MmlNode>::walkTreeFiltered(treeReceiver(),visit,data,visitorIdentity,
+        [](NodeValue child){return dynamic_cast<AbstractMmlNode*>(child.nodeOrNull())!=nullptr;});
     return data;
 }
 
@@ -161,7 +157,7 @@ NodeValue AbstractMmlBaseNode::setTeXclass(NodeValue previous) {
         }
     }
 
-    const auto currentChildren = childNodes;
+    const auto currentChildren = childArrayOwner();
     if (!currentChildren) {
         throw Error("TypeError",u"Cannot read properties of null (reading 'slice')");
     }
