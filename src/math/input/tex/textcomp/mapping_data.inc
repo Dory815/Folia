@@ -1,0 +1,237 @@
+// Generated from locked TextcompMappings.ts; Source SHA256 21e81e2467f13c9d3d52463dfdd4f80f002bf996da1d04ad5e011303ae68899b; 117 entries.
+static constexpr char16_t textcomp_0[]{0x005e};
+static constexpr char16_t textcomp_1[]{0x007e};
+static constexpr char16_t textcomp_2[]{0x002a};
+static constexpr char16_t textcomp_3[]{0x005c};
+static constexpr char16_t textcomp_4[]{0x007c};
+static constexpr char16_t textcomp_5[]{0x007b};
+static constexpr char16_t textcomp_6[]{0x007d};
+static constexpr char16_t textcomp_7[]{0x2022};
+static constexpr char16_t textcomp_8[]{0x2020};
+static constexpr char16_t textcomp_9[]{0x2021};
+static constexpr char16_t textcomp_10[]{0x2026};
+static constexpr char16_t textcomp_11[]{0x2014};
+static constexpr char16_t textcomp_12[]{0x2013};
+static constexpr char16_t textcomp_13[]{0x00a1};
+static constexpr char16_t textcomp_14[]{0x003e};
+static constexpr char16_t textcomp_15[]{0x003c};
+static constexpr char16_t textcomp_16[]{0x00aa};
+static constexpr char16_t textcomp_17[]{0x00ba};
+static constexpr char16_t textcomp_18[]{0x00b6};
+static constexpr char16_t textcomp_19[]{0x00b7};
+static constexpr char16_t textcomp_20[]{0x00bf};
+static constexpr char16_t textcomp_21[]{0x201c};
+static constexpr char16_t textcomp_22[]{0x201d};
+static constexpr char16_t textcomp_23[]{0x2018};
+static constexpr char16_t textcomp_24[]{0x2019};
+static constexpr char16_t textcomp_25[]{0x00a7};
+static constexpr char16_t textcomp_26[]{0x005f};
+static constexpr char16_t textcomp_27[]{0x2423};
+static constexpr char16_t textcomp_28[]{0x02dd};
+static constexpr char16_t textcomp_29[]{0x00b4};
+static constexpr char16_t textcomp_30[]{0x02d8};
+static constexpr char16_t textcomp_31[]{0x02c7};
+static constexpr char16_t textcomp_32[]{0x00a8};
+static constexpr char16_t textcomp_33[]{0x00af};
+static constexpr char16_t textcomp_34[]{0x02f5};
+static constexpr char16_t textcomp_35[]{0x02f7};
+static constexpr char16_t textcomp_36[]{0x0e3f};
+static constexpr char16_t textcomp_37[]{0x00a2};
+static constexpr char16_t textcomp_38[]{0x20a1};
+static constexpr char16_t textcomp_39[]{0x00a4};
+static constexpr char16_t textcomp_40[]{0x0024};
+static constexpr char16_t textcomp_41[]{0x20ab};
+static constexpr char16_t textcomp_42[]{0x20ac};
+static constexpr char16_t textcomp_43[]{0x0192};
+static constexpr char16_t textcomp_44[]{0x20b2};
+static constexpr char16_t textcomp_45[]{0x20a4};
+static constexpr char16_t textcomp_46[]{0x20a6};
+static constexpr char16_t textcomp_47[]{0x20b1};
+static constexpr char16_t textcomp_48[]{0x00a3};
+static constexpr char16_t textcomp_49[]{0x20a9};
+static constexpr char16_t textcomp_50[]{0x00a5};
+static constexpr char16_t textcomp_51[]{0x2117};
+static constexpr char16_t textcomp_52[]{0x200c};
+static constexpr char16_t textcomp_53[]{0xd83c, 0xdd2f};
+static constexpr char16_t textcomp_54[]{0x00a9};
+static constexpr char16_t textcomp_55[]{0x00ae};
+static constexpr char16_t textcomp_56[]{0x2120};
+static constexpr char16_t textcomp_57[]{0x2122};
+static constexpr char16_t textcomp_58[]{0x2016};
+static constexpr char16_t textcomp_59[]{0x25ef};
+static constexpr char16_t textcomp_60[]{0x2422};
+static constexpr char16_t textcomp_61[]{0x00a6};
+static constexpr char16_t textcomp_62[]{0x2052};
+static constexpr char16_t textcomp_63[]{0x212e};
+static constexpr char16_t textcomp_64[]{0x203d};
+static constexpr char16_t textcomp_65[]{0x2e18};
+static constexpr char16_t textcomp_66[]{0x266a};
+static constexpr char16_t textcomp_67[]{0x2116};
+static constexpr char16_t textcomp_68[]{0x25e6};
+static constexpr char16_t textcomp_69[]{0x2031};
+static constexpr char16_t textcomp_70[]{0x2030};
+static constexpr char16_t textcomp_71[]{0x211e};
+static constexpr char16_t textcomp_72[]{0x203b};
+static constexpr char16_t textcomp_73[]{0x2329};
+static constexpr char16_t textcomp_74[]{0x232a};
+static constexpr char16_t textcomp_75[]{0x27e6};
+static constexpr char16_t textcomp_76[]{0x27e7};
+static constexpr char16_t textcomp_77[]{0x2045};
+static constexpr char16_t textcomp_78[]{0x2046};
+static constexpr char16_t textcomp_79[]{0x2103};
+static constexpr char16_t textcomp_80[]{0x00b0};
+static constexpr char16_t textcomp_81[]{0x00f7};
+static constexpr char16_t textcomp_82[]{0x2193};
+static constexpr char16_t textcomp_83[]{0x2044};
+static constexpr char16_t textcomp_84[]{0x2190};
+static constexpr char16_t textcomp_85[]{0x00ac};
+static constexpr char16_t textcomp_86[]{0x2127};
+static constexpr char16_t textcomp_87[]{0x2212};
+static constexpr char16_t textcomp_88[]{0x00b5};
+static constexpr char16_t textcomp_89[]{0x2126};
+static constexpr char16_t textcomp_90[]{0x00bd};
+static constexpr char16_t textcomp_91[]{0x00bc};
+static constexpr char16_t textcomp_92[]{0x00b9};
+static constexpr char16_t textcomp_93[]{0x00b1};
+static constexpr char16_t textcomp_94[]{0x2192};
+static constexpr char16_t textcomp_95[]{0x221a};
+static constexpr char16_t textcomp_96[]{0x00be};
+static constexpr char16_t textcomp_97[]{0x00b3};
+static constexpr char16_t textcomp_98[]{0x00d7};
+static constexpr char16_t textcomp_99[]{0x00b2};
+static constexpr char16_t textcomp_100[]{0x2191};
+static constexpr char16_t textcomp_101[]{0x002a};
+static constexpr char16_t textcomp_102[]{0x2020};
+static constexpr char16_t textcomp_103[]{0x26ae};
+static constexpr char16_t textcomp_104[]{0x26ad};
+static constexpr char16_t textcomp_105[]{0x00a2};
+static constexpr char16_t textcomp_106[]{0x0024};
+static constexpr char16_t textcomp_107[]{0x0030};
+static constexpr char16_t textcomp_108[]{0x0031};
+static constexpr char16_t textcomp_109[]{0x0032};
+static constexpr char16_t textcomp_110[]{0x0033};
+static constexpr char16_t textcomp_111[]{0x0034};
+static constexpr char16_t textcomp_112[]{0x0035};
+static constexpr char16_t textcomp_113[]{0x0036};
+static constexpr char16_t textcomp_114[]{0x0037};
+static constexpr char16_t textcomp_115[]{0x0038};
+static constexpr char16_t textcomp_116[]{0x0039};
+static constexpr Entry entries[]{
+    {"textasciicircum", std::u16string_view(textcomp_0, 1), ""},
+    {"textasciitilde", std::u16string_view(textcomp_1, 1), ""},
+    {"textasteriskcentered", std::u16string_view(textcomp_2, 1), ""},
+    {"textbackslash", std::u16string_view(textcomp_3, 1), ""},
+    {"textbar", std::u16string_view(textcomp_4, 1), ""},
+    {"textbraceleft", std::u16string_view(textcomp_5, 1), ""},
+    {"textbraceright", std::u16string_view(textcomp_6, 1), ""},
+    {"textbullet", std::u16string_view(textcomp_7, 1), ""},
+    {"textdagger", std::u16string_view(textcomp_8, 1), ""},
+    {"textdaggerdbl", std::u16string_view(textcomp_9, 1), ""},
+    {"textellipsis", std::u16string_view(textcomp_10, 1), ""},
+    {"textemdash", std::u16string_view(textcomp_11, 1), ""},
+    {"textendash", std::u16string_view(textcomp_12, 1), ""},
+    {"textexclamdown", std::u16string_view(textcomp_13, 1), ""},
+    {"textgreater", std::u16string_view(textcomp_14, 1), ""},
+    {"textless", std::u16string_view(textcomp_15, 1), ""},
+    {"textordfeminine", std::u16string_view(textcomp_16, 1), ""},
+    {"textordmasculine", std::u16string_view(textcomp_17, 1), ""},
+    {"textparagraph", std::u16string_view(textcomp_18, 1), ""},
+    {"textperiodcentered", std::u16string_view(textcomp_19, 1), ""},
+    {"textquestiondown", std::u16string_view(textcomp_20, 1), ""},
+    {"textquotedblleft", std::u16string_view(textcomp_21, 1), ""},
+    {"textquotedblright", std::u16string_view(textcomp_22, 1), ""},
+    {"textquoteleft", std::u16string_view(textcomp_23, 1), ""},
+    {"textquoteright", std::u16string_view(textcomp_24, 1), ""},
+    {"textsection", std::u16string_view(textcomp_25, 1), ""},
+    {"textunderscore", std::u16string_view(textcomp_26, 1), ""},
+    {"textvisiblespace", std::u16string_view(textcomp_27, 1), ""},
+    {"textacutedbl", std::u16string_view(textcomp_28, 1), ""},
+    {"textasciiacute", std::u16string_view(textcomp_29, 1), ""},
+    {"textasciibreve", std::u16string_view(textcomp_30, 1), ""},
+    {"textasciicaron", std::u16string_view(textcomp_31, 1), ""},
+    {"textasciidieresis", std::u16string_view(textcomp_32, 1), ""},
+    {"textasciimacron", std::u16string_view(textcomp_33, 1), ""},
+    {"textgravedbl", std::u16string_view(textcomp_34, 1), ""},
+    {"texttildelow", std::u16string_view(textcomp_35, 1), ""},
+    {"textbaht", std::u16string_view(textcomp_36, 1), ""},
+    {"textcent", std::u16string_view(textcomp_37, 1), ""},
+    {"textcolonmonetary", std::u16string_view(textcomp_38, 1), ""},
+    {"textcurrency", std::u16string_view(textcomp_39, 1), ""},
+    {"textdollar", std::u16string_view(textcomp_40, 1), ""},
+    {"textdong", std::u16string_view(textcomp_41, 1), ""},
+    {"texteuro", std::u16string_view(textcomp_42, 1), ""},
+    {"textflorin", std::u16string_view(textcomp_43, 1), ""},
+    {"textguarani", std::u16string_view(textcomp_44, 1), ""},
+    {"textlira", std::u16string_view(textcomp_45, 1), ""},
+    {"textnaira", std::u16string_view(textcomp_46, 1), ""},
+    {"textpeso", std::u16string_view(textcomp_47, 1), ""},
+    {"textsterling", std::u16string_view(textcomp_48, 1), ""},
+    {"textwon", std::u16string_view(textcomp_49, 1), ""},
+    {"textyen", std::u16string_view(textcomp_50, 1), ""},
+    {"textcircledP", std::u16string_view(textcomp_51, 1), ""},
+    {"textcompwordmark", std::u16string_view(textcomp_52, 1), ""},
+    {"textcopyleft", std::u16string_view(textcomp_53, 2), ""},
+    {"textcopyright", std::u16string_view(textcomp_54, 1), ""},
+    {"textregistered", std::u16string_view(textcomp_55, 1), ""},
+    {"textservicemark", std::u16string_view(textcomp_56, 1), ""},
+    {"texttrademark", std::u16string_view(textcomp_57, 1), ""},
+    {"textbardbl", std::u16string_view(textcomp_58, 1), ""},
+    {"textbigcircle", std::u16string_view(textcomp_59, 1), ""},
+    {"textblank", std::u16string_view(textcomp_60, 1), ""},
+    {"textbrokenbar", std::u16string_view(textcomp_61, 1), ""},
+    {"textdiscount", std::u16string_view(textcomp_62, 1), ""},
+    {"textestimated", std::u16string_view(textcomp_63, 1), ""},
+    {"textinterrobang", std::u16string_view(textcomp_64, 1), ""},
+    {"textinterrobangdown", std::u16string_view(textcomp_65, 1), ""},
+    {"textmusicalnote", std::u16string_view(textcomp_66, 1), ""},
+    {"textnumero", std::u16string_view(textcomp_67, 1), ""},
+    {"textopenbullet", std::u16string_view(textcomp_68, 1), ""},
+    {"textpertenthousand", std::u16string_view(textcomp_69, 1), ""},
+    {"textperthousand", std::u16string_view(textcomp_70, 1), ""},
+    {"textrecipe", std::u16string_view(textcomp_71, 1), ""},
+    {"textreferencemark", std::u16string_view(textcomp_72, 1), ""},
+    {"textlangle", std::u16string_view(textcomp_73, 1), ""},
+    {"textrangle", std::u16string_view(textcomp_74, 1), ""},
+    {"textlbrackdbl", std::u16string_view(textcomp_75, 1), ""},
+    {"textrbrackdbl", std::u16string_view(textcomp_76, 1), ""},
+    {"textlquill", std::u16string_view(textcomp_77, 1), ""},
+    {"textrquill", std::u16string_view(textcomp_78, 1), ""},
+    {"textcelsius", std::u16string_view(textcomp_79, 1), ""},
+    {"textdegree", std::u16string_view(textcomp_80, 1), ""},
+    {"textdiv", std::u16string_view(textcomp_81, 1), ""},
+    {"textdownarrow", std::u16string_view(textcomp_82, 1), ""},
+    {"textfractionsolidus", std::u16string_view(textcomp_83, 1), ""},
+    {"textleftarrow", std::u16string_view(textcomp_84, 1), ""},
+    {"textlnot", std::u16string_view(textcomp_85, 1), ""},
+    {"textmho", std::u16string_view(textcomp_86, 1), ""},
+    {"textminus", std::u16string_view(textcomp_87, 1), ""},
+    {"textmu", std::u16string_view(textcomp_88, 1), ""},
+    {"textohm", std::u16string_view(textcomp_89, 1), ""},
+    {"textonehalf", std::u16string_view(textcomp_90, 1), ""},
+    {"textonequarter", std::u16string_view(textcomp_91, 1), ""},
+    {"textonesuperior", std::u16string_view(textcomp_92, 1), ""},
+    {"textpm", std::u16string_view(textcomp_93, 1), ""},
+    {"textrightarrow", std::u16string_view(textcomp_94, 1), ""},
+    {"textsurd", std::u16string_view(textcomp_95, 1), ""},
+    {"textthreequarters", std::u16string_view(textcomp_96, 1), ""},
+    {"textthreesuperior", std::u16string_view(textcomp_97, 1), ""},
+    {"texttimes", std::u16string_view(textcomp_98, 1), ""},
+    {"texttwosuperior", std::u16string_view(textcomp_99, 1), ""},
+    {"textuparrow", std::u16string_view(textcomp_100, 1), ""},
+    {"textborn", std::u16string_view(textcomp_101, 1), ""},
+    {"textdied", std::u16string_view(textcomp_102, 1), ""},
+    {"textdivorced", std::u16string_view(textcomp_103, 1), ""},
+    {"textmarried", std::u16string_view(textcomp_104, 1), ""},
+    {"textcentoldstyle", std::u16string_view(textcomp_105, 1), "oldstyle"},
+    {"textdollaroldstyle", std::u16string_view(textcomp_106, 1), "oldstyle"},
+    {"textzerooldstyle", std::u16string_view(textcomp_107, 1), "oldstyle"},
+    {"textoneoldstyle", std::u16string_view(textcomp_108, 1), "oldstyle"},
+    {"texttwooldstyle", std::u16string_view(textcomp_109, 1), "oldstyle"},
+    {"textthreeoldstyle", std::u16string_view(textcomp_110, 1), "oldstyle"},
+    {"textfouroldstyle", std::u16string_view(textcomp_111, 1), "oldstyle"},
+    {"textfiveoldstyle", std::u16string_view(textcomp_112, 1), "oldstyle"},
+    {"textsixoldstyle", std::u16string_view(textcomp_113, 1), "oldstyle"},
+    {"textsevenoldstyle", std::u16string_view(textcomp_114, 1), "oldstyle"},
+    {"texteightoldstyle", std::u16string_view(textcomp_115, 1), "oldstyle"},
+    {"textnineoldstyle", std::u16string_view(textcomp_116, 1), "oldstyle"},
+};
