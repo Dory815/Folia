@@ -1518,3 +1518,19 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mml_context_bindings.ixx)
 target_sources(folia_math PRIVATE
     src/math/core/mml_tree/mml_context_bindings.cpp)
+
+# These CMake executables are console tests/probes; the WinUI app uses MSBuild.
+# Keep CRT reports on stderr, including failures before main().
+if(WIN32 AND MSVC)
+    add_library(folia_console_test_runtime OBJECT tools/test-support/windows_console_runtime.cpp)
+    target_compile_features(folia_console_test_runtime PRIVATE cxx_std_23)
+    set_target_properties(folia_console_test_runtime PROPERTIES
+        CXX_MODULE_STD OFF CXX_SCAN_FOR_MODULES OFF)
+    get_property(folia_console_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(folia_console_target IN LISTS folia_console_targets)
+        get_target_property(folia_console_type ${folia_console_target} TYPE)
+        if(folia_console_type STREQUAL "EXECUTABLE" AND folia_console_target MATCHES "^Folia")
+            target_link_libraries(${folia_console_target} PRIVATE folia_console_test_runtime)
+        endif()
+    endforeach()
+endif()
