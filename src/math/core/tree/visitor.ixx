@@ -1,118 +1,103 @@
 /*************************************************************
- * Source port of MathJax 4.1.3 core/Tree/Visitor.ts.
- * The visitor is factory-kind driven; callers provide the native equivalents
- * of property lookup on the concrete visitor and childNodes access.
+ * Copyright (c) 2017-2026 The MathJax Consortium.
+ * Native typed visitor based on MathJax 4.1.3 core/Tree/Visitor.ts.
+ * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
  *************************************************************/
 export module folia.math.core.tree.visitor;
 export import folia.math.core.tree.factory_types;
 import std;
 
 export namespace folia::math::tree {
-template<class Product> class AbstractVisitor;
+template <class Product, class Argument, class Result>
+using VisitorFunction = std::function<Result(Product &, Argument const &)>;
 
-template<class Product>
-using VisitorFunction = std::function<std::any(
-    AbstractVisitor<Product>&, Product&, std::span<const std::any>)>;
+template <class Product, class Kind, class Argument, class Result>
+using VisitorHandlerTable = std::unordered_map<Kind, VisitorFunction<Product, Argument, Result>>;
 
-template<class Product> struct VisitorMethod {
-    bool truthy = false;
-    VisitorFunction<Product> function;
-    std::any value;
+template <class Product> struct VisitorChildren {
+    std::function<std::size_t(Product &)> size;
+    std::function<Product *(Product &, std::size_t)> get;
 };
 
-template<class Product> struct VisitorChildren {
-    // The Source for-of captures the array object once, but reads its length
-    // before every step and Gets the current slot.  These callbacks preserve
-    // that live sequence profile during recursive visitor callbacks.
-    std::function<std::size_t()> size;
-    std::function<ChildValue<Product>(std::size_t)> get;
-};
-
-template<class Product>
+template <class Product, class Kind, class Argument = std::monostate, class Result = void>
 class AbstractVisitor {
-public:
-    using MethodLookup = std::function<VisitorMethod<Product>(std::string_view)>;
-    using ChildrenLookup = std::function<std::optional<VisitorChildren<Product>>(
-        Product&)>;
+  public:
+    using Handler = VisitorFunction<Product, Argument, Result>;
+    using HandlerTable = VisitorHandlerTable<Product, Kind, Argument, Result>;
 
-private:
-    std::unordered_map<std::string, VisitorMethod<Product>> nodeHandlers_;
-    ChildrenLookup children_;
+  private:
+    std::unordered_map<Kind, std::shared_ptr<Handler const>> nodeHandlers_;
+    VisitorChildren<Product> children_;
 
-    static bool identifierChar(char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-               (c >= '0' && c <= '9') || c == '_';
-    }
-
-public:
-    static std::string methodName(std::string_view kind) {
-        // Source performs charAt(0).toUpperCase() + substring(1), then applies
-        // /[^a-z0-9_]/gi to the complete resulting name.  Factory kinds in the
-        // current MML profile are ASCII; non-ASCII case expansion is tracked
-        // separately rather than treating UTF-8 bytes as UTF-16 code units.
-        std::string suffix(kind);
-        if (!suffix.empty() && suffix[0] >= 'a' && suffix[0] <= 'z')
-            suffix[0] = static_cast<char>(suffix[0] - 'a' + 'A');
-        std::string result = "visit";
-        for (char c : suffix) result.push_back(identifierChar(c) ? c : '_');
-        result += "Node";
-        return result;
-    }
-
-    AbstractVisitor(FactoryServices<Product>& factory, MethodLookup methodLookup,
-                    ChildrenLookup childrenLookup)
-        : children_(std::move(childrenLookup)) {
-        // Source captures the method function into its Map during construction;
-        // later changes to a visitor method do not rewrite this entry.
-        for (const auto& kind : factory.getKinds()) {
-            const auto name = methodName(kind);
-            if (methodLookup) {
-                auto method = methodLookup(name);
-                if (method.truthy) nodeHandlers_.insert_or_assign(kind, std::move(method));
-            }
+  public:
+    template <class CreationArguments>
+    explicit AbstractVisitor(FactoryServices<Product, Kind, CreationArguments> &factory,
+                             HandlerTable handlers, VisitorChildren<Product> children)
+        : children_(std::move(children)) {
+        // Source captures handlers only for the factory's current kinds.
+        // The copied functions remain stable if the caller later replaces its table.
+        for (const auto &kind : factory.getKinds()) {
+            const auto found = handlers.find(kind);
+            if (found != handlers.end() && found->second)
+                nodeHandlers_.insert_or_assign(kind,
+                                               std::make_shared<Handler const>(found->second));
         }
     }
 
+    AbstractVisitor(AbstractVisitor const &) = delete;
+    AbstractVisitor &operator=(AbstractVisitor const &) = delete;
+    AbstractVisitor(AbstractVisitor &&) = delete;
+    AbstractVisitor &operator=(AbstractVisitor &&) = delete;
     virtual ~AbstractVisitor() = default;
 
-    virtual std::any visitTree(Product& tree, std::span<const std::any> args = {}) {
-        return visitNode(tree, args);
+    virtual Result visitTree(Product &tree, Argument const &argument = Argument{}) {
+        return visitNode(tree, argument);
     }
 
-    virtual std::any visitNode(Product& node, std::span<const std::any> args = {}) {
-        const auto kind = node.kind();
-        const auto handler = nodeHandlers_.find(kind);
-        if (handler != nodeHandlers_.end()) {
-            if(!handler->second.truthy)return visitDefault(node,args);
-            if (!handler->second.function)
-                throw options::Exception("TypeError",u"handler.call is not a function");
-            return handler->second.function(*this, node, args);
+    virtual Result visitNode(Product &node, Argument const &argument = Argument{}) {
+        const auto found = nodeHandlers_.find(node.kind());
+        // Keep the active target alive if it changes this registry entry while
+        // executing. Copying only the shared owner preserves mutable functor state.
+        std::shared_ptr<Handler const> handler;
+        if (found != nodeHandlers_.end())
+            handler = found->second;
+        if (handler && *handler)
+            return (*handler)(node, argument);
+        return visitDefault(node, argument);
+    }
+
+    virtual Result visitDefault(Product &node, Argument const &argument = Argument{}) {
+        const bool hasSize = static_cast<bool>(children_.size);
+        const bool hasGet = static_cast<bool>(children_.get);
+        if (hasSize != hasGet)
+            throw std::invalid_argument("Tree visitor child accessors must be supplied together");
+        if (hasSize) {
+            // Query the size on every iteration and get the current slot only
+            // after the callback, matching Source's live for-of child traversal.
+            for (std::size_t index = 0; index < children_.size(node); ++index) {
+                auto *child = children_.get(node, index);
+                if (!child)
+                    throw std::invalid_argument("Tree visitor child accessor returned null");
+                (void)visitNode(*child, argument);
+            }
         }
-        return visitDefault(node, args);
-    }
-
-    virtual std::any visitDefault(Product& node, std::span<const std::any> args = {}) {
-        if (!children_) return {};
-        const auto children = children_(node);
-        if (!children) return {};
-        if(!children->size||!children->get)
-            throw options::Exception("TypeError",u"Visitor child iterator is invalid");
-        for (std::size_t i=0;i<children->size();++i) {
-            const auto child=children->get(i);
-            (void)visitNode(*child.requireNode("kind"), args);
+        if constexpr (std::is_void_v<Result>) {
+            return;
+        } else {
+            return Result{};
         }
-        return {};
     }
 
-    virtual void setNodeHandler(std::string kind, VisitorFunction<Product> handler) {
-        VisitorMethod<Product> method;
-        method.truthy=static_cast<bool>(handler);
-        method.function=std::move(handler);
-        nodeHandlers_.insert_or_assign(std::move(kind), std::move(method));
+    virtual void setNodeHandler(Kind kind, Handler handler) {
+        if (handler)
+            nodeHandlers_.insert_or_assign(std::move(kind),
+                                           std::make_shared<Handler const>(std::move(handler)));
+        else
+            nodeHandlers_.erase(kind);
     }
 
-    virtual void removeNodeHandler(std::string_view kind) {
-        nodeHandlers_.erase(std::string(kind));
+    virtual void removeNodeHandler(Kind const &kind) {
+        nodeHandlers_.erase(kind);
     }
 };
-}
+} // namespace folia::math::tree

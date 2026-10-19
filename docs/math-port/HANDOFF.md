@@ -8,7 +8,7 @@
 
 - MML 集成基线 `33ea03fb`：43 类实际 MML 已接入唯一工厂和文档 arena。
   后续 exact clone、StyleJson、Common 值类型/字体 CSS 数据也已实现并验收，
-  当前组件测试 **201 项 / 32,044 断言**通过。
+  TreeVisitor 也已原生实现并验收；当前组件测试 **205 项 / 32,065 断言**通过。
   不要重新迁移这些类或重跑已完成的大盘点。
 - 下一项是恢复 Common 实际类协作，契约见 `common-native-implementation.md`。
   `MmlClone` / `copyNativeStateTo` 已在原有模块中
@@ -273,11 +273,49 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
   日志 `build/math-port/common-wrapper-native-cases-source.log`。其他新包 Source 执行由 Luna 报告，
   尚不可当作 Root 原生验收。外部 UT 必须 import Common primary，不能 import partitions。
 - 仍需补齐实际 Common LinebreakVisitor（不能用生产 no-op）；目前原 header 仍是旧 any 接口。
-  `Linebreaks` 最小纯虚接口和 TreeVisitor 模板已冻结在正式 Common 文档。TreeVisitor 正在单独
-  原生迁移/构建，下一步先完成它，再用真实类整合 Common core；不要把生产 Common 原样旧依赖加回。
+  `Linebreaks` 最小纯虚接口已冻结在正式 Common 文档。**TreeVisitor 已完成**，下一步用它改造
+  Common visitor 声明/实现，并整合真实 Common core；不要重做 TreeVisitor 或把旧依赖加回。
 - 未解决验收项：无效 mathvariant Source 警告需要闭合诊断值接口；Common 基类 forceInlineBreaks
   是 false，但 Source SVG 返回 options.linebreaks.inline，最终 SVG 对照必须保留这个实际策略。
   TeX parser/packages、CommonMath/其他家族、fraction/radical 实际类、Scene 发射和 Folia 接入仍未完成。
+
+### Typed TreeVisitor（2026-10-20 已完成）
+
+- 原 visitor.ixx 原地替换为 typed Product/Kind/Argument/Result 模板；保留 visitTree/Node/Default、
+  factory kind snapshot、set/remove handler 和 live children 遍历。移除 std::any、反射 methodName/
+  MethodLookup/VisitorMethod、ChildValue 和 JS receiver/coercion 行为。
+- 每个已登记的实际 callable 用标准 shared_ptr<const Handler> 保持正在执行时的生命期；
+  dispatch 只复制该 owner，不复制 std::function target，因此 callback 自替换/移除及 mutable
+  closure 状态正确。只涉及本 Visitor 的有限 typed callback，无对象堆、retirement 或释放补丁。
+- Root 执行正式 `tools/math-port/tree-visitor-source-witness.cjs` 成功；新增 4 项 / 21 断言，
+  覆盖 Source snapshot/replace/remove/live append/result 和实际 callback 析构时机。
+  构建/聚焦/完整 exit0：`build/math-port/native-tree-visitor-{final-build,focused,full}.log`，
+  Source 日志 `native-tree-visitor-source.log`。完整 **205 项 / 32,065 断言**。
+- 这不代表 Common LinebreakVisitor 已移植；其余 inactive Tree/MML visitor 消费者尚需原生改造，
+  不增兼容别名，也不宣称 inactive 老源码已清理。
+
+### Common 候选关键文件校验值（避免拿旧包覆盖 Root 已修结果）
+
+以下路径均相对 `tools/math-port/drafts/native-raii/`；均未原生整合验收。
+
+| 文件 | SHA-256 |
+| --- | --- |
+| common-contract-refresh/headers/types.ixx | 58DC2CFEA8B0AE29766B14C5B197C5B7E63FE3ACBA958A628B78A2478683332B |
+| common-contract-refresh/headers/wrapper.ixx | 1F1FD1D6C83909B8E2ADD3AEAFF6BD0FA58EAA69946C58C79E347917359D01C4 |
+| common-contract-refresh/headers/wrapper_factory.ixx | D1AED312E89EC4147FA4C81AECD53AB2CB129C87B66025D0D57F8FF9C6714339 |
+| common-contract-refresh/headers/output_jax.ixx | 5E218322FCE8CFD8DFF57DFE16D08012CDACB56890164C38142F1C7DCB826D98 |
+| common-wrapper-native-impl/src/math/output/common/wrapper.cpp | D5FD30B9FD2519116FE24837E2883ECFF8EDA708BAE194513F3CA617D0350D7E |
+| common-factory-native-impl/src/math/output/common/wrapper_factory.cpp | F573547A38FDE8A28C3AA421204215779CB644D7A524FCF6920027EC591C6C4A |
+| common-factory-native-impl/src/math/output/common/output_jax.cpp | AC04596D01E845803292CE40CAB7EE62CAD9354A96876F7F4A616627D132D77C |
+| common-mo-native-impl/src/math/output/common/wrappers/mo.cpp | 4999861803C0E66E7669E0E0B6B5578642CC75BF692BDB3A0B68723709F64EB6 |
+| common-text-native-impl/src/math/output/common/wrappers/text_node.cpp | 858E307ED486265BFD274D4FEE95BF10FF2E074B41C2BE23DBD02503B903CFA1 |
+| common-row-native-impl/src/math/output/common/wrappers/mrow.cpp | 18C11407FF455D0ED894A4F16AEDC83FBF5EB150014451D4CB41156274D244B2 |
+
+Root 已修 factory packet 的 merged output_jax.cpp 和 lifecycle snippet：nodeMap 登记应
+insert_or_assign（Source Map.set），不能抛出“同节点已有不同 wrapper”。其旧 unified patch/hash
+因此已过期；整合时读当前文件并重新生成 diff，不要直接应用旧 patch。
+
+所有本轮构建已结束；Luna 包均已交付，没有需要继续等待的旧 build/agent 句柄。
 
 ## 工作区保护
 
@@ -289,3 +327,8 @@ inventory 工具另有未提交修改；不要顺手一并提交、删除或覆�
 字体证据、Common 原接口与旧类声明已经核查。最近两笔 Tree 实现的构建与测试也已完成。
 接下来不要重复这些检查来代替执行上述下一步。若 HEAD 或相关文件实际变化，
 只核对相应差异并更新本记录；继续保持一个构建、总并发 4/math 编译池 2。
+
+分批暂存 CMake 不要过滤 zero-context diff 的前部 hunk 后直接应用后部绝对行号；
+本轮因此曾把 types 行暂存到 FILE_SET 括号外，工作树构建虽过但暂存版本不正确。
+最终提交已恢复正确列表位置，并对最终 HEAD 重跑 configure/build/test；不能用工作树
+先前通过的日志推断每个中间暂存提交都能独立配置。
