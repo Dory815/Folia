@@ -1,141 +1,135 @@
-// MathJax 4.1.3 core/MathItem.ts. Apache-2.0.
-// The actual expression/job state lives here, outside the TeX parser family.
+// Native MathItem expression state for the shared mathematical output pipeline.
+// MathJax 4.1.3 core/MathItem.ts; Apache-2.0.
 export module folia.math.core.math_item;
-export import folia.math.core.mml_tree.mml_node;
-export import folia.math.core.dom_node;
-export import folia.math.core.dom_adaptor;
-export import folia.math.core.math_location;
-export import folia.math.util.context_property_bindings;
-export import folia.math.util.object_types;
+export import folia.math.core.mml_tree.mml_document;
+export import folia.math.output.scene;
+export import folia.math.util.bbox;
 import std;
+
 export namespace folia::math::core {
+enum class MathState : std::int32_t {
+    unprocessed = 0, find_math = 10, compiled = 20, convert = 100,
+    metrics = 110, rerender = 125, typeset = 150, inserted = 200, last = 10000
+};
+// Stock codes retain their Source values. A numeric predecessor such as 124
+// is representable; no runtime string -> state registry is needed by scope38.
+struct MathStates {
+    static constexpr auto UNPROCESSED = MathState::unprocessed;
+    static constexpr auto FINDMATH = MathState::find_math;
+    static constexpr auto COMPILED = MathState::compiled;
+    static constexpr auto CONVERT = MathState::convert;
+    static constexpr auto METRICS = MathState::metrics;
+    static constexpr auto RERENDER = MathState::rerender;
+    static constexpr auto TYPESET = MathState::typeset;
+    static constexpr auto INSERTED = MathState::inserted;
+    static constexpr auto LAST = MathState::last;
+};
+inline constexpr MathStates STATE;
+
+enum class MathDisplay : std::uint8_t { inline_math, display_math, escaped };
+struct MathMetrics {
+    double em;
+    double ex;
+    double containerWidth;
+    double scale;
+};
+struct MathRecompile {
+    MathState state;
+    std::int64_t counter;
+    friend bool operator==(MathRecompile const&, MathRecompile const&) = default;
+};
+struct MathInputData {
+    std::optional<MathRecompile> recompile;
+};
+struct MathOutputData {
+    std::optional<std::u16string> mtext_family;
+    std::optional<std::u16string> merror_family;
+};
+
 class MathItem;
-class MathDocumentService;
-class MathInputJaxService;
-class MathOutputJaxService;
-class MathRenderActionsService;
-class MathListService;
-using MathDocumentReference=std::variant<Missing,PropertyNull,MathDocumentService*>;
-using MathInputJaxReference=std::variant<Missing,PropertyNull,MathInputJaxService*>;
-using MathOutputJaxReference=std::variant<Missing,PropertyNull,MathOutputJaxService*>;
-using MathRenderActionsReference=std::variant<Missing,PropertyNull,MathRenderActionsService*>;
-// A common-output result is the same canonical DOM handle held by the
-// adaptor. Other output backends may return their actual native owner.
-using MathOutput=std::variant<Missing,PropertyNull,NativeObjectRef,DOMNodeRef>;
-// Convert the actual output result to the Source-facing Context value. DOM
-// results use the canonical node Property binding; no replacement object is
-// allocated for a node handle.
-options::Value sourceOutputValue(const MathOutput&,ContextPropertyBindings&);
-// Generic Location may include a native N/T node. Keep the complete supplied
-// location object opaque and identical; scalar location records use Property.
-// Source ProtoItem belongs to core/MathItem.ts, shared by InputJax and FindMath.
-// Scalar records use the existing lossless Property graph; native N/T locations
-// may retain a complete opaque proto record.
-using ProtoMathItem=std::variant<Property,NativeObjectRef>;
-using ProtoMathItems=std::shared_ptr<std::vector<ProtoMathItem>>;
+// Retained existing service roles, narrowed to the native expression pipeline.
+// No service owns a MathItem or a second MmlDocument.
 class MathInputJaxService {
 public:
-    virtual ~MathInputJaxService()=default;
-    virtual mml::NodeValue compile(MathItem&,MathDocumentReference)=0;
+    virtual ~MathInputJaxService() = default;
+    virtual mml::MmlNode& compile(MathItem&, mml::MmlDocument&) = 0;
 };
 class MathOutputJaxService {
 public:
-    virtual ~MathOutputJaxService()=default;
-    virtual MathOutput typeset(MathItem&,MathDocumentReference)=0;
-    virtual MathOutput escaped(MathItem&,MathDocumentReference)=0;
+    virtual ~MathOutputJaxService() = default;
+    virtual output::scene::Scene typeset(MathItem&, mml::MmlDocument&) = 0;
+    virtual output::scene::Scene escaped(MathItem&, mml::MmlDocument&) = 0;
+    // Source CommonOutputJax.getBBox; needed by configured bussproofs.
+    // Returns a value, never a reference into a temporary wrapper arena.
+    virtual BBox getBBox(MathItem&, mml::MmlDocument&) = 0;
 };
 class MathRenderActionsService {
 public:
-    virtual ~MathRenderActionsService()=default;
-    virtual void renderMath(MathItem&,MathDocumentReference,Property start)=0;
-    virtual void renderConvert(MathItem&,MathDocumentReference,Property end)=0;
+    virtual ~MathRenderActionsService() = default;
+    virtual void renderMath(MathItem&, mml::MmlDocument&,
+                            MathState start = STATE.UNPROCESSED) = 0;
+    virtual void renderConvert(MathItem&, mml::MmlDocument&,
+                               MathState end = STATE.LAST) = 0;
 };
-class MathDocumentService {
+
+class MathItem {
 public:
-    virtual ~MathDocumentService()=default;
-    virtual MathRenderActionsReference renderActionsReference()const=0;
-    virtual MathOutputJaxReference outputJaxReference()const=0;
-    // Retain the actual document adaptor when an MML HTML node outlives
-    // the filter invocation that created it.
-    virtual std::shared_ptr<AbstractDOMAdaptor> domAdaptorOwner()const {
-        throw options::Exception("Unimplemented",u"MathDocument has no retained DOM adaptor");
-    }
-    // These are live views of the actual MathDocument fields. The default
-    // throws so legacy document adapters cannot silently invent empty/null
-    // Source state while they are migrated to the canonical graph.
-    virtual DOMNodeValue documentNode()const {
-        throw options::Exception("Unimplemented",u"MathDocument.document has no canonical DOM node binding");
-    }
-    virtual MathListService& mathList()const {
-        throw options::Exception("Unimplemented",u"MathDocument.math has no live MathList binding");
-    }
-    virtual MathLocationService& locationService()const {
-        throw options::Exception("Unimplemented",u"MathDocument has no live MathLocation accessor");
-    }
-    virtual options::Context& sourceContext()const {
-        throw options::Exception("Unimplemented",u"MathDocument has no canonical Source Context");
-    }
-    virtual options::ObjectRef sourceIdentity()const {
-        throw options::Exception("Unimplemented",u"MathDocument has no canonical Source identity");
-    }
+    std::u16string math;
+    MathInputJaxService* inputJax{}; // nullable Source input: measurement-only item
+    MathDisplay display{MathDisplay::display_math};
+    mml::MmlNode* root{}; // sole expression-root borrow, owned by supplied document
+    std::optional<output::scene::Scene> typesetRoot; // actual owned native output
+    std::optional<MathMetrics> metrics; // Source starts with {}; no metric defaults here
+    MathInputData inputData;
+    MathOutputData outputData;
+
+    virtual ~MathItem() = default;
+    virtual bool isEscaped() const noexcept = 0;
+    bool isDisplay() const noexcept;
+    void setDisplay(bool) noexcept; // BaseMethods.Equation updates this one field
+    virtual void render(MathRenderActionsService&, mml::MmlDocument&) = 0;
+    virtual void rerender(MathRenderActionsService&, mml::MmlDocument&,
+                          MathState start = STATE.RERENDER) = 0;
+    virtual void convert(MathRenderActionsService&, mml::MmlDocument&,
+                         MathState end = STATE.LAST) = 0;
+    virtual void compile(mml::MmlDocument&) = 0;
+    virtual void typeset(MathOutputJaxService&, mml::MmlDocument&) = 0;
+    // Core Source defaults only; no HTML insertion shell is implemented.
+    virtual void updateDocument() = 0;
+    virtual void removeFromDocument(bool restore = false) = 0;
+    virtual void setMetrics(double em, double ex, double cwidth, double scale) = 0;
+    virtual MathState state() const noexcept = 0;
+    virtual MathState state(MathState, bool restore = false) = 0;
+    virtual void reset(bool restore = false) = 0;
+    virtual void clear() = 0;
 };
-class MathItem:public NativeObject {
-public:
-    Property math=Missing{},display=Missing{};
-    MathLocation start=Property(Missing{}),end=Property(Missing{});
-    MathInputJaxReference inputJax=Missing{};
-    mml::NodeValue root=PropertyNull{};
-    MathOutput typesetRoot=PropertyNull{};
-    Property metrics=Missing{},inputData=Missing{},outputData=Missing{};
-    virtual ~MathItem()=default;
-    virtual bool isEscaped()const=0;
-    virtual void render(MathDocumentReference)=0;
-    virtual void rerender(MathDocumentReference,Property start=Missing{})=0;
-    virtual void convert(MathDocumentReference,Property end=Missing{})=0;
-    virtual void compile(MathDocumentReference)=0;
-    virtual void typeset(MathDocumentReference)=0;
-    virtual void updateDocument(MathDocumentReference)=0;
-    virtual void removeFromDocument(Property restore=Missing{})=0;
-    virtual void setMetrics(Property em,Property ex,Property cwidth,Property scale)=0;
-    virtual Property state(Property state=Missing{},Property restore=Missing{})=0;
-    virtual void reset(Property restore=Missing{})=0;
-    virtual void clear()=0;
-};
-// The document and output layers depend on this exact live list owner. It is
-// declared after MathItem so its callback always names the canonical type.
-class MathListService {
-public:
-    virtual ~MathListService()=default;
-    virtual void forEach(const std::function<void(MathItem&)>&)=0;
-};
-class AbstractMathItem:public MathItem {
+
+// The actual Source implementation family, not a second job/request facade.
+// No native subclass is needed solely to duplicate these default algorithms.
+class AbstractMathItem : public MathItem {
 protected:
-    Property state_=Missing{};
-    AbstractMathItem(Property math,MathInputJaxReference,Property display=Missing{},
-                     MathLocation start=Property(Missing{}),MathLocation end=Property(Missing{}));
+    MathState state_{STATE.UNPROCESSED};
 public:
-    AbstractMathItem(const AbstractMathItem&)=delete;
-    AbstractMathItem& operator=(const AbstractMathItem&)=delete;
-    // Source exposes _state as an ordinary writable field. Context projection
-    // must read/write the actual state owner without invoking state()'s
-    // transition side effects or narrowing values to a number.
-    Property sourceStateField()const{return state_;}
-    void setSourceStateField(Property value){state_=std::move(value);}
-    bool isEscaped()const override;
-    void render(MathDocumentReference)override;
-    void rerender(MathDocumentReference,Property start=Missing{})override;
-    void convert(MathDocumentReference,Property end=Missing{})override;
-    void compile(MathDocumentReference)override;
-    void typeset(MathDocumentReference)override;
-    void updateDocument(MathDocumentReference)override;
-    void removeFromDocument(Property restore=Missing{})override;
-    void setMetrics(Property em,Property ex,Property cwidth,Property scale)override;
-    Property state(Property state=Missing{},Property restore=Missing{})override;
-    void reset(Property restore=Missing{})override;
-    void clear()override;
+    AbstractMathItem(std::u16string math, MathInputJaxService*,
+                     MathDisplay display = MathDisplay::display_math);
+    AbstractMathItem(AbstractMathItem const&) = delete;
+    AbstractMathItem& operator=(AbstractMathItem const&) = delete;
+    AbstractMathItem(AbstractMathItem&&) = delete;
+    AbstractMathItem& operator=(AbstractMathItem&&) = delete;
+    bool isEscaped() const noexcept override;
+    void render(MathRenderActionsService&, mml::MmlDocument&) override;
+    void rerender(MathRenderActionsService&, mml::MmlDocument&,
+                  MathState start = STATE.RERENDER) override;
+    void convert(MathRenderActionsService&, mml::MmlDocument&,
+                 MathState end = STATE.LAST) override;
+    void compile(mml::MmlDocument&) override;
+    void typeset(MathOutputJaxService&, mml::MmlDocument&) override;
+    void updateDocument() override;
+    void removeFromDocument(bool restore = false) override;
+    void setMetrics(double em, double ex, double cwidth, double scale) override;
+    MathState state() const noexcept override;
+    MathState state(MathState, bool restore = false) override;
+    void reset(bool restore = false) override;
+    void clear() override;
 };
-extern PropertyList STATE;
-Property protoItem(Property open,Property math,Property close,Property n,
-                   Property start,Property end,Property display=Missing{});
-void newState(std::string_view name,Property state);
 }

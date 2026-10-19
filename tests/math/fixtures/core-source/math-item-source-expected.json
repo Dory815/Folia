@@ -1,0 +1,133 @@
+{
+  "version": "4.1.3",
+  "sourceHashes": {
+    "cjs/core/MathItem.js": "e6ed5008854e4d2ac6b34ab98c53bec6afb34e460895e8320c90a0d8d700d261",
+    "mjs/core/MathItem.js": "152d0a3dc1bf876e4905b7d90e27bb1eaef8a296b8af1627c1aa72ffeff273be",
+    "ts/core/MathItem.ts": "7c376ecd5c9ae0a74753429b361752d302454eb02c38023b9a91eb313e069285",
+    "cjs/core/MathDocument.js": "3a7dad24d15a1137fa0bd8394a42284c690830c751102b6a31785a0f77eee1db",
+    "mjs/core/MathDocument.js": "9d61ca58a555dbf60a9801c9a42d3f176d4687484aafd9bb8d951bc3fc80be2a",
+    "ts/core/MathDocument.ts": "05b01d5bb70d07b47363784e2d6482c2e3e9e4511cc8eaffbd72a46d554370ab",
+    "cjs/input/tex.js": "ef2852b197173f373e62326016e980aef01ffc838f5f766ab6076262f944eada",
+    "mjs/input/tex.js": "12402942e0f448baa44c952d930bb9f40c5f54080898067ad516798dd9801df0",
+    "ts/input/tex.ts": "77f300e2e6fd91851b84eb8dcb4190bcc3a87d9fc37f6bcae0a4d6223eeea389",
+    "cjs/input/tex/Tags.js": "e027c7edb6f7207f3b3ce7e7203dcfc763219b1fa37a3b39925ae83c1beef896",
+    "mjs/input/tex/Tags.js": "a5c933f8f4e0d3f5cf133f3839a8d29b882f23c4ba7f0a78327a72396b59117e",
+    "ts/input/tex/Tags.ts": "55b527ce2f83bb793f4f207c27d0072561a424dbbd37b02be0316a5287bd54e4",
+    "cjs/input/tex/base/BaseMethods.js": "b8d5c74e01f85ae391ec8d16ffcd216a4ca4267bd8ffa091c5bfe1462ad7b491",
+    "mjs/input/tex/base/BaseMethods.js": "83d4af50cec5ca942a8fbbebcd734664f97948169a0615fd9a9d38e9fb8a804c",
+    "ts/input/tex/base/BaseMethods.ts": "0c4a1c2c3ca19c583e11ee6af7ea0ec4975c03a0ebfad2a0b0266e9f96d3bdf4",
+    "cjs/input/tex/bussproofs/BussproofsUtil.js": "8ed15ce9672065e5d4ae2e3f06703bbb456f836287fa1fb6a0aa45ecfb1a305d",
+    "mjs/input/tex/bussproofs/BussproofsUtil.js": "405462226577db243794a5a527f85be8367e279394bcd922b263e3c61dd35257",
+    "ts/input/tex/bussproofs/BussproofsUtil.ts": "df3851ecd1431586c686d22215b152f55536b9de63cdadc7483e3ad0938bbeba"
+  },
+  "cases": [
+    {
+      "name": "actual-initial-defaults",
+      "source": "x",
+      "display": false,
+      "escaped": false,
+      "root": null,
+      "typesetRoot": null,
+      "metrics": {},
+      "inputData": {},
+      "outputData": {},
+      "state": 0
+    },
+    {
+      "name": "escaped-is-distinct-from-inline",
+      "display": null,
+      "escaped": true
+    },
+    {
+      "name": "rollback-clears-data-at-thresholds-but-retains-roots-and-metrics",
+      "state": 19,
+      "inputData": {},
+      "outputData": {},
+      "rootRetained": true,
+      "typesetRootRetained": true,
+      "metrics": {
+        "em": 16,
+        "ex": 8,
+        "containerWidth": 400,
+        "scale": 1
+      }
+    },
+    {
+      "name": "actual-document-recompile-loop-restores-state-and-record-before-second-input-pass",
+      "rounds": [
+        {
+          "before": {
+            "state": 0,
+            "counter": 7,
+            "allCounter": 7,
+            "refUpdate": false,
+            "recompile": null
+          },
+          "after": {
+            "state": 0,
+            "counter": 9,
+            "allCounter": 9,
+            "refUpdate": false,
+            "recompile": {
+              "state": 0,
+              "counter": 7
+            }
+          }
+        },
+        {
+          "before": {
+            "state": 0,
+            "counter": 7,
+            "allCounter": 9,
+            "refUpdate": true,
+            "recompile": {
+              "state": 0,
+              "counter": 7
+            }
+          },
+          "after": {
+            "state": 0,
+            "counter": 9,
+            "allCounter": 9,
+            "refUpdate": true,
+            "recompile": {
+              "state": 0,
+              "counter": 7
+            }
+          }
+        }
+      ],
+      "final": {
+        "state": 20,
+        "recompile": {
+          "state": 0,
+          "counter": 7
+        },
+        "allCounter": 9,
+        "allIds": {
+          "observed-id": true
+        },
+        "allLabels": {
+          "observed-label": {
+            "tag": "9",
+            "id": "observed-id"
+          }
+        },
+        "processedCalls": [
+          "compile"
+        ]
+      }
+    },
+    {
+      "name": "redo-during-refupdate-stores-current-precommit-session-counter-and-exact-item-state",
+      "state": 19,
+      "refUpdate": true,
+      "counter": 5,
+      "allCounter": 10,
+      "recompile": {
+        "state": 19,
+        "counter": 10
+      }
+    }
+  ]
+}

@@ -13,13 +13,17 @@
 
 - 用户再次指出压缩后重复调查。AGENTS.md 的连续性规则已经存在，问题在执行；
   本次已实际重读本文件并核对 Git/代理状态。不能只在摘要中提到文件路径就算读过。
-- 此前正式代码基线为 `7a632b73`。273项/33,051断言是此前完整基线；随后scanner
-  仅运行10项/96断言。完整TeX→SVG与Folia替换尚未完成，不能扩大验收结论。
+- **最新完整Math组件基线：292项/33,343断言，exit0**，
+  `build/math-port/native-tex-color-math-item-full.log`，native句柄3528已终态。
+  NodeFactory已提交64a06e78，ColorModel/session已提交febc2e4e；MathItem本批已推广。
+  完整TeX→SVG与Folia替换尚未完成，不能把组件suite扩大为端到端验收。
 - Root四份TeX声明候选在 `tools/math-port/drafts/native-raii/tex-parser-declarations/`，
   尚未推广/构建。架构和职责见 `typed-tex-parser-implementation.md`。
-- `raii_session`已完成修订并交付 `tex-parse-options-contract/README.md`，
-  SHA256 `68EEDEA26DD1E0B919CB37931B30925F2ED79A4EFBFD045AA8F2040373D4E487`。
-  Root尚未审查此最新修订；它仍是声明提案，不是可推广的完整parser。
+- ParseOptions提案已经Root审查并发现真实依赖，不再等待旧交付：
+  tex-parse-options-contract/README.md当前SHA256
+  `7198314240C5DCFE882E94572316B5161B5E74DF81DB691B22B8D8EF7D2CADAE`。
+  它仍不是完整可推广声明；NodeFactory登记和MathItem已实际接入native组件图，
+  Tags/typed dispatch/ColumnParser须闭合后再冻结该服务。
 - **NodeFactory登记已推广并验证**：原node_factory文件增加借用NodeKindRegistration，
   保留唯一MmlFactory；text不登记，token登记外层，error按mtext/merror顺序登记。
   正式工具 `tools/math-port/tex-node-factory-source.cjs` Root从C:\Windows重放exit0，
@@ -32,22 +36,39 @@
   native-tex-color-source.log。构建49594终态exit0；原生color+session共10项/150断言通过，
   native-tex-color-focused.log。旧color/configuration、color/methods、colortbl/methods明确待按
   typed parser服务改造，不进入native依赖图，也不能作为旧路径fallback；本次不声称整包接通。
+- **MathItem已推广并验证**：保留原core/math_item.{ixx,cpp}/math_item_state.cpp职责，
+  去掉旧Context/DOM依赖，实际MathItem/AbstractMathItem持typed状态、borrowed MML root、owned
+  optional Scene。正式math-item-source.cjs从C:\Windows通过5例/18hash，日志
+  native-math-item-formal-source.log；构建5212终态exit0，10项/122断言聚焦通过，
+  native-math-item-focused.log。Bussproofs临时MathItem借同document子树测量，不clone/reparent。
+  服务测试用typed recorders，并不是完整TeX/Common Scene发射实现。Renderer尚未绑定这些服务。
 - BaseItems原26类声明已交付并经Root要求修订，位置 `tex-base-items-contract/`。
   去掉旧TokenMap primary import、修EndEntry virtual和字段遗漏；Source公开数据现在直接
   用typed成员，去掉冗余getter/setter。Root四份header的:types已加同module CharacterMap forward。
   这两包仍未推广/构建；不能引用旧canonical StackKind不存在来重查已说明的状态。
-- 正在运行/审查：`math_structure_audit`写tex-dispatch-contract/；`raii_session`修
-  tex-tags-contract/（Root拒绝跨module core::MathItem forward、将CasesTags字段全塞入
-  equation和把package Tags类搬进主tags文件）；`mml_base_contract_review`写
-  tex-math-item-contract/。`raii_common_font_audit`修tex-color-native/，Root已读代码，
-  正在修多余test右括号、locale无关数字转换及固定Source用例。其余代理已完成。
-- **下一步明确动作**：审并构建ColorModel候选；收齐并审Tags/MathItem/typed dispatch，
-  冻结ParseOptions和26类的服务接口后派Stack/BaseItems实现。颜色持续状态使用原ColorModel
-  类作为session的optional owner，不造另一份ColorPackageState map。MathItem旧primary仍含
-  Context/DOM，不得作为native依赖捷径。原文件职责在typed-tex-parser-implementation.md。
+- **新证据已修正未推广的frame契约**：真实NumCases经EqnArray后再次Push同一CasesBeginItem，
+  同时两个slot共享同一对象/state/env/global。Root从C:\Windows重放正式
+  tex-frame-activation-source.cjs exit0，native-tex-frame-activation-formal-source.log；13个锁定文件。
+  新决定为FrameHandle=shared_ptr<BaseItem>，Factory unique构造后转换一次；Stack/checkItem/
+  replay共享真实frame激活，无registry/arena/shared_from_this。旧unique-only草案已明确取代，
+  不是因忘记旧结论而重查；旧24+6仅审replacement序列，没覆盖这种environment重复入栈。
+  radical_table_runner已更新Root四header和BaseItems候选，Root已读类型/签名；仍未推广/构建。
+- Tags候选已交付且Root已要求修正：tex-tags-contract/，保留原Tags/base/AMS/cases/tagformat/
+  mathtools文件，恢复真实env/label/noTag/makeId；CasesTags自己持subcounter，Mathtools的
+  persistent typed state由session持、request Tags借用。**别整份复制其中session镜像覆盖正式
+  ColorModel改动**。MathItem依赖现在是正式native primary，不再用跨module forward。
+- 当前运行代理：math_structure_audit在tex-dispatch-contract/补四原文件的实际声明，使用
+  Root FrameHandle/BaseItem、独立EnvironmentBodyHandler及closed callback variant；
+  font_assert_audit在tex-column-parser-contract/审原ColumnParser及newcolumntype跨表达式寿命。
+  其余已完成，无live build/native。不要再等旧完成包或重派已消费NodeFactory/Color/MathItem。
+- **下一步明确动作**：收取typed dispatch四header和ColumnParser契约，审Tags与ParseOptions
+  完整服务图并冻结，再让Luna按原文件实现Stack/BaseItems/dispatch。Source priority已实际
+  证明同priority按配置逆序；source-dispatch-observe.cjs已Root重放exit0（14hash），
+  native-tex-dispatch-contract-source.log。不得回到“reverse后恢复原序”的旧错误解释。
+  完整parser/38包、Common→Scene与Folia切换仍是后续必做；不重做已验收Common家族。
 - Git原13项既有无关修改继续保护，见文末。当前无live build/native句柄，不运行reset。
 
-### 最新完成与证据
+### 历史组件证据（当前状态以上方短检查点为准）
 
 - **完整 Math 组件 273 项 / 33,051 断言，exit0**：
   `build/math-port/native-scene-factory-final-full.log`，最终构建
@@ -83,7 +104,7 @@
 - 43 MML类、exact clone、StyleJson、TreeVisitor、字体14,568,049字段零差异、Common core、
   texts/rows/inline、scripts/limits、fence/action、递归LinebreakVisitor均已组件验收。勿重做。
 
-### 当前执行断点与后续候选（2026-10-20）
+### 历史断点与候选记录（不是恢复执行入口）
 
 - 已提交：`149ddacb` Mo非accent remap短路；`1a86ac59` 正式menclose Source工具与锁；
   `82e42966` 原CommonMenclose/notation/catalog、窄sqrt projection、CMake和原生UT。
@@ -189,7 +210,7 @@
   TexEquationState；Color/Begingroup持续状态属于session，不能每request重置。
   其他本轮代理均completed。当前无live native/build，未宣称完整声明已冻结。
 
-### 下一步（直接接续）
+### 当时的下一步（历史，以上方短检查点为准）
 
 1. 四份Root核心header审查、constructor表/运行观察已收取并修正；现在审最新ParseOptions服务草案和BaseItems候选；
    基于24+6条Source transition及Root owner/environment协议冻结完整声明，
@@ -280,7 +301,7 @@
 - 单次一个构建，总并发不超过 4，math 编译池为 2。控制磁盘占用，小批提交。
 - 使用普通本地开发、测试术语。Windows 控制台测试必须使用仓库的 console runtime。
 
-## 对当前状态的判断（已经核查，不要再次从零盘点）
+## 历史核查结论（已核查事项不要从零盘点）
 
 存在局部架构偏离和未清理的旧实现，不能宣称干净移植或完成接入；不建议整个仓库
 reset。用户询问是否需要 reset 不是执行授权，目前没有执行 reset/revert。
@@ -297,7 +318,7 @@ reset。用户询问是否需要 reset 不是执行授权，目前没有执行 r
 其他原 Common wrapper 文件还在工作树中。复用类和数学方法，移除其模拟类型依赖；
 保留新测试发现的修正，例如根式临时 BBox 只复制 w/h/d 的 Source 行为。
 
-## 当前实际完成与未完成
+## 历史组件范围记录（当前完成状态见文首）
 
 - 已有原生 MML 基础、部分 TeX 状态/工具、BBox/长度/正则、Scene 和 SVG 组件。
 - 完整 TeX parser/stack/package 流程与 Renderer 门面尚未接通；CommonWrapper 基础编排

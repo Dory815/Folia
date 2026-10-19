@@ -136,6 +136,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/tree/node_types.ixx
     src/math/core/tree/node.ixx
     src/math/core/tree/visitor.ixx
+    src/math/core/math_item.ixx
     src/math/core/mml_tree/node_kind.ixx
     src/math/core/mml_tree/attributes.ixx
     src/math/core/mml_tree/node_properties.ixx
@@ -183,6 +184,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/common/types.ixx
     src/math/util/regexp_host.ixx)
 target_sources(folia_math PRIVATE
+    src/math/core/math_item.cpp
+    src/math/core/math_item_state.cpp
     src/math/core/mml_tree/attributes.cpp
     src/math/core/mml_tree/node_properties.cpp
     src/math/core/mml_tree/mml_node.cpp
@@ -371,6 +374,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_scanner.cpp
     tests/math/native_tex_node_registration.cpp
     tests/math/native_tex_color.cpp
+    tests/math/native_math_item.cpp
     tests/math/parse_util_native.cpp
     tests/math/mml_native_factory.cpp
     tests/math/mml_defaults.cpp

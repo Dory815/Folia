@@ -1,75 +1,51 @@
+// MathJax 4.1.3 core/MathItem.ts constructor and state methods; Apache-2.0.
 module folia.math.core.math_item;
-import folia.math.core.math_item_host;
-import folia.math.util.property_host;
 import std;
+
 namespace folia::math::core {
-AbstractMathItem::AbstractMathItem(Property mathValue,MathInputJaxReference jax,Property mode,
-                                   MathLocation begin,MathLocation finish){
-    math=std::move(mathValue);
-    inputJax=std::move(jax);
-    display=mode.missing()?Property(true):std::move(mode);
-    const auto defaultLocation=[](){
-        return MathLocation(PropertyList{{"i",0},{"n",0},{"delim",""}});
-    };
-    if(auto* value=std::get_if<Property>(&begin);value&&value->missing())start=defaultLocation();
-    else start=std::move(begin);
-    if(auto* value=std::get_if<Property>(&finish);value&&value->missing())end=defaultLocation();
-    else end=std::move(finish);
-    root=PropertyNull{};
-    typesetRoot=PropertyNull{};
-    metrics=PropertyList{};
-    inputData=PropertyList{};
-    outputData=PropertyList{};
-    state_=math_item_host::constant("UNPROCESSED");
+AbstractMathItem::AbstractMathItem(std::u16string source, MathInputJaxService* jax,
+                                  MathDisplay mode) {
+    math = std::move(source);
+    inputJax = jax;
+    display = mode;
 }
-Property protoItem(Property open,Property math,Property close,Property n,
-                   Property begin,Property finish,Property mode){
-    if(mode.missing())mode=PropertyNull{};
-    const Property start=PropertyList{{"n",std::move(begin)}};
-    const Property end=PropertyList{{"n",std::move(finish)}};
-    return PropertyList{{"open",std::move(open)},{"math",std::move(math)},
-        {"close",std::move(close)},{"n",std::move(n)},{"start",start},
-        {"end",end},{"display",std::move(mode)}};
-}
-bool AbstractMathItem::isEscaped()const{return std::holds_alternative<PropertyNull>(display.value);}
-void AbstractMathItem::setMetrics(Property em,Property ex,Property cwidth,Property scale){
-    metrics=PropertyList{{"em",std::move(em)},{"ex",std::move(ex)},
-                         {"containerWidth",std::move(cwidth)},{"scale",std::move(scale)}};
-}
-Property AbstractMathItem::state(Property target,Property restore){
-    if(restore.missing())restore=false;
-    if(!property_host::nullish(target)){
-        const Property insertedInput=math_item_host::constant("INSERTED");
-        if(math_item_host::less(target,insertedInput)){
-            const Property currentState=state_;
-            const Property insertedCurrent=math_item_host::constant("INSERTED");
-            if(math_item_host::greaterEqual(currentState,insertedCurrent))
-                this->removeFromDocument(restore);
-        }
 
-        const Property typesetInput=math_item_host::constant("TYPESET");
-        if(math_item_host::less(target,typesetInput)){
-            const Property currentState=state_;
-            const Property typesetCurrent=math_item_host::constant("TYPESET");
-            if(math_item_host::greaterEqual(currentState,typesetCurrent))outputData=PropertyList{};
-        }
+bool MathItem::isDisplay() const noexcept {
+    return display == MathDisplay::display_math;
+}
 
-        const Property compiledInput=math_item_host::constant("COMPILED");
-        if(math_item_host::less(target,compiledInput)){
-            const Property currentState=state_;
-            const Property compiledCurrent=math_item_host::constant("COMPILED");
-            if(math_item_host::greaterEqual(currentState,compiledCurrent))inputData=PropertyList{};
-        }
-        state_=target;
-    }
+void MathItem::setDisplay(bool value) noexcept {
+    display = value ? MathDisplay::display_math : MathDisplay::inline_math;
+}
+
+bool AbstractMathItem::isEscaped() const noexcept {
+    return display == MathDisplay::escaped;
+}
+
+void AbstractMathItem::setMetrics(double em, double ex, double cwidth, double scale) {
+    metrics = MathMetrics{em, ex, cwidth, scale};
+}
+
+MathState AbstractMathItem::state() const noexcept {
     return state_;
 }
-void AbstractMathItem::reset(Property restore){
-    if(restore.missing())restore=false;
-    this->state(math_item_host::constant("UNPROCESSED"),std::move(restore));
+
+MathState AbstractMathItem::state(MathState target, bool restore) {
+    if (target < STATE.INSERTED && state_ >= STATE.INSERTED) {
+        this->removeFromDocument(restore);
+    }
+    // Read the current state after the virtual removal, as Source does.
+    if (target < STATE.TYPESET && state_ >= STATE.TYPESET) {
+        outputData = {};
+    }
+    if (target < STATE.COMPILED && state_ >= STATE.COMPILED) {
+        inputData = {};
+    }
+    state_ = target;
+    return state_;
 }
-void newState(std::string_view name,Property state){
-    if(math_item_host::hasState(name))math_item_host::duplicateState(name);
-    STATE.set(name,std::move(state));
+
+void AbstractMathItem::reset(bool restore) {
+    this->state(STATE.UNPROCESSED, restore);
 }
 }
