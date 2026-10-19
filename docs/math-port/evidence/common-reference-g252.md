@@ -6,7 +6,8 @@ used by the G213 SVG reference. The historical host-less capture and comparator
 remain unchanged. All source/profile/dependency pins are checked before use.
 
 Root independently regenerated the proposed Source capture before promotion.
-SHA-256 is `29ea93906eb3a66fbb048ee9e4ac0a4eb8bad99908ad7e4d6b07ac250e50611a`.
+After LF normalization, SHA-256 is
+`8bc9c64c70a2c8a27d92b7e7535c8f80ae196ed3bb8c1b3c31db42f84f6d13f7`.
 The producer exits 0 with the existing `Invalid variant: -mhchem` warning.
 All 73 non-action records are deeply identical to the historical capture.
 The two action records complete with their actual click/mouseover/mouseout
@@ -28,5 +29,9 @@ node tools/math-port/regressions/g252/compare-common-passive.cjs build/math-port
 The source JSON is an ignored generated artifact. Its expected bytes, observer,
 host, original capture, profile and dependency hashes are in the tracked lock.
 The four tracked witness files use LF explicitly to preserve those byte locks.
-Root's independent artifacts are `build/math-port/common-passive-source-root-g252.json`
-and `build/math-port/common-passive-comparison-root-g252.json`.
+Root's final independent artifacts are
+`build/math-port/common-passive-source-lf-root-g252.json`
+and `build/math-port/common-passive-lf-comparison-root-g252.json`.
+The initial draft used CRLF; normalizing the pinned scripts to LF changes only
+the observer provenance hashes in the capture, and the full-record comparison
+still accepts 75/75. Working-tree and Git blob hashes now agree.

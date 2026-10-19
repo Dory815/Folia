@@ -209,5 +209,3 @@ if(extended){
     ...(extended?{corpusSha256:digest(path.join(root,'tools/math-port/common-layout-reference/profile-cases.json')),
       configuredPackages:scope.profile.tex_packages}:{} )},null,2)+'\n');
 })().catch(error=>{process.stderr.write(error.stack+'\n');process.exitCode=1;});
-
-

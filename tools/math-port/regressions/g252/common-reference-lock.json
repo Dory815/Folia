@@ -4,7 +4,7 @@
   "sourceCommit": "fb987178c2d279a99b0db5ea02e751691703955e",
   "producer": {
     "path": "common-passive-source.cjs",
-    "sha256": "f23de472aaa05a7360530668948fd3c4b392c5781abbb1abd9c91dfb1be04c81"
+    "sha256": "e630ced8f9e4e6b95cfcb8a4b187353a16c8defbdff56ea6d9bc1ec120d24804"
   },
   "host": {
     "path": "passive-event-host.cjs",
@@ -14,7 +14,7 @@
     "listenerCapture": "tools/math-port/drafts/g213-maction-passive-host/source-passive-host-profile-75-listeners.json",
     "listenerCaptureSha256": "c366305d8361d70c95850c396153ba82fa631feff0d2ee5bfa49b96d67521ced"
   },
-  "sourceCaptureSha256": "29ea93906eb3a66fbb048ee9e4ac0a4eb8bad99908ad7e4d6b07ac250e50611a",
+  "sourceCaptureSha256": "8bc9c64c70a2c8a27d92b7e7535c8f80ae196ed3bb8c1b3c31db42f84f6d13f7",
   "profile": {
     "scopePath": "docs/math-port/scope.json",
     "scopeSha256": "9705d389538b2fc8bf782feea4372ace639b3727304f2971937bbcfb0042a0d1",
