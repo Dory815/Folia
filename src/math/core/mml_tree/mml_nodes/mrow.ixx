@@ -8,6 +8,7 @@ class MmlMrow : public AbstractMmlNode {
   protected:
     mutable MmlNode *core_ = nullptr;
     MmlMrow(MmlDocument &, NodeKind);
+    void copyNativeStateTo(MmlNode &destination, MmlClone &) const override;
 
   public:
     explicit MmlMrow(MmlDocument &);

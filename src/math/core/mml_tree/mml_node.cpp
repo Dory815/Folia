@@ -141,6 +141,8 @@ void initialize_values(MmlNode &node, AttributeSet supplied) {
 
 MmlNode::MmlNode(MmlDocument &document, NodeKind kind) : owner_(&document), kind_(kind) {}
 
+void MmlNode::copyNativeStateTo(MmlNode &, MmlClone &) const {}
+
 NodeKind MmlNode::kind() const noexcept {
     return kind_;
 }

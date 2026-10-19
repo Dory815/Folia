@@ -8,6 +8,7 @@ import std;
 export namespace folia::math::mml {
 class MmlDocument;
 class MmlFactory;
+class MmlClone;
 
 struct XmlObject {
     virtual ~XmlObject() = default;
@@ -76,6 +77,7 @@ struct InheritanceStop {
 
 class MmlNode : public tree::Node<MmlNode, NodeKind> {
     friend class MmlDocument;
+    friend class MmlClone;
     MmlDocument *owner_;
     NodeKind kind_;
     std::u16string text_;
@@ -86,6 +88,7 @@ class MmlNode : public tree::Node<MmlNode, NodeKind> {
   protected:
     MmlNode(MmlDocument &, NodeKind);
     tree::NodeOwner<MmlNode, NodeKind> &treeOwner() const noexcept override;
+    virtual void copyNativeStateTo(MmlNode &destination, MmlClone &) const;
 
   public:
     MmlNode(MmlNode const &) = delete;
@@ -281,6 +284,7 @@ class XMLNode : public AbstractMmlEmptyNode {
   protected:
     XmlRef xml_{};
     std::shared_ptr<XmlAdaptor const> adaptor_{};
+    void copyNativeStateTo(MmlNode &destination, MmlClone &) const override;
 
   public:
     explicit XMLNode(MmlDocument &);

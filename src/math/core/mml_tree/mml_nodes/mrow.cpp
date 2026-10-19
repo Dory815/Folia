@@ -12,6 +12,13 @@ MmlMrow::MmlMrow(MmlDocument &document) : MmlMrow(document, NodeKind::mrow) {}
 
 MmlMrow::MmlMrow(MmlDocument &document, NodeKind kind) : AbstractMmlNode(document, kind) {}
 
+void MmlMrow::copyNativeStateTo(MmlNode &destination, MmlClone &) const {
+    auto *clonedRow = dynamic_cast<MmlMrow *>(&destination);
+    if (!clonedRow)
+        throw std::logic_error("mrow exact clone has an incompatible destination type");
+    clonedRow->core_ = nullptr;
+}
+
 AttributeSet MmlMrow::defaults() {
     return nodeDefaultAttributes(NodeKind::mrow);
 }

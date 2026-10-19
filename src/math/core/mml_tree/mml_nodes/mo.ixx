@@ -11,6 +11,7 @@ class MmlMo : public AbstractMmlTokenNode {
     MoTexClassMode tex_class_mode_{MoTexClassMode::unset};
 
   protected:
+    void copyNativeStateTo(MmlNode &destination, MmlClone &) const override;
     virtual operator_dict::OperatorDef getOperatorDef(std::u16string_view);
     virtual void checkOperatorTable(std::u16string_view);
     virtual std::vector<std::u16string>

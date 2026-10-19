@@ -15,6 +15,7 @@ class MmlMfenced : public AbstractMmlNode {
     MmlNode *setTeXclass(MmlNode *previous) override;
 
   protected:
+    void copyNativeStateTo(MmlNode &destination, MmlClone &clone) const override;
     void setChildInheritedAttributes(AttributeList const &, bool, double, bool) override;
     virtual void addFakeNodes();
     virtual MmlNode &fakeNode(std::u16string character, AttributeSet attributes = {},

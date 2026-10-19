@@ -179,6 +179,14 @@ MmlNode &XMLNode::copy(bool) const {
     return *result->setXML(std::move(cloned));
 }
 
+void XMLNode::copyNativeStateTo(MmlNode &destination, MmlClone &) const {
+    auto *xml = dynamic_cast<XMLNode *>(&destination);
+    if (!xml)
+        throw std::logic_error("XML exact-clone destination type mismatch");
+    xml->xml_ = xml_;
+    xml->adaptor_ = adaptor_;
+}
+
 std::string XMLNode::toString() const {
     return "XML data";
 }

@@ -189,15 +189,32 @@ std::string_view MmlDocument::kindName(NodeKind kind) const {
 }
 
 MmlNode &MmlDocument::cloneSubtree(const MmlNode &source) {
-    // A clone copies values into this arena and never copies links or ownership.
-    auto &clone = make(source.kind());
+    const auto checkpoint = arena_.size();
+    MmlClone operation(*this);
+    try {
+        return operation.clone(source);
+    } catch (...) {
+        // Every link created by this operation stays within this new arena tail.
+        // Destroy partial clones without changing the existing tree or root.
+        arena_.resize(checkpoint);
+        throw;
+    }
+}
+
+MmlNode &MmlClone::clone(MmlNode const &source) {
+    if (const auto found = nodes_.find(&source); found != nodes_.end())
+        return *found->second;
+
+    auto &clone = document_.make(source.kind());
+    nodes_.emplace(&source, &clone);
     clone.text_ = source.text_;
     clone.attributes_ = source.attributes_;
     clone.properties_ = source.properties_;
     clone.state_ = source.state_;
-    for (auto *child : source.children_) {
-        append(clone, cloneSubtree(*child));
+    for (auto *child : source.children()) {
+        document_.append(clone, this->clone(*child));
     }
+    source.copyNativeStateTo(clone, *this);
     return clone;
 }
 } // namespace folia::math::mml

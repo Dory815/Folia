@@ -29,6 +29,35 @@ NodeKind MmlMfenced::kind() const noexcept {
     return NodeKind::mfenced;
 }
 
+void MmlMfenced::copyNativeStateTo(MmlNode &destination, MmlClone &clone) const {
+    auto *fenced = dynamic_cast<MmlMfenced *>(&destination);
+    if (!fenced) {
+        throw std::logic_error("mfenced clone destination has the wrong dynamic type");
+    }
+
+    const auto remap = [&](MmlNode *source) -> MmlNode * {
+        if (!source)
+            return nullptr;
+
+        MmlNode &target = clone.clone(*source);
+        if (target.parent() == fenced)
+            return &target;
+        if (target.parent()) {
+            throw std::invalid_argument(
+                "mfenced cloned auxiliary already has a different parent");
+        }
+        clone.document().attachAuxiliary(*fenced, target);
+        return &target;
+    };
+
+    fenced->open = remap(open);
+    fenced->close = remap(close);
+    fenced->separators.clear();
+    fenced->separators.reserve(separators.size());
+    for (MmlNode *separator : separators)
+        fenced->separators.push_back(remap(separator));
+}
+
 MmlNode &MmlMfenced::fakeNode(std::u16string character, AttributeSet nodeAttributes,
                               std::optional<TexClass> texClassValue) {
     auto &text = document().factory().make(NodeKind::text);

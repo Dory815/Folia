@@ -68,6 +68,38 @@ of adding a fallback. Existing binding-only files are not copied into the new pa
 
 ## Acceptance before production switch
 
+### Native exact clone contract (2026-10-20)
+
+This is distinct from MathJax `copy`, whose reconstruction behavior remains unchanged.
+Root owns `mml_document` and the shared node declaration. A single operation-local
+`MmlClone` holds the destination document and a typed source-node/destination-node
+map; it owns no nodes. Its `clone(MmlNode const&)` registers each raw allocation
+before recursion, copies base values and normal children, then calls protected
+virtual `copyNativeStateTo(MmlNode&, MmlClone&) const`. Default implementation is
+empty because most families have no additional state. The destination document
+is the only owner. On failure, `cloneSubtree` removes this operation's arena tail;
+existing nodes, source nodes and the destination root remain untouched.
+
+- Mo copies its mode and optional spacing in its existing class, with no query
+  side effects or reconstruction. Base intrinsic state is already copied once.
+- XML copies its immutable payload and immutable adaptor owner; HTML inherits
+  this method. Do not invoke adaptor cloning or change Source `copy` semantics.
+- Mfenced remaps open/close/separators through the same operation map, preserving
+  aliases. Newly detached auxiliaries attach to the cloned fence; an existing
+  parent must already be that cloned fence. No source-arena links survive.
+- Mrow clears its borrowed core cache; public core queries recompute it from
+  destination children. InferredMrow inherits this behavior.
+
+For this bounded change Root may assign exclusive canonical family files and
+separate family test files directly to Luna. Root alone edits shared declarations,
+document code and CMake, builds, executes native tests and commits. No agent may
+change another family's files or the shared interface without agreement.
+Acceptance covers same/cross-document clone, source lifetime independence,
+auxiliary alias identity and parent links, XML replacement independence, all Mo
+modes/spacing, row cache recomputation, and rollback after a typed hook throws.
+The existing Source-copy tests must still pass. These are ownership/value tests;
+they do not establish end-to-end rendering parity.
+
 1. All 43 kinds allocate actual concrete family objects through one registry;
    registered subtype queries work. No generic substitute for an unfinished kind.
 2. Existing ownership, defaults, typed properties and exact clone tests remain;

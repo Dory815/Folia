@@ -4,6 +4,27 @@ export import :factory;
 import std;
 
 export namespace folia::math::mml {
+// One exact-clone operation. Nodes remain exclusively document-owned; this map
+// only preserves identity between normal children and family auxiliary links.
+class MmlClone final {
+    friend class MmlDocument;
+    MmlDocument &document_;
+    std::unordered_map<MmlNode const *, MmlNode *> nodes_;
+    explicit MmlClone(MmlDocument &document) : document_(document) {}
+
+  public:
+    MmlClone(MmlClone const &) = delete;
+    MmlClone &operator=(MmlClone const &) = delete;
+    MmlClone(MmlClone &&) = delete;
+    MmlClone &operator=(MmlClone &&) = delete;
+
+    MmlDocument &document() const noexcept {
+        return document_;
+    }
+
+    MmlNode &clone(MmlNode const &source);
+};
+
 class MmlDocument final : public tree::NodeOwner<MmlNode, NodeKind> {
     friend class MmlFactory;
     std::unique_ptr<MmlFactory> factory_;

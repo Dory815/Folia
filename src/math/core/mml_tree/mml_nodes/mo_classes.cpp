@@ -28,6 +28,15 @@ bool isAccentChild(MmlNode *child, MmlNode const *target) {
 }
 } // namespace
 
+void MmlMo::copyNativeStateTo(MmlNode &destination, MmlClone &) const {
+    auto *const cloned = dynamic_cast<MmlMo *>(&destination);
+    if (!cloned)
+        throw std::logic_error("MmlMo native clone target has incompatible dynamic type");
+    cloned->tex_class_mode_ = tex_class_mode_;
+    cloned->lspace = lspace;
+    cloned->rspace = rspace;
+}
+
 MmlNode *MmlMo::coreParent() {
     MmlNode *embellished = nullptr;
     MmlNode *current = this;
