@@ -241,6 +241,10 @@ std::vector<std::tuple<std::uint64_t,int,std::string>> RendererDiagnosticsProbe:
         result.emplace_back(id,static_cast<int>(kind),name);
     return result;
 }
+std::array<std::size_t,4> RendererDiagnosticsProbe::contextRecordCounts(const Renderer& renderer){
+    const auto counts=renderer.state_->session.context().recordCountsForDiagnostics();
+    return {counts.slots,counts.live,counts.retired,counts.ownerBearing};
+}
 std::array<std::size_t,9> RendererDiagnosticsProbe::snapshot(const Renderer& renderer){
     const auto c=renderer.diagnosticsForTest();
     return {c.contextObjectSlots,c.contextSymbolSlots,c.mmlFactoryProducts,
@@ -249,8 +253,13 @@ std::array<std::size_t,9> RendererDiagnosticsProbe::snapshot(const Renderer& ren
 }
 void RendererDiagnosticsProbe::print(const Renderer& renderer,std::string_view stage){
     const auto c=renderer.diagnosticsForTest();
+    const auto records=contextRecordCounts(renderer);
     std::cout<<stage
         <<" context_object_slots="<<c.contextObjectSlots
+        <<" context_record_slots="<<records[0]
+        <<" context_live_records="<<records[1]
+        <<" context_retired_records="<<records[2]
+        <<" context_owner_bearing_records="<<records[3]
         <<" context_symbol_slots="<<c.contextSymbolSlots
         <<" mml_factory_products="<<c.mmlFactoryProducts
         <<" parser_registry_entries="<<c.parserRegistryEntries

@@ -802,6 +802,22 @@ void Context::retireObjectRecord(ObjectRef object_ref){
     value=Record{};
     value.retired=true;
 }
+Context::RecordCounts Context::recordCountsForDiagnostics() const noexcept {
+    RecordCounts counts;
+    counts.slots=state_->objects.size();
+    for(const auto& slot:state_->objects){
+        if(!slot)continue;
+        const auto& value=*slot;
+        if(value.retired){++counts.retired;continue;}
+        ++counts.live;
+        if(value.payload.has_value()||value.callable||value.construct||
+           value.nativeIndexedView||value.nativeRecordView||
+           !value.nativeFields.empty()||!value.declaredNativeFields.empty()||
+           value.attachedOwner||!value.ownerTraces.empty())
+            ++counts.ownerBearing;
+    }
+    return counts;
+}
 Context::AllocationCounts Context::allocationCountsForDiagnostics() const noexcept {
     return {state_->objects.size(),state_->symbols.size()};
 }

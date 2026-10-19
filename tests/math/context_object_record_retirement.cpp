@@ -31,6 +31,38 @@ suite context_object_record_retirement=[] {
         expect(weakValue.expired()&&weakBindings.expired());
     }
 };
+"math_port_context_record_inventory_observes_creation_and_retirement_without_getters"_test=[] {
+    opts::Context context;
+    const auto before=context.recordCountsForDiagnostics();
+    const auto object=context.object();
+    std::size_t getterCalls=0;
+    auto owner=std::make_shared<int>(9);
+    context.bindData(object,opts::Key(u"native"),std::make_shared<opts::NativeDataField>(owner,
+        [&getterCalls]{++getterCalls;return opts::Value(9);},
+        [](opts::Value){}));
+    const auto function=context.function(u"inventory",[](opts::Context&,opts::Value,std::span<const opts::Value>){return opts::Value(1);});
+    const auto created=context.recordCountsForDiagnostics();
+    expect(created.slots==before.slots+2);
+    expect(created.live==before.live+2);
+    expect(created.retired==before.retired);
+    expect(created.ownerBearing==before.ownerBearing+2);
+    expect(getterCalls==0u);
+
+    context.retireObjectRecord(function);
+    const auto oneRetired=context.recordCountsForDiagnostics();
+    expect(oneRetired.slots==created.slots);
+    expect(oneRetired.live+1==created.live);
+    expect(oneRetired.retired==created.retired+1);
+    expect(oneRetired.ownerBearing+1==created.ownerBearing);
+    expect(getterCalls==0u);
+    context.retireObjectRecord(object);
+    const auto bothRetired=context.recordCountsForDiagnostics();
+    expect(bothRetired.slots==created.slots);
+    expect(bothRetired.live+2==created.live);
+    expect(bothRetired.retired==created.retired+2);
+    expect(bothRetired.ownerBearing+2==created.ownerBearing);
+    expect(getterCalls==0u);
+};
 "math_port_context_object_record_retirement_releases_all_owner_edges_and_keeps_stale_slot"_test=[] {
     opts::Context context;auto type=context.constructor(u"owner");
     NativeIdentityBindings<std::shared_ptr<int>> bindings(context);

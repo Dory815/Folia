@@ -62,6 +62,7 @@ int main(){
         Renderer renderer;
         (void)runPhase("primary/warm-render",[&]{return renderer.render("x");});
         const auto warm=RendererDiagnosticsProbe::snapshot(renderer);
+        RendererDiagnosticsProbe::print(renderer,"warm_inventory");
         const auto warmSceneOwners=RendererDiagnosticsProbe::sceneOwnerSnapshot(renderer);
         const auto warmLiteIdentities=RendererDiagnosticsProbe::liteNodeIdentityNamedSnapshot(renderer);
         retained=runPhase("primary/retained-result",[&]{return renderer.render("x+1");});
@@ -75,6 +76,7 @@ int main(){
         const auto normalized=runPhase("primary/normalize-after-tag-A",[&]{return renderer.render(R"(\begin{array}{cc}a&b\\c&d\end{array})");});
         check(!normalized.svg.empty(),"normalization array SVG",ok);
         const auto persistentState=RendererDiagnosticsProbe::snapshot(renderer);
+        RendererDiagnosticsProbe::print(renderer,"post_state_setup_inventory");
         const auto persistentFamilies=RendererDiagnosticsProbe::parserIdentitySnapshot(renderer);
         const auto persistentSceneOwners=RendererDiagnosticsProbe::sceneOwnerSnapshot(renderer);
         checkCount(persistentFamilies[11],1,"one durable Label identity after tag A placeholder retirement",ok);
@@ -88,6 +90,7 @@ int main(){
             check(!scene.roots().empty(),std::string("iteration ")+n+" Scene roots",ok);
         }
         const auto afterLoop=RendererDiagnosticsProbe::snapshot(renderer);
+        RendererDiagnosticsProbe::print(renderer,"after_64_inventory");
         const auto afterLoopFamilies=RendererDiagnosticsProbe::parserIdentitySnapshot(renderer);
         const auto afterLoopSceneOwners=RendererDiagnosticsProbe::sceneOwnerSnapshot(renderer);
         const auto afterLoopLiteIdentities=RendererDiagnosticsProbe::liteNodeIdentityNamedSnapshot(renderer);
@@ -106,6 +109,7 @@ int main(){
 
         const auto parseError=runPhase("primary/malformed-formula",[&]{return renderer.render(R"(\frac{)");});
         const auto afterFirstMalformed=RendererDiagnosticsProbe::snapshot(renderer);
+        RendererDiagnosticsProbe::print(renderer,"after_first_malformed_inventory");
         const auto firstMalformedLite=RendererDiagnosticsProbe::liteNodeIdentityNamedSnapshot(renderer);
         const auto newlyMaterializedLite=newLiteIdentities(afterLoopLiteIdentities,firstMalformedLite);
         check(isMathError(parseError),"malformed TeX returns an merror",ok);
@@ -133,6 +137,7 @@ int main(){
         const auto labelBNormalized=runPhase("primary/normalize-after-tag-B",[&]{return renderer.render(R"(\begin{array}{cc}a&b\\c&d\end{array})");});
         check(!labelBNormalized.svg.empty(),"normalization array SVG after tag B",ok);
         const auto after=RendererDiagnosticsProbe::snapshot(renderer);
+        RendererDiagnosticsProbe::print(renderer,"after_persistent_state_inventory");
         const auto finalFamilies=RendererDiagnosticsProbe::parserIdentitySnapshot(renderer);
         const auto afterSceneOwners=RendererDiagnosticsProbe::sceneOwnerSnapshot(renderer);
         const auto referenceGlyphs=glyphs(reference);
@@ -176,6 +181,7 @@ int main(){
         Renderer cancelled;
         (void)runPhase("cancelled/warm-render",[&]{return cancelled.render("x");});
         const auto before=RendererDiagnosticsProbe::snapshot(cancelled);
+        RendererDiagnosticsProbe::print(cancelled,"before_cancel_inventory");
         const auto beforeSceneOwners=RendererDiagnosticsProbe::sceneOwnerSnapshot(cancelled);
         // Decode/construct the UTF-16 input before starting the stop request so
         // cancellation is observed inside the native session, not in UTF-8 conversion.
@@ -194,6 +200,7 @@ int main(){
         }
         stopper.join();
         const auto afterCancel=RendererDiagnosticsProbe::snapshot(cancelled);
+        RendererDiagnosticsProbe::print(cancelled,"after_cancel_inventory");
         const auto afterCancelSceneOwners=RendererDiagnosticsProbe::sceneOwnerSnapshot(cancelled);
         check(cancelledDuringRequest,"stop request is observed inside native session",ok);
         checkCount(afterCancel[2],before[2],"MML products after in-flight cancellation",ok);

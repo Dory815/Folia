@@ -236,6 +236,11 @@ public:
     Context(const Context&) = delete;
     Context& operator=(const Context&) = delete;
     struct AllocationCounts { std::size_t objectSlots=0; std::size_t symbolSlots=0; };
+    struct RecordCounts {
+        std::size_t slots=0,live=0,retired=0,ownerBearing=0;
+    };
+    // Diagnostic only. Reads stored Record fields without invoking their owners.
+    RecordCounts recordCountsForDiagnostics() const noexcept;
     // Diagnostic only: total allocated slots, not live or reclaimable objects.
     AllocationCounts allocationCountsForDiagnostics() const noexcept;
     const Intrinsics& intrinsics() const;
