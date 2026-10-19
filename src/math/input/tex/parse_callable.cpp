@@ -17,6 +17,12 @@ void validate_receiver(const folia::math::FunctionReceiver& receiver) {
         if (!*object) invalid_callable(u"ParseMethod receiver is null");
         return;
     }
+    // ParseMethod bodies model ordinary Source functions. A call such as
+    // TextMacrosMethods.Insert(parser, name, c) has the methods object as
+    // `this`, which is an ordinary Context Value and is preserved unchanged.
+    // NativeObjectRef is reserved for native owner callbacks; only that
+    // representation needs its non-null owner invariant checked here.
+    if (std::holds_alternative<folia::math::options::Value>(receiver)) return;
     if (!std::holds_alternative<folia::math::Missing>(receiver)) {
         invalid_callable(u"Invalid ParseMethod receiver");
     }
