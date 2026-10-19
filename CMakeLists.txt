@@ -220,7 +220,7 @@ target_sources(folia_math PRIVATE
 # Native Common classes retain their original family partitions. LinebreakVisitor
 # implementation joins this list after its concrete family dependencies migrate.
 set(FOLIA_COMMON_NATIVE_FAMILIES
-    mo mrow inferred_mrow)
+    mo mrow inferred_mrow text_node mi mn ms mspace mglyph mtext math)
 foreach(family IN LISTS FOLIA_COMMON_NATIVE_FAMILIES)
     target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
         src/math/output/common/wrappers/${family}.ixx)
@@ -387,6 +387,11 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_common_jax.cpp
     tests/math/native_common_mo.cpp
     tests/math/native_common_mrow.cpp
+    tests/math/native_common_text.cpp
+    tests/math/native_common_wrapper.cpp
+    tests/math/native_common_text_ownership.cpp
+    tests/math/native_common_mtext_math.cpp
+    tests/math/native_common_inline_policy.cpp
     tests/math/native_tree_factory.cpp
     tests/math/native_tree_node.cpp
     tests/math/native_tree_visitor.cpp

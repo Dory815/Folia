@@ -1,0 +1,60 @@
+{
+  "cases": [
+    {
+      "inline": true,
+      "display": false,
+      "baseCommonForceGetter": false,
+      "svgForceGetter": true,
+      "inlineMarked": true,
+      "inlineForced": true,
+      "breakable": true,
+      "forcebreak": true,
+      "firstKind": "inferredMrow"
+    },
+    {
+      "inline": false,
+      "display": false,
+      "baseCommonForceGetter": false,
+      "svgForceGetter": false,
+      "inlineMarked": false,
+      "inlineForced": null,
+      "breakable": false,
+      "forcebreak": false,
+      "firstKind": "inferredMrow"
+    },
+    {
+      "inline": true,
+      "display": true,
+      "baseCommonForceGetter": false,
+      "svgForceGetter": true,
+      "inlineMarked": false,
+      "inlineForced": null,
+      "breakable": false,
+      "forcebreak": false,
+      "firstKind": "inferredMrow"
+    }
+  ],
+  "transitions": [
+    {
+      "svgForceGetter": true,
+      "inlineMarked": true,
+      "inlineForced": true,
+      "breakable": true,
+      "forcebreak": true
+    },
+    {
+      "svgForceGetter": true,
+      "inlineMarked": false,
+      "inlineForced": null,
+      "breakable": false,
+      "forcebreak": false
+    },
+    {
+      "svgForceGetter": false,
+      "inlineMarked": false,
+      "inlineForced": null,
+      "breakable": false,
+      "forcebreak": false
+    }
+  ]
+}

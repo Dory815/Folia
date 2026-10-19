@@ -5,9 +5,10 @@ assigned method implementations. The declaration packet is
 `tools/math-port/drafts/native-raii/common-contract-refresh/headers/`.
 The native `:types`, CommonWrapper, CommonWrapperFactory, CommonOutputJax and
 Mo/Mrow/InferredMrow classes now compile together in their original partitions.
-The integrated component suite passes 220 tests / 32,185 assertions. Text families,
-the actual linebreak visitor, and the inline-policy lifecycle remain the next
-integration batch; no end-to-end acceptance is claimed here.
+TextNode/Mi/Mn/Ms/Mspace/Mglyph/Mtext/Math and the inline-policy lifecycle also
+compile and pass the integrated component suite: 235 tests / 32,338 assertions.
+The actual linebreak visitor and remaining families are the next integration
+batch; no end-to-end acceptance is claimed here.
 
 This contract reuses the current 43 polymorphic MML classes and arena, committed Tree factory/wrapper APIs, immutable NewCM FontRepository, Styles, StyleJson, LineBBox, and LengthContext. It preserves MathJax 4.1.3 Common responsibilities and method call order while replacing Context/Property/DOM object semantics with typed values. The pinned references are `.reference/MathJax-src/ts/output/common.ts`, `output/common/Wrapper.ts`, `output/common/WrapperFactory.ts`, and `core/Tree/Wrapper{,Factory}.ts`.
 
@@ -54,6 +55,17 @@ wrapper/visitor constructor choices. The inputs are consumed once; the factory
 retains the only creator registry and Jax owns the resulting visitor. No callback
 receiver service or production no-op visitor is added. Complete renderer
 integration must provide the full actual catalog and actual linebreak algorithm.
+
+`InlineBreakPolicy` is a closed mathematical constructor input. Common defaults
+to `opportunistic`; an SVG caller selects `forced`, whose forceInlineBreaks()
+also respects the one live linebreaks.inlineBreaks option. Jax retains the sole
+policy value. LayoutJob::build performs the Source mathematical entry sequence:
+update root inherited overflow (preserving own/default layers), select width
+when overflow is linebreak, reconcile old inline-marked/inline-forced state,
+mark the actual first root row when enabled for inline math, run setTeXclass,
+then construct wrappers. It creates no DOM and repeats no parser or inheritance
+pass. The Common entry, text geometry and service-call tests do not stand in for
+the not-yet-integrated actual LinebreakVisitor algorithm.
 
 ## Measurement boundary
 

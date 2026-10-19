@@ -16,6 +16,8 @@ class CommonMtable;
 class Linebreaks;
 class LayoutJob;
 
+enum class InlineBreakPolicy : std::uint8_t { opportunistic, forced };
+
 struct ExtendedMetrics {
     double em = 16;
     double ex = 8;
@@ -70,6 +72,7 @@ struct CommonOutputJaxConfig {
     CommonOptions options;
     FontRepository const &fonts;
     std::string faceName;
+    InlineBreakPolicy inlineBreakPolicy = InlineBreakPolicy::opportunistic;
 };
 
 class MeasurementTarget {

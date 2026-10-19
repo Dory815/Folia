@@ -16,6 +16,7 @@ class CommonOutputJax {
     FontFaceData const &face_;
     ExtendedMetrics metrics_;
     CommonOptions options_;
+    InlineBreakPolicy inlineBreakPolicy_;
     MeasurementTarget &measurement_;
     double containerWidth_{}; // computed em width, distinct from metrics pixel width
     // Reverse destruction: visitor first, then factory and its wrappers.

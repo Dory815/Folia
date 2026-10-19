@@ -1,46 +1,68 @@
 module folia.math.output.common;
 import :mspace;
 import :output_jax;
-import folia.math.core.mml_tree.mml_nodes.mspace;
-import folia.math.util.property_host;
 import std;
 
 namespace folia::math::output::common {
-CommonMspace::CommonMspace(CommonWrapperFactory& factory,mml::MmlNode& node,CommonWrapper* parent)
-    :CommonWrapper(factory,node,parent){}
-void CommonMspace::initializeSource(){CommonWrapper::initializeSource();setBreakStyle();}
-
-bool CommonMspace::canBreak()const{
-    const auto* space=dynamic_cast<const mml::MmlMspace*>(node);
-    if(!space)throw options::Exception("TypeError",u"CommonMspace requires an MmlMspace node");
-    return space->canBreak();
+namespace {
+LengthInput lengthValue(mml::AttributeValue const *value) {
+    if (const auto *number = value ? std::get_if<double>(value) : nullptr)
+        return *number;
+    if (const auto *text = value ? std::get_if<std::u16string>(value) : nullptr)
+        return *text;
+    return std::u16string{};
 }
 
-std::size_t CommonMspace::breakCount(){return breakStyle.empty()?0:1;}
+mml::MmlMspace &requireMspace(mml::MmlNode &node) {
+    auto *space = dynamic_cast<mml::MmlMspace *>(&node);
+    if (!space)
+        throw std::logic_error("CommonMspace requires an MmlMspace node");
+    return *space;
+}
+} // namespace
 
-void CommonMspace::setBreakStyle(std::string_view linebreak){
-    if(!linebreak.empty()){breakStyle=std::string(linebreak);return;}
-    const auto* space=dynamic_cast<const mml::MmlMspace*>(node);
-    if(!space)throw options::Exception("TypeError",u"CommonMspace requires an MmlMspace node");
-    breakStyle=(space->hasNewline()||property_host::truthy(node->getProperty("forcebreak")))?"before":"";
+bool CommonMspace::canBreak() const {
+    auto *self = const_cast<CommonMspace *>(this);
+    return requireMspace(*self->node).canBreak();
 }
 
-void CommonMspace::computeBBox(BBox& bbox,bool){
-    const auto attributes=node->attributes();
-    bbox.w=length2em(attributes->get("width"),0);
-    bbox.h=length2em(attributes->get("height"),0);
-    bbox.d=length2em(attributes->get("depth"),0);
+std::size_t CommonMspace::breakCount() {
+    return breakStyle.empty() ? 0 : 1;
 }
 
-std::shared_ptr<LineBBox> CommonMspace::computeLineBBox(std::size_t index){
-    const auto leadingString=node->attributes()->get("data-lineleading");
-    const double leading=length2em(leadingString,jax().currentLinebreakOptions().lineleading);
-    auto bbox=std::make_shared<LineBBox>(LineBBox::from(BBox::zero(),leading));
-    if(index==1){
-        bbox->getIndentData(*node);
-        bbox->w=getBBox()->w;
-        bbox->isFirst=bbox->w==0;
+void CommonMspace::setBreakStyle(std::string_view linebreak) {
+    if (!linebreak.empty()) {
+        breakStyle = linebreak;
+        return;
     }
-    return bbox;
+    const bool forced = node->properties().layout.force_break.value_or(false);
+    breakStyle = (requireMspace(*node).hasNewline() || forced) ? "before" : "";
 }
+
+void CommonMspace::initializeSource() {
+    CommonWrapper::initializeSource();
+    setBreakStyle();
 }
+
+void CommonMspace::computeBBox(BBox &box, bool) {
+    const auto &attributes = node->attributes();
+    box.w = length2em(lengthValue(attributes.lookup(u"width")), 0);
+    box.h = length2em(lengthValue(attributes.lookup(u"height")), 0);
+    box.d = length2em(lengthValue(attributes.lookup(u"depth")), 0);
+}
+
+std::shared_ptr<LineBBox> CommonMspace::computeLineBBox(std::size_t index) {
+    const auto &attributes = node->attributes();
+    const auto *leading = attributes.lookup(u"data-lineleading");
+    const auto defaultLeading = jax().currentLinebreakOptions().lineleading;
+    const auto leadingValue = leading ? lengthValue(leading) : LengthInput{defaultLeading};
+    const double lineLeading = length2em(leadingValue, defaultLeading);
+    auto result = std::make_shared<LineBBox>(LineBBox::from(BBox::zero(), lineLeading));
+    if (index == 1) {
+        result->getIndentData(*node);
+        result->w = getBBox().w;
+        result->isFirst = result->w == 0;
+    }
+    return result;
+}
+} // namespace folia::math::output::common

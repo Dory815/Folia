@@ -18,7 +18,7 @@ CommonOutputJax::CommonOutputJax(mml::MmlDocument &document, CommonOutputJaxConf
                                  LinebreakFactory linebreakFactory)
     : document_(document), fonts_(config.fonts), face_(fonts_.face(config.faceName)),
       metrics_(std::move(config.metrics)), options_(std::move(config.options)),
-      measurement_(measurement) {
+      inlineBreakPolicy_(config.inlineBreakPolicy), measurement_(measurement) {
     if (!std::isfinite(metrics_.em) || metrics_.em <= 0 || !std::isfinite(metrics_.ex) ||
         metrics_.ex < 0) {
         throw std::invalid_argument(
@@ -145,13 +145,34 @@ CommonWrapperFactory &LayoutJob::factory() noexcept {
 }
 
 CommonWrapper &LayoutJob::build() {
-    // Source chooses the line-break width before wrapping the root so all
-    // wrappers observe the same request-local width during initialization.
-    (void)jax_.getLinebreakWidth();
     mml::MmlNode *const root = document().root();
     if (!root) {
         throw std::logic_error("Cannot build a Common layout without an MML root");
     }
+    root->attributes().setInherited(u"overflow",
+                                    utf16::decode(jax_.options().displayOverflow).text);
+    const auto *overflow = root->attributes().lookup(u"overflow");
+    const auto *overflowText = overflow ? std::get_if<std::u16string>(overflow) : nullptr;
+    if (overflowText && *overflowText == u"linebreak")
+        (void)jax_.getLinebreakWidth();
+
+    const bool makeBreaks =
+        jax_.options().linebreaks.inlineBreaks && !jax_.currentMetrics().display;
+    auto &layout = root->properties().layout;
+    if (layout.inline_marked.value_or(false) &&
+        (!makeBreaks || jax_.forceInlineBreaks() != layout.inline_forced.value_or(false))) {
+        jax_.unmarkInlineBreaks(*root);
+        layout.inline_marked.reset();
+        layout.inline_forced.reset();
+    }
+    if (makeBreaks && !layout.inline_marked.value_or(false)) {
+        const auto children = root->children();
+        if (!children.empty())
+            jax_.markInlineBreaks(*children.front());
+        layout.inline_marked = true;
+        layout.inline_forced = jax_.forceInlineBreaks();
+    }
+    root->setTeXclass(nullptr);
     return factory().wrap(*root);
 }
 
@@ -231,7 +252,7 @@ void markBreak(mml::MmlNode &parent, mml::MmlNode &child, mml::MmlNode *mo, bool
 } // namespace
 
 bool CommonOutputJax::forceInlineBreaks() const {
-    return false;
+    return inlineBreakPolicy_ == InlineBreakPolicy::forced && options_.linebreaks.inlineBreaks;
 }
 
 double CommonOutputJax::getLinebreakWidth() {

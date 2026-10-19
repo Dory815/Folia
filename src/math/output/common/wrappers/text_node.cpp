@@ -1,129 +1,126 @@
 module folia.math.output.common;
 import :text_node;
 import :output_jax;
-import :mo;
 import folia.math.core.mml_tree.mml_nodes.mo;
-import folia.math.util.property_host;
+import folia.math.util.string;
+import folia.math.util.utf16;
 import std;
 
 namespace folia::math::output::common {
 namespace {
-std::u16string codePointText(std::uint32_t code) {
-    std::u16string text;
-    if(code<=0xFFFF) text.push_back(static_cast<char16_t>(code));
-    else {
-        code-=0x10000;
-        text.push_back(static_cast<char16_t>(0xD800+(code>>10)));
-        text.push_back(static_cast<char16_t>(0xDC00+(code&0x3FF)));
+mml::MmlNode *nextSibling(mml::MmlNode &parent, mml::MmlNode &child) {
+    if (parent.kind() != mml::NodeKind::mrow && !parent.isInferred())
+        return nullptr;
+    const auto index = parent.childIndex(child);
+    if (!index)
+        return nullptr;
+    const auto children = parent.children();
+    auto next = *index + 1;
+    if (next < children.size()) {
+        if (auto *mo = dynamic_cast<mml::MmlMo *>(children[next]);
+            mo && mo->getText() == u"\u2062") {
+            ++next;
+        }
     }
-    return text;
+    return next < children.size() ? children[next] : nullptr;
 }
-Property dataSlot(const Property& value,std::string_view key) {
-    const auto record=PropertyList::object(value);
-    if(!record)throw options::Exception("TypeError",u"Cannot read properties of undefined (reading 'unknown')");
-    return record->get(key);
-}
-double numberSlot(const Property& value) {
-    return property_host::number(value);
-}
-}
+} // namespace
 
-std::shared_ptr<std::vector<std::uint32_t>> CommonTextNode::remappedText(
-    std::u16string_view text,std::string_view name) const {
-    if(!parent)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'stretch')");
-    const double code=parent->stretch&&parent->stretch->c?*parent->stretch->c:0;
-    if(code)return std::make_shared<std::vector<std::uint32_t>>(1,static_cast<std::uint32_t>(code));
-    return parent->remapChars(unicodeChars(text,name));
-}
-
-std::u16string CommonTextNode::addUtextBBox(BBox& box,std::u16string_view text,
-                                             std::string_view name) {
-    if(!text.empty()) {
-        const auto measured=jax().measureText(text,name);
-        updateBBox(box,measured.h,measured.d,measured.w);
+std::vector<std::uint32_t> CommonTextNode::remappedText(std::u16string_view text,
+                                                        std::string_view variantName) const {
+    if (!parent)
+        throw std::logic_error("CommonTextNode requires its borrowed parent wrapper");
+    if (const auto *active = std::get_if<ActiveStretch>(&parent->stretch); active) {
+        if (active->selectedCodepoint && *active->selectedCodepoint != 0)
+            return {*active->selectedCodepoint};
+        if (const auto *delimiter =
+                jax().fonts().delimiter(jax().face().name, active->sourceCodepoint);
+            delimiter && delimiter->c && *delimiter->c != 0) {
+            return {*delimiter->c};
+        }
     }
-    return {};
+    return parent->remapChars(parent->unicodeChars(text, variantName));
 }
 
-void CommonTextNode::updateBBox(BBox& box,double h,double d,double w) {
-    box.w+=w;
-    if(h>box.h)box.h=h;
-    if(d>box.d)box.d=d;
+void CommonTextNode::addMeasuredText(BBox &box, std::u16string_view text,
+                                     std::string_view variantName, CommonOutputJax &output) {
+    if (text.empty())
+        return;
+    const auto measured = output.measureText(text, variantName);
+    updateBBox(box, measured.h, measured.d, measured.w);
 }
 
-void CommonTextNode::computeBBox(BBox& box,bool recompute) {
-    (void)recompute;
-    if(!parent)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'variant')");
-    const std::string variantName=parent->variant;
-    auto* textNode=dynamic_cast<mml::TextNode*>(node);
-    if(!textNode)throw options::Exception("TypeError",u"TextNode wrapper has no MML TextNode");
-    const auto text=textNode->getText();
-    if(variantName=="-explicitFont") {
-        if(!parent->styles)throw options::Exception("TypeError",u"Cannot read properties of undefined (reading 'styles')");
-        const auto fontData=jax().getFontData(*parent->styles);
-        const auto measured=jax().measureText(text,variantName,fontData);
-        box.h=measured.h;box.d=measured.d;box.w=measured.w;
+void CommonTextNode::updateBBox(BBox &box, double height, double depth, double width) {
+    box.w += width;
+    if (height > box.h)
+        box.h = height;
+    if (depth > box.d)
+        box.d = depth;
+}
+
+void CommonTextNode::computeBBox(BBox &box, bool) {
+    if (!parent)
+        throw std::logic_error("CommonTextNode requires its borrowed parent wrapper");
+    const auto variantName = parent->variant;
+    const auto *textNode = dynamic_cast<mml::TextNode *>(node);
+    if (!textNode)
+        throw std::logic_error("CommonTextNode requires an MML TextNode");
+    const auto text = textNode->getText();
+    auto &output = jax();
+
+    if (variantName == "-explicitFont") {
+        if (!parent->styles)
+            throw std::logic_error("explicit-font text requires parent Styles");
+        const auto font = output.getFontData(*parent->styles);
+        const auto measured = output.measureText(text, variantName, font);
+        box.h = measured.h;
+        box.d = measured.d;
+        box.w = measured.w;
         return;
     }
 
-    const auto chars=remappedText(text,variantName);
-    if(!chars)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'length')");
+    const auto characters = remappedText(text, variantName);
     std::u16string unknownText;
     box.empty();
-    for(std::size_t index=0;index<chars->size();++index) {
-        const auto tuple=getVariantChar(variantName,(*chars)[index]);
-        const auto h=numberSlot(tuple.get(0));
-        const auto d=numberSlot(tuple.get(1));
-        const auto w=numberSlot(tuple.get(2));
-        const auto data=tuple.get(3);
-        if(property_host::truthy(dataSlot(data,"unknown"))) {
-            unknownText+=codePointText((*chars)[index]);
+    for (std::size_t index = 0; index < characters.size(); ++index) {
+        const auto resolved = getVariantChar(variantName, characters[index]);
+        if (!resolved) {
+            const std::array<double, 1> codepoint{static_cast<double>(characters[index])};
+            unknownText += string_util::unicodeString(codepoint);
             continue;
         }
 
-        unknownText=addUtextBBox(box,unknownText,variantName);
-        updateBBox(box,h,d,w);
-        const auto ic=dataSlot(data,"ic"),sk=dataSlot(data,"sk"),dx=dataSlot(data,"dx");
-        box.ic=property_host::truthy(ic)?numberSlot(ic):0;
-        box.sk=property_host::truthy(sk)?numberSlot(sk):0;
-        box.dx=property_host::truthy(dx)?numberSlot(dx):0;
-        const auto oc=dataSlot(data,"oc");
-        if(!property_host::truthy(oc)||index<chars->size()-1)continue;
-        if(!parent->childNodes||!(*parent->childNodes))
-            throw options::Exception("TypeError",u"Cannot read properties of undefined (reading 'length')");
-        const auto parentChildren=*parent->childNodes;
-        if(parentChildren->empty()||parentChildren->get(parentChildren->size()-1).requireNode("node")->node!=node)continue;
+        addMeasuredText(box, unknownText, variantName, output);
+        unknownText.clear();
+        const auto &metrics = resolved->data->metrics;
+        updateBBox(box, metrics.h, metrics.d, metrics.w);
+        box.ic = metrics.ic;
+        box.sk = metrics.sk;
+        box.dx = metrics.dx;
+        if (metrics.oc == 0 || index + 1 != characters.size())
+            continue;
 
-        if(!parent->parent||!parent->parent->node)
-            throw options::Exception("TypeError",u"Cannot read properties of null (reading 'node')");
-        auto* mmlParent=parent->parent->node;
-        std::optional<mml::NodeValue> next;
-        if(mmlParent->isKind("mrow")||mmlParent->isInferred()) {
-            const auto childIndex=mmlParent->childIndex(mml::NodeValue(parent->node));
-            if(!childIndex)throw options::Exception("TypeError",u"MML parent does not contain wrapper parent");
-            const auto children=mmlParent->childArrayOwner();
-            if(children&&*childIndex+1<children->size())
-                next=children->get(*childIndex+1);
-        }
-        if(next&&next->isNode()) {
-            auto* nextNode=next->nodeOrNull();
-            if(auto* mo=dynamic_cast<mml::MmlMo*>(nextNode);mo&&mo->getText()==u"\u2062") {
-                const auto moIndex=mmlParent->childIndex(*next);
-                if(moIndex) {
-                    const auto children=mmlParent->childArrayOwner();
-                    next.reset();
-                    if(children&&*moIndex+1<children->size())
-                        next=children->get(*moIndex+1);
-                }
-            }
-        }
-        bool sameVariant=false;
-        if(next&&next->isNode())sameVariant=next->nodeOrNull()->attributes()->get("mathvariant")==Property(std::string(variantName));
-        if(!next||!next->isNode()||!sameVariant)box.ic=numberSlot(oc);
-        else box.oc=numberSlot(oc);
+        const auto parentChildren = parent->childNodes;
+        if (parentChildren.empty() || parentChildren.back() != this)
+            continue;
+        if (!parent->parent)
+            throw std::logic_error("text parent wrapper has no MML parent wrapper");
+        auto *outer = parent->node->parent();
+        if (!outer)
+            throw std::logic_error("text parent MML node has no parent");
+        const auto *next = nextSibling(*outer, *parent->node);
+        const auto *nextVariant = next ? next->attributes().lookup(u"mathvariant") : nullptr;
+        const auto *nextVariantText =
+            nextVariant ? std::get_if<std::u16string>(nextVariant) : nullptr;
+        if (!nextVariantText || *nextVariantText != utf16::decode(variantName).text)
+            box.ic = metrics.oc;
+        else
+            box.oc = metrics.oc;
     }
-    unknownText=addUtextBBox(box,unknownText,variantName);
-    if(chars->size()>1)box.sk=0;
+
+    addMeasuredText(box, unknownText, variantName, output);
+    if (characters.size() > 1)
+        box.sk = 0;
     box.clean();
 }
-}
+} // namespace folia::math::output::common

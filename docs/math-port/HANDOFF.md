@@ -6,17 +6,25 @@
 
 ## 恢复时先看这几行
 
+- **最新：Common 文本和 inline 数学入口已验收**，完整原生组件 **235 项 / 32,338 断言**
+  exit0；构建 `build/math-port/native-common-text-policy-final-build.log`，完整运行
+  `native-common-text-policy-final-full.log`。TextNode/Mi/Mn/Ms/Mspace/Mglyph/Mtext/Math
+  均在原有家族文件中进入 CMake；不再是待推广的候选。
+  LayoutJob 已有 overflow inherited 层更新、inline 标记协调、强制/普通策略、最后 setTeXclass
+  再构造 wrappers 的 Source 顺序；继承与输入解析仍属输入流程。SVG 使用 forced，Common 默认
+  opportunistic。正式 `common-inline-policy-source-witness.cjs` 已由 Root 运行 exit0。
+  当前没有实际 LinebreakVisitor 算法运行：本批服务 UT 是明确的拒绝/观测 fixture。
 - **Common core 首批已验收**：原地 Wrapper/Factory/Jax、Mo/Mrow/Inferred 类、闭合 warning
   记录，完整原生组件 **220 项 / 32,185 断言** exit0。日志
   `build/math-port/native-common-core-batch-{build,full}.log`；格式整理后的构建
   `native-common-core-batch-formatted-build.log` 和完整
   `native-common-core-batch-final-full.log` 同样 exit0。不要拿下方旧 205 项结论覆盖新进展。
-  文本六类及 Mtext/Math 的实现已在工作树，尚未完整验收，当前 CMake 只接入首批三家族，
-  为独立小批提交暂时保存的全列表在 ignored `build/math-port/common-full-CMakeLists.txt`。
+  已提交 `9099dfe0`；此前正式 Source 工具提交 `f0879fb3`。文本后续结果见上一条。
+  CMake 已恢复 11 家族的正式列表，ignored common-full-CMakeLists.txt 只是旧备份，不可再覆盖。
   六个正式 `common-*-source-witness` 已由 Root 运行成功，输出
   `build/math-port/common-{factory,jax,variant,text,row,mo}-formal-source.log`；row reflow
   另见 `common-row-reflow-formal-source.log`。正式工具覆盖与限制见 `common-source-witness-coverage.md`。
-  正在补 LayoutJob 的 inline policy/marking 数学生命周期；实际 LinebreakVisitor 和其余家族
+  LayoutJob 的 inline policy/marking 数学生命周期已补；实际 LinebreakVisitor 和其余家族
   候选均已交付，尚未编译整合。不要重写这些候选，也不要宣称 TeX→SVG 已完成。
 - 本轮确定的修正：cpp 是 `module folia.math.output.common; import :partition;`，
   不能再声明与 interface 同名的 implementation partition；`coreMO()` 必须返回普通
@@ -25,12 +33,17 @@
   Mrow.shiftLines 在重新对齐前清 L，重复宽度 6/8/10 的 1em 左缩进不累加，已做 Source 对照。
   CommonOutputJax 嵌套 mstyle/semantic-added 分支标记 scanned parent；semantic 的递归也可能
   标记 scanned node，不能断言它始终未标记。正式 Jax Source witness 已覆盖两者。
-- 还未整合的关键包：`common-inline-policy-native-impl`（Source 布局入口生命周期，注意其
-  overflow 候选用了 setDefault，但 Source 实际 getAllInherited，推广应为 setInherited）；
-  `common-fraction-class-native-impl`（实际 Mfrac+288 案例）、`common-radical-class-native-impl`
+- 还未整合的关键包：`common-fraction-class-native-impl`（实际 Mfrac+288 案例）、`common-radical-class-native-impl`
   （实际 roots+192 案例）、`common-scripts-native-impl`、`common-fence-action-native-impl`、
   `common-linebreak-native-impl`（完整 cpp，已改 signed depth，Source 孤立 close: -1/2700）。
   所有包均已交付，不要重新从头分派。正式 header/source 是推广后的权威，旧 mirrors 不能覆盖。
+- 本轮文本/入口纠正：Source physical `parent` 与 logical `Parent()` 不可混用；
+  isTopEmbellished 和 getMathMLSpacing 用前者，Mtext 的 merror 查询用后者。
+  Ms quotes 用 wrapNode 后手动前/后插入；Mglyph charWrapper 用 wrapNode 登记但不追加普通 children；
+  Mtext 测量 TextNode 用 document.attachAuxiliary 关联唯一父节点。测试已覆盖顺序、索引、owner。
+  模式切换测试检查 inherited overflow 覆盖旧 inherited 而保留 own 和 default 层，不能改回 setDefault。
+  先前 spacing UT 没有 Source SVG forced-marking/实际 getBBox 流程，不能据此改期望为 2/9；
+  现在通过真实 forced LayoutJob + getBBox 与 Source 一致：plus.L=0、TeX b.L=2/9，MathML plus.R=2/9。
 - MML 集成基线 `33ea03fb`：43 类实际 MML 已接入唯一工厂和文档 arena。
   后续 exact clone、StyleJson、Common 值类型/字体 CSS 数据也已实现并验收，
   TreeVisitor 也已原生实现并验收；当前组件测试 **205 项 / 32,065 断言**通过。
@@ -202,10 +215,9 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 
 ### 紧接着执行
 
-1. **继续 Common 下一批整合**：core Wrapper/Factory/Jax、Mo/Mrow/Inferred 已通过
-   220 项 / 32,185 断言。不要再冻结一遍旧草稿或重做其基础。
-   先补 `common-inline-policy-native-impl` 的布局入口步骤并接入工作树已有的 Text/Mtext/Math，
-   完成剩余 UT，再用已交付的实际 fraction/radical/scripts/fence/action 与 visitor 包继续整合。
+1. **继续 Common 下一批整合**：core 与 Text/Mtext/Math/inline 入口已通过
+   235 项 / 32,338 断言。不要再冻结一遍旧草稿或重做其基础。
+   直接用已交付的实际 fraction/radical/scripts/fence/action 与 visitor 包继续整合。
    分式/根式当前生产文件仍是 scalar helper API；候选实际类尚未推广，不能当作已完成。
 2. 接通完整 TeX parser/stack/38-package 流程、Common 共享布局、Renderer 和 SVG；
    按固定上游 profile 做真正 TeX→SVG 对照，再替换 Folia 数学 QuickJS worker。
@@ -275,7 +287,7 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
 
 - 正式责任/模块约定：`common-native-implementation.md`。types 与 wrapper/factory/Jax 已推广、
   构建测试通过；正式 source/header 是权威，不得用旧 `common-contract-refresh/headers` 覆盖。
-  已接入的 Mo/Mrow/Inferred 与尚未接入的 Text/其他家族应按文首断点区分。
+  已接入的 Mo/Mrow/Inferred/Text/Mtext/Math 与其他家族应按文首断点区分。
 - 已确认的重要 Source 细节：factory adopt 只拥有并初始化；**CommonWrapper::wrapNode**
   才负责显式 parent 时追加和完成后的 nodeMap 登记，base initialize 的默认 child wrap 只追加一次。
   禁止把同一逻辑同时塞进 factory.wrap 和 wrapper.wrap。通用 Common defaultNodes 为空，
@@ -301,8 +313,7 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
   cpp 当前仍未进入 CMake，完整原生 cpp 已在 `common-linebreak-native-impl` 候选。
   `Linebreaks` 最小纯虚接口已冻结在正式 Common 文档。**TreeVisitor 已完成**，下一步用它改造
   Common visitor 声明/实现，并整合真实 Common core；不要重做 TreeVisitor 或把旧依赖加回。
-- 未解决验收项：无效 mathvariant Source 警告需要闭合诊断值接口；Common 基类 forceInlineBreaks
-  是 false，但 Source SVG 返回 options.linebreaks.inline，最终 SVG 对照必须保留这个实际策略。
+- mathvariant 闭合诊断值接口和 SVG forced inline 数学策略已解决并验收，不再列为待办。
   TeX parser/packages、CommonMath/其他家族、fraction/radical 实际类、Scene 发射和 Folia 接入仍未完成。
 
 ### Typed TreeVisitor（2026-10-20 已完成）

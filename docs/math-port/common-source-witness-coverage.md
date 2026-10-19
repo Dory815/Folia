@@ -1,6 +1,6 @@
 # Common pinned Source witness coverage
 
-These six standalone witnesses exercise existing MathJax 4.1.3 Common behavior. They are evidence for the named Source cases, not native behavior or complete Common/renderer parity. All generated JSON and logs are written beneath ignored `build/math-port/common-source/`.
+These standalone witnesses exercise existing MathJax 4.1.3 Common behavior. They are evidence for the named Source cases, not native behavior or complete Common/renderer parity. All generated JSON and logs are written beneath ignored `build/math-port/common-source/`.
 
 | Candidate formal tool | Source and exercised behavior | Limits |
 | --- | --- | --- |
@@ -14,6 +14,13 @@ These six standalone witnesses exercise existing MathJax 4.1.3 Common behavior. 
 The row witness also reflows its actual broken row to widths 6, 8, and 10 with
 left alignment and a 1em indent. Every line must retain L=1 at each width;
 this checks that `shiftLines` clears the prior left offset before realignment.
+
+`common-inline-policy-source-witness.cjs` pins Common/SVG TS and CJS hashes and
+executes three real SVG configurations plus same-document display/enable
+transitions. It checks the Source Common and SVG forceInlineBreaks getters,
+marking, recursive cleanup and conversion-entry ordering. It compares the
+checked-in inline-policy fixture and writes observations under ignored build.
+It does not compare final SVG bytes or prove the native linebreak algorithm.
 
 The Mo loader intercepts imports only when their parent is pinned `ts/output/common/Wrappers/mo.ts`; it returns the named test support module. The witness imports that support module directly only to supply the typed `CommonWrapper` base and `BBox` used by the fixture. The stubs do not replace `CommonMoMixin` or its tested methods.
 

@@ -334,7 +334,7 @@ void CommonWrapper::getScale() {
 bool CommonWrapper::isTopEmbellished() const {
     if (!node->isEmbellished())
         return false;
-    auto *sourceParent = node->Parent();
+    auto *sourceParent = node->parent();
     return !sourceParent || !sourceParent->isEmbellished();
 }
 
@@ -375,7 +375,7 @@ void CommonWrapper::getMathMLSpacing() {
     auto *child = mo->coreParent();
     if (!child)
         return;
-    auto *row = child->Parent();
+    auto *row = child->parent();
     if (!row || (row->kind() != mml::NodeKind::mrow && row->kind() != mml::NodeKind::inferred_mrow))
         return;
 
