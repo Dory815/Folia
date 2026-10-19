@@ -1,54 +1,88 @@
+/*************************************************************
+ * Native CommonMfenced methods mirroring MathJax 4.1.3.
+ * See src/math/LICENSE-MathJax.txt.
+ *************************************************************/
 module folia.math.output.common;
 import :mfenced;
-import :wrapper;
 import :mrow;
+import :inferred_mrow;
+import :wrapper;
 import folia.math.core.mml_tree.mml_nodes.mfenced;
 import std;
+
 namespace folia::math::output::common {
-CommonMfenced::CommonMfenced(CommonWrapperFactory& factory,mml::MmlNode& node,CommonWrapper* parentValue)
-    :CommonWrapper(factory,node,parentValue){}
-void CommonMfenced::initializeSource(){
+CommonMfenced::CommonMfenced(CommonWrapperFactory &factory, mml::MmlNode &source,
+                             CommonWrapper *parentValue)
+    : CommonWrapper(factory, source, parentValue) {
+}
+
+void CommonMfenced::initializeSource() {
     CommonWrapper::initializeSource();
-    createMrow();addMrowChildren();
+    createMrow();
+    addMrowChildren();
 }
-void CommonMfenced::createMrow(){
-    const auto rowValue=node->factoryOwner().create("inferredMrow",{});
-    auto* row=rowValue;
-    row->inheritAttributesFrom(mml::NodeValue(node));
-    auto* wrapped=wrapNode(*row,nullptr);
-    mrow=dynamic_cast<CommonMrow*>(wrapped);
-    if(!mrow)throw options::Exception("TypeError",u"inferredMrow wrapper is not a CommonMrow");
-    mrow->parent=this;
+
+void CommonMfenced::createMrow() {
+    auto &rowNode = node->document().factory().make(mml::NodeKind::inferred_mrow);
+    rowNode.inheritAttributesFrom(*node);
+    auto &rowWrapper = wrapNode(rowNode);
+    auto *inferred = dynamic_cast<CommonMrow *>(&rowWrapper);
+    if (!inferred)
+        throw std::logic_error("inferred mrow wrapper is not a CommonMrow");
+    mrow = inferred;
+    mrow->parent = this;
 }
-void CommonMfenced::addMo(mml::MmlNode* value){
-    if(!value)return;
-    if(!mrow||!mrow->childNodes||!(*mrow->childNodes))throw options::Exception("TypeError",u"Cannot read properties of undefined (reading 'push')");
-    CommonWrapper* wrapped=wrapNode(*value,nullptr);
-    (*mrow->childNodes)->push_back(wrapped);
-    wrapped->parent=mrow;
+
+void CommonMfenced::addMo(mml::MmlNode *operatorNode) {
+    if (!operatorNode)
+        return;
+    if (!mrow)
+        throw std::logic_error("CommonMfenced has no inferred mrow");
+    auto &wrapper = wrapNode(*operatorNode);
+    mrow->childNodes.push_back(&wrapper);
+    wrapper.parent = mrow;
 }
-void CommonMfenced::addMrowChildren(){
-    auto* fenced=dynamic_cast<mml::MmlMfenced*>(node);
-    if(!fenced)throw options::Exception("TypeError",u"CommonMfenced requires an MmlMfenced node");
+
+void CommonMfenced::addMrowChildren() {
+    auto *fenced = dynamic_cast<mml::MmlMfenced *>(node);
+    if (!fenced)
+        throw std::logic_error("CommonMfenced requires MmlMfenced");
+    if (!mrow)
+        throw std::logic_error("CommonMfenced has no inferred mrow");
+
     addMo(fenced->open);
-    if(!childNodes)throw options::Exception("TypeError",u"Cannot read properties of undefined (reading 'length')");
-    const auto captured=*childNodes;
-    if(!captured)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'length')");
-    if(captured->size())(*mrow->childNodes)->push_back(captured->get(0));
-    if(!fenced->separators)throw options::Exception("TypeError",u"Cannot read properties of null (reading '0')");
-    const auto rest=captured->slice(1);
-    std::size_t index=0;
-    for(std::size_t i=0;i<rest->size();++i){
-        const auto separator=fenced->separators->get(index++);
-        addMo(separator.nodeOrNull());
-        (*mrow->childNodes)->push_back(rest->get(i));
+    const auto count = childNodes.size();
+    if (count != 0)
+        mrow->childNodes.push_back(childNodes.front());
+    for (std::size_t childIndex = 1; childIndex < count; ++childIndex) {
+        const auto separatorIndex = childIndex - 1;
+        if (separatorIndex < fenced->separators.size())
+            addMo(fenced->separators[separatorIndex]);
+        auto *child = childNodes[childIndex];
+        if (!child)
+            throw std::logic_error("CommonMfenced has a null child wrapper");
+        mrow->childNodes.push_back(child);
     }
     addMo(fenced->close);
     mrow->stretchChildren();
 }
-std::size_t CommonMfenced::breakCount(){return mrow->breakCount();}
-void CommonMfenced::computeBBox(BBox& box,bool recompute){
-    box.updateFrom(*mrow->getOuterBBox());setChildPWidths(recompute);
+
+std::size_t CommonMfenced::breakCount() {
+    if (!mrow)
+        throw std::logic_error("CommonMfenced has no inferred mrow");
+    return mrow->breakCount();
 }
-std::shared_ptr<LineBBox> CommonMfenced::computeLineBBox(std::size_t index){return mrow->getLineBBox(index);}
+
+void CommonMfenced::computeBBox(BBox &box, bool recompute) {
+    if (!mrow)
+        throw std::logic_error("CommonMfenced has no inferred mrow");
+    box.updateFrom(mrow->getOuterBBox());
+    (void)setChildPWidths(recompute);
 }
+
+std::shared_ptr<LineBBox> CommonMfenced::computeLineBBox(std::size_t index) {
+    if (!mrow)
+        throw std::logic_error("CommonMfenced has no inferred mrow");
+    return mrow->getLineBBox(index);
+}
+} // namespace folia::math::output::common
