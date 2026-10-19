@@ -1,8 +1,25 @@
 # Current native MathJax status
 
-The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
-integration replacing the math QuickJS worker. Native conversion runs, but the
-renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
+The goal remains native TeX -> shared mathematical layout -> SVG, then verified
+Folia integration replacing the math QuickJS worker. Folia still uses that
+QuickJS path; complete renderer/application acceptance remains open.
+
+Latest verified snapshot: Gate239 passes the complete Host suite (436 tests /
+2,966 assertions), all 150 exact SVG comparisons and four event-position
+comparisons, with 2,200 registered inputs unchanged. The prototype/accessor and
+cross-adapter object identity regressions are fixed. See
+`evidence/shared-gate237.md` and `evidence/shared-gates238-239.md`.
+
+Gate236's package comparisons pass 24/24, 23/23, 16/16 and 20/20; Gate233's
+nested SVG corpus passes 12/12. These remain bounded corpus results. Private
+Renderer allocation lifetime, current broader core/layout/font/platform checks,
+the per-file/method acceptance ledger and Folia integration are still required.
+The reviewed request-domain and WinUI C ABI integration packets are drafts.
+Mermaid remains paused. Gate238 was rejected after a draft agent changed the
+unregistered scope manifest; Root restored it and included it in Gate239's
+snapshot. No scope acceptance was advanced by that edit.
+
+## Historical records
 
 Latest package comparisons: next-six passes 20/20 at Gate222; font packages
 pass 16/16 at Gate223 against unchanged Source records. The observers now

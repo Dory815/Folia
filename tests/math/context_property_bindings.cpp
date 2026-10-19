@@ -129,6 +129,76 @@ suite contextProperties=[] {
         expect(graph.properties.to(first)==opts::Value(object));
         expect(graph.properties.to(record.get("child"))==opts::Value(child));
     };
+    "math_context_property_cross_binding_identity_and_equality_are_source_object_based"_test=[] {
+        Graph graph;
+        OptionFunctionBindings peerFunctions{graph.context};
+        ContextPropertyBindings peer{graph.context,peerFunctions};
+        auto object=graph.context.object();
+        auto array=graph.context.array(1);
+        std::size_t getterCalls=0;
+        const auto getter=graph.context.function(u"get-value",[&](auto&,auto,auto){++getterCalls;return opts::Value(3);});
+        graph.context.define(object,u"value",opts::Descriptor::access(getter,{},true,true));
+        const auto firstRecord=graph.properties.from(object);
+        const auto peerRecord=peer.from(object);
+        const auto firstArray=graph.properties.from(array);
+        const auto peerArray=peer.from(array);
+        expect(firstRecord==peerRecord) << "same Context object records compare by exact Source identity";
+        expect(property_host::sameValueZero(firstRecord,peerRecord))
+            << "Map/TokenMap SameValueZero agrees with Source object identity";
+        expect(firstArray==peerArray) << "same Context object arrays compare by exact Source identity";
+        expect(graph.properties.to(peerRecord)==opts::Value(object));
+        expect(peer.to(firstRecord)==opts::Value(object));
+        expect(graph.properties.to(peerArray)==opts::Value(array));
+        expect(peer.to(firstArray)==opts::Value(array));
+        expect(getterCalls==0u) << "identity comparison and conversion never invoke getters";
+        graph.context.set(object,u"written",7);
+        expect(PropertyList::record(firstRecord)->get("written")==Property(7));
+        PropertyList::record(peerRecord)->set("written",Property(9));
+        expect(graph.context.get(object,u"written")==opts::Value(9));
+
+        const auto distinct=graph.context.object();
+        expect(graph.properties.from(distinct)!=peer.from(object))
+            << "different Source objects in one Context remain unequal";
+        Graph foreign;
+        const auto foreignObject=foreign.context.object();
+        expect(graph.properties.from(object)!=foreign.properties.from(foreignObject))
+            << "different Context identities remain unequal";
+        const auto foreignGetter=foreign.context.function(u"foreign-get",
+            [&](opts::Context&,opts::Value,std::span<const opts::Value>){++getterCalls;return opts::Value(11.0);});
+        foreign.context.define(foreignObject,opts::Key(u"foreign-visible"),
+            opts::Descriptor::access(foreignGetter,std::nullopt,true,true));
+        const auto localProjection=graph.properties.to(foreign.properties.from(foreignObject));
+        const auto* localObject=std::get_if<opts::ObjectRef>(&localProjection.data);
+        expect(localObject!=nullptr);
+        if(localObject){
+            expect(localObject->context==graph.context.intrinsics().objectPrototype.context)
+                << "foreign Context identity is projected into the receiving Context";
+            expect(*localObject!=foreignObject) << "projection never returns the foreign ObjectRef";
+            expect(graph.context.ownPropertyEnumerable(localProjection,opts::Key(u"foreign-visible")));
+            expect(getterCalls==0u) << "foreign accessor is not invoked during projection";
+            expect(graph.context.get(localProjection,opts::Key(u"foreign-visible"))==opts::Value(11.0));
+            expect(getterCalls==1u) << "projected accessor remains live and lazy";
+        }
+        const auto retired=graph.context.object();
+        const auto retiredProperty=graph.properties.from(retired);
+        const auto retiredPeerProperty=peer.from(retired);
+        graph.context.retireObjectRecord(retired);
+        bool retiredLocal=false,retiredPeer=false;
+        try{(void)graph.properties.to(retiredProperty);}catch(const opts::Exception& error){retiredLocal=error.name=="TypeError";}
+        try{(void)peer.to(retiredPeerProperty);}catch(const opts::Exception& error){retiredPeer=error.name=="TypeError";}
+        expect(retiredLocal&&retiredPeer) << "retired same-Context record identities cannot be resurrected";
+
+        PropertyList nested;
+        nested.set("live",firstRecord);
+        const auto nestedObject=std::get<opts::ObjectRef>(peer.to(Property(nested)).data);
+        expect(graph.context.get(nestedObject,u"live")==opts::Value(object))
+            << "nested native Property record keeps bound Source object identity";
+        PropertyArray nestedArray;
+        nestedArray.push(firstRecord);
+        const auto nestedArrayObject=std::get<opts::ObjectRef>(peer.to(Property(nestedArray)).data);
+        expect(graph.context.get(opts::Value(nestedArrayObject),opts::Key(u"0"))==opts::Value(object))
+            << "nested native Property array keeps bound Source object identity";
+    };
     "math_context_property_plain_native_record_keeps_shared_storage_identity"_test=[] {
         Graph graph;PropertyList record{{"value",Property(3)}};const Property original(record);
         const auto object=std::get<opts::ObjectRef>(graph.properties.to(original).data);

@@ -42,7 +42,7 @@ struct Property {
     Property(const PropertyList& v);
     Property(const PropertyArray& v);
     bool missing() const { return std::holds_alternative<Missing>(value); }
-    bool operator==(const Property&) const = default;
+    bool operator==(const Property&) const;
 };
 // A view of an existing record graph. Bound storage owns no parallel entries:
 // every operation reaches the original record, including getters and setters.
@@ -82,6 +82,8 @@ struct PropertyRecordBinding {
     // Source Object.assign copy semantics. Context-backed records override this
     // to preserve enumerable symbol keys as well as string keys.
     virtual PropertyList copyEnumerableOwn();
+    // Exact Source object identity, available without reading properties.
+    virtual std::optional<options::ObjectRef> sourceObjectIdentity()const noexcept{return {}; }
 };
 struct PropertyStorage {
     std::shared_ptr<PropertyRecordBinding> binding;
@@ -94,6 +96,19 @@ struct PropertyStorage {
     std::vector<Property> arrayValues;
     std::vector<bool> arrayPresent;
 };
+
+inline bool Property::operator==(const Property& other) const {
+    const auto* left=std::get_if<std::shared_ptr<PropertyStorage>>(&value);
+    const auto* right=std::get_if<std::shared_ptr<PropertyStorage>>(&other.value);
+    if(left&&right){
+        if(*left==*right)return true;
+        if(!*left||!*right||!(*left)->binding||!(*right)->binding)return false;
+        const auto leftIdentity=(*left)->binding->sourceObjectIdentity();
+        const auto rightIdentity=(*right)->binding->sourceObjectIdentity();
+        return leftIdentity&&rightIdentity&&*leftIdentity==*rightIdentity;
+    }
+    return value==other.value;
+}
 
 // Copies are handles to the same dictionary, like JS object references. Own
 // entries are separate from the prototype; deletion never hides inherited data.

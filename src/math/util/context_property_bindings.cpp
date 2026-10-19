@@ -344,6 +344,7 @@ struct ContextPropertyBindings::State:std::enable_shared_from_this<State> {
         ObjectRef object;
         Record(std::shared_ptr<State> owner,ObjectRef object):owner(std::move(owner)),object(object){}
         static Key key(std::string_view text){return Key(property_host::text(text));}
+        std::optional<ObjectRef> sourceObjectIdentity()const noexcept override{return object;}
         Property get(std::string_view name)override{return owner->from(owner->context.get(object,key(name)));}
         Property getOwn(std::string_view name)override{
             if(!owner->context.hasOwn(object,key(name)))return Missing{};
@@ -475,16 +476,26 @@ struct ContextPropertyBindings::State:std::enable_shared_from_this<State> {
         }
         for(auto it=projections.rbegin();it!=projections.rend();++it)
             if(auto projected=it->first(value))return *projected;
-        if(const auto* storage=std::get_if<std::shared_ptr<PropertyStorage>>(&value.value);storage&&*storage){
-            const auto* bound=dynamic_cast<Record*>((*storage)->binding.get());
-            if(bound&&bound->owner.get()==this)return bound->object;
+        if(const auto* storage=std::get_if<std::shared_ptr<PropertyStorage>>(&value.value);storage&&*storage)
             return const_cast<State*>(this)->objectFor(*storage);
-        }
         throw Exception("Unimplemented",u"Typed intrinsic Property has no canonical Context binding");
     }
 };
 ObjectRef ContextPropertyBindings::State::objectFor(const std::shared_ptr<PropertyStorage>& storage){
     if(!storage)throw Exception("TypeError",u"PropertyStorage is null");
+    if(storage->binding){
+        if(const auto identity=storage->binding->sourceObjectIdentity();
+           identity&&identity->context==context.intrinsics().objectPrototype.context){
+            // Validate liveness and record shape before returning the exact
+            // same-Context Source ObjectRef. Foreign identities fall through
+            // to the live local projection below.
+            const auto kind=context.kind(*identity);
+            const bool sourceArray=kind==ObjectKind::array;
+            if(sourceArray!=storage->array)
+                throw Exception("TypeError",u"Context property identity has the wrong record shape");
+            return *identity;
+        }
+    }
     for(const auto& [object,weak]:records)if(auto current=weak.lock();current&&current==storage)return object;
     ObjectRef object;
     if(storage->array){
