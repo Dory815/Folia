@@ -4,6 +4,14 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
+Latest package comparisons: next-six passes 20/20 at Gate222; font packages
+pass 16/16 at Gate223 against unchanged Source records. The observers now
+separate compile/state capture phases explicitly, and the font observer seeds
+the root Map's canonical identity before traversing shared aliases. A small
+compiler experiment and C4866 diagnostics reproduce the old expression's
+order limitation. These gates cover package observations only; see
+`evidence/shared-gates222-223.md`.
+
 Latest SVG evaluation (Gate221): all 61 targets build and 2,187 registered
 input entries remain unchanged through evaluation. The tooltip candidate fails
 its Scene nesting test and public Renderer geometry handling. The 150-record
