@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "mathJaxVersion": "4.1.3",
+  "sources": [
+    {
+      "file": "ts/input/tex/MapHandler.ts",
+      "sha256": "7cacdaef3ed1df90b4f05cc0b3183a2956ae8f848f20ae8833932faa4efcb2a2",
+      "cjsFile": "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/MapHandler.js",
+      "cjsSha256": "d82e3034776d2392689aad86500b5e60dbe0aa5540853b48f308841879f3cf67"
+    }
+  ]
+}
