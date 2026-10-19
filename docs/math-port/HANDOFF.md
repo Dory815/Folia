@@ -7,9 +7,10 @@
 ## 恢复时先看这几行
 
 - MML 集成基线 `33ea03fb`：43 类实际 MML 已接入唯一工厂和文档 arena。
-  后续 exact clone 也已实现并验收，当前组件测试 **194 项 / 31,793 断言**通过。
+  后续 exact clone 和 StyleJson 也已实现并验收，当前组件测试 **200 项 / 31,805 断言**通过。
   不要重新迁移这些类或重跑已完成的大盘点。
-- 下一项是恢复 Common 实际类协作。`MmlClone` / `copyNativeStateTo` 已在原有模块中
+- 下一项是恢复 Common 实际类协作，契约见 `common-native-implementation.md`。
+  `MmlClone` / `copyNativeStateTo` 已在原有模块中
   实现并构建测试，**不再是待实现的讨论方案**；家族状态、辅助节点映射和异常回滚已补齐。
 - TeX→SVG 和 Folia 原生接入尚未完成；Mermaid 继续暂停。
 - 现有未提交改动见文末“工作区保护”，本次记事不改变其归属。
@@ -207,6 +208,23 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
 - 四个 Luna 按冻结接口各自负责 Mo/XML/Mfenced/Mrow 原文件和独立测试；Root 负责文档/base、
   回滚测试、审查、CMake 和执行。正式职责/验收在 `typed-mml-implementation.md`。
 - 此结果依旧只是组件验收，不是 TeX→SVG/Folia 接入证明。
+
+### StyleJson（2026-10-20 已完成）
+
+- 原 `util/style_json` 类/方法原地迁移为有序、拥有值的 CSS 定义树；叶子只有字符串/数字，
+  嵌套只有 CSS 定义。没有 Property/Context、通用对象身份、布尔/null/function 或兼容桥。
+- 保留 shallow merge、替换/追加顺序、嵌套规则和精确 whitespace/数字/UTF-16。
+  原生输入快照不与外部可变结构共享，属于用户要求的原生值类型边界。
+- Root 执行 `tools/math-port/style-json-source-witness.cjs`，11 项通过，运行前强制校验
+  CJS SHA-256 `dfd45381fc15fa9b8a038e8ac782550934b5327871d10534df52af02aa43f11f`。
+  日志 `build/math-port/style-json-source.log`。
+- 构建 exit0：`native-style-json-verified-build.log`；聚焦 exit0：
+  `native-style-json-focused.log`；完整 **200 项 / 31,805 断言** exit0：
+  `build/math-port/native-style-json-full.log`。新增 6 项 / 12 断言。
+- Root 修正测试里遗漏的 sibling color 和孤立 surrogate 整条规则期望，已执行 Source 核对；
+  继续使用 compare/ranges::equal 避免 Boost.UT 的 UTF-16 运算符/打印器问题。
+- inactive Common bindings/output bridge 仍引用旧 PropertyList，后续随其真实消费者迁移移除，
+  不保留临时转接。StyleJson 完成不代表 CommonOutputJax 或 SVG pipeline 已完成。
 
 ## 工作区保护
 

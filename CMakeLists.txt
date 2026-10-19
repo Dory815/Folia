@@ -170,6 +170,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/lengths.ixx
     src/math/util/js_number.ixx
     src/math/util/styles.ixx
+    src/math/util/style_json.ixx
     src/math/util/regexp_host.ixx)
 target_sources(folia_math PRIVATE
     src/math/core/mml_tree/attributes.cpp
@@ -204,6 +205,7 @@ target_sources(folia_math PRIVATE
     ${FOLIA_FONT_GENERATED_CPP}
     src/math/util/lengths.cpp
     src/math/util/styles.cpp
+    src/math/util/style_json.cpp
     src/math/util/regexp_host.cpp)
 
 # Actual MathJax MML families share the document-owned native arena. Keep the
@@ -359,6 +361,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_string_util.cpp
     tests/math/native_raii_fonts.cpp
     tests/math/common_styles_source.cpp
+    tests/math/native_style_json.cpp
     tests/math/native_line_bbox.cpp
     tests/math/native_tree_factory.cpp
     tests/math/native_tree_node.cpp

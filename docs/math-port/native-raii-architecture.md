@@ -91,6 +91,24 @@ current exported input/result/function surface is not the final wrapper API.
 
 ## Ownership
 
+### CSS stylesheet dependency for Common (2026-10-20)
+
+Keep `StyleJsonSheet` in existing `util/style_json.ixx/.cpp`; no Common-local
+stylesheet implementation. Its native CSS tree is `StyleEntry {u16string name;
+variant<u16string,double,vector<StyleEntry>> value;}` and `StyleJson` is the
+ordered vector of entries. Leaves are CSS strings/numbers; groups are selector
+definitions including nested rules. This is not a general runtime object value.
+Copying owns a value snapshot. Merging updates named declarations in place,
+appends new names, and replaces nested definitions shallowly as Source does.
+Preserve constructor/addStyles/removeStyles/clear/cssText/getStyleString/
+getStyleRules/getStyleDefString and exact Source whitespace/numeric spelling.
+Use overloads for omitted getStyleRules input, not a Missing/null sentinel.
+Acceptance compares actual pinned StyleJson.ts execution for replacement order,
+removal/reinsertion, nested @media/@font-face, numbers, empty groups and UTF-16.
+Arbitrary JS alias/prototype/coercion tests remain withdrawn; CSS output and
+merging behavior remain required. Common shared declarations are governed by
+`common-native-implementation.md`; drafts do not establish compiled acceptance.
+
 ### Typed factory and actual MML family decision (2026-10-20)
 
 The generic `Tree/Factory` and `Tree/Wrapper` class roles remain. Replace their
