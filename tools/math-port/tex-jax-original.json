@@ -1,0 +1,611 @@
+{
+  "source": {
+    "path": "ts/input/tex.ts",
+    "sha256": "151d3c73697bfbf874001549f6e0c80dbebeabba2b36ab50501a4ffd7753bf06"
+  },
+  "cjs": {
+    "path": "cjs/input/tex.js",
+    "sha256": "ef2852b197173f373e62326016e980aef01ffc838f5f766ab6076262f944eada"
+  },
+  "rows": [
+    {
+      "label": "tex-class-function-descriptors-and-inheritance",
+      "result": {
+        "constructor": {
+          "name": "TeX",
+          "length": 1,
+          "ownKeys": [
+            "length",
+            "name",
+            "prototype",
+            "configure",
+            "tags",
+            "NAME",
+            "OPTIONS"
+          ],
+          "nameDescriptor": {
+            "value": "TeX",
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          },
+          "lengthDescriptor": {
+            "value": 1,
+            "writable": false,
+            "enumerable": false,
+            "configurable": true
+          }
+        },
+        "prototypeKeys": [
+          "constructor",
+          "setMmlFactory",
+          "parseOptions",
+          "reset",
+          "compile",
+          "findMath",
+          "formatError"
+        ],
+        "methods": [
+          {
+            "name": "setMmlFactory",
+            "descriptor": {
+              "value": {
+                "$": "function",
+                "name": "",
+                "length": 1
+              },
+              "writable": true,
+              "enumerable": true,
+              "configurable": true
+            },
+            "function": {
+              "$": "function",
+              "name": "",
+              "length": 1
+            }
+          },
+          {
+            "name": "parseOptions",
+            "descriptor": {
+              "get": {
+                "$": "function",
+                "name": "get",
+                "length": 0
+              },
+              "set": {
+                "$": "undefined"
+              },
+              "enumerable": false,
+              "configurable": true
+            },
+            "function": {
+              "$": "function",
+              "name": "get",
+              "length": 0
+            }
+          },
+          {
+            "name": "reset",
+            "descriptor": {
+              "value": {
+                "$": "function",
+                "name": "",
+                "length": 1
+              },
+              "writable": true,
+              "enumerable": true,
+              "configurable": true
+            },
+            "function": {
+              "$": "function",
+              "name": "",
+              "length": 1
+            }
+          },
+          {
+            "name": "compile",
+            "descriptor": {
+              "value": {
+                "$": "function",
+                "name": "",
+                "length": 2
+              },
+              "writable": true,
+              "enumerable": true,
+              "configurable": true
+            },
+            "function": {
+              "$": "function",
+              "name": "",
+              "length": 2
+            }
+          },
+          {
+            "name": "findMath",
+            "descriptor": {
+              "value": {
+                "$": "function",
+                "name": "",
+                "length": 1
+              },
+              "writable": true,
+              "enumerable": true,
+              "configurable": true
+            },
+            "function": {
+              "$": "function",
+              "name": "",
+              "length": 1
+            }
+          },
+          {
+            "name": "formatError",
+            "descriptor": {
+              "value": {
+                "$": "function",
+                "name": "",
+                "length": 1
+              },
+              "writable": true,
+              "enumerable": true,
+              "configurable": true
+            },
+            "function": {
+              "$": "function",
+              "name": "",
+              "length": 1
+            }
+          }
+        ],
+        "staticMethods": [
+          {
+            "name": "configure",
+            "function": {
+              "$": "function",
+              "name": "",
+              "length": 1
+            },
+            "descriptor": {
+              "value": {
+                "$": "function",
+                "name": "",
+                "length": 1
+              },
+              "writable": true,
+              "enumerable": true,
+              "configurable": true
+            }
+          },
+          {
+            "name": "tags",
+            "function": {
+              "$": "function",
+              "name": "",
+              "length": 2
+            },
+            "descriptor": {
+              "value": {
+                "$": "function",
+                "name": "",
+                "length": 2
+              },
+              "writable": true,
+              "enumerable": true,
+              "configurable": true
+            }
+          }
+        ],
+        "nameValue": "TeX",
+        "optionKeys": [
+          "preFilters",
+          "postFilters",
+          "FindTeX",
+          "packages",
+          "maxBuffer",
+          "maxTemplateSubtitutions",
+          "mathStyle",
+          "formatError"
+        ],
+        "options": {
+          "preFilters": [],
+          "postFilters": [],
+          "FindTeX": null,
+          "packages": [
+            "base"
+          ],
+          "maxBuffer": 5120,
+          "maxTemplateSubtitutions": 10000,
+          "mathStyle": "TeX",
+          "formatError": {
+            "$": "function",
+            "name": "formatError",
+            "length": 2
+          }
+        }
+      },
+      "error": null
+    },
+    {
+      "label": "tex-constructor-source-initialization-and-live-parse-options",
+      "result": null,
+      "error": {
+        "name": "TypeError",
+        "id": null,
+        "message": "object is not iterable (cannot read property Symbol(Symbol.iterator))"
+      }
+    },
+    {
+      "label": "tex-configure-actual-parser-configuration",
+      "result": null,
+      "error": {
+        "name": "TypeError",
+        "id": null,
+        "message": "config.configurations.map is not a function"
+      }
+    },
+    {
+      "label": "tex-static-tags-adds-configuration-and-selects-default",
+      "result": {
+        "oldAndNewDiffer": true,
+        "tagClass": "NoTags",
+        "configOwnTagKeys": [
+          "base"
+        ],
+        "tagsConfigurationIsParseOptions": true
+      },
+      "error": null
+    },
+    {
+      "label": "tex-reset-omitted-undefined-null-and-value",
+      "result": [
+        {
+          "label": "omitted",
+          "result": {
+            "$": "undefined"
+          },
+          "error": null,
+          "calls": 1,
+          "counter": 0,
+          "currentTag": {
+            "env": "",
+            "taggable": false,
+            "defaultTags": false,
+            "tag": null,
+            "tagId": "",
+            "tagFormat": null,
+            "noTag": false,
+            "labelId": ""
+          },
+          "parseRoot": null,
+          "parserLength": 0,
+          "nodeListKeys": [],
+          "parseOptionsReads": [
+            "parseOptions",
+            "parseOptions"
+          ]
+        },
+        {
+          "label": "undefined",
+          "result": {
+            "$": "undefined"
+          },
+          "error": null,
+          "calls": 1,
+          "counter": 0,
+          "currentTag": {
+            "env": "",
+            "taggable": false,
+            "defaultTags": false,
+            "tag": null,
+            "tagId": "",
+            "tagFormat": null,
+            "noTag": false,
+            "labelId": ""
+          },
+          "parseRoot": null,
+          "parserLength": 0,
+          "nodeListKeys": [],
+          "parseOptionsReads": [
+            "parseOptions",
+            "parseOptions"
+          ]
+        },
+        {
+          "label": "null",
+          "result": {
+            "$": "undefined"
+          },
+          "error": null,
+          "calls": 1,
+          "counter": null,
+          "currentTag": {
+            "env": "",
+            "taggable": false,
+            "defaultTags": false,
+            "tag": null,
+            "tagId": "",
+            "tagFormat": null,
+            "noTag": false,
+            "labelId": ""
+          },
+          "parseRoot": null,
+          "parserLength": 0,
+          "nodeListKeys": [],
+          "parseOptionsReads": [
+            "parseOptions",
+            "parseOptions"
+          ]
+        },
+        {
+          "label": "number",
+          "result": {
+            "$": "undefined"
+          },
+          "error": null,
+          "calls": 1,
+          "counter": 7,
+          "currentTag": {
+            "env": "",
+            "taggable": false,
+            "defaultTags": false,
+            "tag": null,
+            "tagId": "",
+            "tagFormat": null,
+            "noTag": false,
+            "labelId": ""
+          },
+          "parseRoot": null,
+          "parserLength": 0,
+          "nodeListKeys": [],
+          "parseOptionsReads": [
+            "parseOptions",
+            "parseOptions"
+          ]
+        }
+      ],
+      "error": null
+    },
+    {
+      "label": "tex-findmath-delegates-live-findtex-and-ignores-second-argument",
+      "result": {
+        "actual": [
+          {
+            "open": "\\(",
+            "math": "x",
+            "close": "\\)",
+            "n": 0,
+            "start": {
+              "n": 7
+            },
+            "end": {
+              "n": 12
+            },
+            "display": false
+          },
+          {
+            "open": "$$",
+            "math": "y",
+            "close": "$$",
+            "n": 1,
+            "start": {
+              "n": 8
+            },
+            "end": {
+              "n": 13
+            },
+            "display": true
+          }
+        ],
+        "receiver": {
+          "marker": "findTeX receiver"
+        },
+        "captured": {
+          "receiverIsFindTeX": true,
+          "sameInput": true
+        },
+        "delegated": [
+          "delegated"
+        ]
+      },
+      "error": null
+    },
+    {
+      "label": "tex-formaterror-regexp-line-boundary-and-real-mml",
+      "result": {
+        "result": {
+          "kind": "merror",
+          "attributes": {
+            "data-mjx-error": "first line\nthird line"
+          },
+          "properties": {},
+          "children": [
+            {
+              "kind": "inferredMrow",
+              "attributes": {},
+              "properties": {},
+              "children": [
+                {
+                  "kind": "mtext",
+                  "attributes": {},
+                  "properties": {},
+                  "children": [
+                    {
+                      "kind": "text",
+                      "attributes": null,
+                      "properties": {},
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "error": {
+          "id": "TestID",
+          "message": "first line\nsecond line\nthird line"
+        }
+      },
+      "error": null
+    },
+    {
+      "label": "tex-setmmlfactory-base-and-nodefactory-share-one-object",
+      "result": {
+        "baseFactoryIdentity": true,
+        "parseFactoryIdentity": true
+      },
+      "error": null
+    },
+    {
+      "label": "tex-compile-real-parser-mml-and-filter-state",
+      "result": {
+        "result": {
+          "kind": "math",
+          "attributes": {
+            "data-latex": "x+1",
+            "display": "block"
+          },
+          "properties": {},
+          "children": [
+            {
+              "kind": "inferredMrow",
+              "attributes": {},
+              "properties": {},
+              "children": [
+                {
+                  "kind": "mi",
+                  "attributes": {
+                    "data-latex": "x"
+                  },
+                  "properties": {},
+                  "children": [
+                    {
+                      "kind": "text",
+                      "attributes": null,
+                      "properties": {},
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "kind": "mo",
+                  "attributes": {
+                    "data-latex": "+"
+                  },
+                  "properties": {
+                    "in-lists": "fixStretchy"
+                  },
+                  "children": [
+                    {
+                      "kind": "text",
+                      "attributes": null,
+                      "properties": {},
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "kind": "mn",
+                  "attributes": {
+                    "data-latex": "1"
+                  },
+                  "properties": {},
+                  "children": [
+                    {
+                      "kind": "text",
+                      "attributes": null,
+                      "properties": {},
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "sameAsRoot": true,
+        "latex": "x+1",
+        "parseError": false,
+        "parserCount": 0,
+        "itemInputIsJax": true,
+        "tagCounter": 0
+      },
+      "error": null
+    },
+    {
+      "label": "tex-compile-source-order-and-live-parse-options-getter",
+      "result": {
+        "trace": [
+          "parseOptions",
+          "clear",
+          "parseOptions",
+          "parseOptions",
+          "executeFilters",
+          "parseOptions",
+          "startEquation",
+          "parseOptions",
+          "nodeFactory.create",
+          "nodeFactory.create",
+          "nodeFactory.create",
+          "parseOptions",
+          "nodeFactory.create",
+          "parseOptions",
+          "finishEquation",
+          "parseOptions",
+          "parseOptions",
+          "executeFilters",
+          "parseOptions"
+        ],
+        "resultKind": "math",
+        "rootSame": true,
+        "parseError": false,
+        "stackParserCount": 0
+      },
+      "error": null
+    },
+    {
+      "label": "tex-compile-formaterror-callback-receiver-and-return",
+      "result": {
+        "calls": [
+          {
+            "receiverIsJax": true,
+            "id": "UndefinedControlSequence",
+            "message": "Undefined control sequence \\notACommand"
+          }
+        ],
+        "result": {
+          "kind": "math",
+          "attributes": {
+            "data-latex": "\\notACommand",
+            "display": "block"
+          },
+          "properties": {},
+          "children": [
+            {
+              "kind": "inferredMrow",
+              "attributes": {},
+              "properties": {},
+              "children": [
+                {
+                  "kind": "merror",
+                  "attributes": {},
+                  "properties": {},
+                  "children": [
+                    {
+                      "kind": "inferredMrow",
+                      "attributes": {},
+                      "properties": {},
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "parseError": true
+      },
+      "error": null
+    }
+  ]
+}

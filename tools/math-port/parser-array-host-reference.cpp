@@ -193,7 +193,7 @@ suite array_host=[] {
 "slice_object_bound_is_explicit_conversion_boundary"_test=[] {
     ArrayFixture e; auto object=e.context.object(); const std::array<opts::Value,1> args{object};
     expect(eq(e.guarded([&]{return e.summary(e.method(u"slice",args));}),
-              std::string("TypeError|THREW|")));
+              std::string("ok|len:0|")));
 };
 "slice_result_owns_data_and_bypasses_prototype_setter"_test=[] {
     ArrayFixture e; e.set(0,4);
@@ -289,7 +289,7 @@ suite array_host=[] {
     ArrayFixture e; e.set(0,2);auto object=e.context.object();
     const std::array<opts::Value,2> args{2,object};
     expect(eq(e.guarded([&]{return e.text(e.method(u"includes",args));}),
-              std::string("TypeError|THREW|")));
+              std::string("ok|true|")));
 };
 "includes_from_index_string_to_number"_test=[] {
     ArrayFixture e; e.set(0,0); e.set(1,1); e.set(2,2);
@@ -408,12 +408,112 @@ suite array_host=[] {
     ArrayFixture e; e.set(0,opts::Null{});e.set(1,opts::Undefined{});
     const std::array<opts::Value,1> args{e.context.object()};
     expect(eq(e.guarded([&]{return e.text(e.method(u"join",args));}),
-              std::string("Unimplemented|THREW|")));
+              std::string("ok|[object Object]|")));
 };
 "join_object_to_primitive_is_explicit_boundary"_test=[] {
     ArrayFixture e; e.set(0,e.context.object());
     expect(eq(e.guarded([&]{return e.text(e.method(u"join"));}),
-              std::string("Unimplemented|THREW|")));
+              std::string("ok|[object Object]|")));
+};
+"object_to_primitive_uses_object_intrinsics_and_tag"_test=[] {
+    opts::Context context; const auto plain=context.object();
+    expect(context.toPrimitive(opts::Value(plain),opts::PrimitiveHint::stringHint)==opts::Value(u"[object Object]"));
+    const auto array=context.array();
+    const auto intrinsic=context.get(opts::Value(context.intrinsics().objectPrototype),opts::Key(u"toString"));
+    expect(context.call(std::get<opts::ObjectRef>(intrinsic.data),opts::Value(array))==opts::Value(u"[object Array]"));
+    const auto tagged=context.object(); context.set(opts::Value(tagged),opts::Key(context.intrinsics().symbolToStringTag),opts::Value(u"Widget"));
+    expect(context.toPrimitive(opts::Value(tagged),opts::PrimitiveHint::stringHint)==opts::Value(u"[object Widget]"));
+};
+"object_to_primitive_observes_override_and_getter_order"_test=[] {
+    opts::Context context; std::vector<std::string> trace; const auto object=context.object();
+    const auto method=context.function(u"toString",[&](auto&,auto,std::span<const opts::Value>)->opts::Value {trace.push_back("call");return u"custom";});
+    const auto getter=context.function(u"get toString",[&](auto&,auto,std::span<const opts::Value>)->opts::Value {trace.push_back("get");return opts::Value(method);});
+    context.define(object,opts::Key(u"toString"),opts::Descriptor::access(getter,{},true,true));
+    expect(context.toPrimitive(opts::Value(object),opts::PrimitiveHint::stringHint)==opts::Value(u"custom")); expect(trace==std::vector<std::string>{"get","call"});
+};
+"object_to_primitive_observes_primitive_tag_getter_and_string_box"_test=[] {
+    opts::Context context; std::vector<std::string> trace;
+    const auto getter=context.function(u"get tag",[&](auto&,auto,std::span<const opts::Value>)->opts::Value {trace.push_back("tag");return u"TaggedString";});
+    context.define(context.intrinsics().stringPrototype,opts::Key(context.intrinsics().symbolToStringTag),opts::Descriptor::access(getter,{},false,true));
+    const auto intrinsic=context.get(opts::Value(context.intrinsics().objectPrototype),opts::Key(u"toString"));
+    expect(context.call(std::get<opts::ObjectRef>(intrinsic.data),opts::Value(u"ab"))==opts::Value(u"[object TaggedString]")); expect(trace==std::vector<std::string>{"tag"});
+    const auto valueOf=context.get(opts::Value(context.intrinsics().objectPrototype),opts::Key(u"valueOf")); const auto boxed=context.call(std::get<opts::ObjectRef>(valueOf.data),opts::Value(u"ab"));
+    expect(context.get(boxed,opts::Key(u"length"))==opts::Value(2)); expect(context.get(boxed,opts::Key(u"0"))==opts::Value(u"a")); expect(context.get(boxed,opts::Key(u"1"))==opts::Value(u"b"));
+};
+"object_to_string_brands_numeric_boolean_and_string_prototypes"_test=[] {
+    opts::Context context; const auto intrinsic=context.get(opts::Value(context.intrinsics().objectPrototype),opts::Key(u"toString")); const auto fn=std::get<opts::ObjectRef>(intrinsic.data);
+    expect(context.call(fn,opts::Value(context.intrinsics().numberPrototype))==opts::Value(u"[object Number]"));
+    expect(context.call(fn,opts::Value(context.intrinsics().booleanPrototype))==opts::Value(u"[object Boolean]"));
+    expect(context.call(fn,opts::Value(context.intrinsics().stringPrototype))==opts::Value(u"[object String]"));
+    expect(context.get(opts::Value(context.intrinsics().stringPrototype),opts::Key(u"length"))==opts::Value(0));
+};
+"object_to_string_symbol_brand_comes_from_symbol_prototype_tag"_test=[] {
+    opts::Context context; const auto key=opts::Key(context.intrinsics().symbolToStringTag); const auto proto=opts::Value(context.intrinsics().symbolPrototype);
+    const auto descriptor=context.descriptor(proto,key); expect(descriptor&&descriptor->value==opts::Value(u"Symbol")&&!descriptor->writable&&!descriptor->enumerable&&descriptor->configurable);
+    const auto intrinsic=context.get(opts::Value(context.intrinsics().objectPrototype),opts::Key(u"toString")); const auto fn=std::get<opts::ObjectRef>(intrinsic.data); const auto symbol=context.symbol(u"x");
+    expect(context.call(fn,opts::Value(symbol))==opts::Value(u"[object Symbol]")); context.erase(context.intrinsics().symbolPrototype,key);
+    expect(context.call(fn,opts::Value(symbol))==opts::Value(u"[object Object]")); context.define(context.intrinsics().symbolPrototype,key,opts::Descriptor::data(opts::Value(7),false,false,true));
+    expect(context.call(fn,opts::Value(symbol))==opts::Value(u"[object Object]")); const auto valueOf=context.get(opts::Value(context.intrinsics().objectPrototype),opts::Key(u"valueOf")); const auto boxed=context.call(std::get<opts::ObjectRef>(valueOf.data),opts::Value(symbol));
+    std::vector<std::string> trace; const auto ownGetter=context.function(u"get own tag",[&](auto&,auto,std::span<const opts::Value>)->opts::Value {trace.push_back("own-tag");return u"OwnSymbol";});
+    context.define(std::get<opts::ObjectRef>(boxed.data),key,opts::Descriptor::access(ownGetter,{},false,true)); expect(context.call(fn,boxed)==opts::Value(u"[object OwnSymbol]")); expect(trace==std::vector<std::string>{"own-tag"});
+};
+"object_to_primitive_bad_override_result_is_type_error"_test=[] {
+    opts::Context context; const auto object=context.object(); const auto method=context.function(u"toString",[&](auto&,auto,std::span<const opts::Value>)->opts::Value {return opts::Value(object);});
+    context.define(object,opts::Key(u"toString"),opts::Descriptor::data(opts::Value(method))); bool threw=false;
+    try {(void)context.toPrimitive(opts::Value(object),opts::PrimitiveHint::stringHint);} catch(const opts::Exception& error) {threw=error.name=="TypeError";} expect(threw);
+};
+"join_object_to_primitive_success_is_live"_test=[] {
+    ArrayFixture ordered;ordered.set(0,1);ordered.set(1,2);
+    ordered.getter(ordered.array,u"0",[&](auto&,auto)->opts::Value {ordered.trace.push_back("get0");return 1;});
+    const auto orderedSeparator=ordered.context.object();
+    const auto orderedToPrimitive=ordered.context.function(u"toPrimitive",[&](auto&,auto,std::span<const opts::Value>)->opts::Value {
+        ordered.trace.push_back("separator");return u"|";
+    });
+    ordered.context.define(orderedSeparator,opts::Key(ordered.context.intrinsics().symbolToPrimitive),
+                           opts::Descriptor::data(opts::Value(orderedToPrimitive)));
+    const std::array<opts::Value,1> orderedArgs{opts::Value(orderedSeparator)};
+    expect(eq(ordered.guarded([&]{return ordered.text(ordered.method(u"join",orderedArgs));}),
+              std::string("ok|1|2|separator/get0")));
+
+    ArrayFixture e; e.set(0,opts::Null{});e.set(1,opts::Undefined{});
+    const auto separator=e.context.object();
+    const auto toPrimitive=e.context.function(u"toPrimitive",[&](auto&,auto,std::span<const opts::Value> args)->opts::Value {
+        e.trace.push_back("separator:"+e.text(args.front()));return u"|";
+    });
+    e.context.define(separator,opts::Key(e.context.intrinsics().symbolToPrimitive),
+                     opts::Descriptor::data(opts::Value(toPrimitive)));
+    const std::array<opts::Value,1> args{opts::Value(separator)};
+    expect(eq(e.guarded([&]{return e.text(e.method(u"join",args));}),
+              std::string("ok|||separator:string")));
+    e.trace.clear();
+    const auto element=e.context.object();
+    const auto elementToPrimitive=e.context.function(u"toPrimitive",[&](auto&,auto,std::span<const opts::Value>)->opts::Value {
+        e.trace.push_back("element");return u"value";
+    });
+    e.context.define(element,opts::Key(e.context.intrinsics().symbolToPrimitive),
+                     opts::Descriptor::data(opts::Value(elementToPrimitive)));
+    e.set(0,opts::Value(element));
+    expect(eq(e.guarded([&]{return e.text(e.method(u"join"));}),
+              std::string("ok|value,|element")));
+};
+"join_captured_length_keeps_separator_after_element_shrinks_array"_test=[] {
+    ArrayFixture e; e.set(0,e.context.object());e.set(1,opts::Undefined{});
+    const auto object=std::get<opts::ObjectRef>(e.context.get(e.array,u"0").data);
+    const auto toPrimitive=e.context.function(u"toPrimitive",[&](auto& context,auto,std::span<const opts::Value> args)->opts::Value {
+        e.trace.push_back(e.text(args.front()));context.set(e.array,u"length",0);return u"value";
+    });
+    e.context.define(object,opts::Key(e.context.intrinsics().symbolToPrimitive),opts::Descriptor::data(opts::Value(toPrimitive)));
+    expect(eq(e.guarded([&]{return e.text(e.method(u"join"));}),std::string("ok|value,|string")));
+};
+"join_object_to_primitive_nonprimitive_result_is_type_error"_test=[] {
+    ArrayFixture e;const auto object=e.context.object();e.set(0,object);
+    const auto toPrimitive=e.context.function(u"toPrimitive",[&](auto&,auto,std::span<const opts::Value>)->opts::Value {
+        e.trace.push_back("element");return opts::Value(object);
+    });
+    e.context.define(object,opts::Key(e.context.intrinsics().symbolToPrimitive),
+                     opts::Descriptor::data(opts::Value(toPrimitive)));
+    expect(eq(e.guarded([&]{return e.text(e.method(u"join"));}),
+              std::string("TypeError|THREW|element")));
 };
 "fill_converts_bounds_then_writes"_test=[] {
     ArrayFixture e; e.set(0,0); e.set(1,0); e.set(2,0);
@@ -465,7 +565,7 @@ suite array_host=[] {
     ArrayFixture e; auto object=e.context.object();
     const std::array<opts::Value,2> args{7,object};
     expect(eq(e.guarded([&]{return e.summary(e.method(u"fill",args));}),
-              std::string("TypeError|THREW|")));
+              std::string("ok|len:0|")));
 };
 "find_reads_holes_and_passes_exact_callback_arguments"_test=[] {
     ArrayFixture e; e.context.set(e.array,u"length",2); auto sentinel=e.context.object();
