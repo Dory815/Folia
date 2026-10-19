@@ -55,6 +55,23 @@ double inheritedScriptLevel(MmlNode const &node) {
 }
 
 suite typed_mml_script_inheritance = [] {
+    "msup_inherits_into_its_physical_script_slot_without_a_subscript"_test = [] {
+        MmlDocument document;
+        auto &base = document.factory().make(NodeKind::none);
+        auto &script = document.factory().make(NodeKind::none);
+        std::array<MmlNode *, 2> children{&base, &script};
+        auto &node = document.factory().make(NodeKind::msup, {}, children);
+        node.setInheritedAttributes({}, true, 2, false);
+        expect(node.children().size() == 2_u);
+        expect(inheritedScriptLevel(base) == 2.0);
+        expect(inheritedScriptLevel(script) == 3.0);
+        expect(!base.properties().tex.prime_style.value_or(false));
+        expect(!script.properties().tex.prime_style.value_or(false));
+        node.setInheritedAttributes({}, false, 4, true);
+        expect(inheritedScriptLevel(script) == 5.0);
+        expect(script.properties().tex.prime_style.value_or(false));
+    };
+
     "subsup_increases_script_level_only_for_script_children"_test = [] {
         MmlDocument document;
         auto &base = document.factory().make(NodeKind::none);

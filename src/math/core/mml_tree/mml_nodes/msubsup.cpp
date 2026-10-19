@@ -36,11 +36,11 @@ std::size_t MmlMsubsup::sup() const {
 void MmlMsubsup::setChildInheritedAttributes(AttributeList const &attributes, bool display,
                                              double level, bool prime) {
     const auto nodes = children();
-    nodes[base()]->setInheritedAttributes(attributes, display, level, prime);
-    nodes[sub()]->setInheritedAttributes(attributes, false, level + 1, prime || sub() == 1);
-    if (sup() >= nodes.size() || !nodes[sup()])
+    nodes[0]->setInheritedAttributes(attributes, display, level, prime);
+    nodes[1]->setInheritedAttributes(attributes, false, level + 1, prime || sub() == 1);
+    if (nodes.size() < 3 || !nodes[2])
         return;
-    nodes[sup()]->setInheritedAttributes(attributes, false, level + 1, prime || sub() == 2);
+    nodes[2]->setInheritedAttributes(attributes, false, level + 1, prime || sub() == 2);
 }
 
 MmlMsub::MmlMsub(MmlDocument &document) : MmlMsubsup(document, NodeKind::msub) {}
