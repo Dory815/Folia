@@ -346,8 +346,14 @@ public:
 };
 inline PropertyList PropertyRecordBinding::copyEnumerableOwn(){
     PropertyList result;
-    const auto ownKeys=keys();
-    for(const auto& key:ownKeys)if(hasOwn(key))result.set(key,getOwn(key));
+    // Object.assign snapshots all own keys before running any getters, then
+    // checks each current descriptor and performs Get/Set in key order.
+    const auto stringKeys=ownStringKeys();
+    const auto symbols=ownSymbolKeys();
+    for(const auto& key:stringKeys)
+        if(ownPropertyEnumerable(key))result.set(key,get(key));
+    for(const auto& symbol:symbols)
+        if(ownSymbolEnumerable(symbol))result.setKey(Property(symbol),getSymbol(symbol));
     return result;
 }
 inline Property::Property(const PropertyList& v) : value(v.storage_) {}

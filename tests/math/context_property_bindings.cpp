@@ -9,6 +9,14 @@ namespace {
 using namespace boost::ut;
 using namespace folia::math;
 namespace opts=folia::math::options;
+bool copyContains(const std::vector<std::string>& values,std::string_view key){
+    return std::find_if(values.begin(),values.end(),[key](const std::string& value){
+        return std::string_view(value)==key;
+    })!=values.end();
+}
+bool copyContains(const std::vector<opts::SymbolRef>& values,opts::SymbolRef key){
+    return std::find(values.begin(),values.end(),key)!=values.end();
+}
 struct Graph {
     opts::Context context;
     OptionFunctionBindings functions{context};
@@ -449,6 +457,115 @@ suite contextProperties=[] {
         expect(eq(reads,1));expect(receiver);expect(graph.context.get(target,u"first")==opts::Value(1));
         expect(!graph.context.hasOwn(target,u"gone"));expect(graph.context.get(target,u"updated")==opts::Value(5));
         expect(!graph.context.hasOwn(target,u"added"));
+    };
+    "math_context_bound_record_assign_snapshots_complete_keys_before_getters"_test=[] {
+        struct MutatingBinding final:PropertyRecordBinding {
+            std::vector<std::string> strings{"first","hidden","gone","__proto__"};
+            std::vector<std::string> enumerableStrings{"first","gone","__proto__"};
+            std::vector<opts::SymbolRef> symbols;
+            std::vector<opts::SymbolRef> enumerableSymbols;
+            std::vector<std::pair<std::string,Property>> values;
+            std::vector<std::pair<opts::SymbolRef,Property>> symbolValues;
+            mutable std::vector<std::string> trace;
+            opts::SymbolRef flip,drop,deleted,late;
+            Property prototypeValue;
+            bool mutated=false;
+            std::string symbolName(opts::SymbolRef key)const{
+                if(key==flip)return "flip-to-enumerable";
+                if(key==drop)return "flip-to-nonenumerable";
+                if(key==deleted)return "deleted-during-getter";
+                return "added-during-getter";
+            }
+            Property value(std::string_view key)const{
+                for(const auto& [name,item]:values)if(name==key)return item;
+                return Missing{};
+            }
+            Property symbolValue(opts::SymbolRef key)const{
+                for(const auto& [name,item]:symbolValues)if(name==key)return item;
+                return Missing{};
+            }
+            Property get(std::string_view key)override{
+                trace.push_back("get:"+std::string(key));
+                if(key=="first"&&!mutated){
+                    mutated=true;
+                    enumerableStrings.push_back("hidden");
+                    std::erase(enumerableStrings,"gone");
+                    strings.push_back("lateString");enumerableStrings.push_back("lateString");
+                    enumerableSymbols.push_back(flip);
+                    std::erase(enumerableSymbols,drop);
+                    std::erase(symbols,deleted);
+                    symbols.push_back(late);enumerableSymbols.push_back(late);
+                }
+                return key=="__proto__"?prototypeValue:value(key);
+            }
+            Property getOwn(std::string_view key)override{return value(key);}
+            bool has(std::string_view key)const override{return hasOwn(key);}
+            bool hasOwn(std::string_view key)const override{
+                return copyContains(strings,key);
+            }
+            bool ownPropertyEnumerable(std::string_view key)const override{
+                trace.push_back("enum:"+std::string(key));
+                return copyContains(strings,key)&&copyContains(enumerableStrings,key);
+            }
+            void set(std::string_view key,Property item)override{setOwn(key,std::move(item));}
+            void setOwn(std::string_view key,Property item)override{
+                for(auto& [name,value]:values)if(name==key){value=std::move(item);return;}
+                strings.emplace_back(key);enumerableStrings.emplace_back(key);values.emplace_back(key,std::move(item));
+            }
+            void erase(std::string_view key)override{
+                std::erase(strings,std::string(key));std::erase(enumerableStrings,std::string(key));
+            }
+            Property getSymbol(opts::SymbolRef key)override{
+                trace.push_back("getSymbol:"+symbolName(key));return symbolValue(key);
+            }
+            Property getOwnSymbol(opts::SymbolRef key)override{return symbolValue(key);}
+            bool hasSymbol(opts::SymbolRef key)const override{return hasOwnSymbol(key);}
+            bool hasOwnSymbol(opts::SymbolRef key)const override{return copyContains(symbols,key);}
+            bool ownSymbolEnumerable(opts::SymbolRef key)const override{
+                trace.push_back("enumSymbol:"+symbolName(key));
+                return hasOwnSymbol(key)&&copyContains(enumerableSymbols,key);
+            }
+            void setSymbol(opts::SymbolRef key,Property item)override{setOwnSymbol(key,std::move(item));}
+            void setOwnSymbol(opts::SymbolRef key,Property item)override{
+                for(auto& [name,value]:symbolValues)if(name==key){value=std::move(item);return;}
+                symbols.push_back(key);enumerableSymbols.push_back(key);symbolValues.emplace_back(key,std::move(item));
+            }
+            void eraseSymbol(opts::SymbolRef key)override{
+                std::erase(symbols,key);std::erase(enumerableSymbols,key);
+            }
+            std::vector<opts::SymbolRef> symbolKeys()const override{return enumerableSymbols;}
+            std::vector<std::string> keys()const override{return enumerableStrings;}
+            std::vector<std::string> ownStringKeys()const override{return strings;}
+            std::vector<opts::SymbolRef> ownSymbolKeys()const override{return symbols;}
+            Property prototype()const override{return Missing{};}
+            Property primitive(opts::PrimitiveHint)override{return BuiltinProperty::toString;}
+        };
+        Graph graph;
+        auto binding=std::make_shared<MutatingBinding>();
+        binding->flip=graph.context.symbol(u"flip-to-enumerable");
+        binding->drop=graph.context.symbol(u"flip-to-nonenumerable");
+        binding->deleted=graph.context.symbol(u"deleted-during-getter");
+        binding->late=graph.context.symbol(u"added-during-getter");
+        PropertyList prototype{{"marker",Property(10)}};
+        binding->prototypeValue=Property(prototype);
+        binding->values={{"first",Property(1)},{"hidden",Property(2)},{"gone",Property(3)}};
+        binding->symbolValues={{binding->flip,Property(5)},{binding->drop,Property(6)},
+            {binding->deleted,Property(7)}};
+        binding->symbols={binding->flip,binding->drop,binding->deleted};
+        binding->enumerableSymbols={binding->drop,binding->deleted};
+
+        auto copied=PropertyList::live(binding).copyOwnEnumerableProperties();
+        expect(binding->trace==std::vector<std::string>{
+            "enum:first","get:first","enum:hidden","get:hidden","enum:gone",
+            "enum:__proto__","get:__proto__","enumSymbol:flip-to-enumerable",
+            "getSymbol:flip-to-enumerable","enumSymbol:flip-to-nonenumerable",
+            "enumSymbol:deleted-during-getter"});
+        expect(copied.keys()==std::vector<std::string>{"first","hidden"});
+        expect(copied.getOwn("hidden")==Property(2));
+        expect(!copied.hasOwn("gone")&&!copied.hasOwn("lateString"));
+        expect(copied.get("__proto__")==Property(prototype)&&!copied.hasOwn("__proto__"));
+        expect(static_cast<bool>(copied.symbolKeys()==std::vector<opts::SymbolRef>{binding->flip}));
+        expect(copied.getKey(Property(binding->flip))==Property(5));
     };
     "math_context_property_assign_copy_uses_target_set_semantics"_test=[] {
         Graph graph;auto source=graph.context.object(),prototype=graph.context.object();
