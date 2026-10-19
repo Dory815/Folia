@@ -25,11 +25,15 @@ executables and commits. No agent writes another agent's formal or draft files.
 ## Locked cross-packet boundaries
 
 - MML packet defines `folia.math.core.mml_tree.node_kind`, `.attributes`,
-  `.mml_node`, `.mml_document`; namespace `folia::math::mml`. Other agents do
-  not invent alternate nodes, handles or attribute values.
+  `.mml_document`; namespace `folia::math::mml`. `mml_node.ixx` is its exported
+  `:node` partition: mutually referencing node/document classes belong to the
+  same named module. Consumers import `.mml_document`. Other agents do not
+  invent alternate nodes, handles or attribute values.
 - Session packet defines `folia.math.input.tex.session`; namespace
   `folia::math::tex`. It does not implement a second parser. Parser interface
   proposals remain proposals until Root reconciles them with MML.
+  `TexEquationState` is a request-owned value; persistent session state does
+  not contain current-equation scratch. Macro expansion belongs to ParseUtil.
 - Scene packet defines `folia.math.output.scene.types` and
   `folia.math.output.scene`; namespace `folia::math::output::scene`.
   A separate `builder` module may import both. It publishes its concrete

@@ -1,10 +1,34 @@
-/*************************************************************
- * Backend-independent completed MathJax output scene module.
- *************************************************************/
 export module folia.math.output.scene;
-export import folia.math.output.scene.foundation;
-export import :wrapper;
-export import :svg_paint;
-export import :glyph_paint;
-export import :placements;
+export import folia.math.output.scene.types;
 import std;
+
+export namespace folia::math::output::scene {
+struct Group {
+    NodeId id{};
+    Affine transform{};
+    std::optional<Clip> clip;
+    std::optional<Link> link;
+    std::optional<Tooltip> tooltip;
+    SemanticMetadata metadata;
+    std::vector<std::variant<Primitive, std::shared_ptr<Group const>>> entries;
+};
+
+// A Scene is a completed immutable value. All content is owned by value;
+// glyph/font data is reachable only through shared const resources.
+class Scene {
+    Group root_;
+    Metrics metrics_;
+    FontMetrics font_metrics_;
+public:
+    // Construction snapshots the full tree and glyph resources, so callers
+    // may safely retain and mutate their source values after this returns.
+    Scene(Group root, Metrics metrics, FontMetrics font_metrics);
+    Scene(Scene const&) = default;
+    Scene(Scene&&) noexcept = default;
+    Scene& operator=(Scene const&) = default;
+    Scene& operator=(Scene&&) noexcept = default;
+    [[nodiscard]] Group const& root() const noexcept;
+    [[nodiscard]] Metrics const& metrics() const noexcept;
+    [[nodiscard]] FontMetrics const& font_metrics() const noexcept;
+};
+}

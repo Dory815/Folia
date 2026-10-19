@@ -1,9 +1,16 @@
 // Native language host for MathJax's UTF-16 non-Unicode scanner expressions.
 // RegExp is a language primitive, not another MathJax parser or regex service.
 export module folia.math.util.regexp_host;
-export import folia.math.util.option_types;
 import std;
 export namespace folia::math::regexp_host {
+enum class ErrorKind { syntax, unsupported, internal };
+class RegexError final : public std::runtime_error {
+public:
+    ErrorKind kind;
+    std::u16string message;
+    RegexError(ErrorKind k, std::u16string text)
+        : std::runtime_error("native regular expression error"), kind(k), message(std::move(text)) {}
+};
 struct Match {
     std::size_t index=0;
     std::u16string input;
@@ -20,23 +27,9 @@ class RegExp {
     std::vector<std::pair<std::u16string,std::size_t>> namedGroups_;
     bool global_=false,sticky_=false,unicode_=false;
 public:
-    // One source-of-truth cell for the writable own lastIndex property. The
-    // implicit numeric edge keeps native scanner callers source-compatible;
-    // Context-bound exec performs the full JS ToNumber conversion instead.
-    struct LastIndexCell {
-        options::Value value=0.0;
-        LastIndexCell& operator=(options::Value next){value=std::move(next);return *this;}
-        template<class Number>
-            requires std::is_arithmetic_v<Number>
-        LastIndexCell& operator=(Number next){value=static_cast<double>(next);return *this;}
-        operator double()const{
-            if(const auto* number=std::get_if<double>(&value.data))return *number;
-            throw std::logic_error("RegExp lastIndex requires Context conversion");
-        }
-    } lastIndex;
-    using ToNumber=std::function<double(const options::Value&)>;
-    using GetLastIndex=std::function<options::Value()>;
-    using SetLastIndex=std::function<void(const options::Value&)>;
+    // Source cursor measured in UTF-16 code units. Stateful expressions read
+    // and write this native integer directly; no JS property conversion exists.
+    std::size_t last_index = 0;
     explicit RegExp(std::u16string pattern,std::u16string flags={});
     ~RegExp();
     RegExp(const RegExp&)=delete;
@@ -47,11 +40,6 @@ public:
     std::u16string source()const;
     const std::u16string& flags()const{return flags_;}
     std::optional<Match> exec(const std::u16string& input);
-    std::optional<Match> exec(const std::u16string& input,const ToNumber& toNumber);
-    std::optional<Match> exec(const std::u16string& input,const ToNumber& toNumber,
-                              const SetLastIndex& setLastIndex);
-    std::optional<Match> exec(const std::u16string& input,const ToNumber& toNumber,
-                              const GetLastIndex& getLastIndex,const SetLastIndex& setLastIndex);
 };
 // ECMAScript String.prototype.split with a RegExp separator. Uses the same
 // compiled RegExp host and returns captured groups with unmatched groups as

@@ -176,10 +176,6 @@ std::u16string compileUnicodePattern(std::u16string_view source){
     }
     return result;
 }
-double cursorLength(double value){
-    if(std::isnan(value)||value<=0)return 0;
-    return std::min(std::floor(value),9007199254740991.0);
-}
 std::vector<std::pair<std::u16string,std::size_t>> namedGroups(std::u16string_view pattern){
     std::vector<std::pair<std::u16string,std::size_t>> result;
     std::size_t capture=0;
@@ -270,13 +266,13 @@ RegExp::RegExp(std::u16string pattern,std::u16string flags)
     std::u16string seen;
     for(auto flag:flags_){
         if(std::u16string_view(u"dgimsuvy").find(flag)==std::u16string_view::npos||seen.find(flag)!=seen.npos)
-            throw options::Exception("SyntaxError",u"Invalid regular expression flags");
+        throw RegexError(ErrorKind::syntax,u"Invalid regular expression flags");
         seen+=flag;
     }
     if(seen.find(u'u')!=seen.npos&&seen.find(u'v')!=seen.npos)
-        throw options::Exception("SyntaxError",u"Incompatible regular expression flags");
+        throw RegexError(ErrorKind::syntax,u"Incompatible regular expression flags");
     for(auto flag:flags_)if(flag!=u'g'&&flag!=u'y'&&flag!=u'i'&&flag!=u'u')
-        throw options::Exception("Unimplemented",u"Unverified native regular expression flag");
+        throw RegexError(ErrorKind::unsupported,u"Unsupported regular expression flag");
     std::u16string canonicalFlags;
     for(const auto flag:std::u16string_view(u"dgimsuvy"))if(seen.find(flag)!=seen.npos)canonicalFlags+=flag;
     flags_=std::move(canonicalFlags);
@@ -298,47 +294,28 @@ RegExp::RegExp(std::u16string pattern,std::u16string flags)
         }
     }
     catch(const UnicodeSyntaxError& error){
-        throw options::Exception("SyntaxError",unicodeSyntaxMessage(pattern_,flags_,error.reason));
+        throw RegexError(ErrorKind::syntax,unicodeSyntaxMessage(pattern_,flags_,error.reason));
     }
-    catch(const legacy_rx::regex_error&){throw options::Exception("SyntaxError",u"Invalid regular expression pattern");}
+    catch(const legacy_rx::regex_error&){throw RegexError(ErrorKind::syntax,u"Invalid regular expression pattern");}
     catch(const unicode_rx::regex_error& error){
         std::u16string_view reason=u"Invalid regular expression";
         if(error.code()==unicode_rx::regex_constants::error_range)reason=u"Range out of order in character class";
         else if(error.code()==unicode_rx::regex_constants::error_escape)reason=u"Invalid escape";
-        throw options::Exception("SyntaxError",unicodeSyntaxMessage(pattern_,flags_,reason));
+        throw RegexError(ErrorKind::syntax,unicodeSyntaxMessage(pattern_,flags_,reason));
     }
     compiled_=std::move(compiled);
 }
 RegExp::~RegExp()=default;
 std::u16string RegExp::source()const{return regexpSource(pattern_);}
 std::optional<Match> RegExp::exec(const std::u16string&input){
-    return exec(input,[](const options::Value& raw){
-        if(const auto* number=std::get_if<double>(&raw.data))return *number;
-        throw options::Exception("TypeError",u"RegExp lastIndex requires Context numeric conversion");
-    },[this](const options::Value& next){lastIndex=next;});
-}
-std::optional<Match> RegExp::exec(const std::u16string&input,const ToNumber&toNumber){
-    return exec(input,toNumber,[this](const options::Value& next){lastIndex=next;});
-}
-std::optional<Match> RegExp::exec(const std::u16string&input,const ToNumber&toNumber,
-                                  const SetLastIndex&setLastIndex){
-    return exec(input,toNumber,[this]{return lastIndex.value;},setLastIndex);
-}
-std::optional<Match> RegExp::exec(const std::u16string&input,const ToNumber&toNumber,
-                                  const GetLastIndex&getLastIndex,
-                                  const SetLastIndex&setLastIndex){
     const bool stateful=global_||sticky_;
-    // Source: Get(lastIndex), then ToLength. If conversion throws, the raw
-    // writable property remains unchanged; all successful conversions happen
-    // exactly once before any later matching or writeback.
-    const double requestedCursor=cursorLength(toNumber(getLastIndex()));
-    double cursor=stateful?requestedCursor:0;
+    std::size_t cursor=stateful?last_index:0;
     if(unicode_&&cursor>0&&cursor<input.size()){
-        const auto current=static_cast<std::uint32_t>(input[static_cast<std::size_t>(cursor)]);
-        const auto previous=static_cast<std::uint32_t>(input[static_cast<std::size_t>(cursor)-1]);
+        const auto current=static_cast<std::uint32_t>(input[cursor]);
+        const auto previous=static_cast<std::uint32_t>(input[cursor-1]);
         if(current>=0xDC00&&current<=0xDFFF&&previous>=0xD800&&previous<=0xDBFF)--cursor;
     }
-    if(cursor>static_cast<double>(input.size())){if(stateful)setLastIndex(options::Value(0));return {};}
+    if(cursor>input.size()){if(stateful)last_index=0;return {};}
     auto buildMatch=[&](const auto& matches)->Match{
         Match result;result.index=static_cast<std::size_t>(matches.position());result.input=input;
         result.captures.reserve(matches.size());
@@ -354,23 +331,23 @@ std::optional<Match> RegExp::exec(const std::u16string&input,const ToNumber&toNu
                 else result.groups->emplace_back(name,std::nullopt);
             }
         }
-        if(stateful)setLastIndex(options::Value(static_cast<double>(result.index+matches.length())));
+        if(stateful)last_index=result.index+matches.length();
         return result;
     };
     if(unicode_){
         unicode_rx::match_results<std::u16string::const_iterator> matches;
         auto flags=unicode_rx::regex_constants::match_default;
         if(sticky_)flags|=unicode_rx::regex_constants::match_continuous;
-        if(!unicode_rx::regex_search(input,static_cast<std::size_t>(cursor),matches,compiled_->unicodeExpression,flags)){
-            if(stateful)setLastIndex(options::Value(0));return {};
+        if(!unicode_rx::regex_search(input,cursor,matches,compiled_->unicodeExpression,flags)){
+            if(stateful)last_index=0;return {};
         }
         return buildMatch(matches);
     }
     legacy_rx::match_results<std::u16string::const_iterator> matches;
     auto flags=legacy_rx::regex_constants::match_default;
     if(sticky_)flags|=legacy_rx::regex_constants::match_continuous;
-    if(!legacy_rx::regex_search(input,static_cast<std::size_t>(cursor),matches,compiled_->legacyExpression,flags)){
-        if(stateful)setLastIndex(options::Value(0));return {};
+    if(!legacy_rx::regex_search(input,cursor,matches,compiled_->legacyExpression,flags)){
+        if(stateful)last_index=0;return {};
     }
     return buildMatch(matches);
 }
@@ -383,18 +360,18 @@ std::vector<std::optional<std::u16string>> split(
     RegExp splitter(std::move(pattern),std::move(splitFlags));
     const std::u16string input(source);
     if(input.empty()){
-        splitter.lastIndex=options::Value(0);
+        splitter.last_index=0;
         return splitter.exec(input)?std::vector<std::optional<std::u16string>>{}:
                                     std::vector<std::optional<std::u16string>>{std::u16string{}};
     }
     std::vector<std::optional<std::u16string>> output;
     std::size_t p=0,q=0;
     while(q<input.size()){
-        splitter.lastIndex=static_cast<double>(q);
+        splitter.last_index=q;
         const auto found=splitter.exec(input);
         if(!found){q=advanceStringIndex(input,q,unicode);continue;}
         const auto whole=found->at(0);
-        if(!whole)throw options::Exception("TypeError",u"RegExp split match has no full capture");
+        if(!whole)throw RegexError(ErrorKind::internal,u"RegExp split match has no full capture");
         const auto e=found->index+whole->size();
         if(e==p){q=advanceStringIndex(input,q,unicode);continue;}
         output.emplace_back(input.substr(p,found->index-p));

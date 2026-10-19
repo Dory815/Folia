@@ -1,92 +1,92 @@
-module folia.math.output.scene.foundation;
-import :builder;
-import folia.math.util.property_host;
-import folia.math.util.styles;
+module folia.math.output.scene.builder;
+import std;
 
 namespace folia::math::output::scene {
-namespace {
-Property sceneAttribute(Property value){
-    // A Scene outlives the Context and layout job that produced it. SVG
-    // attributes have already crossed the DOM setAttribute boundary here, so
-    // retain their owned string value rather than a live Property handle.
-    return Property(property_host::debugText(property_host::string(value)));
-}
-PropertyList sceneAttributes(const PropertyList& source){
-    PropertyList result;
-    // DOMAdaptor.setAttributes applies an object-valued style before ordinary
-    // attributes. Complete that same conversion while the live record is
-    // available, retaining only owned CSS text in the finished Scene.
-    const auto style=source.get("style");
-    if(const auto record=PropertyList::record(style)){
-        styles::Styles owned;
-        for(const auto& key:record->keys()){
-            const auto name=property_host::text(key);
-            std::u16string converted;
-            for(std::size_t index=0;index<name.size();++index){
-                if(name[index]==u'-'&&index+1<name.size()&&name[index+1]>=u'a'&&name[index+1]<=u'z')
-                    converted.push_back(static_cast<char16_t>(name[++index]-32));
-                else converted.push_back(name[index]);
+struct Builder::State {
+    struct Entry { std::variant<Primitive, NodeId> value; };
+    struct MutableGroup {
+        NodeId id{};
+        Affine transform{};
+        std::optional<Clip> clip;
+        std::optional<Link> link;
+        std::optional<Tooltip> tooltip;
+        SemanticMetadata metadata;
+        std::vector<Entry> entries;
+    };
+    std::vector<MutableGroup> groups;
+    Metrics metrics{};
+    FontMetrics font_metrics{};
+    NodeId next_id{1};
+    State() { groups.push_back(MutableGroup{.id=0}); }
+    MutableGroup* find(NodeId id) noexcept {
+        for (auto& group : groups) if (group.id == id) return &group;
+        return nullptr;
+    }
+    Group freeze_group(NodeId id) && {
+        auto* source = find(id);
+        if (!source) throw std::logic_error("invalid group in Scene builder");
+        Group out;
+        out.id = source->id;
+        out.transform = source->transform;
+        out.clip = std::move(source->clip);
+        out.link = std::move(source->link);
+        out.tooltip = std::move(source->tooltip);
+        out.metadata = std::move(source->metadata);
+        for (auto& entry : source->entries) {
+            if (auto* primitive = std::get_if<Primitive>(&entry.value))
+                out.entries.emplace_back(std::move(*primitive));
+            else {
+                auto child = std::make_shared<Group>(std::move(*this).freeze_group(std::get<NodeId>(entry.value)));
+                out.entries.emplace_back(std::shared_ptr<Group const>{std::move(child)});
             }
-            owned.set(converted,property_host::string(record->get(key)));
         }
-        if(!record->keys().empty())
-            result.set("style",Property(property_host::debugText(owned.cssText())));
+        return out;
     }
-    for(const auto& key:source.keys()){
-        if(key!="properties"&&(key!="style"||std::holds_alternative<std::string>(style.value)))
-            result.set(key,sceneAttribute(source.getOwn(key)));
-    }
-    return result;
+};
+
+Builder::Builder() : state_(std::make_unique<State>()) {}
+Builder::~Builder() = default;
+Builder::Builder(Builder&&) noexcept = default;
+Builder& Builder::operator=(Builder&&) noexcept = default;
+
+NodeId Builder::add_group(NodeId parent, Affine transform, std::optional<Clip> clip,
+    std::optional<Link> link, std::optional<Tooltip> tooltip, SemanticMetadata metadata) {
+    if (!state_) throw std::logic_error("Scene builder is moved from");
+    auto* owner = state_->find(parent);
+    if (!owner) throw std::out_of_range("Scene parent group does not exist");
+    if (state_->next_id == 0) throw std::overflow_error("Scene group id space exhausted");
+    auto const id = state_->next_id++;
+    state_->groups.push_back(State::MutableGroup{.id=id, .transform=transform,
+        .clip=std::move(clip), .link=std::move(link), .tooltip=std::move(tooltip),
+        .metadata=std::move(metadata)});
+    owner = state_->find(parent); // vector growth can invalidate the previous pointer
+    owner->entries.push_back(State::Entry{NodeId{id}});
+    return id;
 }
+
+void Builder::add_primitive(NodeId group, Primitive primitive) {
+    if (!state_) throw std::logic_error("Scene builder is moved from");
+    auto* owner = state_->find(group);
+    if (!owner) throw std::out_of_range("Scene target group does not exist");
+    owner->entries.push_back(State::Entry{std::move(primitive)});
 }
-bool Builder::reaches(const NodeRef& current,const Node* target){
-    if(!current)return false;
-    if(current.get()==target)return true;
-    for(std::size_t index=0;index<current->children.size();++index)
-        if(reaches(current->children[index],target))return true;
-    return false;
+
+void Builder::set_metrics(Metrics metrics) {
+    if (!state_) throw std::logic_error("Scene builder is moved from");
+    state_->metrics = metrics;
 }
-NodeRef Builder::node(std::u16string kind,PropertyList attributes,std::u16string text,
-                      std::size_t sourceChildCount){
-    if(kind!=u"#text"&&observer_&&observer_->paint)
-        observer_->paint(currentWrapper_,kind,attributes,sourceChildCount);
-    auto result=std::make_shared<Node>();
-    result->kind=std::move(kind);result->attributes=sceneAttributes(attributes);
-    if(result->kind==u"#text")result->semantic=TextRunPrimitive{std::move(text)};
-    return result;
+
+void Builder::set_font_metrics(FontMetrics metrics) {
+    if (!state_) throw std::logic_error("Scene builder is moved from");
+    state_->font_metrics = metrics;
 }
-NodeRef Builder::adoptExisting(std::u16string kind,PropertyList attributes,std::u16string text){
-    auto result=std::make_shared<Node>();
-    result->kind=std::move(kind);result->attributes=sceneAttributes(attributes);
-    if(result->kind==u"#text")result->semantic=TextRunPrimitive{std::move(text)};
-    return result;
-}
-void Builder::geometry(const NodeRef& node,Geometry geometry){
-    if(!node)property_host::typeError("Cannot set properties of null (setting 'geometry')");
-    node->geometry=std::move(geometry);
-}
-void Builder::transform(const NodeRef& node,Transform transform){
-    if(!node)property_host::typeError("Cannot set properties of null (setting 'transform')");
-    node->transform=transform;
-}
-void Builder::validateAppend(const NodeRef& parent,const NodeRef& child)const{
-    if(!parent)property_host::typeError("Cannot read properties of null (reading 'children')");
-    if(!child)property_host::typeError("Cannot read properties of null (reading 'append')");
-    if(reaches(child,parent.get()))property_host::typeError("Scene graph cannot contain a cycle");
-}
-void Builder::append(const NodeRef& parent,const NodeRef& child){
-    validateAppend(parent,child);
-    if(const auto previous=child->parent.lock()){
-        for(std::size_t index=0;index<previous->children.size();++index)
-            if(previous->children[index]==child){previous->children.erase(index);break;}
-    }
-    parent->children.push_back(child);
-    child->parent=parent;
-    child->parentValue=options::Value(options::Undefined{});
-}
-Scene Builder::finish()&&{
-    Scene result;
-    result.freeze(roots_,resources_);
-    return result;
+
+Scene Builder::freeze() && {
+    if (!state_) throw std::logic_error("Scene builder is already moved from");
+    auto root = std::move(*state_).freeze_group(0);
+    auto metrics = state_->metrics;
+    auto font_metrics = state_->font_metrics;
+    state_.reset();
+    return Scene{std::move(root), metrics, font_metrics};
 }
 }
