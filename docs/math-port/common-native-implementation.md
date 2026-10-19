@@ -245,6 +245,43 @@ percentage widths. LayoutJob prepares/wraps; the layout consumer requests the
 root BBox before freezing geometry. Tests mirror this real request, rather than
 calling table setters by hand.
 
+### Completed element purposes and SVG transform serialization (2026-10-20)
+
+Root locks the element-purpose vocabulary proposed by the existing ignored
+`svg-parity-roles` audit. Add `scene::ElementRole` to Scene's existing value types:
+`math_wrapper`, `id_alignment_box`, `operator_adjustment`,
+`inferred_row_adjustment`, `enclosure_content`, `enclosure_mark`,
+`table_content_viewport`, `table_label_frame`, `image_glyph`, `unknown_text`,
+`foreign_content_viewport`. This describes why a completed element exists; it
+does not encode punctuation, a callback, a backend handle or a second layout
+instruction. Append `Group::role` with default `math_wrapper`; append the same
+optional argument to `Builder::add_group`. Scene freezing preserves the value.
+
+The existing SVG writer serializes ordered Transform values according to this
+closed purpose. Ordinary wrapper/id-box/unknown-text translations use comma/no-space;
+enclosure content uses comma-space; operator/inferred-row/enclosure-mark/table/
+image/foreign translations use spaces. Uniform scale keeps its one-argument
+form, nonuniform scale keeps both arguments, and all operations keep their
+original order and zero components. Rotation and matrix serialization retain
+their existing numeric units. No writer introspection of source_tag/class/path
+or affine recomposition determines the purpose. Common family construction
+will assign it when producing geometry; numerical layout remains in Common.
+
+This change only preserves the serialization distinctions for already completed
+groups. It does not implement responsive SVG roots, foreign HTML, primitive
+placement, or the missing Common-to-Scene traversal. Those remain required work.
+Root viewport state belongs to writer options, not a fake Scene group. The one
+root mathematical reflection is separate from explicit local text/foreign
+reflections. The writer must never invent another reflection for a role.
+
+Acceptance uses actual pinned Source producers (Wrapper.place, menclose content
+and arrow, mo adjustment, inferred-row shift, table viewport, image and foreign
+viewport) with recorded transforms. Native tests use owned Scene groups and
+compare complete transform attributes, including mixed operation order,
+zero components and freezing through Builder. The 150-row prior census proves
+the witnessed occurrences only; unwitnessed Source branches need focused
+observations before a parity claim. This does not establish end-to-end rendering.
+
 1. Root reviews and freezes the four ignored declaration mirrors; no method-body work before this interface review.
 2. Implement CommonWrapper and CommonWrapperFactory in their existing module partitions, adapting old C++ method bodies to typed MML/Tree, existing Styles/StyleJson/LineBBox/LengthContext/FontRepository, and the field/ownership contract above. Prove factory adoption and exact initialization order with real MML wrappers.
 3. Implement CommonOutputJax typed request state, MeasurementTarget calls/cache, inline break marking and style/font service methods. Move DOM lifecycle and DOM creation into Renderer/backend rather than retaining a second compatibility path.

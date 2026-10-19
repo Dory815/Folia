@@ -11,12 +11,11 @@
 
 ### 最新完成与证据
 
-- **完整 Math 组件 263 项 / 32,397 断言，exit0**：
-  `build/math-port/native-common-table-containers-shared-full.log`。
-  最终构建 `native-common-math-percent-width-build.log` exit0。
-  native session32008已终态exit0；build17356/42125/99455/67191均已结束，无live句柄。
-  该结果覆盖下列已提交实现，但不是端到端TeX/SVG/Folia验收。
-- **最新实现提交9cbbb155**：实际Common Table/Mtr/Mtd、Mpadded/Semantics/TeXAtom，
+- **完整 Math 组件 269 项 / 33,025 断言，exit0**：
+  `build/math-port/native-common-menclose-final-full.log`，menclose实现已提交 `82e42966`。
+  正式56条native SVG对照及精确参数收紧也已通过，详情见下节。
+  这不是端到端TeX/SVG/Folia验收；旧263项日志是此前table/containers基线。
+- **9cbbb155已完成**：实际Common Table/Mtr/Mtd、Mpadded/Semantics/TeXAtom，
   CMake/primary导出与真实MML wrapper tests。保留原家族文件职责，未创建另一套树/家族层。
 - 75705931：修shared defaults及root width。Source Wrapper.ts:421默认NOSTRETCH；
   native无消费者的UnresolvedStretch导致分式被排除于mrow尺寸计算，已删除并默认NoStretch。
@@ -44,64 +43,61 @@
 - 43 MML类、exact clone、StyleJson、TreeVisitor、字体14,568,049字段零差异、Common core、
   texts/rows/inline、scripts/limits、fence/action、递归LinebreakVisitor均已组件验收。勿重做。
 
-### 当前未提交实现与精确断点（已推广、已构建，验收未完成）
+### 当前执行断点与后续候选（2026-10-20）
 
-恢复核查的HEAD为 `b48df3d1`。以下为正式工作树的后续修改，不能用旧候选再次整包覆盖。
-ignored包根目录是 `tools/math-port/drafts/native-raii/`。所有现有代理均completed，
-没有需要继续等待的旧agent/build句柄；后续续派仍须遵守当前用户和代理工具约束。
+- 已提交：`149ddacb` Mo非accent remap短路；`1a86ac59` 正式menclose Source工具与锁；
+  `82e42966` 原CommonMenclose/notation/catalog、窄sqrt projection、CMake和原生UT。
+  这些已消费，canonical是权威，不能重新推广旧menclose packet。
+- **完整组件269项 / 33,025断言 exit0**：`build/math-port/native-common-menclose-final-full.log`。
+  构建 `native-common-menclose-formatted-build.log` exit0。
+  随后只收紧parameters测试为Source精确double，构建/14断言聚焦均exit0：
+  `native-common-menclose-exact-parameters-{build,focused}.log`。生产代码未变，不需无故重跑全套。
+- **实际native Scene→SVG 56行全部通过**：正式 `common-menclose-compare-svg.cjs`，
+  日志 `native-menclose-formal-svg-compare.log`。原始dump `native-menclose-svg.tsv`。
+  使用原始Source SVG十进制有理数精确归一化（无round/epsilon），相对/绝对path等价；
+  仅明示rect/ellipse转path及mitre→miter。这个范围是28装饰handler×两个受控box，
+  不是完整TeX文档/SVG byte equality/Folia验收。radical另有21断言真实投影验收。
+- 正式Source/geometry/selftest均已在C:\Windows由Root重放exit0，日志
+  `common-menclose-formal-source.log`、`common-menclose-geometry-formal-source.log`、
+  `common-menclose-formal-selftest.log`；baseline+13种更改检查，含1e-15差异拒绝、
+  负arc radius/overflow/raw-fill直接断言。工具无draft依赖，generated仅在ignored build。
+- Root发现旧参数observer用parseFloat stub把2mu变成2，已改实际CommonWrapper.length2em，
+  锁定util/lengths，实际Source厚度0.1111111111111111/extenders0.6111111111111112，
+  去掉原生对应epsilon断言。原始失败观察 `common-menclose-real-length-observe.log` 是历史证据。
+- 已解决勿重查：Mo只在isAccent才要求parent；recipe检查ordered Translation{-0.1,0}后
+  Rotation{90,{1.5,.25}}（80断言）；Source getBBox初始化用BBox.zero而非new BBox；
+  horizontal/vertical extenders已修；diagonal用实际childbox；双箭头末段已补；
+  local y/rotation/sweep不二次翻转，phasor一path含bottom，fill/stroke继承分别保留。
+- sqrt projection：辅助MML detached、document arena唯一owner、重新wrap同一base MML，
+  不clone/reparent/共享旧wrapper/attachAuxiliary。已有radical geometry不覆盖。
+  Module impl `module folia.math.output.common; import :family;`；fixture header不include std；
+  长小数用普通double，_u不作算术。这些已修，不再当成新问题。
+- **下一候选 scene-element-roles/** 已交付（ignored根目录tools/math-port/drafts/native-raii/）。
+  Root契约已写common-native-implementation.md“Completed element purposes…”：11种用途值，
+  Group.role/Builder最后参，writer只选typed translation separator，保留操作序列；
+  unknown_text与math_wrapper/id使用comma，enclosure_content用comma-space，其余space。
+  当前尚未推广/原生构建。候选patch SHA256
+  454db98ba45def0415d04e93459ed087c3b1e88d202e71c935bb0aafa3a99c6a。
+  无完整Common→Scene traversal/TextRun原点/foreign XHTML/响应root实现，不可冒充完成。
+- **TeX Stack实际Source证据已新增，勿重做inventory**：ignored tex-stack-transition-source/
+  {observe.cjs,expected.json,source-lock.json,README.md}；Root从C:\Windows重放24例/88文件hash
+  exit0，`build/math-port/tex-stack-transition-source.log`。replay可能含原top自身、incoming和
+  裸MML，先Pop再逐项递归；checkItem时两个owner仍活着。真实BaseItem.env是prototype accessor，
+  delete item.env并不清除_env！旧inventory prose对此不精确。不能据此错误清空存活frame的环境。
+  完整package replay去重/环境所有权协议仍待Root冻结，不是native或38包验收。
+- 已有tex-parser-architecture/{README.md,closed-inventory.md}是完整38包提案；MmlDocument拥有
+  唯一MmlFactory，NodeFactory借用。parser_family.ixx已是parser primary，勿再另造竞争primary。
+- 所有本批build/native句柄已终态；现有Luna均completed，无待轮询旧句柄。
 
-- notation、原CommonMenclose、SVG immutable catalog、窄CommonMsqrt projection、CMake及UT
-  **已经推广并构建通过**：`build/math-port/native-common-menclose-parity-fixes-build.log`。
-  `common-menclose-native-impl` 是旧初始包，不能再当作下一包；当前正式文件含Root修正。
-- 最新Source修正包为 `common-menclose-native-parity-fixes/`。Source观察必须执行真实
-  CommonWrapper.getBBox和构造时的BBox.zero()；旧observer错误用new BBox()造成负高度差异，
-  已修观察与expected，不改正确的生产CommonWrapper。生产修正了横/竖线extenders、
-  diagonal arrow使用实际child BBox、双箭头遗漏末尾线段。禁止恢复旧expected/生产版本。
-- 56条BBox/TRBL **505断言通过**：`native-common-menclose-geometry-fixed.log`；
-  radical projection **21断言通过**：`native-common-menclose-radical-projection-fixed.log`；
-  parameters **14断言通过**：`native-common-menclose-parameters-focused.log`。
-  日志均在 `build/math-port/`。这些不等于56条SVG已通过；本批尚未重跑完整suite。
-- CommonMo::remapChars已按Source短路：只有isAccent才解引用/要求coreParent().parent，
-  非accent detached surd不需要父节点。Source 9例和新增native 3断言通过，日志
-  `common-mo-detached-remap-source.log`、`native-common-mo-parent-remap-regression-focused.log`。
-  这是责任方法语义修正，不是self fallback；不要再把已解决的radical异常当作未解决。
-- **仍有两项明确未通过**：
-  1. `native-common-menclose-recipes-fixed.log`：77断言中仅arrow translation失败。
-     UT误把含中心旋转的合成matrix.e当平移分量，还沿用了不同TRBL输入的旧offset。
-     当前输入TRBL {.1,.4,.1,.2}应检查ordered Translation{-0.1,0}与后续Rotation，
-     需按实际Source调用核实；不要改生产数学迎合这一UT。
-  2. `native-menclose-strict-svg-fixed.log`：严格comparer首次停在双箭头。
-     Source原始SVG `-30.1 + 67` 与native绝对坐标 `36.9` 等价，但test normalizer
-     用二进制double累加relative path产生约1e-17差异。下一步用原始source_svg属性中的
-     十进制数做精确有理数/十进制定点归一化，严格对照native输出；不得round、epsilon或改fixture。
-     后续其他SVG是否一致仍未知，必须实际跑完，不能因首项是测试问题便宣称全部一致。
-- 实际native dump已经生成：`build/math-port/native-menclose-svg.tsv`，56行。
-  hardened comparer在 `common-menclose-svg-comparison-review/compare-svg-dump.cjs`，
-  baseline+selftest 12种变更检查通过；精确十进制改造尚未实施。正式工具候选在
-  `common-menclose-formal-tools/`，已同步zero-BBox Source及hardened comparer，但还需同步
-  下一轮十进制修正后才推广。不能把其Source replay通过误记成真实native SVG对照通过。
-- 已解决且不得回退：Source根scale(1,-1)只执行一次，无blanket local y/rotation/sweep翻转；
-  phasor只有一个含bottom的path；执行实际Source fixed；filled arrow stroke继承paint；
-  Source mitre只作typed miter拼写映射。显式/继承cap/join与ordered transform必须保留。
-- sqrt projection仅定点合并，保留已验收的radical geometry。辅助MML detached且由document arena
-  唯一拥有；重新wrap同一base MML，不clone/reparent/共享旧wrapper/attachAuxiliary。
-  CommonMenclose creator需4参并设置isInstance；test expected header不得在boost.ut模块导入后
-  再include标准库。Boost.UT `_u`不作算术，长小数用普通double。以上机械问题已经修复。
-- 后续TeX资料已存在 `tex-parser-architecture/{README.md,closed-inventory.md}`，含38-package
-  inventory，仍是待Root冻结的提案。MmlDocument已有唯一MmlFactory，NodeFactory借用它；
-  不得为新parser重复创建owner，也不要重新盘点或从头重译已有C++。
+### 下一步（直接接续）
 
-### 下一步（从这里接续，不重新做已完成组件）
-
-1. 先修上述recipe UT与comparer的精确十进制归一化，跑完实际56条native SVG对照；
-   Source expected取 `common-menclose-native-parity-fixes/source/geometry-source-expected.json`。
-   更新正式工具候选并推广，在仓库外重放；focused通过后再跑一次完整suite、小批提交。
-2. 接通其余Common数学placement到已有immutable Scene与SVG writer；Source数值算法仍归原
-   Common家族，Scene无家族数学层，SVG/D2D只消费一次完成的布局。
-3. 完整TeX parser/stack/38-package与Renderer门面仍未接通。继续复用已有C++，不从头重译，
-   不恢复Context/Property/ObjectRef/通用JS模拟。Folia仍使用QuickJS，尚不能原生端到端TeX→SVG。
-4. Mermaid暂停，不做D2D像素对照；保持单次一个构建、--parallel4、math pool2；
-   保护文末13项无关dirty work，不reset、不推广旧retirement补丁。
+1. 审查并推广scene-element-roles的窄改动，验证Source observed ordered transform UT；
+   之后接通其余Common数学placement与已有immutable Scene，数学仍归Common原家族。
+2. 基于已交付24条Source transition，冻结实际Stack/BaseItem/Factory/ParseOptions的原生接口和
+   移交协议，再按原文件分派Luna实现；不得恢复Context/Property/ObjectRef/通用JS模拟。
+3. 完整TeX parser/38-package、Common→Scene发射与Renderer/Folia替换仍未接通，目标保持active。
+   Folia仍旧QuickJS；Mermaid暂停，不做D2D像素对照。
+4. 一个构建、--parallel4/math pool2；保护文末13项无关dirty work，小批提交、不reset。
 
 ## 上一批已验收结论与证据（保留，不是当前待办）
 
