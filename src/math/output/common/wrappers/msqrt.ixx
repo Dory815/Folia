@@ -18,11 +18,15 @@ struct RadicalGeometry {
 };
 
 class CommonMsqrt : public CommonWrapper {
+    // Menclose borrows an existing source node for its detached radical.
+    // The request factory owns the new wrapper; this does not reparent MML.
+    mml::MmlNode* projectedBaseNode_{};
   public:
     CommonMo *surd{}; // borrowed from the request-local wrapper factory
     double surdH{};
 
-    CommonMsqrt(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr);
+    CommonMsqrt(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr,
+                mml::MmlNode* projectedBaseNode = nullptr);
     void initializeSource() override;
 
     virtual std::size_t base() const {

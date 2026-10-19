@@ -31,3 +31,5 @@ export import :mtd;
 export import :mpadded;
 export import :semantics;
 export import :tex_atom;
+export import :notation;
+export import :menclose;

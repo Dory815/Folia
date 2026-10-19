@@ -42,12 +42,15 @@ CommonWrapper &requiredChild(CommonWrapper const &wrapper, std::size_t index) {
 }
 } // namespace
 
-CommonMsqrt::CommonMsqrt(CommonWrapperFactory &factory, mml::MmlNode &node, CommonWrapper *parent)
-    : CommonWrapper(factory, node, parent) {
+CommonMsqrt::CommonMsqrt(CommonWrapperFactory &factory, mml::MmlNode &node, CommonWrapper *parent,
+                        mml::MmlNode* projectedBaseNode)
+    : CommonWrapper(factory, node, parent), projectedBaseNode_(projectedBaseNode) {
 }
 
 void CommonMsqrt::initializeSource() {
     CommonWrapper::initializeSource();
+    if (projectedBaseNode_)
+        (void)wrapNode(*projectedBaseNode_, this);
     surd = &createMo(u"\u221A");
     (void)surd->canStretch(StretchDirection::vertical);
     getStretchedSurd();

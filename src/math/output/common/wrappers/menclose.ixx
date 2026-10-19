@@ -1,49 +1,65 @@
-/*************************************************************
- * MathJax 4.1.3 output/common/Wrappers/menclose.ts.
- * The selected constructor's real Notations Map remains the source of all
- * notation definitions; this class stores the Source instance's live fields.
- *************************************************************/
 export module folia.math.output.common:menclose;
 export import :wrapper;
 export import :msqrt;
-import folia.math.core.mml_tree.mml_nodes.menclose;
+export import :notation;
+export import folia.math.core.mml_tree.mml_nodes.menclose;
 import std;
 
 export namespace folia::math::output::common {
 class CommonMenclose : public CommonWrapper {
-    options::ObjectRef sourceInstance() const;
-    options::Value sourceField(std::u16string_view) const;
-    void setSourceField(std::u16string_view,options::Value);
-    options::Value callSourceMethod(std::u16string_view,
-                                    std::span<const options::Value> args={}) const;
-    options::Value notation(std::u16string_view) const;
-    options::Value callNotation(const options::Value&,std::u16string_view,
-                                std::span<const options::Value> args={}) const;
-    double paddingValue() const;
-    double thicknessValue() const;
-    std::array<double,3> arrowheadValue() const;
-    void setArrowhead(std::array<double,3>);
-    std::vector<std::u16string> notationNames() const;
-public:
-    CommonMenclose(CommonWrapperFactory&,mml::MmlNode&,CommonWrapper* parent=nullptr);
+    std::span<NotationSpec const> catalog_;
+    std::vector<NotationSpec const *> notations_;
+    std::optional<NotationKind> renderChild_;
+    CommonMsqrt *msqrt_{};
+    PaddingData trbl_{};
+    [[nodiscard]] BBox const *childBoxFor(NotationSpec const &) const;
+    void removeNotation(std::string_view source_name);
+
+  public:
+    static constexpr double defaultPadding = .2;
+    static constexpr double defaultThickness = .067;
+    static constexpr Arrowhead defaultArrowhead{4, 2, 1};
+
+    double padding{defaultPadding};
+    double thickness{defaultThickness};
+    Arrowhead arrowhead{defaultArrowhead};
+
+    CommonMenclose(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *,
+                   std::span<NotationSpec const> profileCatalog);
     void initializeSource() override;
     void getParameters();
     void getNotations();
     void removeRedundantNotations();
     void initializeNotations();
-    std::array<double,4> getBBoxExtenders() const;
-    std::array<double,4> getPadding() const;
-    void maximizeEntries(std::array<double,4>&,const std::array<double,4>&) const;
-    double getOffset(std::string_view direction) const;
-    std::array<double,2> getArgMod(double width,double height) const;
-    options::Value arrow(double width,double angle,bool doubleHeaded,
-                         std::string_view offset={},double distance=0) const;
-    struct ArrowData { double angle=0,width=0,x=0,y=0; };
-    ArrowData arrowData() const;
-    std::array<double,2> arrowAW() const;
-    CommonMsqrt& createMsqrt(CommonWrapper& child);
-    std::array<double,4> sqrtTRBL() const;
-protected:
-    void computeBBox(BBox&,bool recompute=false) override;
+    [[nodiscard]] PaddingData getBBoxExtenders() const;
+    [[nodiscard]] PaddingData getPadding() const;
+    static void maximizeEntries(PaddingData &, PaddingData const &) noexcept;
+    [[nodiscard]] double getOffset(std::string_view direction) const noexcept;
+    [[nodiscard]] std::pair<double, double> getArgMod(double width, double height) const noexcept;
+    [[nodiscard]] ArrowGeometry arrow(double width, double angle, bool doubleHeaded,
+                                      std::string_view offset = {}, double distance = 0);
+    [[nodiscard]] ArrowMetrics arrowData() const;
+    [[nodiscard]] std::pair<double, double> arrowAW() const;
+    [[nodiscard]] CommonMsqrt &createMsqrt(CommonWrapper &child);
+    [[nodiscard]] PaddingData sqrtTRBL() const;
+
+    [[nodiscard]] std::span<NotationSpec const *const> notations() const noexcept {
+        return notations_;
+    }
+
+    [[nodiscard]] std::optional<NotationKind> renderChild() const noexcept {
+        return renderChild_;
+    }
+
+    [[nodiscard]] CommonMsqrt *msqrt() const noexcept {
+        return msqrt_;
+    }
+
+    // Common returns backend-neutral Scene path geometry in the common
+    // wrapper's completed local box; render-child placement remains traversal.
+    [[nodiscard]] std::vector<NotationGeometry> sceneGeometry();
+
+  protected:
+    void computeBBox(BBox &, bool recompute = false) override;
 };
-}
+} // namespace folia::math::output::common

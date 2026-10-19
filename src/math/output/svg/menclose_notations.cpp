@@ -1,0 +1,155 @@
+module folia.math.output.svg.menclose_notations;
+import folia.math.output.common;
+import std;
+
+namespace folia::math::output::svg {
+namespace {
+using namespace common;
+constexpr std::array<std::string_view, 2> removeTopRight{"top", "right"};
+constexpr std::array<std::string_view, 2> removeBottomRight{"bottom", "right"};
+constexpr std::array<std::string_view, 1> removeBottom{"bottom"};
+constexpr std::array<std::string_view, 4> removeBoxSides{"left", "right", "top", "bottom"};
+constexpr std::array<std::string_view, 1> removeVertical{"verticalstrike"};
+constexpr std::array<std::string_view, 1> removeMisspelledVertical{"verticakstrike"};
+constexpr std::array<std::string_view, 1> removeHorizontal{"horizontalstrike"};
+constexpr std::array<std::string_view, 3> removeUpDownArrow{"verticalstrike", "uparrow",
+                                                            "downarrow"};
+constexpr std::array<std::string_view, 3> removeLeftRightArrow{"horizontalstrike", "leftarrow",
+                                                               "rightarrow"};
+constexpr std::array<std::string_view, 2> removeUpDiagonalNortheast{"updiagonalstrike",
+                                                                    "northeastarrow"};
+constexpr std::array<std::string_view, 2> removeNortheastUpDiagonal{"updiagonalstrike",
+                                                                    "updiagonalarrow"};
+constexpr std::array<std::string_view, 1> removeDownDiagonal{"downdiagonalstrike"};
+constexpr std::array<std::string_view, 1> removeUpDiagonal{"updiagonalstrike"};
+constexpr std::array<std::string_view, 4> removeNE_SW{"updiagonalstrike", "northeastarrow",
+                                                      "updiagonalarrow", "southwestarrow"};
+constexpr std::array<std::string_view, 3> removeNW_SE{"downdiagonalstrike", "northwestarrow",
+                                                      "southeastarrow"};
+constexpr std::array<NotationSpec, 29> specs{
+    {{NotationKind::top,
+      "top",
+      BBoxRecipe::one_side,
+      BorderRecipe::one_side,
+      PaintRecipe::side_line,
+      false,
+      {}},
+     {NotationKind::right,
+      "right",
+      BBoxRecipe::one_side,
+      BorderRecipe::one_side,
+      PaintRecipe::side_line,
+      false,
+      {}},
+     {NotationKind::bottom,
+      "bottom",
+      BBoxRecipe::one_side,
+      BorderRecipe::one_side,
+      PaintRecipe::side_line,
+      false,
+      {}},
+     {NotationKind::left,
+      "left",
+      BBoxRecipe::one_side,
+      BorderRecipe::one_side,
+      PaintRecipe::side_line,
+      false,
+      {}},
+     {NotationKind::actuarial, "actuarial", BBoxRecipe::two_sides, BorderRecipe::two_sides,
+      PaintRecipe::side_line, false, removeTopRight},
+     {NotationKind::madruwb, "madruwb", BBoxRecipe::two_sides, BorderRecipe::two_sides,
+      PaintRecipe::side_line, false, removeBottomRight},
+     {NotationKind::up_diagonal_strike,
+      "updiagonalstrike",
+      BBoxRecipe::full,
+      BorderRecipe::none,
+      PaintRecipe::diagonal_line,
+      false,
+      {}},
+     {NotationKind::down_diagonal_strike,
+      "downdiagonalstrike",
+      BBoxRecipe::full,
+      BorderRecipe::none,
+      PaintRecipe::diagonal_line,
+      false,
+      {}},
+     {NotationKind::horizontal_strike,
+      "horizontalstrike",
+      BBoxRecipe::horizontal_strike,
+      BorderRecipe::none,
+      PaintRecipe::horizontal_line,
+      false,
+      {}},
+     {NotationKind::vertical_strike,
+      "verticalstrike",
+      BBoxRecipe::vertical_strike,
+      BorderRecipe::none,
+      PaintRecipe::vertical_line,
+      false,
+      {}},
+     {NotationKind::box, "box", BBoxRecipe::full, BorderRecipe::full, PaintRecipe::box, false,
+      removeBoxSides},
+     {NotationKind::rounded_box,
+      "roundedbox",
+      BBoxRecipe::full,
+      BorderRecipe::none,
+      PaintRecipe::rounded_box,
+      false,
+      {}},
+     {NotationKind::circle,
+      "circle",
+      BBoxRecipe::full,
+      BorderRecipe::none,
+      PaintRecipe::circle,
+      false,
+      {}},
+     {NotationKind::phasor_angle, "phasorangle", BBoxRecipe::phasor_angle,
+      BorderRecipe::phasor_bottom, PaintRecipe::phasor_angle, false, removeBottom},
+     {NotationKind::up_arrow, "uparrow", BBoxRecipe::arrow, BorderRecipe::none, PaintRecipe::arrow,
+      false, removeVertical},
+     {NotationKind::down_arrow, "downarrow", BBoxRecipe::arrow, BorderRecipe::none,
+      PaintRecipe::arrow, false, removeMisspelledVertical},
+     {NotationKind::left_arrow, "leftarrow", BBoxRecipe::arrow, BorderRecipe::none,
+      PaintRecipe::arrow, false, removeHorizontal},
+     {NotationKind::right_arrow, "rightarrow", BBoxRecipe::arrow, BorderRecipe::none,
+      PaintRecipe::arrow, false, removeHorizontal},
+     {NotationKind::up_down_arrow, "updownarrow", BBoxRecipe::arrow, BorderRecipe::none,
+      PaintRecipe::arrow, false, removeUpDownArrow},
+     {NotationKind::left_right_arrow, "leftrightarrow", BBoxRecipe::arrow, BorderRecipe::none,
+      PaintRecipe::arrow, false, removeLeftRightArrow},
+     {NotationKind::up_diagonal_arrow, "updiagonalarrow", BBoxRecipe::diagonal_arrow,
+      BorderRecipe::none, PaintRecipe::diagonal_arrow, false, removeUpDiagonalNortheast},
+     {NotationKind::northeast_arrow, "northeastarrow", BBoxRecipe::diagonal_arrow,
+      BorderRecipe::none, PaintRecipe::diagonal_arrow, false, removeNortheastUpDiagonal},
+     {NotationKind::southeast_arrow, "southeastarrow", BBoxRecipe::diagonal_arrow,
+      BorderRecipe::none, PaintRecipe::diagonal_arrow, false, removeDownDiagonal},
+     {NotationKind::northwest_arrow, "northwestarrow", BBoxRecipe::diagonal_arrow,
+      BorderRecipe::none, PaintRecipe::diagonal_arrow, false, removeDownDiagonal},
+     {NotationKind::southwest_arrow, "southwestarrow", BBoxRecipe::diagonal_arrow,
+      BorderRecipe::none, PaintRecipe::diagonal_arrow, false, removeUpDiagonal},
+     {NotationKind::northeast_southwest_arrow, "northeastsouthwestarrow",
+      BBoxRecipe::diagonal_arrow, BorderRecipe::none, PaintRecipe::diagonal_arrow, false,
+      removeNE_SW},
+     {NotationKind::northwest_southeast_arrow, "northwestsoutheastarrow",
+      BBoxRecipe::diagonal_arrow, BorderRecipe::none, PaintRecipe::diagonal_arrow, false,
+      removeNW_SE},
+     {NotationKind::long_div,
+      "longdiv",
+      BBoxRecipe::long_div,
+      BorderRecipe::none,
+      PaintRecipe::long_div,
+      false,
+      {}},
+     {NotationKind::radical,
+      "radical",
+      BBoxRecipe::radical,
+      BorderRecipe::none,
+      PaintRecipe::radical,
+      true,
+      {}}}};
+} // namespace
+
+std::span<common::NotationSpec const> mencloseNotations() noexcept {
+    return specs;
+}
+} // namespace folia::math::output::svg

@@ -156,10 +156,12 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
     src/math/output/svg/writer.ixx
+    src/math/output/svg/menclose_notations.ixx
     src/math/output/svg/font_data.ixx
     src/math/output/common/font_data.ixx
     src/math/output/common/font_path.ixx
     src/math/output/common/line_bbox.ixx
+    src/math/output/common/notation.ixx
     src/math/output/common/common.ixx
     src/math/output/common/wrapper.ixx
     src/math/output/common/wrapper_factory.ixx
@@ -198,11 +200,13 @@ target_sources(folia_math PRIVATE
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
+    src/math/output/svg/menclose_notations.cpp
     src/math/output/svg/node_metadata.cpp
     src/math/output/svg/font_data.cpp
     src/math/output/common/font_data.cpp
     src/math/output/common/font_path.cpp
     src/math/output/common/line_bbox.cpp
+    src/math/output/common/notation.cpp
     src/math/output/common/wrapper.cpp
     src/math/output/common/wrapper_factory.cpp
     src/math/output/common/output_jax.cpp
@@ -223,7 +227,7 @@ target_sources(folia_math PRIVATE
 set(FOLIA_COMMON_NATIVE_FAMILIES
     mo mrow inferred_mrow text_node mi mn ms mspace mglyph mtext math
     scriptbase msubsup mmultiscripts munderover mfenced maction
-    mtable mtr mtd mpadded semantics tex_atom)
+    mtable mtr mtd mpadded semantics tex_atom menclose)
 foreach(family IN LISTS FOLIA_COMMON_NATIVE_FAMILIES)
     target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
         src/math/output/common/wrappers/${family}.ixx)
@@ -401,6 +405,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_common_linebreak.cpp
     tests/math/native_common_table.cpp
     tests/math/native_common_containers.cpp
+    tests/math/native_common_menclose.cpp
     tests/math/native_tree_factory.cpp
     tests/math/native_tree_node.cpp
     tests/math/native_tree_visitor.cpp
