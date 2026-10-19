@@ -11,15 +11,19 @@ static_assert(std::derived_from<TexParser,ParserContext>);
 static_assert(std::derived_from<TeX,core::AbstractInputJax>);
 static_assert(std::same_as<decltype(ParseOptions::options),options::Value>);
 static_assert(std::same_as<decltype(ParseOptions::packageData),ParserShared<SourceStringMap<options::Value>>>);
-static_assert(std::same_as<decltype(ParseOptions::parsers),ParserShared<std::vector<TexParserRef>>>);
-static_assert(std::same_as<decltype(ParseOptions::columnParser),ColumnParser>);
+static_assert(std::same_as<decltype(ParseOptions::parsers),options::Value>);
+static_assert(std::same_as<decltype(ParseOptions::nodeFactory),options::Value>);
+static_assert(std::same_as<decltype(ParseOptions::columnParser),options::Value>);
 static_assert(std::same_as<decltype(ParseOptions::mathItem),core::MathItemReference>);
 static_assert(std::same_as<decltype(TexParser::configuration),ParserBorrowed<ParseOptions>>);
 static_assert(std::same_as<decltype(TexParser::stack),ParserShared<Stack>>);
 static_assert(std::same_as<decltype(ArrayItem::parser),ParserBorrowed<TexParser>>);
 static_assert(std::same_as<decltype(ArrayItem::table),ParserShared<tree::ChildArray<mml::MmlNode>>>);
-static_assert(std::same_as<decltype(Tags::configuration),ParserBorrowed<ParseOptions>>);
-static_assert(std::same_as<decltype(Tags::enTag),FunctionRef>);
+// Tags Source fields are live Context properties on the actual instance.
+// They are accessed through the native owner's field view, rather than a
+// second typed field whose value could drift from the Context graph.
+static_assert(std::same_as<decltype(std::declval<AbstractTags&>().field(u"configuration")),options::Value>);
+static_assert(std::same_as<decltype(std::declval<AbstractTags&>().field(u"enTag")),options::Value>);
 static_assert(std::same_as<decltype(std::declval<TexParser&>().GetDelimiter(u"name")),Property>);
 static_assert(std::same_as<decltype(std::declval<TexParser&>().GetArgument(u"name")),Property>);
 static_assert(std::same_as<decltype(std::declval<TexParser&>().GetBrackets(u"name")),Property>);
