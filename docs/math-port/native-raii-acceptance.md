@@ -8,6 +8,14 @@ green corpora establish reference data, not acceptance for rewritten code.
 
 - Every math implementation file has a keep/rewrite/remove/regenerate decision,
   a native responsibility, Source provenance and a named owner.
+- Start from the pinned upstream file and family responsibility. Each proposed
+  new file/module must explain why an existing owner cannot contain the work,
+  identify actual consumers, and identify the implementation it replaces.
+  Native numerical family work replaces the canonical Common wrapper files;
+  it must not coexist with a competing placement or Scene wrapper hierarchy.
+- Audit both the active dependency graph and obsolete code remaining on disk.
+  Record missing production callers explicitly. Passing isolated numerical
+  tests cannot establish that CommonWrapper or the renderer is connected.
 - The active `folia_math` graph contains no Context/ObjectRef/Descriptor,
   prototype services, universal `Value` call/construct machinery, arbitrary
   payloads, identity registries or manual request retirement scopes.
@@ -56,6 +64,10 @@ green corpora establish reference data, not acceptance for rewritten code.
   TeX expansion/scopes, operator classes/spacing, inherited attributes,
   fractions, scripts/limits, radicals, stretch delimiters, tables, line breaks,
   colors/enclosures/actions, HTML/annotations, tags and errors.
+- Keep Source-paired case data separate from a compact table-driven test runner.
+  Commit the reproducible hash-locked Source witness, not thousands of repeated
+  generated C++ assertion blocks. Preserve case/field diagnostics and exact
+  comparisons; splitting a generated test into many source files is not a fix.
 - C++ registration and option types need their own typed contracts. JS
   property descriptors, prototype replacement, Function.call mutation, sparse
   JS array holes and arbitrary JS coercion are withdrawn API requirements.

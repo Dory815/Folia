@@ -47,6 +47,25 @@ executables and commits. No agent writes another agent's formal or draft files.
 
 ## Following waves
 
+### Correction before further implementation (2026-10-20)
+
+The architecture's Source structure correction supersedes the standalone
+`common/placement/fraction` and `radical` allocations. Pause further family
+promotion until Root has mapped the upstream methods, canonical owning files,
+current callers, inactive duplicate implementations and removal/rewiring sites.
+Use `common/wrappers/mfrac`, `msqrt` and `mroot` as the family owners; do not
+create another hierarchy because an agent packet is independently assignable.
+No file moves or wrapper completion are implied by this planning correction.
+
+Root also rejects the generated 4,241/3,954-line test form in `b030b874`.
+Retain all 288/192 Source case observations as data, with a reproducible witness
+and compact runner. The witness candidates are drafts; no cleanup or native
+test acceptance is claimed until they are reviewed, promoted and executed.
+
+Each subsequent assignment must name the Source files/methods, canonical write
+scope, producer/consumer contract, deleted/replaced responsibilities, ownership
+and focused acceptance. An unconnected component remains explicitly incomplete.
+
 After Root reviews the foundation contracts, separate Luna packets port typed
 TeX parser/stack/NodeFactory, MML node families, package families, CommonWrapper/
 font services, and per-family placement. Each has an exact file set and paired

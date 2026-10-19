@@ -30,6 +30,50 @@ enums, value records and typed callbacks replace JS prototypes, mixins and
 reflective dispatch. Source mathematical algorithms remain the reference;
 arbitrary JS mutation behavior is no longer a native API requirement.
 
+## Source structure correction (2026-10-20)
+
+The upstream file responsibilities are the starting architecture, not merely
+algorithm references. Removing JS object semantics does not justify replacing
+the Common/MML/TeX family structure with a new collection of helper modules.
+This section supersedes the earlier `output/common/placement/` allocation and
+the fraction/radical packet paths. No source relocation has been performed yet.
+
+Review of `b030b874` found two problems: the new fraction/radical services have
+only test callers, and their equations coexist on disk with the superseded
+Common and Scene family implementations. They are component experiments, not
+an integrated shared layout implementation. The active target excludes the old
+wrappers and renderer facade; it cannot render TeX end to end. A successful
+component build does not resolve these responsibility or integration gaps.
+
+| Pinned upstream responsibility | Native owning files | Required boundary |
+|---|---|---|
+| `output/common/Wrappers/mfrac.ts` | `output/common/wrappers/mfrac.ixx/.cpp` | Fraction attributes, child metrics, ruled/atop/bevel measurement, slash stretching and width reconciliation |
+| `output/common/Wrappers/msqrt.ts` | `output/common/wrappers/msqrt.ixx/.cpp` | Shared radical logic, surd stretching, p/q and base measurement |
+| `output/common/Wrappers/mroot.ts` | `output/common/wrappers/mroot.ixx/.cpp` | Degree-specific dimensions/height; retain its relationship to msqrt |
+| Numerical parts of SVG `Wrappers/mfrac.ts`, `msqrt.ts`, `mroot.ts` | The corresponding Common family above | Calculate child origins and rule geometry once, preserving separate Source measurement and painting quantities |
+| SVG elements, attribute order, grouping and number spelling | `output/svg/` | Consume completed layout; no second mathematical placement calculation |
+| Completed owned geometry | `output/scene/` | Store/freeze values; no node-family wrapper hierarchy or layout equations |
+| `core/MmlTree/MmlNodes/mfrac.ts`, `msqrt.ts`, `mroot.ts` | Corresponding `core/mml_tree/mml_nodes/` files | MML structure, inheritance and semantics, distinct from output layout |
+
+The numerical placement adjustment is necessary for the requested shared
+SVG/Direct2D result: upstream SVG wrappers currently contain mathematical
+positions as well as SVG construction. Move only the mathematical part to its
+Common family. Preserve the rest of the upstream responsibility separation.
+This is not a reason to create a separate placement family beside Common.
+
+Replace canonical family files in place and retire superseded implementations
+and their registrations in the same responsibility-sized change. Do not merely
+move a free-function experiment into a wrapper-named file and claim the wrapper
+is complete. MML/font/child/stretch orchestration and actual callers must be
+reviewed too. Existing inactive consumers require explicit rewrite/removal
+decisions; absence from CMake alone is not source cleanup.
+
+C++ module boundaries follow owners and dependencies. A packet, individual
+function or test seam does not automatically need its own named module.
+Family implementation details and numerical intermediates remain private
+unless a real production consumer needs them. Native ownership changes remain
+typed values, unique owners and explicit borrowed references within a request.
+
 ## Ownership
 
 | Lifetime | Owner | Owned contents | Permitted references |
@@ -107,8 +151,7 @@ maps and macro dictionaries are legitimate domain data, not JS objects.
 | `src/math/core/mml_tree/node_kind.ixx`, `mml_node.*`, `mml_document.*` | typed node vocabulary, document ownership and tree operations |
 | `src/math/core/mml_tree/attributes.*`, `mml_factory.*` | mathematical attribute inheritance and typed node construction |
 | `src/math/core/mml_tree/mml_nodes/` | node-family validation, inheritance, TeX classes, operator semantics |
-| `src/math/output/common/wrapper.*`, `wrapper_factory.*`, `wrappers/` | one wrapper family hierarchy, BBox and mathematical measurements |
-| `src/math/output/common/placement/` | placement extracted from Source SVG wrappers; one implementation per family |
+| `src/math/output/common/wrapper.*`, `wrapper_factory.*`, `wrappers/` | one upstream-aligned wrapper family hierarchy; BBox, stretching and shared numerical placement; fraction/sqrt/root remain in their canonical family files |
 | `src/math/output/common/font*`, `src/math/fonts/` | typed font lookup, metrics, stretch data and bounded immutable resources |
 | `src/math/output/scene/types.ixx`, `scene.ixx`, `scene.cpp`, `builder.*` | owned completed layout representation and freezing; no second layout hierarchy |
 | `src/math/output/svg/writer.ixx`, `writer.cpp`, `node_metadata.cpp` | Source-compatible SVG serialization and metadata emission |
