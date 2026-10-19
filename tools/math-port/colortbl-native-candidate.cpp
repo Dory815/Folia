@@ -257,41 +257,64 @@ std::string classInfo(Fixture& fixture,Serializer& serializer,tex::TeX& jax){
         ",\"tableLength\":"+std::to_string(table&&*table?(*table)->size():0)+"}}";
     return output;
 }
-std::string configurationInfo(Fixture& fixture,Serializer& serializer){
-    const auto found=fixture.runtime.configurationHandler.get(u"colortbl");
-    const auto* configuration=std::get_if<tex::ConfigurationRef>(&found);
-    if(!configuration||!*configuration)throw opts::Exception("TypeError",u"Colortbl configuration unavailable");
-    const auto identity=fixture.runtime.configurationIdentities.find(*configuration);
+std::string configurationInfo(Fixture& fixture,Serializer& serializer,tex::ConfigurationRef configuration){
+    if(!configuration)throw opts::Exception("TypeError",u"Colortbl configuration unavailable");
+    const auto identity=fixture.runtime.configurationIdentities.find(configuration);
     if(!identity)throw opts::Exception("TypeError",u"Colortbl configuration identity unavailable");
     const auto field=[&](std::u16string_view name){return serializer.value(fixture.cx.get(opts::Value(*identity),opts::Key(std::u16string(name))));};
-    return "{\"name\":"+q(text((*configuration)->name()))+
+    return "{\"name\":"+q(text(configuration->name()))+
         ",\"handler\":"+field(u"handler")+
         ",\"items\":"+field(u"items")+
         ",\"priority\":"+field(u"priority")+
         ",\"configMethod\":"+field(u"configMethod")+
-        ",\"config\":"+serializer.value((*configuration)->config())+"}";
+        ",\"config\":"+serializer.value(configuration->config())+"}";
 }
 }
 int main(){
     try{
         Fixture fixture;
         Serializer serializer{&fixture.cx,&fixture.functions,&fixture.runtime.mapHandler};
-        const auto classJax=fixture.jax(baseColortbl);
-        std::cout<<"{\"schema\":1,\"source\":\"MathJax-src 4.1.3 fb987178c2d279a99b0db5ea02e751691703955e\",\"files\":["
-            <<"{\"ts\":\"ts/input/tex/colortbl/ColortblConfiguration.ts\",\"tsSha256\":\"0a10559b100eb9576ac5d1bcd5db4e5e288144a9de753a866bca7c87f819464c\",\"cjs\":\"cjs/input/tex/colortbl/ColortblConfiguration.js\",\"cjsSha256\":\"b2da866632dcecb74b05559fa13c0fdd3d79c9d2b4a927bb22a587ef6c76227e\"}]"
-            <<",\"class\":"<<classInfo(fixture,serializer,*classJax)
-            <<",\"configuration\":"<<configurationInfo(fixture,serializer)
-            <<",\"maps\":"<<serializer.maps(fixture.runtime)<<",\"cases\":[";
-        bool first=true;for(const auto& item:cases){if(!first)std::cout<<',';first=false;std::cout<<"{\"name\":"<<q(item.name)<<",\"input\":"<<q(text(item.input))<<",\"packages\":[";
-            for(std::size_t package=0;package<item.packages.size();++package){if(package)std::cout<<',';std::cout<<q(text(item.packages[package]));}
-            std::cout<<"],\"settings\":{},\"result\":";
-            const auto jax=fixture.jax(item.packages);
-            try{std::cout<<serializer.node(fixture.compile(item.input,*jax))<<",\"error\":null,\"packageData\":"<<serializer.packageData(*jax)<<"}";}
-            catch(const tex::TexError& e){std::cout<<"null,\"error\":{\"name\":\"TexError\",\"id\":"<<q(text(e.id))<<",\"message\":"<<q(text(e.message))<<"},\"packageData\":"<<serializer.packageData(*jax)<<"}";}
-            catch(const options::Exception& e){std::cout<<"null,\"error\":{\"name\":"<<q(e.name)<<",\"id\":null,\"message\":"<<q(text(e.message))<<"},\"packageData\":"<<serializer.packageData(*jax)<<"}";}
-            catch(const std::exception& e){std::cout<<"null,\"error\":{\"name\":\"NativeException\",\"message\":"<<q(e.what())<<"},\"packageData\":"<<serializer.packageData(*jax)<<"}";}
-            catch(...){std::cout<<"null,\"error\":{\"name\":\"UnclassifiedNativeException\"},\"packageData\":"<<serializer.packageData(*jax)<<"}";}
-        }std::cout<<"]}\n";return 0;
+        tex::TeXRef classJax;
+        const std::string filesJson=R"json([{"ts":"ts/input/tex/colortbl/ColortblConfiguration.ts","tsSha256":"0a10559b100eb9576ac5d1bcd5db4e5e288144a9de753a866bca7c87f819464c","cjs":"cjs/input/tex/colortbl/ColortblConfiguration.js","cjsSha256":"b2da866632dcecb74b05559fa13c0fdd3d79c9d2b4a927bb22a587ef6c76227e"}])json";
+        std::string casesJson="[";
+        bool first=true;
+        for(const auto& item:cases){
+            std::string packagesJson="[";
+            for(std::size_t package=0;package<item.packages.size();++package){if(package)packagesJson+=',';packagesJson+=q(text(item.packages[package]));}
+            packagesJson+=']';
+            tex::TeXRef jax;
+            std::string resultJson="null",errorJson="null";
+            try{
+                jax=fixture.jax(item.packages);
+                if(!classJax)classJax=jax;
+                const auto result=fixture.compile(item.input,*jax);
+                resultJson=serializer.node(result);
+            }
+            catch(const tex::TexError& e){errorJson="{\"name\":\"TexError\",\"id\":"+q(text(e.id))+",\"message\":"+q(text(e.message))+"}";}
+            catch(const options::Exception& e){errorJson="{\"name\":"+q(e.name)+",\"id\":null,\"message\":"+q(text(e.message))+"}";}
+            catch(const std::exception& e){errorJson="{\"name\":\"NativeException\",\"message\":"+q(e.what())+"}";}
+            catch(...){errorJson="{\"name\":\"UnclassifiedNativeException\"}";}
+            const std::string packageJson=jax?serializer.packageData(*jax):"null";
+            const std::string caseJson="{\"name\":"+q(item.name)+",\"input\":"+q(text(item.input))+
+                ",\"packages\":"+packagesJson+",\"settings\":{},\"result\":"+resultJson+
+                ",\"error\":"+errorJson+",\"packageData\":"+packageJson+"}";
+            if(!first)casesJson+=',';
+            first=false;
+            casesJson+=caseJson;
+        }
+        casesJson+=']';
+        const std::string mapsJson=serializer.maps(fixture.runtime);
+        const auto configurationValue=fixture.runtime.configurationHandler.get(u"colortbl");
+        const auto* configurationRef=std::get_if<tex::ConfigurationRef>(&configurationValue);
+        if(!configurationRef||!*configurationRef)throw opts::Exception("TypeError",u"Colortbl configuration unavailable");
+        if(!classJax)throw opts::Exception("TypeError",u"Colortbl metadata jax unavailable after cases");
+        const std::string classJson=classInfo(fixture,serializer,*classJax);
+        const std::string configurationJson=configurationInfo(fixture,serializer,*configurationRef);
+        const std::string outputJson="{\"schema\":1,\"source\":\"MathJax-src 4.1.3 fb987178c2d279a99b0db5ea02e751691703955e\",\"files\":"+filesJson+
+            ",\"class\":"+classJson+",\"configuration\":"+configurationJson+
+            ",\"maps\":"+mapsJson+",\"cases\":"+casesJson+"}";
+        std::cout<<outputJson<<'\n';
+        return 0;
     }catch(const options::Exception& e){std::cerr<<"fixture-init "<<e.name<<": "<<text(e.message)<<'\n';}
      catch(const std::exception& e){std::cerr<<"fixture-init NativeException: "<<e.what()<<'\n';}
      catch(...){std::cerr<<"fixture-init UnclassifiedNativeException\n";}

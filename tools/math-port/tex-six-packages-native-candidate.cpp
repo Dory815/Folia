@@ -230,16 +230,32 @@ int main(int argc,char** argv){
             return 0;
         }
         std::cout<<"{\"schema\":1,\"cases\":[";
-        bool first=true;for(const auto& item:cases){if(!first)std::cout<<',';first=false;std::cout<<"{\"name\":"<<q(item.name)<<",\"input\":"<<q(text(item.input))<<",\"packages\":[";
-            for(std::size_t package=0;package<item.packages.size();++package){if(package)std::cout<<',';std::cout<<q(text(item.packages[package]));}
-            std::cout<<"],\"result\":";
-            const auto jax=fixture.jax(item.packages);
-            try{std::cout<<serializer.node(fixture.compile(item.input,*jax))<<",\"error\":null,\"packageData\":"<<serializer.packageData(*jax)<<",\"maps\":"<<serializer.maps(fixture.runtime)<<"}";}
-            catch(const tex::TexError& e){std::cout<<"null,\"error\":{\"name\":\"TexError\",\"id\":"<<q(text(e.id))<<",\"message\":"<<q(text(e.message))<<"},\"packageData\":"<<serializer.packageData(*jax)<<",\"maps\":"<<serializer.maps(fixture.runtime)<<"}";}
-            catch(const options::Exception& e){std::cout<<"null,\"error\":{\"name\":"<<q(e.name)<<",\"message\":"<<q(text(e.message))<<"},\"packageData\":"<<serializer.packageData(*jax)<<",\"maps\":"<<serializer.maps(fixture.runtime)<<"}";}
-            catch(const std::exception& e){std::cout<<"null,\"error\":{\"name\":\"NativeException\",\"message\":"<<q(e.what())<<"},\"packageData\":"<<serializer.packageData(*jax)<<",\"maps\":"<<serializer.maps(fixture.runtime)<<"}";}
-            catch(...){std::cout<<"null,\"error\":{\"name\":\"UnclassifiedNativeException\"},\"packageData\":"<<serializer.packageData(*jax)<<",\"maps\":"<<serializer.maps(fixture.runtime)<<"}";}
-        }std::cout<<"]}\n";return 0;
+        bool first=true;
+        for(const auto& item:cases){
+            std::string packagesJson="[";
+            for(std::size_t package=0;package<item.packages.size();++package){if(package)packagesJson+=',';packagesJson+=q(text(item.packages[package]));}
+            packagesJson+=']';
+            tex::TeXRef jax;
+            std::string resultJson="null",errorJson="null";
+            try{
+                jax=fixture.jax(item.packages);
+                const auto result=fixture.compile(item.input,*jax);
+                resultJson=serializer.node(result);
+            }
+            catch(const tex::TexError& e){errorJson="{\"name\":\"TexError\",\"id\":"+q(text(e.id))+",\"message\":"+q(text(e.message))+"}";}
+            catch(const options::Exception& e){errorJson="{\"name\":"+q(e.name)+",\"message\":"+q(text(e.message))+"}";}
+            catch(const std::exception& e){errorJson="{\"name\":\"NativeException\",\"message\":"+q(e.what())+"}";}
+            catch(...){errorJson="{\"name\":\"UnclassifiedNativeException\"}";}
+            const std::string mapsJson=serializer.maps(fixture.runtime);
+            const std::string packageJson=jax?serializer.packageData(*jax):"null";
+            const std::string caseJson="{\"name\":"+q(item.name)+",\"input\":"+q(text(item.input))+
+                ",\"packages\":"+packagesJson+",\"result\":"+resultJson+
+                ",\"error\":"+errorJson+",\"packageData\":"+packageJson+",\"maps\":"+mapsJson+"}";
+            if(!first)std::cout<<',';
+            first=false;
+            std::cout<<caseJson;
+        }
+        std::cout<<"]}\n";return 0;
     }catch(const options::Exception& e){std::cerr<<"fixture-init "<<e.name<<": "<<text(e.message)<<'\n';}
      catch(const std::exception& e){std::cerr<<"fixture-init NativeException: "<<e.what()<<'\n';}
      catch(...){std::cerr<<"fixture-init UnclassifiedNativeException\n";}
