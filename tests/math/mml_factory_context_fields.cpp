@@ -317,6 +317,10 @@ suite mmlFactoryContextFields = [] {
     const auto identity=graph.runtime.mmlNodeIdentities.findPointee(node);
     expect(identity.has_value()) << "MML test 25 assertion at source line 252";
     if(!identity)return;
+    const auto nodePrototype=graph.context.prototype(*identity);
+    expect(nodePrototype.has_value()) << "MML test 25 bound node has a canonical class prototype";
+    expect(!graph.context.hasOwn(o::Value(*identity),o::Key(u"factory")))
+        << "MML test 25 inherited factory accessor remains visible";
     const auto rawChildren=graph.context.get(o::Value(*identity),o::Key(u"childNodes"));
     const auto* array=std::get_if<o::ObjectRef>(&rawChildren.data);
     expect(array!=nullptr) << "MML test 25 assertion at source line 256";
@@ -1393,6 +1397,16 @@ suite mmlFactoryContextFields = [] {
         expect(convertedNode->kind()=="mrow") << "MML test 44 assertion at source line 1304";
         expect(convertedNode->childArrayOwner()->size()==1u) << "MML test 44 assertion at source line 1305";
         expect(convertedNode->getProperty("foreign")==graph.runtime.properties.from(o::Value(41.0))) << "MML test 44 assertion at source line 1306";
+        const auto convertedIdentity=graph.runtime.mmlNodeIdentities.findPointee(convertedNode);
+        expect(convertedIdentity.has_value()) << "finite child conversion has a canonical identity";
+        if(convertedIdentity){
+            const auto properties=graph.context.get(o::Value(*convertedIdentity),o::Key(u"properties"));
+            expect(graph.context.get(properties,o::Key(u"foreignObject"))==o::Value(foreignPropertyObject))
+                << "finite child conversion preserves raw property object identity";
+        }
+        const auto typedForeignObject=convertedNode->getProperty("foreignObject");
+        expect(graph.runtime.properties.to(typedForeignObject)==o::Value(foreignPropertyObject))
+            << "finite child property preserves object identity across typed conversion";
         expect(convertedNode->getProperty("foreignObject")==graph.runtime.properties.from(o::Value(foreignPropertyObject))) << "MML test 44 assertion at source line 1307";
     }
 

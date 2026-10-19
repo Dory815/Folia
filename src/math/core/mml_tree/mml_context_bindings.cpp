@@ -368,8 +368,13 @@ ObjectRef MmlContextBindings::bindFactory(std::shared_ptr<MmlFactory> factory){
             const auto self=weak.lock();if(!self)throw Exception("TypeError",u"MML Context binding owner has expired");
             const auto target=owner->takeAdoptIdentityTarget();
             const auto object=target?*target:self->context_.object();
+            if(!target){
+                // Register the canonical payload first, then expose the actual
+                // class prototype before node field binders inspect descriptors.
+                (void)self->nodes_.bind(&node,object,std::static_pointer_cast<void>(owner));
+                self->factoryFields_->bindNodePrototype(object,node);
+            }
             (void)self->bindNode(object,node,owner);
-            if(!target)self->factoryFields_->bindNodePrototype(object,node);
         });
         requireCurrentProgress(u"identity binder installation");
         progress->binder=true;
