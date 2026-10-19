@@ -54,7 +54,7 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 - `-bbm-bold` 与 `-bboldx` 共享缓存 ID 但路径不同，现按语义 variant 查询路径。
   Source 对照脚本 `tools/math-port/font-cache-source-witness.cjs` 已提交。
 - 上述结果不等于完整数学布局、SVG 文档或应用接入验收。无需无故重复完整字体对照。
-- Styles 已在原文件/原类中完成原生存储迁移，保留解析、TRBL/WSC/font 展开及合并
+- `797e5926`：Styles 已在原文件/原类中完成原生存储迁移，保留解析、TRBL/WSC/font 展开及合并
   方法；删除 Property/property_host 依赖、旧正则对象字段访问和仅用于绑定的函数名元数据。
   使用有序 string/u16string 值容器、原生正则游标、纯 C++ 数字格式化；没有新建解析器。
 - Styles 的 Source 对照脚本 `tools/math-port/styles-source-witness.cjs` 跑过 19 组断言；
@@ -64,13 +64,21 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
   `build/math-port/styles-native-reuse-final-full.log`；最终构建同前缀 `final-build.log`。
   旧测试文件中两项 StyleJson 通用对象别名/null 行为测试已退出此目标；它们不是 Styles
   数学/CSS 算法验收，不得把尚未原生迁移的 StyleJson 宣称为已完成。
+- LineBBox 已原地完成类型迁移（本记录对应提交）：保留 from/append/copy/getIndentData/
+  copyIndentData 的原有职责，用固定三行的原生缩进记录代替 PropertyArray；共享只涉及
+  具体缩进值，无节点/对象模拟反向引用。protected 边界保留，测试通过派生 probe 访问。
+  Root 补充的语义修正：Source getAllAttributes 的字段读取不解析 `_inherit_`；新增
+  AttributeSet::lookupRaw，lookup 继续保留原解析语义。LineBBox 使用 raw 查询。
+  `tools/math-port/line-bbox-source-witness.cjs` 对固定哈希的 Source 运行通过；
+  原生 LineBBox 3 项 / 25 断言通过，全量 114 项 / 30,724 断言通过：
+  `build/math-port/line-bbox-native-reuse-full.log`，构建 `line-bbox-native-reuse-final-build.log`。
 
 ## 下一步，按此接续
 
 1. 字体实现已独立整理提交，不要重复提交或重新做完整对照。
-2. Styles 迁移已完成验证，接续 LineBBox 原类迁移。Luna 草稿在
-   `tools/math-port/drafts/native-raii/line-bbox-native-reuse/`；Root 已要求修正模块导入、
-   保留 protected 方法边界并补齐 Source 断言。尚未推广、构建或验收。
+2. Styles 与 LineBBox 均已原地迁移并验证，直接接续 Common/MML 类协作。
+   旧 inactive LinebreakVisitor、mrow、mtext 和 bbox_bindings 仍引用旧数组 API；
+   在各自迁移中重接类型或移除模拟绑定，不加兼容桥，不宣称这些消费者已完成。
 3. 依照原有 C++ 类，先确定 CommonWrapper/Factory 的原生类型与所有权边界，再迁移
    分式/根式方法和调用者。不得继续新增独立数学 helper API 充当最终 wrapper 架构。
    契约候选在 `tools/math-port/drafts/native-raii/common-wrapper-contract/CONTRACT.md`。
@@ -78,6 +86,15 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
    非缓存 BBox/outer BBox 不能返回临时引用。LineBBox 实际算法需要的类型明确、无环共享
    所有权可以保留，不能为了消灭所有 shared_ptr 而破坏算法别名关系。
    完整 MML core/embellished/spacing 语义仍是缺失依赖，不能加空实现掩盖。
+   契约尚未接受：不能直接删掉 tree::AbstractWrapper/AbstractWrapperFactory 的真实
+   kind/wrap/walkTree/工厂分派职责。Root 已纠正，Luna 已在同一草稿中记录。
+   下次需要明确两项，而非重新盘点：原生泛型工厂的有类型创建参数/登记表，以及
+   MML 家族类如何成为 MmlDocument 真正拥有的节点。当前 MmlNode final 只含结构，
+   旧 MmlMrow/MmlMfrac 等类无法用于这个 arena；不得用另一套外置门面掩盖。
+   复用旧 MML 基类的 C++ 可从 `f4d04f25:src/math/core/mml_tree/mml_node.ixx` 及
+   对应实现读取（dc287b48 之前）；具体家族文件仍在当前树中。
+   注意：当前 util/lengths 已是纯原生 LengthContext API，草稿所称仍依赖 Property
+   是过时信息，不能据此重做长度模块。
 
 Root 负责正式文件推广、CMake、构建、原生执行和提交；Luna 在各自忽略草稿目录工作。
 给每项任务指定既有 C++ 方法、保留职责、替换类型、调用者和验收，不让代理自行重划架构。

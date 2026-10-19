@@ -87,7 +87,7 @@ const AttributeValue* AttributeSet::effectiveInherited(
     return effectiveDefault(name);
 }
 
-const AttributeValue* AttributeSet::lookup(std::u16string_view name) const noexcept {
+const AttributeValue* AttributeSet::lookupRaw(std::u16string_view name) const noexcept {
     const AttributeValue* value = own(name);
     if (!value) {
         value = inherited(name);
@@ -98,7 +98,11 @@ const AttributeValue* AttributeSet::lookup(std::u16string_view name) const noexc
     if (!value) {
         value = globalDefault(name);
     }
+    return value;
+}
 
+const AttributeValue* AttributeSet::lookup(std::u16string_view name) const noexcept {
+    const auto* value = lookupRaw(name);
     if (const auto* stringValue = value ? std::get_if<std::u16string>(value) : nullptr;
         stringValue && *stringValue == inheritSentinel) {
         return globalDefault(name);

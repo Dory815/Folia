@@ -6,21 +6,44 @@ module folia.math.output.common.line_bbox;
 import std;
 
 namespace folia::math::output::common {
-LineBBox LineBBox::from(const BBox& bbox, std::optional<double> leading,
-                        std::shared_ptr<PropertyArray> indent) {
+namespace {
+using mml::AttributeSet;
+
+std::optional<std::u16string> string_attribute(
+    AttributeSet const& attributes, std::u16string_view name) {
+    auto const* value = attributes.lookupRaw(name);
+    if (!value) return std::nullopt;
+    auto const* string = std::get_if<std::u16string>(value);
+    if (!string)
+        throw std::invalid_argument("LineBBox indentation attributes must be strings");
+    return *string;
+}
+
+std::optional<std::u16string> inherited_string(
+    AttributeSet const& attributes, std::u16string_view name) {
+    auto const* value = attributes.effectiveInherited(name);
+    if (!value) return std::nullopt;
+    auto const* string = std::get_if<std::u16string>(value);
+    if (!string)
+        throw std::invalid_argument("LineBBox inherited indentation attributes must be strings");
+    return *string;
+}
+
+bool aliases(std::optional<std::u16string> const& value, std::u16string_view name) {
+    return value && *value == name;
+}
+}
+
+LineBBox LineBBox::from(BBox const& bbox, std::optional<double> leading,
+                        IndentDataRef indent) {
     LineBBox result;
     static_cast<BBox&>(result) = bbox;
-    // Source constructs a default LineBBox (whose originalL is its initial
-    // L), then Object.assigns the plain BBox fields.  originalL is therefore
-    // not replaced by bbox.L here; copying another LineBBox uses copy() to
-    // transfer its explicit originalL field.
     result.lineLeading = leading;
     if (indent) result.indentData = std::move(indent);
     return result;
 }
 
-LineBBox::LineBBox(BBoxData def,
-                   std::optional<std::array<double, 2>> startValue)
+LineBBox::LineBBox(BBoxData def, std::optional<std::array<double, 2>> startValue)
     : BBox(std::move(def)), originalL(L) {
     if (startValue) start = *startValue;
 }
@@ -38,7 +61,6 @@ void LineBBox::append(LineBBox& child) {
 
 LineBBox LineBBox::copy() const {
     LineBBox result = LineBBox::from(*this, lineLeading);
-    // Source copy retains indentData's array identity.
     result.indentData = indentData;
     result.lineLeading = lineLeading;
     result.start = start;
@@ -48,48 +70,28 @@ LineBBox LineBBox::copy() const {
     return result;
 }
 
-void LineBBox::getIndentData(const mml::MmlNode& node) {
-    const auto attributes = node.attributes()->getAllAttributes();
-    auto align = attributes.get("indentalign");
-    auto shift = attributes.get("indentshift");
-    auto firstAlign = attributes.get("indentalignfirst");
-    auto firstShift = attributes.get("indentshiftfirst");
-    auto lastAlign = attributes.get("indentalignlast");
-    auto lastShift = attributes.get("indentshiftlast");
-    if (firstAlign == Property("indentalign"))
-        firstAlign = node.attributes()->getInherited("indentalign");
-    if (firstShift == Property("indentshift"))
-        firstShift = node.attributes()->getInherited("indentshift");
-    if (lastAlign == Property("indentalign")) lastAlign = align;
-    if (lastShift == Property("indentshift")) lastShift = shift;
-    indentData = std::make_shared<PropertyArray>();
-    const auto pair = [](Property first, Property second) {
-        return Property(PropertyArray{std::move(first), std::move(second)});
-    };
-    indentData->push(pair(std::move(firstAlign), std::move(firstShift)));
-    indentData->push(pair(std::move(align), std::move(shift)));
-    indentData->push(pair(std::move(lastAlign), std::move(lastShift)));
+void LineBBox::getIndentData(mml::MmlNode const& node) {
+    auto const& attributes = node.attributes();
+    auto align = string_attribute(attributes, u"indentalign");
+    auto shift = string_attribute(attributes, u"indentshift");
+    auto first_align = string_attribute(attributes, u"indentalignfirst");
+    auto first_shift = string_attribute(attributes, u"indentshiftfirst");
+    auto last_align = string_attribute(attributes, u"indentalignlast");
+    auto last_shift = string_attribute(attributes, u"indentshiftlast");
+    if (aliases(first_align, u"indentalign")) first_align = inherited_string(attributes, u"indentalign");
+    if (aliases(first_shift, u"indentshift")) first_shift = inherited_string(attributes, u"indentshift");
+    if (aliases(last_align, u"indentalign")) last_align = align;
+    if (aliases(last_shift, u"indentshift")) last_shift = shift;
+    indentData = std::make_shared<IndentData>();
+    indentData->lines = {
+        IndentPair{std::move(first_align), std::move(first_shift)},
+        IndentPair{std::move(align), std::move(shift)},
+        IndentPair{std::move(last_align), std::move(last_shift)}};
 }
 
-std::shared_ptr<PropertyArray> LineBBox::copyIndentData(const LineBBox& bbox) const {
+IndentDataRef LineBBox::copyIndentData(LineBBox const& bbox) const {
     if (!bbox.indentData)
-        throw options::Exception("TypeError", u"Cannot read properties of null (reading 'map')");
-    auto result = std::make_shared<PropertyArray>();
-    const PropertyList source = bbox.indentData->record();
-    const auto length = bbox.indentData->size();
-    result->resize(length);
-    for (std::size_t index = 0; index < length; ++index) {
-        const auto name = std::to_string(index);
-        if (!source.has(name)) continue; // Array#map preserves holes.
-        const Property pairValue = source.get(name);
-        const auto pair = PropertyArray::array(pairValue);
-        if (!pair)
-            throw options::Exception("TypeError", u"object is not iterable");
-        const PropertyList pairRecord = pair->record();
-        const Property first = pairRecord.get("0");
-        const Property second = pairRecord.get("1");
-        result->set(index, Property(PropertyArray{first, second}));
-    }
-    return result;
+        throw std::invalid_argument("LineBBox has no indentation data to copy");
+    return std::make_shared<IndentData>(*bbox.indentData);
 }
 }

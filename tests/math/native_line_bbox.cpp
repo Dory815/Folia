@@ -1,0 +1,102 @@
+#include "../support/folia_test.hpp"
+import folia.math.core.mml_tree.mml_document;
+import folia.math.output.common.line_bbox;
+
+using namespace boost::ut;
+using namespace folia::math;
+using namespace folia::math::mml;
+using namespace folia::math::output::common;
+
+namespace {
+struct LineBBoxProbe : LineBBox { using LineBBox::copyIndentData; };
+}
+
+suite native_line_bbox = [] {
+    "LineBBox from and copy preserve source geometry and identity"_test = [] {
+        BBox source{BBoxData{.w=2.4, .h=1.2, .d=0.3}};
+        source.L=0.25; source.R=0.15; source.rscale=0.75; source.scale=1.3;
+        source.ic=0.1; source.pwidth="40%";
+        auto from=LineBBox::from(source, 0.2);
+        expect(from.w==2.4 && from.h==1.2 && from.d==0.3 && from.L==0.25 && from.R==0.15);
+        expect(from.rscale==0.75 && from.scale==1.3 && from.ic==0.1 && from.pwidth=="40%");
+        expect(from.lineLeading==0.2 && from.originalL==0);
+        LineBBox constructed{BBoxData{.w=1}, std::array<double,2>{5,6}};
+        std::array<double,2> expected_start{5,6};
+        expect(constructed.start==expected_start && constructed.originalL==0);
+
+        auto shared=std::make_shared<IndentData>();
+        shared->lines[1]={std::u16string(u"right"), std::u16string(u"0.5em")};
+        from.indentData=shared; from.start=std::array<double,2>{1,2};
+        from.end=std::array<double,2>{3,4}; from.originalL=0.7; from.isFirst=true;
+        auto copied=from.copy();
+        expect(copied.w==from.w && copied.h==from.h && copied.d==from.d && copied.L==from.L);
+        expect(copied.indentData==shared && copied.originalL==0.7 && copied.isFirst);
+        expect(copied.start==from.start && copied.end==from.end && copied.lineLeading==from.lineLeading);
+        LineBBoxProbe probe;
+        auto independent=probe.copyIndentData(from);
+        expect(independent!=shared && *independent==*shared);
+        independent->lines[1].alignment=u"left";
+        expect(shared->lines[1].alignment==std::u16string(u"right"));
+    };
+
+    "LineBBox append retains Source dimensions and first-line mutation"_test = [] {
+        auto shared=std::make_shared<IndentData>();
+        LineBBox parent{BBoxData{.w=1, .h=0.2, .d=0.1}};
+        parent.isFirst=true;
+        LineBBox child{BBoxData{.w=2, .h=0.8, .d=0.2}};
+        child.L=0.3; child.R=0.2; child.rscale=0.5; child.lineLeading=0.4;
+        child.indentData=shared; child.isFirst=false;
+        parent.append(child);
+        expect(parent.w==2.1 && parent.h==0.4 && parent.d==0.1);
+        expect(child.L==0 && child.originalL==0.3 && parent.indentData==shared);
+        expect(parent.lineLeading==0.4 && !parent.isFirst);
+        auto copied=parent.copy();
+        expect(copied.w==2.1 && copied.h==0.4 && copied.d==0.1);
+        expect(copied.indentData==shared && copied.lineLeading==0.4 && !copied.isFirst);
+    };
+
+    "LineBBox indentation preserves inherited current and absent values"_test = [] {
+        MmlDocument document;
+        auto& inherited=document.make(NodeKind::mrow);
+        auto& attrs=inherited.attributes();
+        attrs.set(u"indentalign", std::u16string(u"right"));
+        attrs.set(u"indentshift", std::u16string(u"1em"));
+        attrs.set(u"indentalignfirst", std::u16string(u"indentalign"));
+        attrs.set(u"indentshiftfirst", std::u16string(u"indentshift"));
+        attrs.set(u"indentalignlast", std::u16string(u"indentalign"));
+        attrs.set(u"indentshiftlast", std::u16string(u"indentshift"));
+        attrs.setInherited(u"indentalign", std::u16string(u"center"));
+        attrs.setInherited(u"indentshift", std::u16string(u"2em"));
+        LineBBox line; line.getIndentData(inherited);
+        expect(line.indentData->lines[0].alignment==std::u16string(u"center"));
+        expect(line.indentData->lines[0].shift==std::u16string(u"2em"));
+        expect(line.indentData->lines[1].alignment==std::u16string(u"right"));
+        expect(line.indentData->lines[1].shift==std::u16string(u"1em"));
+        expect(line.indentData->lines[2]==line.indentData->lines[1]);
+
+        auto& explicit_node=document.make(NodeKind::mrow);
+        explicit_node.attributes().set(u"indentalignfirst", std::u16string(u"left"));
+        explicit_node.attributes().set(u"indentshiftfirst", std::u16string(u"3em"));
+        LineBBox explicit_line; explicit_line.getIndentData(explicit_node);
+        expect(explicit_line.indentData->lines[0].alignment==std::u16string(u"left"));
+        expect(!explicit_line.indentData->lines[1].alignment && !explicit_line.indentData->lines[1].shift);
+        expect(!explicit_line.indentData->lines[2].alignment && !explicit_line.indentData->lines[2].shift);
+
+        // Source reads getAllAttributes directly, while get() resolves the
+        // special sentinel. LineBBox must retain the raw operation's value.
+        auto& sentinelNode = document.make(NodeKind::mrow);
+        sentinelNode.attributes().setGlobalDefault(u"indentalign", std::u16string(u"center"));
+        sentinelNode.attributes().set(u"indentalign", std::u16string(u"_inherit_"));
+        LineBBox sentinelLine;
+        sentinelLine.getIndentData(sentinelNode);
+        expect(sentinelLine.indentData->lines[1].alignment == std::u16string(u"_inherit_"));
+        expect(std::get<std::u16string>(*sentinelNode.attributes().lookup(u"indentalign")) == u"center");
+
+        auto& invalid=document.make(NodeKind::mrow);
+        invalid.attributes().set(u"indentalign", true);
+        bool rejected=false;
+        try { LineBBox invalid_line; invalid_line.getIndentData(invalid); }
+        catch (std::invalid_argument const&) { rejected=true; }
+        expect(rejected);
+    };
+};

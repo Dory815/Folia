@@ -5,30 +5,40 @@
  *************************************************************/
 export module folia.math.output.common.line_bbox;
 export import folia.math.util.bbox;
-export import folia.math.core.mml_tree.mml_node;
+export import folia.math.core.mml_tree.mml_document;
 import std;
 
 export namespace folia::math::output::common {
-using IndentData = std::shared_ptr<PropertyArray>;
+struct IndentPair {
+    std::optional<std::u16string> alignment;
+    std::optional<std::u16string> shift;
+    friend bool operator==(IndentPair const&, IndentPair const&) = default;
+};
+
+struct IndentData {
+    std::array<IndentPair, 3> lines; // first, normal, last
+    friend bool operator==(IndentData const&, IndentData const&) = default;
+};
+using IndentDataRef = std::shared_ptr<IndentData>;
 
 class LineBBox : public BBox {
 public:
-    std::shared_ptr<PropertyArray> indentData;
+    IndentDataRef indentData;
     std::optional<double> lineLeading;
     double originalL = 0;
     bool isFirst = false;
     std::optional<std::array<double, 2>> start;
     std::optional<std::array<double, 2>> end;
 
-    static LineBBox from(const BBox& bbox, std::optional<double> leading,
-                         std::shared_ptr<PropertyArray> indent = {});
+    static LineBBox from(BBox const& bbox, std::optional<double> leading,
+                         IndentDataRef indent = {});
     explicit LineBBox(BBoxData def = {},
                       std::optional<std::array<double, 2>> start = {});
     void append(LineBBox& child);
     LineBBox copy() const;
-    void getIndentData(const mml::MmlNode& node);
+    void getIndentData(mml::MmlNode const& node);
 
 protected:
-    std::shared_ptr<PropertyArray> copyIndentData(const LineBBox& bbox) const;
+    IndentDataRef copyIndentData(LineBBox const& bbox) const;
 };
 }

@@ -40,6 +40,9 @@ public:
 
     const AttributeValue* effectiveInherited(std::u16string_view name) const noexcept;
     const AttributeValue* effectiveDefault(std::u16string_view name) const noexcept;
+    // Attribute-layer lookup without resolving MathJax's _inherit_ sentinel,
+    // matching a field read from Source getAllAttributes().
+    const AttributeValue* lookupRaw(std::u16string_view name) const noexcept;
     const AttributeValue* lookup(std::u16string_view name) const noexcept;
     bool isSet(std::u16string_view name) const noexcept;
     bool hasDefault(std::u16string_view name) const noexcept;

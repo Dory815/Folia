@@ -149,6 +149,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/svg/font_data.ixx
     src/math/output/common/font_data.ixx
     src/math/output/common/font_path.ixx
+    src/math/output/common/line_bbox.ixx
     src/math/output/common/common.ixx
     src/math/output/common/wrappers/mfrac.ixx
     src/math/output/common/wrappers/msqrt.ixx
@@ -181,6 +182,7 @@ target_sources(folia_math PRIVATE
     src/math/output/svg/font_data.cpp
     src/math/output/common/font_data.cpp
     src/math/output/common/font_path.cpp
+    src/math/output/common/line_bbox.cpp
     src/math/output/common/wrappers/mfrac.cpp
     src/math/output/common/wrappers/msqrt.cpp
     src/math/output/common/wrappers/mroot.cpp
@@ -294,6 +296,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mml_node_state.cpp
     tests/math/native_raii_fonts.cpp
     tests/math/common_styles_source.cpp
+    tests/math/native_line_bbox.cpp
     tests/math/fraction_native.cpp
     tests/math/radical_native.cpp)
 target_compile_features(FoliaMathTests PRIVATE cxx_std_23)
