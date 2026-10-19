@@ -30,11 +30,10 @@ class CommonMmultiscripts : public CommonMsubsup {
     void combineBBoxLists(BBox &, BBox &, const std::vector<BBox> &,
                           const std::vector<BBox> &) const;
     std::array<double, 3> getScaledWHD(const BBox &) const;
-    std::array<double, 2> getCombinedUV();
+    std::array<double, 3> getCombinedUV();
     BBox addPrescripts(BBox &, double u, double v) const;
     BBox addPostscripts(BBox &, double u, double v) const;
-    std::array<double, 3> getUVQ(const BBox *subbox = nullptr,
-                                 const BBox *supbox = nullptr) override;
+    std::array<double, 3> getUVQ(const BBox *subbox, const BBox *supbox) override;
     BBox appendScripts(BBox &) const override;
     std::shared_ptr<LineBBox> computeLineBBox(std::size_t) override;
 

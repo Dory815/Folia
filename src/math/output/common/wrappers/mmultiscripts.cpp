@@ -112,11 +112,10 @@ std::array<double, 3> CommonMmultiscripts::getScaledWHD(const BBox &box) const {
     return {box.w * box.rscale, box.h * box.rscale, box.d * box.rscale};
 }
 
-std::array<double, 2> CommonMmultiscripts::getCombinedUV() {
+std::array<double, 3> CommonMmultiscripts::getCombinedUV() {
     const auto sub = combinePrePost(scriptData_.sub, scriptData_.psub);
     const auto sup = combinePrePost(scriptData_.sup, scriptData_.psup);
-    const auto uvq = getUVQ(&sub, &sup);
-    return {uvq[0], uvq[1]};
+    return getUVQ(&sub, &sup);
 }
 
 BBox CommonMmultiscripts::addPrescripts(BBox &box, double u, double v) const {
@@ -139,10 +138,12 @@ BBox CommonMmultiscripts::addPostscripts(BBox &box, double u, double v) const {
 }
 
 std::array<double, 3> CommonMmultiscripts::getUVQ(const BBox *subValue, const BBox *supValue) {
-    const BBox sub = subValue ? *subValue : subChild()->getOuterBBox();
-    const BBox sup = supValue ? *supValue : supChild()->getOuterBBox();
     if (UVQ)
         return *UVQ;
+    if (!subValue || !supValue)
+        throw std::invalid_argument("multiscripts UVQ requires combined script boxes");
+    const BBox& sub = *subValue;
+    const BBox& sup = *supValue;
     if (sub.w == 0)
         UVQ = std::array<double, 3>{getU(), 0, 0};
     else if (sup.w == 0)

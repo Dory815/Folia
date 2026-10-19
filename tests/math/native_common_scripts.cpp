@@ -143,6 +143,53 @@ mml::MmlNode &token(mml::MmlDocument &d, mml::NodeKind kind, std::u16string valu
 std::array<mml::MmlNode *, 2> subChildren(mml::MmlDocument &d) {
     return {&token(d, mml::NodeKind::mi, u"x"), &token(d, mml::NodeKind::mi, u"i")};
 }
+
+CommonWrapperCatalog sourceRootCatalog() {
+    auto result = catalog(false); // includes CommonInferredMrow and real MML token wrappers
+    result.push_back(registration<CommonMath>(mml::NodeKind::math));
+    return result;
+}
+
+CommonOutputJaxConfig sourceScriptConfig(FontRepository const &fonts) {
+    ExtendedMetrics metrics{.em = 16,
+                            .ex = 8,
+                            .containerWidth = 640,
+                            .scale = 1,
+                            .family = "MathJaxNewcm",
+                            .display = false};
+    CommonOptions options;
+    options.linebreaks.inlineBreaks = true;
+    return {metrics, std::move(options), fonts, "MathJaxNewcm", InlineBreakPolicy::forced};
+}
+
+mml::MmlNode &sourceMathRoot(mml::MmlDocument &d, mml::MmlNode &script) {
+    mml::MmlNode *scriptChildren[]{&script};
+    auto &inferred = d.factory().make(mml::NodeKind::inferred_mrow, {}, scriptChildren);
+    mml::MmlNode *mathChildren[]{&inferred};
+    auto &math = d.factory().make(mml::NodeKind::math, {}, mathChildren);
+    d.setRoot(math);
+    math.setInheritedAttributes(); // MathML input's inherited-attribute pass
+    return math;                   // LayoutJob::build supplies the output TeXclass pass
+}
+
+void expectSourceBox(CommonWrapper &wrapper, double w, double h, double d, double ic, double sk,
+                     double dx, double rscale, double scale) {
+    const auto box = wrapper.getOuterBBox();
+    auto check = [&](std::string_view field, double actual, double expected) {
+        expect(actual == expected)
+            << static_cast<unsigned>(wrapper.kind()) << field
+            << std::format("actual={:.17g} expected={:.17g}", actual, expected);
+    };
+    check("w", box.w, w);
+    check("h", box.h, h);
+    check("d", box.d, d);
+    check("ic", box.ic, ic);
+    check("sk", box.sk, sk);
+    check("dx", box.dx, dx);
+    check("rscale", box.rscale, rscale);
+    check("scale", box.scale, scale);
+}
+
 } // namespace
 
 suite native_common_scripts_factory = [] {
@@ -217,115 +264,130 @@ suite native_common_scripts_factory = [] {
         expect(data.numScripts == 1_u);
         expect(data.numPrescripts == 1_u);
         expect(w.firstPrescript() == 4_u);
-        const auto uvq = w.getUVQ();
+        const auto uvq = w.getCombinedUV();
         expect(eq(uvq[0], .42000000000000004));
         expect(eq(uvq[1], -.09999999999999992));
         expect(eq(uvq[2], .12_d));
     };
 
     "real_newcm_provider_runs_independent_source_script_trees"_test = [] {
-        const auto bundle = folia::math::fonts::makeNewcmFontData();
+        // Provider lifetime is owned by this test. LayoutJob and every wrapper die
+        // before `bundle`; no test-lambda reference capture keeps a local font bundle.
+        auto bundle = folia::math::fonts::makeNewcmFontData();
         Target target;
+        const auto wrappers = sourceRootCatalog();
+        auto makeLinebreaks = [](CommonWrapperFactory &factory) -> std::unique_ptr<Linebreaks> {
+            return std::make_unique<LinebreakVisitor>(factory);
+        };
+        constexpr double scriptScale = 0.7071067811865475;
+
         {
             mml::MmlDocument d;
-            auto jax = makeJax(d, target, bundle.fonts, false);
-            auto kids = subChildren(d);
-            auto &node = d.factory().make(mml::NodeKind::msub, {}, kids);
-            node.setInheritedAttributes();
-            node.setTeXclass(nullptr);
-            d.setRoot(node);
-            auto &w = dynamic_cast<CommonMsub &>(jax.factory().wrap(node));
-            const auto offset = w.getOffset();
-            const auto &params = jax.face().parameters;
-            const auto base = w.baseCore->getOuterBBox();
-            const auto script = w.scriptChild()->getOuterBBox();
-            const double expected = std::max(
-                {w.baseCharZero(w.baseCore->getLineBBox(w.baseCore->breakCount())->d * w.baseScale +
-                                params.required("sub_drop") * script.rscale),
-                 params.required("sub1"),
-                 script.h * script.rscale - .8 * params.required("x_height")});
-            expect(eq(offset[1], -expected));
-            expect(base.rscale == 1.0_d);
-        }
-        {
-            mml::MmlDocument d;
-            auto jax = makeJax(d, target, bundle.fonts, false);
-            auto &baseNode = token(d, mml::NodeKind::mi, u"x");
-            auto &supNode = token(d, mml::NodeKind::mi, u"2");
-            mml::MmlNode *kids[]{&baseNode, &supNode};
-            auto &node = d.factory().make(mml::NodeKind::msup, {}, kids);
-            node.setInheritedAttributes();
-            node.setTeXclass(nullptr);
-            d.setRoot(node);
-            auto &w = dynamic_cast<CommonMsup &>(jax.factory().wrap(node));
-            const auto offset = w.getOffset();
-            const auto &params = jax.face().parameters;
-            const auto script = w.scriptChild()->getOuterBBox();
-            const auto line = w.baseCore->getLineBBox(w.baseCore->breakCount());
-            const double expected =
-                std::max({w.baseCharZero(line->h * w.baseScale -
-                                         params.required("sup_drop") * script.rscale),
-                          params.required("sup2"),
-                          script.d * script.rscale + .25 * params.required("x_height")});
-            expect(eq(offset[0], w.getAdjustedIc() - (w.baseRemoveIc ? 0 : w.baseIc)));
-            expect(eq(offset[1], expected));
-        }
-        {
-            mml::MmlDocument d;
-            auto jax = makeJax(d, target, bundle.fonts, false);
-            auto &baseNode = token(d, mml::NodeKind::mi, u"x");
-            auto &subNode = token(d, mml::NodeKind::mi, u"i");
-            auto &supNode = token(d, mml::NodeKind::mi, u"2");
-            mml::MmlNode *kids[]{&baseNode, &subNode, &supNode};
-            auto &node = d.factory().make(mml::NodeKind::msubsup, {}, kids);
-            node.setInheritedAttributes();
-            node.setTeXclass(nullptr);
-            d.setRoot(node);
-            auto &w = dynamic_cast<CommonMsubsup &>(jax.factory().wrap(node));
-            const auto &params = jax.face().parameters;
-            const auto sub = w.subChild()->getOuterBBox();
-            const auto sup = w.supChild()->getOuterBBox();
-            const auto line = w.baseCore->getLineBBox(w.baseCore->breakCount());
-            double u = w.getU();
-            double v = std::max(
-                w.baseCharZero(line->d * w.baseScale + params.required("sub_drop") * sub.rscale),
-                params.required("sub2"));
-            const double supDepth = sup.d * sup.rscale, subHeight = sub.h * sub.rscale;
-            double q = u - supDepth - (subHeight - v);
-            const double clearance = 3 * params.required("rule_thickness");
-            if (q < clearance) {
-                v += clearance - q;
-                const double correction = .8 * params.required("x_height") - (u - supDepth);
-                if (correction > 0) {
-                    u += correction;
-                    v -= correction;
-                }
-            }
-            q = u - supDepth - (subHeight - v);
-            const auto uvq = w.getUVQ();
-            expect(eq(uvq[0], u));
-            expect(eq(uvq[1], -v));
-            expect(eq(uvq[2], q));
-        }
-        {
-            mml::MmlDocument d;
-            auto jax = makeJax(d, target, bundle.fonts, false);
             auto &base = token(d, mml::NodeKind::mi, u"x");
             auto &sub = token(d, mml::NodeKind::mi, u"i");
-            auto &sup = token(d, mml::NodeKind::mi, u"2");
+            mml::MmlNode *children[]{&base, &sub};
+            auto &node = d.factory().make(mml::NodeKind::msub, {}, children);
+            auto &root = sourceMathRoot(d, node);
+            LayoutJob job(d, sourceScriptConfig(bundle.fonts), target, wrappers, makeLinebreaks);
+            auto &math = dynamic_cast<CommonMath &>(job.build());
+            expect(root.properties().layout.inline_marked.value_or(false));
+            expect(root.properties().layout.inline_forced.value_or(false));
+            auto &row = dynamic_cast<CommonInferredMrow &>(*math.childNodes[0]);
+            auto &w = dynamic_cast<CommonMsub &>(*row.childNodes[0]);
+            const auto offset = w.getOffset();
+            expect(offset[0] == 0.0);
+            expect(offset[1] == -0.15);
+            expectSourceBox(*w.childNodes[0], .572, .442, .011, 0, .043, 0, 1, 1);
+            expectSourceBox(*w.childNodes[1], .345, .661, .011, 0, .074, 0, scriptScale,
+                            scriptScale);
+            expectSourceBox(w, .8989518395093589, .442, .15777817459305202, 0, 0, 0, 1, 1);
+            expectSourceBox(math, .8989518395093589, .442, .15777817459305202, 0, 0, 0, 1, 1);
+        }
+        {
+            mml::MmlDocument d;
+            auto &base = token(d, mml::NodeKind::mi, u"x");
+            auto &sup = token(d, mml::NodeKind::mn, u"2");
+            mml::MmlNode *children[]{&base, &sup};
+            auto &node = d.factory().make(mml::NodeKind::msup, {}, children);
+            auto &root = sourceMathRoot(d, node);
+            LayoutJob job(d, sourceScriptConfig(bundle.fonts), target, wrappers, makeLinebreaks);
+            auto &math = dynamic_cast<CommonMath &>(job.build());
+            expect(root.properties().layout.inline_marked.value_or(false));
+            expect(root.properties().layout.inline_forced.value_or(false));
+            auto &row = dynamic_cast<CommonInferredMrow &>(*math.childNodes[0]);
+            auto &w = dynamic_cast<CommonMsup &>(*row.childNodes[0]);
+            const auto offset = w.getOffset();
+            expect(offset[0] == 0.0);
+            expect(offset[1] == .363);
+            expectSourceBox(*w.childNodes[0], .572, .442, .011, 0, .043, 0, 1, 1);
+            expectSourceBox(*w.childNodes[1], .5, .666, 0, 0, 0, 0, scriptScale, scriptScale);
+            expectSourceBox(w, 1.0085533905932738, .8339331162702406, .011, 0, 0, 0, 1, 1);
+            expectSourceBox(math, 1.0085533905932738, .8339331162702406, .011, 0, 0, 0, 1, 1);
+        }
+        {
+            mml::MmlDocument d;
+            auto &base = token(d, mml::NodeKind::mi, u"x");
+            auto &sub = token(d, mml::NodeKind::mi, u"i");
+            auto &sup = token(d, mml::NodeKind::mn, u"2");
+            mml::MmlNode *children[]{&base, &sub, &sup};
+            auto &node = d.factory().make(mml::NodeKind::msubsup, {}, children);
+            auto &root = sourceMathRoot(d, node);
+            LayoutJob job(d, sourceScriptConfig(bundle.fonts), target, wrappers, makeLinebreaks);
+            auto &math = dynamic_cast<CommonMath &>(job.build());
+            expect(root.properties().layout.inline_marked.value_or(false));
+            expect(root.properties().layout.inline_forced.value_or(false));
+            auto &row = dynamic_cast<CommonInferredMrow &>(*math.childNodes[0]);
+            auto &w = dynamic_cast<CommonMsubsup &>(*row.childNodes[0]);
+            const auto uvq = w.getUVQ();
+            expect(uvq[0] == .363);
+            expect(uvq[1] == -.2843975823643079);
+            expect(uvq[2] == .18);
+            expectSourceBox(*w.childNodes[0], .572, .442, .011, 0, .043, 0, 1, 1);
+            expectSourceBox(*w.childNodes[1], .345, .661, .011, 0, .074, 0, scriptScale,
+                            scriptScale);
+            expectSourceBox(*w.childNodes[2], .5, .666, 0, 0, 0, 0, scriptScale, scriptScale);
+            expectSourceBox(w, 1.0085533905932738, .8339331162702406, .2921757569573599, 0, 0, 0, 1,
+                            1);
+            expectSourceBox(math, 1.0085533905932738, .8339331162702406, .2921757569573599, 0, 0, 0,
+                            1, 1);
+        }
+        {
+            mml::MmlDocument d;
+            auto &base = token(d, mml::NodeKind::mi, u"x");
+            auto &sub = token(d, mml::NodeKind::mi, u"i");
+            auto &sup = token(d, mml::NodeKind::mn, u"2");
             auto &marker = d.factory().make(mml::NodeKind::mprescripts);
             auto &psub = token(d, mml::NodeKind::mi, u"j");
-            auto &psup = token(d, mml::NodeKind::mi, u"3");
-            mml::MmlNode *nodes[]{&base, &sub, &sup, &marker, &psub, &psup};
-            auto &node = d.factory().make(mml::NodeKind::mmultiscripts, {}, nodes);
-            node.setInheritedAttributes();
-            node.setTeXclass(nullptr);
-            d.setRoot(node);
-            auto &w = dynamic_cast<CommonMmultiscripts &>(jax.factory().wrap(node));
-            expect(w.scriptsData().numScripts == 1_u);
-            expect(w.scriptsData().numPrescripts == 1_u);
-            expect(std::isfinite(w.getUVQ()[0]));
-            expect(std::isfinite(w.getUVQ()[1]));
+            auto &psup = token(d, mml::NodeKind::mn, u"3");
+            mml::MmlNode *children[]{&base, &sub, &sup, &marker, &psub, &psup};
+            auto &node = d.factory().make(mml::NodeKind::mmultiscripts, {}, children);
+            auto &root = sourceMathRoot(d, node);
+            LayoutJob job(d, sourceScriptConfig(bundle.fonts), target, wrappers, makeLinebreaks);
+            auto &math = dynamic_cast<CommonMath &>(job.build());
+            expect(root.properties().layout.inline_marked.value_or(false));
+            expect(root.properties().layout.inline_forced.value_or(false));
+            auto &row = dynamic_cast<CommonInferredMrow &>(*math.childNodes[0]);
+            auto &w = dynamic_cast<CommonMmultiscripts &>(*row.childNodes[0]);
+            const auto &data = w.scriptsData();
+            expect(data.numScripts == 1_u);
+            expect(data.numPrescripts == 1_u);
+            expect(w.firstPrescript() == 4_u);
+            const auto uvq = w.getCombinedUV();
+            expect(uvq[0] == .36915634918610407);
+            expect(uvq[1] == -.29379758236430786);
+            expect(uvq[2] == .18);
+            expectSourceBox(*w.childNodes[0], .572, .442, .011, 0, .043, 0, 1, 1);
+            expectSourceBox(*w.childNodes[1], .345, .661, .011, 0, .074, 0, scriptScale,
+                            scriptScale);
+            expectSourceBox(*w.childNodes[2], .5, .666, 0, 0, 0, 0, scriptScale, scriptScale);
+            expectSourceBox(*w.childNodes[3], 0, 0, 0, 0, 0, 0, 1, 1);
+            expectSourceBox(*w.childNodes[4], .412, .661, .205, 0, .153, 0, scriptScale,
+                            scriptScale);
+            expectSourceBox(*w.childNodes[5], .5, .666, .022, 0, 0, 0, scriptScale, scriptScale);
+            expectSourceBox(w, 1.3791067811865474, .8400894654563447, .43875447250755006, 0, 0, 0,
+                            1, 1);
+            expectSourceBox(math, 1.3791067811865474, .8400894654563447, .43875447250755006, 0, 0,
+                            0, 1, 1);
         }
     };
 };
