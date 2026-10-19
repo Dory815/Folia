@@ -123,6 +123,11 @@ void MmlContextBindings::initialize(util::RuntimeModules& runtimeModules){
             if(!self)throw Exception("TypeError",u"MML Context binding owner has expired");
             return self->nodes_.resolve(object);
         },
+        [weakOwner](ObjectRef object,MmlNode& node){
+            const auto self=weakOwner.lock();
+            if(!self)throw Exception("TypeError",u"MML Context binding owner has expired");
+            return self->resolveProductOwner(object,node);
+        },
         [weakOwner](ObjectRef object,MmlNode& node,const std::shared_ptr<MmlFactory>& owner){
             const auto self=weakOwner.lock();if(!self)throw Exception("TypeError",u"MML Context binding owner has expired");
             (void)self->bindNode(object,node,owner);
@@ -229,6 +234,16 @@ MmlFactoryContextMethods& MmlContextBindings::factoryMethods(){return *factoryMe
 MmlFactoryContextFields& MmlContextBindings::factoryFields(){return *factoryFields_;}
 MmlNodeContextMethods& MmlContextBindings::nodeMethods(){return *nodeMethods_;}
 MmlSourceAllocator& MmlContextBindings::sourceAllocator(){return *sourceAllocator_;}
+std::shared_ptr<MmlFactory> MmlContextBindings::resolveProductOwner(ObjectRef object,MmlNode& node)const{
+    if(nodes_.resolve(object)!=&node)
+        throw Exception("TypeError",u"MML receiver does not resolve to its canonical native product");
+    const auto* binding=std::any_cast<NativeBindingPayload<MmlNode*>>(
+        &std::as_const(context_).payload(object));
+    if(!binding||binding->identity!=&node||!binding->lifetime)
+        throw Exception("TypeError",u"MML receiver has no retained native allocation owner");
+    // bindNode stores the actual MmlFactory owner in this canonical payload.
+    return std::static_pointer_cast<MmlFactory>(binding->lifetime);
+}
 MmlNode& MmlContextBindings::bindNode(ObjectRef identity,MmlNode& node,const std::shared_ptr<MmlFactory>& owner){
     if(!owner)throw Exception("TypeError",u"MML node requires its actual native factory owner");
     if(const auto existing=nodes_.find(&node);existing&&*existing!=identity)

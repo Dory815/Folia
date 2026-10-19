@@ -11,6 +11,7 @@ export namespace folia::math::mml {
 class MmlSourceAllocator {
 public:
     using ResolveNode=std::function<MmlNode*(options::ObjectRef)>;
+    using ResolveProductOwner=std::function<std::shared_ptr<MmlFactory>(options::ObjectRef,MmlNode&)>;
     // Canonical, idempotent Context binding callback; the backend's adopt
     // hook uses this same callback when a descriptor produces a new node.
     using BindProduct=std::function<void(options::ObjectRef,MmlNode&,
@@ -20,13 +21,14 @@ private:
     options::Context& context_;
     std::shared_ptr<MmlFactory> backend_;
     ResolveNode resolveNode_;
+    ResolveProductOwner resolveProductOwner_;
     BindProduct bindProduct_;
     InitializeTreeBase initializeTreeBase_;
     std::weak_ptr<std::atomic_bool> contextLease_;
     void requireActive()const;
 public:
     MmlSourceAllocator(options::Context&,std::shared_ptr<MmlFactory>,
-        std::weak_ptr<std::atomic_bool>,ResolveNode,BindProduct,InitializeTreeBase);
+        std::weak_ptr<std::atomic_bool>,ResolveNode,ResolveProductOwner,BindProduct,InitializeTreeBase);
     MmlSourceAllocator(const MmlSourceAllocator&)=delete;
     MmlSourceAllocator& operator=(const MmlSourceAllocator&)=delete;
     MmlFactory& backend()const;

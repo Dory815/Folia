@@ -39,6 +39,7 @@ private:
                        std::shared_ptr<options::MapContextBindings>);
     void initialize(util::RuntimeModules&);
     void rollbackInitialization() noexcept;
+    std::shared_ptr<MmlFactory> resolveProductOwner(options::ObjectRef,MmlNode&)const;
 public:
     static std::shared_ptr<MmlContextBindings> create(options::Context&,
         util::RuntimeModules&,
