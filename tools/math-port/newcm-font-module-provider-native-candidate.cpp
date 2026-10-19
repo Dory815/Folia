@@ -3,7 +3,13 @@
 import std;
 import folia.math.fonts.newcm_font_data;
 import folia.math.fonts.newcm_font_module_provider;
+import folia.math.util.regexp_binding;
+import folia.math.util.option_functions;
 import folia.math.util.property_host;
+import folia.math.util.context_property_bindings;
+import folia.math.output.common.font_data_bindings;
+import folia.math.output.common.font_data_options;
+import folia.math.util.map_bindings;
 
 namespace {
 using namespace folia::math;
@@ -86,6 +92,39 @@ void sample(std::ostream& out,common::FontData& font,std::string_view name,std::
     auto value=font.getChar("normal",cp);
     if(value)property(out,*value);else out<<"{\"$\":\"undefined\"}";
 }
+options::ObjectRef registerNewcmSourceClass(options::Context& context,
+    common::FontDataContextBindings& identities,ContextPropertyBindings& properties,
+    options::MapContextBindings& maps,
+    const std::shared_ptr<fonts::NewcmFontDataClass>& owner,
+    const std::shared_ptr<common::FontLoadHost>& hostAnchor){
+    auto constructor=identities.registerClass(u"MathJaxNewcmFont",owner,*hostAnchor,
+        std::static_pointer_cast<void>(hostAnchor),
+        [](common::FontDataClass& actual,common::FontLoadHost& host,
+           options::Context& cx,options::Value supplied){
+            return std::make_shared<fonts::NewcmFontData>(
+                static_cast<fonts::NewcmFontDataClass&>(actual),host,cx,
+                std::move(supplied));
+        },{},[&properties](const std::shared_ptr<common::FontData>& font,
+                          options::ObjectRef instance){
+            font->bindSourceIdentity(properties,instance);
+        });
+    // The Source class identity must exist before its static data and dynamic
+    // options fields are initialized, as in the production FontData surface.
+    owner->bindSourceIdentity(properties,constructor,maps);
+    owner->dynamicExtensions=options::Value(maps.create());
+    context.bindData(constructor,options::Key(u"dynamicExtensions"),
+        std::make_shared<options::NativeDataField>(std::static_pointer_cast<void>(owner),
+            [owner]{return owner->dynamicExtensions;},
+            [owner](options::Value value){owner->dynamicExtensions=std::move(value);}));
+    owner->initializeSourceData();
+    common::bindSourceOptionArrayField(properties,constructor,std::static_pointer_cast<void>(owner),
+        u"defaultVariants",owner->defaultVariants);
+    common::bindSourceOptionArrayField(properties,constructor,std::static_pointer_cast<void>(owner),
+        u"defaultSizeVariants",owner->defaultSizeVariants);
+    common::bindSourceOptionArrayField(properties,constructor,std::static_pointer_cast<void>(owner),
+        u"defaultStretchVariants",owner->defaultStretchVariants);
+    return constructor;
+}
 struct AliasObservation {
     std::string first,before,afterFirst,afterSecond,module;
     bool changedAfterFirst=false,stableAfterSecond=false,resolvedSame=false;
@@ -97,11 +136,19 @@ std::string setupType(const common::DynamicFileRef& dynamic){
 AliasObservation aliasObservation(std::string first){
     Context context;
     auto fontClass=std::make_shared<fonts::NewcmFontDataClass>(context);
-    fontClass->initializeSourceData();
+    regexp_host::RegExpBindings regexp(context);
+    OptionFunctionBindings functions(context);
+    ContextPropertyBindings properties(context,functions);
+    common::FontDataContextBindings identities(context);
+    options::MapContextBindings maps(context);
+    auto hostAnchor=std::make_shared<common::FontLoadHost>();
+    hostAnchor->regexp=&regexp;
+    auto classConstructor=registerNewcmSourceClass(context,identities,properties,maps,
+        fontClass,hostAnchor);
     auto queue=std::make_shared<async::JobQueue>();
     auto provider=std::make_shared<fonts::NewcmFontModuleProvider>(fontClass,queue);
-    common::FontLoadHost host;host.queue=queue;
-    auto font=std::make_shared<fonts::NewcmFontData>(*fontClass,host,context);
+    hostAnchor->queue=queue;
+    auto font=identities.resolve(context.construct(classConstructor));
     const auto found=fontClass->dynamicFiles.find("arrows");
     if(found==fontClass->dynamicFiles.end()||!found->second)
         throw std::runtime_error("NewCM arrows module is absent");
@@ -160,41 +207,72 @@ int main(){
     try{
         Context context;
         auto fontClass=std::make_shared<fonts::NewcmFontDataClass>(context);
-        fontClass->initializeSourceData();
+        regexp_host::RegExpBindings regexp(context);
+        OptionFunctionBindings functions(context);
+        ContextPropertyBindings properties(context,functions);
+        common::FontDataContextBindings identities(context);
+        options::MapContextBindings maps(context);
+        auto hostAnchor=std::make_shared<common::FontLoadHost>();
+        auto& host=*hostAnchor;
+        host.regexp=&regexp;
         auto queue=std::make_shared<async::JobQueue>();
+        host.queue=queue;
+        host.asyncIsSynchronous=[] {return true;};
+        host.warn=[](const std::any& reason){
+            const auto* failure=std::any_cast<std::exception_ptr>(&reason);
+            if(!failure){std::cerr<<"font load warning: "<<reason.type().name()<<'\n';return;}
+            try{std::rethrow_exception(*failure);}
+            catch(const options::Exception& error){
+                std::cerr<<"font load warning: "<<error.name<<": "
+                         <<property_host::debugText(error.message)<<'\n';
+            }catch(const std::exception& error){
+                std::cerr<<"font load warning: "<<error.what()<<'\n';
+            }catch(...){std::cerr<<"font load warning: non-standard exception\n";}
+        };
+        phase="register canonical NewCM Source class";
+        const auto classConstructor=registerNewcmSourceClass(context,identities,
+            properties,maps,fontClass,hostAnchor);
         auto provider=std::make_shared<fonts::NewcmFontModuleProvider>(fontClass,queue);
-        common::FontLoadHost host;host.queue=queue;host.asyncIsSynchronous=[] {return true;};
+        phase="wire NewCM module provider";
         std::vector<Event> trace;
-        host.syncLoad=[provider,&trace](common::FontData& font,
+        host.syncLoad=[provider,&trace](common::FontData& actualFont,
             const common::DynamicFileRef& dynamic,std::string request){
             trace.push_back({"request",request,{}});
-            provider->loadSync(font,dynamic,request);
+            provider->loadSync(actualFont,dynamic,request);
             trace.push_back({"evaluated",request,dynamic&&dynamic->setup?"function":"undefined"});
         };
-        auto font=std::make_shared<fonts::NewcmFontData>(*fontClass,host,context);
+        phase="construct canonical NewCM Source instance";
+        auto fontOwner=identities.resolve(context.construct(classConstructor));
+        auto& font=*fontOwner;
         const auto options=std::get<ObjectRef>(fontClass->OPTIONS.data);
         const auto sourcePrefix=property_host::debugText(std::get<std::u16string>(
             context.get(Value(options),Key(u"dynamicPrefix")).data));
 
         std::ostringstream beforeOut,afterOut;
         statuses(beforeOut,fontClass->dynamicFiles,false);
-        font->loadDynamicFilesSync();
+        phase="load all dynamic font files synchronously";
+        font.loadDynamicFilesSync();
         statuses(afterOut,fontClass->dynamicFiles,true);
         std::size_t glyphCount=0;
         for(const auto&[name,_]:fontClass->defaultChars){
-            if(const auto variant=font->getVariant(name);variant&&variant->get().chars)
+            if(const auto variant=font.getVariant(name);variant&&variant->get().chars)
                 glyphCount+=variant->get().chars->own.size();
         }
         std::cout<<"{\"source\":\"MathJax 4.1.3 / fb987178c2d279a99b0db5ea02e751691703955e\",\"sourcePrefix\":";
         quote(std::cout,sourcePrefix);std::cout<<",\"initialModuleCount\":"<<fontClass->dynamicFiles.size()<<",\"before\":";
         std::cout<<beforeOut.str()<<",\"requests\":";events(std::cout,trace);
         std::cout<<",\"after\":"<<afterOut.str()<<",\"loadedGlyphCount\":"<<glyphCount<<",\"samples\":{";
-        sample(std::cout,*font,"arrows",0x219C);std::cout<<',';
-        sample(std::cout,*font,"symbols",0x2200);std::cout<<',';
-        sample(std::cout,*font,"monospace",0x1D400);std::cout<<',';
-        sample(std::cout,*font,"sans-serif",0x1D5D4);std::cout<<"},\"aliasCache\":";
+        sample(std::cout,font,"arrows",0x219C);std::cout<<',';
+        sample(std::cout,font,"symbols",0x2200);std::cout<<',';
+        sample(std::cout,font,"monospace",0x1D400);std::cout<<',';
+        sample(std::cout,font,"sans-serif",0x1D5D4);std::cout<<"},\"aliasCache\":";
+        phase="observe dynamic module alias cache";
         aliases(std::cout);std::cout<<"}\n";
         return 0;
+    }catch(const Exception& error){
+        std::cerr<<"newcm-font-module-provider candidate failed during "<<phase
+                 <<": "<<error.name<<":"<<property_host::debugText(error.message)<<'\n';
+        return 1;
     }catch(const std::exception& error){
         std::cerr<<"newcm-font-module-provider candidate failed during "<<phase<<": "<<error.what()<<'\n';
         return 1;
