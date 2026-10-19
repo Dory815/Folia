@@ -4,6 +4,16 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
+Latest completed focused evaluation (Gate217): all 61 targets compile with
+2,181 unchanged registered input entries and at most four compile jobs. Full
+Host passes 2,821 assertions; focused property-copy, TextMacros preprocessor,
+ParseOptions.clear and Attributes constructor checks pass. Six mfenced tests
+complete with six setter-call sequence failures, without reproducing the Core
+crash. Package comparisons remain incomplete: next-six matches 18/20 and font
+packages 13/16. No complete layout/SVG or lifetime acceptance was rerun. See
+`evidence/shared-gates214-217.md`. Later callback/construction fixes await a new
+build; Folia integration remains pending.
+
 Latest completed full evaluation (Gate213): all 61 targets compile with 2,179
 unchanged input entries through evaluation, using at most four compile jobs.
 API matches 9/9 and BBoldx SVG/glyph paths match 6/6. Parser, Regexp and
@@ -12,8 +22,9 @@ fail. Common layout, full SVG, paired Scene and both request-lifetime probes
 exceed their existing time limits, so this gate establishes no complete layout
 or SVG parity result. Package captures complete 24/25 and comparisons pass
 15/20. See `evidence/shared-g213.md`. Source-confirmed fixture corrections,
-fallback property-copy snapshots and timing diagnostics are applied afterward
-and await the next build. Folia integration remains pending.
+fallback property-copy snapshots and timing diagnostics were applied afterward;
+Gates216–217 provide the subsequent focused results above. Folia integration
+remains pending.
 
 Previous completed full evaluation (Gate212): all 61 targets compile with 2,179
 unchanged inputs through evaluation. API matches 9/9, Common layout 75/75,
