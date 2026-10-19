@@ -830,6 +830,10 @@ Context::RecordCounts Context::recordCountsForDiagnostics() const noexcept {
             };
             std::string group="kind="+std::to_string(static_cast<unsigned>(value.kind));
             group+=";payload="+(value.payload.has_value()?std::string(value.payload.type().name()):"-");
+            // This is the concrete callable target held by std::function, not
+            // a Source function name or a stable callsite identifier.
+            group+=";callableTarget="+(value.callable?std::string(value.callable.target_type().name()):"-");
+            group+=";constructTarget="+(value.construct?std::string(value.construct.target_type().name()):"-");
             group+=";recordView="+(value.nativeRecordView?std::string(typeid(*value.nativeRecordView).name()):"-");
             group+=";arrayView="+(value.nativeIndexedView?std::string(typeid(*value.nativeIndexedView).name()):"-");
             std::string callableName;
