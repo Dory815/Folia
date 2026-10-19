@@ -1,0 +1,4441 @@
+{
+  "upstream": {
+    "version": "4.1.3",
+    "commit": "fb987178c2d279a99b0db5ea02e751691703955e"
+  },
+  "sources": [
+    {
+      "file": "ts/input/tex/boldsymbol/BoldsymbolConfiguration.ts",
+      "sha256": "f017f7d31a5f6bf17a2d9d2468cf515b1f7e5948009a55304578bb93ffddb334"
+    },
+    {
+      "file": "ts/input/tex/configmacros/ConfigMacrosConfiguration.ts",
+      "sha256": "1578e2cec78cd03e83dff7439c0b2eedbb4564cef2002dbd2dba528c25197c7a"
+    },
+    {
+      "file": "cjs/input/tex/boldsymbol/BoldsymbolConfiguration.js",
+      "sha256": "b552f0c41e5929e19d967897118cb92960f873eb7a8a21e467d532158f6dfccb"
+    },
+    {
+      "file": "cjs/input/tex/configmacros/ConfigMacrosConfiguration.js",
+      "sha256": "050cfb81fdc2914459e6c4128ab2ba8a3162207f72db921351cc1fb3320914a0"
+    }
+  ],
+  "cases": [
+    {
+      "name": "bold:single-token",
+      "input": "\\boldsymbol{x}",
+      "packages": [
+        "base",
+        "boldsymbol"
+      ],
+      "options": {},
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\boldsymbol{x}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "\\boldsymbol{x}",
+                  "mathvariant": "bold-italic"
+                },
+                "properties": {
+                  "in-lists": "fixBold"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-active-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-env-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "boldsymbol",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": []
+      }
+    },
+    {
+      "name": "bold:greek-and-operator",
+      "input": "\\boldsymbol{\\alpha+x}",
+      "packages": [
+        "base",
+        "boldsymbol"
+      ],
+      "options": {},
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\boldsymbol{\\alpha+x}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "α",
+                "attrs": {
+                  "data-latex": "\\alpha",
+                  "mathvariant": "bold-italic"
+                },
+                "properties": {
+                  "in-lists": "fixBold"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "α",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+",
+                  "mathvariant": "bold"
+                },
+                "properties": {
+                  "in-lists": "fixBold,fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "\\boldsymbol{\\alpha+x}",
+                  "mathvariant": "bold-italic"
+                },
+                "properties": {
+                  "in-lists": "fixBold"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-active-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-env-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "boldsymbol",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": []
+      }
+    },
+    {
+      "name": "bold:nested-scope",
+      "input": "\\boldsymbol{x+\\boldsymbol{y}}+z",
+      "packages": [
+        "base",
+        "boldsymbol"
+      ],
+      "options": {},
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\boldsymbol{x+\\boldsymbol{y}}+z",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "x",
+                  "mathvariant": "bold-italic"
+                },
+                "properties": {
+                  "in-lists": "fixBold"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+",
+                  "mathvariant": "bold"
+                },
+                "properties": {
+                  "in-lists": "fixBold,fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "y",
+                "attrs": {
+                  "data-latex": "\\boldsymbol{x+\\boldsymbol{y}}",
+                  "mathvariant": "bold-italic"
+                },
+                "properties": {
+                  "in-lists": "fixBold"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "y",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "z",
+                "attrs": {
+                  "data-latex": "z"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "z",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-active-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-env-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "boldsymbol",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": []
+      }
+    },
+    {
+      "name": "bold:text-exclusion",
+      "input": "\\boldsymbol{\\text{abc}+x}",
+      "packages": [
+        "base",
+        "boldsymbol"
+      ],
+      "options": {},
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\boldsymbol{\\text{abc}+x}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mtext",
+                "text": "abc",
+                "attrs": {
+                  "data-latex": "\\text{abc}"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "abc",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+",
+                  "mathvariant": "bold"
+                },
+                "properties": {
+                  "in-lists": "fixBold,fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "\\boldsymbol{\\text{abc}+x}",
+                  "mathvariant": "bold-italic"
+                },
+                "properties": {
+                  "in-lists": "fixBold"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-active-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-env-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "boldsymbol",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": []
+      }
+    },
+    {
+      "name": "bold:variant-rewrites",
+      "input": "\\boldsymbol{\\mathit{x}+\\mathfrak{y}+\\mathcal{z}}",
+      "packages": [
+        "base",
+        "boldsymbol"
+      ],
+      "options": {},
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\boldsymbol{\\mathit{x}+\\mathfrak{y}+\\mathcal{z}}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "TeXAtom",
+                "text": null,
+                "attrs": {
+                  "data-latex": "\\mathit{x}"
+                },
+                "properties": {
+                  "texClass": 0
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "text": null,
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mi",
+                        "text": "x",
+                        "attrs": {
+                          "mathvariant": "bold-italic",
+                          "data-latex": "x"
+                        },
+                        "properties": {
+                          "in-lists": "fixBold",
+                          "ignore-variant": true
+                        },
+                        "children": [
+                          {
+                            "kind": "text",
+                            "text": "x",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+",
+                  "mathvariant": "bold"
+                },
+                "properties": {
+                  "in-lists": "fixBold,fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "TeXAtom",
+                "text": null,
+                "attrs": {
+                  "data-latex": "\\mathfrak{y}"
+                },
+                "properties": {
+                  "texClass": 0
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "text": null,
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mi",
+                        "text": "y",
+                        "attrs": {
+                          "mathvariant": "bold-fraktur",
+                          "data-latex": "y"
+                        },
+                        "properties": {
+                          "in-lists": "fixBold"
+                        },
+                        "children": [
+                          {
+                            "kind": "text",
+                            "text": "y",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+",
+                  "mathvariant": "bold"
+                },
+                "properties": {
+                  "in-lists": "fixBold,fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "TeXAtom",
+                "text": null,
+                "attrs": {
+                  "data-latex": "\\boldsymbol{\\mathit{x}+\\mathfrak{y}+\\mathcal{z}}"
+                },
+                "properties": {
+                  "texClass": 0
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "text": null,
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mi",
+                        "text": "z",
+                        "attrs": {
+                          "mathvariant": "-tex-bold-calligraphic",
+                          "data-latex": "z"
+                        },
+                        "properties": {
+                          "in-lists": "fixBold",
+                          "ignore-variant": true
+                        },
+                        "children": [
+                          {
+                            "kind": "text",
+                            "text": "z",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-active-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-env-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "boldsymbol",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": []
+      }
+    },
+    {
+      "name": "bold:unsupported-variant-retained",
+      "input": "\\boldsymbol{\\mathbb{R}}",
+      "packages": [
+        "base",
+        "boldsymbol"
+      ],
+      "options": {},
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\boldsymbol{\\mathbb{R}}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "TeXAtom",
+                "text": null,
+                "attrs": {
+                  "data-latex": "\\boldsymbol{\\mathbb{R}}"
+                },
+                "properties": {
+                  "texClass": 0
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "text": null,
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mi",
+                        "text": "R",
+                        "attrs": {
+                          "mathvariant": "double-struck",
+                          "data-latex": "R"
+                        },
+                        "properties": {
+                          "in-lists": "fixBold"
+                        },
+                        "children": [
+                          {
+                            "kind": "text",
+                            "text": "R",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-active-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          },
+          "configmacros-env-map": {
+            "same": false,
+            "entries": {
+              "$": "undefined"
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "boldsymbol",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": []
+      }
+    },
+    {
+      "name": "configmacros:string-macro",
+      "input": "\\foo",
+      "packages": [
+        "base",
+        "newcommand",
+        "configmacros"
+      ],
+      "options": {
+        "macros": {
+          "foo": "x+y"
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\foo",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "x"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "y",
+                "attrs": {
+                  "data-latex": "y"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "y",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "foo",
+                  {
+                    "_token": "foo",
+                    "_func": {
+                      "$": "function",
+                      "name": "Macro",
+                      "length": 5
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        "x+y"
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "new-Command",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "Newcommand-macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "new-Environment",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "configmacros:array-macro",
+      "input": "\\foo",
+      "packages": [
+        "base",
+        "newcommand",
+        "configmacros"
+      ],
+      "options": {
+        "macros": {
+          "foo": {
+            "$": "array",
+            "items": [
+              "x+y"
+            ]
+          }
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\foo",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "x"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "y",
+                "attrs": {
+                  "data-latex": "y"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "y",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "foo",
+                  {
+                    "_token": "foo",
+                    "_func": {
+                      "$": "function",
+                      "name": "Macro",
+                      "length": 5
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        "x+y"
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "new-Command",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "Newcommand-macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "new-Environment",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "configmacros:parameter-template",
+      "input": "\\foo{a}{b}",
+      "packages": [
+        "base",
+        "newcommand",
+        "configmacros"
+      ],
+      "options": {
+        "macros": {
+          "foo": {
+            "$": "array",
+            "items": [
+              2,
+              "#1+#2"
+            ]
+          }
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\foo{a}{b}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "TeXAtom",
+                "text": null,
+                "attrs": {
+                  "data-latex": "{a}"
+                },
+                "properties": {
+                  "texClass": 0
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "text": null,
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mi",
+                        "text": "a",
+                        "attrs": {
+                          "data-latex": "a"
+                        },
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "text": "a",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "TeXAtom",
+                "text": null,
+                "attrs": {
+                  "data-latex": "{b}"
+                },
+                "properties": {
+                  "texClass": 0
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "text": null,
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mi",
+                        "text": "b",
+                        "attrs": {
+                          "data-latex": "b"
+                        },
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "text": "b",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "foo",
+                  {
+                    "_token": "foo",
+                    "_func": {
+                      "$": "function",
+                      "name": "Macro",
+                      "length": 5
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        2,
+                        "#1+#2"
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "new-Command",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "Newcommand-macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "new-Environment",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "configmacros:optional-default",
+      "input": "\\foo{x}",
+      "packages": [
+        "base",
+        "newcommand",
+        "configmacros"
+      ],
+      "options": {
+        "macros": {
+          "foo": {
+            "$": "array",
+            "items": [
+              2,
+              "#1+#2",
+              "d"
+            ]
+          }
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\foo{x}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "TeXAtom",
+                "text": null,
+                "attrs": {
+                  "data-latex": "{x}"
+                },
+                "properties": {
+                  "texClass": 0
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "text": null,
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mi",
+                        "text": "x",
+                        "attrs": {
+                          "data-latex": "x"
+                        },
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "text": "x",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "foo",
+                  {
+                    "_token": "foo",
+                    "_func": {
+                      "$": "function",
+                      "name": "Macro",
+                      "length": 5
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        2,
+                        "#1+#2",
+                        "d"
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "new-Command",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "Newcommand-macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "new-Environment",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "configmacros:template-list",
+      "input": "\\foo a,b",
+      "packages": [
+        "base",
+        "newcommand",
+        "configmacros"
+      ],
+      "options": {
+        "macros": {
+          "foo": {
+            "$": "array",
+            "items": [
+              "#1+#2",
+              2,
+              {
+                "$": "array",
+                "items": [
+                  "",
+                  ","
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\foo a,b",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "a",
+                "attrs": {
+                  "data-latex": "a"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "a",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "b",
+                "attrs": {
+                  "data-latex": "b"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "b",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "foo",
+                  {
+                    "_token": "foo",
+                    "_func": {
+                      "$": "function",
+                      "name": "MacroWithTemplate",
+                      "length": 4
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        "#1+#2",
+                        2,
+                        "",
+                        ","
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "new-Command",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "Newcommand-macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "new-Environment",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "configmacros:active-character",
+      "input": "~",
+      "packages": [
+        "base",
+        "newcommand",
+        "configmacros"
+      ],
+      "options": {
+        "active": {
+          "~": "x+y"
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "~",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "x"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "y",
+                "attrs": {
+                  "data-latex": "y"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "y",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "~",
+                  {
+                    "_token": "~",
+                    "_func": {
+                      "$": "function",
+                      "name": "Macro",
+                      "length": 5
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        "x+y"
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "new-Command",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "Newcommand-macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "new-Environment",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "configmacros:configured-environment",
+      "input": "\\begin{xx}x\\end{xx}",
+      "packages": [
+        "base",
+        "newcommand",
+        "configmacros"
+      ],
+      "options": {
+        "environments": {
+          "xx": {
+            "$": "array",
+            "items": [
+              "a+",
+              "+b"
+            ]
+          }
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\begin{xx}x\\end{xx}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "a",
+                "attrs": {
+                  "data-latex": "a"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "a",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "x"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "b",
+                "attrs": {
+                  "data-latex": "b"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "b",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "xx",
+                  {
+                    "_token": "xx",
+                    "_func": {
+                      "$": "function",
+                      "name": "BeginEnv",
+                      "length": 6
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        true,
+                        "a+",
+                        "+b"
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "new-Command",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "Newcommand-macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "new-Environment",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "configmacros:environment-option-array",
+      "input": "\\begin{xx}{q}x\\end{xx}",
+      "packages": [
+        "base",
+        "newcommand",
+        "configmacros"
+      ],
+      "options": {
+        "environments": {
+          "xx": {
+            "$": "array",
+            "items": [
+              "#1+",
+              "+end",
+              1,
+              "d"
+            ]
+          }
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\begin{xx}{q}x\\end{xx}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "d",
+                "attrs": {
+                  "data-latex": "d"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "d",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "TeXAtom",
+                "text": null,
+                "attrs": {
+                  "data-latex": "{q}"
+                },
+                "properties": {
+                  "texClass": 0
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "text": null,
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mi",
+                        "text": "q",
+                        "attrs": {
+                          "data-latex": "q"
+                        },
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "text": "q",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "x"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "e",
+                "attrs": {
+                  "data-latex": "e"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "e",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "n",
+                "attrs": {
+                  "data-latex": "n"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "n",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "d",
+                "attrs": {
+                  "data-latex": "d"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "d",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "xx",
+                  {
+                    "_token": "xx",
+                    "_func": {
+                      "$": "function",
+                      "name": "BeginEnv",
+                      "length": 6
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        true,
+                        "#1+",
+                        "+end",
+                        1,
+                        "d"
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "new-Command",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "Newcommand-macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "new-Environment",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "configmacros:bad-macro-arity",
+      "input": "\\foo",
+      "packages": [
+        "base",
+        "newcommand",
+        "configmacros"
+      ],
+      "options": {
+        "macros": {
+          "foo": {
+            "$": "array",
+            "items": [
+              4,
+              "#1"
+            ]
+          }
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\foo",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": []
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "foo",
+                  {
+                    "_token": "foo",
+                    "_func": {
+                      "$": "function",
+                      "name": "Macro",
+                      "length": 5
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        4,
+                        "#1"
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "new-Command",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "new-Delimiter",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "Newcommand-macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "new-Environment",
+              "priority": -100,
+              "registeredSame": true
+            },
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "configmacros:standalone-package",
+      "input": "\\foo",
+      "packages": [
+        "base",
+        "configmacros"
+      ],
+      "options": {
+        "macros": {
+          "foo": "x+y"
+        }
+      },
+      "result": {
+        "kind": "math",
+        "text": null,
+        "attrs": {
+          "data-latex": "\\foo",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "text": null,
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "text": "x",
+                "attrs": {
+                  "data-latex": "x"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "x",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "text": "+",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "+",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "mi",
+                "text": "y",
+                "attrs": {
+                  "data-latex": "y"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "text": "y",
+                    "attrs": {},
+                    "properties": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "maps": {
+        "maps": {
+          "boldsymbol": {
+            "same": false,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "boldsymbol",
+                  {
+                    "_token": "boldsymbol",
+                    "_func": {
+                      "$": "function",
+                      "name": "Boldsymbol",
+                      "length": 2
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": []
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-map": {
+            "same": true,
+            "constructor": "CommandMap",
+            "entries": {
+              "$": "map",
+              "entries": [
+                [
+                  "foo",
+                  {
+                    "_token": "foo",
+                    "_func": {
+                      "$": "function",
+                      "name": "Macro",
+                      "length": 5
+                    },
+                    "_args": {
+                      "$": "array",
+                      "items": [
+                        "x+y"
+                      ]
+                    }
+                  }
+                ]
+              ]
+            }
+          },
+          "configmacros-active-map": {
+            "same": true,
+            "constructor": "MacroMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          },
+          "configmacros-env-map": {
+            "same": true,
+            "constructor": "EnvironmentMap",
+            "entries": {
+              "$": "map",
+              "entries": []
+            }
+          }
+        },
+        "handlers": {
+          "character": [
+            {
+              "name": "configmacros-active-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "digit",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "letter",
+              "priority": 4,
+              "registeredSame": true
+            },
+            {
+              "name": "special",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "command",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "delimiter": [
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "macro": [
+            {
+              "name": "configmacros-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar7",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mo",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "mathchar0mi",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "ucGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "lcGreek",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "macros",
+              "priority": 5,
+              "registeredSame": true
+            },
+            {
+              "name": "delimiter",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ],
+          "environment": [
+            {
+              "name": "configmacros-env-map",
+              "priority": 3,
+              "registeredSame": true
+            },
+            {
+              "name": "environment",
+              "priority": 5,
+              "registeredSame": true
+            }
+          ]
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": []
+      }
+    }
+  ],
+  "configurations": {
+    "boldsymbol": {
+      "name": "boldsymbol",
+      "handler": {
+        "character": {
+          "$": "array",
+          "items": []
+        },
+        "delimiter": {
+          "$": "array",
+          "items": []
+        },
+        "macro": {
+          "$": "array",
+          "items": [
+            "boldsymbol"
+          ]
+        },
+        "environment": {
+          "$": "array",
+          "items": []
+        }
+      },
+      "nodes": {
+        "token": {
+          "name": "createBoldToken",
+          "length": 4
+        }
+      },
+      "postprocessors": [
+        {
+          "processor": {
+            "name": "rewriteBoldTokens",
+            "length": 1
+          },
+          "priority": 5
+        }
+      ]
+    },
+    "configmacros": {
+      "name": "configmacros",
+      "handler": {
+        "character": {
+          "$": "array",
+          "items": []
+        },
+        "delimiter": {
+          "$": "array",
+          "items": []
+        },
+        "macro": {
+          "$": "array",
+          "items": []
+        },
+        "environment": {
+          "$": "array",
+          "items": []
+        }
+      },
+      "items": [
+        "beginEnv"
+      ],
+      "options": {
+        "active": {
+          "ownKeys": [],
+          "prototype": "Expandable",
+          "constructor": "Expandable"
+        },
+        "macros": {
+          "ownKeys": [],
+          "prototype": "Expandable",
+          "constructor": "Expandable"
+        },
+        "environments": {
+          "ownKeys": [],
+          "prototype": "Expandable",
+          "constructor": "Expandable"
+        }
+      },
+      "init": {
+        "name": "configmacrosInit",
+        "length": 1
+      },
+      "config": {
+        "name": "configmacrosConfig",
+        "length": 2
+      }
+    }
+  }
+}

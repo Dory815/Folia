@@ -1,0 +1,4741 @@
+{
+  "upstream": {
+    "version": "4.1.3",
+    "commit": "fb987178c2d279a99b0db5ea02e751691703955e"
+  },
+  "sources": [
+    {
+      "source": "ts/input/tex/ams/AmsItems.ts",
+      "sha256": "6fe73b33063f5b8c86a3e07bcf7bce45aaa5256b2d321146ffc39a7435264926",
+      "cjs": "input/tex/ams/AmsItems.js",
+      "cjs_sha256": "24f1b6b0dabb84eddc52150bf5f629fb8203a3e9eeaecb5f425c7df8fe4656d5"
+    },
+    {
+      "source": "ts/input/tex/ams/AmsMethods.ts",
+      "sha256": "afc713c62b1f53e9ebc8136eda3f5e7bcea2685b8c8de139b842d815851d2126",
+      "cjs": "input/tex/ams/AmsMethods.js",
+      "cjs_sha256": "1b24b7bfa46c4e8764756ef66972cd788512fbd33bd80eeed18f88a2db72de51"
+    },
+    {
+      "source": "ts/input/tex/ams/AmsMappings.ts",
+      "sha256": "01e0a7a2291f7a5d3b1c1799a79c82cf8641415a953ca8b70abc1eff7cbbfbb5",
+      "cjs": "input/tex/ams/AmsMappings.js",
+      "cjs_sha256": "83337b1aafc4e7431050696abc27a3392c26e5626d70d22595d0b250bc5f2af9"
+    },
+    {
+      "source": "ts/input/tex/ams/AmsConfiguration.ts",
+      "sha256": "5dc58a7d4cad9ba6d70a44cec59d9c38514965b7b14dd39421a57c0459ad8e51",
+      "cjs": "input/tex/ams/AmsConfiguration.js",
+      "cjs_sha256": "ff8e1aa5936fb48e68da3cc5ff8745f1365d5dbd2416c1a908c6a06842989f79"
+    },
+    {
+      "source": "ts/input/tex/newcommand/NewcommandItems.ts",
+      "sha256": "d4ac79bffc72954a6d6fe3e99ee7c1d9274b55d2d87d3008c09d6be2f2f59b7b",
+      "cjs": "input/tex/newcommand/NewcommandItems.js",
+      "cjs_sha256": "8772e5089015efc52fedce9e5e9b3968a89d5732a0f480c0c906e424baa73b01"
+    },
+    {
+      "source": "ts/input/tex/newcommand/NewcommandUtil.ts",
+      "sha256": "58b42e9601faa07d95333fd1e56d3e611a6505687c10f590422f4f19d73a6e07",
+      "cjs": "input/tex/newcommand/NewcommandUtil.js",
+      "cjs_sha256": "496a1c7154521e6870c5469b47070323766182150740f2e846cd005460b7e4bf"
+    },
+    {
+      "source": "ts/input/tex/newcommand/NewcommandMethods.ts",
+      "sha256": "8db96297b5921f0420db38a36c5ead0e4f165be46c4e9fc0a918a5ce1ce27937",
+      "cjs": "input/tex/newcommand/NewcommandMethods.js",
+      "cjs_sha256": "7aa2e76b2263b2f12961958c86e2325acba83083334ca54f6949f86a25bd80cb"
+    },
+    {
+      "source": "ts/input/tex/newcommand/NewcommandMappings.ts",
+      "sha256": "42f2181845827166f5ebaaba6c7f0dcad54af314abf510e23d3ab37dd0b445b7",
+      "cjs": "input/tex/newcommand/NewcommandMappings.js",
+      "cjs_sha256": "0b52824ee1e59343672612bcd1a0bffd1be922fc4122497a6cbfa7399508838b"
+    },
+    {
+      "source": "ts/input/tex/newcommand/NewcommandConfiguration.ts",
+      "sha256": "fc7ac30d0e6a1f2b9cd723b9f2dbc613e0fab3f506309e080425330f919312c7",
+      "cjs": "input/tex/newcommand/NewcommandConfiguration.js",
+      "cjs_sha256": "8c4de6d6933fd485916114d588400f2e4b5fb1763e5720db74af9b9b5bc24ab2"
+    }
+  ],
+  "configurations": {
+    "ams": "ams",
+    "newcommand": "newcommand"
+  },
+  "cases": [
+    {
+      "name": "newcommand-standard-name-redefinition",
+      "input": "\\newcommand{\\frac}{x}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\newcommand{\\frac}{x}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": []
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "frac",
+                {
+                  "_token": "frac",
+                  "_func": {
+                    "$": "function",
+                    "name": "Macro",
+                    "length": 5
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "x",
+                      {
+                        "$": "undefined"
+                      },
+                      {
+                        "$": "undefined"
+                      }
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "newcommand-missing-definition",
+      "input": "\\newcommand{\\zz}[2]",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\newcommand{\\zz}[2]",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Missing argument for \\newcommand"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Missing argument for \\newcommand"
+                          }
+                        ],
+                        "text": "Missing argument for \\newcommand"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "newcommand-illegal-control-sequence-name",
+      "input": "\\newcommand{bad!}{x}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\newcommand{bad!}{x}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Illegal control sequence name for \\newcommand"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Illegal control sequence name for \\newcommand"
+                          }
+                        ],
+                        "text": "Illegal control sequence name for \\newcommand"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "newcommand-empty-optional-default",
+      "input": "\\newcommand{\\zz}[2][]{#1/#2}\\zz{q}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\newcommand{\\zz}[2][]{#1/#2}\\zz{q}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": "/"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "/"
+                  }
+                ],
+                "text": "/"
+              },
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "q"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "q"
+                  }
+                ],
+                "text": "q"
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "zz",
+                {
+                  "_token": "zz",
+                  "_func": {
+                    "$": "function",
+                    "name": "Macro",
+                    "length": 5
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "#1/#2",
+                      "2",
+                      ""
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "newcommand-explicit-empty-optional",
+      "input": "\\newcommand{\\zz}[2][d]{#1/#2}\\zz[]{q}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\newcommand{\\zz}[2][d]{#1/#2}\\zz[]{q}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": "/"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "/"
+                  }
+                ],
+                "text": "/"
+              },
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "q"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "q"
+                  }
+                ],
+                "text": "q"
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "zz",
+                {
+                  "_token": "zz",
+                  "_func": {
+                    "$": "function",
+                    "name": "Macro",
+                    "length": 5
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "#1/#2",
+                      "2",
+                      "d"
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "def-delimited-argument-match",
+      "input": "\\def\\zz#1,#2;{#2/#1}\\zz a,b;",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\def\\zz#1,#2;{#2/#1}\\zz a,b;",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "b"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "b"
+                  }
+                ],
+                "text": "b"
+              },
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": "/"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "/"
+                  }
+                ],
+                "text": "/"
+              },
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "a"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "a"
+                  }
+                ],
+                "text": "a"
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "zz",
+                {
+                  "_token": "zz",
+                  "_func": {
+                    "$": "function",
+                    "name": "MacroWithTemplate",
+                    "length": 4
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "#2/#1",
+                      "2",
+                      {
+                        "$": "hole"
+                      },
+                      ",",
+                      ";"
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "def-delimited-argument-mismatch",
+      "input": "\\def\\zz#1,#2;{#1}\\zz a;c",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\def\\zz#1,#2;{#1}\\zz a;c",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Runaway argument for \\zz?"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Runaway argument for \\zz?"
+                          }
+                        ],
+                        "text": "Runaway argument for \\zz?"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "zz",
+                {
+                  "_token": "zz",
+                  "_func": {
+                    "$": "function",
+                    "name": "MacroWithTemplate",
+                    "length": 4
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "#1",
+                      "2",
+                      {
+                        "$": "hole"
+                      },
+                      ",",
+                      ";"
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "def-runaway-delimited-argument",
+      "input": "\\def\\zz#1,{#1}\\zz abc",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\def\\zz#1,{#1}\\zz abc",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Runaway argument for \\zz?"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Runaway argument for \\zz?"
+                          }
+                        ],
+                        "text": "Runaway argument for \\zz?"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "zz",
+                {
+                  "_token": "zz",
+                  "_func": {
+                    "$": "function",
+                    "name": "MacroWithTemplate",
+                    "length": 4
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "#1",
+                      "1",
+                      {
+                        "$": "hole"
+                      },
+                      ","
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "def-missing-control-sequence",
+      "input": "\\def foo{x}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\def foo{x}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "\\def must be followed by a control sequence"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "\\def must be followed by a control sequence"
+                          }
+                        ],
+                        "text": "\\def must be followed by a control sequence"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "let-undefined-control-sequence",
+      "input": "\\let\\zz=\\notDefined\\zz",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\let\\zz=\\notDefined\\zz",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Undefined control sequence \\zz"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Undefined control sequence \\zz"
+                          }
+                        ],
+                        "text": "Undefined control sequence \\zz"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "let-existing-newcommand",
+      "input": "\\newcommand{\\orig}{x}\\let\\copy=\\orig\\copy",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\newcommand{\\orig}{x}\\let\\copy=\\orig\\copy",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "x"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "x"
+                  }
+                ],
+                "text": "x"
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "orig",
+                {
+                  "_token": "orig",
+                  "_func": {
+                    "$": "function",
+                    "name": "Macro",
+                    "length": 5
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "x",
+                      {
+                        "$": "undefined"
+                      },
+                      {
+                        "$": "undefined"
+                      }
+                    ]
+                  }
+                }
+              ],
+              [
+                "copy",
+                {
+                  "_token": "orig",
+                  "_func": {
+                    "$": "function",
+                    "name": "Macro",
+                    "length": 5
+                  },
+                  "_args": {
+                    "$": "cycle"
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "let-existing-character-token",
+      "input": "\\let\\zz=\\alpha\\zz",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\let\\zz=\\alpha\\zz",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "\\let\\zz=\\alpha\\zz"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "α"
+                  }
+                ],
+                "text": "α"
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "zz",
+                {
+                  "_token": "zz",
+                  "_func": {
+                    "$": "function",
+                    "name": "method",
+                    "length": 1
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "zz",
+                      "α"
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "let-special-character",
+      "input": "\\let\\zz=^\\zz x",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\let\\zz=^\\zz x",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "msup",
+                "attrs": {
+                  "data-latex": "^x"
+                },
+                "properties": {
+                  "sub-sup": "^"
+                },
+                "children": [
+                  {
+                    "kind": "mi",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "text",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [],
+                        "text": ""
+                      }
+                    ],
+                    "text": ""
+                  },
+                  {
+                    "kind": "mi",
+                    "attrs": {
+                      "data-latex": "x"
+                    },
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "text",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [],
+                        "text": "x"
+                      }
+                    ],
+                    "text": "x"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "zz",
+                {
+                  "_token": "zz",
+                  "_func": {
+                    "$": "function",
+                    "name": "Macro",
+                    "length": 5
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "^"
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "let-special-delimiter",
+      "input": "\\let\\paren=(\\paren",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\let\\paren=(\\paren",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mo",
+                "attrs": {
+                  "fence": false,
+                  "stretchy": false,
+                  "data-latex": "\\let\\paren=(\\paren"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "("
+                  }
+                ],
+                "text": "("
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "\\paren",
+                {
+                  "_token": "\\paren",
+                  "_char": "(",
+                  "_attributes": null
+                }
+              ]
+            ]
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "new-environment-omitted-optional-default",
+      "input": "\\newenvironment{xx}[1][d]{(#1)}{!}\\begin{xx}q\\end{xx}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\newenvironment{xx}[1][d]{(#1)}{!}\\begin{xx}q\\end{xx}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": "(",
+                  "stretchy": false
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "("
+                  }
+                ],
+                "text": "("
+              },
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "d"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "d"
+                  }
+                ],
+                "text": "d"
+              },
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": ")",
+                  "stretchy": false
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": ")"
+                  }
+                ],
+                "text": ")"
+              },
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "q"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "q"
+                  }
+                ],
+                "text": "q"
+              },
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": "!"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "!"
+                  }
+                ],
+                "text": "!"
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "xx",
+                {
+                  "_token": "xx",
+                  "_func": {
+                    "$": "function",
+                    "name": "BeginEnv",
+                    "length": 6
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      true,
+                      "(#1)",
+                      "!",
+                      "1",
+                      "d"
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "new-environment-explicit-empty-optional",
+      "input": "\\newenvironment{xx}[1][d]{(#1)}{!}\\begin{xx}[]q\\end{xx}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\newenvironment{xx}[1][d]{(#1)}{!}\\begin{xx}[]q\\end{xx}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": "(",
+                  "stretchy": false
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "("
+                  }
+                ],
+                "text": "("
+              },
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": ")",
+                  "stretchy": false
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": ")"
+                  }
+                ],
+                "text": ")"
+              },
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "q"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "q"
+                  }
+                ],
+                "text": "q"
+              },
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": "!"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "!"
+                  }
+                ],
+                "text": "!"
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "xx",
+                {
+                  "_token": "xx",
+                  "_func": {
+                    "$": "function",
+                    "name": "BeginEnv",
+                    "length": 6
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      true,
+                      "(#1)",
+                      "!",
+                      "1",
+                      "d"
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "new-environment-mismatched-end",
+      "input": "\\newenvironment{xx}{a}{b}\\begin{xx}x\\end{yy}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\newenvironment{xx}{a}{b}\\begin{xx}x\\end{yy}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Unknown environment 'yy'"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Unknown environment 'yy'"
+                          }
+                        ],
+                        "text": "Unknown environment 'yy'"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "xx",
+                {
+                  "_token": "xx",
+                  "_func": {
+                    "$": "function",
+                    "name": "BeginEnv",
+                    "length": 6
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      true,
+                      "a",
+                      "b",
+                      {
+                        "$": "undefined"
+                      },
+                      {
+                        "$": "undefined"
+                      }
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "declare-math-operator-unstarred",
+      "input": "\\DeclareMathOperator{\\rank}{rank}\\rank(A)",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\DeclareMathOperator{\\rank}{rank}\\rank(A)",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "\\operatorname{rank}"
+                },
+                "properties": {
+                  "movesupsub": false,
+                  "movablelimits": true,
+                  "texClass": 1
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "rank"
+                  }
+                ],
+                "text": "rank"
+              },
+              {
+                "kind": "mo",
+                "attrs": {},
+                "properties": {
+                  "texClass": -1
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "⁡"
+                  }
+                ],
+                "text": "⁡"
+              },
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": "(",
+                  "stretchy": false
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "("
+                  }
+                ],
+                "text": "("
+              },
+              {
+                "kind": "mi",
+                "attrs": {
+                  "data-latex": "A"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "A"
+                  }
+                ],
+                "text": "A"
+              },
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": ")",
+                  "stretchy": false
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": ")"
+                  }
+                ],
+                "text": ")"
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "rank",
+                {
+                  "_token": "rank",
+                  "_func": {
+                    "$": "function",
+                    "name": "Macro",
+                    "length": 5
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "\\operatorname{rank}"
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "declare-math-operator-starred",
+      "input": "\\DeclareMathOperator*{\\limfoo}{lim}\\limfoo_n",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\DeclareMathOperator*{\\limfoo}{lim}\\limfoo_n",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "munder",
+                "attrs": {
+                  "data-latex": "\\operatorname*{lim}_n"
+                },
+                "properties": {
+                  "movesupsub": true,
+                  "sub-sup": "_"
+                },
+                "children": [
+                  {
+                    "kind": "mi",
+                    "attrs": {
+                      "data-latex": "\\operatorname*{lim}"
+                    },
+                    "properties": {
+                      "movesupsub": true,
+                      "movablelimits": true,
+                      "texClass": 1
+                    },
+                    "children": [
+                      {
+                        "kind": "text",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [],
+                        "text": "lim"
+                      }
+                    ],
+                    "text": "lim"
+                  },
+                  {
+                    "kind": "mi",
+                    "attrs": {
+                      "data-latex": "n"
+                    },
+                    "properties": {
+                      "texprimestyle": true
+                    },
+                    "children": [
+                      {
+                        "kind": "text",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [],
+                        "text": "n"
+                      }
+                    ],
+                    "text": "n"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": [
+              [
+                "limfoo",
+                {
+                  "_token": "limfoo",
+                  "_func": {
+                    "$": "function",
+                    "name": "Macro",
+                    "length": 5
+                  },
+                  "_args": {
+                    "$": "array",
+                    "items": [
+                      "\\operatorname*{lim}"
+                    ]
+                  }
+                }
+              ]
+            ]
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-arrow-empty-labels",
+      "input": "\\xrightarrow[]{}+\\xleftarrow{}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\xrightarrow[]{}+\\xleftarrow{}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "TeXAtom",
+                "attrs": {
+                  "data-latex": "\\xrightarrow[]{}"
+                },
+                "properties": {
+                  "texClass": 3
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "TeXAtom",
+                        "attrs": {},
+                        "properties": {
+                          "texClass": -1
+                        },
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "mover",
+                        "attrs": {},
+                        "properties": {
+                          "subsupOK": true
+                        },
+                        "children": [
+                          {
+                            "kind": "mo",
+                            "attrs": {},
+                            "properties": {
+                              "texClass": 0
+                            },
+                            "children": [
+                              {
+                                "kind": "text",
+                                "attrs": {},
+                                "properties": {},
+                                "children": [],
+                                "text": "→"
+                              }
+                            ],
+                            "text": "→"
+                          },
+                          {
+                            "kind": "mpadded",
+                            "attrs": {
+                              "width": "+0.833em",
+                              "lspace": "0.278em",
+                              "voffset": "-.2em",
+                              "height": "-.2em"
+                            },
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "inferredMrow",
+                                "attrs": {},
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "mspace",
+                                    "attrs": {
+                                      "depth": ".2em"
+                                    },
+                                    "properties": {},
+                                    "children": [],
+                                    "text": ""
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "mo",
+                "attrs": {
+                  "data-latex": "+"
+                },
+                "properties": {
+                  "in-lists": "fixStretchy"
+                },
+                "children": [
+                  {
+                    "kind": "text",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [],
+                    "text": "+"
+                  }
+                ],
+                "text": "+"
+              },
+              {
+                "kind": "TeXAtom",
+                "attrs": {
+                  "data-latex": "\\xleftarrow{}"
+                },
+                "properties": {
+                  "texClass": 3
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "TeXAtom",
+                        "attrs": {},
+                        "properties": {
+                          "texClass": -1
+                        },
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "mover",
+                        "attrs": {},
+                        "properties": {
+                          "subsupOK": true
+                        },
+                        "children": [
+                          {
+                            "kind": "mo",
+                            "attrs": {},
+                            "properties": {
+                              "texClass": 0
+                            },
+                            "children": [
+                              {
+                                "kind": "text",
+                                "attrs": {},
+                                "properties": {},
+                                "children": [],
+                                "text": "←"
+                              }
+                            ],
+                            "text": "←"
+                          },
+                          {
+                            "kind": "mpadded",
+                            "attrs": {
+                              "width": "+0.833em",
+                              "lspace": "0.556em",
+                              "voffset": "-.2em",
+                              "height": "-.2em"
+                            },
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "inferredMrow",
+                                "attrs": {},
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "mspace",
+                                    "attrs": {
+                                      "depth": ".2em"
+                                    },
+                                    "properties": {},
+                                    "children": [],
+                                    "text": ""
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-shove-outside-multline",
+      "input": "\\shoveleft{x}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\shoveleft{x}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "\\shoveleft only allowed in multline environment"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "\\shoveleft only allowed in multline environment"
+                          }
+                        ],
+                        "text": "\\shoveleft only allowed in multline environment"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-shove-after-row-content",
+      "input": "\\begin{multline}a\\shoveleft b\\end{multline}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\begin{multline}a\\shoveleft b\\end{multline}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "\\shoveleft must come at the beginning of the line"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "\\shoveleft must come at the beginning of the line"
+                          }
+                        ],
+                        "text": "\\shoveleft must come at the beginning of the line"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-cfrac-illegal-alignment",
+      "input": "\\cfrac[x]{a}{b}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\cfrac[x]{a}{b}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Illegal alignment specified in \\cfrac"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Illegal alignment specified in \\cfrac"
+                          }
+                        ],
+                        "text": "Illegal alignment specified in \\cfrac"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-cfrac-right-alignment",
+      "input": "\\cfrac[r]{a}{b}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\cfrac[r]{a}{b}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mfrac",
+                "attrs": {
+                  "numalign": "right",
+                  "denomalign": "right",
+                  "data-latex": "\\cfrac[r]{a}{b}"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "mrow",
+                    "attrs": {
+                      "data-latex": "\\strut\\textstyle{a}"
+                    },
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mpadded",
+                        "attrs": {
+                          "height": "8.6pt",
+                          "depth": "3pt",
+                          "width": 0,
+                          "data-latex": "\\strut"
+                        },
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mrow",
+                                "attrs": {},
+                                "properties": {},
+                                "children": []
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "TeXAtom",
+                        "attrs": {
+                          "data-latex": "{a}"
+                        },
+                        "properties": {
+                          "texClass": 0
+                        },
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "a"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "a"
+                                  }
+                                ],
+                                "text": "a"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mrow",
+                    "attrs": {
+                      "data-latex": "\\strut\\textstyle{b}"
+                    },
+                    "properties": {
+                      "texprimestyle": true
+                    },
+                    "children": [
+                      {
+                        "kind": "mpadded",
+                        "attrs": {
+                          "height": "8.6pt",
+                          "depth": "3pt",
+                          "width": 0,
+                          "data-latex": "\\strut"
+                        },
+                        "properties": {
+                          "texprimestyle": true
+                        },
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {
+                              "texprimestyle": true
+                            },
+                            "children": [
+                              {
+                                "kind": "mrow",
+                                "attrs": {},
+                                "properties": {
+                                  "texprimestyle": true
+                                },
+                                "children": []
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "TeXAtom",
+                        "attrs": {
+                          "data-latex": "{b}"
+                        },
+                        "properties": {
+                          "texClass": 0
+                        },
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "b"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "b"
+                                  }
+                                ],
+                                "text": "b"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-tag-duplicate",
+      "input": "\\begin{equation}\\tag{a}\\tag{b}x\\end{equation}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\begin{equation}\\tag{a}\\tag{b}x\\end{equation}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Multiple \\tag"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Multiple \\tag"
+                          }
+                        ],
+                        "text": "Multiple \\tag"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-tag-starred",
+      "input": "\\begin{equation}\\tag*{A}x\\end{equation}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\begin{equation}\\tag*{A}x\\end{equation}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mtable",
+                "attrs": {
+                  "displaystyle": true,
+                  "data-latex": "\\begin{equation}\\tag*{A}x\\end{equation}"
+                },
+                "properties": {
+                  "useHeight": true
+                },
+                "children": [
+                  {
+                    "kind": "mlabeledtr",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtd",
+                        "attrs": {
+                          "id": "mjx-eqn:A"
+                        },
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mtext",
+                                "attrs": {
+                                  "data-latex": "\\text{A}"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "A"
+                                  }
+                                ],
+                                "text": "A"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "mtd",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "x"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "x"
+                                  }
+                                ],
+                                "text": "x"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-tag-untaggable-environment",
+      "input": "\\begin{split}a&=b\\tag{x}\\end{split}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\begin{split}a&=b\\tag{x}\\end{split}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "\\tag not allowed in split environment"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "\\tag not allowed in split environment"
+                          }
+                        ],
+                        "text": "\\tag not allowed in split environment"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-alignat-invalid-column-count",
+      "input": "\\begin{alignat}{x}a&=b\\end{alignat}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\begin{alignat}{x}a&=b\\end{alignat}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Argument to \\begin{alignat} must be a positive integer"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Argument to \\begin{alignat} must be a positive integer"
+                          }
+                        ],
+                        "text": "Argument to \\begin{alignat} must be a positive integer"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-genfrac-invalid-style",
+      "input": "\\genfrac{(}{)}{0pt}{4}{a}{b}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\genfrac{(}{)}{0pt}{4}{a}{b}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "merror",
+                "attrs": {
+                  "data-mjx-error": "Bad math style for \\genfrac"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtext",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "text",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [],
+                            "text": "Bad math style for \\genfrac"
+                          }
+                        ],
+                        "text": "Bad math style for \\genfrac"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-xalignat-row",
+      "input": "\\begin{xalignat}{1}a&=b\\end{xalignat}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\begin{xalignat}{1}a&=b\\end{xalignat}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mtable",
+                "attrs": {
+                  "width": "100%",
+                  "displaystyle": true,
+                  "columnalign": "center right left center",
+                  "columnspacing": "0em",
+                  "columnwidth": "fit auto auto fit",
+                  "rowspacing": "3pt",
+                  "data-break-align": "middle bottom top middle",
+                  "minlabelspacing": "0",
+                  "data-width-includes-label": true,
+                  "data-latex": "\\begin{xalignat}{1}a&=b\\end{xalignat}"
+                },
+                "properties": {
+                  "useHeight": true
+                },
+                "children": [
+                  {
+                    "kind": "mtr",
+                    "attrs": {
+                      "data-latex": "{1}"
+                    },
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtd",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "mtd",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "a"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "a"
+                                  }
+                                ],
+                                "text": "a"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "mtd",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mstyle",
+                                "attrs": {
+                                  "indentshift": "2em"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "inferredMrow",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [
+                                      {
+                                        "kind": "mo",
+                                        "attrs": {
+                                          "data-latex": "="
+                                        },
+                                        "properties": {
+                                          "in-lists": "fixStretchy"
+                                        },
+                                        "children": [
+                                          {
+                                            "kind": "text",
+                                            "attrs": {},
+                                            "properties": {},
+                                            "children": [],
+                                            "text": "="
+                                          }
+                                        ],
+                                        "text": "="
+                                      },
+                                      {
+                                        "kind": "mi",
+                                        "attrs": {
+                                          "data-latex": "b"
+                                        },
+                                        "properties": {},
+                                        "children": [
+                                          {
+                                            "kind": "text",
+                                            "attrs": {},
+                                            "properties": {},
+                                            "children": [],
+                                            "text": "b"
+                                          }
+                                        ],
+                                        "text": "b"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "mtd",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-alignedat-two-pairs",
+      "input": "\\begin{alignedat}{2}a&=b&c&=d\\end{alignedat}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\begin{alignedat}{2}a&=b&c&=d\\end{alignedat}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mtable",
+                "attrs": {
+                  "displaystyle": true,
+                  "columnalign": "right left right left",
+                  "columnspacing": "0em 0em 0em",
+                  "rowspacing": "3pt",
+                  "data-break-align": "bottom top bottom top",
+                  "data-latex": "\\begin{alignedat}{2}a&=b&c&=d\\end{alignedat}"
+                },
+                "properties": {
+                  "useHeight": true
+                },
+                "children": [
+                  {
+                    "kind": "mtr",
+                    "attrs": {
+                      "data-latex": "{2}"
+                    },
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtd",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "a"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "a"
+                                  }
+                                ],
+                                "text": "a"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "mtd",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mstyle",
+                                "attrs": {
+                                  "indentshift": "2em"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "inferredMrow",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [
+                                      {
+                                        "kind": "mi",
+                                        "attrs": {},
+                                        "properties": {},
+                                        "children": [],
+                                        "text": ""
+                                      },
+                                      {
+                                        "kind": "mo",
+                                        "attrs": {
+                                          "data-latex": "="
+                                        },
+                                        "properties": {
+                                          "in-lists": "fixStretchy"
+                                        },
+                                        "children": [
+                                          {
+                                            "kind": "text",
+                                            "attrs": {},
+                                            "properties": {},
+                                            "children": [],
+                                            "text": "="
+                                          }
+                                        ],
+                                        "text": "="
+                                      },
+                                      {
+                                        "kind": "mi",
+                                        "attrs": {
+                                          "data-latex": "b"
+                                        },
+                                        "properties": {},
+                                        "children": [
+                                          {
+                                            "kind": "text",
+                                            "attrs": {},
+                                            "properties": {},
+                                            "children": [],
+                                            "text": "b"
+                                          }
+                                        ],
+                                        "text": "b"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "mtd",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "c"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "c"
+                                  }
+                                ],
+                                "text": "c"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "mtd",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mstyle",
+                                "attrs": {
+                                  "indentshift": "2em"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "inferredMrow",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [
+                                      {
+                                        "kind": "mi",
+                                        "attrs": {},
+                                        "properties": {},
+                                        "children": [],
+                                        "text": ""
+                                      },
+                                      {
+                                        "kind": "mo",
+                                        "attrs": {
+                                          "data-latex": "="
+                                        },
+                                        "properties": {
+                                          "in-lists": "fixStretchy"
+                                        },
+                                        "children": [
+                                          {
+                                            "kind": "text",
+                                            "attrs": {},
+                                            "properties": {},
+                                            "children": [],
+                                            "text": "="
+                                          }
+                                        ],
+                                        "text": "="
+                                      },
+                                      {
+                                        "kind": "mi",
+                                        "attrs": {
+                                          "data-latex": "d"
+                                        },
+                                        "properties": {},
+                                        "children": [
+                                          {
+                                            "kind": "text",
+                                            "attrs": {},
+                                            "properties": {},
+                                            "children": [],
+                                            "text": "d"
+                                          }
+                                        ],
+                                        "text": "d"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-shoveright-first-row",
+      "input": "\\begin{multline}\\shoveright a+b\\\\c+d\\end{multline}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\begin{multline}\\shoveright a+b\\\\c+d\\end{multline}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mtable",
+                "attrs": {
+                  "displaystyle": true,
+                  "rowspacing": ".5em",
+                  "columnspacing": "100%",
+                  "width": "100%",
+                  "data-array-padding": "1em 1em",
+                  "data-width-includes-label": true,
+                  "data-latex": "\\begin{multline}\\shoveright a+b\\\\c+d\\end{multline}"
+                },
+                "properties": {
+                  "useHeight": true
+                },
+                "children": [
+                  {
+                    "kind": "mtr",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtd",
+                        "attrs": {
+                          "columnalign": "right"
+                        },
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "a"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "a"
+                                  }
+                                ],
+                                "text": "a"
+                              },
+                              {
+                                "kind": "mo",
+                                "attrs": {
+                                  "data-latex": "+"
+                                },
+                                "properties": {
+                                  "in-lists": "fixStretchy"
+                                },
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "+"
+                                  }
+                                ],
+                                "text": "+"
+                              },
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "b"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "b"
+                                  }
+                                ],
+                                "text": "b"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "mtr",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mtd",
+                        "attrs": {
+                          "columnalign": "right"
+                        },
+                        "properties": {},
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "c"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "c"
+                                  }
+                                ],
+                                "text": "c"
+                              },
+                              {
+                                "kind": "mo",
+                                "attrs": {
+                                  "data-latex": "+"
+                                },
+                                "properties": {
+                                  "in-lists": "fixStretchy"
+                                },
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "+"
+                                  }
+                                ],
+                                "text": "+"
+                              },
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "d"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "d"
+                                  }
+                                ],
+                                "text": "d"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-arrow-bottom-label",
+      "input": "\\xleftarrow[a]{b}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\xleftarrow[a]{b}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "TeXAtom",
+                "attrs": {
+                  "data-latex": "\\xleftarrow[a]{b}"
+                },
+                "properties": {
+                  "texClass": 3
+                },
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "TeXAtom",
+                        "attrs": {},
+                        "properties": {
+                          "texClass": -1
+                        },
+                        "children": [
+                          {
+                            "kind": "inferredMrow",
+                            "attrs": {},
+                            "properties": {},
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "munderover",
+                        "attrs": {},
+                        "properties": {
+                          "subsupOK": true
+                        },
+                        "children": [
+                          {
+                            "kind": "mo",
+                            "attrs": {},
+                            "properties": {
+                              "texClass": 0
+                            },
+                            "children": [
+                              {
+                                "kind": "text",
+                                "attrs": {},
+                                "properties": {},
+                                "children": [],
+                                "text": "←"
+                              }
+                            ],
+                            "text": "←"
+                          },
+                          {
+                            "kind": "mpadded",
+                            "attrs": {
+                              "width": "+0.833em",
+                              "lspace": "0.556em",
+                              "voffset": ".15em",
+                              "depth": "-.15em"
+                            },
+                            "properties": {
+                              "texprimestyle": true
+                            },
+                            "children": [
+                              {
+                                "kind": "inferredMrow",
+                                "attrs": {},
+                                "properties": {
+                                  "texprimestyle": true
+                                },
+                                "children": [
+                                  {
+                                    "kind": "mi",
+                                    "attrs": {
+                                      "data-latex": "a"
+                                    },
+                                    "properties": {
+                                      "texprimestyle": true
+                                    },
+                                    "children": [
+                                      {
+                                        "kind": "text",
+                                        "attrs": {},
+                                        "properties": {},
+                                        "children": [],
+                                        "text": "a"
+                                      }
+                                    ],
+                                    "text": "a"
+                                  },
+                                  {
+                                    "kind": "mspace",
+                                    "attrs": {
+                                      "height": ".75em"
+                                    },
+                                    "properties": {
+                                      "texprimestyle": true
+                                    },
+                                    "children": [],
+                                    "text": ""
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "mpadded",
+                            "attrs": {
+                              "width": "+0.833em",
+                              "lspace": "0.556em",
+                              "voffset": "-.2em",
+                              "height": "-.2em"
+                            },
+                            "properties": {},
+                            "children": [
+                              {
+                                "kind": "inferredMrow",
+                                "attrs": {},
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "mi",
+                                    "attrs": {
+                                      "data-latex": "b"
+                                    },
+                                    "properties": {},
+                                    "children": [
+                                      {
+                                        "kind": "text",
+                                        "attrs": {},
+                                        "properties": {},
+                                        "children": [],
+                                        "text": "b"
+                                      }
+                                    ],
+                                    "text": "b"
+                                  },
+                                  {
+                                    "kind": "mspace",
+                                    "attrs": {
+                                      "depth": ".2em"
+                                    },
+                                    "properties": {},
+                                    "children": [],
+                                    "text": ""
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-genfrac-text-style",
+      "input": "\\genfrac{(}{)}{0pt}{1}{a}{b}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\genfrac{(}{)}{0pt}{1}{a}{b}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "mstyle",
+                "attrs": {
+                  "displaystyle": false,
+                  "data-latex": "\\genfrac{(}{)}{0pt}{1}{a}{b}"
+                },
+                "properties": {},
+                "children": [
+                  {
+                    "kind": "inferredMrow",
+                    "attrs": {},
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "mrow",
+                        "attrs": {},
+                        "properties": {
+                          "open": "(",
+                          "close": ")",
+                          "texClass": 0
+                        },
+                        "children": [
+                          {
+                            "kind": "TeXAtom",
+                            "attrs": {
+                              "data-latex": "\\bigl ("
+                            },
+                            "properties": {
+                              "texClass": 4
+                            },
+                            "children": [
+                              {
+                                "kind": "inferredMrow",
+                                "attrs": {},
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "mo",
+                                    "attrs": {
+                                      "minsize": "1.2em",
+                                      "maxsize": "1.2em"
+                                    },
+                                    "properties": {},
+                                    "children": [
+                                      {
+                                        "kind": "text",
+                                        "attrs": {},
+                                        "properties": {},
+                                        "children": [],
+                                        "text": "("
+                                      }
+                                    ],
+                                    "text": "("
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "mfrac",
+                            "attrs": {
+                              "linethickness": "0pt"
+                            },
+                            "properties": {
+                              "withDelims": true
+                            },
+                            "children": [
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "a"
+                                },
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "a"
+                                  }
+                                ],
+                                "text": "a"
+                              },
+                              {
+                                "kind": "mi",
+                                "attrs": {
+                                  "data-latex": "b"
+                                },
+                                "properties": {
+                                  "texprimestyle": true
+                                },
+                                "children": [
+                                  {
+                                    "kind": "text",
+                                    "attrs": {},
+                                    "properties": {},
+                                    "children": [],
+                                    "text": "b"
+                                  }
+                                ],
+                                "text": "b"
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "TeXAtom",
+                            "attrs": {
+                              "data-latex": "\\bigr )"
+                            },
+                            "properties": {
+                              "texClass": 5
+                            },
+                            "children": [
+                              {
+                                "kind": "inferredMrow",
+                                "attrs": {},
+                                "properties": {},
+                                "children": [
+                                  {
+                                    "kind": "mo",
+                                    "attrs": {
+                                      "minsize": "1.2em",
+                                      "maxsize": "1.2em"
+                                    },
+                                    "properties": {},
+                                    "children": [
+                                      {
+                                        "kind": "text",
+                                        "attrs": {},
+                                        "properties": {},
+                                        "children": [],
+                                        "text": ")"
+                                      }
+                                    ],
+                                    "text": ")"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-operatorname-limits",
+      "input": "\\operatorname{lim}\\limits_{n}",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\operatorname{lim}\\limits_{n}",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "msub",
+                "attrs": {
+                  "data-latex": "\\operatorname{lim}\\limits_{n}"
+                },
+                "properties": {
+                  "sub-sup": "_",
+                  "movesupsub": false
+                },
+                "children": [
+                  {
+                    "kind": "mi",
+                    "attrs": {
+                      "data-latex": "\\operatorname{lim}\\limits"
+                    },
+                    "properties": {
+                      "movesupsub": false,
+                      "movablelimits": true,
+                      "texClass": 1
+                    },
+                    "children": [
+                      {
+                        "kind": "text",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [],
+                        "text": "lim"
+                      }
+                    ],
+                    "text": "lim"
+                  },
+                  {
+                    "kind": "TeXAtom",
+                    "attrs": {
+                      "data-latex": "{n}"
+                    },
+                    "properties": {
+                      "texClass": 0,
+                      "texprimestyle": true
+                    },
+                    "children": [
+                      {
+                        "kind": "inferredMrow",
+                        "attrs": {},
+                        "properties": {
+                          "texprimestyle": true
+                        },
+                        "children": [
+                          {
+                            "kind": "mi",
+                            "attrs": {
+                              "data-latex": "n"
+                            },
+                            "properties": {
+                              "texprimestyle": true
+                            },
+                            "children": [
+                              {
+                                "kind": "text",
+                                "attrs": {},
+                                "properties": {},
+                                "children": [],
+                                "text": "n"
+                              }
+                            ],
+                            "text": "n"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    },
+    {
+      "name": "ams-multint-with-limits",
+      "input": "\\iint\\limits_a^b",
+      "result": {
+        "kind": "math",
+        "attrs": {
+          "data-latex": "\\iint\\limits_a^b",
+          "display": "block"
+        },
+        "properties": {},
+        "children": [
+          {
+            "kind": "inferredMrow",
+            "attrs": {},
+            "properties": {},
+            "children": [
+              {
+                "kind": "munderover",
+                "attrs": {
+                  "data-latex": "\\iint\\limits_a^b"
+                },
+                "properties": {
+                  "movesupsub": true,
+                  "sub-sup": "^"
+                },
+                "children": [
+                  {
+                    "kind": "mo",
+                    "attrs": {
+                      "data-latex": "\\limits"
+                    },
+                    "properties": {
+                      "in-lists": "fixStretchy",
+                      "movesupsub": true,
+                      "movablelimits": false,
+                      "texprimestyle": true
+                    },
+                    "children": [
+                      {
+                        "kind": "text",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [],
+                        "text": "∬"
+                      }
+                    ],
+                    "text": "∬"
+                  },
+                  {
+                    "kind": "mi",
+                    "attrs": {
+                      "data-latex": "a"
+                    },
+                    "properties": {
+                      "texprimestyle": true
+                    },
+                    "children": [
+                      {
+                        "kind": "text",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [],
+                        "text": "a"
+                      }
+                    ],
+                    "text": "a"
+                  },
+                  {
+                    "kind": "mi",
+                    "attrs": {
+                      "data-latex": "b"
+                    },
+                    "properties": {},
+                    "children": [
+                      {
+                        "kind": "text",
+                        "attrs": {},
+                        "properties": {},
+                        "children": [],
+                        "text": "b"
+                      }
+                    ],
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "error": null,
+      "dynamicMaps": {
+        "new-Delimiter": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Command": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        },
+        "new-Environment": {
+          "sameRegistryMap": true,
+          "entries": {
+            "$": "map",
+            "entries": []
+          }
+        }
+      },
+      "packageData": {
+        "$": "map",
+        "entries": [
+          [
+            "newcommand",
+            {}
+          ]
+        ]
+      }
+    }
+  ]
+}
