@@ -350,6 +350,11 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mml_typed_table.cpp
     tests/math/typed_mml_containers.cpp
     tests/math/native_raii_mo.cpp
+    tests/math/mml_exact_clone_document.cpp
+    tests/math/mml_exact_clone_mo.cpp
+    tests/math/mml_exact_clone_xml.cpp
+    tests/math/mml_exact_clone_fenced.cpp
+    tests/math/mml_exact_clone_row.cpp
     tests/math/native_mml_families.cpp
     tests/math/native_string_util.cpp
     tests/math/native_raii_fonts.cpp

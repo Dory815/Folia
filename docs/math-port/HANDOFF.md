@@ -6,11 +6,11 @@
 
 ## 恢复时先看这几行
 
-- 最近核对 HEAD：`33ea03fb`。43 类实际 MML 已接入唯一工厂和文档 arena，
-  组件测试 179 项 / 31,618 断言通过；不要重新迁移这些类或重跑已完成的大盘点。
-- 下一项是补齐 `cloneSubtree` 的家族状态，然后恢复 Common 实际类协作。
-  **clone 修正尚未实现**：当前仍只复制 shared base fields 和 normal children。
-  `MmlClone` / `copyNativeStateTo` 只是讨论中的实现方案，未冻结、未写入生产代码、未验收。
+- MML 集成基线 `33ea03fb`：43 类实际 MML 已接入唯一工厂和文档 arena。
+  后续 exact clone 也已实现并验收，当前组件测试 **194 项 / 31,793 断言**通过。
+  不要重新迁移这些类或重跑已完成的大盘点。
+- 下一项是恢复 Common 实际类协作。`MmlClone` / `copyNativeStateTo` 已在原有模块中
+  实现并构建测试，**不再是待实现的讨论方案**；家族状态、辅助节点映射和异常回滚已补齐。
 - TeX→SVG 和 Folia 原生接入尚未完成；Mermaid 继续暂停。
 - 现有未提交改动见文末“工作区保护”，本次记事不改变其归属。
 - 2026-10-20 用户再次要求压缩后读取小本本。已有记录不能代替实际执行：
@@ -175,19 +175,15 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 
 ### 紧接着执行
 
-1. **补齐 native exact clone 的新增家族状态**：当前 cloneSubtree 保留原 shared base
-   fields/normal children，但没有复制 Mo mode/lspace/rspace、XML payload/adaptor、
-   Mfenced auxiliary nodes。需要类型明确的类职责与目标文档内 remapping，不能复制源 arena
-   指针、把 Source copy 代作 exact clone，或增加通用对象层。Mrow core cache 也要明确处理。
-   已有具体案例建议在 ignored `mml-copy-clone-review/REVIEW.md`，不要重新排查已确认差异。
-2. **恢复 Common 实际类协作**：MML family 现已具备基础，不再说“只有 final 结构节点”。
+1. **恢复 Common 实际类协作**：MML family 及 exact clone 已具备基础，
+   不再说“只有 final 结构节点”或“clone 尚未复制家族状态”。
    复核 `common-wrapper-contract/CONTRACT.md`，冻结 CommonOutputJax / CommonWrapper /
    Factory 的实际依赖与状态所有权后，复用旧 C++ 方法原地迁移。此前 Jax/jax() 和临时 BBox
    引用问题仍需处理。分式/根式当前 scalar helper API 不是最终 wrapper 架构。
-3. 接通完整 TeX parser/stack/38-package 流程、Common 共享布局、Renderer 和 SVG；
+2. 接通完整 TeX parser/stack/38-package 流程、Common 共享布局、Renderer 和 SVG；
    按固定上游 profile 做真正 TeX→SVG 对照，再替换 Folia 数学 QuickJS worker。
    当前 Folia 仍是旧路径。Mermaid 暂停，不做 D2D 像素对照。
-4. inactive 模拟 bindings/hosts/receiver 算法仍未清理，不能把未进 CMake 当作已移植完成。
+3. inactive 模拟 bindings/hosts/receiver 算法仍未清理，不能把未进 CMake 当作已移植完成。
    在其全部真实消费者迁移后移除对应旧职责，不推广旧 retirement 补丁。
 
 本轮按家族分批提交，整组以同一集成测试验收；接口/工厂/CMake 在最后一笔接通。
@@ -195,6 +191,22 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 `4d7d8686`，arithmetic `cd97192c`，scripts `20a66b90`，table `5680452a`，containers
 `a4b4245f`，Mo `d595a4d7`；最后的文档/唯一工厂/基类/CMake 接入由本记录所在提交保存。
 Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变共享架构。
+
+### Native exact clone（2026-10-20 已完成）
+
+- 文档内单次 `MmlClone` 只保存源/目标的借用指针映射，不拥有节点；目标 arena 仍是唯一 owner。
+  先登记 raw 目标再复制 normal children，最后 virtual hook 复制实际家族状态。
+- Mo 原类复制 mode/lspace/rspace；XML/HTML 共享不可变 payload/adaptor；Mfenced
+  在同一映射中复制生成 Mo/Text，保留别名、空项和唯一父链接；Mrow/inferred row 清空借用 cache。
+  不调用可能改状态的查询来重建快照，也不改变 Source `copy` 的重构行为。
+- 失败时销毁本次新 arena tail，已有目标节点/root 与源树不变。测试通过实际派生 hook 抛异常，
+  检查节点析构计数；另覆盖辅助引用父冲突。没有新增通用对象、释放补丁或第二所有权层。
+- Root 实际构建 exit0：`build/math-port/mml-exact-clone-final-build.log`；
+  聚焦 exit0：`mml-exact-clone-final-focused.log`；完整 **194 项 / 31,793 断言** exit0：
+  `build/math-port/mml-exact-clone-final-full.log`。新增 15 项 / 175 断言。
+- 四个 Luna 按冻结接口各自负责 Mo/XML/Mfenced/Mrow 原文件和独立测试；Root 负责文档/base、
+  回滚测试、审查、CMake 和执行。正式职责/验收在 `typed-mml-implementation.md`。
+- 此结果依旧只是组件验收，不是 TeX→SVG/Folia 接入证明。
 
 ## 工作区保护
 
