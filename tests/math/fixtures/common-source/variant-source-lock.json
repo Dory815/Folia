@@ -1,0 +1,21 @@
+{
+  "scopeSha256": "9705d389538b2fc8bf782feea4372ace639b3727304f2971937bbcfb0042a0d1",
+  "source": {
+    "output/common/Wrapper.ts": "d1db6112db1cb3546658eb8868b5997a4f69e588632ecbe4e08a71949544a828",
+    "output/common/WrapperFactory.ts": "a798803bab094ae1e72cd7f96eb37aca936ac458da145c1ebb22079a0280b6cd",
+    "output/common/LineBBox.ts": "42646988f6914b044044c4fe6edd700e6b68e1b6b16524ae0282d5715723326a",
+    "output/common/Wrappers/mrow.ts": "7e363c64d653d9cebd18c9e70784018c6f44b29b09bc26847b921b47e696e5d9",
+    "output/common/Wrappers/mo.ts": "67c7ed182bc8a38139da98e4d42d0350d2386de29a7e5f95095b4161dcab1bcf",
+    "output/svg.ts": "557acc55adc39e849864c61a92ac9e253bce5c13fbfd16603f143cf9c85ee9e5",
+    "output/svg/Wrapper.ts": "3d886e96761e90c045d455ed3e246692e1f9feedac770adcc4b0d9dc4096f6b2"
+  },
+  "cjs": {
+    "output/common/Wrapper.js": "9e21f886b91624d170ff89df0eecef31e789ffecda001abc3e5649a38419412b",
+    "output/common/WrapperFactory.js": "57ce2e232ec1919fa518699226466ceef52cbcb2af75559137d2bb2dc83ea2ab",
+    "output/common/LineBBox.js": "5e6464e467ef82116d6933af020450bacb354d518848049188cd0dde0b2eadd2",
+    "output/common/Wrappers/mrow.js": "656d226a08412290c90284fa5ab0b311b288e8aaeb33c257d8d99e20ee920776",
+    "output/common/Wrappers/mo.js": "d447975853c750ad94eb3cc5fe4e3ae012fbdc73841d39bbef3080619e765a1c",
+    "output/svg.js": "1495e23a9da0bf6b0e8b44d71f54271fa12e902c11444e4f18cdd749ad3b800e",
+    "output/svg/Wrapper.js": "3ba6e35cf799f0cffe5c555be3f81c12d8a8f81fe36257685ddccb96f4671ee4"
+  }
+}

@@ -6,6 +6,13 @@
 
 ## 恢复时先看这几行
 
+- **Common 整合正在进行**：Wrapper/Factory/Jax、Mo/Mrow/Inferred/Text 六类及 Mtext/Math
+  已进入工作树构建，尚未完整原生验收；不要拿下方旧 205 项结论证明这些新改动通过。
+  六个正式 `common-*-source-witness` 已由 Root 运行成功，输出
+  `build/math-port/common-{factory,jax,variant,text,row,mo}-formal-source.log`；row reflow
+  另见 `common-row-reflow-formal-source.log`。正式工具覆盖与限制见 `common-source-witness-coverage.md`。
+  正在补 LayoutJob 的 inline policy/marking 数学生命周期；实际 LinebreakVisitor 和其余家族
+  候选均已交付，尚未编译整合。不要重写这些候选，也不要宣称 TeX→SVG 已完成。
 - MML 集成基线 `33ea03fb`：43 类实际 MML 已接入唯一工厂和文档 arena。
   后续 exact clone、StyleJson、Common 值类型/字体 CSS 数据也已实现并验收，
   TreeVisitor 也已原生实现并验收；当前组件测试 **205 项 / 32,065 断言**通过。

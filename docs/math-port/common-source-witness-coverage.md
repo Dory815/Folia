@@ -1,0 +1,20 @@
+# Common pinned Source witness coverage
+
+These six standalone witnesses exercise existing MathJax 4.1.3 Common behavior. They are evidence for the named Source cases, not native behavior or complete Common/renderer parity. All generated JSON and logs are written beneath ignored `build/math-port/common-source/`.
+
+| Candidate formal tool | Source and exercised behavior | Limits |
+| --- | --- | --- |
+| `tools/math-port/common-factory-source-witness.cjs` | Fixed hashes for Common `Wrapper.ts`, `WrapperFactory.ts`, Tree `WrapperFactory.ts`, and SVG/CHTML wrapper catalogs; checks package versions, extracted common style/variant defaults, empty generic registry, wrapper initialization and explicit-parent side-effect order, and 38 SVG/36 CHTML catalog entries. | Confirms source declarations and profile tables; does not instantiate native wrappers or exercise a renderer catalog. |
+| `tools/math-port/common-jax-source-witness.cjs` | Runs pinned 4.1.3 CJS CommonOutputJax methods through a real MathML→SVG Source document. Deep-compares metrics, CSS font data, font styles, linebreak width/marking and cleanup, nested parent marking, and unknown-text cache results against the existing expected JSON. Pins the Common TS/CJS hashes and package versions. | Uses the upstream SVG renderer as a Source harness. It does not compare native Common layout or the final SVG output. |
+| `tools/math-port/common-variant-source-witness.cjs` | Calls pinned Source `CommonWrapper.getVariant` for invalid/null/valid explicit variants and font-family precedence, then compares the existing expected fixture. Validates `scope.json`, locked Common TS/CJS source, and MathJax/NewCM package versions. | Focused method calls with small receiver fixtures; no full wrapper lifecycle or renderer comparison. |
+| `tools/math-port/common-text-source-witness.cjs` | Runs nine real MathML→SVG cases for Unicode `mi`, leading-minus `mn`, scaling, quoted `ms`, `mspace`, `mglyph`, explicit font selection, mtext widths, and display linebreaking. Compares wrapper records and geometry to the original expected JSON; checks locked TypeScript/CJS files, scope and package versions. | These nine cases cover selected token/text behavior and wrapper measurements, not all text input, line-breaking, or font cases. |
+| `tools/math-port/common-row-source-witness.cjs` | Runs a pinned TeX→SVG row with several break opportunities; traverses actual `CommonMrow` wrappers and checks that source-created rows and line breaking occur. Locks `mrow.ts`, `LineBBox.ts`, their CJS outputs, and package versions. Writes the observed row geometry under `build/`. | The existing witness has semantic assertions rather than an external expected JSON snapshot; it does not compare every line geometry field to a checked-in baseline. |
+| `tools/math-port/common-mo-source-witness.mjs` | Executes pinned `CommonMoMixin` methods with the narrowly scoped test support module. Checks dimensions/symmetry, baseline, full-extent rounding, fixed size/schar selection, zero-size truthiness, mathaccent size adjustment, assembly metrics, and linebreak style. Pins `mo.ts` hash and `@mathjax/src` version. | Dependency doubles are explicit test support; called Mo methods come from Source. This focused method witness does not exercise a full font repository or MML renderer. |
+
+The row witness also reflows its actual broken row to widths 6, 8, and 10 with
+left alignment and a 1em indent. Every line must retain L=1 at each width;
+this checks that `shiftLines` clears the prior left offset before realignment.
+
+The Mo loader intercepts imports only when their parent is pinned `ts/output/common/Wrappers/mo.ts`; it returns the named test support module. The witness imports that support module directly only to supply the typed `CommonWrapper` base and `BBox` used by the fixture. The stubs do not replace `CommonMoMixin` or its tested methods.
+
+Source hashes and expected observations are scoped to the repository's pinned MathJax 4.1.3 profile. Passing these scripts does not establish native ownership, native Common integration, complete layout parity, SVG parity, or Folia application integration.

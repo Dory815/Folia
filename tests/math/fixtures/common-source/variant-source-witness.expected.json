@@ -1,0 +1,20 @@
+{
+  "invalid": {
+    "variant": "normal",
+    "warnings": ["Invalid variant: not-a-source-variant"]
+  },
+  "explicitNull": {
+    "variant": "normal",
+    "warnings": ["Invalid variant: null"]
+  },
+  "valid": {
+    "variant": "normal",
+    "warnings": []
+  },
+  "fontFamilyPrecedence": {
+    "variant": "-explicitFont",
+    "explicitFont": {
+      "family": "MathAttribute"
+    }
+  }
+}
