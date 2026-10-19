@@ -1,0 +1,14 @@
+{
+  "version": "4.1.3",
+  "sha256": {
+    "output/common/FontData.js": "b14584e26fcb9c76d74ae4688b37e0afcc348278dc26126b4baf6662886ff63a",
+    "core/MmlTree/MmlFactory.js": "d0c4e25237d04a9d21d12ee44776e46d30777e7f284db6f4f3ed1cc625b752d3",
+    "output/common/Wrappers/msubsup.js": "10c11393a9ec6273de294cb31fd1c51665f4be8e11a5b830bad9d739def680be",
+    "output/common/Wrappers/scriptbase.js": "3781ec869fc7c95bbc6d993a7b5cc82724f1592fe00e9b712cf82d4272c06289",
+    "output/common/Wrappers/mmultiscripts.js": "82802f8b88dc48ffec0439cc8ffc8e5163c21cf82a28dcc84c7c44513bb05c2b",
+    "core/MmlTree/MmlNode.js": "86c5eb572dcf2652c3c52a60b66c720d231e17f600cc9aeef3ace4aeafc81d45",
+    "core/MmlTree/MmlNodes/msubsup.js": "7971b391a8d7c92e0d6115b17c4c394dafc828942fc00591ba6064b871610c18",
+    "core/MmlTree/MmlNodes/mmultiscripts.js": "db40a3543cffbd706c0070ae0877285ce22b07db3a7e530e56f42eaa7b2d922e",
+    "util/BBox.js": "792428ce9802696fe669aa8a13b1a92f5f2eaadd07e05fc28bd359acd8d2062d"
+  }
+}

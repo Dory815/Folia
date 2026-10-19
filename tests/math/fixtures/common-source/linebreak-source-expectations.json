@@ -1,0 +1,12 @@
+{
+  "texclassClose": 5,
+  "nestedOpenPenalty": 8800,
+  "noPreviousOpenPenalty": 3300,
+  "selectedBreaks": [["break", null]],
+  "postBreakWidth": 0,
+  "binaryGoodbreakPenalty": 3558,
+  "unmatchedClose": { "penalty": 2700, "depth": -1 },
+  "mspaceNewlinePenalty": 0,
+  "mspaceNobreakPenalty": 1000000,
+  "breakStyle": "before"
+}

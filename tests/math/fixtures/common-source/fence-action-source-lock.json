@@ -1,0 +1,11 @@
+{
+  "version": "4.1.3",
+  "sourceTsSha256": {
+    ".reference/MathJax-src/ts/output/common/Wrappers/mfenced.ts": "0da151ef587e065dbdfe1cd750999a41bcfee67c0d765ea0622baa206b40a40d",
+    ".reference/MathJax-src/ts/output/common/Wrappers/maction.ts": "7a83a9dea6f03ed6ceca9d4fd4537bf4f571023e65ca9ff3b1d614cf558a28c9"
+  },
+  "cjsSha256": {
+    "output/common/Wrappers/mfenced.js": "a02799dfd87903d59a13c509f9a9593bdc6882c2a0d7c43c1a8220ff35ceb166",
+    "output/common/Wrappers/maction.js": "0ff1cc7ec6b74055ddefa93b1e7d27afd3e7344ce6d830877ec4d0bef5f495f9"
+  }
+}

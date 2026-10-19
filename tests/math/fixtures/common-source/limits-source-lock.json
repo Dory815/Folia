@@ -1,0 +1,14 @@
+{
+  "version": "4.1.3",
+  "sha256": {
+    "core/MmlTree/MmlFactory.js": "d0c4e25237d04a9d21d12ee44776e46d30777e7f284db6f4f3ed1cc625b752d3",
+    "core/MmlTree/MmlNodes/munderover.js": "104a6ed2f1a8967726c4a0da6ffd0ffb917c23fe0b3847138161c975fa0785b9",
+    "output/common/Wrappers/scriptbase.js": "3781ec869fc7c95bbc6d993a7b5cc82724f1592fe00e9b712cf82d4272c06289",
+    "output/common/Wrappers/munderover.js": "6b746b059ad85131b28ca62c755b234e31f0aa4403956eafb8621d4ff0a81d4e",
+    "util/BBox.js": "792428ce9802696fe669aa8a13b1a92f5f2eaadd07e05fc28bd359acd8d2062d"
+  },
+  "sourceTsSha256": {
+    ".reference/MathJax-src/ts/output/common/Wrappers/munderover.ts": "bd77fa0e9ff51e1e2771810198e987d4b3047f68aefde5ceb64de0266fb078eb",
+    ".reference/MathJax-src/ts/output/common/Wrappers/scriptbase.ts": "f63e12bd993ff76bd1717d73e3a9c9f57831bdcc8cbc80f2e01b7d4de0cbb02e"
+  }
+}
