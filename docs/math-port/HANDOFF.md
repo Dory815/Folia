@@ -72,7 +72,7 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
   `tools/math-port/line-bbox-source-witness.cjs` 对固定哈希的 Source 运行通过；
   原生 LineBBox 3 项 / 25 断言通过，全量 114 项 / 30,724 断言通过：
   `build/math-port/line-bbox-native-reuse-full.log`，构建 `line-bbox-native-reuse-final-build.log`。
-- Typed Tree Factory/Wrapper 已在原有五个文件中迁移（本记录对应提交）。保留
+- `2dc1bce0`：Typed Tree Factory/Wrapper 已在原有五个文件中迁移。保留
   FactoryServices/AbstractFactory/WrapperServices/Wrapper/AbstractWrapper/
   AbstractWrapperFactory 类职责：一个有序类型登记表，明确 Arguments，构造后移交
   unique_ptr 给具体 owner；没有 Context、any、通用 Property 或第二 creator 对象。
@@ -81,6 +81,12 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
   原生新增 6 项 / 28 断言，全量 120 项 / 30,752 断言通过：
   `build/math-port/typed-tree-factory-full.log`，构建 `typed-tree-factory-final-build.log`。
   当前 Common/MML 消费者尚未接入这些模板，不代表端到端完成。
+- Typed Tree Node 已在原有 node_types/node 文件中迁移（本记录对应提交）。保留
+  Node/AbstractNode/AbstractEmptyNode 的结构操作、虚拟分派、子类查询、复制、遍历、
+  空节点行为；NodeOwner 借用具体文档来执行结构修改，没有第二棵树或通用对象状态。
+  Source witness `tools/math-port/tree-node-source-witness.cjs` 跑过固定哈希上游；
+  原生新增 3 项 / 43 断言，全量 123 项 / 30,795 断言通过：
+  `build/math-port/typed-tree-node-full.log`，构建 `typed-tree-node-final-build.log`。
 
 ## 下一步，按此接续
 
@@ -104,10 +110,8 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
    对应实现读取（dc287b48 之前）；具体家族文件仍在当前树中。
    注意：当前 util/lengths 已是纯原生 LengthContext API，草稿所称仍依赖 Property
    是过时信息，不能据此重做长度模块。
-4. 当前 Node/AbstractNode/AbstractEmptyNode 原生候选在
-   `tools/math-port/drafts/native-raii/typed-tree-node/`，已按 Root 复核修正虚方法、模块
-   重导出、KindName 签名、子类测试和 aliased setChildren；待正式推广/构建/原生验收。
-   NodeOwner 是借用的文档结构操作接口，Node 拥有唯一 parent_/children_；不是第二棵树。
+4. Node/AbstractNode/AbstractEmptyNode 已正式推广并验证，不要重做。MML 接入时继承
+   此唯一 parent_/children_ 存储；具体 MmlDocument 的 NodeOwner 接口仍需实现。
 5. MML 基类声明草稿在 `tools/math-port/drafts/native-raii/typed-mml-base-contract/`。
    尚未接受：Root 正在要求修正错误 module 名、重复 texclass 状态、缺少的 Source 默认
    虚方法、错误 addInheritedAttributes 参数和继承规则表类型。修复前不能分派家族实现。
@@ -115,7 +119,14 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
    doc.make -> factory.allocateRaw -> 单一登记表 -> 实际派生节点 -> doc.adopt；
    MmlFactory.make 做 defaults/arity 再直接 allocateRaw，不能回调 doc.make 形成递归。
    doc.make 仍是原有无 defaults 的底层构造，保持现有 absent 属性测试语义。
-   外来 XML 值类型尚需确定，不能临时发明一个 DOM/对象语义框架。
+   Root 已选择保留原有 XmlObject/XmlAdaptor/XMLNode/HtmlAdaptor/HtmlNode 协议，
+   以不可变 XML 值及 shared const adaptor owner 明确 RAII 生命周期，不新建 DOM；
+   属性接口只用字符串/optional 字符串，不再用通用 Property。
+   gpt-6.1-sol 仅做了这一份 MML 头文件只读复核，发现了需要保留的继承 origin、
+   token defaults/walkTree、TextNode 虚拟 setter、verifyTree 省略语义和 factory adopt/friend。
+   继承输入已修正为 {name,origin:NodeKind,AttributeValue}，additions 保持普通键值；
+   display/level/prime 改为 Source 的 bool/double/bool 默认 false/0/false。
+   完整复核在该 Sol 的最终消息；Root 应将修正落实到草稿再冻结，不得假定已实现。
 
 Root 负责正式文件推广、CMake、构建、原生执行和提交；Luna 在各自忽略草稿目录工作。
 给每项任务指定既有 C++ 方法、保留职责、替换类型、调用者和验收，不让代理自行重划架构。

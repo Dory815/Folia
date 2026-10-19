@@ -172,6 +172,36 @@ methods are retired; mathematical property values remain in the existing typed
 MML `NodeProperties`, and cloning them belongs to the document. No `std::any`,
 property bags, source readers/writers or callable receiver abstraction remain.
 
+`MmlDocument` owns its one `MmlFactory` and exposes it by borrowed reference;
+TeX `NodeFactory` and callers borrow that factory. Raw document construction
+delegates to `MmlFactory::allocateRaw`, the single concrete-class registry, and
+document adoption. `MmlFactory::make(kind, attributes, children)` keeps current
+validation/default/arity responsibilities and calls `allocateRaw` directly.
+It must not call back into `document.make`. Raw construction continues to omit
+defaults, preserving the existing low-level API; ordinary parser construction
+uses `MmlFactory::make`. Exact `cloneSubtree` and Source `node.copy(keepIds)`
+retain their different, already identified contracts.
+
+Inherited attribute inputs are explicit records `{name, origin: NodeKind,
+value: AttributeValue}`. Origin is required for the Source `noInherit` rules.
+Plain attribute additions have no origin until `addInheritedAttributes` stamps
+the current node kind, excluding displaystyle/scriptlevel/style. Inheritance
+display/level/prime inputs are native bool/double/bool with false/0/false
+defaults. Verification omission means no verification, so the typed API keeps
+an explicit absent-options call form distinct from `VerifyOptions{}`.
+
+Foreign XML/HTML keeps its existing `XmlObject`, `XmlAdaptor`, `XMLNode`,
+`HtmlAdaptor` and `HtmlNode` responsibilities; do not invent another DOM or an
+unrelated snapshot API. `XmlRef` owns an immutable, XML-domain payload;
+`XMLNode` retains a shared const typed adaptor owner. This protocol has only
+clone/serialization and the actual HTML string-attribute/content operations,
+with native strings, optional strings and vectors of XML references replacing
+Property/PropertyList. Adaptors retain no MML/parser/wrapper state or references.
+This is a foreign-content value boundary; Common layout does not construct DOM
+nodes. Token text reads real `TextNode`/`HtmlNode` virtual methods rather than
+reflective `textContent` fields. SVG consumes serialized content and measured
+runs through its existing foreign-content contract.
+
 | Lifetime | Owner | Owned contents | Permitted references |
 |---|---|---|---|
 | Process/profile | immutable `FontRepository`, `PackageRegistry` | font tables/outlines, native handler registration | shared const data; finite declared cache bounds |
