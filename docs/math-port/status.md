@@ -12,20 +12,6 @@ listener-position pairs. Font tables, instance extensions and provider
 comparisons also pass. All 2,213 registered inputs remained unchanged.
 See [the Gate268 execution record](evidence/shared-gate268.md).
 
-Gate271's native C ABI probe passes, including UTF-16 input, error SVGs,
-result lifetime, thread checks, cancellation and deadlines. This is a narrow
-bridge result. Gate270 compiled but failed four Host assertions in the new
-MML property capture; its Source-visible factory getter regression and
-persistent mtable defaults baseline still require correction. ParseOptions
-real-owner cases pass 39 assertions, and Foundation passes 116 / 1,334.
-See [the bridge checkpoint](evidence/native-bridge-gate271.md).
-
-Request-owner growth remains unresolved. Gate270 measures 18,816 additional
-owner-bearing records over 192 renders, down from Gate268's 27,264 after
-Lite callback and native MML projection cleanup. The Host failure prevents
-accepting that tree as a complete result. Sparse retired-record storage is
-under review and has not been built or run.
-
 Gate273 builds successfully. Context checks pass 26 tests / 208 assertions,
 Foundation passes 116 / 1,334, and the C ABI probe passes. Host still has one
 projection cleanup assertion failure; the earlier Source factory getter
@@ -34,12 +20,18 @@ including 18,816 owner-bearing records. Retired Record storage is reclaimed,
 but the observation takes 526.857 seconds and the teardown algorithm needs
 revision. This tree is not accepted. See [the Gate273 record](evidence/shared-gate273.md).
 
+The C ABI probe covers UTF-16 input, error SVGs, retained result bytes,
+thread checks, cancellation and deadlines. ParseOptions real-owner cases
+pass 39 assertions. See [the bridge checkpoint](evidence/native-bridge-gate271.md).
+Owner-bearing growth has fallen from Gate268's 27,264 to 18,816 after Lite
+callback and native MML property cleanup, but lifetime remains unbounded.
+
 The complete per-file/member review, actual native worker acceptance and
 Folia math backend switch remain open. The user removed the additional D2D
 pixel comparison: integration continues through the existing SVG path.
-The C ABI is committed; raster/worker integration candidates are drafts.
-Mermaid remains paused. Current
-builds reuse ignored output and run at most four compile jobs.
+The C ABI is committed; the native worker and its tests remain drafts.
+Mermaid remains paused. Builds reuse ignored output and run at most four
+compile jobs.
 
 ## Earlier Gate255 checkpoint
 
