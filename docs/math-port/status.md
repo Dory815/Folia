@@ -4,7 +4,18 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest completed full evaluation (Gate212): all 61 targets compile with 2,179
+Latest completed full evaluation (Gate213): all 61 targets compile with 2,179
+unchanged input entries through evaluation, using at most four compile jobs.
+API matches 9/9 and BBoldx SVG/glyph paths match 6/6. Parser, Regexp and
+LinkedList pass. Core still exits with an access violation; Host and Foundation
+fail. Common layout, full SVG, paired Scene and both request-lifetime probes
+exceed their existing time limits, so this gate establishes no complete layout
+or SVG parity result. Package captures complete 24/25 and comparisons pass
+15/20. See `evidence/shared-g213.md`. Source-confirmed fixture corrections,
+fallback property-copy snapshots and timing diagnostics are applied afterward
+and await the next build. Folia integration remains pending.
+
+Previous completed full evaluation (Gate212): all 61 targets compile with 2,179
 unchanged inputs through evaluation. API matches 9/9, Common layout 75/75,
 and public SVG/error records 150/150. This means 146 serialized SVG results
 and four matching host errors, not 150 successful SVG renders. The two Maction
@@ -14,9 +25,9 @@ routes agree on all 146 successful outputs; BBoldx SVG also passes.
 Full acceptance still fails: Core exits with an access violation, Host and
 Foundation have failures, mhchem and two request-lifetime observations exceed
 their 60-second limits, and 16/20 package comparisons pass. Parser, Regexp and
-LinkedList pass. Gate213 is building the reviewed Tree null-property access,
-property-copy Symbols, and MML constructor-field corrections with at most four
-parallel jobs. Those new changes are not yet verified. See
+LinkedList pass. Gate213 subsequently compiled the reviewed Tree null-property
+access, partial property-copy Symbols and MML constructor-field corrections;
+its full evaluation is recorded above. See
 `evidence/shared-g212.md`.
 
 The Core operator-trace null read was isolated to an inactive diagnostic
