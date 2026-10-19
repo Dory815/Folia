@@ -5,3 +5,7 @@ tools/math-port/regressions/g252/common-passive-source.cjs text eol=lf
 tools/math-port/regressions/g252/passive-event-host.cjs text eol=lf
 tools/math-port/regressions/g252/common-reference-lock.json text eol=lf
 tools/math-port/regressions/g252/compare-common-passive.cjs text eol=lf
+
+# Reproducible MathJax Source observation tables.
+tests/math/fixtures/fraction_source_pairs.txt text eol=lf
+tests/math/fixtures/radical_source_pairs.txt text eol=lf

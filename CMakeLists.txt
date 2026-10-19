@@ -244,6 +244,8 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
 target_compile_features(FoliaMathTests PRIVATE cxx_std_23)
 set_target_properties(FoliaMathTests PROPERTIES CXX_MODULE_STD ON CXX_SCAN_FOR_MODULES ON)
 target_include_directories(FoliaMathTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_compile_definitions(FoliaMathTests PRIVATE
+    FOLIA_MATH_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/math/fixtures")
 target_link_libraries(FoliaMathTests PRIVATE folia_math Boost::ut_module)
 add_test(NAME FoliaMathTests COMMAND FoliaMathTests)
 if(MSVC)

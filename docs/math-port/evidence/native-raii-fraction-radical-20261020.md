@@ -1,5 +1,39 @@
 # Shared fraction and radical numerical layout
 
+## Test representation correction
+
+The earlier 4,241/3,954-line generated C++ suites have been replaced by compact
+table-driven runners and separate Source observation tables. Re-running the
+tracked witnesses reproduces all 288/192 case records exactly (deep comparison
+with the earlier observations). The focused native run passes both tests:
+14,208 fraction assertions and 11,424 radical assertions. Fraction now also
+checks the staged request after mutating its original input. All 480 inputs and
+the original output comparisons remain covered; no native equations generate
+expected values. Log: `build/math-port/layout-table-focused.log`.
+
+Reproduce from the repository root, using the pinned local source and bundles:
+
+```powershell
+node tools/math-port/layout-source-fraction.cjs --output build/math-port/fraction-source.json
+node tools/math-port/layout-source-radical.cjs --output build/math-port/radical-source.json
+node tools/math-port/layout-source-table.cjs --family fraction --input build/math-port/fraction-source.json --output tests/math/fixtures/fraction_source_pairs.txt --check
+node tools/math-port/layout-source-table.cjs --family radical --input build/math-port/radical-source.json --output tests/math/fixtures/radical_source_pairs.txt --check
+build/core/FoliaMathTests.exe "*all_generated_source*"
+```
+
+Omit `--check` only when intentionally regenerating the tables. Their first
+non-comment line names every column; subsequent rows use those field names,
+quoted strings and `~` for missing/null observations. Source TS/CJS hashes are
+checked before accepting witness output. The test-local reader is not part of
+the native math module.
+
+These remain numerical component tests. Canonical Common wrapper orchestration
+and actual layout-to-Scene integration are still incomplete. The additional
+`placement/` family introduced in b030b874 is superseded by the canonical
+Common-family ownership correction in `native-raii-architecture.md`.
+
+## Earlier component observations
+
 The native placement services own inputs and results and depend only on BBox
 and std. They combine the pinned Common measurement and SVG placement
 equations once; neither backend owns a second fraction/root algorithm.
