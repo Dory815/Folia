@@ -19,6 +19,9 @@ public:
     options::Value to(const Property&)const;
     // Diagnostic inventory of projection registry entries and still-live storage owners.
     std::array<std::size_t,2> projectionCountsForDiagnostics()const noexcept;
+    // Retire only the Context record created as a projection for this exact native storage.
+    // Source-origin wrappers and identities returned by registered projections are retained.
+    void retireNativeProjectionForStorage(const std::shared_ptr<PropertyStorage>&);
     // Register a canonical projection for one existing native Property graph.
     // The callbacks must return the actual Context object / original Property
     // handle; this facility never copies or fabricates a wrapper object.

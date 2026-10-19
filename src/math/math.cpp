@@ -62,11 +62,13 @@ struct Renderer::State {
     std::optional<mml::MmlFactory::ProductMark> requestMmlMark;
     std::optional<RequestIdentityCapture> requestMmlCapture;
     std::optional<RequestIdentityCapture> requestNodeArrayCapture;
+    std::optional<RequestIdentityCapture> requestAttributesCapture;
     std::optional<adaptors::lite::LiteModule::RequestMark> requestLiteMark;
     std::optional<svg::SceneContextNodes::RequestMark> requestSceneMark;
     bool requestOwnersActive=false;
     bool requestItemRetired=false,requestMmlIdentitiesRetired=false,
-         requestNodeArraysRetired=false,requestSceneRetired=false,requestProductsRetired=false,
+         requestNodeArraysRetired=false,requestAttributesRetired=false,
+         requestSceneRetired=false,requestProductsRetired=false,
          requestLiteRetired=false,requestSourceDomainRetired=false;
 
     std::array<std::size_t,3> sceneOwnerDiagnostics()const {
@@ -133,18 +135,27 @@ struct Renderer::State {
         try{
             requestMmlMark=services.mmlFactory().productMark();
             requestLiteMark=services.lite().requestMark();
-            requestMmlCapture=runtime.mmlNodeIdentities.beginRequestCapture();
-            try{requestNodeArrayCapture=runtime.nodeArrayIdentities.beginRequestCapture();}
-            catch(...){runtime.mmlNodeIdentities.retireCapturedRequestBindings(*requestMmlCapture);requestMmlCapture.reset();throw;}
-            try{document->beginRequestOwnerScope();}
-            catch(...){runtime.nodeArrayIdentities.retireCapturedRequestBindings(*requestNodeArrayCapture);requestNodeArrayCapture.reset();runtime.mmlNodeIdentities.retireCapturedRequestBindings(*requestMmlCapture);requestMmlCapture.reset();throw;}
         }catch(...){
             services.sceneContextNodes().retireRequestScope(*requestSceneMark);
-            requestSceneMark.reset();throw;
+            requestSceneMark.reset();requestMmlMark.reset();requestLiteMark.reset();
+            throw;
         }
         requestItemRetired=requestMmlIdentitiesRetired=requestNodeArraysRetired=
-            requestSceneRetired=requestProductsRetired=requestLiteRetired=requestSourceDomainRetired=false;
+            requestAttributesRetired=requestSceneRetired=requestProductsRetired=
+            requestLiteRetired=requestSourceDomainRetired=false;
+        // Set the owner-scope progress before starting captures. If any later
+        // begin operation throws, the same retirement path can retry any token
+        // whose cleanup itself fails instead of losing it in local rollback.
         requestOwnersActive=true;
+        try{
+            requestMmlCapture=runtime.mmlNodeIdentities.beginRequestCapture();
+            requestNodeArrayCapture=runtime.nodeArrayIdentities.beginRequestCapture();
+            requestAttributesCapture=mmlBindings->beginPrivateRendererAttributesCapture();
+            document->beginRequestOwnerScope();
+        }catch(...){
+            try{retireCurrentRequestOwners();}catch(...){}
+            throw;
+        }
         try{
             requestSourceDomain.emplace(mmlBindings->makePrivateSourceAllocationDomain());
             mmlBindings->bindSourceAllocationDomain(*requestSourceDomain);
@@ -156,9 +167,20 @@ struct Renderer::State {
         if(!requestOwnersActive)return;
         auto& services=session.services();auto& runtime=services.parser();
         if(!requestItemRetired){document->retireCompletedRequestItem();requestItemRetired=true;}
-        if(!requestMmlIdentitiesRetired){runtime.mmlNodeIdentities.retireCapturedRequestBindings(*requestMmlCapture);requestMmlCapture.reset();requestMmlIdentitiesRetired=true;}
-        if(!requestNodeArraysRetired){runtime.nodeArrayIdentities.retireCapturedRequestBindings(*requestNodeArrayCapture);requestNodeArrayCapture.reset();requestNodeArraysRetired=true;}
-        if(!requestSceneRetired){services.sceneContextNodes().retireRequestScope(*requestSceneMark);requestSceneRetired=true;}
+        if(!requestMmlIdentitiesRetired){
+            if(requestMmlCapture)runtime.mmlNodeIdentities.retireCapturedRequestBindings(*requestMmlCapture);
+            requestMmlCapture.reset();requestMmlIdentitiesRetired=true;
+        }
+        if(!requestNodeArraysRetired){
+            if(requestNodeArrayCapture)runtime.nodeArrayIdentities.retireCapturedRequestBindings(*requestNodeArrayCapture);
+            requestNodeArrayCapture.reset();requestNodeArraysRetired=true;
+        }
+        if(!requestAttributesRetired){
+            if(requestAttributesCapture)
+                mmlBindings->retirePrivateRendererAttributesCapture(*requestAttributesCapture);
+            requestAttributesCapture.reset();requestAttributesRetired=true;
+        }
+        if(!requestSceneRetired){services.sceneContextNodes().retireRequestScope(*requestSceneMark);requestSceneMark.reset();requestSceneRetired=true;}
         if(!requestProductsRetired){services.mmlFactory().retireProductsFrom(*requestMmlMark);requestProductsRetired=true;}
         if(!requestLiteRetired){services.lite().retireRequestNodesSince(*requestLiteMark);requestLiteRetired=true;}
         (void)runtime.retireTagInfoOwnersOutsidePrivateRendererRoots();

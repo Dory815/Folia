@@ -326,6 +326,12 @@ std::array<std::size_t,3> MmlContextBindings::nativeOwnerCountsForDiagnostics()c
     return {nodeModule_->attributes().canonicalHandleCountForDiagnostics(),
             projections[0],projections[1]};
 }
+RequestIdentityCapture MmlContextBindings::beginPrivateRendererAttributesCapture(){
+    return nodeModule_->attributes().beginRequestCapture();
+}
+void MmlContextBindings::retirePrivateRendererAttributesCapture(RequestIdentityCapture token){
+    nodeModule_->attributes().retireCapturedRequestBindings(token);
+}
 NativeIdentityBindings<MmlNode*>& MmlContextBindings::nodes(){return nodes_;}
 NativeIdentityBindings<MmlFactory*>& MmlContextBindings::factories(){return factories_;}
 NativeIdentityBindings<Children>& MmlContextBindings::arrays(){return arrays_;}

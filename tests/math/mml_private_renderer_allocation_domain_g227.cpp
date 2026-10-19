@@ -49,6 +49,318 @@ std::weak_ptr<m::MmlFactory> productFactory(const o::Context& context,o::ObjectR
 }
 
 suite mmlPrivateRendererAllocationDomainG227=[] {
+    "private_renderer_attributes_projection_failure_preserves_post_identity_retry_progress"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();
+        runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);
+        if(!bindings)return;
+
+        const auto countBefore=runtime->attributeBindings.canonicalHandleCountForDiagnostics();
+        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        auto owner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
+        std::weak_ptr<folia::math::Attributes> weakOwner=owner;
+        const auto identity=runtime->attributeBindings.bind(owner);
+        const std::array<std::u16string_view,3> fields{u"defaults",u"inherited",u"attributes"};
+        std::array<o::ObjectRef,3> projections{};
+        for(std::size_t i=0;i<fields.size();++i){
+            const auto value=graph.context.get(o::Value(identity),o::Key(std::u16string(fields[i])));
+            const auto* object=std::get_if<o::ObjectRef>(&value.data);
+            expect(object!=nullptr);
+            if(object)projections[i]=*object;
+        }
+        const std::weak_ptr<folia::math::PropertyStorage> pendingDefaults=
+            std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(owner->defaultsLayer()).value);
+        owner.reset();
+
+        // Deliberately invalidate the last pending projection before the first
+        // retirement. The capture has already retained the exact native storage.
+        graph.context.retireObjectRecord(projections[0]);
+        std::optional<std::string> firstName,secondName;
+        std::optional<std::u16string> firstMessage,secondMessage;
+        try{bindings->retirePrivateRendererAttributesCapture(capture);}
+        catch(const o::Exception& error){firstName=error.name;firstMessage=error.message;}
+        expect(firstName.has_value()&&firstMessage.has_value());
+        expect(static_cast<bool>(firstName&&*firstName=="TypeError"));
+        expect(static_cast<bool>(firstMessage&&
+            *firstMessage==u"Object handle refers to a retired Context record"));
+        expect(weakOwner.expired());
+        expect(runtime->attributeBindings.canonicalHandleCountForDiagnostics()==countBefore);
+        expect(!pendingDefaults.expired());
+        for(const auto projection:projections){
+            bool stale=false;
+            try{(void)graph.context.kind(projection);}
+            catch(const o::Exception& error){stale=error.name=="TypeError";}
+            expect(stale);
+        }
+        bool identityStale=false;
+        try{(void)graph.context.kind(identity);}
+        catch(const o::Exception& error){identityStale=error.name=="TypeError";}
+        expect(identityStale);
+
+        // Identity retirement and the first two layer retirements have already
+        // completed. The same token must resume at the still-pending defaults
+        // storage, producing the same stale-record error rather than an inactive
+        // identity-capture-token error. This fixture is intentionally not repaired.
+        try{bindings->retirePrivateRendererAttributesCapture(capture);}
+        catch(const o::Exception& error){secondName=error.name;secondMessage=error.message;}
+        expect(secondName&&firstName&&*secondName==*firstName);
+        expect(static_cast<bool>(secondMessage&&firstMessage&&*secondMessage==*firstMessage));
+        expect(runtime->attributeBindings.canonicalHandleCountForDiagnostics()==countBefore);
+        expect(!pendingDefaults.expired());
+    };
+
+// Draft fragment for integration into mmlPrivateRendererAllocationDomainG227.
+// Uses its SharedGraph, helpers, aliases and existing boost.ut imports.
+
+"private_factory_node_map_has_owner_exact_canonical_retirement"_test=[] {
+    SharedGraph graph;
+    auto runtime=graph.makeRuntime();
+    runtime->initializeParserRuntime();
+    (void)t::BasePackage::initializeModule(*runtime);
+    const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+    expect(bindings!=nullptr);
+    if(!bindings)return;
+
+    auto ambient=std::make_shared<m::MmlFactory>();
+    const auto ambientIdentity=runtime->bindMmlFactory(ambient);
+    const auto ambientMap=std::get<o::ObjectRef>(graph.context.get(
+        o::Value(ambientIdentity),o::Key(u"nodeMap")).data);
+    const auto baseline=runtime->maps.canonicalStorageCountForDiagnostics();
+    auto domain=bindings->makePrivateSourceAllocationDomain();
+    bindings->bindSourceAllocationDomain(domain);
+    const auto factory=runtime->mmlFactoryIdentities.find(&domain.factory());
+    expect(factory.has_value());
+    if(!factory)return;
+
+    const auto first=graph.context.get(o::Value(*factory),o::Key(u"nodeMap"));
+    const auto* map=std::get_if<o::ObjectRef>(&first.data);
+    expect(map!=nullptr);
+    if(!map)return;
+    const auto repeated=graph.context.get(o::Value(*factory),o::Key(u"nodeMap"));
+    expect(repeated==first) << "projected native nodeMap remains Context-canonical";
+    expect(runtime->maps.canonicalStorageCountForDiagnostics()==baseline+1u);
+    auto storage=runtime->maps.resolve(*map);
+    const std::weak_ptr<o::MapStorage> weakStorage=storage;
+    const auto textValue=storage->get(o::Value(u"text"));
+    const auto* textConstructor=std::get_if<o::ObjectRef>(&textValue.data);
+    expect(textConstructor!=nullptr);
+    if(!textConstructor)return;
+    storage.reset();
+
+    const auto nodes=runtime->mmlNodeIdentities.beginRequestCapture();
+    const auto arrays=runtime->nodeArrayIdentities.beginRequestCapture();
+    runtime->mmlNodeIdentities.retireCapturedRequestBindings(nodes);
+    runtime->nodeArrayIdentities.retireCapturedRequestBindings(arrays);
+    bindings->retireSourceAllocationDomain(domain);
+
+    expect(throws<o::Exception>([&]{(void)graph.context.kind(*map);}))
+        << "exact factory-owned projected Map Context object is retired with its owner";
+    expect(throws<o::Exception>([&]{(void)runtime->maps.resolve(*map);}))
+        << "retirement removes the canonical sidecar before owner storage can persist";
+    expect(weakStorage.expired()) << "private projected MapStorage releases after its exact owner retires";
+    expect(graph.context.kind(*textConstructor)==o::ObjectKind::function)
+        << "shared class constructor metadata remains live after one private factory retires";
+    expect(graph.context.kind(ambientMap)==o::ObjectKind::instance);
+    expect(runtime->maps.resolve(ambientMap)!=nullptr)
+        << "an ambient factory Map remains canonical and usable";
+    expect(runtime->maps.canonicalStorageCountForDiagnostics()==baseline);
+};
+
+"private_factory_node_map_replacement_preserves_escaped_old_map_and_new_map"_test=[] {
+    SharedGraph graph;
+    auto runtime=graph.makeRuntime();
+    runtime->initializeParserRuntime();
+    (void)t::BasePackage::initializeModule(*runtime);
+    const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+    expect(bindings!=nullptr);
+    if(!bindings)return;
+
+    const auto baseline=runtime->maps.canonicalStorageCountForDiagnostics();
+    auto domain=bindings->makePrivateSourceAllocationDomain();
+    bindings->bindSourceAllocationDomain(domain);
+    const auto factory=runtime->mmlFactoryIdentities.find(&domain.factory());
+    expect(factory.has_value());
+    if(!factory)return;
+
+    const auto privateValue=graph.context.get(o::Value(*factory),o::Key(u"nodeMap"));
+    const auto* privateMap=std::get_if<o::ObjectRef>(&privateValue.data);
+    expect(privateMap!=nullptr);
+    if(!privateMap)return;
+    const auto replacement=runtime->maps.create();
+    graph.context.set(o::Value(*factory),o::Key(u"nodeMap"),o::Value(replacement));
+    expect(graph.context.get(o::Value(*factory),o::Key(u"nodeMap"))==o::Value(replacement));
+
+    const auto nodes=runtime->mmlNodeIdentities.beginRequestCapture();
+    const auto arrays=runtime->nodeArrayIdentities.beginRequestCapture();
+    runtime->mmlNodeIdentities.retireCapturedRequestBindings(nodes);
+    runtime->nodeArrayIdentities.retireCapturedRequestBindings(arrays);
+    bindings->retireSourceAllocationDomain(domain);
+
+    expect(graph.context.kind(*privateMap)==o::ObjectKind::instance)
+        << "the old Map may have escaped before replacement, so preserve its ECMAScript identity";
+    expect(runtime->maps.resolve(*privateMap)!=nullptr);
+    expect(graph.context.kind(replacement)==o::ObjectKind::instance)
+        << "Source replacement Map remains a live canonical Map";
+    expect(runtime->maps.resolve(replacement)!=nullptr);
+    expect(runtime->maps.canonicalStorageCountForDiagnostics()==baseline+2u)
+        << "both escaped old Map and replacement remain registered";
+};
+
+"map_binding_retirement_is_exact_retryable_and_does_not_remove_another_map"_test=[] {
+    SharedGraph graph;
+    auto runtime=graph.makeRuntime();
+    const auto storage=runtime->maps.createStorage();
+    const auto object=runtime->maps.bind(storage);
+    const auto identity=storage->identity();
+    const auto unregistered=graph.context.object();
+    expect(!runtime->maps.retireBinding(unregistered,identity));
+    expect(graph.context.kind(unregistered)==o::ObjectKind::object);
+    const auto otherStorage=runtime->maps.createStorage();
+    const auto other=runtime->maps.bind(otherStorage);
+    expect(throws<o::Exception>([&]{
+        (void)runtime->maps.retireBinding(object,otherStorage->identity());
+    })) << "wrong expected identity fails before touching the object or registry";
+    expect(graph.context.kind(object)==o::ObjectKind::instance);
+    expect(runtime->maps.resolve(object)==storage);
+    expect(graph.context.kind(other)==o::ObjectKind::instance);
+    expect(runtime->maps.resolve(other)==otherStorage);
+    expect(runtime->maps.retireBinding(object,identity));
+    expect(throws<o::Exception>([&]{(void)graph.context.kind(object);}));
+    expect(!runtime->maps.retireBinding(object,identity))
+        << "already retired binding is an idempotent no-op";
+    expect(graph.context.kind(unregistered)==o::ObjectKind::object);
+    expect(graph.context.kind(other)==o::ObjectKind::instance);
+};
+
+    "private_renderer_attributes_capture_retires_only_new_canonical_owners_after_layer_materialization"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();
+        runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);
+        if(!bindings)return;
+
+        auto ambient=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
+        const auto ambientIdentity=runtime->attributeBindings.bind(ambient);
+        const auto ambientCount=runtime->attributeBindings.canonicalHandleCountForDiagnostics();
+
+        auto factory=std::make_shared<m::MmlFactory>();
+        const auto factoryIdentity=runtime->bindMmlFactory(factory);
+        const auto nodeMap=std::get<o::ObjectRef>(graph.context.get(o::Value(factoryIdentity),o::Key(u"nodeMap")).data);
+        const auto mrow=std::get<o::ObjectRef>(runtime->maps.resolve(nodeMap)->get(o::Value(u"mrow")).data);
+        const auto classDefaults=std::get<o::ObjectRef>(graph.context.get(o::Value(mrow),o::Key(u"defaults")).data);
+        const auto defaultMathVariant=graph.context.get(o::Value(classDefaults),o::Key(u"mathvariant"));
+
+        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        const auto sharedGlobal=graph.context.object();
+        auto requestOwner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},
+            runtime->attributeBindings.fromValue(o::Value(sharedGlobal)));
+        std::weak_ptr<folia::math::Attributes> weakRequestOwner=requestOwner;
+        const auto requestIdentity=runtime->attributeBindings.bind(requestOwner);
+        std::array<std::weak_ptr<folia::math::PropertyStorage>,3> weakStorages{
+            std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(requestOwner->defaultsLayer()).value),
+            std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(requestOwner->inheritedLayer()).value),
+            std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(requestOwner->attributesLayer()).value)};
+        requestOwner.reset();
+        std::array<o::ObjectRef,4> projections{};
+        const std::array<std::u16string_view,4> fields{u"global",u"defaults",u"inherited",u"attributes"};
+        for(std::size_t i=0;i<fields.size();++i){
+            const auto field=graph.context.get(o::Value(requestIdentity),o::Key(std::u16string(fields[i])));
+            const auto* object=std::get_if<o::ObjectRef>(&field.data);
+            expect(object!=nullptr);
+            if(object)projections[i]=*object;
+        }
+        for(std::size_t i=0;i<fields.size();++i)
+            expect(graph.context.get(o::Value(requestIdentity),o::Key(std::u16string(fields[i])))==o::Value(projections[i]));
+        auto userGetterCalls=std::make_shared<std::size_t>(0);
+        const auto userGetter=graph.context.function(u"get diagnostic",[userGetterCalls](o::Context&,o::Value,std::span<const o::Value>){
+            ++*userGetterCalls;return o::Value(7);
+        });
+        graph.context.define(sharedGlobal,o::Key(u"userGetterProbe"),
+            o::Descriptor::access(userGetter,std::nullopt,true,true));
+
+        bindings->retirePrivateRendererAttributesCapture(capture);
+        expect(weakRequestOwner.expired());
+        expect(runtime->attributeBindings.canonicalHandleCountForDiagnostics()==ambientCount);
+        expect(static_cast<bool>(runtime->attributeBindings.resolve(ambientIdentity)==ambient));
+        expect(throws<o::Exception>([&]{(void)graph.context.kind(requestIdentity);}));
+        expect(*userGetterCalls==0u);
+        expect(graph.context.kind(projections[0])==o::ObjectKind::object);
+        expect(graph.context.kind(sharedGlobal)==o::ObjectKind::object);
+        expect(std::all_of(weakStorages.begin(),weakStorages.end(),[](const auto& storage){return storage.expired();}));
+        expect(graph.context.get(o::Value(sharedGlobal),o::Key(u"userGetterProbe"))==o::Value(7));
+        expect(graph.context.kind(classDefaults)==o::ObjectKind::object);
+        expect(graph.context.get(o::Value(classDefaults),o::Key(u"mathvariant"))==defaultMathVariant);
+
+        const auto lazyCapture=bindings->beginPrivateRendererAttributesCapture();
+        auto lazyOwner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
+        const auto lazyIdentity=runtime->attributeBindings.bind(lazyOwner);
+        const std::array<std::weak_ptr<folia::math::PropertyStorage>,3> lazyStorages{
+            std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(lazyOwner->defaultsLayer()).value),
+            std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(lazyOwner->inheritedLayer()).value),
+            std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(lazyOwner->attributesLayer()).value)};
+        lazyOwner.reset();
+        bindings->retirePrivateRendererAttributesCapture(lazyCapture);
+        expect(throws<o::Exception>([&]{(void)graph.context.kind(lazyIdentity);}));
+        expect(std::all_of(lazyStorages.begin(),lazyStorages.end(),[](const auto& storage){return storage.expired();}));
+    };
+
+    "private_renderer_attributes_capture_retires_only_initial_layers_and_keeps_source_replacements"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();
+        runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);
+        if(!bindings)return;
+
+        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        auto owner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
+        const auto identity=runtime->attributeBindings.bind(owner);
+        const std::weak_ptr<folia::math::PropertyStorage> initialDefaults=
+            std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(owner->defaultsLayer()).value);
+        const auto sourceReplacement=graph.context.object();
+        graph.context.set(o::Value(identity),o::Key(u"defaults"),o::Value(sourceReplacement));
+        const auto replacementProjection=graph.context.get(o::Value(identity),o::Key(u"defaults"));
+        expect(std::get_if<o::ObjectRef>(&replacementProjection.data)!=nullptr);
+        bindings->retirePrivateRendererAttributesCapture(capture);
+        owner.reset();
+        expect(initialDefaults.expired());
+        expect(graph.context.kind(sourceReplacement)==o::ObjectKind::object);
+        expect(throws<o::Exception>([&]{(void)graph.context.kind(identity);}));
+    };
+
+    "private_renderer_attributes_capture_preserves_foreign_token_and_failed_retirement_retry"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();
+        runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);
+        if(!bindings)return;
+        using AttributesOwner=std::shared_ptr<folia::math::Attributes>;
+        folia::math::NativeIdentityBindings<AttributesOwner> foreign(graph.context);
+        const auto foreignToken=foreign.beginRequestCapture();
+        expect(throws<o::Exception>([&]{bindings->retirePrivateRendererAttributesCapture(foreignToken);}));
+        foreign.retireCapturedRequestBindings(foreignToken);
+
+        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        auto owner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
+        std::weak_ptr<folia::math::Attributes> weakOwner=owner;
+        const auto identity=runtime->attributeBindings.bind(owner);
+        std::any originalPayload=graph.context.payload(identity);
+        graph.context.setPayload(identity,std::string("temporary invalid payload"));
+        expect(throws<o::Exception>([&]{bindings->retirePrivateRendererAttributesCapture(capture);}));
+        graph.context.setPayload(identity,std::move(originalPayload));
+        bindings->retirePrivateRendererAttributesCapture(capture);
+        owner.reset();originalPayload.reset();
+        expect(weakOwner.expired());
+        expect(throws<o::Exception>([&]{(void)graph.context.kind(identity);}));
+    };
     "private_domain_reuses_the_single_mml_prototype_getter_after_warmup"_test=[] {
         SharedGraph graph;
         auto runtime=graph.makeRuntime();

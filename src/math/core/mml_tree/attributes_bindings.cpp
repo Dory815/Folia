@@ -28,6 +28,13 @@ struct AttributesContextBindings::State:std::enable_shared_from_this<State>{
     std::weak_ptr<std::atomic_bool> executionLifetime;
     NativeIdentityBindings<std::shared_ptr<Attributes>> identities;
     ObjectRef ctor{},proto{};
+    struct Capture {
+        RequestIdentityCapture token;
+        std::vector<std::shared_ptr<PropertyStorage>> storages;
+        bool identitiesRetired=false;
+    };
+    std::unordered_map<std::uint64_t,Capture> captures;
+    std::vector<std::uint64_t> activeCaptures;
 
     State(Context& context,OptionFunctionBindings& functions,
           ContextPropertyBindings& properties,std::weak_ptr<std::atomic_bool> executionLifetime)
@@ -80,6 +87,22 @@ struct AttributesContextBindings::State:std::enable_shared_from_this<State>{
         requireActive();
         if(!owner)typeError(u"Attributes owner is null");
         if(auto existing=identities.find(owner))return *existing;
+        std::optional<std::uint64_t> captureId;
+        if(!activeCaptures.empty()){
+            captureId=activeCaptures.back();
+            auto& storages=captures.at(*captureId).storages;
+            const auto first=storages.size();
+            try{
+                for(PropertyList* layer:{&owner->defaultsLayer(),&owner->inheritedLayer(),&owner->attributesLayer()}){
+                    const auto value=Property(*layer);
+                    storages.push_back(std::get<std::shared_ptr<PropertyStorage>>(value.value));
+                }
+            }catch(...){
+                storages.resize(first);
+                throw;
+            }
+        }
+        try{
         const auto object=identities.instance(owner,ctor);
         // The Source constructor assigns these own fields in this order.
         installLayer(owner,object,"global");
@@ -87,6 +110,14 @@ struct AttributesContextBindings::State:std::enable_shared_from_this<State>{
         installLayer(owner,object,"inherited");
         installLayer(owner,object,"attributes");
         return object;
+        }catch(...){
+            if(captureId){
+                auto& storages=captures.at(*captureId).storages;
+                storages.resize(storages.size()-3);
+                try{identities.retire(owner);}catch(...){}
+            }
+            throw;
+        }
     }
 
     ObjectRef construct(std::span<const Value> args){
@@ -254,6 +285,36 @@ ObjectRef AttributesContextBindings::bind(const std::shared_ptr<Attributes>& own
 std::shared_ptr<Attributes> AttributesContextBindings::resolve(ObjectRef object)const{return state_->resolve(object);}
 std::size_t AttributesContextBindings::canonicalHandleCountForDiagnostics()const noexcept{
     return state_->identities.canonicalHandleCount();
+}
+RequestIdentityCapture AttributesContextBindings::beginRequestCapture(){
+    state_->requireActive();
+    const auto token=state_->identities.beginRequestCapture();
+    try{
+        state_->captures.emplace(token.id,State::Capture{token,{},{}});
+        state_->activeCaptures.push_back(token.id);
+    }catch(...){
+        state_->captures.erase(token.id);
+        state_->identities.retireCapturedRequestBindings(token);
+        throw;
+    }
+    return token;
+}
+void AttributesContextBindings::retireCapturedRequestBindings(RequestIdentityCapture token){
+    state_->requireActive();
+    const auto found=state_->captures.find(token.id);
+    if(token.id==0||token.owner.lock()==nullptr||found==state_->captures.end()||
+       found->second.token.owner.lock()!=token.owner.lock())
+        throw Exception("TypeError",u"Attributes request capture token is not active in this registry");
+    std::erase(state_->activeCaptures,token.id);
+    if(!found->second.identitiesRetired){
+        state_->identities.retireCapturedRequestBindings(token);
+        found->second.identitiesRetired=true;
+    }
+    while(!found->second.storages.empty()){
+        state_->properties.retireNativeProjectionForStorage(found->second.storages.back());
+        found->second.storages.pop_back();
+    }
+    state_->captures.erase(found);
 }
 Value AttributesContextBindings::toValue(const Property& value)const{state_->requireActive();return state_->properties.to(value);}
 Property AttributesContextBindings::fromValue(Value value){state_->requireActive();return state_->properties.from(std::move(value));}

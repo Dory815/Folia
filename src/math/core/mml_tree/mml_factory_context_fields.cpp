@@ -128,6 +128,14 @@ struct MmlFactoryContextFields::State:std::enable_shared_from_this<State>{
     std::shared_ptr<MmlSourceAllocator> sourceAllocator;
     std::vector<std::pair<MmlFactory*,ObjectRef>> nodeObjects;
     std::vector<std::tuple<tree::FactoryCreatorRef<MmlNode>,MmlFactory*,ObjectRef>> creatorFunctions;
+    struct PrivateNodeMapBinding {
+        std::weak_ptr<MmlFactory> factory;
+        MapStorageRef storage;
+        ObjectRef object{};
+    };
+    // Only native projections created by the private factory nodeMap getter
+    // are tracked here. Source-supplied Map values never enter this list.
+    std::vector<PrivateNodeMapBinding> privateNodeMaps;
     std::vector<std::pair<ObjectRef,std::shared_ptr<const std::uint8_t>>> sourceMapIdentities;
     ObjectRef nodePrototype{},tokenPrototype{},abstractMmlNodePrototype{};
     std::optional<ObjectRef> prototypeWithMmlGetter;
@@ -458,6 +466,24 @@ struct MmlFactoryContextFields::State:std::enable_shared_from_this<State>{
         requireActive();
         const Value callable=context.get(receiver,Key(std::u16string(method)));
         return context.callMember(callable,receiver,args,method);
+    }
+    ObjectRef bindPrivateNodeMap(const std::shared_ptr<MmlFactory>& factory,
+                                 MapStorageRef storage){
+        if(!factory||!storage)throw Exception("TypeError",u"Private MmlFactory nodeMap storage is null");
+        auto entry=std::find_if(privateNodeMaps.begin(),privateNodeMaps.end(),
+            [&](const PrivateNodeMapBinding& item){
+                return item.factory.lock()==factory&&item.storage&&
+                       item.storage->identity()==storage->identity();
+            });
+        if(entry==privateNodeMaps.end()){
+            privateNodeMaps.reserve(privateNodeMaps.size()+1);
+            privateNodeMaps.push_back({factory,std::move(storage),{}});
+            entry=std::prev(privateNodeMaps.end());
+        }
+        // Keep a pending storage association before bind() so a failure can
+        // be retried by the next getter or by private owner retirement.
+        entry->object=maps.bind(entry->storage);
+        return entry->object;
     }
     std::vector<Value> sourceMapKeys(const Value& receiver){
         const Value iterator=sourceMapCall(receiver,u"keys");
@@ -837,6 +863,18 @@ void MmlFactoryContextFields::retireFactoryOwner(const std::shared_ptr<MmlFactor
         state.context.retireObjectRecord(std::get<2>(*it));
         it=state.creatorFunctions.erase(it);
     }
+    for(auto it=state.privateNodeMaps.begin();it!=state.privateNodeMaps.end();){
+        if(it->factory.lock()!=factory){++it;continue;}
+        // If Source replaced nodeMap, the prior Map may have escaped and is
+        // still an ordinary live Map. Retire only the exact current native
+        // projection; preserve historical/replaced bindings conservatively.
+        if(!it->storage||factory->nodeMapAccess()->identity()!=it->storage->identity()){
+            ++it;continue;
+        }
+        if(!it->object.context)it->object=state.maps.bind(it->storage);
+        state.maps.retireBinding(it->object,it->storage->identity());
+        it=state.privateNodeMaps.erase(it);
+    }
 }
 
 void MmlFactoryContextFields::bind(ObjectRef identity,const std::shared_ptr<MmlFactory>& owner,
@@ -872,7 +910,7 @@ void MmlFactoryContextFields::bind(ObjectRef identity,const std::shared_ptr<MmlF
                 [self](const tree::FactoryClassMapValue<MmlNode>& mapped){
                     return self->classToValue(mapped);
                 });
-            return Value(self->maps.bind(storage));
+            return Value(self->bindPrivateNodeMap(retained,std::move(storage)));
         },[self,retained](Value value){
             self->requireActive();
             self->setNodeMapOwner(retained,std::move(value));

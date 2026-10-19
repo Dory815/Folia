@@ -8,7 +8,13 @@ struct ContextPropertyBindings::State:std::enable_shared_from_this<State> {
     OptionFunctionBindings& functions;
     // Weak handles prevent cycles when a record contains itself. The binding
     // retains this owner; Context owns the actual fields and nested records.
-    std::vector<std::pair<ObjectRef,std::weak_ptr<PropertyStorage>>> records;
+    enum class RecordOrigin { sourceObject, nativeProjection };
+    struct CachedRecord {
+        ObjectRef object;
+        std::weak_ptr<PropertyStorage> storage;
+        RecordOrigin origin;
+    };
+    std::vector<CachedRecord> records;
     std::vector<std::pair<ContextPropertyBindings::PropertyToObject,
                           ContextPropertyBindings::ObjectToProperty>> projections;
     State(Context& context,OptionFunctionBindings& functions):context(context),functions(functions){}
@@ -446,12 +452,12 @@ struct ContextPropertyBindings::State:std::enable_shared_from_this<State> {
             }
             for(auto it=projections.rbegin();it!=projections.rend();++it)
                 if(auto projected=it->second(*object))return *projected;
-            for(const auto& [known,weak]:records)if(known==*object)if(auto storage=weak.lock()){
+            for(const auto& record:records)if(record.object==*object)if(auto storage=record.storage.lock()){
                 Property result;result.value=std::move(storage);return result;
             }
             const Property result=PropertyList::live(std::make_shared<Record>(shared_from_this(),*object),kind==ObjectKind::array);
             const auto storage=std::get<std::shared_ptr<PropertyStorage>>(result.value);
-            records.emplace_back(*object,storage);return result;
+            records.push_back(CachedRecord{*object,storage,RecordOrigin::sourceObject});return result;
         }
         throw Exception("Unimplemented",u"Context value requires its typed Property binding");
     }
@@ -496,7 +502,7 @@ ObjectRef ContextPropertyBindings::State::objectFor(const std::shared_ptr<Proper
             return *identity;
         }
     }
-    for(const auto& [object,weak]:records)if(auto current=weak.lock();current&&current==storage)return object;
+    for(const auto& record:records)if(auto current=record.storage.lock();current&&current==storage)return record.object;
     ObjectRef object;
     if(storage->array){
         auto view=std::make_shared<NativeArray>(shared_from_this(),storage);
@@ -507,7 +513,7 @@ ObjectRef ContextPropertyBindings::State::objectFor(const std::shared_ptr<Proper
         auto view=std::make_shared<NativeRecord>(shared_from_this(),storage);
         object=context.nativeRecord(view,view->prototype());
     }
-    records.emplace_back(object,storage);
+    records.push_back(CachedRecord{object,storage,RecordOrigin::nativeProjection});
     return object;
 }
 Value ContextPropertyBindings::State::toValue(const Property& value){
@@ -542,6 +548,23 @@ Value ContextPropertyBindings::to(const Property& value)const{return state_->to(
 void ContextPropertyBindings::registerProjection(PropertyToObject to,ObjectToProperty from){
     if(!to||!from)throw options::Exception("TypeError",u"Property projection requires both directions");
     state_->projections.emplace_back(std::move(to),std::move(from));
+}
+void ContextPropertyBindings::retireNativeProjectionForStorage(
+    const std::shared_ptr<PropertyStorage>& storage){
+    if(!storage)return;
+    auto& records=state_->records;
+    const auto found=std::find_if(records.begin(),records.end(),[&](const auto& record){
+        if(record.origin!=State::RecordOrigin::nativeProjection)return false;
+        const auto current=record.storage.lock();
+        return current&&current==storage;
+    });
+    if(found==records.end())return;
+    // The cache entry is the registry's proof that this exact Context handle
+    // still names this exact projected storage. Validate liveness before the
+    // Context tombstone operation, and erase our entry only after it succeeds.
+    state_->context.kind(found->object);
+    state_->context.retireObjectRecord(found->object);
+    records.erase(found);
 }
 Property ContextPropertyBindings::copyOwnEnumerableProperties(const Property& source){
     auto& context=state_->context;
@@ -579,7 +602,7 @@ Property ContextPropertyBindings::copyOwnEnumerableProperties(const Property& so
 }
 std::array<std::size_t,2> ContextPropertyBindings::projectionCountsForDiagnostics()const noexcept{
     std::size_t live=0;
-    for(const auto& entry:state_->records)if(entry.second.use_count()>0)++live;
+    for(const auto& entry:state_->records)if(entry.storage.use_count()>0)++live;
     return {state_->records.size(),live};
 }
 }

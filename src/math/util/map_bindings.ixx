@@ -161,6 +161,9 @@ public:
     ObjectRef prototype()const;
     MapStorageRef createStorage()const;
     ObjectRef bind(const MapStorageRef& storage);
+    // Retire one exact canonical Context Map binding. The expected storage
+    // identity prevents a stale owner from retiring a replaced Map.
+    bool retireBinding(ObjectRef object,const void* expectedStorageIdentity);
     ObjectRef create(Value iterable=Undefined{});
     MapStorageRef resolve(ObjectRef object)const;
     Value get(ObjectRef object,Value key)const;

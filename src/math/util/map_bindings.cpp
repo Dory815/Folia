@@ -156,11 +156,37 @@ struct MapContextBindings::State:std::enable_shared_from_this<State>{
             if(const auto entry=storage->entryAt(index)){validateValue(entry->first);validateValue(entry->second);}
         }
         for(const auto& entry:instances)if(entry.identity==storage->identity())return entry.object;
+        // Allocate registry capacity before making a Context record. Once the
+        // record exists, appending its canonical sidecar cannot allocate.
+        instances.reserve(instances.size()+1);
         const ObjectRef object=context.instance(ctor,storage);
-        context.registerNativeOwnerTrace(object,NativeOwnerPart::payload,
-            std::make_shared<MapStorageOwnerTrace>(storage));
+        try{
+            context.registerNativeOwnerTrace(object,NativeOwnerPart::payload,
+                std::make_shared<MapStorageOwnerTrace>(storage));
+        }catch(...){
+            context.retireObjectRecord(object);
+            throw;
+        }
         instances.push_back({storage->identity(),std::move(storage),object});
         return object;
+    }
+    bool retireBinding(ObjectRef object,const void* expectedStorageIdentity){
+        const auto found=std::find_if(instances.begin(),instances.end(),
+            [object](const Instance& entry){return entry.object==object;});
+        if(found==instances.end())return false;
+        if(!found->storage||found->identity!=expectedStorageIdentity||
+           found->storage->identity()!=expectedStorageIdentity)
+            typeError(u"Map binding storage identity changed before retirement");
+        if(context.kind(object)!=ObjectKind::instance)
+            typeError(u"Map binding Context object is not a Map instance");
+        const auto* payload=std::any_cast<MapStorageRef>(&context.payload(object));
+        if(!payload||*payload!=found->storage)
+            typeError(u"Map binding payload no longer owns its canonical storage");
+        // Keep the registry entry and its strong storage until Context
+        // retirement succeeds; a thrown retirement remains retryable.
+        context.retireObjectRecord(object);
+        instances.erase(found);
+        return true;
     }
     ObjectRef makeIterator(MapStorageRef storage,IteratorState::Kind kind){
         auto state=std::make_shared<IteratorState>();state->map=std::move(storage);state->kind=kind;
@@ -274,6 +300,9 @@ ObjectRef MapContextBindings::constructor()const{return state_->ctor;}
 ObjectRef MapContextBindings::prototype()const{return state_->proto;}
 MapStorageRef MapContextBindings::createStorage()const{return std::make_shared<ValueMapStorage>();}
 ObjectRef MapContextBindings::bind(const MapStorageRef& storage){return state_->bindStorage(storage);}
+bool MapContextBindings::retireBinding(ObjectRef object,const void* expectedStorageIdentity){
+    return state_->retireBinding(object,expectedStorageIdentity);
+}
 ObjectRef MapContextBindings::create(Value iterable){
     const std::array<Value,1> args{std::move(iterable)};
     return state_->context.construct(state_->ctor,args);
