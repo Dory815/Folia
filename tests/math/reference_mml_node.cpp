@@ -1994,6 +1994,7 @@ expect(bool((n->attributes()->getDefaultNames().size())==0.0));
 expect(prop(n->attributes()->get("mathcolor"),Property("black")));
 f.setNodeClass("math",cls<MathNode>());
 {std::string error;try{(void)f.create("plain");}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"))<<"(void)f.create(\"plain\")"<<error;}
+f.setNodeClass("math",cls<MathNode>(PropertyList{}));auto*emptyGlobal=f.create("plain");expect(emptyGlobal!=nullptr);if(emptyGlobal)expect(prop(emptyGlobal->attributes()->get("mathcolor"),Property(Missing{})));
 f.setNodeClass("math",cls<MathNode>(MathNode::globals()));
 auto*pnode=dynamic_cast<Plain*>(f.create("plain"));pnode->childNodes=children({nullptr});
 {std::string error;try{(void)pnode->copy();}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"))<<"(void)pnode->copy()"<<error;}

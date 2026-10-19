@@ -28,17 +28,12 @@ const PropertyArray TEXSPACE = {
     PropertyArray{ 1,-1, 2, 3, 1, 0, 1, 1}
 };
 
-PropertyList class_info_defaults(const tree::FactoryClassRef<MmlNode>& nodeClass,
-                                 bool required) {
+Property class_info_defaults(const tree::FactoryClassRef<MmlNode>& nodeClass) {
     if (!nodeClass) host::typeError("Missing registered MML node class");
     const auto* info = std::any_cast<std::shared_ptr<MmlClassInfo>>(&nodeClass->staticData);
     if (!info || !*info) host::typeError("MML class has no native static metadata");
     const auto defaults=(*info)->getDefaults();
-    if (!defaults) {
-        if (required) host::typeError("Object prototype may only be an Object or null: undefined");
-        return {};
-    }
-    return *defaults;
+    return defaults?Property(*defaults):Property(Missing{});
 }
 
 MmlNode* child_at(const Children& children, std::size_t index, std::string_view operation) {
@@ -237,7 +232,7 @@ NativeDynamic native_mml_get(NativeDynamic object,std::u16string_view key){
         return native_property(Property(Missing{}));
     }
     if(const auto* nodeClass=std::get_if<tree::FactoryClassRef<MmlNode>>(&object.data())){
-        if(key==u"defaults")return native_property(Property(class_info_defaults(*nodeClass,false)));
+        if(key==u"defaults")return native_property(class_info_defaults(*nodeClass));
         return native_property(Property(Missing{}));
     }
     if(const auto* property=std::get_if<Property>(&object.data()))
@@ -321,7 +316,12 @@ NativeReceiver native_mml_receiver(AbstractMmlNode* node){
             return;
         }
         if(const auto* child=std::get_if<NodeValue>(&object.data())){
-            auto* target=child->requireNodeForWrite("MML field");
+            auto* target=child->nodeOrNull();
+            if(!target){
+                const auto kind=child->kind()==tree::ChildKind::Null?"null":"undefined";
+                host::typeError(std::string("Cannot set properties of ")+kind+
+                    " (setting '"+host::debugText(key)+"')");
+            }
             if(const auto source=target->sourceTreeAccess()){
                 source->setValue(source->sourceValue(),key,native_options_value(value,source));
                 return;
@@ -420,6 +420,8 @@ NativeReceiver native_mml_receiver(AbstractMmlNode* node){
             if(const auto* list=std::get_if<PropertyList>(&value.data()))return *list;
             host::typeError("MML class defaults must be property records");
         };
+        if(const auto* global=std::get_if<Property>(&mathDefaults.data());global&&global->missing())
+            host::typeError("Object prototype may only be an Object or null: undefined");
         return NativeDynamic(std::make_shared<Attributes>(toList(defaults),toList(mathDefaults)));
     };
     receiver.truthy=[](NativeDynamic value){
@@ -504,7 +506,12 @@ NativeReceiver native_mml_receiver(AbstractMmlNode* node){
         if(const auto* raw=std::get_if<options::Value>(&value.data())){
             (void)raw;host::typeError("Native raw Context value has no operation provider");
         }
-        if(const auto* children=std::get_if<Children>(&value.data())){if(*children)(*children)->forOf([&](NodeValue child){body(native_child(std::move(child)));});return;}
+        if(const auto* children=std::get_if<Children>(&value.data())){
+            if(!*children)host::typeError(
+                "object null is not iterable (cannot read property Symbol(Symbol.iterator))");
+            (*children)->forOf([&](NodeValue child){body(native_child(std::move(child)));});
+            return;
+        }
         if(const auto* property=std::get_if<Property>(&value.data())){
             if(const auto array=PropertyArray::array(*property)){
                 for(std::size_t index=0;index<array->size();++index)body(native_property(array->get(index)));
