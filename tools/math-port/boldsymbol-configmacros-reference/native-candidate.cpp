@@ -7,6 +7,8 @@ import folia.math.input.tex.boldsymbol.configuration;
 import folia.math.input.tex.configmacros.configuration;
 import folia.math.input.tex.node_util;
 import folia.math.core.math_item;
+import folia.math.core.math_document;
+import folia.math.core.math_render_actions;
 import folia.math.core.mml_tree.mml_factory;
 import folia.math.core.find_math_host;
 import folia.math.core.input_jax_host;
@@ -15,18 +17,13 @@ import folia.math.util.regexp_host;
 import folia.math.util.unicode_normalization;
 import folia.math.util.options;
 import folia.math.util.property_host;
+#include "../support/standalone_abstract_math_item.hpp"
 
 namespace {
 using namespace boost::ut;
 using namespace folia::math;
 namespace tex=folia::math::tex;
 namespace opts=folia::math::options;
-class CandidateMathItem final:public core::AbstractMathItem {
-public:
-  CandidateMathItem(Property input,core::MathInputJaxReference jax)
-    :core::AbstractMathItem(std::move(input),std::move(jax),Property(true)){}
-};
-
 opts::Value strings(opts::Context& cx,std::span<const std::u16string_view> values){
   const auto out=cx.array(static_cast<std::uint32_t>(values.size()));std::uint32_t i=0;
   for(const auto value:values){const auto n=std::to_string(i++);cx.set(out,opts::Key(std::u16string(n.begin(),n.end())),opts::Value(std::u16string(value)));}
@@ -44,9 +41,11 @@ struct Fixture {
   core::FindMathModule findMath{context};
   tex::FindTeXModule findTeX{context,findMath,regex};
   tex::ParserRuntime runtime{context,functions,regex,unicode,input,findTeX};
-  mml::MmlFactory mml;
+  std::unique_ptr<standalone_math_item::Binding> mathItemBinding;
+  std::shared_ptr<mml::MmlFactory> mml=std::make_shared<mml::MmlFactory>();
   Fixture(){
     runtime.initializeParserRuntime();
+    mathItemBinding=std::make_unique<standalone_math_item::Binding>(context,runtime.properties,runtime);
     (void)tex::BasePackage::initializeModule(runtime);
     tex::NewcommandConfiguration::initializeModule(runtime);
     (void)tex::BoldsymbolConfiguration::initializeModule(runtime);
@@ -58,15 +57,23 @@ struct Fixture {
     if(const auto* object=std::get_if<opts::ObjectRef>(&overrides.data)){
       for(const auto& name:context.ownKeys(*object))context.set(config,name,context.get(*object,name));
     }
-    auto result=tex::TeX::make(runtime,config);result->setMmlFactory(&mml);return result;
+    auto result=tex::TeX::make(runtime,config);result->setMmlFactory(mml);return result;
   }
   tex::TeXRef jax(std::initializer_list<std::u16string_view> packages,opts::Value overrides=opts::Undefined{}){
     return jax(std::span<const std::u16string_view>(packages.begin(),packages.size()),std::move(overrides));
   }
   mml::NodeValue compile(tex::TeX& jax,std::u16string source){
-    CandidateMathItem item(Property(property_host::debugText(source)),
-      core::MathInputJaxReference{static_cast<core::MathInputJaxService*>(&jax)});
-    return jax.compile(item,core::MathDocumentReference{PropertyNull{}});
+    const std::array<opts::Value,3> arguments{
+      opts::Value(std::move(source)),
+      opts::Value(jax.instanceIdentity()),opts::Value(true)};
+    const auto itemIdentity=context.construct(mathItemBinding->constructor(),arguments);
+    auto& item=standalone_math_item::require(context,opts::Value(itemIdentity));
+    try{
+      return jax.compile(item,core::MathDocumentReference{PropertyNull{}});
+    }catch(const opts::Exception& error){
+      expect(false)<<error.name<<" "<<property_host::debugText(error.message);
+      throw;
+    }
   }
 };
 void walk(mml::NodeValue value,const std::function<void(mml::MmlNode&)>& visit){
