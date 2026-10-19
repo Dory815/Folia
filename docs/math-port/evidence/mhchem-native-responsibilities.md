@@ -1,0 +1,46 @@
+# Mhchem native responsibility map
+
+The reference is MathJax 4.1.3 at
+`fb987178c2d279a99b0db5ea02e751691703955e`. Its package import
+`#mhchem/mhchemParser.js` resolves through `package.json` to
+`mhchemparser/esm/mhchemParser.js`; the compiled CJS package's own imports map
+resolves to `mhchemparser/dist/mhchemParser.js`. Both repository dependency locks
+pin mhchemparser 4.2.1. The installed package includes the original TypeScript,
+declarations, ESM, CommonJS and Apache-2.0 license; it has no runtime dependencies.
+Exact input and generated-data hashes are in `mhchem-source-lock.json`.
+Both locks record the npm distribution integrity as
+`sha512-kYmyrCirqJf3zZ9t/0wGgRZ4/ZJw//VwaRVGA75C4nhE60vtnIzhl9J9ndkX/h6hxSN7pjg/cE0VxbnNM+bnDQ==`.
+
+Source responsibilities are assigned before implementation:
+
+| Original responsibility | Native file |
+| --- | --- |
+| `MhchemConfiguration.ts`: commands, characters, replacements, Machine and relmo | `src/math/input/tex/mhchem/configuration.{ixx,cpp}` |
+| `mhchemParser.ts`: toTex, createTransitions and parser.go | `src/math/dependencies/mhchem_parser/parser.cpp` |
+| pattern literals and all pattern functions, findObserveGroups and match_ | `patterns.cpp`, `patterns_data.inc` |
+| generic actions and fourteen machines' local actions | `actions.cpp` |
+| every machine's original ordered transition table | `transitions_data.inc` |
+| `_mhchemTexify`: go, _goInner, _go2, arrow/bond/operator maps | `texify.cpp` |
+| `mhchemParser.d.ts`: parsed records, Buffer, Match and transition types | `parser.ixx` |
+
+The package has one `MhchemModule` owner in the render session's existing
+`util::RuntimeModules`. Initialization requires both that cache and the actual
+`ParserRuntime`; there is no implicit singleton registration route. The module
+owns its exported methods/utils records, its original command and character
+maps, its ordered replacement rules and configuration. Map mutation does not
+replace the module's exported callable references. A registry replacement does
+not redirect the replacement callback away from its original lexical maps.
+The Machine callable holds a weak module reference, avoiding a native ownership
+cycle between the module, maps and callback.
+
+`mhchem-generate-data.cjs` executes the original only as a development data
+transcription tool. It writes the literal regular-expression definitions and
+expanded ordered transition records, with source hashes. No function bodies,
+chemical examples, expected TeX or renderer output enter the generated native
+data. Native C++ owns pattern matching, buffer mutations, state transitions,
+recursive parsing, error construction and TeX generation. Generated TeX is fed
+back into the existing TeX parser, then its ordinary MML/Common/Scene route.
+
+Source and native observations and unfinished tests remain under
+`tools/math-port/drafts`. The module remains unregistered pending Root's review
+and current-graph build. Isolated checks against Gate101 are recorded as such.
