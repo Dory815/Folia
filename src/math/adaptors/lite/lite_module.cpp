@@ -304,6 +304,11 @@ struct LiteModule::State : std::enable_shared_from_this<State> {
     ObjectRef nodeAdaptorClass{};
     ObjectRef adaptorClass{};
     std::vector<std::pair<LiteNodeRef,ObjectRef>> nodes;
+    struct ArrayProjection { NodeId ownerNode=0; ObjectRef identity{}; };
+    // Exact native array projections created while binding a particular Lite
+    // node. The node creation id, rather than projection time, determines its
+    // request lifetime (an old node can be projected lazily in a later request).
+    std::vector<ArrayProjection> arrayProjections;
     std::unordered_map<NodeId,std::shared_ptr<LiteNodeContextProjection>> contextProjections;
     std::vector<std::pair<std::shared_ptr<LiteParser>,ObjectRef>> parsers;
     std::vector<std::pair<std::shared_ptr<LiteBase>,ObjectRef>> adaptors;
@@ -532,9 +537,19 @@ struct LiteModule::State : std::enable_shared_from_this<State> {
         for(const auto& name:keys)if(record.hasOwn(name))context.set(Value(result),key(property_host::text(name)),toContext(record.getOwn(name)));
         return result;
     }
-    ObjectRef arrayObject(PropertyArray& array){
+    ObjectRef arrayObject(PropertyArray& array,NodeId ownerNode){
         auto view=std::make_shared<LiteArrayView>(array,[weak=weak_from_this()](const Property& p)->Value{auto s=weak.lock();if(!s)throw Exception("TypeError",u"Lite module has expired");return s->toContext(p);},[weak=weak_from_this()](Value v)->Property{auto s=weak.lock();if(!s)throw Exception("TypeError",u"Lite module has expired");return s->fromContext(std::move(v));});
-        return context.nativeArray(std::move(view));
+        const ObjectRef identity=context.nativeArray(std::move(view));
+        try{arrayProjections.push_back({ownerNode,identity});}
+        catch(...){context.retireObjectRecord(identity);throw;}
+        return identity;
+    }
+    void discardArrayProjection(ObjectRef identity){
+        const auto found=std::ranges::find_if(arrayProjections,
+            [&](const ArrayProjection& entry){return entry.identity==identity;});
+        if(found==arrayProjections.end())return;
+        context.retireObjectRecord(found->identity);
+        arrayProjections.erase(found);
     }
     ObjectRef spreadArray(Value source){
         const auto result=context.array();
@@ -562,11 +577,14 @@ struct LiteModule::State : std::enable_shared_from_this<State> {
             const auto kidsProperty=store->backingField(node,"children");
             auto kidsArray=PropertyArray::array(kidsProperty);
             if(!kidsArray)throw Exception("TypeError",u"Lite node children is not an array");
-            const auto kids=arrayObject(*kidsArray);
-            store->backingSetField(node,"children",properties.from(Value(kids)));
+            const auto kids=arrayObject(*kidsArray,node.id);
+            try{store->backingSetField(node,"children",properties.from(Value(kids)));}
+            catch(...){discardArrayProjection(kids);throw;}
         } else if(nodeKind==NodeKind::List){
             auto nativeNodes=record(node).listNodes;
-            const auto list=arrayObject(nativeNodes);record(node).listNodes=PropertyArray::array(properties.from(Value(list))).value();
+            const auto list=arrayObject(nativeNodes,node.id);
+            try{record(node).listNodes=PropertyArray::array(properties.from(Value(list))).value();}
+            catch(...){discardArrayProjection(list);throw;}
         }
         std::weak_ptr<State> weak=shared_from_this();const auto id=node.id;
         auto owner=std::static_pointer_cast<void>(store);
@@ -1708,6 +1726,15 @@ void LiteModule::retireRequestNodesSince(RequestMark mark){
         throw Exception("TypeError",u"Lite request mark does not belong to the current store state");
     // Drop callback/receiver roots while their Context records are still live.
     state_->retireEventRegistrationsSince(mark.firstEvent);
+    // These array records are independent Context owners from the Lite node
+    // records. Retire only views whose owning node was allocated in this request.
+    // Keep each entry until retirement succeeds so a repeated mark can resume.
+    for(auto it=state_->arrayProjections.begin();it!=state_->arrayProjections.end();){
+        if(it->ownerNode>=mark.nodes.first){
+            state_->context.retireObjectRecord(it->identity);
+            it=state_->arrayProjections.erase(it);
+        }else ++it;
+    }
     for(auto it=state_->nodes.begin();it!=state_->nodes.end();){
         if(it->first.id>=mark.nodes.first){
             state_->contextProjections.erase(it->first.id);
