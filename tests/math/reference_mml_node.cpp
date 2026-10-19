@@ -2001,6 +2001,20 @@ auto*pnode=dynamic_cast<Plain*>(f.create("plain"));pnode->childNodes=children({n
 {std::string error;try{(void)pnode->setInheritedAttributes();}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"))<<"(void)pnode->setInheritedAttributes()"<<error;}
 {std::string error;try{pnode->verifyTree(PropertyList{});}catch(const m::Error& x){error=x.name;}expect(bool(error=="TypeError"))<<"pnode->verifyTree(PropertyList{})"<<error;}
 };
+"math_port_mml_node_null_child_array_index_reports_source_type_error"_test=[] {
+for(int operation=0;operation<3;++operation){
+    F f(classes());auto*layout=f.create("layout");auto*child=f.create("leaf");
+    layout->childNodes.reset();
+    std::string name;std::u16string message;
+    try{
+        if(operation==0)layout->setChildren(children());
+        else if(operation==1)(void)layout->appendChild(m::NodeValue(child));
+        else (void)layout->replaceChild(m::NodeValue(child),m::NodeValue(child));
+    }catch(const m::Error&error){name=error.name;message=error.message;}
+    expect(name=="TypeError");
+    expect(bool(message==u"Cannot read properties of null (reading '0')"));
+}
+};
 "math_port_mml_node_normal_isEmpty_captures_array_identity"_test=[] {F f(classes());
 struct EmptyProbe:Plain{using Plain::Plain;std::function<void()> onEmpty;std::string kind()const override{return "emptyProbe";}bool isEmpty()const override{if(onEmpty)onEmpty();return true;}};f.setNodeClass("emptyProbe",cls<EmptyProbe>(m::AbstractMmlNode::defaults()));auto*n=f.create("plain");auto*probe=dynamic_cast<EmptyProbe*>(f.create("emptyProbe"));n->setChildren(children({probe,f.create("leaf")}));probe->onEmpty=[&]{n->childNodes=children();};
 expect(bool((n->isEmpty())==false));

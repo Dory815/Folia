@@ -259,7 +259,8 @@ NativeDynamic native_mml_get(NativeDynamic object,std::u16string_view key){
         });
     }
     if(const auto* children=std::get_if<Children>(&object.data())){
-        if(key==u"length")return native_property(Property(static_cast<double>(*children?(*children)->size():0)));
+        if(!*children)host::typeError("Cannot read properties of null (reading '"+host::debugText(key)+"')");
+        if(key==u"length")return native_property(Property(static_cast<double>((*children)->size())));
         if(key==u"push")return native_callable([](NativeDynamic receiver,std::span<const NativeDynamic> args){
             const auto children=std::get<Children>(receiver.data());
             if(!children)host::typeError("Cannot read properties of null (reading 'push')");
@@ -301,8 +302,10 @@ NativeReceiver native_mml_receiver(AbstractMmlNode* node){
     receiver.getIndex=[](NativeDynamic object,std::size_t index){
         if(const auto* raw=std::get_if<NativeSourceValue>(&object.data()))
             return NativeDynamic(NativeSourceValue{raw->provider->getValue(raw->value,property_host::text(std::to_string(index))),raw->provider});
-        if(const auto* children=std::get_if<Children>(&object.data()))
+        if(const auto* children=std::get_if<Children>(&object.data())){
+            if(!*children)host::typeError("Cannot read properties of null (reading '"+std::to_string(index)+"')");
             return native_child((*children)->get(index));
+        }
         if(const auto* property=std::get_if<Property>(&object.data())){
             const auto list=PropertyList::record(*property);
             if(list)return native_property(list->get(std::to_string(index)));
@@ -328,8 +331,8 @@ NativeReceiver native_mml_receiver(AbstractMmlNode* node){
             }
             if(key==u"childNodes")target->childArrayOwner(native_children_arg(value));
             else if(key==u"parent")target->setParent(native_child_arg(value));
-            else if(key==u"prevClass")dynamic_cast<AbstractMmlNode&>(*target).setSourcePrevClassField(native_property_arg(value));
-            else if(key==u"prevLevel")dynamic_cast<AbstractMmlNode&>(*target).setSourcePrevLevelField(native_property_arg(value));
+            else if(key==u"prevClass")dynamic_cast<AbstractMmlNode&>(*target).setPrevClass(native_property_arg(value));
+            else if(key==u"prevLevel")dynamic_cast<AbstractMmlNode&>(*target).setPrevLevel(native_property_arg(value));
             else if(key==u"texclass")dynamic_cast<AbstractMmlNode&>(*target).setSourceTexclassField(native_property_arg(value));
             else if(key==u"properties"){
                 if(const auto* raw=std::get_if<NativeSourceValue>(&value.data())){
