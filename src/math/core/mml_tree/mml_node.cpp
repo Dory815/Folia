@@ -161,7 +161,7 @@ void AbstractMmlNode::initializeMml(tree::FactoryArgs args) {
     }
 
     if (arity() < 0) {
-        MmlNode* const inferred = factory.create("inferredMrow", {});
+        MmlNode* const inferred = factoryOwner().create("inferredMrow", {});
         Children inferredChildren = std::make_shared<tree::ChildArray<MmlNode>>();
         inferredChildren->push_back(NodeValue(inferred));
         this->childNodes = std::move(inferredChildren);
@@ -171,9 +171,9 @@ void AbstractMmlNode::initializeMml(tree::FactoryArgs args) {
     }
     this->setChildren(std::move(inputChildren));
 
-    const auto nodeClass = factory.getNodeClass(this->kind());
+    const auto nodeClass = factoryOwner().getNodeClass(this->kind());
     PropertyList nodeDefaults = class_info_defaults(nodeClass, false);
-    const auto mathClass = factory.getNodeClass("math");
+    const auto mathClass = factoryOwner().getNodeClass("math");
     PropertyList mathDefaults = class_info_defaults(mathClass, true);
     auto newAttributes = std::make_shared<Attributes>(nodeDefaults, mathDefaults);
     this->setAttributes(std::move(newAttributes));
@@ -196,7 +196,7 @@ PropertyList AbstractMmlNode::constructorDefaults()const {
 MmlNode* AbstractMmlNode::copy(bool keepIds) {
     tree::TreeCallGuard<MmlNode> guard;
 
-    MmlNode* const node = factory.create(this->kind(), {});
+    MmlNode* const node = factoryOwner().create(this->kind(), {});
     if (!node) host::typeError("Cannot set properties of null (setting 'properties')");
     auto* const normalNode = dynamic_cast<AbstractMmlNode*>(node);
     if (!normalNode) {
@@ -329,7 +329,7 @@ NodeValue AbstractMmlNode::appendChild(NodeValue child) {
         }
 
         MmlNode* const original = input;
-        MmlNode* const replacement = factory.create("mrow", {});
+        MmlNode* const replacement = factoryOwner().create("mrow", {});
         if (!replacement) host::typeError("Cannot read properties of null (reading 'setChildren')");
         replacement->setChildren(original->childNodes);
         replacement->setAttributes(original->attributes());
@@ -494,7 +494,7 @@ void AbstractMmlNode::inheritAttributes(AttributeList inherited, Property displa
                     const auto currentChildren = this->childNodes;
                     if (!currentChildren) host::typeError("Cannot read properties of null (reading 'length')");
                     if (!(static_cast<double>(currentChildren->size()) < expectedArity)) break;
-                    MmlNode* const row = this->factory.create("mrow", {});
+                    MmlNode* const row = this->factoryOwner().create("mrow", {});
                     this->appendChild(NodeValue(row));
                 }
             }
@@ -637,7 +637,7 @@ MmlNode* AbstractMmlNode::mError(std::string message, Property options, bool sho
     if (initialParent.isNode() &&
         getParent().requireNode("isKind")->isKind("merror")) return nullptr;
 
-    MmlNode* const merror = factory.create("merror", {});
+    MmlNode* const merror = factoryOwner().create("merror", {});
     auto* const initialErrorNode = NodeValue(merror).requireNode("attributes");
     auto initialErrorAttributes = initialErrorNode->attributes();
     if (!initialErrorAttributes) host::typeError("Cannot read properties of null (reading 'set')");
@@ -649,8 +649,8 @@ MmlNode* AbstractMmlNode::mError(std::string message, Property options, bool sho
     const Property initialFullErrors = host::get(options, "fullErrors");
 
     if (host::truthy(initialFullErrors) || shortError) {
-        MmlNode* const mtext = factory.create("mtext", {});
-        MmlNode* const text = factory.create("text", {});
+        MmlNode* const mtext = factoryOwner().create("mtext", {});
+        MmlNode* const text = factoryOwner().create("text", {});
         MmlNode* const textReceiver = NodeValue(text).requireNode("setText");
 
         if (options.missing()) host::typeError("Cannot read properties of undefined (reading 'fullErrors')");

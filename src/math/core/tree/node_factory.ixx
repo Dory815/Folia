@@ -15,6 +15,24 @@ class AbstractNodeFactory : public AbstractFactory<Product> {
 public:
     using Base::Base;
 
+    // Native Context method adapter. The callback runs only after the actual
+    // Source creator has been resolved, and its returned argument vector is
+    // consumed by that captured creator without a second registry lookup.
+    template<class BuildArguments>
+    Product* createWithArguments(std::string_view kind,BuildArguments&& buildArguments) {
+        return this->createDirectWithArguments(kind,std::forward<BuildArguments>(buildArguments));
+    }
+
+    // Use when raw Source argument values are already available and native
+    // conversion must wait until the captured target is known callable.
+    template<class EvaluateRawArguments,class ConvertArguments>
+    Product* createWithConvertedArguments(std::string_view kind,
+        EvaluateRawArguments&& evaluateRawArguments,ConvertArguments&& convertArguments) {
+        return this->createDirectWithArgumentPhases(kind,
+            std::forward<EvaluateRawArguments>(evaluateRawArguments),
+            std::forward<ConvertArguments>(convertArguments));
+    }
+
     Product* create(std::string_view kind, FactoryArgs args) override {
         std::array<std::any, 2> normalized;
         normalized[0] = args.size() > 0 && args[0].has_value()

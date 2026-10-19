@@ -3,6 +3,7 @@ import folia.math.core.mml_tree.mml_factory;
 import folia.math.core.mml_tree.class_binding;
 import folia.math.core.mml_tree.mml_nodes.mi;
 import folia.math.core.mml_tree.mml_node;
+import folia.math.util.option_types;
 
 namespace {
 using namespace boost::ut;
@@ -75,8 +76,8 @@ suite mml_constructor_identity=[] {
         m::MmlFactory factory;
         factory.setNodeClass("mi",descriptor);
         const auto creators=factory.MML();
-        const auto entry=std::ranges::find_if(creators->entries,[](const auto& pair){return pair.first=="mi";});
-        const auto saved=entry->second;
+        const auto entry=std::ranges::find_if(creators->entries,[](const auto& pair){return pair.first==folia::math::options::Key(u"mi");});
+        const auto saved=entry->second.creator;
         factory.setNodeClass("mi",m::classBinding<SecondMi>());
         descriptor.reset();
         expect(!weak.expired());

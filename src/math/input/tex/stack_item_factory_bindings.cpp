@@ -27,7 +27,7 @@ tree::FactoryClassRef<BaseItem> dummyClass(){
 tree::FactoryClassMap<BaseItem> StackItemFactory::DefaultStackItems{{"base",dummyClass()}};
 StackItemFactory::StackItemFactory(std::optional<tree::FactoryClassMap<BaseItem>> nodes,
                                  const tree::FactoryClassMap<BaseItem>* defaults)
-    :tree::AbstractFactory<BaseItem>(std::move(nodes),defaults){defaultKind="dummy";}
+    :tree::AbstractFactory<BaseItem>(std::move(nodes),defaults){defaultKind=std::u16string(u"dummy");}
 tree::FactoryServices<BaseItem>& StackItemFactory::itemFactory(){return *this;}
 BaseItem* StackItemFactory::adopt(std::unique_ptr<BaseItem> item){
     if(!item)property_host::typeError("Cannot adopt a null factory product");

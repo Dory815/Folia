@@ -16,7 +16,7 @@ void MmlMtr::setChildInheritedAttributes(AttributeList attributes, Property disp
     for (std::size_t index = 0; index < initialChildren->size(); ++index) {
         const NodeValue child = initialChildren->get(index);
         if (!host::tableNode(child, "isKind").isKind("mtd")) {
-            const NodeValue replacement = host::tableCreate(this->factory, "mtd");
+            const NodeValue replacement = host::tableCreate(this->factoryOwner(), "mtd");
             const NodeValue replaced = this->replaceChild(replacement, child);
             host::tableNode(replaced, "appendChild").appendChild(child);
         }
@@ -85,7 +85,7 @@ void MmlMtr::verifyChildren(Property options) {
         const NodeValue child = children->get(index);
         MmlNode& childNode = host::tableNode(child, "isKind");
         if (!childNode.isKind("mtd")) {
-            const NodeValue replacement = host::tableCreate(this->factory, "mtd");
+            const NodeValue replacement = host::tableCreate(this->factoryOwner(), "mtd");
             const NodeValue replaced = this->replaceChild(replacement, child);
             host::tableNode(replaced, "appendChild").appendChild(child);
             if (options.missing()) host::typeError("Cannot read properties of undefined (reading 'fixMtables')");

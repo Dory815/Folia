@@ -2,16 +2,19 @@
 #include "support/folia_test.hpp"
 import folia.math.core.tree.node_factory;
 import folia.math.core.tree.wrapper_factory;
-namespace tr=folia::math::tree;using namespace boost::ut;
+import folia.math.util.option_types;
+namespace tr=folia::math::tree;namespace opts=folia::math::options;using namespace boost::ut;
 namespace {
 struct Probe:tr::FactoryNode {tr::FactoryServices<Probe>* factory=nullptr;std::vector<std::any> args;std::string report="reported-b";std::string kind() const override{return report;}};
 struct BaseProbe:Probe{};struct DerivedProbe:BaseProbe{DerivedProbe(){report="reported-d";}};struct UnrelatedProbe:Probe{};
 static_assert(!std::is_copy_constructible_v<tr::AbstractFactory<Probe>> && !std::is_move_constructible_v<tr::AbstractFactory<Probe>> && !std::is_copy_assignable_v<tr::AbstractFactory<Probe>> && !std::is_move_assignable_v<tr::AbstractFactory<Probe>>);
 template<class T>tr::FactoryClassRef<Probe> klass(){auto c=std::make_shared<tr::FactoryClass<Probe>>();c->nativeType=typeid(T);c->construct=[](tr::FactoryServices<Probe>& factory,tr::FactoryArgs args){auto p=std::make_unique<T>();p->factory=&factory;p->args.assign(args.begin(),args.end());return factory.adopt(std::move(p));};c->isInstance=[](const Probe* p){return dynamic_cast<const T*>(p)!=nullptr;};return c;}
 struct DefaultGuard {tr::FactoryClassMap<Probe> old=tr::AbstractFactory<Probe>::defaultNodes;~DefaultGuard(){tr::AbstractFactory<Probe>::defaultNodes=std::move(old);}};
-struct Exposed:tr::AbstractFactory<Probe>{using tr::AbstractFactory<Probe>::AbstractFactory;void registerOnly(std::string key,tr::FactoryClassRef<Probe> c){for(auto& e:nodeMap_)if(e.first==key){e.second=std::move(c);return;}nodeMap_.emplace_back(std::move(key),std::move(c));}};
-tr::FactoryCreatorRef<Probe> own(tr::FactoryCreatorView<Probe> view,std::string_view key){for(auto& e:view->entries)if(e.first==key)return e.second;return {};}
-void writeOwn(tr::FactoryCreatorView<Probe> view,std::string key,tr::FactoryCreatorRef<Probe> c){for(auto& e:view->entries)if(e.first==key){e.second=std::move(c);return;}view->entries.emplace_back(std::move(key),std::move(c));}
+opts::Key keyOf(std::string_view key){return opts::Key(std::u16string(key.begin(),key.end()));}
+opts::Value valueOf(std::string_view key){return opts::Value(std::u16string(key.begin(),key.end()));}
+struct Exposed:tr::AbstractFactory<Probe>{using tr::AbstractFactory<Probe>::AbstractFactory;void registerOnly(std::string key,tr::FactoryClassRef<Probe> c){nodeMapAccess()->set(valueOf(key),tr::FactoryClassMapValue<Probe>::native(std::move(c)));}};
+tr::FactoryCreatorRef<Probe> own(tr::FactoryCreatorView<Probe> view,std::string_view key){for(auto& e:view->entries)if(e.first==keyOf(key))return e.second.creator;return {};}
+void writeOwn(tr::FactoryCreatorView<Probe> view,std::string key,tr::FactoryCreatorRef<Probe> c){for(auto& e:view->entries)if(e.first==keyOf(key)){e.second.creator=std::move(c);return;}view->entries.emplace_back(keyOf(key),tr::FactoryCreatorSlot<Probe>{std::move(c),{}});}
 bool same_properties(const std::any& x,const folia::math::PropertyList& p){return std::any_cast<folia::math::PropertyList>(x).getOwn("v")==p.getOwn("v") && folia::math::Property(std::any_cast<folia::math::PropertyList>(x))==folia::math::Property(p);}
 }
 suite math_port_factory_reference=[] {
@@ -66,7 +69,7 @@ expect(bool((r->args.size())==3));
 expect(bool((std::any_cast<double>(r->args[0]))==3));
 expect(bool((std::any_cast<std::string>(r->args[1]))=="arg"));
 expect(bool((std::any_cast<std::nullptr_t>(r->args[2])==nullptr)==true));
-f.defaultKind="chosen";
+f.defaultKind=std::u16string(u"chosen");
 expect(bool((f.create("absent",std::array<std::any,1>{4.0})->kind())=="reported-b"));
 f.deleteNodeClass("chosen");
 {bool caught=false;try{(void)f.create("absent");}catch(const tr::FactoryError& e){caught=true;expect(bool(e.name=="TypeError"));}expect(caught);}

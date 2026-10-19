@@ -154,7 +154,7 @@ MmlNode* MmlMfenced::fakeNode(std::u16string character, Property properties, Pro
     if (properties.missing()) properties = PropertyList{};
     if (texClass.missing()) texClass = PropertyNull{};
 
-    TextNode* const text = requiredText(this->factory.create("text", {})).setText(std::move(character));
+    TextNode* const text = requiredText(this->factoryOwner().create("text", {})).setText(std::move(character));
     auto children = std::make_shared<tree::ChildArray<MmlNode>>();
     children->push_back(NodeValue(text));
     std::any propertiesArgument;
@@ -163,7 +163,7 @@ MmlNode* MmlMfenced::fakeNode(std::u16string character, Property properties, Pro
     const std::array<std::any, 2> arguments{
         std::move(propertiesArgument), std::any(Children(children))
     };
-    MmlNode* const node = this->factory.create("mo", tree::FactoryArgs(arguments));
+    MmlNode* const node = this->factoryOwner().create("mo", tree::FactoryArgs(arguments));
     NodeValue(node).requireNodeForWrite("texClass")->setTexClass(texClass);
     NodeValue(node).requireNodeForWrite("parent")->setParent(NodeValue(static_cast<MmlNode*>(this)));
     return node;

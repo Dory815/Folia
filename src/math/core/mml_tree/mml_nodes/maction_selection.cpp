@@ -20,7 +20,7 @@ MmlNode* MmlMaction::selected() const {
     const double index = host::mathMax(1.0, host::mathMin(length, host::number(selection))) - 1.0;
     const NodeValue child = host::numericChild(childNodes, index);
     if (child.isNode()) return child.nodeOrNull();
-    return this->factory.create("mrow", {});
+    return this->factoryOwner().create("mrow", {});
 }
 
 bool MmlMaction::isEmbellished() const {

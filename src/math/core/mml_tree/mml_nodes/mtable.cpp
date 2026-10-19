@@ -43,7 +43,7 @@ void MmlMtable::setChildInheritedAttributes(AttributeList attributes, Property d
         const NodeValue childValue = originalChildren->get(index);
         MmlNode& child = host::tableNode(childValue, "isKind");
         if (!child.isKind("mtr")) {
-            const NodeValue row = replaceChild(host::tableCreate(factory, "mtr"), childValue);
+            const NodeValue row = replaceChild(host::tableCreate(factoryOwner(), "mtr"), childValue);
             row.requireNode("appendChild")->appendChild(childValue);
         }
     }
@@ -96,7 +96,7 @@ void MmlMtable::setChildInheritedAttributes(AttributeList attributes, Property d
 void MmlMtable::verifyChildren(Property options) {
     tree::TreeCallGuard<MmlNode> guard;
     NodeValue currentRow = PropertyNull{};
-    Factory& rowFactory = this->factory;
+    Factory& rowFactory = this->factoryOwner();
 
     std::int64_t index = 0;
     while (true) {

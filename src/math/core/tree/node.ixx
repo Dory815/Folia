@@ -5,14 +5,106 @@
  * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
  *************************************************************/
 export module folia.math.core.tree.node;
-export import folia.math.core.tree.node_types;
+export import folia.math.core.tree.node_algorithms;
+import folia.math.util.property_host;
 import std;
 
 export namespace folia::math::tree {
 template<class Product, class Base = Node<Product>>
 class AbstractNode : public Base {
+    using Receiver=TreeNodeReceiver<Product>;
+protected:
+    static Receiver nativeReceiver(Product* node) {
+        if(!node)throw options::Exception("TypeError",u"Tree algorithm requires a native node");
+        Receiver receiver;
+        receiver.self=[node]{return ChildValue<Product>(node);};
+        receiver.kind=[node]{return Property(node->kind());};
+        receiver.kindPrefix=[node]{return node->kind();};
+        receiver.properties=[node]{return Property(node->propertyOwner());};
+        receiver.assignProperties=[node](Property value){
+            auto record=PropertyList::record(value);
+            if(!record)throw options::Exception("TypeError",u"Node properties must be a record");
+            node->propertyOwner(*record);
+        };
+        // Bound PropertyList owners dispatch to Context::ownKeys/live Get/Set,
+        // preserving enumerable Symbols and the target's __proto__ setter.
+        // The unbound native owner exposes only its actual typed key domain.
+        receiver.copyProperties=[node]{return Property(node->propertyOwner().copyOwnEnumerableProperties());};
+        receiver.setProperty=[node](Property name,Property value){
+            const auto text=property_host::debugText(property_host::string(name));
+            node->propertyOwner().set(text,std::move(value));
+        };
+        receiver.getProperty=[node](Property name){
+            const auto text=property_host::debugText(property_host::string(name));
+            return node->propertyOwner().get(text);
+        };
+        receiver.getPropertyNames=[node]{return node->propertyOwner().keys();};
+        receiver.deleteProperty=[node](Property name){
+            const auto text=property_host::debugText(property_host::string(name));
+            node->propertyOwner().erase(text);
+        };
+        receiver.children=[node]{return node->childArrayOwner();};
+        receiver.copyChildren=[node]{
+            auto children=node->childArrayOwner();
+            return children?children:std::make_shared<ChildArray<Product>>();
+        };
+        receiver.assignChildren=[node](FactoryChildren<Product> value){node->childArrayOwner(std::move(value));};
+        receiver.newChildren=[] {return std::make_shared<ChildArray<Product>>();};
+        receiver.captureCreator=[node]{
+            auto& factory=node->factoryOwner();
+            return std::function<ChildValue<Product>(Property)>([&factory](Property kind){
+                const auto name=property_host::debugText(property_host::string(kind));
+                return ChildValue<Product>(factory.create(name,FactoryArgs{}));
+            });
+        };
+        receiver.assignPropertiesOn=[](ChildValue<Product> target,Property value){
+            auto* product=target.requireNodeForWrite("properties");
+            auto record=PropertyList::record(value);
+            if(!record)throw options::Exception("TypeError",u"Node properties must be a record");
+            product->propertyOwner(*record);
+        };
+        receiver.appendOn=[](ChildValue<Product> target,ChildValue<Product> child){
+            return target.requireNode("appendChild")->appendChild(std::move(child));
+        };
+        receiver.childIndex=[node](ChildValue<Product> child){
+            // Preserve virtual `this.childIndex(child)` dispatch for derived
+            // native nodes while the shared algorithm owns the operation.
+            const auto index=node->childIndex(std::move(child));
+            return index?Property(static_cast<double>(*index)):Property(PropertyNull{});
+        };
+        receiver.writeChildAt=[](FactoryChildren<Product> children,Property index,ChildValue<Product> value){
+            const auto numeric=property_host::number(index);
+            if(!std::isfinite(numeric)||numeric<0||std::trunc(numeric)!=numeric)
+                throw options::Exception("TypeError",u"Native child index is not an integer");
+            children->set(static_cast<std::size_t>(numeric),std::move(value));
+        };
+        receiver.spliceChildAt=[](FactoryChildren<Product> children,Property index){
+            const auto numeric=property_host::number(index);
+            if(!std::isfinite(numeric)||numeric<0||std::trunc(numeric)!=numeric)
+                throw options::Exception("TypeError",u"Native child index is not an integer");
+            children->splice(static_cast<std::int64_t>(numeric),std::size_t{1});
+        };
+        receiver.factoryNodeIsKind=[node](Property kind){
+            return node->factoryOwner().nodeIsKind(node,property_host::debugText(property_host::string(kind)));
+        };
+        receiver.isKindOn=[](ChildValue<Product> value,Property kind){
+            const auto name=property_host::debugText(property_host::string(kind));
+            if(const auto source=value.sourceAccess())return source->isKind(name);
+            return value.requireNode("isKind")->isKind(name);
+        };
+        receiver.walkOn=[](ChildValue<Product> value,const std::function<void(ChildValue<Product>,const std::any&)>& visit,
+                           const std::any& data,const std::any& visitorIdentity){
+            value.walkTreeRaw(visit,data,visitorIdentity);
+        };
+        return receiver;
+    }
 public:
     explicit AbstractNode(FactoryServices<Product>& factory) : Base(factory) {}
+    // Reuse the native receiver already consumed by TreeNodeAlgorithms.
+    // This is an operation view, not a second owner or Context identity.
+    Receiver treeReceiver() {
+        return nativeReceiver(static_cast<Product*>(this));
+    }
     AbstractNode(const AbstractNode&) = delete;
     AbstractNode& operator=(const AbstractNode&) = delete;
     AbstractNode(AbstractNode&&) = delete;
@@ -20,208 +112,164 @@ public:
     virtual ~AbstractNode() = default;
 
     void initializeNode(FactoryArgs args = {}) {
-        PropertyList defaultProperties;
-        const PropertyList* inputProperties = &defaultProperties;
-        if (!args.empty() && args[0].has_value()) {
-            inputProperties = std::any_cast<PropertyList>(&args[0]);
-            if (!inputProperties) type_error("Node properties must be a PropertyList");
-        }
-        for (const auto& name : inputProperties->keys()) {
-            this->setProperty(name, inputProperties->getOwn(name));
-        }
-
-        FactoryChildren<Product> defaultChildren = std::make_shared<ChildArray<Product>>();
-        FactoryChildren<Product> inputChildren = std::move(defaultChildren);
-        if (args.size() > 1 && args[1].has_value()) {
-            const auto* children = std::any_cast<FactoryChildren<Product>>(&args[1]);
-            if (!children) type_error("Node children must be a child-array handle");
-            inputChildren = *children;
-        }
-        if (!inputChildren) type_error("Cannot read length of null children");
-        if (!inputChildren->empty()) this->setChildren(std::move(inputChildren));
+        TreeConstructorReceiver receiver;
+        receiver.writeOwnFields=[this]{
+            this->setParent(PropertyNull{});
+            propertyOwner(PropertyList{});
+            this->childArrayOwner(std::make_shared<ChildArray<Product>>());
+        };
+        receiver.propertyKeys=[args]{
+            if(args.empty()||!args[0].has_value())return std::vector<std::u16string>{};
+            const auto* input=std::any_cast<PropertyList>(&args[0]);
+            if(!input)type_error("Node properties must be a PropertyList");
+            std::vector<std::u16string> result;
+            for(const auto& key:input->keys())result.push_back(property_host::text(key));
+            return result;
+        };
+        receiver.propertyValueNative=[args](std::u16string_view key){
+            if(args.empty()||!args[0].has_value())return Property(Missing{});
+            const auto* input=std::any_cast<PropertyList>(&args[0]);
+            if(!input)type_error("Node properties must be a PropertyList");
+            return input->get(property_host::debugText(key));
+        };
+        receiver.callSetPropertyNative=[this](std::u16string_view key,Property value){
+            this->setProperty(property_host::debugText(key),std::move(value));
+        };
+        receiver.childLengthTruthy=[args]{
+            if(args.size()<2||!args[1].has_value())return false;
+            const auto* children=std::any_cast<FactoryChildren<Product>>(&args[1]);
+            if(!children)type_error("Node children must be a child-array handle");
+            if(!*children)type_error("Cannot read length of null children");
+            return (*children)->lengthTruthy();
+        };
+        receiver.callSetChildren=[this,args]{
+            const auto* children=std::any_cast<FactoryChildren<Product>>(&args[1]);
+            if(!children)type_error("Node children must be a child-array handle");
+            this->setChildren(*children);
+        };
+        TreeNodeAlgorithms<Product>::initialize(receiver);
     }
 
     std::string kind() const override { return "unknown"; }
 
+    // The Context field aliases this actual PropertyList handle.
+    PropertyList propertyOwner()const override{
+        if(propertyReader_)return propertyReader_();
+        if(sourcePropertiesRaw_){
+            if(auto record=PropertyList::record(*sourcePropertiesRaw_))return *record;
+            type_error("Node properties is not an object");
+        }
+        return properties;
+    }
+    void propertyOwner(PropertyList value)override{
+        if(propertyWriter_){propertyWriter_(std::move(value));return;}
+        sourcePropertiesRaw_.reset();
+        properties=std::move(value);
+    }
+    void sourcePropertyAccessors(std::function<PropertyList()> read,
+                                 std::function<void(PropertyList)> write){
+        propertyReader_=std::move(read);propertyWriter_=std::move(write);
+    }
+    // Raw value for the actual Source data cell; bypass propertyOwner hooks.
+    Property sourcePropertiesCell()const{
+        if(sourcePropertiesRaw_)return *sourcePropertiesRaw_;
+        return Property(properties);
+    }
+    PropertyList sourcePropertiesField() const { return propertyOwner(); }
+    std::optional<Property> sourcePropertiesRawField()const{return sourcePropertiesRaw_;}
+    void setSourcePropertiesField(PropertyList value) { propertyOwner(std::move(value)); }
+    void setSourcePropertiesRawField(Property value){
+        if(const auto record=PropertyList::record(value)){
+            properties=*record;
+            sourcePropertiesRaw_.reset();
+        }else sourcePropertiesRaw_=std::move(value);
+    }
+
     void setProperty(std::string_view name, Property value) override {
-        properties.set(name, std::move(value));
+        TreeNodeAlgorithms<Product>::setProperty(nativeReceiver(static_cast<Product*>(this)),name,std::move(value));
     }
 
     Property getProperty(std::string_view name) const override {
-        return properties.get(name);
+        return TreeNodeAlgorithms<Product>::getProperty(nativeReceiver(const_cast<Product*>(static_cast<const Product*>(this))),name);
     }
 
     std::vector<std::string> getPropertyNames() const override {
-        return properties.keys();
+        return TreeNodeAlgorithms<Product>::getPropertyNames(nativeReceiver(static_cast<Product*>(const_cast<AbstractNode*>(this))));
     }
 
     PropertyList getAllProperties() const override {
-        return properties;
+        return PropertyList::record(TreeNodeAlgorithms<Product>::getAllProperties(nativeReceiver(static_cast<Product*>(const_cast<AbstractNode*>(this))))).value();
     }
 
     void removeProperty(std::span<const std::string> names) override {
-        for (const auto& name : names) properties.erase(name);
+        TreeNodeAlgorithms<Product>::removeProperty(nativeReceiver(static_cast<Product*>(this)),names);
     }
 
     bool isKind(std::string_view name) const override {
-        return this->factory.nodeIsKind(static_cast<const Product*>(this), name);
+        return TreeNodeAlgorithms<Product>::isKind(nativeReceiver(static_cast<Product*>(const_cast<AbstractNode*>(this))),Property(std::string(name)));
     }
 
     void setChildren(FactoryChildren<Product> children) override {
         // The replacement happens before the source starts iterating its input.
-        this->childNodes = std::make_shared<ChildArray<Product>>();
-        if (!children) {
-            type_error("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
-        }
-        // A JS for-of loop captures the array object, but reads its live length
-        // and indexed values as it advances. Get turns holes into Undefined.
-        const auto input = std::move(children);
-        for (std::size_t index = 0; index < input->size(); ++index) {
-            this->appendChild(input->get(index));
-        }
+        TreeNodeAlgorithms<Product>::setChildren(nativeReceiver(static_cast<Product*>(this)),std::move(children));
     }
 
     ChildValue<Product> appendChild(ChildValue<Product> child) override {
-        const auto target = this->childNodes;
-        if (!target) type_error("Cannot read properties of null (reading 'push')");
-        target->push_back(child);
-        // The array write precedes the JS assignment receiver check.
-        Product* const receiver = child.requireNodeForWrite("parent");
-        receiver->setParent(ChildValue<Product>(static_cast<Product*>(this)));
-        return child;
+        return TreeNodeAlgorithms<Product>::appendChild(nativeReceiver(static_cast<Product*>(this)),std::move(child));
     }
 
     ChildValue<Product> replaceChild(ChildValue<Product> newChild, ChildValue<Product> oldChild) override {
-        // This virtual call may mutate or replace this->childNodes. The write
-        // below must therefore resolve the receiver's current array afterward.
-        const auto index = this->childIndex(oldChild);
-        if (index) {
-            const auto target = this->childNodes;
-            if (!target) {
-                const std::string key = std::to_string(*index);
-                type_error(std::string("Cannot set properties of null (setting '") + key + "')");
-            }
-            target->set(*index, newChild);
-
-            Product* const newReceiver = newChild.requireNodeForWrite("parent");
-            newReceiver->setParent(ChildValue<Product>(static_cast<Product*>(this)));
-
-            // Do not inspect oldChild until after the replacement and new
-            // parent write have completed; a nullish old value throws here.
-            Product* const oldReceiver = oldChild.requireNode("parent");
-            if (oldReceiver->getParent() == ChildValue<Product>(static_cast<Product*>(this))) {
-                oldReceiver->setParent(ChildValue<Product>(PropertyNull{}));
-            }
-        }
-        return newChild;
+        return TreeNodeAlgorithms<Product>::replaceChild(nativeReceiver(static_cast<Product*>(this)),std::move(newChild),std::move(oldChild));
     }
 
     ChildValue<Product> removeChild(ChildValue<Product> child) override {
-        const auto index = this->childIndex(child);
-        if (index) {
-            const auto target = this->childNodes;
-            if (!target) type_error("Cannot read properties of null (reading 'splice')");
-            target->splice(static_cast<std::int64_t>(*index), std::size_t{1});
-
-            // Splice remains visible if the source value cannot receive the
-            // following parent assignment.
-            Product* const receiver = child.requireNodeForWrite("parent");
-            receiver->setParent(ChildValue<Product>(PropertyNull{}));
-        }
-        return child;
+        return TreeNodeAlgorithms<Product>::removeChild(nativeReceiver(static_cast<Product*>(this)),std::move(child));
     }
 
     std::optional<std::size_t> childIndex(ChildValue<Product> child) const override {
-        const auto children = this->childNodes;
-        if (!children) type_error("Cannot read properties of null (reading 'indexOf')");
-        return children->indexOf(child);
+        const auto result=TreeNodeAlgorithms<Product>::childIndex(nativeReceiver(static_cast<Product*>(const_cast<AbstractNode*>(this))),std::move(child));
+        if(std::holds_alternative<PropertyNull>(result.value))return {};
+        const auto numeric=property_host::number(result);
+        return static_cast<std::size_t>(numeric);
     }
 
     Product* copy(bool keepIds = false) override {
-        TreeCallGuard<Product> guard;
-        (void)keepIds; // Generic Node.copy ignores this extra argument.
-
-        const FactoryArgs noArguments{};
-        Product* const node = this->factory.create(this->kind(), noArguments);
-        if (!node) type_error("Cannot set properties of null (setting 'properties')");
-
-        // The pinned CJS spread is Object.assign({}, source): make a fresh
-        // record, enumerate own keys, and retain nested Property identities.
-        PropertyList copiedProperties;
-        copiedProperties.assign(this->properties);
-        auto* const copiedBase = dynamic_cast<AbstractNode<Product, Base>*>(node);
-        if (!copiedBase) {
-            type_error("Factory product does not implement this Node property storage");
-        }
-        copiedBase->properties = std::move(copiedProperties);
-
-        // Capture after factory construction and property copying, as Source
-        // does. Iterate this handle with live length and Has/Get hole behavior.
-        const auto sourceChildren = this->childNodes;
-        if (sourceChildren) {
-            for (std::size_t index = 0; index < sourceChildren->size(); ++index) {
-                const ChildValue<Product> child = sourceChildren->get(index);
-                if (child.isNode()) {
-                    Product* const copiedChild = child.requireNode("copy")->copy();
-                    node->appendChild(ChildValue<Product>(copiedChild));
-                }
-            }
-        }
-        return node;
+        (void)keepIds;
+        return TreeNodeAlgorithms<Product>::copy(nativeReceiver(static_cast<Product*>(this))).requireNodeForWrite("copy");
     }
 
     std::vector<Product*> findNodes(std::string_view name) override {
         std::vector<Product*> result;
-        walkTree([&](Product* node, const std::any&) {
-            if (node->isKind(name)) result.push_back(node);
-        });
+        for(auto child:TreeNodeAlgorithms<Product>::findNodes(nativeReceiver(static_cast<Product*>(this)),Property(std::string(name))))
+            result.push_back(child.requireNode("findNodes"));
         return result;
     }
 
     std::any walkTree(const TreeVisitor<Product>& visit, const std::any& data = {}) override {
-        TreeCallGuard<Product> guard;
-        visit(static_cast<Product*>(this), data);
+        TreeNodeAlgorithms<Product>::walkTree(nativeReceiver(static_cast<Product*>(this)),[&](ChildValue<Product> child,const std::any& value){
+            visit(child.requireNode("walkTree"),value);
+        },data);
+        return data;
+    }
 
-        // Match for-of: the receiver may rebind childNodes in the callback,
-        // so capture the array only after visiting this node. Its length and
-        // indexed Get remain live during traversal.
-        const auto children = this->childNodes;
-        if (!children) {
-            type_error("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
-        }
-        for (std::size_t index = 0; index < children->size(); ++index) {
-            const ChildValue<Product> child = children->get(index);
-            if (child.isNode()) child.requireNode("walkTree")->walkTree(visit, data);
-        }
+    std::any walkTreeRaw(const TreeRawVisitor<Product>& visit,const std::any& data={},
+                         const std::any& visitorIdentity={}) override {
+        TreeNodeAlgorithms<Product>::walkTree(nativeReceiver(static_cast<Product*>(this)),visit,data,visitorIdentity);
         return data;
     }
 
     std::string toString() const override {
-        TreeCallGuard<Product> callGuard;
-        const std::string nodeKind = this->kind();
-        const auto children = this->childNodes;
-        if (!children) {
-            type_error("Cannot read properties of null (reading 'join')");
-        }
-
-        // Array.join suppresses recursion by array identity, not by node.
-        TreeJoinGuard<Product> joinGuard(children.get());
-        if (!joinGuard.entered()) return nodeKind + "()";
-
-        const std::size_t length = children->size();
-        std::string result = nodeKind;
-        result.push_back('(');
-        for (std::size_t index = 0; index < length; ++index) {
-            if (index != 0) result.push_back(',');
-            const ChildValue<Product> child = children->get(index);
-            if (child.isNode()) result += child.requireNode("toString")->toString();
-        }
-        result.push_back(')');
-        return result;
+        return TreeNodeAlgorithms<Product>::toString(nativeReceiver(static_cast<Product*>(const_cast<AbstractNode*>(this))));
     }
 
 protected:
     PropertyList properties;
+    // A Source assignment may store any Value in `properties`, including
+    // null. This discriminant is the active field owner until an object-valued
+    // assignment installs a PropertyList projection.
+    std::optional<Property> sourcePropertiesRaw_;
+    std::function<PropertyList()> propertyReader_;
+    std::function<void(PropertyList)> propertyWriter_;
 
     [[noreturn]] static void type_error(std::string_view message) {
         throw FactoryError("TypeError", std::u16string(message.begin(), message.end()));
@@ -238,20 +286,28 @@ public:
     AbstractEmptyNode(AbstractEmptyNode&&) = delete;
     AbstractEmptyNode& operator=(AbstractEmptyNode&&) = delete;
 
-    void setChildren(FactoryChildren<Product>) override {}
-    ChildValue<Product> appendChild(ChildValue<Product> child) override { return child; }
-    ChildValue<Product> replaceChild(ChildValue<Product>, ChildValue<Product> oldChild) override { return oldChild; }
-    std::optional<std::size_t> childIndex(ChildValue<Product>) const override { return std::nullopt; }
+    void setChildren(FactoryChildren<Product> children) override {TreeEmptyNodeAlgorithms<Product>::setChildren(Parent::nativeReceiver(static_cast<Product*>(this)),std::move(children));}
+    ChildValue<Product> appendChild(ChildValue<Product> child) override {return TreeEmptyNodeAlgorithms<Product>::appendChild(Parent::nativeReceiver(static_cast<Product*>(this)),std::move(child));}
+    ChildValue<Product> replaceChild(ChildValue<Product>, ChildValue<Product> oldChild) override {return TreeEmptyNodeAlgorithms<Product>::replaceChild(Parent::nativeReceiver(static_cast<Product*>(this)),{},std::move(oldChild));}
+    ChildValue<Product> removeChild(ChildValue<Product> child) override {return TreeEmptyNodeAlgorithms<Product>::replaceChild(Parent::nativeReceiver(static_cast<Product*>(this)),{},std::move(child));}
+    std::optional<std::size_t> childIndex(ChildValue<Product> child) const override {
+        const auto result=TreeEmptyNodeAlgorithms<Product>::childIndex(Parent::nativeReceiver(static_cast<Product*>(const_cast<AbstractEmptyNode*>(this))),std::move(child));
+        return std::holds_alternative<PropertyNull>(result.value)?std::optional<std::size_t>{}:std::optional<std::size_t>{static_cast<std::size_t>(property_host::number(result))};
+    }
 
     std::any walkTree(const TreeVisitor<Product>& visit, const std::any& data = {}) override {
-        TreeCallGuard<Product> guard;
-        visit(static_cast<Product*>(this), data);
+        TreeEmptyNodeAlgorithms<Product>::walkTree(Parent::nativeReceiver(static_cast<Product*>(this)),[&](ChildValue<Product> child,const std::any& value){visit(child.requireNode("walkTree"),value);},data);
+        return data;
+    }
+    std::any walkTreeRaw(const TreeRawVisitor<Product>& visit,const std::any& data={},
+                         const std::any& visitorIdentity={}) override {
+        (void)visitorIdentity;
+        TreeEmptyNodeAlgorithms<Product>::walkTree(Parent::nativeReceiver(static_cast<Product*>(this)),visit,data);
         return data;
     }
 
     std::string toString() const override {
-        TreeCallGuard<Product> guard;
-        return this->kind();
+        return property_host::debugText(property_host::string(TreeEmptyNodeAlgorithms<Product>::toString(Parent::nativeReceiver(static_cast<Product*>(const_cast<AbstractEmptyNode*>(this))))));
     }
 };
 }

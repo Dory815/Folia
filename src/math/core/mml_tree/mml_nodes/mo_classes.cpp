@@ -16,7 +16,7 @@ MmlNode* MmlMo::coreParent() {
     tree::TreeCallGuard<MmlNode> guard;
     MmlNode* embellished = nullptr;
     NodeValue parent = this;
-    const auto mathClass = this->factory.getNodeClass("math");
+    const auto mathClass = this->factoryOwner().getNodeClass("math");
     tree::TreeWalkBudget<MmlNode> walkBudget;
     while (parent.isNode() && parent.requireNode("isEmbellished")->isEmbellished() &&
            parent.requireNode("coreMO")->coreMO() == NodeValue(this) &&

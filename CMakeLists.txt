@@ -152,10 +152,13 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/tree/property.ixx
     src/math/core/tree/child_array.ixx
     src/math/core/tree/factory_types.ixx
+    src/math/core/tree/factory_class_map_owner.ixx
     src/math/core/tree/factory.ixx
+    src/math/util/factory_context_field_views.ixx
     src/math/core/tree/node_factory.ixx
     src/math/core/tree/wrapper_factory.ixx
     src/math/core/tree/node_types.ixx
+    src/math/core/tree/node_algorithms.ixx
     src/math/core/tree/node.ixx
     src/math/core/tree/wrapper_types.ixx
     src/math/core/tree/wrapper.ixx

@@ -60,7 +60,7 @@ MmlNode* TextNode::copy(bool keepIds) {
 
     // Preserve the source order: create by current kind, then call the source
     // virtual getter and the result's virtual setter.
-    MmlNode* const created = factory.create(kind(), {});
+    MmlNode* const created = factoryOwner().create(kind(), {});
     std::u16string const text = getText();
     auto* const result = dynamic_cast<TextNode*>(created);
     if (!result) host::typeError("Factory product has no TextNode setText method");
@@ -85,7 +85,7 @@ MmlNode* XMLNode::copy(bool keepIds) {
 
     // The factory result is allocated first. Source adaptor.clone runs next;
     // setXML receives only the clone, so the result's adaptor remains null.
-    MmlNode* const created = factory.create(kind(), {});
+    MmlNode* const created = factoryOwner().create(kind(), {});
     if (!adaptor_) host::typeError("Cannot read properties of null (reading 'clone')");
     XmlRef const clone = adaptor_->clone(xml_);
     auto* const result = dynamic_cast<XMLNode*>(created);

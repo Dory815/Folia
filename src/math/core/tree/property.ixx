@@ -338,7 +338,7 @@ public:
         PropertyList result;
         const auto ownKeys=keys();
         for(const auto& key:ownKeys){
-            if(hasOwn(key))result.setOwn(key,getOwn(key));
+            if(hasOwn(key))result.set(key,getOwn(key));
         }
         for(const auto& key:symbolKeys())result.setOwnKey(Property(key),getKey(Property(key)));
         return result;
