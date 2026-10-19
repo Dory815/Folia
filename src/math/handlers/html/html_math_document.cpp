@@ -110,12 +110,15 @@ ObjectRef HTMLMathDocument::constructItem(Value mathValue,Value inputValue,
     if(const auto* id=std::get_if<ObjectRef>(&inputValue.data))
         for(const auto& candidate:inputJax_)if(candidate.identity==*id){input=candidate.owner.get();break;}
     const auto id=context_->object();
+    if(privateRequestOwnerScopeActive_){
+        try{privateRequestItems_.push_back(id);}
+        catch(...){context_->retireObjectRecord(id);throw;}
+    }
     auto item=std::make_shared<HTMLMathItem>(*context_,id,*this,
         properties_->from(mathValue),std::move(input),properties_->from(displayValue),
         properties_->from(startValue),properties_->from(endValue));
     context_->setPrototype(id,itemPrototype_);
     context_->payload(id)=std::static_pointer_cast<NativeObject>(item);
-    lastRequestItem_=id;
     auto* propertyBindings=properties_;
     auto graphLease=serviceOwner_;
     // `_state` is the actual Source field backed by AbstractMathItem::state_.
@@ -191,15 +194,27 @@ ObjectRef HTMLMathDocument::constructItem(Value mathValue,Value inputValue,
 }
 
 void HTMLMathDocument::beginRequestOwnerScopeImpl(){
+    if(!privateRequestItems_.empty())
+        throw Exception("TypeError",u"HTMLMathDocument request item cleanup is pending");
+    beginPrivateRequestOwnerScope();
+    privateRequestItemRetireIndex_=0;
     for(const auto& input:inputJax_){
         if(auto* tex=dynamic_cast<tex::TeX*>(input.owner.get()))tex->beginRequestOwnerScope();
     }
 }
-void HTMLMathDocument::retireLastRequestItem(){
+void HTMLMathDocument::retireRequestItems(){
+    if(!privateRequestOwnerScopeActive_)return;
     for(const auto& input:inputJax_){
         if(auto* tex=dynamic_cast<tex::TeX*>(input.owner.get()))tex->releaseRequestReferences();
     }
-    if(lastRequestItem_){context_->retireObjectRecord(*lastRequestItem_);lastRequestItem_.reset();}
+    while(privateRequestItemRetireIndex_<privateRequestItems_.size()){
+        const auto identity=privateRequestItems_[privateRequestItemRetireIndex_];
+        context_->retireObjectRecord(identity);
+        ++privateRequestItemRetireIndex_;
+    }
+    privateRequestItems_.clear();
+    privateRequestItemRetireIndex_=0;
+    retirePrivateRequestOwnerScope();
 }
 
 HTMLMathItem& HTMLMathDocument::requireItem(Context& context,Value receiver){

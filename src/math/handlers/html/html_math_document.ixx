@@ -12,7 +12,8 @@ import std;
 export namespace folia::math::handlers::html {
 class HTMLMathDocument final : public core::MathDocument, public HTMLMathItemHost {
     options::ObjectRef itemPrototype_;
-    std::optional<options::ObjectRef> lastRequestItem_;
+    std::vector<options::ObjectRef> privateRequestItems_;
+    std::size_t privateRequestItemRetireIndex_=0;
     regexp_host::RegExpBindings* regexp_;
 
     HTMLMathDocument(options::Context&,ContextPropertyBindings&,util::RuntimeModules&,
@@ -27,7 +28,7 @@ class HTMLMathDocument final : public core::MathDocument, public HTMLMathItemHos
     void installItemSurface();
     options::ObjectRef constructItem(options::Value,options::Value,
         options::Value,options::Value,options::Value);
-    void retireLastRequestItem();
+    void retireRequestItems();
     void beginRequestOwnerScopeImpl();
     static HTMLMathItem& requireItem(options::Context&,options::Value);
     core::MathItem& resolveMathItem(options::ObjectRef) override;
@@ -50,7 +51,7 @@ public:
     ContextPropertyBindings& propertyBindings()const override{return *properties_;}
     core::MathLocationService& locationService()const override{return core::MathDocument::locationService();}
     // Called only by the private Renderer after its copied result is complete.
-    void retireCompletedRequestItem(){retireLastRequestItem();}
+    void retireCompletedRequestItem(){retireRequestItems();}
     void beginRequestOwnerScope(){beginRequestOwnerScopeImpl();}
 };
 }

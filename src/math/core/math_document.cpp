@@ -162,6 +162,10 @@ Value MathDocument::convertCore(Value mathValue,Value supplied){
             const Value candidate=args.size()<2?Value(Undefined{}):args[1];
             return cx.get(candidate,Key(u"name"))==format?candidate:accumulator;
         });
+    if(privateRequestOwnerScopeActive_){
+        try{privateRequestReducerRecords_.push_back(reducer);}
+        catch(...){context_->retireObjectRecord(reducer);throw;}
+    }
     const std::array<Value,2> reduceArguments{Value(reducer),Value(Null{})};
     const Value selectedInput=context_->callMember(reduce,inputList,reduceArguments,
         u"MathDocument.convert inputJax.reduce");
@@ -191,6 +195,25 @@ Value MathDocument::convertCore(Value mathValue,Value supplied){
     return sourceResult(item);
 }
 
+void MathDocument::beginPrivateRequestOwnerScope(){
+    if(privateRequestOwnerScopeActive_)
+        throw Exception("TypeError",u"MathDocument request owner scope is already active");
+    if(!privateRequestReducerRecords_.empty())
+        throw Exception("TypeError",u"MathDocument request owner scope has pending cleanup");
+    privateRequestReducerRetireIndex_=0;
+    privateRequestOwnerScopeActive_=true;
+}
+void MathDocument::retirePrivateRequestOwnerScope(){
+    if(!privateRequestOwnerScopeActive_)return;
+    while(privateRequestReducerRetireIndex_<privateRequestReducerRecords_.size()){
+        const auto identity=privateRequestReducerRecords_[privateRequestReducerRetireIndex_];
+        context_->retireObjectRecord(identity);
+        ++privateRequestReducerRetireIndex_;
+    }
+    privateRequestReducerRecords_.clear();
+    privateRequestReducerRetireIndex_=0;
+    privateRequestOwnerScopeActive_=false;
+}
 Value MathDocument::convert(Value math,Value supplied){
     if(std::holds_alternative<Undefined>(supplied.data))supplied=Value(context_->object());
     return convertCore(std::move(math),std::move(supplied));

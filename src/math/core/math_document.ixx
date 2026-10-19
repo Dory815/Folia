@@ -42,6 +42,9 @@ protected:
     std::unique_ptr<AbstractMathList> math_;
     std::unique_ptr<RenderActions> renderActions_;
     options::ObjectRef itemConstructor_;
+    std::vector<options::ObjectRef> privateRequestReducerRecords_;
+    std::size_t privateRequestReducerRetireIndex_=0;
+    bool privateRequestOwnerScopeActive_=false;
 
     MathDocument(options::Context&,ContextPropertyBindings&,util::RuntimeModules&,
         std::vector<InputJaxBinding>,std::shared_ptr<OutputJax>,options::ObjectRef,
@@ -56,6 +59,8 @@ protected:
     virtual options::Value sourceResult(MathItem&)=0;
     void installCoreDocumentMethods();
     options::Value convertCore(options::Value math,options::Value supplied);
+    void beginPrivateRequestOwnerScope();
+    void retirePrivateRequestOwnerScope();
 public:
     MathDocument(const MathDocument&)=delete;
     MathDocument& operator=(const MathDocument&)=delete;
