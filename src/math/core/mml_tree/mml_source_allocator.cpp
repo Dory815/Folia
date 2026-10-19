@@ -8,13 +8,18 @@ using namespace options;
 MmlSourceAllocator::MmlSourceAllocator(Context& context,
         std::shared_ptr<MmlFactory> backend,std::weak_ptr<std::atomic_bool> lease,
         SelectBackend selectBackend,ResolveNode resolveNode,ResolveProductOwner resolveProductOwner,
-        BindProduct bindProduct,InitializeTreeBase initializeTreeBase)
+        BindProduct bindProduct,InitializeTreeBase initializeTreeBase,
+        BeginReceiverInitialization beginReceiverInitialization,
+        EndReceiverInitialization endReceiverInitialization)
     :context_(context),backend_(std::move(backend)),selectBackend_(std::move(selectBackend)),
      resolveNode_(std::move(resolveNode)),
      resolveProductOwner_(std::move(resolveProductOwner)),bindProduct_(std::move(bindProduct)),
      initializeTreeBase_(std::move(initializeTreeBase)),
+     beginReceiverInitialization_(std::move(beginReceiverInitialization)),
+     endReceiverInitialization_(std::move(endReceiverInitialization)),
      contextLease_(std::move(lease)){
-    if(!backend_||!selectBackend_||!resolveNode_||!resolveProductOwner_||!bindProduct_||!initializeTreeBase_)
+    if(!backend_||!selectBackend_||!resolveNode_||!resolveProductOwner_||!bindProduct_||
+       !initializeTreeBase_||!beginReceiverInitialization_||!endReceiverInitialization_)
         throw Exception("TypeError",u"MML Source allocator requires one complete Context binding service");
 }
 void MmlSourceAllocator::requireActive()const{
@@ -26,7 +31,7 @@ MmlFactory& MmlSourceAllocator::backend()const{requireActive();return *backend_;
 void MmlSourceAllocator::validate()const{requireActive();}
 MmlNode& MmlSourceAllocator::initializeReceiver(ObjectRef receiver,
         const tree::FactoryClassRef<MmlNode>& descriptor,Value lexicalFactory,
-        Value rawAttributes,Value rawChildren){
+        Value rawAttributes,Value rawChildren,SourceReceiverProvenance provenance){
     requireActive();
     (void)context_.kind(receiver); // Validate this exact receiver belongs to the Context.
     if(!descriptor||!descriptor->construct||!descriptor->initializeSource)
@@ -36,7 +41,10 @@ MmlNode& MmlSourceAllocator::initializeReceiver(ObjectRef receiver,
     try{node=resolveNode_(receiver);}
     catch(const NativeIdentityResolutionFailure&){}
     if(node)productOwner=resolveProductOwner_(receiver,*node);
-    initializeTreeBase_(receiver,lexicalFactory);
+    const auto receiverScope=beginReceiverInitialization_(receiver,provenance,node==nullptr);
+    try{initializeTreeBase_(receiver,lexicalFactory);}
+    catch(...){if(receiverScope)endReceiverInitialization_(receiverScope);throw;}
+    if(receiverScope)endReceiverInitialization_(receiverScope);
     if(!node){
         productOwner=selectBackend_();
         if(!productOwner)throw Exception("TypeError",u"MML Context has no active Source allocation owner");

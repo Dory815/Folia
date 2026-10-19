@@ -30,6 +30,12 @@ o::ObjectRef textConstructor(SharedGraph& graph,t::ParserRuntime& runtime,o::Obj
     return std::get<o::ObjectRef>(runtime.maps.resolve(map)->get(o::Value(u"text")).data);
 }
 
+o::ObjectRef mmlConstructor(SharedGraph& graph,t::ParserRuntime& runtime,o::ObjectRef factory,
+                            std::u16string_view name){
+    const auto map=std::get<o::ObjectRef>(graph.context.get(o::Value(factory),o::Key(u"nodeMap")).data);
+    return std::get<o::ObjectRef>(runtime.maps.resolve(map)->get(o::Value(std::u16string(name))).data);
+}
+
 o::ObjectRef constructText(SharedGraph& graph,o::ObjectRef constructor,o::ObjectRef factory){
     const auto prototype=std::get<o::ObjectRef>(
         graph.context.get(o::Value(constructor),o::Key(u"prototype")).data);
@@ -71,7 +77,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         owner->set("shared",sharedProperty);
         owner->setInherited("inheritedShared",sharedProperty);
         owner->defaultsLayer().set("defaultShared",sharedProperty);
-        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
         std::weak_ptr<folia::math::Attributes> weakOwner=owner;
         const auto identity=runtime->attributeBindings.bind(owner);
 
@@ -133,7 +139,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
             if(handle)weakFresh[i]=*handle;
         }
         owner.reset();
-        bindings->retirePrivateRendererAttributesCapture(capture);
+        bindings->retirePrivateRendererProjectionCapture(capture);
         expect(weakOwner.expired());
         for(const auto object:fresh){
             bool retired=false;
@@ -166,7 +172,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         if(!bindings)return;
 
         const auto countBefore=runtime->attributeBindings.canonicalHandleCountForDiagnostics();
-        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
         auto owner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
         std::weak_ptr<folia::math::Attributes> weakOwner=owner;
         const auto identity=runtime->attributeBindings.bind(owner);
@@ -191,7 +197,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         graph.context.retireObjectRecord(list);
         std::optional<std::string> firstName,secondName;
         std::optional<std::u16string> firstMessage,secondMessage;
-        try{bindings->retirePrivateRendererAttributesCapture(capture);}
+        try{bindings->retirePrivateRendererProjectionCapture(capture);}
         catch(const o::Exception& error){firstName=error.name;firstMessage=error.message;}
         expect(static_cast<bool>(firstName&&*firstName=="TypeError"));
         expect(firstMessage.has_value());
@@ -204,7 +210,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         try{(void)graph.context.kind(identity);}catch(const o::Exception& error){identityRetired=error.name=="TypeError";}
         expect(namesRetired&&identityRetired);
 
-        try{bindings->retirePrivateRendererAttributesCapture(capture);}
+        try{bindings->retirePrivateRendererProjectionCapture(capture);}
         catch(const o::Exception& error){secondName=error.name;secondMessage=error.message;}
         expect(secondName&&firstName&&*secondName==*firstName);
         expect(static_cast<bool>(secondMessage&&firstMessage&&*secondMessage==*firstMessage));
@@ -223,7 +229,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         if(!bindings)return;
 
         const auto countBefore=runtime->attributeBindings.canonicalHandleCountForDiagnostics();
-        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
         auto owner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
         std::weak_ptr<folia::math::Attributes> weakOwner=owner;
         const auto identity=runtime->attributeBindings.bind(owner);
@@ -244,7 +250,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         graph.context.retireObjectRecord(projections[0]);
         std::optional<std::string> firstName,secondName;
         std::optional<std::u16string> firstMessage,secondMessage;
-        try{bindings->retirePrivateRendererAttributesCapture(capture);}
+        try{bindings->retirePrivateRendererProjectionCapture(capture);}
         catch(const o::Exception& error){firstName=error.name;firstMessage=error.message;}
         expect(firstName.has_value()&&firstMessage.has_value());
         expect(static_cast<bool>(firstName&&*firstName=="TypeError"));
@@ -268,7 +274,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         // completed. The same token must resume at the still-pending defaults
         // storage, producing the same stale-record error rather than an inactive
         // identity-capture-token error. This fixture is intentionally not repaired.
-        try{bindings->retirePrivateRendererAttributesCapture(capture);}
+        try{bindings->retirePrivateRendererProjectionCapture(capture);}
         catch(const o::Exception& error){secondName=error.name;secondMessage=error.message;}
         expect(secondName&&firstName&&*secondName==*firstName);
         expect(static_cast<bool>(secondMessage&&firstMessage&&*secondMessage==*firstMessage));
@@ -419,7 +425,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         const auto classDefaults=std::get<o::ObjectRef>(graph.context.get(o::Value(mrow),o::Key(u"defaults")).data);
         const auto defaultMathVariant=graph.context.get(o::Value(classDefaults),o::Key(u"mathvariant"));
 
-        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
         const auto sharedGlobal=graph.context.object();
         auto requestOwner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},
             runtime->attributeBindings.fromValue(o::Value(sharedGlobal)));
@@ -447,7 +453,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         graph.context.define(sharedGlobal,o::Key(u"userGetterProbe"),
             o::Descriptor::access(userGetter,std::nullopt,true,true));
 
-        bindings->retirePrivateRendererAttributesCapture(capture);
+        bindings->retirePrivateRendererProjectionCapture(capture);
         expect(weakRequestOwner.expired());
         expect(runtime->attributeBindings.canonicalHandleCountForDiagnostics()==ambientCount);
         expect(static_cast<bool>(runtime->attributeBindings.resolve(ambientIdentity)==ambient));
@@ -460,7 +466,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         expect(graph.context.kind(classDefaults)==o::ObjectKind::object);
         expect(graph.context.get(o::Value(classDefaults),o::Key(u"mathvariant"))==defaultMathVariant);
 
-        const auto lazyCapture=bindings->beginPrivateRendererAttributesCapture();
+        const auto lazyCapture=bindings->beginPrivateRendererProjectionCapture();
         auto lazyOwner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
         const auto lazyIdentity=runtime->attributeBindings.bind(lazyOwner);
         const std::array<std::weak_ptr<folia::math::PropertyStorage>,3> lazyStorages{
@@ -468,7 +474,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
             std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(lazyOwner->inheritedLayer()).value),
             std::get<std::shared_ptr<folia::math::PropertyStorage>>(folia::math::Property(lazyOwner->attributesLayer()).value)};
         lazyOwner.reset();
-        bindings->retirePrivateRendererAttributesCapture(lazyCapture);
+        bindings->retirePrivateRendererProjectionCapture(lazyCapture);
         expect(throws<o::Exception>([&]{(void)graph.context.kind(lazyIdentity);}));
         expect(std::all_of(lazyStorages.begin(),lazyStorages.end(),[](const auto& storage){return storage.expired();}));
     };
@@ -482,7 +488,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         expect(bindings!=nullptr);
         if(!bindings)return;
 
-        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
         auto owner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
         const auto identity=runtime->attributeBindings.bind(owner);
         const std::weak_ptr<folia::math::PropertyStorage> initialDefaults=
@@ -491,7 +497,7 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         graph.context.set(o::Value(identity),o::Key(u"defaults"),o::Value(sourceReplacement));
         const auto replacementProjection=graph.context.get(o::Value(identity),o::Key(u"defaults"));
         expect(std::get_if<o::ObjectRef>(&replacementProjection.data)!=nullptr);
-        bindings->retirePrivateRendererAttributesCapture(capture);
+        bindings->retirePrivateRendererProjectionCapture(capture);
         owner.reset();
         expect(initialDefaults.expired());
         expect(graph.context.kind(sourceReplacement)==o::ObjectKind::object);
@@ -509,18 +515,18 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         using AttributesOwner=std::shared_ptr<folia::math::Attributes>;
         folia::math::NativeIdentityBindings<AttributesOwner> foreign(graph.context);
         const auto foreignToken=foreign.beginRequestCapture();
-        expect(throws<o::Exception>([&]{bindings->retirePrivateRendererAttributesCapture(foreignToken);}));
+        expect(throws<o::Exception>([&]{bindings->retirePrivateRendererProjectionCapture(foreignToken);}));
         foreign.retireCapturedRequestBindings(foreignToken);
 
-        const auto capture=bindings->beginPrivateRendererAttributesCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
         auto owner=std::make_shared<folia::math::Attributes>(folia::math::PropertyList{},folia::math::PropertyList{});
         std::weak_ptr<folia::math::Attributes> weakOwner=owner;
         const auto identity=runtime->attributeBindings.bind(owner);
         std::any originalPayload=graph.context.payload(identity);
         graph.context.setPayload(identity,std::string("temporary invalid payload"));
-        expect(throws<o::Exception>([&]{bindings->retirePrivateRendererAttributesCapture(capture);}));
+        expect(throws<o::Exception>([&]{bindings->retirePrivateRendererProjectionCapture(capture);}));
         graph.context.setPayload(identity,std::move(originalPayload));
-        bindings->retirePrivateRendererAttributesCapture(capture);
+        bindings->retirePrivateRendererProjectionCapture(capture);
         owner.reset();originalPayload.reset();
         expect(weakOwner.expired());
         expect(throws<o::Exception>([&]{(void)graph.context.kind(identity);}));
@@ -802,6 +808,272 @@ suite mmlPrivateRendererAllocationDomainG227=[] {
         }
         expect(detached.has_value()&&!detached->roots().empty())
             << "frozen Scene geometry survives request factory and Renderer retirement";
+    };
+
+    "private_source_constructor_retires_exact_base_properties_object_without_touching_nested_aliases"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();
+        runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);if(!bindings)return;
+        const auto nodes=runtime->mmlNodeIdentities.beginRequestCapture();
+        const auto arrays=runtime->nodeArrayIdentities.beginRequestCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
+        auto domain=bindings->makePrivateSourceAllocationDomain();
+        bindings->bindSourceAllocationDomain(domain);
+        const auto owner=domain.factory().weak_from_this().lock();
+        expect(owner!=nullptr);if(!owner)return;
+        const auto factory=bindings->bindFactory(owner);
+        const auto constructor=textConstructor(graph,*runtime,factory);
+        const std::array<o::Value,1> args{o::Value(factory)};
+        o::ObjectRef receiver{};
+        {
+            auto active=bindings->activateSourceAllocation(domain);
+            receiver=graph.context.construct(constructor,args);
+        }
+        const auto properties=std::get<o::ObjectRef>(
+            graph.context.get(o::Value(receiver),o::Key(u"properties")).data);
+        const auto nested=graph.context.object();
+        const auto parent=graph.context.object();
+        graph.context.set(o::Value(properties),o::Key(u"nested"),o::Value(nested));
+        graph.context.setPrototype(properties,parent);
+        auto getterCalls=std::make_shared<std::size_t>(0);
+        const auto getter=graph.context.function(u"get probe",[getterCalls](o::Context&,o::Value,std::span<const o::Value>){
+            ++*getterCalls;return o::Value(1);
+        });
+        graph.context.define(nested,o::Key(u"probe"),o::Descriptor::access(getter,std::nullopt,true,true));
+        const auto& node=runtime->resolveMmlNode(receiver);
+        const auto* nativeCell=dynamic_cast<const tree::AbstractNode<m::MmlNode,m::MmlNode>*>(&node);
+        expect(nativeCell!=nullptr);if(!nativeCell)return;
+        const auto sourceCell=nativeCell->sourcePropertiesCell();
+        const auto* storage=std::get_if<std::shared_ptr<folia::math::PropertyStorage>>(&sourceCell.value);
+        expect(storage&&*storage&&(*storage)->binding&&
+               (*storage)->binding->sourceObjectIdentity()==std::optional<o::ObjectRef>{properties})
+            << "the native cell keeps the exact ObjectRef created by the Source base constructor";
+
+        runtime->mmlNodeIdentities.retireCapturedRequestBindings(nodes);
+        runtime->nodeArrayIdentities.retireCapturedRequestBindings(arrays);
+        bindings->retirePrivateRendererProjectionCapture(capture);
+        bindings->retireSourceAllocationDomain(domain);
+        expect(throws<o::Exception>([&]{(void)graph.context.kind(properties);}))
+            << "request cleanup retires the exact initial Source object record";
+        expect(graph.context.kind(nested)==o::ObjectKind::object);
+        expect(graph.context.kind(parent)==o::ObjectKind::object);
+        expect(*getterCalls==0u);
+    };
+
+    "private_source_construct_capture_uses_active_backend_with_ambient_lexical_factory"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);if(!bindings)return;
+        auto ambient=std::make_shared<m::MmlFactory>();
+        const auto ambientIdentity=runtime->bindMmlFactory(ambient);
+        const auto constructor=textConstructor(graph,*runtime,ambientIdentity);
+        const auto nodes=runtime->mmlNodeIdentities.beginRequestCapture();
+        const auto arrays=runtime->nodeArrayIdentities.beginRequestCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
+        auto domain=bindings->makePrivateSourceAllocationDomain();bindings->bindSourceAllocationDomain(domain);
+        const auto args=std::array<o::Value,1>{o::Value(ambientIdentity)};
+        o::ObjectRef receiver{};
+        {
+            auto active=bindings->activateSourceAllocation(domain);
+            receiver=graph.context.construct(constructor,args);
+        }
+        const auto initialProperties=std::get<o::ObjectRef>(
+            graph.context.get(o::Value(receiver),o::Key(u"properties")).data);
+        expect(graph.context.get(o::Value(receiver),o::Key(u"factory"))==o::Value(ambientIdentity))
+            << "Source keeps the ambient lexical factory on the receiver";
+        expect(productFactory(graph.context,receiver).lock().get()==&domain.factory())
+            << "Context::construct allocates the native product from the active private backend";
+        const auto* nativeCell=dynamic_cast<const tree::AbstractNode<m::MmlNode,m::MmlNode>*>(&runtime->resolveMmlNode(receiver));
+        expect(nativeCell!=nullptr);if(!nativeCell)return;
+        const auto cell=nativeCell->sourcePropertiesCell();
+        const auto* storage=std::get_if<std::shared_ptr<folia::math::PropertyStorage>>(&cell.value);
+        expect(storage&&*storage&&(*storage)->binding&&
+               (*storage)->binding->sourceObjectIdentity()==std::optional<o::ObjectRef>{initialProperties})
+            << "the captured birth is the exact object transferred into the canonical node";
+        runtime->mmlNodeIdentities.retireCapturedRequestBindings(nodes);
+        runtime->nodeArrayIdentities.retireCapturedRequestBindings(arrays);
+        bindings->retirePrivateRendererProjectionCapture(capture);
+        expect(throws<o::Exception>([&]{(void)graph.context.kind(initialProperties);}))
+            << "the exact Source birth is retired despite the distinct lexical factory";
+        bindings->retireSourceAllocationDomain(domain);
+    };
+
+    "private_source_base_properties_capture_preserves_mtable_class_field_replacement"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);if(!bindings)return;
+        const auto nodes=runtime->mmlNodeIdentities.beginRequestCapture();
+        const auto arrays=runtime->nodeArrayIdentities.beginRequestCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
+        auto domain=bindings->makePrivateSourceAllocationDomain();bindings->bindSourceAllocationDomain(domain);
+        const auto owner=domain.factory().weak_from_this().lock();
+        expect(owner!=nullptr);if(!owner)return;
+        const auto factory=bindings->bindFactory(owner);
+        const auto constructor=mmlConstructor(graph,*runtime,factory,u"mtable");
+        const std::array<o::Value,1> args{o::Value(factory)};
+        o::ObjectRef receiver{};
+        {
+            auto active=bindings->activateSourceAllocation(domain);
+            receiver=graph.context.construct(constructor,args);
+        }
+        const auto replacement=std::get<o::ObjectRef>(
+            graph.context.get(o::Value(receiver),o::Key(u"properties")).data);
+        runtime->mmlNodeIdentities.retireCapturedRequestBindings(nodes);
+        runtime->nodeArrayIdentities.retireCapturedRequestBindings(arrays);
+        bindings->retirePrivateRendererProjectionCapture(capture);
+        expect(graph.context.kind(replacement)==o::ObjectKind::object)
+            << "MmlMtable::initializeClassFields replacement is outside the base birth capture";
+        bindings->retireSourceAllocationDomain(domain);
+    };
+
+    "private_source_construct_skips_inherited_properties_setter_that_retains_value"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);if(!bindings)return;
+        const auto nodes=runtime->mmlNodeIdentities.beginRequestCapture();
+        const auto arrays=runtime->nodeArrayIdentities.beginRequestCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
+        auto domain=bindings->makePrivateSourceAllocationDomain();bindings->bindSourceAllocationDomain(domain);
+        const auto owner=domain.factory().weak_from_this().lock();
+        expect(owner!=nullptr);if(!owner)return;
+        const auto factory=bindings->bindFactory(owner);
+        const auto constructor=textConstructor(graph,*runtime,factory);
+        const auto prototype=std::get<o::ObjectRef>(graph.context.get(o::Value(constructor),o::Key(u"prototype")).data);
+        const auto saved=graph.context.object();
+        auto setterCalls=std::make_shared<std::size_t>(0);
+        const auto setter=graph.context.function(u"set properties",[saved,setterCalls](o::Context& cx,o::Value,std::span<const o::Value> args){
+            ++*setterCalls;cx.set(o::Value(saved),o::Key(u"value"),args[0]);return o::Value(o::Undefined{});
+        });
+        graph.context.define(prototype,o::Key(u"properties"),o::Descriptor::access(std::nullopt,setter,true,true));
+        const std::array<o::Value,1> args{o::Value(factory)};
+        {
+            auto active=bindings->activateSourceAllocation(domain);
+            (void)graph.context.construct(constructor,args);
+        }
+        const auto retained=std::get<o::ObjectRef>(graph.context.get(o::Value(saved),o::Key(u"value")).data);
+        runtime->mmlNodeIdentities.retireCapturedRequestBindings(nodes);
+        runtime->nodeArrayIdentities.retireCapturedRequestBindings(arrays);
+        bindings->retirePrivateRendererProjectionCapture(capture);
+        expect(*setterCalls==1u)<<"the normal Source assignment invokes the inherited setter exactly once";
+        expect(graph.context.kind(retained)==o::ObjectKind::object)
+            << "construct-created receivers with a retaining properties setter are excluded from retirement";
+        graph.context.erase(prototype,o::Key(u"properties"));
+        bindings->retireSourceAllocationDomain(domain);
+    };
+
+    "private_source_capture_excludes_borrowed_receiver_with_a_properties_setter"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);if(!bindings)return;
+        const auto nodes=runtime->mmlNodeIdentities.beginRequestCapture();
+        const auto arrays=runtime->nodeArrayIdentities.beginRequestCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
+        auto domain=bindings->makePrivateSourceAllocationDomain();bindings->bindSourceAllocationDomain(domain);
+        const auto owner=domain.factory().weak_from_this().lock();
+        expect(owner!=nullptr);if(!owner)return;
+        const auto factory=bindings->bindFactory(owner);
+        const auto constructor=textConstructor(graph,*runtime,factory);
+        const auto prototype=std::get<o::ObjectRef>(graph.context.get(o::Value(constructor),o::Key(u"prototype")).data);
+        const auto saved=graph.context.object();
+        const auto setter=graph.context.function(u"set properties",[saved](o::Context& cx,o::Value,std::span<const o::Value> args){
+            cx.set(o::Value(saved),o::Key(u"value"),args[0]);return o::Value(o::Undefined{});
+        });
+        graph.context.define(prototype,o::Key(u"properties"),o::Descriptor::access(std::nullopt,setter,true,true));
+        const auto receiver=graph.context.objectWithPrototype(prototype);
+        const std::array<o::Value,1> args{o::Value(factory)};
+        {
+            auto active=bindings->activateSourceAllocation(domain);
+            (void)graph.context.call(constructor,o::Value(receiver),args);
+        }
+        const auto retained=std::get<o::ObjectRef>(graph.context.get(o::Value(saved),o::Key(u"value")).data);
+        runtime->mmlNodeIdentities.retireCapturedRequestBindings(nodes);
+        runtime->nodeArrayIdentities.retireCapturedRequestBindings(arrays);
+        bindings->retirePrivateRendererProjectionCapture(capture);
+        expect(graph.context.kind(retained)==o::ObjectKind::object)
+            << "borrowed-call setter values remain live and are not treated as private initial records";
+        graph.context.erase(prototype,o::Key(u"properties"));
+        bindings->retireSourceAllocationDomain(domain);
+    };
+
+    "private_source_initial_properties_orphan_before_adopt_is_retired"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);if(!bindings)return;
+        const auto nodes=runtime->mmlNodeIdentities.beginRequestCapture();
+        const auto arrays=runtime->nodeArrayIdentities.beginRequestCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
+        auto domain=bindings->makePrivateSourceAllocationDomain();bindings->bindSourceAllocationDomain(domain);
+        const auto owner=domain.factory().weak_from_this().lock();
+        expect(owner!=nullptr);if(!owner)return;
+        const auto factory=bindings->bindFactory(owner);
+        const auto constructor=textConstructor(graph,*runtime,factory);
+        const auto prototype=std::get<o::ObjectRef>(graph.context.get(o::Value(constructor),o::Key(u"prototype")).data);
+        const auto saved=std::make_shared<std::optional<o::ObjectRef>>();
+        const auto setter=graph.context.function(u"set childNodes",[saved](o::Context& cx,o::Value receiver,std::span<const o::Value>){
+            *saved=std::get<o::ObjectRef>(cx.get(receiver,o::Key(u"properties")).data);
+            throw o::Exception("TypeError",u"Injected childNodes setter failure before product adoption");
+            return o::Value(o::Undefined{});
+        });
+        graph.context.define(prototype,o::Key(u"childNodes"),o::Descriptor::access(std::nullopt,setter,true,true));
+        const std::array<o::Value,1> args{o::Value(factory)};
+        {
+            auto active=bindings->activateSourceAllocation(domain);
+            expect(throws<o::Exception>([&]{(void)graph.context.construct(constructor,args);}));
+        }
+        expect(saved->has_value())<<"the Source properties object was created before the later base-field failure";
+        runtime->mmlNodeIdentities.retireCapturedRequestBindings(nodes);
+        runtime->nodeArrayIdentities.retireCapturedRequestBindings(arrays);
+        bindings->retirePrivateRendererProjectionCapture(capture);
+        if(*saved)expect(throws<o::Exception>([&]{(void)graph.context.kind(**saved);}))
+            << "pre-adopt orphan is retired by its request token";
+        graph.context.erase(prototype,o::Key(u"childNodes"));
+        bindings->retireSourceAllocationDomain(domain);
+    };
+
+    "private_source_projection_token_blocks_new_capture_after_mml_retirement_failure"_test=[] {
+        SharedGraph graph;
+        auto runtime=graph.makeRuntime();runtime->initializeParserRuntime();
+        (void)t::BasePackage::initializeModule(*runtime);
+        const auto bindings=graph.modules.find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+        expect(bindings!=nullptr);if(!bindings)return;
+        const auto nodes=runtime->mmlNodeIdentities.beginRequestCapture();
+        const auto arrays=runtime->nodeArrayIdentities.beginRequestCapture();
+        const auto capture=bindings->beginPrivateRendererProjectionCapture();
+        auto domain=bindings->makePrivateSourceAllocationDomain();bindings->bindSourceAllocationDomain(domain);
+        const auto owner=domain.factory().weak_from_this().lock();
+        expect(owner!=nullptr);if(!owner)return;
+        const auto factory=bindings->bindFactory(owner);
+        const auto constructor=textConstructor(graph,*runtime,factory);
+        const std::array<o::Value,1> args{o::Value(factory)};
+        o::ObjectRef receiver{};
+        {
+            auto active=bindings->activateSourceAllocation(domain);
+            receiver=graph.context.construct(constructor,args);
+        }
+        const auto properties=std::get<o::ObjectRef>(
+            graph.context.get(o::Value(receiver),o::Key(u"properties")).data);
+        graph.context.retireObjectRecord(properties);
+        runtime->mmlNodeIdentities.retireCapturedRequestBindings(nodes);
+        runtime->nodeArrayIdentities.retireCapturedRequestBindings(arrays);
+        expect(throws<o::Exception>([&]{bindings->retirePrivateRendererProjectionCapture(capture);}));
+        expect(throws<o::Exception>([&]{(void)bindings->beginPrivateRendererProjectionCapture();}))
+            << "an unclosed token blocks a new capture even after Attributes completed";
+        expect(throws<o::Exception>([&]{bindings->retirePrivateRendererProjectionCapture(capture);}))
+            << "a tombstoned Context object cannot be fabricated back into a successful retry";
+        bindings->retireSourceAllocationDomain(domain);
     };
 };
 

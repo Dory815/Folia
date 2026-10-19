@@ -27,7 +27,8 @@ public:
     ContextPropertyBindings& properties();
     AttributesContextBindings& attributes();
     tree::TreeNodeContextClasses<MmlNode>& treeClasses();
-    void initializeTreeClasses(tree::TreeNodeContextBindings<MmlNode>&,std::weak_ptr<std::atomic_bool>);
+    void initializeTreeClasses(tree::TreeNodeContextBindings<MmlNode>&,std::weak_ptr<std::atomic_bool>,
+        tree::TreeOwnedObjectCreated observer={});
     void detachContextBindings(tree::TreeNodeContextBindings<MmlNode>&) noexcept;
     MmlNodeContextPrototypes initializeSourceMethods(
         NativeIdentityBindings<MmlNode*>&,

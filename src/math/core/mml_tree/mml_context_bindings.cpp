@@ -101,7 +101,10 @@ void MmlContextBindings::initialize(util::RuntimeModules& runtimeModules){
     const auto weak=weak_from_this();
     treeNodes_=std::make_unique<tree::TreeNodeContextBindings<MmlNode>>(
         context_,nodes_,nodeModule_->properties(),lease_);
-    nodeModule_->initializeTreeClasses(*treeNodes_,lease_);
+    nodeModule_->initializeTreeClasses(*treeNodes_,lease_,[weak](ObjectRef receiver,Key field,ObjectRef object,
+        tree::TreeOwnedObjectHandoff& handoff){
+        if(const auto self=weak.lock())self->observeTreeOwnedObject(receiver,std::move(field),object,handoff);
+    });
     // Resolve this separately cached module only after Context attachment so
     // a failed cache lookup exercises the same rollback path as later setup.
     factoryBaseModule_=runtimeModules.getOrCreate<tree::FactoryContextBaseModule>(
@@ -142,7 +145,12 @@ void MmlContextBindings::initialize(util::RuntimeModules& runtimeModules){
             const std::array<Value,1> arguments{std::move(factory)};
             (void)self->context_.call(self->nodeModule_->treeClasses().abstractNodeConstructor(),
                                       Value(receiver),arguments);
-        });
+        },
+        [weakOwner](ObjectRef receiver,SourceReceiverProvenance provenance,bool hasNoProduct){
+            const auto self=weakOwner.lock();if(!self)throw Exception("TypeError",u"MML Context binding owner has expired");
+            return self->beginReceiverInitialization(receiver,provenance,hasNoProduct);
+        },
+        [weakOwner](std::uint64_t id){if(const auto self=weakOwner.lock())self->endReceiverInitialization(id);});
     nodeFields_=std::make_unique<MmlNodeContextFields>(context_,nodeModule_->properties(),
         nodeModule_->attributes(),nodes_,*treeNodes_,lease_,
         [weakOwner](Children children){
@@ -326,11 +334,107 @@ std::array<std::size_t,3> MmlContextBindings::nativeOwnerCountsForDiagnostics()c
     return {nodeModule_->attributes().canonicalHandleCountForDiagnostics(),
             projections[0],projections[1]};
 }
-RequestIdentityCapture MmlContextBindings::beginPrivateRendererAttributesCapture(){
-    return nodeModule_->attributes().beginRequestCapture();
+RequestIdentityCapture MmlContextBindings::beginPrivateRendererProjectionCapture(){
+    if(privateRendererProjectionCapture_)
+        throw Exception("TypeError",u"A previous private MML projection capture is still pending retirement");
+    const auto token=nodeModule_->attributes().beginRequestCapture();
+    // The single inline optional is non-allocating for an empty capture. Once
+    // Attributes returns a token, cleanup state is therefore already retained.
+    privateRendererProjectionCapture_.emplace(PrivateRendererProjectionCapture{token,{},{},{}});
+    activePrivateRendererProjectionCapture_=token;
+    return token;
 }
-void MmlContextBindings::retirePrivateRendererAttributesCapture(RequestIdentityCapture token){
-    nodeModule_->attributes().retireCapturedRequestBindings(token);
+void MmlContextBindings::retirePrivateRendererProjectionCapture(RequestIdentityCapture token){
+    const auto suppliedOwner=token.owner.lock();
+    const auto storedOwner=privateRendererProjectionCapture_
+        ?privateRendererProjectionCapture_->token.owner.lock():std::shared_ptr<const void>{};
+    if(token.id==0||!suppliedOwner||!storedOwner||
+       suppliedOwner.owner_before(storedOwner)||storedOwner.owner_before(suppliedOwner)||
+       privateRendererProjectionCapture_->token.id!=token.id)
+        throw Exception("TypeError",u"Private MML projection capture token is not active in this registry");
+    if(activePrivateRendererProjectionCapture_&&activePrivateRendererProjectionCapture_->id==token.id)
+        activePrivateRendererProjectionCapture_.reset();
+    auto& capture=*privateRendererProjectionCapture_;
+    if(!capture.attributesRetired){
+        nodeModule_->attributes().retireCapturedRequestBindings(token);
+        capture.attributesRetired=true;
+    }
+    if(capture.pendingBirth){
+        const auto& pending=*capture.pendingBirth;
+        nodeModule_->properties().retireCapturedSourceObject(pending.object,pending.storage);
+        capture.pendingBirth.reset();
+    }
+    auto& objects=capture.sourceObjects;
+    while(!objects.empty()){
+        const auto& pending=objects.back();
+        nodeModule_->properties().retireCapturedSourceObject(pending.object,pending.storage);
+        objects.pop_back();
+    }
+    privateRendererProjectionCapture_.reset();
+}
+std::uint64_t MmlContextBindings::beginReceiverInitialization(
+        ObjectRef receiver,SourceReceiverProvenance provenance,bool hasNoProduct){
+    if(provenance!=SourceReceiverProvenance::constructed||!hasNoProduct||
+       !activePrivateRendererProjectionCapture_||activeSourceBackends_.empty())return 0;
+    if(!privateRendererProjectionCapture_||
+       privateRendererProjectionCapture_->token.id!=activePrivateRendererProjectionCapture_->id)
+        throw Exception("TypeError",u"Private MML projection capture record is missing");
+    const auto factory=activeSourceBackends_.back().second;
+    if(!factory||factory==sourceBackend_)return 0;
+    if(nextReceiverScopeId_==0)throw Exception("RangeError",u"Private MML receiver scope space is exhausted");
+    const auto id=nextReceiverScopeId_++;
+    receiverInitializationScopes_.push_back(ReceiverInitializationScope{
+        id,receiver,factory,privateRendererProjectionCapture_->token.id});
+    return id;
+}
+void MmlContextBindings::endReceiverInitialization(std::uint64_t id)noexcept{
+    if(!id)return;
+    const auto found=std::find_if(receiverInitializationScopes_.rbegin(),receiverInitializationScopes_.rend(),
+        [&](const auto& scope){return scope.id==id;});
+    if(found!=receiverInitializationScopes_.rend())
+        receiverInitializationScopes_.erase(std::next(found).base());
+}
+void MmlContextBindings::observeTreeOwnedObject(ObjectRef receiver,Key field,ObjectRef object,
+        tree::TreeOwnedObjectHandoff& handoff){
+    if(receiverInitializationScopes_.empty()||field!=Key(u"properties"))return;
+    const auto& scope=receiverInitializationScopes_.back();
+    if(scope.receiver!=receiver)return;
+    if(!activePrivateRendererProjectionCapture_||activePrivateRendererProjectionCapture_->id!=scope.captureId||
+       activeSourceBackends_.empty()||activeSourceBackends_.back().second!=scope.expectedOwner)
+        throw Exception("TypeError",u"Private MML receiver initialization changed its capture or actual factory owner");
+    if(!privateRendererProjectionCapture_||
+       privateRendererProjectionCapture_->token.id!=scope.captureId)
+        throw Exception("TypeError",u"Source receiver refers to an inactive MML projection capture");
+    // A custom accessor may retain this fresh value outside the request.
+    // Inspect raw descriptors only; never call a getter/setter to decide ownership.
+    auto prototype=context_.prototype(receiver);
+    while(prototype){
+        if(const auto descriptor=context_.descriptor(Value(*prototype),field);descriptor&&descriptor->accessor)return;
+        prototype=context_.prototype(*prototype);
+    }
+    if(const auto descriptor=context_.descriptor(Value(receiver),field);descriptor&&descriptor->accessor)return;
+    auto& capture=*privateRendererProjectionCapture_;
+    for(const auto& current:capture.sourceObjects)
+        if(current.receiver==receiver&&current.object==object)return;
+    if(capture.pendingBirth)
+        throw Exception("TypeError",u"Another Source object birth is already pending in this non-reentrant capture");
+    // Install an inline exact token before conversion or vector growth can fail.
+    // The generic Tree layer will leave the Context record to this token after
+    // claim(), including when `from()` fails before it can return storage.
+    capture.pendingBirth.emplace(CapturedSourceObject{receiver,object,{},scope.expectedOwner});
+    handoff.claim();
+    auto& properties=nodeModule_->properties();
+    const auto source=properties.from(Value(object));
+    const auto* storage=std::get_if<std::shared_ptr<PropertyStorage>>(&source.value);
+    if(!storage||!*storage)
+        throw Exception("TypeError",u"Fresh Source properties object did not produce a retained source storage");
+    capture.pendingBirth->storage=*storage;
+    if(!(*storage)->binding||(*storage)->binding->sourceObjectIdentity()!=std::optional<ObjectRef>{object})
+        throw Exception("TypeError",u"Fresh Source properties storage lost its exact Context object identity");
+    // Copies are non-throwing; vector allocation is the only failing step, and
+    // on failure the inline pending token still owns the exact object/storage.
+    capture.sourceObjects.push_back(*capture.pendingBirth);
+    capture.pendingBirth.reset();
 }
 NativeIdentityBindings<MmlNode*>& MmlContextBindings::nodes(){return nodes_;}
 NativeIdentityBindings<MmlFactory*>& MmlContextBindings::factories(){return factories_;}
@@ -353,6 +457,11 @@ std::shared_ptr<MmlFactory> MmlContextBindings::resolveProductOwner(ObjectRef ob
 }
 MmlNode& MmlContextBindings::bindNode(ObjectRef identity,MmlNode& node,const std::shared_ptr<MmlFactory>& owner){
     if(!owner)throw Exception("TypeError",u"MML node requires its actual native factory owner");
+    if(privateRendererProjectionCapture_){
+        for(const auto& source:privateRendererProjectionCapture_->sourceObjects)
+            if(source.receiver==identity&&source.expectedOwner!=owner)
+                throw Exception("TypeError",u"MML Source properties birth belongs to another actual product factory");
+    }
     if(const auto existing=nodes_.find(&node);existing&&*existing!=identity)
         throw Exception("TypeError",u"MML node already has a different canonical Context identity");
     (void)nodes_.bind(&node,identity,std::static_pointer_cast<void>(owner));

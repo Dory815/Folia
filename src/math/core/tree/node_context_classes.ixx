@@ -8,6 +8,14 @@ import folia.math.util.property_host;
 import std;
 
 export namespace folia::math::tree {
+class TreeOwnedObjectHandoff {
+    bool claimed_=false;
+public:
+    void claim()noexcept{claimed_=true;}
+    bool claimed()const noexcept{return claimed_;}
+};
+using TreeOwnedObjectCreated=std::function<void(
+    options::ObjectRef,options::Key,options::ObjectRef,TreeOwnedObjectHandoff&)>;
 options::Key treeContextPropertyKey(options::Context&,ContextPropertyBindings&,options::Value);
 Property treeContextCopyOwnEnumerable(options::Context&,ContextPropertyBindings&,options::Value);
 std::string treeContextString(options::Context&,ContextPropertyBindings&,options::Value);
@@ -25,10 +33,13 @@ template<class Product> class TreeNodeContextClasses {
         ContextPropertyBindings& properties;
         TreeNodeContextBindings<Product>& values;
         std::weak_ptr<std::atomic_bool> lease;
+        TreeOwnedObjectCreated ownedObjectCreated;
         ObjectRef nodeConstructor{},emptyConstructor{},nodePrototype{},emptyPrototype{};
         State(options::Context& cx,ContextPropertyBindings& p,
-              TreeNodeContextBindings<Product>& v,std::weak_ptr<std::atomic_bool> lifetime)
-            :context(cx),properties(p),values(v),lease(std::move(lifetime)) {
+              TreeNodeContextBindings<Product>& v,std::weak_ptr<std::atomic_bool> lifetime,
+              TreeOwnedObjectCreated observer)
+            :context(cx),properties(p),values(v),lease(std::move(lifetime)),
+             ownedObjectCreated(std::move(observer)) {
             if(&p.context()!=&cx)throw options::Exception("TypeError",u"Tree Context values belong to another Context");
         }
         void active()const {
@@ -189,7 +200,19 @@ template<class Product> class TreeNodeContextClasses {
             owner.writeOwnFields=[self,receiver,factory]{
                 self->set(receiver,u"factory",factory);
                 self->set(receiver,u"parent",options::Null{});
-                self->set(receiver,u"properties",Value(self->context.object()));
+                const auto properties=self->context.object();
+                if(self->ownedObjectCreated){
+                    TreeOwnedObjectHandoff handoff;
+                    try{self->ownedObjectCreated(
+                        std::get<ObjectRef>(receiver.data),key(u"properties"),properties,handoff);}
+                    catch(...){
+                        // A claimed birth is now owned by the observer's retryable
+                        // token. Otherwise Tree remains responsible for the orphan.
+                        if(!handoff.claimed())try{self->context.retireObjectRecord(properties);}catch(...){}
+                        throw;
+                    }
+                }
+                self->set(receiver,u"properties",Value(properties));
                 self->set(receiver,u"childNodes",Value(self->context.array(0)));
             };
             owner.propertyKeys=[self,inputProperties]{return self->context.enumerableStringKeys(inputProperties);};
@@ -361,8 +384,9 @@ template<class Product> class TreeNodeContextClasses {
     std::shared_ptr<State> state_;
 public:
     TreeNodeContextClasses(options::Context& context,ContextPropertyBindings& properties,
-        TreeNodeContextBindings<Product>& values,std::weak_ptr<std::atomic_bool> lease)
-        :state_(std::make_shared<State>(context,properties,values,std::move(lease))){state_->install();}
+        TreeNodeContextBindings<Product>& values,std::weak_ptr<std::atomic_bool> lease,
+        TreeOwnedObjectCreated observer={})
+        :state_(std::make_shared<State>(context,properties,values,std::move(lease),std::move(observer))){state_->install();}
     options::ObjectRef abstractNodeConstructor()const{state_->active();return state_->nodeConstructor;}
     options::ObjectRef abstractEmptyNodeConstructor()const{state_->active();return state_->emptyConstructor;}
     options::ObjectRef abstractNodePrototype()const{state_->active();return state_->nodePrototype;}

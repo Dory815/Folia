@@ -22,13 +22,15 @@ tree::TreeNodeContextClasses<MmlNode>& MmlNodeContextModule::treeClasses(){
     active();if(!treeClasses_)throw Exception("TypeError",u"MML tree classes have not been attached to Context identities");
     return *treeClasses_;
 }
-void MmlNodeContextModule::initializeTreeClasses(tree::TreeNodeContextBindings<MmlNode>& bindings,std::weak_ptr<std::atomic_bool> contextLease){
+void MmlNodeContextModule::initializeTreeClasses(tree::TreeNodeContextBindings<MmlNode>& bindings,
+        std::weak_ptr<std::atomic_bool> contextLease,tree::TreeOwnedObjectCreated observer){
     active();
     if(treeClasses_){
         if(attachedBindings_!=&bindings)throw Exception("TypeError",u"MML tree classes already use another Context identity registry");
         return;
     }
-    auto classes=std::make_unique<tree::TreeNodeContextClasses<MmlNode>>(context_,properties_,bindings,std::move(contextLease));
+    auto classes=std::make_unique<tree::TreeNodeContextClasses<MmlNode>>(
+        context_,properties_,bindings,std::move(contextLease),std::move(observer));
     treeClasses_=std::move(classes);attachedBindings_=&bindings;
 }
 void MmlNodeContextModule::detachContextBindings(tree::TreeNodeContextBindings<MmlNode>& bindings)noexcept{

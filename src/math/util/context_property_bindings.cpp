@@ -566,6 +566,26 @@ void ContextPropertyBindings::retireNativeProjectionForStorage(
     state_->context.retireObjectRecord(found->object);
     records.erase(found);
 }
+void ContextPropertyBindings::retireCapturedSourceObject(
+        ObjectRef object,const std::shared_ptr<PropertyStorage>& storage){
+    auto& records=state_->records;
+    const auto found=std::find_if(records.begin(),records.end(),[&](const auto& record){
+        return record.origin==State::RecordOrigin::sourceObject&&record.object==object;
+    });
+    if(storage){
+        if(found==records.end()||found->storage.lock()!=storage)
+            throw Exception("TypeError",u"Captured Source object cache identity no longer matches");
+        if(!storage->binding||storage->binding->sourceObjectIdentity()!=std::optional<ObjectRef>{object})
+            throw Exception("TypeError",u"Captured Source object storage has a different Source identity");
+    }else if(found!=records.end()&&!found->storage.expired()){
+        // A no-storage pending birth is valid only when conversion failed
+        // before publishing a live sourceObject cache entry.
+        throw Exception("TypeError",u"Pending Source object unexpectedly has a live cache storage");
+    }
+    state_->context.kind(object);
+    state_->context.retireObjectRecord(object);
+    if(found!=records.end())records.erase(found);
+}
 Property ContextPropertyBindings::copyOwnEnumerableProperties(const Property& source){
     auto& context=state_->context;
     const auto target=context.object();

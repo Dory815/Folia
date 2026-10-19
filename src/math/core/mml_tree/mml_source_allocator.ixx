@@ -8,6 +8,7 @@ export import folia.math.util.native_identities;
 import std;
 
 export namespace folia::math::mml {
+enum class SourceReceiverProvenance:std::uint8_t { constructed, borrowedCall };
 class MmlSourceAllocator {
 public:
     using ResolveNode=std::function<MmlNode*(options::ObjectRef)>;
@@ -18,6 +19,9 @@ public:
     using BindProduct=std::function<void(options::ObjectRef,MmlNode&,
                                          const std::shared_ptr<MmlFactory>&)>;
     using InitializeTreeBase=std::function<void(options::ObjectRef,options::Value)>;
+    using BeginReceiverInitialization=std::function<std::uint64_t(
+        options::ObjectRef,SourceReceiverProvenance,bool)>;
+    using EndReceiverInitialization=std::function<void(std::uint64_t)>;
 private:
     options::Context& context_;
     std::shared_ptr<MmlFactory> backend_;
@@ -26,12 +30,14 @@ private:
     ResolveProductOwner resolveProductOwner_;
     BindProduct bindProduct_;
     InitializeTreeBase initializeTreeBase_;
+    BeginReceiverInitialization beginReceiverInitialization_;
+    EndReceiverInitialization endReceiverInitialization_;
     std::weak_ptr<std::atomic_bool> contextLease_;
     void requireActive()const;
 public:
     MmlSourceAllocator(options::Context&,std::shared_ptr<MmlFactory>,
         std::weak_ptr<std::atomic_bool>,SelectBackend,ResolveNode,ResolveProductOwner,
-        BindProduct,InitializeTreeBase);
+        BindProduct,InitializeTreeBase,BeginReceiverInitialization,EndReceiverInitialization);
     MmlSourceAllocator(const MmlSourceAllocator&)=delete;
     MmlSourceAllocator& operator=(const MmlSourceAllocator&)=delete;
     MmlFactory& backend()const;
@@ -43,6 +49,6 @@ public:
     MmlNode& initializeReceiver(options::ObjectRef receiver,
         const tree::FactoryClassRef<MmlNode>& descriptor,
         options::Value lexicalFactory,options::Value rawAttributes,
-        options::Value rawChildren);
+        options::Value rawChildren,SourceReceiverProvenance);
 };
 }

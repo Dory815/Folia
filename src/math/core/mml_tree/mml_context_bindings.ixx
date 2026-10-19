@@ -57,6 +57,29 @@ private:
     std::shared_ptr<MmlFactory> sourceBackend_;
     std::shared_ptr<MmlSourceAllocator> sourceAllocator_;
     std::vector<std::pair<std::uint64_t,std::shared_ptr<MmlFactory>>> activeSourceBackends_;
+    struct CapturedSourceObject {
+        options::ObjectRef receiver{},object{};
+        std::shared_ptr<PropertyStorage> storage;
+        std::shared_ptr<MmlFactory> expectedOwner;
+    };
+    struct PrivateRendererProjectionCapture {
+        RequestIdentityCapture token;
+        std::vector<CapturedSourceObject> sourceObjects;
+        std::optional<CapturedSourceObject> pendingBirth;
+        bool attributesRetired=false;
+    };
+    struct ReceiverInitializationScope {
+        std::uint64_t id=0;
+        options::ObjectRef receiver{};
+        std::shared_ptr<MmlFactory> expectedOwner;
+        std::uint64_t captureId=0;
+    };
+    // Renderer is non-reentrant; one inline token avoids losing cleanup state
+    // if allocating a registry node fails after Attributes has begun capture.
+    std::optional<PrivateRendererProjectionCapture> privateRendererProjectionCapture_;
+    std::optional<RequestIdentityCapture> activePrivateRendererProjectionCapture_;
+    std::vector<ReceiverInitializationScope> receiverInitializationScopes_;
+    std::uint64_t nextReceiverScopeId_=1;
     std::uint64_t nextSourceActivationId_=1;
     std::shared_ptr<tree::FactoryContextBaseModule> factoryBaseModule_;
     std::vector<std::weak_ptr<MmlFactory>> boundFactories_;
@@ -72,6 +95,10 @@ private:
     std::shared_ptr<MmlFactory> selectedSourceBackend()const;
     void deactivateSourceAllocation(std::uint64_t)noexcept;
     std::shared_ptr<MmlFactory> resolveProductOwner(options::ObjectRef,MmlNode&)const;
+    void observeTreeOwnedObject(options::ObjectRef,options::Key,options::ObjectRef,
+                                tree::TreeOwnedObjectHandoff&);
+    std::uint64_t beginReceiverInitialization(options::ObjectRef,SourceReceiverProvenance,bool);
+    void endReceiverInitialization(std::uint64_t)noexcept;
 public:
     static std::shared_ptr<MmlContextBindings> create(options::Context&,
         util::RuntimeModules&,
@@ -82,8 +109,8 @@ public:
     MmlContextBindings& operator=(const MmlContextBindings&)=delete;
     options::Context& context()const;
     std::array<std::size_t,3> nativeOwnerCountsForDiagnostics()const;
-    RequestIdentityCapture beginPrivateRendererAttributesCapture();
-    void retirePrivateRendererAttributesCapture(RequestIdentityCapture);
+    RequestIdentityCapture beginPrivateRendererProjectionCapture();
+    void retirePrivateRendererProjectionCapture(RequestIdentityCapture);
     NativeIdentityBindings<MmlNode*>& nodes();
     NativeIdentityBindings<MmlFactory*>& factories();
     NativeIdentityBindings<Children>& arrays();

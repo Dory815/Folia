@@ -22,6 +22,9 @@ public:
     // Retire only the Context record created as a projection for this exact native storage.
     // Source-origin wrappers and identities returned by registered projections are retained.
     void retireNativeProjectionForStorage(const std::shared_ptr<PropertyStorage>&);
+    // Retire only an exact Source ObjectRef and the sourceObject cache storage
+    // captured when the private receiver field was created.
+    void retireCapturedSourceObject(options::ObjectRef,const std::shared_ptr<PropertyStorage>&);
     // Register a canonical projection for one existing native Property graph.
     // The callbacks must return the actual Context object / original Property
     // handle; this facility never copies or fabricates a wrapper object.

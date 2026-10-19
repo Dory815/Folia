@@ -62,12 +62,12 @@ struct Renderer::State {
     std::optional<mml::MmlFactory::ProductMark> requestMmlMark;
     std::optional<RequestIdentityCapture> requestMmlCapture;
     std::optional<RequestIdentityCapture> requestNodeArrayCapture;
-    std::optional<RequestIdentityCapture> requestAttributesCapture;
+    std::optional<RequestIdentityCapture> requestProjectionCapture;
     std::optional<adaptors::lite::LiteModule::RequestMark> requestLiteMark;
     std::optional<svg::SceneContextNodes::RequestMark> requestSceneMark;
     bool requestOwnersActive=false;
     bool requestItemRetired=false,requestMmlIdentitiesRetired=false,
-         requestNodeArraysRetired=false,requestAttributesRetired=false,
+         requestNodeArraysRetired=false,requestProjectionsRetired=false,
          requestSceneRetired=false,requestProductsRetired=false,
          requestLiteRetired=false,requestSourceDomainRetired=false;
 
@@ -141,7 +141,7 @@ struct Renderer::State {
             throw;
         }
         requestItemRetired=requestMmlIdentitiesRetired=requestNodeArraysRetired=
-            requestAttributesRetired=requestSceneRetired=requestProductsRetired=
+            requestProjectionsRetired=requestSceneRetired=requestProductsRetired=
             requestLiteRetired=requestSourceDomainRetired=false;
         // Set the owner-scope progress before starting captures. If any later
         // begin operation throws, the same retirement path can retry any token
@@ -150,7 +150,7 @@ struct Renderer::State {
         try{
             requestMmlCapture=runtime.mmlNodeIdentities.beginRequestCapture();
             requestNodeArrayCapture=runtime.nodeArrayIdentities.beginRequestCapture();
-            requestAttributesCapture=mmlBindings->beginPrivateRendererAttributesCapture();
+            requestProjectionCapture=mmlBindings->beginPrivateRendererProjectionCapture();
             document->beginRequestOwnerScope();
         }catch(...){
             try{retireCurrentRequestOwners();}catch(...){}
@@ -175,10 +175,10 @@ struct Renderer::State {
             if(requestNodeArrayCapture)runtime.nodeArrayIdentities.retireCapturedRequestBindings(*requestNodeArrayCapture);
             requestNodeArrayCapture.reset();requestNodeArraysRetired=true;
         }
-        if(!requestAttributesRetired){
-            if(requestAttributesCapture)
-                mmlBindings->retirePrivateRendererAttributesCapture(*requestAttributesCapture);
-            requestAttributesCapture.reset();requestAttributesRetired=true;
+        if(!requestProjectionsRetired){
+            if(requestProjectionCapture)
+                mmlBindings->retirePrivateRendererProjectionCapture(*requestProjectionCapture);
+            requestProjectionCapture.reset();requestProjectionsRetired=true;
         }
         if(!requestSceneRetired){services.sceneContextNodes().retireRequestScope(*requestSceneMark);requestSceneMark.reset();requestSceneRetired=true;}
         if(!requestProductsRetired){services.mmlFactory().retireProductsFrom(*requestMmlMark);requestProductsRetired=true;}

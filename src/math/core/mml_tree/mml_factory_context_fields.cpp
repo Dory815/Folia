@@ -204,9 +204,10 @@ struct MmlFactoryContextFields::State:std::enable_shared_from_this<State>{
         const auto name=(*info)->sourceConstructorName;
         const auto kind=(*info)->sourceKind;
         const auto prototypeOverride=existingBasePrototype(name);
-        using InitializeReceiver=std::function<Value(Context&,Value,std::span<const Value>)>;
+        using InitializeReceiver=std::function<Value(Context&,Value,std::span<const Value>,SourceReceiverProvenance)>;
         InitializeReceiver initializeReceiver=[retained,weakClassModule](
-                Context& cx,Value receiver,std::span<const Value> args)->Value{
+                Context& cx,Value receiver,std::span<const Value> args,
+                SourceReceiverProvenance provenance)->Value{
                 const auto classModule=weakClassModule.lock();
                 if(!classModule)throw Exception("TypeError",u"MML class runtime owner has expired");
                 classModule->requireActive();
@@ -223,7 +224,7 @@ struct MmlFactoryContextFields::State:std::enable_shared_from_this<State>{
                 const auto allocator=classModule->sourceAllocator.lock();
                 if(!allocator)throw Exception("TypeError",u"MML Context allocator has expired");
                 (void)allocator->initializeReceiver(*receiverObject,retained,
-                    factoryValue,rawAttributes,rawChildren);
+                    factoryValue,rawAttributes,rawChildren,provenance);
                 return receiver;
             };
         auto constructorIdentity=std::make_shared<std::optional<ObjectRef>>();
@@ -235,11 +236,11 @@ struct MmlFactoryContextFields::State:std::enable_shared_from_this<State>{
                 const auto* objectPrototype=std::get_if<ObjectRef>(&currentPrototype.data);
                 const ObjectRef prototype=objectPrototype?*objectPrototype:cx.intrinsics().objectPrototype;
                 const auto receiver=cx.objectWithPrototype(prototype);
-                (void)initializeReceiver(cx,Value(receiver),args);
+                (void)initializeReceiver(cx,Value(receiver),args,SourceReceiverProvenance::constructed);
                 return receiver;
             },
             [initializeReceiver](Context& cx,Value receiver,std::span<const Value> args)->Value{
-                return initializeReceiver(cx,std::move(receiver),args);
+                return initializeReceiver(cx,std::move(receiver),args,SourceReceiverProvenance::borrowedCall);
             },retained);
         if(prototypeOverride){
             context.set(Value(constructor),Key(u"prototype"),Value(*prototypeOverride));
