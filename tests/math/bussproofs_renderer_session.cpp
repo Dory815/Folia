@@ -58,7 +58,7 @@ suite bussproofsRendererSession=[] {
         constexpr std::string_view proofA=
             R"(\begin{prooftree}\AxiomC{A}\UnaryInfC{B}\end{prooftree})";
         constexpr std::string_view proofB=
-            R"(\begin{prooftree}\AxiomC{P}\AxiomC{Q}\BinaryInfC{P\land Q}\end{prooftree})";
+            R"(\begin{prooftree}\AxiomC{P}\AxiomC{Q}\BinaryInfC{$P\land Q$}\end{prooftree})";
         Renderer renderer;
         const auto first=renderer.render(proofA);
         const auto ordinary=renderer.render("x+1");
@@ -66,6 +66,9 @@ suite bussproofsRendererSession=[] {
         expect(!first.scene.roots().empty()) << "proof renders through the Scene path";
         expect(!ordinary.scene.roots().empty()) << "ordinary formula still renders in the same session";
         expect(!second.scene.roots().empty()) << "a second proof renders in the same session";
+        expect(!contains(first,"data-mml-node=\"merror\"")) << "first proof is not a TeX error result";
+        expect(!contains(ordinary,"data-mml-node=\"merror\"")) << "ordinary formula is not a TeX error result";
+        expect(!contains(second,"data-mml-node=\"merror\"")) << "second proof is not a TeX error result";
         expect(contains(first,"<svg")) << "first proof has SVG output";
         expect(hasGlyph(first,static_cast<std::uint32_t>('A'))&&
                hasGlyph(first,static_cast<std::uint32_t>('B')))
