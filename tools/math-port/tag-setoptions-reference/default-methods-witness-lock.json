@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "sourceLockFile": "source-lock.json",
+  "sourceLockSha256": "adff29b700cdc2e84f2451e84f9424f69679a94bd5f3448048bb6a4d3e6ea58d",
+  "sourceWitnessFile": "default-methods-source-witness.cjs",
+  "sourceWitnessSha256": "a52278168587306293392ae065dcefe4ebc97b07efee8ccb7de811db6b80f620",
+  "sourceOutput": "build/math-port/tag-setoptions-default-methods-original.json",
+  "sourceOutputSha256": "8086ab2976d7c0e519d14bdd77fbd1bd06b0ee62b4f94fca2a7750266a4c0574"
+}

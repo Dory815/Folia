@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "mathJaxVersion": "4.1.3",
+  "scopeSha256": "9705d389538b2fc8bf782feea4372ace639b3727304f2971937bbcfb0042a0d1",
+  "sources": [
+    {
+      "file": "ts/input/tex/tagformat/TagFormatConfiguration.ts",
+      "sha256": "fdb658f76cd044e64b233b999e216b93720c83ca2d0ede3b033d5759f4755a42",
+      "cjsFile": "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/tagformat/TagFormatConfiguration.js",
+      "cjsSha256": "54cb07c08095308bd78d232998366afe0053d74abfe1829cdf2b640921ab29bd"
+    },
+    {
+      "file": "ts/input/tex/setoptions/SetOptionsConfiguration.ts",
+      "sha256": "ccaa243137c68208e7f442013aa5dc6cc04b735ac3e0ca099ea8f30be557790d",
+      "cjsFile": "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/setoptions/SetOptionsConfiguration.js",
+      "cjsSha256": "dac7cec87b390b199257df54f4942a14f7c5ef0cbef54e75ff4f471551a41852"
+    },
+    {
+      "file": "ts/input/tex/mathtools/MathtoolsConfiguration.ts",
+      "sha256": "7b14b1d6e4324397ab315fa012ceada7999df6cbf3b4c9f09fc3742f8b5a30ae",
+      "cjsFile": "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/mathtools/MathtoolsConfiguration.js",
+      "cjsSha256": "863415dfbc384852e5b3b39724d50cc453e1bb6e54f8f6a1073b9e5e43b8734d"
+    },
+    {
+      "file": "ts/input/tex/mathtools/MathtoolsTags.ts",
+      "sha256": "2437a2beea0f0c04fac8697ab407a09672b2395d483b1942aefa51e9df057e47",
+      "cjsFile": "tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/mathtools/MathtoolsTags.js",
+      "cjsSha256": "bcdd1c9f8592d5640fa2b8bb8cade19c29e2d8f732e19a2dfbcb5415135e3e2d"
+    }
+  ]
+}
