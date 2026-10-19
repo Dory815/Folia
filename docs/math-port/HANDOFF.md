@@ -43,9 +43,9 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 
 ## 已完成验证与提交（仅对应组件范围）
 
-- HEAD 在记录时为 `47eaaa2c`：Scene 变换和 SVG 字体资源语义键修正。
+- `47eaaa2c`：Scene 变换和 SVG 字体资源语义键修正。
 - `1a31f62e`：将巨大分式/根式测试整理为数据和紧凑 runner，保留 288/192 对照案例。
-- 字体生成/原生数据实现已整理提交（见本记录对应的字体提交）；完整 Source 对照已跑过：
+- `e1ebbfcd`：字体生成/原生数据实现已独立提交；完整 Source 对照已跑过：
   14,568,049 个字段，0 差异。日志 `build/math-port/font-semantic-keys-compare.log`。
   对照包含 24,307 个直接字形记录、2,624 个 remap、238,666 个 SVG alias。
 - 原生组件测试 102 项 / 30,600 条断言通过：
@@ -54,18 +54,30 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 - `-bbm-bold` 与 `-bboldx` 共享缓存 ID 但路径不同，现按语义 variant 查询路径。
   Source 对照脚本 `tools/math-port/font-cache-source-witness.cjs` 已提交。
 - 上述结果不等于完整数学布局、SVG 文档或应用接入验收。无需无故重复完整字体对照。
+- Styles 已在原文件/原类中完成原生存储迁移，保留解析、TRBL/WSC/font 展开及合并
+  方法；删除 Property/property_host 依赖、旧正则对象字段访问和仅用于绑定的函数名元数据。
+  使用有序 string/u16string 值容器、原生正则游标、纯 C++ 数字格式化；没有新建解析器。
+- Styles 的 Source 对照脚本 `tools/math-port/styles-source-witness.cjs` 跑过 19 组断言；
+  原生 Styles 9 项 / 99 断言通过，包含精确 CSS、插入顺序、返回副本、数字/布尔和 UTF-16。
+  草稿曾损坏的换行字面量已修复；未确认的“顺序疑点”已核对，没有发现差异。
+  最终组件全量 111 项 / 30,699 断言通过：
+  `build/math-port/styles-native-reuse-final-full.log`；最终构建同前缀 `final-build.log`。
+  旧测试文件中两项 StyleJson 通用对象别名/null 行为测试已退出此目标；它们不是 Styles
+  数学/CSS 算法验收，不得把尚未原生迁移的 StyleJson 宣称为已完成。
 
 ## 下一步，按此接续
 
 1. 字体实现已独立整理提交，不要重复提交或重新做完整对照。
-2. 原地迁移现有 Styles 类作为依赖工作，保留已有解析和 shorthand 方法。
-   Luna 草稿在忽略目录
-   `tools/math-port/drafts/native-raii/styles-native-reuse/`，尚未推广、构建或验收。
-   Root 已发现草稿把若干字面量 `\n` 转成实际换行，破坏 C++ 字符字面量，必须修正；
-   还需独立核对 Source 用例，不能把候选测试当作已通过。
-   不为 inactive Lite 适配器增加兼容桥。原 StyleJson 测试退出的范围需明确记录。
+2. Styles 迁移已完成验证，接续 LineBBox 原类迁移。Luna 草稿在
+   `tools/math-port/drafts/native-raii/line-bbox-native-reuse/`；Root 已要求修正模块导入、
+   保留 protected 方法边界并补齐 Source 断言。尚未推广、构建或验收。
 3. 依照原有 C++ 类，先确定 CommonWrapper/Factory 的原生类型与所有权边界，再迁移
    分式/根式方法和调用者。不得继续新增独立数学 helper API 充当最终 wrapper 架构。
+   契约候选在 `tools/math-port/drafts/native-raii/common-wrapper-contract/CONTRACT.md`。
+   Root 已要求纠正两点：保留 CommonOutputJax 类及 jax() 的布局服务职责、唯一状态来源；
+   非缓存 BBox/outer BBox 不能返回临时引用。LineBBox 实际算法需要的类型明确、无环共享
+   所有权可以保留，不能为了消灭所有 shared_ptr 而破坏算法别名关系。
+   完整 MML core/embellished/spacing 语义仍是缺失依赖，不能加空实现掩盖。
 
 Root 负责正式文件推广、CMake、构建、原生执行和提交；Luna 在各自忽略草稿目录工作。
 给每项任务指定既有 C++ 方法、保留职责、替换类型、调用者和验收，不让代理自行重划架构。

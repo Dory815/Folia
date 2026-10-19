@@ -1,13 +1,12 @@
 // MathJax 4.1.3 util/Styles.ts; Apache-2.0.
 export module folia.math.util.styles;
-export import folia.math.core.tree.property;
 export import folia.math.util.regexp_host;
 import std;
 
 export namespace folia::math::styles {
-using StyleList = PropertyList;
-extern std::vector<std::string> TRBL;
-extern std::vector<std::string> WSC;
+using StyleList = std::vector<std::pair<std::string, std::u16string>>;
+extern const std::vector<std::string> TRBL;
+extern const std::vector<std::string> WSC;
 
 struct Styles;
 struct StylesAccess;
@@ -16,8 +15,6 @@ struct StylesConnection {
     std::vector<std::string> parts;
     bool hasParts = false;
     bool subPart = false;
-    std::string splitName;
-    std::string combineName;
     std::function<void(Styles&, std::string_view)> split;
     std::function<void(Styles&, std::string_view)> combine;
 };
@@ -40,14 +37,15 @@ struct StyleValue {
 };
 
 struct Styles {
-    static StylesPatterns pattern;
-    static StylesConnections connect;
+    static const StylesPatterns pattern;
+    static const StylesConnections connect;
 
 protected:
     StyleList styles_;
-    // A class descriptor or module static owns this table for longer than any
-    // Styles instance. Derived constructors pass their actual class-level
-    // pattern authority before the base constructor parses the initial text.
+    std::u16string const* lookup(std::string_view name) const noexcept;
+    void store(std::string_view name, std::u16string value);
+    void erase(std::string_view name) noexcept;
+    // A class/module static owns this pattern table for longer than any Styles instance.
     const StylesPatterns* patterns_;
     explicit Styles(std::u16string_view cssText, const StylesPatterns& classPatterns);
     const StylesPatterns& patternTable() const { return *patterns_; }

@@ -158,6 +158,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/constants.ixx
     src/math/util/bbox.ixx
     src/math/util/lengths.ixx
+    src/math/util/js_number.ixx
+    src/math/util/styles.ixx
     src/math/util/regexp_host.ixx)
 target_sources(folia_math PRIVATE
     src/math/core/mml_tree/attributes.cpp
@@ -186,6 +188,7 @@ target_sources(folia_math PRIVATE
     src/math/fonts/newcm_font_module_provider.cpp
     ${FOLIA_FONT_GENERATED_CPP}
     src/math/util/lengths.cpp
+    src/math/util/styles.cpp
     src/math/util/regexp_host.cpp)
 
 # ---------------------------------------------------------------------------
@@ -290,6 +293,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mml_defaults.cpp
     tests/math/mml_node_state.cpp
     tests/math/native_raii_fonts.cpp
+    tests/math/common_styles_source.cpp
     tests/math/fraction_native.cpp
     tests/math/radical_native.cpp)
 target_compile_features(FoliaMathTests PRIVATE cxx_std_23)

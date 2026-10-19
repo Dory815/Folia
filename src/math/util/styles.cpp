@@ -1,30 +1,89 @@
 // MathJax 4.1.3 util/Styles.ts; Apache-2.0.
 module folia.math.util.styles;
-import folia.math.util.property_host;
 import folia.math.util.js_number;
 import std;
 
 namespace folia::math::styles {
-std::vector<std::string> TRBL{"top", "right", "bottom", "left"};
-std::vector<std::string> WSC{"width", "style", "color"};
+const std::vector<std::string> TRBL{"top", "right", "bottom", "left"};
+const std::vector<std::string> WSC{"width", "style", "color"};
 
 struct StylesAccess {
     static void setStyle(Styles& style, std::string_view name, std::u16string_view value) {
         style.setStyle(name, value);
     }
     static void setRaw(Styles& style, std::string_view name, std::u16string_view value) {
-        style.styles_.set(name, Property(property_host::debugText(value)));
+        style.store(name, std::u16string(value));
     }
-    static Property raw(const Styles& style, std::string_view name) {
-        return style.styles_.getOwn(name);
+    static std::u16string raw(const Styles& style, std::string_view name) {
+        const auto* value = style.lookup(name);
+        return value ? *value : std::u16string{};
     }
-    static void erase(Styles& style, std::string_view name) { style.styles_.erase(name); }
+    static void erase(Styles& style, std::string_view name) { style.erase(name); }
     static std::string childName(const Styles& style, std::string_view name, std::string_view child) {
         return style.childName(name, child);
     }
     static void combineChildren(Styles& style, std::string_view name) { style.combineChildren(name); }
     static void combineParent(Styles& style, std::string_view name) { style.combineParent(name); }
 };
+
+namespace {
+// Internal property-name encoding mirrors the former property_host::debugText/text
+// boundary: valid pairs become UTF-8 and isolated UTF-16 surrogates remain WTF-8.
+std::u16string ascii16(std::string_view text) {
+    std::u16string result;
+    result.reserve(text.size());
+    for (unsigned char c : text) result.push_back(static_cast<char16_t>(c));
+    return result;
+}
+
+std::string toWtf8(std::u16string_view text) {
+    std::string out;
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        std::uint32_t cp = text[i];
+        if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < text.size() &&
+            text[i + 1] >= 0xDC00 && text[i + 1] <= 0xDFFF) {
+            cp = 0x10000 + ((cp - 0xD800) << 10) + (text[++i] - 0xDC00);
+        }
+        if (cp <= 0x7F) out.push_back(static_cast<char>(cp));
+        else if (cp <= 0x7FF) {
+            out.push_back(static_cast<char>(0xC0 | (cp >> 6)));
+            out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        } else if (cp <= 0xFFFF) {
+            out.push_back(static_cast<char>(0xE0 | (cp >> 12)));
+            out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+            out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        } else {
+            out.push_back(static_cast<char>(0xF0 | (cp >> 18)));
+            out.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+            out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+            out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        }
+    }
+    return out;
+}
+
+// Inverse for internal keys only; keys come from toWtf8 or ASCII CSS regex captures.
+std::u16string fromWtf8(std::string_view text) {
+    std::u16string out;
+    for (std::size_t i = 0; i < text.size();) {
+        const auto lead = static_cast<unsigned char>(text[i++]);
+        std::uint32_t cp = lead;
+        unsigned continuation = 0;
+        if ((lead & 0xE0) == 0xC0) { cp = lead & 0x1F; continuation = 1; }
+        else if ((lead & 0xF0) == 0xE0) { cp = lead & 0x0F; continuation = 2; }
+        else if ((lead & 0xF8) == 0xF0) { cp = lead & 0x07; continuation = 3; }
+        for (unsigned j = 0; j < continuation && i < text.size(); ++j)
+            cp = (cp << 6) | (static_cast<unsigned char>(text[i++]) & 0x3F);
+        if (cp <= 0xFFFF) out.push_back(static_cast<char16_t>(cp));
+        else {
+            cp -= 0x10000;
+            out.push_back(static_cast<char16_t>(0xD800 + (cp >> 10)));
+            out.push_back(static_cast<char16_t>(0xDC00 + (cp & 0x3FF)));
+        }
+    }
+    return out;
+}
+}
 
 namespace {
 using regexp_host::RegExp;
@@ -97,13 +156,13 @@ std::vector<std::u16string> splitSpaces(std::u16string_view text) {
     std::size_t p = 0;
     std::size_t q = 0;
     while (q < length) {
-        scan.lastIndex = static_cast<double>(q);
+        scan.last_index = q;
         const auto match = scan.exec(input);
         if (!match) {
             ++q; // AdvanceStringIndex with non-Unicode semantics.
             continue;
         }
-        const auto e = static_cast<std::size_t>(std::get<double>(scan.lastIndex.value.data));
+        const auto e = scan.last_index;
         if (e == p) {
             ++q; // Empty separator at p must not emit a split element.
             continue;
@@ -150,7 +209,7 @@ const StylesConnection* connection(std::string_view name) {
 void splitTRBLStyle(Styles& style, std::string_view name) {
     const auto* connect = connection(name);
     if (!connect) return;
-    auto parts = splitTRBL(property_host::string(StylesAccess::raw(style, name)));
+    auto parts = splitTRBL(StylesAccess::raw(style, name));
     for (std::size_t i = 0; i < connect->children.size(); ++i) {
         const std::string child = StylesAccess::childName(style, name, connect->children[i]);
         StylesAccess::setStyle(style, child, parts[i]);
@@ -162,12 +221,12 @@ void combineTRBLStyle(Styles& style, std::string_view name) {
     if (!connect) return;
     std::vector<std::u16string> parts;
     for (const auto& child : connect->children) {
-        const Property value = StylesAccess::raw(style, StylesAccess::childName(style, name, child));
-        if (!property_host::truthy(value)) {
+        const std::u16string value = StylesAccess::raw(style, StylesAccess::childName(style, name, child));
+        if (value.empty()) {
             StylesAccess::erase(style, name);
             return;
         }
-        parts.push_back(property_host::string(value));
+        parts.push_back(value);
     }
     if (parts.size() == 4 && parts[3] == parts[1]) {
         parts.pop_back();
@@ -182,7 +241,7 @@ void combineTRBLStyle(Styles& style, std::string_view name) {
 void splitSameStyle(Styles& style, std::string_view name) {
     const auto* connect = connection(name);
     if (!connect) return;
-    const auto value = property_host::string(StylesAccess::raw(style, name));
+    const auto value = StylesAccess::raw(style, name);
     for (const auto& child : connect->children)
         StylesAccess::setStyle(style, StylesAccess::childName(style, name, child), value);
 }
@@ -190,14 +249,14 @@ void splitSameStyle(Styles& style, std::string_view name) {
 void combineSameStyle(Styles& style, std::string_view name) {
     const auto* connect = connection(name);
     if (!connect || connect->children.empty()) return;
-    const Property value = StylesAccess::raw(style, StylesAccess::childName(style, name, connect->children[0]));
+    const std::u16string value = StylesAccess::raw(style, StylesAccess::childName(style, name, connect->children[0]));
     for (std::size_t i = 1; i < connect->children.size(); ++i) {
         if (StylesAccess::raw(style, StylesAccess::childName(style, name, connect->children[i])) != value) {
             StylesAccess::erase(style, name);
             return;
         }
     }
-    if (property_host::truthy(value)) StylesAccess::setRaw(style, name, property_host::string(value));
+    if (!value.empty()) StylesAccess::setRaw(style, name, value);
 }
 
 const RegExpRef& borderPattern(std::string_view name) {
@@ -210,7 +269,7 @@ void splitWSCStyle(Styles& style, std::string_view name) {
     const auto* connect = connection(name);
     if (!connect) return;
     std::map<std::string, std::u16string, std::less<>> values{{"width", {}}, {"style", {}}, {"color", {}}};
-    for (const auto& part : splitSpaces(property_host::string(StylesAccess::raw(style, name)))) {
+    for (const auto& part : splitSpaces(StylesAccess::raw(style, name))) {
         const auto width = values["width"];
         const auto lineStyle = values["style"];
         if (matches(borderPattern("width"), part) && width.empty()) values["width"] = part;
@@ -226,8 +285,8 @@ void combineWSCStyle(Styles& style, std::string_view name) {
     if (!connect) return;
     std::vector<std::u16string> parts;
     for (const auto& child : connect->children) {
-        const Property value = StylesAccess::raw(style, StylesAccess::childName(style, name, child));
-        if (property_host::truthy(value)) parts.push_back(property_host::string(value));
+        const std::u16string value = StylesAccess::raw(style, StylesAccess::childName(style, name, child));
+        if (!value.empty()) parts.push_back(value);
     }
     if (parts.size() > 1) StylesAccess::setRaw(style, name, join(parts, u" "));
     else StylesAccess::erase(style, name);
@@ -256,7 +315,7 @@ void splitFontStyle(Styles& style, std::string_view name) {
     values["family"] = {};
     values["line-height"] = {};
     const std::array<std::string_view, 5> patternNames{"style", "variant", "weight", "stretch", "size"};
-    for (const auto& part : splitSpaces(property_host::string(StylesAccess::raw(style, name)))) {
+    for (const auto& part : splitSpaces(StylesAccess::raw(style, name))) {
         if (values["family"].text.empty()) values["family"].text = part;
         for (const auto field : patternNames) {
             auto& value = values[std::string(field)];
@@ -293,49 +352,64 @@ void combinePartStyle(Styles& style, std::string_view name) {
     StylesAccess::combineParent(style, name);
 }
 
-void initializeTables();
 }
 
-StylesPatterns Styles::pattern{
+StylesPatterns const Styles::pattern{
     regex(uR"STY(['";])STY"),
     regex(uR"STY(^((:?'(?:\\.|[^'])*(?:'|$)|"(?:\\.|[^"])*(?:"|$)|\n|\\.|[^'";])*?)[\s\n]*(?:;|$).*)STY"),
     regex(uR"STY(([-a-z]+)[\s\n]*:[\s\n]*((?:'(?:\\.|[^'])*(?:'|$)|"(?:\\.|[^"])*(?:"|$)|\n|\\.|[^'";])*?)[\s\n]*(?:;|$))STY", u"g"),
     regex(uR"STY(/\*[^]*?\*/)STY", u"g")
 };
-StylesConnections Styles::connect;
-
 namespace {
-void initializeTables() {
-    if (!Styles::connect.empty()) return;
-    auto add = [](std::string name, std::vector<std::string> children,
-                  std::string splitName, std::string combineName,
+StylesConnections makeConnections() {
+    StylesConnections result;
+    auto add = [&result](std::string name, std::vector<std::string> children,
                   std::function<void(Styles&, std::string_view)> split,
                   std::function<void(Styles&, std::string_view)> combine,
                   std::vector<std::string> parts = {}, bool hasParts = false, bool subPart = false) {
-        Styles::connect.emplace_back(std::move(name), StylesConnection{
+        result.emplace_back(std::move(name), StylesConnection{
             std::move(children), std::move(parts), hasParts, subPart,
-            std::move(splitName), std::move(combineName), std::move(split), std::move(combine)});
+            std::move(split), std::move(combine)});
     };
-    add("padding", TRBL, "splitTRBL", "combineTRBL", splitTRBLStyle, combineTRBLStyle);
-    add("margin", TRBL, "splitTRBL", "combineTRBL", splitTRBLStyle, combineTRBLStyle);
-    add("border", TRBL, "splitSame", "combineSame", splitSameStyle, combineSameStyle, WSC, true);
-    add("border-top", WSC, "splitWSC", "combineWSC", splitWSCStyle, combineWSCStyle);
-    add("border-right", WSC, "splitWSC", "combineWSC", splitWSCStyle, combineWSCStyle);
-    add("border-bottom", WSC, "splitWSC", "combineWSC", splitWSCStyle, combineWSCStyle);
-    add("border-left", WSC, "splitWSC", "combineWSC", splitWSCStyle, combineWSCStyle);
-    add("border-width", TRBL, "splitTRBL", "combinePart", splitTRBLStyle, combinePartStyle, {}, false, true);
-    add("border-style", TRBL, "splitTRBL", "combinePart", splitTRBLStyle, combinePartStyle, {}, false, true);
-    add("border-color", TRBL, "splitTRBL", "combinePart", splitTRBLStyle, combinePartStyle, {}, false, true);
+    add("padding", TRBL, splitTRBLStyle, combineTRBLStyle);
+    add("margin", TRBL, splitTRBLStyle, combineTRBLStyle);
+    add("border", TRBL, splitSameStyle, combineSameStyle, WSC, true);
+    add("border-top", WSC, splitWSCStyle, combineWSCStyle);
+    add("border-right", WSC, splitWSCStyle, combineWSCStyle);
+    add("border-bottom", WSC, splitWSCStyle, combineWSCStyle);
+    add("border-left", WSC, splitWSCStyle, combineWSCStyle);
+    add("border-width", TRBL, splitTRBLStyle, combinePartStyle, {}, false, true);
+    add("border-style", TRBL, splitTRBLStyle, combinePartStyle, {}, false, true);
+    add("border-color", TRBL, splitTRBLStyle, combinePartStyle, {}, false, true);
     add("font", {"style", "variant", "weight", "stretch", "line-height", "size", "family"},
-        "splitFont", "combineFont", splitFontStyle, combineFontStyle);
+        splitFontStyle, combineFontStyle);
+    return result;
 }
-const bool tablesInitialized = [] { initializeTables(); return true; }();
 }
+StylesConnections const Styles::connect = makeConnections();
 
 Styles::Styles(std::u16string_view cssText) : Styles(cssText, pattern) {}
 Styles::Styles(std::u16string_view cssText, const StylesPatterns& classPatterns) : patterns_(&classPatterns) {
-    initializeTables();
     parse(cssText);
+}
+
+std::u16string const* Styles::lookup(std::string_view name) const noexcept {
+    const auto found = std::find_if(styles_.begin(), styles_.end(),
+        [name](const auto& entry) { return entry.first == name; });
+    return found == styles_.end() ? nullptr : &found->second;
+}
+
+void Styles::store(std::string_view name, std::u16string value) {
+    const auto found = std::find_if(styles_.begin(), styles_.end(),
+        [name](const auto& entry) { return entry.first == name; });
+    if (found == styles_.end()) styles_.emplace_back(std::string(name), std::move(value));
+    else found->second = std::move(value);
+}
+
+void Styles::erase(std::string_view name) noexcept {
+    const auto found = std::find_if(styles_.begin(), styles_.end(),
+        [name](const auto& entry) { return entry.first == name; });
+    if (found != styles_.end()) styles_.erase(found);
 }
 
 std::u16string Styles::sanitizeValue(std::u16string_view input) const {
@@ -367,7 +441,7 @@ std::string Styles::normalizeName(std::u16string_view name) const {
             normalized.push_back(c);
         }
     }
-    return property_host::debugText(normalized);
+    return toWtf8(normalized);
 }
 
 std::string Styles::parentName(std::string_view name) const {
@@ -388,20 +462,20 @@ std::string Styles::childName(std::string_view name, std::string_view child) con
 }
 
 void Styles::setStyle(std::string_view name, std::u16string_view value) {
-    styles_.set(name, Property(property_host::debugText(sanitizeValue(value))));
+    store(name, sanitizeValue(value));
     if (const auto* connect = connection(name); connect && !connect->children.empty())
         connect->split(*this, name);
-    if (value.empty()) styles_.erase(name);
+    if (value.empty()) erase(name);
 }
 
 void Styles::combineChildren(std::string_view name) {
     const std::string parent = parentName(name);
     const auto* connect = connection(name);
-    if (!connect) property_host::typeError("Cannot read properties of undefined (reading 'children')");
+    if (!connect) throw std::logic_error("Styles connection has no children");
     for (const auto& child : connect->children) {
         const std::string childKey = childName(parent, child);
         const auto* childConnect = connection(childKey);
-        if (!childConnect) property_host::typeError("Cannot read properties of undefined (reading 'combine')");
+        if (!childConnect) throw std::logic_error("Styles connection has no combine operation");
         childConnect->combine(*this, childKey);
     }
 }
@@ -418,13 +492,13 @@ void Styles::combineParent(std::string_view name) {
             std::find(parentConnection->children.begin(), parentConnection->children.end(), suffix) != parentConnection->children.end();
         if (!childConnection && !parentHasChild) break;
         if (!parentConnection || !parentConnection->combine)
-            property_host::typeError("Cannot read properties of undefined (reading 'combine')");
+            throw std::logic_error("Styles connection has no combine operation");
         parentConnection->combine(*this, current);
     }
-    if (!property_host::truthy(styles_.get(current))) return;
+    if (StylesAccess::raw(*this, current).empty()) return;
     const auto* connect = connection(current);
     if (connect && connect->hasParts)
-        for (const auto& part : connect->parts) styles_.erase(childName(current, part));
+        for (const auto& part : connect->parts) erase(childName(current, part));
 }
 
 void Styles::set(std::u16string_view name, StyleValue value) {
@@ -433,7 +507,7 @@ void Styles::set(std::u16string_view name, StyleValue value) {
         using T = std::decay_t<decltype(item)>;
         if constexpr (std::is_same_v<T, std::u16string>) return item;
         else if constexpr (std::is_same_v<T, bool>) return item ? u"true" : u"false";
-        else return property_host::text(js_number::toString(item));
+        else return ascii16(js_number::toString(item));
     }, value.value);
     setStyle(normalized, text);
     const auto* connect = connection(normalized);
@@ -448,13 +522,13 @@ void Styles::set(std::u16string_view name, StyleValue value) {
 }
 
 std::u16string Styles::get(std::u16string_view name) const {
-    const auto value = styles_.getOwn(normalizeName(name));
-    return value.missing() ? std::u16string{} : property_host::string(value);
+    const auto* value = lookup(normalizeName(name));
+    return value ? *value : std::u16string{};
 }
 
 std::u16string Styles::cssText() const {
-    std::vector<std::u16string> styles;
-    for (const auto& name : styles_.keys()) {
+    std::vector<std::u16string> declarations;
+    for (const auto& [name, value] : styles_) {
         const std::string parent = parentName(name);
         const auto split = name.rfind('-');
         const std::string child = split == std::string::npos ? name : name.substr(split + 1);
@@ -462,22 +536,20 @@ std::u16string Styles::cssText() const {
         const std::string pname = childName(parentParent, child);
         const auto* connect = connection(parent);
         const bool knownChild = connect && std::find(connect->children.begin(), connect->children.end(), child) != connect->children.end();
-        const Property value = styles_.get(name);
-        if (property_host::truthy(value) && !property_host::truthy(styles_.get(pname)) &&
-            (!property_host::truthy(styles_.get(parent)) || !knownChild))
-            styles.push_back(property_host::text(name) + u": " + property_host::string(value) + u";");
+        const std::u16string parentValue = StylesAccess::raw(*this, pname);
+        const std::u16string groupValue = StylesAccess::raw(*this, parent);
+        if (!value.empty() && parentValue.empty() && (groupValue.empty() || !knownChild))
+            declarations.push_back(fromWtf8(name) + u": " + value + u";");
     }
-    return join(styles, u" ");
+    return join(declarations, u" ");
 }
 
 StyleList Styles::styleList() const {
-    StyleList copy;
-    copy.assign(styles_);
-    return copy;
+    return styles_;
 }
 
 void Styles::parse(std::u16string_view cssText) {
-    styles_ = StyleList{};
+    styles_.clear();
     std::u16string text(cssText);
     std::replace(text.begin(), text.end(), u'\n', u' ');
     const auto& comment = patternTable().comment;
@@ -504,8 +576,8 @@ void Styles::parse(std::u16string_view cssText) {
         const auto value = match->at(2);
         if (std::any_of(space.begin(), space.end(),
             [](char16_t c) { return c != u';' && !jsWhitespace(c); })) return;
-        if (!name || !value) property_host::typeError("Styles pattern did not provide its Source captures");
-        set(property_host::text(property_host::debugText(*name)), StyleValue(*value));
+        if (!name || !value) throw std::logic_error("Styles pattern did not provide its Source captures");
+        set(*name, StyleValue(*value));
         prior = match->index + full->size();
     }
     const std::u16string remainder = withoutComments.substr(std::min(prior, withoutComments.size()));
