@@ -13,6 +13,16 @@ void MacroDefinition::validate() const {
     if (default_first_argument && arity == 0)
         throw std::invalid_argument("A default argument requires at least one parameter");
 }
+MacroColumnDefinition const* ColumnMacroDefinitions::find(char16_t specifier) const noexcept {
+    auto const it = definitions_.find(specifier);
+    return it == definitions_.end() ? nullptr : &it->second;
+}
+void ColumnMacroDefinitions::set(char16_t specifier, MacroColumnDefinition definition) {
+    definitions_.insert_or_assign(specifier, std::move(definition));
+}
+bool ColumnMacroDefinitions::erase(char16_t specifier) noexcept {
+    return definitions_.erase(specifier) != 0;
+}
 MacroDefinition const* TexSessionState::findMacro(std::u16string_view name) const {
     auto const it = macros_.find(std::u16string(name));
     return it == macros_.end() ? nullptr : &it->second;

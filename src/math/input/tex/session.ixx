@@ -15,6 +15,25 @@ struct MacroDefinition final {
     friend bool operator==(MacroDefinition const&, MacroDefinition const&) = default;
 };
 
+// NewColumnType definitions survive equations and tag resets. Their parser
+// service borrows these values; no callback or parser is retained here.
+struct MacroColumnDefinition final {
+    std::u16string replacement;
+    double argument_count{};
+    friend bool operator==(MacroColumnDefinition const&, MacroColumnDefinition const&) = default;
+};
+
+class ColumnMacroDefinitions final {
+    std::unordered_map<char16_t, MacroColumnDefinition> definitions_;
+public:
+    MacroColumnDefinition const* find(char16_t specifier) const noexcept;
+    void set(char16_t specifier, MacroColumnDefinition definition);
+    bool erase(char16_t specifier) noexcept;
+    std::size_t size() const noexcept { return definitions_.size(); }
+    bool empty() const noexcept { return definitions_.empty(); }
+    friend bool operator==(ColumnMacroDefinitions const&, ColumnMacroDefinitions const&) = default;
+};
+
 struct LabelRecord final {
     std::u16string tag;
     std::u16string id;
@@ -71,6 +90,7 @@ private:
     // Source ColorConfiguration creates one ColorModel per TeX input jax.
     // It survives individual equations and tag resets without retaining nodes.
     std::optional<ColorModel> color_;
+    ColumnMacroDefinitions column_definitions_;
 public:
     TexSessionState() = default;
     TexSessionState(TexSessionState const&) = default;
@@ -87,6 +107,9 @@ public:
     ColorModel& enableColor();
     ColorModel* colorModel() noexcept;
     ColorModel const* colorModel() const noexcept;
+
+    ColumnMacroDefinitions& columnDefinitions() noexcept { return column_definitions_; }
+    ColumnMacroDefinitions const& columnDefinitions() const noexcept { return column_definitions_; }
 
     LabelRecord const* findLabel(std::u16string_view name) const;
     LabelMap const& labels() const noexcept { return all_labels_; }
