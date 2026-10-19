@@ -8,24 +8,35 @@ export import folia.math.core.mml_tree.mml_nodes.mtr;
 
 export namespace folia::math::output::common {
 class CommonMtr : public CommonWrapper {
-public:
+  public:
     using CommonWrapper::CommonWrapper;
     virtual std::size_t numCells() const;
-    virtual bool labeled() const { return false; }
-    virtual tree::FactoryChildren<CommonWrapper> tableCells() const;
-    virtual CommonWrapper* getChild(std::size_t) const;
-    virtual std::vector<std::shared_ptr<BBox>> getChildBBoxes() const;
-    virtual void stretchChildren(std::optional<std::array<double,2>> HD={});
-    bool fixesPWidth() const override { return false; }
+
+    virtual bool labeled() const {
+        return false;
+    }
+
+    virtual std::span<CommonWrapper *const> tableCells() const;
+    virtual CommonWrapper *getChild(std::size_t) const;
+    virtual std::vector<BBox> getChildBBoxes() const;
+    virtual void stretchChildren(std::optional<std::array<double, 2>> HD = {});
+
+    bool fixesPWidth() const override {
+        return false;
+    }
 };
 
 class CommonMlabeledtr : public CommonMtr {
-public:
+  public:
     using CommonMtr::CommonMtr;
     std::size_t numCells() const override;
-    bool labeled() const override { return true; }
-    tree::FactoryChildren<CommonWrapper> tableCells() const override;
-    CommonWrapper* getChild(std::size_t) const override;
-    std::vector<std::shared_ptr<BBox>> getChildBBoxes() const override;
+
+    bool labeled() const override {
+        return true;
+    }
+
+    std::span<CommonWrapper *const> tableCells() const override;
+    CommonWrapper *getChild(std::size_t) const override;
+    std::vector<BBox> getChildBBoxes() const override;
 };
-}
+} // namespace folia::math::output::common

@@ -4,94 +4,85 @@
  *************************************************************/
 module folia.math.output.common;
 import :mtr;
-import :wrapper;
-import folia.math.core.tree.child_array;
+import :mo;
 import std;
 
 namespace folia::math::output::common {
-namespace {
-tree::FactoryChildren<CommonWrapper> requiredChildren(const CommonMtr& row,std::string_view member) {
-    const auto& value=row.childNodes;
-    const std::u16string suffix=u" (reading '"+std::u16string(member.begin(),member.end())+u"')";
-    if(!value)throw options::Exception("TypeError",u"Cannot read properties of undefined"+suffix);
-    if(!*value)throw options::Exception("TypeError",u"Cannot read properties of null"+suffix);
-    return *value;
-}
-CommonWrapper* firstChild(CommonWrapper& cell) {
-    if(!cell.childNodes)throw options::Exception("TypeError",u"Cannot read properties of undefined (reading '0')");
-    if(!*cell.childNodes)throw options::Exception("TypeError",u"Cannot read properties of null (reading '0')");
-    return dynamic_cast<CommonWrapper*>((*cell.childNodes)->get(0).requireNode("canStretch"));
-}
+std::size_t CommonMtr::numCells() const {
+    return childNodes.size();
 }
 
-std::size_t CommonMtr::numCells() const { return requiredChildren(*this,"length")->size(); }
-tree::FactoryChildren<CommonWrapper> CommonMtr::tableCells() const { return requiredChildren(*this,"length"); }
-CommonWrapper* CommonMtr::getChild(std::size_t index) const {
-    return dynamic_cast<CommonWrapper*>(requiredChildren(*this,"length")->get(index).nodeOrNull());
+std::span<CommonWrapper *const> CommonMtr::tableCells() const {
+    return childNodes;
 }
-std::vector<std::shared_ptr<BBox>> CommonMtr::getChildBBoxes() const {
-    const auto cells=requiredChildren(*this,"map");
-    std::vector<std::shared_ptr<BBox>> result;
-    result.reserve(cells->size());
-    for(std::size_t i=0;i<cells->size();++i) {
-        auto* cell=dynamic_cast<CommonWrapper*>(cells->get(i).requireNode("getBBox"));
+
+CommonWrapper *CommonMtr::getChild(std::size_t index) const {
+    return index < childNodes.size() ? childNodes[index] : nullptr;
+}
+
+std::vector<BBox> CommonMtr::getChildBBoxes() const {
+    std::vector<BBox> result;
+    result.reserve(childNodes.size());
+    for (auto *cell : childNodes)
         result.push_back(cell->getBBox());
-    }
     return result;
 }
-void CommonMtr::stretchChildren(std::optional<std::array<double,2>> HD) {
-    const auto original=requiredChildren(*this,"slice");
-    const auto cells=labeled()?original->slice(1):original;
-    std::vector<CommonWrapper*> stretchy;
-    for(std::size_t i=0;i<cells->size();++i) {
-        auto* cell=dynamic_cast<CommonWrapper*>(cells->get(i).requireNode("childNodes"));
-        auto* child=firstChild(*cell);
-        if(child->canStretch("v"))stretchy.push_back(child);
+
+void CommonMtr::stretchChildren(std::optional<std::array<double, 2>> HD) {
+    const auto cells = tableCells();
+    std::vector<CommonWrapper *> stretchy;
+    for (auto *cell : cells) {
+        if (cell->childNodes.empty())
+            throw std::logic_error("table cell has no first child wrapper for stretch lookup");
+        auto *child = cell->childNodes.front();
+        if (child->canStretch(StretchDirection::vertical))
+            stretchy.push_back(child);
     }
-    const auto count=stretchy.size();
-    const auto nodeCount=requiredChildren(*this,"length")->size();
-    if(count&&nodeCount>1&&!HD) {
-        double H=0,D=0;
-        const bool all=count>1&&count==nodeCount;
-        for(std::size_t i=0;i<cells->size();++i) {
-            auto* cell=dynamic_cast<CommonWrapper*>(cells->get(i).requireNode("childNodes"));
-            auto* child=firstChild(*cell);
-            if(!child->stretch)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'dir')");
-            const bool noStretch=child->stretch->dir==NONE;
-            if(all||noStretch) {
-                const auto box=child->getBBox(noStretch);
-                if(box->h>H)H=box->h;
-                if(box->d>D)D=box->d;
+    if (stretchy.size() && childNodes.size() > 1 && !HD) {
+        double H = 0, D = 0;
+        const bool all = stretchy.size() > 1 && stretchy.size() == childNodes.size();
+        for (auto *cell : cells) {
+            if (cell->childNodes.empty())
+                throw std::logic_error("table cell has no first child wrapper for height lookup");
+            auto *child = cell->childNodes.front();
+            const bool noStretch = std::holds_alternative<NoStretch>(child->stretch);
+            if (all || noStretch) {
+                const auto box = child->getBBox(noStretch);
+                H = std::max(H, box.h);
+                D = std::max(D, box.d);
             }
         }
-        HD=std::array<double,2>{H,D};
+        HD = std::array<double, 2>{H, D};
     }
-    if(HD)for(auto* child:stretchy) {
-        const auto scale=child->coreRScale();
-        auto* mo=child->coreMO();
-        if(!mo)throw options::Exception("TypeError",u"Cannot read properties of null (reading 'getStretchedVariant')");
-        mo->getStretchedVariant(std::array<double,2>{(*HD)[0]*scale,(*HD)[1]*scale});
+    if (!HD)
+        return;
+    for (auto *child : stretchy) {
+        auto *mo = dynamic_cast<CommonMo *>(child->coreMO());
+        if (!mo)
+            throw std::logic_error("stretchable table cell has no operator core");
+        const double scale = child->coreRScale();
+        mo->getStretchedVariant(std::array<double, 2>{(*HD)[0] * scale, (*HD)[1] * scale});
     }
 }
 
 std::size_t CommonMlabeledtr::numCells() const {
-    const auto count=CommonMtr::numCells();
-    return count?count-1:0;
+    return childNodes.empty() ? 0 : childNodes.size() - 1;
 }
-tree::FactoryChildren<CommonWrapper> CommonMlabeledtr::tableCells() const {
-    return requiredChildren(*this,"slice")->slice(1);
+
+std::span<CommonWrapper *const> CommonMlabeledtr::tableCells() const {
+    return childNodes.empty() ? std::span<CommonWrapper *const>{}
+                              : std::span<CommonWrapper *const>{childNodes}.subspan(1);
 }
-CommonWrapper* CommonMlabeledtr::getChild(std::size_t index) const {
-    return dynamic_cast<CommonWrapper*>(requiredChildren(*this,"length")->get(index+1).nodeOrNull());
+
+CommonWrapper *CommonMlabeledtr::getChild(std::size_t index) const {
+    return index + 1 < childNodes.size() ? childNodes[index + 1] : nullptr;
 }
-std::vector<std::shared_ptr<BBox>> CommonMlabeledtr::getChildBBoxes() const {
-    const auto cells=requiredChildren(*this,"slice")->slice(1);
-    std::vector<std::shared_ptr<BBox>> result;
-    result.reserve(cells->size());
-    for(std::size_t i=0;i<cells->size();++i) {
-        auto* cell=dynamic_cast<CommonWrapper*>(cells->get(i).requireNode("getBBox"));
+
+std::vector<BBox> CommonMlabeledtr::getChildBBoxes() const {
+    std::vector<BBox> result;
+    result.reserve(numCells());
+    for (auto *cell : tableCells())
         result.push_back(cell->getBBox());
-    }
     return result;
 }
-}
+} // namespace folia::math::output::common

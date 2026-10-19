@@ -222,7 +222,8 @@ target_sources(folia_math PRIVATE
 # LinebreakVisitor uses these same classes for recursive mathematical breaks.
 set(FOLIA_COMMON_NATIVE_FAMILIES
     mo mrow inferred_mrow text_node mi mn ms mspace mglyph mtext math
-    scriptbase msubsup mmultiscripts munderover mfenced maction)
+    scriptbase msubsup mmultiscripts munderover mfenced maction
+    mtable mtr mtd mpadded semantics tex_atom)
 foreach(family IN LISTS FOLIA_COMMON_NATIVE_FAMILIES)
     target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
         src/math/output/common/wrappers/${family}.ixx)
@@ -398,6 +399,8 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_common_limits.cpp
     tests/math/native_common_fence_action.cpp
     tests/math/native_common_linebreak.cpp
+    tests/math/native_common_table.cpp
+    tests/math/native_common_containers.cpp
     tests/math/native_tree_factory.cpp
     tests/math/native_tree_node.cpp
     tests/math/native_tree_visitor.cpp
