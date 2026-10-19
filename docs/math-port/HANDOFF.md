@@ -11,6 +11,14 @@
 
 ### 恢复时先用这个短检查点
 
+- **恢复执行顺序**：先实际读本节 → 核对 Git/代理/既有进程句柄 → 从本节“下一步”续做。
+  不依据旧完成消息重派任务。重开已解决问题前，必须指出哪一项新代码或新证据使原结论失效。
+  本次用户再次要求记小本本：连续性规则早已写在AGENTS.md，欠缺的是执行与及时更新，
+  不能以再加一条规则代替实际阅读。每次重要决定/验收/提交后更新此处；压缩或结束前写清断点。
+- **保持已确定方向**：保留原MathJax文件/类职责与已验证C++算法，去掉通用JS对象语义模拟，
+  用原生领域类型和RAII；不重写另一套parser/layout，不继续堆释放补丁，不自行reset。
+  Mermaid暂停；Folia目前只要求SVG接入，无D2D像素对照门槛。优先Luna，确有需要仅用6.1 sol。
+  一次构建、--parallel 4；保留用户CPU；只用正常本地开发/测试用语。
 - 用户再次指出压缩后重复调查。AGENTS.md 的连续性规则已经存在，问题在执行；
   本次已实际重读本文件并核对 Git/代理状态。不能只在摘要中提到文件路径就算读过。
 - **最新完整Math组件基线：292项/33,343断言，exit0**，
@@ -56,24 +64,42 @@
 - Tags候选已交付且Root已要求修正：tex-tags-contract/，保留原Tags/base/AMS/cases/tagformat/
   mathtools文件，恢复真实env/label/noTag/makeId；CasesTags自己持subcounter，Mathtools的
   persistent typed state由session持、request Tags借用。**别整份复制其中session镜像覆盖正式
-  ColorModel改动**。MathItem依赖现在是正式native primary，不再用跨module forward。
-- 当前运行代理：math_structure_audit在tex-dispatch-contract/补四原文件的实际声明，使用
-  Root FrameHandle/BaseItem、独立EnvironmentBodyHandler及closed callback variant；
-  font_assert_audit在tex-column-parser-contract/审原ColumnParser及newcolumntype跨表达式寿命。
-  其余已完成，无live build/native。不要再等旧完成包或重派已消费NodeFactory/Color/MathItem。
-  dispatch四header已收取至headers/并由Root读过，仍需统一DispatchResult等别名、给MacroMap
-  增加真实session borrow/lookup override与typed MacroInvocation definition-source variant；
-  旧版本只有prose声称借用但类声明没有该成员，尚未冻结，不可派body。
+  ColorModel/ColumnMacroDefinitions改动**。MathItem依赖是正式native primary，不用跨module forward。
+- **Column定义状态已提交98598241**：原session文件持纯值ColumnMacroDefinitions，
+  ColumnParser服务借用，跨equation/tag reset保留，复制后隔离；未在session保存parser/callback。
+  构建2112已终态exit0，native-column-definitions-build.log；四个新UT+原七个session UT
+  共11项/65断言exit0，native-column-definitions-focused.log。正式tex-column-source.cjs已从
+  C:\Windows重放exit0，native-column-definitions-formal-source.log，12个TS/CJS哈希锁。
+  Source用真实TeX/ColumnParser/NewColumnType方法，argument scanner/ArrayItem是明示的有限桩；
+  此验收不是完整ColumnParser原生实现，也不是全TeX；最新完整组件suite仍是292项旧基线。
+- **dispatch四header已交付/Root已读，代理已完成**：tex-dispatch-contract/headers/。
+  MacroMap已明确借session和expansion_handler，覆盖contains/lookup/parserFor，借原MacroDefinition，
+  不缓存另一份Macro；SessionMacroMapInit已明确。Root :types草案已加入封闭DispatchOutcome
+  （Continue/Handled/ReturnedFrame/InvokeFallback/NoParseResult）、MacroInvocation等实际共享类型。
+  CONTRACT旧共享片段仍有NodeValue/EmptyStackEntry和跨module MacroDefinition forward，须改正；
+  以Root :types为准，不能复制旧片段。StackEntry精确为monostate/MmlNode*/FrameHandle。
+  NotItem.remap已改为借CharacterMap*，MapHandler持unique地图实例；这仍是未推广声明。
+- **仅raii_session仍在运行**：tex-session-definitions-contract/，补newenvironment/undefinition/
+  BegingroupStack的纯值持久层及Source作用域语义，尚未交付；不重派旧颜色/Tags任务。
+  mml_base_contract_review刚交付tex-parser-interface-contract/，待Root实际审阅，尚未推广/构建。
+  其Source报告3例/66 CJS+14 TS锁定，Root未重放，不当Root验收。TexParser应复用唯一scanner；
+  ParseInput持dispatch token值；实际TextParser需protected DeferParsing两阶段构造，ParserScope
+  必须先于owned Stack入场，保持Source回调次序。剩余服务闭合事项见该包README。
+  raii_scene_foundation已完成common-scene-emission-contract/，Root读过，仍是声明提案。
+  Common真实wrapper家族发Scene、LayoutJob一次build/getBBox/freeze，不建第二套wrapper树。
+  TextRun/ForeignContent/annotation/paint继承/href hitbox/dash等缺口尚待冻结，不能声称Scene已接通。
   ColumnParser runtime在tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/ColumnParser.js，
   不在.reference（那里只有TS），没有已有accepted column witness可等待，不要重编译TS/复制依赖。
-- **下一步明确动作**：收取typed dispatch四header和ColumnParser契约，审Tags与ParseOptions
-  完整服务图并冻结，再让Luna按原文件实现Stack/BaseItems/dispatch。Source priority已实际
+- **下一步明确动作**：实际审TexParser新交付，等待session definitions增量；改dispatch旧片段，
+  合并ColumnParser/Tags/ParseOptions实际服务图并冻结，再让Luna按原文件实现Stack/BaseItems/dispatch。
+  已完成dispatch/column提案不重派、不再等待。Source priority已实际
   证明同priority按配置逆序；source-dispatch-observe.cjs已Root重放exit0（14hash），
   native-tex-dispatch-contract-source.log。不得回到“reverse后恢复原序”的旧错误解释。
   NodeFactory还要接configured boldsymbol.createBoldToken typed creator，不能把已验收标准
   creator登记当成全部profile hooks完成；该Source先正常建token，再按当前env标记/登记fixBold。
   完整parser/38包、Common→Scene与Folia切换仍是后续必做；不重做已验收Common家族。
 - Git原13项既有无关修改继续保护，见文末。当前无live build/native句柄，不运行reset。
+  Column提交后HEAD为98598241；本次交接记录另作独立小提交。
 
 ### 历史组件证据（当前状态以上方短检查点为准）
 
