@@ -18,7 +18,9 @@ class CommonOutputJax {
     CommonOptions options_;
     InlineBreakPolicy inlineBreakPolicy_;
     MeasurementTarget &measurement_;
-    double containerWidth_{}; // computed em width, distinct from metrics pixel width
+    // No linebreak constraint exists until getLinebreakWidth runs. NaN keeps
+    // width comparisons inactive, as in Source's unset mathematical width.
+    double containerWidth_ = std::numeric_limits<double>::quiet_NaN();
     // Reverse destruction: visitor first, then factory and its wrappers.
     std::unique_ptr<CommonWrapperFactory> factory_;
     std::unique_ptr<Linebreaks> linebreaks_;

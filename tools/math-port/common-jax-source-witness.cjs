@@ -56,6 +56,10 @@ async function run() {
   const sheet = new StyleJsonSheet();
   output.addFontStyles(sheet);
   output.addWrapperStyles(sheet);
+  assert.equal(output.containerWidth, undefined,
+    'overflow layout leaves the linebreak constraint unset');
+  assert.ok(Number.isNaN(Math.max(output.containerWidth / 10, output.containerWidth - 1)),
+    'an unset constraint must not shrink ordinary auto-width tables to zero');
   output.getLinebreakWidth();
   const linebreakWidth = output.containerWidth;
   for (const child of output.math.root.childNodes) output.markInlineBreaks(child);

@@ -255,7 +255,7 @@ suite math_native_common_inline_policy = [] {
 
         expect(snapshot.ownsOverflow);
         expect(snapshot.overflowInherited.compare(u"linebreak") == 0);
-        expect(snapshot.containerWidth == 0.0);
+        expect(std::isnan(snapshot.containerWidth));
         expect(*fixture.root->attributes().defaultValue(u"overflow") == savedDefault);
     };
 };

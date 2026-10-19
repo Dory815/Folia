@@ -10,6 +10,13 @@ double CommonMath::getWrapWidth(std::size_t) {
     return metrics().containerWidth / jax().pxPerEm();
 }
 
+bool CommonMath::setChildPWidths(bool recompute, std::optional<double> width, bool) {
+    // The numerical part of Source SvgMath.setChildPWidths belongs to the
+    // shared layout: both output backends consume the same resolved widths.
+    return CommonWrapper::setChildPWidths(
+        recompute, parent ? width : metrics().containerWidth / jax().pxPerEm(), false);
+}
+
 void CommonMath::computeBBox(BBox &box, bool recompute) {
     CommonWrapper::computeBBox(box, recompute);
     const auto *overflowValue = node->attributes().lookup(u"overflow");

@@ -8,6 +8,8 @@ class CommonMath : public CommonWrapper {
   public:
     using CommonWrapper::CommonWrapper;
     double getWrapWidth(std::size_t) override;
+    bool setChildPWidths(bool recompute, std::optional<double> width = std::nullopt,
+                         bool clear = true) override;
 
   protected:
     void computeBBox(BBox &, bool recompute = false) override;

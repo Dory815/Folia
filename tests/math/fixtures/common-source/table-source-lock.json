@@ -3,13 +3,17 @@
   "sourceTsSha256": {
     ".reference/MathJax-src/ts/output/common/Wrappers/mtable.ts": "a1e060baab84d7b842c811c560ab73f32ca91614e3a5b02f7f1712db73b0100c",
     ".reference/MathJax-src/ts/output/common/Wrappers/mtr.ts": "7f9657da0fbf35b48523b345f3e9886fa384a0871bb3028ad06a5887a577aabb",
-    ".reference/MathJax-src/ts/output/common/Wrappers/mtd.ts": "06a87d48c77c0d167881e29c9115ce2dd50f89beac9f27dbe9ed56a99e884d97"
+    ".reference/MathJax-src/ts/output/common/Wrappers/mtd.ts": "06a87d48c77c0d167881e29c9115ce2dd50f89beac9f27dbe9ed56a99e884d97",
+    ".reference/MathJax-src/ts/output/common/Wrapper.ts": "d1db6112db1cb3546658eb8868b5997a4f69e588632ecbe4e08a71949544a828",
+    ".reference/MathJax-src/ts/output/svg/Wrappers/math.ts": "7110be42cb256ed271a6c4c8117d49441a17e3ec75822bbbb5cd1d659c12af53"
   },
   "corpusSha256": "d0f4e0454d64b36a7660cee776d474dd9de81d10a0018060a26325c88363748a",
   "cjsSha256": {
     "src/cjs/output/common/Wrappers/mtable.js": "3b536684d4899f8603fa5db61a081db2bad9ed9d09b4e3de45f7d0f2fbade29c",
     "src/cjs/output/common/Wrappers/mtr.js": "41d3ffdc6f110e96e48d1d0f5d4cf07a489a299b2884cd81011c80a0260d0c4f",
     "src/cjs/output/common/Wrappers/mtd.js": "57ee84fffc3ad38998ab4572f4b08240a25d529941f8de92cbdcda35eb295c5b",
-    "mathjax-newcm-font/cjs/svg.js": "709d6e85113ef44645ad802b8424508d5f836dd61e4d1f2797b5e011a9693734"
+    "mathjax-newcm-font/cjs/svg.js": "709d6e85113ef44645ad802b8424508d5f836dd61e4d1f2797b5e011a9693734",
+    "src/cjs/output/common/Wrapper.js": "9e21f886b91624d170ff89df0eecef31e789ffecda001abc3e5649a38419412b",
+    "src/cjs/output/svg/Wrappers/math.js": "d54d1222519d5907e8ff35252f0f0bff06b75b2cc4bb00088ef6f2f054f236eb"
   }
 }

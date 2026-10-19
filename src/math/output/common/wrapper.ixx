@@ -101,7 +101,7 @@ class CommonWrapper : public tree::AbstractWrapper<CommonWrapper, mml::MmlNode> 
     std::optional<StyleData> styleData;
     StringMap removedStyles;
     std::string variant;
-    StretchState stretch{UnresolvedStretch{}};
+    StretchState stretch{NoStretch{}};
 
     CommonWrapper(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr);
     virtual ~CommonWrapper() = default;
@@ -111,7 +111,7 @@ class CommonWrapper : public tree::AbstractWrapper<CommonWrapper, mml::MmlNode> 
     CommonWrapperFactory &factory() const;
     CommonOutputJax &jax() const;
     ExtendedMetrics const &metrics() const;
-    double containerWidth() const;
+    virtual double containerWidth() const;
     Linebreaks &linebreaks() const;
     LinebreakOptions const &linebreakOptions() const;
 

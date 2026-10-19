@@ -82,8 +82,6 @@ class MeasurementTarget {
     virtual UnknownBBox measureUnknownText(UnknownTextRequest const &) = 0;
 };
 
-struct UnresolvedStretch {};
-
 struct NoStretch {};
 
 struct ActiveStretch {
@@ -91,7 +89,7 @@ struct ActiveStretch {
     std::optional<std::uint32_t> selectedCodepoint;
 };
 
-using StretchState = std::variant<UnresolvedStretch, NoStretch, ActiveStretch>;
+using StretchState = std::variant<NoStretch, ActiveStretch>;
 
 enum class CommonDiagnosticCode : std::uint8_t { unknown_math_variant };
 

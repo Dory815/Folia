@@ -70,6 +70,10 @@ input.compile = function() {
 };
 const originalProcess=output.processMath;
 output.processMath=function(wrapper,node){
+  if(active){
+    const table=Array.from(this.nodeMap.values()).find(w=>w.node===active.mmlTables[0]);
+    active.beforeProcess=table?tableState(wrapper,table):null;
+  }
   const result=originalProcess.apply(this,arguments);
   if(active){
     const tableNode=active.mmlTables[0];
@@ -86,10 +90,14 @@ output.processMath=function(wrapper,node){
           wrapWidth:cell.getWrapWidth(0),children:cell.childNodes.map(c=>({kind:c.node.kind,bbox:box(c.getBBox()),breakCount:typeof c.breakCount==="function"?c.breakCount():c.breakCount}))}))})),
       linebreakCalls:active.name==='break'?Array.from(this.nodeMap.values()).filter(w=>w.node.kind==='mspace'||w.node.kind==='mtext'||w.node.kind==='mi').map(w=>({kind:w.node.kind,breakCount:typeof w.breakCount==="function"?w.breakCount():w.breakCount,bbox:box(w.getBBox())})):[]
     };
+    active.afterProcess=tableState(wrapper,table);
   }
   return result;
 };
 function box(b){return Object.fromEntries(['w','h','d','scale','rscale','L','R','pwidth','ic','oc','sk','dx'].map(k=>[k,b[k]]));}
+function tableState(root,table){return {root:{kind:root.node.kind,bbox:box(root.bbox)},table:{kind:table.node.kind,
+  bbox:box(table.bbox),cWidths:[...table.cWidths],pWidth:table.pWidth,isTop:table.isTop,
+  parent:table.parent?.node?.kind??null,container:table.container?.node?.kind??null}};}
 function sourceNode(node){
   const attributes=node.attributes?.getAllAttributes?.()||{};
   return {kind:node.kind,attributes,properties:node.properties||{},text:node.text||undefined,
@@ -101,7 +109,8 @@ mathjax.asyncLoad=name=>{const target=path.isAbsolute(name)?name:path.resolve(sr
   const records=[];
   for(const item of cases){active={...item,result:null,mmlTables:[]};
     await document.convertPromise(item.tex,{display:item.display,em:16,ex:8,containerWidth:item.containerWidth||1280});
-    records.push({name:item.name,root:sourceNode(active.sourceRoot),tree:sourceNode(active.mmlTables[0]),result:active.result}); active=null;
+    records.push({name:item.name,root:sourceNode(active.sourceRoot),tree:sourceNode(active.mmlTables[0]),
+      beforeProcess:active.beforeProcess,afterProcess:active.afterProcess,result:active.result}); active=null;
   }
   const observed=records.map(r=>({name:r.name,table:{w:r.result.table.bbox.w,h:r.result.table.bbox.h,d:r.result.table.bbox.d,
     numRows:r.result.table.numRows,numCols:r.result.table.numCols,hasLabels:r.result.table.hasLabels,
@@ -113,7 +122,16 @@ mathjax.asyncLoad=name=>{const target=path.isAbsolute(name)?name:path.resolve(sr
       cells:row.cells.map(cell=>({wrapWidth:cell.wrapWidth??null,bbox:[cell.bbox.w,cell.bbox.h,cell.bbox.d],breakCount:cell.children[0].breakCount}))}))}));
   const expected=JSON.parse(fs.readFileSync(path.join(root,'tests/math/fixtures/common-source/table-branch-source-expected.json'),'utf8'));
   assert.deepEqual(observed,expected.records,'table branch Source measurements changed');
-  const evidence={source:expected.source,sourceTrees:records.map(({name,root,tree})=>({name,root,tree})),records:observed};
+  const percent=records.find(record=>record.name==='percent');
+  assert.deepEqual(percent.beforeProcess.table.cWidths,['30%',null]);
+  assert.equal(percent.beforeProcess.table.bbox.pwidth,'75%');
+  assert.equal(percent.beforeProcess.table.pWidth,0);
+  assert.deepEqual(percent.afterProcess.table.cWidths,[15.312,35.728]);
+  assert.equal(percent.afterProcess.table.pWidth,53.04);
+  assert.equal(percent.afterProcess.table.bbox.w,53.04);
+  assert.equal(percent.afterProcess.root.bbox.w,53.04);
+  const evidence={source:expected.source,sourceTrees:records.map(({name,root,tree})=>({name,root,tree})),
+    phases:records.map(({name,beforeProcess,afterProcess})=>({name,beforeProcess,afterProcess})),records:observed};
   const output=path.join(root,'build/math-port/common-source/table-branch-source.json');
   fs.mkdirSync(path.dirname(output),{recursive:true});
   fs.writeFileSync(output,JSON.stringify(evidence,null,2)+'\n');
