@@ -45,6 +45,14 @@ void MmlDocument::setRoot(MmlNode& node) {
     root_ = &node;
 }
 
+void MmlDocument::reserveChildren(MmlNode& parent, std::size_t count) {
+    requireOwned(parent);
+    if (count > parent.children_.max_size()) {
+        throw std::length_error("MML child capacity exceeds the vector limit");
+    }
+    parent.children_.reserve(count);
+}
+
 void MmlDocument::append(MmlNode& parent, MmlNode& child) {
     insert(parent, parent.children_.size(), child);
 }

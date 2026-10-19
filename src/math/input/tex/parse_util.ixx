@@ -1,44 +1,25 @@
-// MathJax 4.1.3 input/tex/ParseUtil.ts; Apache-2.0.
-export module folia.math.input.tex.parser:parse_util;
-export import :types;
+// Native C++23 contract for ParseUtil.addArgs, substituteArgs and checkMaxMacros.
+// Source: MathJax 4.1.3 ts/input/tex/ParseUtil.ts (Apache-2.0).
+export module folia.math.input.tex.parse_util;
 import std;
-export namespace folia::math::tex {
-class BaseItem;
-// Source generics erase to one class identity; conversion uses the canonical
-// FunctionRef body, whose result may be any supported native value.
-class KeyValueDef:public NativeObject {
-public:
-    std::u16string name;
-    FunctionRef verify,convert;
-    KeyValueDef(std::u16string,FunctionRef,FunctionRef);
-    static KeyValueType oneof(ParserRuntime&,std::span<const std::u16string>);
+export import folia.math.input.tex.tex_error;
+
+export namespace folia::math::tex::parse_util {
+struct ExpansionBudget final {
+    std::size_t maxMacros;
+    std::size_t maxBuffer;
+    std::size_t macroCount = 0;
 };
-using KeyValueFn=FunctionRef;
-// The exported KeyValueTypes ordinary record belongs to the loaded runtime.
-struct ParseUtil {
-    static void initializeModule(ParserRuntime&);
-    static std::u16string cols(std::span<const double>);
-    static mml::NodeValue fenced(ParseOptions&,std::u16string,mml::NodeValue,std::u16string,std::u16string big=u"",Property color=Property(""));
-    static mml::NodeValue fenced(ParseOptions&,Property,mml::NodeValue,Property,std::u16string big=u"",Property color=Property(""));
-    static mml::NodeValue fixedFence(ParseOptions&,std::u16string,mml::NodeValue,std::u16string);
-    static mml::NodeValue mathPalette(ParseOptions&,std::u16string,std::u16string side);
-    static void fixInitialMO(ParseOptions&,mml::Children);
-    static void fixInitialMO(ParseOptions&,BaseItem&);
-    static mml::Children internalMath(TexParser&,std::u16string,Property level=Missing{},Property font=Missing{});
-    static mml::NodeValue internalText(TexParser&,std::u16string,Property def);
-    static mml::NodeValue underOver(TexParser&,mml::NodeValue,mml::NodeValue,std::u16string pos,bool stack);
-    static void checkMovableLimits(mml::NodeValue);
-    static ArrayItem& setArrayAlign(ArrayItem&,std::u16string,TexParser* parser=nullptr);
-    static std::u16string substituteArgs(TexParser&,options::Value args,std::u16string);
-    static std::u16string substituteArgs(TexParser&,options::Value args,Property rawSource);
-    static std::u16string addArgs(TexParser&,std::u16string,std::u16string);
-    static std::u16string addArgs(TexParser&,Property rawFirst,std::u16string second);
-    static void checkMaxMacros(TexParser&,bool isMacro=true);
-    static void checkEqnEnv(TexParser&,bool nestable=true);
-    static mml::NodeValue copyNode(mml::NodeValue,TexParser&);
-    static std::u16string mmlFilterAttribute(TexParser&,std::u16string,std::u16string);
-    static Property getFontDef(TexParser&);
-    static Property keyvalOptions(ParserRuntime&,std::u16string,options::Value allowed=options::Null{},bool error=false,bool l3keys=false);
-    static bool isLatinOrGreekChar(ParserRuntime&,std::u16string);
-};
+
+std::u16string addArgs(
+    std::u16string_view left,
+    std::u16string_view right,
+    std::size_t maxBuffer);
+
+std::u16string substituteArgs(
+    std::span<std::u16string const> arguments,
+    std::u16string_view replacement,
+    std::size_t maxBuffer);
+
+void checkMaxMacros(ExpansionBudget& budget, bool isMacro = true);
 }

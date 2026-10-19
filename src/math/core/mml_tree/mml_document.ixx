@@ -22,6 +22,7 @@ public:
     MmlNode& make(NodeKind);
     MmlNode* root() const noexcept { return root_; }
     void setRoot(MmlNode&);
+    void reserveChildren(MmlNode& parent, std::size_t count);
     void append(MmlNode& parent, MmlNode& child);
     void insert(MmlNode& parent, std::size_t index, MmlNode& child);
     void replace(MmlNode& parent, MmlNode& oldChild, MmlNode& replacement);
