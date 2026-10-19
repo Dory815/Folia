@@ -4,6 +4,13 @@ export module folia.math.input.tex.parser:base_items;
 export import :types;
 import std;
 export namespace folia::math::tex {
+class ParserRuntime;
+struct BaseItems {
+    // Registers the actual Source constructors and native factory descriptors
+    // in the one loaded parser runtime. The returned ordinary object is kept
+    // by ParserRuntime and consumed by BaseConfiguration.
+    static void initializeModule(ParserRuntime&);
+};
 class StartItem:public BaseItem {
 public:
     void initializeStartItem(Property global);
@@ -100,7 +107,7 @@ class NotItem:public BaseItem {
 protected:
     ParserShared<TokenMap> remap=Missing{};
 public:
-    void initializeNotItem();
+    void initializeNotItem(ParserRuntime&);
     std::string kind()const override;
     CheckType checkItem(BaseItem*)override;
 };
@@ -114,6 +121,8 @@ class ArrayItem:public BaseItem {
 protected:
     virtual mml::NodeValue handleFrame(mml::NodeValue);
     virtual options::Value getEntry(); // actual [prefix,entry,terminator,found] array
+private:
+    ParserRuntime* runtime_=nullptr; // borrowed loaded-module owner for Source arraydef access
 public:
     ParserShared<tree::ChildArray<mml::MmlNode>> table=Missing{},row=Missing{};
     options::Value frame=options::Undefined{},hfill=options::Undefined{};
@@ -123,6 +132,10 @@ public:
     Property atEnd=Missing{},templateSubs=Missing{};
     ParserBorrowed<TexParser> parser=Missing{};
     void initializeArrayItem(ParserRuntime&);
+    ParserRuntime& runtime()const {
+        if(!runtime_)throw options::Exception("Unimplemented",u"ArrayItem has no ParserRuntime binding");
+        return *runtime_;
+    }
     std::string kind()const override;
     bool isOpen()const override;
     bool copyEnv()const override;
