@@ -206,6 +206,40 @@ target_sources(folia_math PRIVATE
     src/math/util/styles.cpp
     src/math/util/regexp_host.cpp)
 
+# Actual MathJax MML families share the document-owned native arena. Keep the
+# original per-family modules; only maction and mo have split implementation TUs.
+set(FOLIA_MML_FAMILIES
+    math mi mn mo mtext mspace ms mrow mfrac msqrt mroot mstyle merror mpadded
+    mphantom mfenced menclose maction msubsup munderover mmultiscripts mtable
+    mtr mtd maligngroup malignmark mglyph semantics tex_atom mathchoice html_node)
+foreach(family IN LISTS FOLIA_MML_FAMILIES)
+    target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+        src/math/core/mml_tree/mml_nodes/${family}.ixx)
+    if(NOT family STREQUAL "maction" AND NOT family STREQUAL "mo")
+        target_sources(folia_math PRIVATE src/math/core/mml_tree/mml_nodes/${family}.cpp)
+    endif()
+endforeach()
+target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+    src/math/core/mml_tree/html_adaptor.ixx
+    src/math/core/mml_tree/mo_types.ixx
+    src/math/core/mml_tree/operator_class.ixx
+    src/math/util/js_numeric_input.ixx
+    src/math/util/utf16_types.ixx
+    src/math/util/utf16.ixx
+    src/math/util/string.ixx
+    src/math/cancellation.ixx)
+target_sources(folia_math PRIVATE
+    src/math/core/mml_tree/mml_branches.cpp
+    src/math/core/mml_tree/mml_empty.cpp
+    src/math/core/mml_tree/mml_nodes/maction_selection.cpp
+    src/math/core/mml_tree/mml_nodes/maction_behavior.cpp
+    src/math/core/mml_tree/mml_nodes/mo_lookup.cpp
+    src/math/core/mml_tree/mml_nodes/mo_classes.cpp
+    src/math/core/mml_tree/mml_nodes/mo_scripts.cpp
+    src/math/core/mml_tree/operator_class.cpp
+    src/math/cancellation.cpp)
+target_sources(folia_math PRIVATE src/math/util/string.cpp)
+
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
 # ---------------------------------------------------------------------------
@@ -308,6 +342,16 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mml_defaults.cpp
     tests/math/mml_node_state.cpp
     tests/math/operator_dictionary_native.cpp
+    tests/math/native_raii_mml_base.cpp
+    tests/math/typed_mml_branches.cpp
+    tests/math/native_mml_row_tokens.cpp
+    tests/math/typed_mml_arithmetic.cpp
+    tests/math/typed_mml_scripts.cpp
+    tests/math/mml_typed_table.cpp
+    tests/math/typed_mml_containers.cpp
+    tests/math/native_raii_mo.cpp
+    tests/math/native_mml_families.cpp
+    tests/math/native_string_util.cpp
     tests/math/native_raii_fonts.cpp
     tests/math/common_styles_source.cpp
     tests/math/native_line_bbox.cpp

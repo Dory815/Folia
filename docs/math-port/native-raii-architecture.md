@@ -129,7 +129,8 @@ properties, intrinsic state and tree invariants. Restore the original C++
 `MmlNode`/`AbstractMmlNode`/token/layout/base/empty classes and concrete family
 inheritance as actual polymorphic arena objects. `MmlDocument` keeps one
 `vector<unique_ptr<MmlNode>>`; its destructor uses the virtual node destructor.
-The current final structural `MmlNode` is not the final representation. Do not
+The former final structural `MmlNode` has been replaced by actual polymorphic
+family objects in the document arena. Do not
 add a separate semantic façade, detached family object, NodeKind switch in each
 consumer, or a fallback implementation of missing semantic methods.
 

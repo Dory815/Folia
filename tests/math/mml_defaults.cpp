@@ -1,5 +1,5 @@
 #include "support/folia_test.hpp"
-import folia.math.core.mml_tree.mml_factory;
+import folia.math.core.mml_tree.mml_document;
 import folia.math.core.mml_tree.node_defaults;
 #include "mml_defaults_source_snapshot.hpp"
 using namespace boost::ut;
@@ -188,7 +188,7 @@ suite math_native_mml_default_installation = [] {
     "factory_initializes_every_kind_with_the_complete_source_layers"_test = [] {
         using namespace mml::source_snapshot;
         mml::MmlDocument document;
-        mml::MmlFactory factory(document);
+        auto& factory = document.factory();
         std::size_t kindsWithAttributeStore = 0;
 
         for (std::size_t i = 0; i < mml::allNodeKinds.size(); ++i) {
@@ -222,7 +222,7 @@ suite math_native_mml_default_installation = [] {
 
     "implicit_and_explicit_rows_retain_source_defaults_recursively"_test = [] {
         mml::MmlDocument document;
-        mml::MmlFactory factory(document);
+        auto& factory = document.factory();
 
         auto& identifier = factory.make(mml::NodeKind::mi);
         identifier.setText(u"x");
@@ -248,7 +248,7 @@ suite math_native_mml_default_installation = [] {
 
     "factory_keeps_source_leaf_nodes_without_attribute_defaults_empty"_test = [] {
         mml::MmlDocument document;
-        mml::MmlFactory factory(document);
+        auto& factory = document.factory();
         for (const auto kind : {mml::NodeKind::text, mml::NodeKind::xml, mml::NodeKind::html}) {
             auto& node = factory.make(kind);
             expect(node.attributes().ownEntries().empty());
@@ -260,7 +260,7 @@ suite math_native_mml_default_installation = [] {
 
     "factory_installs_defaults_without_losing_any_caller_layer"_test = [] {
         mml::MmlDocument document;
-        mml::MmlFactory factory(document);
+        auto& factory = document.factory();
         mml::AttributeSet supplied;
         supplied.set(u"mathvariant", std::u16string(u"bold"));
         supplied.setInherited(u"dir", std::u16string(u"rtl"));

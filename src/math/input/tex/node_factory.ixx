@@ -1,5 +1,5 @@
 export module folia.math.input.tex.node_factory;
-export import folia.math.core.mml_tree.mml_factory;
+export import folia.math.core.mml_tree.mml_document;
 import std;
 
 export namespace folia::math::tex {

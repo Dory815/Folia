@@ -7,7 +7,7 @@ namespace tex = folia::math::tex;
 suite math_native_mml_factory = [] {
     "typed_factory_owns_attributes_and_borrows_same_document_children"_test = [] {
         mml::MmlDocument document;
-        mml::MmlFactory factory(document);
+        auto& factory = document.factory();
         auto& child = document.make(mml::NodeKind::mi);
         child.setText(u"x");
 
@@ -27,7 +27,7 @@ suite math_native_mml_factory = [] {
 
     "negative_arity_inserts_one_inferred_row_for_supplied_children"_test = [] {
         mml::MmlDocument document;
-        mml::MmlFactory factory(document);
+        auto& factory = document.factory();
         auto& text = document.make(mml::NodeKind::mtext);
         auto& explicitRow = document.make(mml::NodeKind::inferred_mrow);
         document.append(explicitRow, text);
@@ -107,7 +107,7 @@ suite math_native_mml_factory = [] {
 
     "infinite_arity_parent_flattens_inferred_child"_test = [] {
         mml::MmlDocument document;
-        mml::MmlFactory factory(document);
+        auto& factory = document.factory();
         auto& text = document.make(mml::NodeKind::text);
         auto& inferred = document.make(mml::NodeKind::inferred_mrow);
         document.append(inferred, text);
@@ -123,7 +123,7 @@ suite math_native_mml_factory = [] {
 
     "finite_arity_parent_converts_inferred_child_to_explicit_row"_test = [] {
         mml::MmlDocument document;
-        mml::MmlFactory factory(document);
+        auto& factory = document.factory();
         auto& text = document.make(mml::NodeKind::text);
         auto& inferred = document.make(mml::NodeKind::inferred_mrow);
         inferred.attributes().set(u"mathvariant", std::u16string(u"bold"));
@@ -147,7 +147,7 @@ suite math_native_mml_factory = [] {
     "invalid_factory_arguments_leave_existing_tree_unchanged"_test = [] {
         mml::MmlDocument first;
         mml::MmlDocument second;
-        mml::MmlFactory factory(first);
+        auto& factory = first.factory();
         auto& parent = first.make(mml::NodeKind::mrow);
         auto& child = first.make(mml::NodeKind::mi);
         auto& grandchild = first.make(mml::NodeKind::text);
@@ -197,7 +197,7 @@ suite math_native_mml_factory = [] {
 suite math_native_tex_node_factory = [] {
     "text_nodes_preserve_owned_utf16_and_token_uses_text_node_child"_test = [] {
         mml::MmlDocument document;
-        mml::MmlFactory mmlFactory(document);
+        auto& mmlFactory = document.factory();
         tex::NodeFactory factory(mmlFactory);
         auto& token = factory.makeToken(mml::NodeKind::mi, u"𝛂é");
         expect(token.kind() == mml::NodeKind::mi);
@@ -209,7 +209,7 @@ suite math_native_tex_node_factory = [] {
 
     "tex_error_uses_generic_merror_arity_rule_once"_test = [] {
         mml::MmlDocument document;
-        mml::MmlFactory mmlFactory(document);
+        auto& mmlFactory = document.factory();
         tex::NodeFactory factory(mmlFactory);
         auto& error = factory.makeError(u"bad 𝛂");
 

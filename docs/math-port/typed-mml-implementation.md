@@ -19,6 +19,11 @@ algorithm cannot satisfy a const, non-throwing declaration.
   normalization. Exact document clone and Source virtual copy remain distinct.
 - Family modules export-import `folia.math.core.mml_tree.mml_document`.
   Implementation units for base/branches/empty belong to that primary module.
+- `mml_factory.ixx` declares the `mml_document:factory` partition, exported by the
+  document primary. Its implementation also belongs to that primary. The document
+  owns the factory, so its forward declaration and definition must be attached to
+  the same C++ named module. Consumers import `mml_document`; no duplicate factory
+  declaration, second owner, or compatibility module is added.
 - Node pointers are borrowed; attributes are `AttributeSet` values, inheritance
   is `{name, origin, AttributeValue}`, and semantic properties use existing typed
   records. No Context, Property, callback receivers, generic coercion framework,

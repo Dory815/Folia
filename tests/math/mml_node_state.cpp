@@ -1,12 +1,12 @@
 #include "support/folia_test.hpp"
-import folia.math.core.mml_tree.mml_factory;
+import folia.math.core.mml_tree.mml_document;
 using namespace boost::ut;
 namespace mml=folia::math::mml;
 
 suite native_mml_node_properties=[] {
     "constructor_intrinsic_state_and_family_defaults_match_source"_test=[] {
         mml::MmlDocument document;
-        mml::MmlFactory factory(document);
+        auto& factory = document.factory();
         for (const auto kind : mml::allNodeKinds) {
             std::optional<mml::TexClass> expected;
             switch (kind) {
@@ -97,7 +97,7 @@ suite native_mml_node_properties=[] {
 
     "clone_copies_complete_typed_state_independently"_test=[] {
         mml::MmlDocument source_document,target_document;
-        mml::MmlFactory factory(source_document);
+        auto& factory = source_document.factory();
         auto& root=factory.make(mml::NodeKind::mrow);
         auto& child=factory.make(mml::NodeKind::mi);
         child.properties().tex.primes=u"′"; child.properties().proof.premise_count=3;
