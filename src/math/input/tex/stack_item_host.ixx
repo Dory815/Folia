@@ -13,9 +13,19 @@ inline mml::Children writeArray(mml::Children nodes,std::string_view member){
     return nodes;
 }
 inline std::string key(double index){return mml::host::debugText(mml::host::string(Property(index)));}
-template<class Product> Product& require(const std::variant<Missing,PropertyNull,Product*>& ref,std::string_view member){
+template<class Product,class... Alternatives>
+Product& require(const std::variant<Alternatives...>& ref,std::string_view member){
     if(auto* p=std::get_if<Product*>(&ref);p&&*p)return **p;
     const bool missing=std::holds_alternative<Missing>(ref);
+    if constexpr ((std::is_same_v<options::Value,Alternatives> || ...)) {
+        if(const auto* raw=std::get_if<options::Value>(&ref)){
+            if(std::holds_alternative<options::Undefined>(raw->data))
+                mml::host::typeError("Cannot read properties of undefined (reading '"+std::string(member)+"')");
+            if(std::holds_alternative<options::Null>(raw->data))
+                mml::host::typeError("Cannot read properties of null (reading '"+std::string(member)+"')");
+            mml::host::typeError("Stack source value has no native owner for '"+std::string(member)+"'");
+        }
+    }
     mml::host::typeError(std::string("Cannot read properties of ")+(missing?"undefined":"null")+" (reading '"+std::string(member)+"')");
 }
 }

@@ -11,6 +11,12 @@ public:
     virtual Property token() const;
     virtual Property character() const;
     virtual Property attributes() const;
+    Property sourceTokenField()const{return token_;}
+    void sourceTokenField(Property value){token_=std::move(value);}
+    Property sourceCharField()const{return character_;}
+    void sourceCharField(Property value){character_=std::move(value);}
+    Property sourceAttributesField()const{return attributes_;}
+    void sourceAttributesField(Property value){attributes_=std::move(value);}
 };
 using TokenRef=std::shared_ptr<Token>;
 }

@@ -15,7 +15,9 @@ class TexParser:public ParserContext,public NativeObject {
     std::u16string composeBracedContent(mml::NodeValue);
 protected:
     virtual std::u16string trimTex(std::u16string);
+    void bindIdentity(options::ObjectRef identity){identity_=std::move(identity);}
 public:
+    static void initializeModule(ParserRuntime&);
     double macroCount=0,i=0;
     ParserShared<Stack> stack=Missing{};
     ParserBorrowed<ParseOptions> configuration=Missing{};
@@ -26,6 +28,7 @@ public:
         if(!identity_)throw options::Exception("Unimplemented",u"TexParser has no canonical native instance binding");
         return *identity_;
     }
+    ParserContextIdentity contextIdentity()const override;
     virtual options::Value options()const;
     virtual ParserShared<StackItemFactory> itemFactory()const;
     virtual ParserShared<Tags> tags()const;
@@ -40,6 +43,7 @@ public:
     virtual void Parse();
     virtual void Push(StackEntry);
     virtual void PushAll(CheckList);
+    virtual void PushAll(mml::Children);
     virtual mml::NodeValue mml();
     virtual Property convertDelimiter(std::u16string); // string | null
     virtual std::u16string getCodePoint();
