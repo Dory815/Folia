@@ -67,7 +67,7 @@ MmlNode* TextNode::copy(bool keepIds) {
     if (!result) host::typeError("Factory product has no TextNode setText method");
     return result->setText(text);
 }
-std::string TextNode::toString() const { return host::debugText(getText()); }
+std::string TextNode::toString() const { return host::debugText(text_); }
 
 std::string XMLNode::kind() const { return "XML"; }
 XmlRef XMLNode::getXML() const { return xml_; }

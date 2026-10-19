@@ -94,7 +94,15 @@ protected:
         };
         receiver.walkOn=[](ChildValue<Product> value,const std::function<void(ChildValue<Product>,const std::any&)>& visit,
                            const std::any& data,const std::any& visitorIdentity){
-            value.walkTreeRaw(visit,data,visitorIdentity);
+            if(const auto source=value.sourceAccess()){
+                source->walkTreeRaw(visit,data,visitorIdentity);
+                return;
+            }
+            auto* const node=value.requireNode("walkTree");
+            const TreeVisitor<Product> childVisit=[&visit](Product* child,const std::any& childData){
+                visit(ChildValue<Product>(child),childData);
+            };
+            (void)node->walkTree(childVisit,data);
         };
         return receiver;
     }
