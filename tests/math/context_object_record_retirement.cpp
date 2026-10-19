@@ -2,7 +2,35 @@
 import folia.math.util.native_identities;
 import folia.math.util.native_data_fields;
 namespace {using namespace boost::ut;using namespace folia::math;namespace opts=folia::math::options;
+struct RegistryCleanupOwner final:opts::NativeAttachedOwner {
+    std::shared_ptr<NativeIdentityBindings<std::shared_ptr<int>>> bindings;
+    int& finalized;
+    RegistryCleanupOwner(std::shared_ptr<NativeIdentityBindings<std::shared_ptr<int>>> value,int& count)
+        :bindings(std::move(value)),finalized(count){}
+    ~RegistryCleanupOwner(){bindings->clear();++finalized;}
+    bool visitContextEdges(const opts::ContextEdgeVisitor&)const override{return true;}
+};
 suite context_object_record_retirement=[] {
+"math_port_context_destruction_keeps_slots_readable_during_native_registry_cleanup"_test=[] {
+    for(const bool ownerFirst:std::array<bool,2>{false,true}){
+        int finalized=0;
+        auto context=std::make_unique<opts::Context>();
+        auto bindings=std::make_shared<NativeIdentityBindings<std::shared_ptr<int>>>(*context);
+        std::weak_ptr<NativeIdentityBindings<std::shared_ptr<int>>> weakBindings=bindings;
+        auto value=std::make_shared<int>(7);
+        std::weak_ptr<int> weakValue=value;
+        auto holder=ownerFirst?context->object():opts::ObjectRef{};
+        const auto canonical=context->object();
+        (void)bindings->bind(value,canonical);
+        if(!ownerFirst)holder=context->object();
+        context->attachOwner(holder,std::make_shared<RegistryCleanupOwner>(bindings,finalized));
+        value.reset();bindings.reset();
+        expect(!weakValue.expired()&&!weakBindings.expired());
+        context.reset();
+        expect(finalized==1) << "the native cleanup owner finishes in either record order";
+        expect(weakValue.expired()&&weakBindings.expired());
+    }
+};
 "math_port_context_object_record_retirement_releases_all_owner_edges_and_keeps_stale_slot"_test=[] {
     opts::Context context;auto type=context.constructor(u"owner");
     NativeIdentityBindings<std::shared_ptr<int>> bindings(context);

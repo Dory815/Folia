@@ -684,7 +684,19 @@ Context::Context() : state_(std::make_unique<ContextState>()) {
     initializeArrayIntrinsics();
 }
 
-Context::~Context() = default;
+Context::~Context() {
+    // Native owners retained by records can own canonical identity registries.
+    // Release them while every record slot still exists: their destructors may
+    // clear payloads in earlier slots. Vector destruction would leave dangling
+    // slots behind before those later owners are released.
+    for (std::size_t index=0;index<state_->objects.size();++index) {
+        if (!state_->objects[index]) continue;
+        auto& slot=*state_->objects[index];
+        const bool wasRetired=slot.retired;
+        auto released=std::exchange(slot,Record{});
+        slot.retired=wasRetired;
+    }
+}
 
 std::shared_ptr<void> Context::getOrCreateServiceImpl(std::u16string identity,
         std::type_index type,std::function<std::shared_ptr<void>()> create){
