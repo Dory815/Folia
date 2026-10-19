@@ -9,6 +9,24 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
+### 恢复时先用这个短检查点
+
+- 用户再次指出压缩后重复调查。AGENTS.md 的连续性规则已经存在，问题在执行；
+  本次已实际重读本文件并核对 Git/代理状态。不能只在摘要中提到文件路径就算读过。
+- 正式代码最近提交为 `7a632b73`。273项/33,051断言是此前完整基线；随后scanner
+  仅运行10项/96断言。完整TeX→SVG与Folia替换尚未完成，不能扩大验收结论。
+- Root四份TeX声明候选在 `tools/math-port/drafts/native-raii/tex-parser-declarations/`，
+  尚未推广/构建。架构和职责见 `typed-tex-parser-implementation.md`。
+- `raii_session`已完成修订并交付 `tex-parse-options-contract/README.md`，
+  SHA256 `68EEDEA26DD1E0B919CB37931B30925F2ED79A4EFBFD045AA8F2040373D4E487`。
+  Root尚未审查此最新修订；它仍是声明提案，不是可推广的完整parser。
+- 唯一运行中的代理是 `radical_table_runner`，写 `tex-base-items-contract/` 的
+  原26个base类声明。实际枚举名为 `StackKind`，不要沿用任务文字中的RootStackKind。
+  其他代理均已完成；旧完成消息不是新的待办。当前无live build/native句柄。
+- **下一步明确动作**：审最新ParseOptions提案，收取并审BaseItems声明，冻结原文件职责、
+  所有权和服务接口后再派实现。复用已验证C++，不重写已完成家族、不恢复JS对象模拟。
+- Git目前13项既有无关修改，见文末保护清单；只提交本次交接记录，不运行reset。
+
 ### 最新完成与证据
 
 - **完整 Math 组件 273 项 / 33,051 断言，exit0**：
@@ -101,7 +119,7 @@
   shared_ptr<TexEnvironment>域值保存真正scope别名/复制，不含parser/frame/MML owner或通用对象。
   generic factory只返回unique_ptr给caller，无新产品arena/重复registry/运行时selector。
   **完整native句柄80469已终态exit0**：native-scene-factory-final-full.log，273项/33,051断言。
-  本批所有build/native句柄均终态；所有Luna已completed，无需等旧句柄。
+  本批所有build/native句柄均终态；该批Luna当时已completed，无需等旧句柄。
 - **包级ownership审查已交付并补证**：同tex-stack-transition-source包新增
   package-replay-review.md（SHA256 3bc743d6131f79aac4806a0e21b193b3f44ec188ac07727802227a9219524a2a）、
   package-replay-observe.cjs/package-replay-observed.json，未修改原24例。
@@ -122,7 +140,7 @@
   src/math/input/tex/{parser_types,stack,stack_item,stack_item_factory}.ixx由Root写出，
   都尚未推广/构建，BaseItems/ParseOptions/dispatch完整声明未就绪，不能派body或冒充parser完成。
   所有相互引用类归原parser_family primary，stack/item/factory将成同module partition。
-- 当前代理（不是旧包待完成）：mml_base_contract_review审四份Root header；raii_session准备
+- 此前分工记录（已被上方短检查点取代）：mml_base_contract_review审四份Root header；raii_session准备
   tex-parse-options-contract/；math_structure_audit修正tex-stack-constructor-contract/中错误TS行号
   并补构造运行证据（表曾把MJS/TS位置混淆，不可未经复核推广）。Multlined实际调用在
   MathtoolsMethods.ts:147附近，继承Multline ctor，defaultTags收到truthy parser对象；
@@ -145,15 +163,15 @@
   Root已冻结MultlinedItemInit marker表示true，不保留parser/begin对象。注意实际DummyItem继承
   kind=base，默认lookup key=dummy；不能把该Source wiring差别默默改成可用fallback。
   初始constructor表的不准确TS位置已修，不能用其旧版本当新Source证据。
-- 新分工：radical_table_runner正写tex-base-items-contract/的原base26类声明（无body），
-  raii_session仍在修tex-parse-options-contract/，Root要求去掉杜撰的TagOperations门面和无消费者
+- 当前分工：radical_table_runner正写tex-base-items-contract/的原base26类声明（无body），
+  raii_session已交付修订的tex-parse-options-contract/，待Root审查；Root要求去掉杜撰的TagOperations门面和无消费者
   NodeListSink、旧bindings import、错误跨module MML forwards。实际Tags类必须保留且借用唯一
   TexEquationState；Color/Begingroup持续状态属于session，不能每request重置。
   其他本轮代理均completed。当前无live native/build，未宣称完整声明已冻结。
 
 ### 下一步（直接接续）
 
-1. 继续上述Root四份header审查，收取准确constructor表/运行观察和ParseOptions服务草案；
+1. 四份Root核心header审查、constructor表/运行观察已收取并修正；现在审最新ParseOptions服务草案和BaseItems候选；
    基于24+6条Source transition及Root owner/environment协议冻结完整声明，
    明确所有包家族的typed构造参数和服务引用后，再按原文件划界让Luna复用旧C++实现。
    不再等待已结束测试、不重做38包inventory、不得恢复通用对象模拟。
