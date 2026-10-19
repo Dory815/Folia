@@ -93,11 +93,14 @@ suite mmlContextAllocatorOwnership = [] {
     const auto result=graph.context.call(text,o::Value(receiver),args);
     expect(result==o::Value(receiver));
     expect(setterCalls==1u);
-    expect(getterCalls>0u);
     expect(written==o::Value(foreignFactory));
+    // Source writes the factory setter without reading the receiver getter.
+    const auto observedFactory=graph.context.get(o::Value(receiver),o::Key(u"factory"));
+    expect(observedFactory==o::Value(foreignFactory));
+    expect(getterCalls==1u);
     auto* node=dynamic_cast<m::TextNode*>(&runtime->resolveMmlNode(receiver));
     expect(node!=nullptr);
-    expect(graph.context.get(o::Value(receiver),o::Key(u"factory"))==o::Value(foreignFactory));
+    expect(observedFactory==o::Value(foreignFactory));
     const auto bindings=runtime->modules().find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
     expect(bindings!=nullptr);
     if(bindings){
@@ -167,7 +170,10 @@ suite mmlContextAllocatorOwnership = [] {
     expect(&runtime->resolveMmlNode(receiver)==failedProduct);
     expect(bindings->sourceAllocator().backend().productCountForDiagnostics()==productsBefore+1u);
     expect(rawFactory==o::Value(foreign));
-    expect(graph.context.get(o::Value(receiver),o::Key(u"childNodes"))==partialChildren);
+    const auto retryChildren=graph.context.get(o::Value(receiver),o::Key(u"childNodes"));
+    expect(std::get_if<o::ObjectRef>(&retryChildren.data)!=nullptr);
+    expect(retryChildren!=partialChildren)
+        << "Source constructor retry resets childNodes while preserving its native product";
     auto* node=dynamic_cast<m::AbstractMmlNode*>(&runtime->resolveMmlNode(receiver));
     expect(node!=nullptr);
   };
@@ -266,10 +272,22 @@ suite mmlContextAllocatorOwnership = [] {
     auto factory=std::make_shared<m::MmlFactory>();
     const auto identity=runtime->bindMmlFactory(factory);
     const auto text=constructorFor(graph.context,*runtime,identity,u"text");
+    const auto prototype=std::get<o::ObjectRef>(graph.context.get(o::Value(text),o::Key(u"prototype")).data);
     runtime.reset();
     const std::array<o::Value,1> args{o::Value(identity)};
     const auto receiver=graph.context.construct(text,args);
-    expect(graph.context.kind(receiver)==o::ObjectKind::instance);
+    expect(graph.context.prototype(receiver)==std::optional<o::ObjectRef>(prototype));
+    {
+      // End this temporary service lease before testing the last facade's release.
+      const auto bindings=modules->find<m::MmlContextBindings>(u"core/MmlTree/ContextBindings");
+      expect(bindings!=nullptr);
+      if(bindings){
+        auto* const product=&bindings->resolveNode(receiver);
+        const auto* payload=std::any_cast<folia::math::NativeBindingPayload<m::MmlNode*>>(
+            &graph.context.payload(receiver));
+        expect(payload!=nullptr&&payload->identity==product);
+      }
+    }
     modules.reset();
     expect(throws<o::Exception>([&]{(void)graph.context.construct(text,args);}));
   };
@@ -413,8 +431,9 @@ suite mmlContextAllocatorOwnership = [] {
     factory->clearIdentityBinder(&foreignBinderOwner);
     const auto identity=bindings->bindFactory(factory);
     expect(pending==identity);
+    const auto textClass=factory->getNodeClass("text");
     bindings.reset();
-    const auto nativeInfo=factory->sourceClassInfo(factory->getNodeClass("text"));
+    const auto nativeInfo=factory->sourceClassInfo(textClass);
     expect(nativeInfo!=nullptr);
     expect(nativeInfo->sourceConstructorName==u"TextNode");
   };
