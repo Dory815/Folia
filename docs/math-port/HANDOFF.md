@@ -56,11 +56,15 @@ ignored根目录 `tools/math-port/drafts/native-raii/`；Root推广/构建/nativ
   替代fixed(toPrecision15)、两侧round1e12。这些候选已改：保留local y/rotation/sweep，
   phasor单path，执行实际Source fixed，BBox/TRBL用原始double精确比较。
   原生SVG比较仍须Root运行，不能以删除几何断言、只BBox通过代替。
-- **raii_common_font_audit当前正做最后机械修正**（已发followup；恢复先查其live/交付）：
+- **raii_common_font_audit已交付最后机械修正**（所有代理现均completed）：
   notation.cpp必须 `module folia.math.output.common; import :notation;`；
   test catalog不能先实例化3参registration<CommonMenclose>（该类需4参），须专门组装creator。
   其SVGcatalog .cpp/.ixx import Common primary，const getBBox和多取&child.node已修。
-  其他Luna均completed，无需等旧消息或重派整包。
+  Root已核对notation实现单元语法和下列SHA-256，尚未native编译；无需等旧消息或重派整包。
+  `src/math/output/common/notation.cpp`（packet内）：
+  `2CC15A3AA2F1875D3DC7455DC96276AE40360B82AC3BC63382985BD28BB2C965`；
+  `tests/native_common_menclose.cpp`（packet内）：
+  `F54AE0DA19EEB2228A54D0D282A14367D2B1CA28D25BDDDF73FF9D29CE456FED`。
 - Menclose UT环境变量 `FOLIA_MENCLOSE_SVG_DUMP`写native SVG，之后运行
   `source/compare-svg-dump.cjs`；完整参数见packet README。
   仅Source `mitre`→typed `miter`拼写正规化；rect/ellipse可按明示规则转换等价path，
