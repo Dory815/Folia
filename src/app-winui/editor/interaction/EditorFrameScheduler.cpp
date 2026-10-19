@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "editor/interaction/EditorFrameScheduler.h"
 
+import folia.platform.editor_frame_pacing;
+
 namespace winrt::Folia
 {
     namespace
@@ -201,11 +203,10 @@ namespace winrt::Folia
                 lastRequestId = frameId;
                 if (WaitForMultipleObjects(2, frameHandles, FALSE, INFINITE) != WAIT_OBJECT_0 + 1) break;
                 auto now = std::chrono::steady_clock::now();
-                auto targetInterval = std::chrono::duration<float>(
-                    state->targetFrameIntervalSeconds.load(std::memory_order_acquire));
+                auto intervalSeconds = state->targetFrameIntervalSeconds.load(std::memory_order_acquire);
                 if (previousSubmission.time_since_epoch().count() != 0)
                 {
-                    auto deadline = previousSubmission + targetInterval;
+                    auto deadline = folia::platform::editor::FramePacingDeadline(previousSubmission, intervalSeconds);
                     if (now < deadline)
                     {
                         auto waitDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(deadline - now).count();
@@ -215,7 +216,7 @@ namespace winrt::Folia
                         if (WaitForMultipleObjects(2, pacingHandles, FALSE, INFINITE) != WAIT_OBJECT_0 + 1) break;
                         now = std::chrono::steady_clock::now();
                     }
-                    else if (now - previousSubmission > targetInterval * 2.0f)
+                    else if (now - previousSubmission > (deadline - previousSubmission) * 2)
                     {
                         previousSubmission = {};
                     }

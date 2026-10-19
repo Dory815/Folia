@@ -28,8 +28,25 @@ namespace winrt::Folia
         valueChangedToken = scrollBar.ValueChanged([this](auto const&, winrt::Microsoft::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
         {
             if (synchronizing || !renderer) return;
+            selectionAutoScrollVelocity = 0.0f;
+            updateSelectionDuringAutoScroll = {};
             renderer->SetScrollOffset(static_cast<float>(args.NewValue()));
-            if (render) render();
+            Start();
+        });
+        scrollToken = scrollBar.Scroll([this](auto const&, winrt::Microsoft::UI::Xaml::Controls::Primitives::ScrollEventArgs const& args)
+        {
+            using winrt::Microsoft::UI::Xaml::Controls::Primitives::ScrollEventType;
+            if (synchronizing || !renderer) return;
+            if (args.ScrollEventType() == ScrollEventType::ThumbTrack)
+            {
+                scrollBarDragging = true;
+                Start();
+            }
+            else if (args.ScrollEventType() == ScrollEventType::EndScroll)
+            {
+                scrollBarDragging = false;
+                Start();
+            }
         });
         attached = true;
         Sync();
@@ -40,6 +57,7 @@ namespace winrt::Folia
         Stop();
         frameScheduler.Detach();
         if (attached && scrollBar) scrollBar.ValueChanged(valueChangedToken);
+        if (attached && scrollBar) scrollBar.Scroll(scrollToken);
         attached = false;
         renderer = nullptr;
         scrollBar = nullptr;
@@ -135,6 +153,7 @@ namespace winrt::Folia
 
     void EditorScrollController::Stop()
     {
+        scrollBarDragging = false;
         selectionAutoScrollVelocity = 0.0f;
         updateSelectionDuringAutoScroll = {};
         if (renderer) renderer->SetScrollOffset(renderer->ScrollOffset());
@@ -145,7 +164,13 @@ namespace winrt::Folia
     {
         if (!renderer) return false;
         auto active = false;
-        if (selectionAutoScrollVelocity != 0.0f)
+        if (scrollBarDragging)
+        {
+            // Keep the display-paced scheduler alive during a drag. ValueChanged
+            // updates the position directly; paint only the latest value per frame.
+            active = true;
+        }
+        else if (selectionAutoScrollVelocity != 0.0f)
         {
             auto before = renderer->ScrollOffset();
             // Do not turn a temporarily blocked UI thread into a large selection

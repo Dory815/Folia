@@ -7,10 +7,16 @@ using folia::platform::editor::EditorScrollState;
 
 suite editor_scroll_state_tests = [] {
 
-"wheel reaches ninety percent of its target within one hundred milliseconds"_test = [] {
+"wheel starts immediately and retains a quarter second deceleration"_test = [] {
     EditorScrollState state;
     state.Queue(480.0f, 2000.0f);
-    for (auto frame = 0; frame < 6; ++frame) state.Advance(1.0f / 60.0f);
+    state.Advance(1.0f / 60.0f);
+    expect(state.Offset() > 0.0_f);
+    expect(state.Offset() < 96.0_f);
+    for (auto frame = 1; frame < 6; ++frame) state.Advance(1.0f / 60.0f);
+    expect(state.Offset() >= 240.0_f);
+    expect(state.Offset() <= 384.0_f);
+    for (auto frame = 6; frame < 15; ++frame) state.Advance(1.0f / 60.0f);
     expect(state.Offset() >= 432.0_f);
     expect(state.Offset() <= state.Target());
 };
