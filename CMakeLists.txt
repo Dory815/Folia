@@ -1012,6 +1012,7 @@ add_executable(FoliaMathHostTests EXCLUDE_FROM_ALL
     tests/math/prioritized_list_source_operations.cpp
     tests/math/parser_configuration_prioritized_list_projection.cpp
     tests/math/parser_configuration_prioritized_list_live_array.cpp
+    tests/math/parse_options_real_owner_source_oracle.cpp
     tests/math/option_array_concat.cpp
     tests/main.cpp
     tests/math/reference_option_array_iteration.cpp

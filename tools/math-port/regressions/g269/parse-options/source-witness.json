@@ -1,0 +1,71 @@
+{
+  "source": {
+    "path": "ts/input/tex/ParseOptions.ts",
+    "sha256": "ab60a07dbb24040c0fb9bd67b942755ffc5b0b18980abf1938736d8d90b22209"
+  },
+  "observed": {
+    "parser": {
+      "constructorPushedSelf": true,
+      "emptyAfterMml": true,
+      "sameArray": true,
+      "headWasPushed": true,
+      "emptyAfterPop": true
+    },
+    "afterAdd": {
+      "keys": [
+        "inferredMrow",
+        "custom"
+      ],
+      "customKinds": [
+        "mi",
+        "mn",
+        "mi"
+      ],
+      "liveProperty": "custom,custom",
+      "detachedProperty": "custom"
+    },
+    "filtered": {
+      "length": 2,
+      "allLive": true,
+      "nodeListsSameArray": true
+    },
+    "duplicateRemoval": {
+      "length": 1,
+      "remainingIsLive": true
+    },
+    "replacementRemoval": {
+      "sameArray": true,
+      "length": 1,
+      "remainingIsLive": true
+    },
+    "parentCases": {
+      "rootIsInTree": true,
+      "descendantIsInTree": true,
+      "detachedIsInTree": false
+    },
+    "clearResets": {
+      "parserArrayReplaced": true,
+      "parsersEmpty": true,
+      "rootNull": true,
+      "nodeListsEmpty": true,
+      "errorFalse": true,
+      "clearRetains": {
+        "options": true,
+        "packageData": true,
+        "nodeFactory": true,
+        "handlers": true
+      }
+    },
+    "clearThrowAfterWrites": {
+      "error": {
+        "name": "Error",
+        "message": "reset-witness"
+      },
+      "resetGetterReads": 1,
+      "parsersEmpty": true,
+      "rootNull": true,
+      "nodeListsEmpty": true,
+      "errorFalse": true
+    }
+  }
+}
