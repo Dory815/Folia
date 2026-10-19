@@ -21,8 +21,11 @@ family placement is ported. This is not a second Scene or layout hierarchy.
 
 The common immutable font repository owns metrics, resolved glyph selection,
 typed outlines, stretch recipes and remap/inheritance data. Scene glyphs retain
-immutable typed resources with Source variant cache identity and codepoint.
-Normal and bold instances of the same codepoint must not collide in a cache.
+immutable typed outline resources and an owned `GlyphKey { variant_cache_id,
+codepoint }`. The key describes the requested resolved font variant, separately
+from the shared outline's provenance. Inherited outlines can be shared while
+requested variants retain their distinct Source cache identities. Normal and
+bold instances of the same codepoint must not collide in a cache.
 
 `output/svg/font_data.ixx/.cpp` becomes an immutable SVG resource catalog,
 module `folia.math.output.svg.font_data`, namespace `output::svg`, replacing
