@@ -1,0 +1,11 @@
+Native C++ port of mhchemparser 4.2.1
+Original project: https://github.com/mhchem/mhchemParser
+Copyright (c) 2015-2023 Martin Hensel
+Licensed under Apache License 2.0; see LICENSE-mhchemparser.txt.
+
+The native C++ implementation changes the original TypeScript/JavaScript
+language and typed host representation. It retains the original state machine,
+pattern definitions, parser actions and generated TeX behavior. Source hashes
+and the original-to-native responsibility map are recorded in
+docs/math-port/evidence/mhchem-source-lock.json and
+docs/math-port/evidence/mhchem-native-responsibilities.md.
