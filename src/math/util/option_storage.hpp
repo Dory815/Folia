@@ -14,6 +14,7 @@ struct Record {
     NativeConstruct construct;
     std::any payload;
     std::vector<std::pair<NativeOwnerPart,NativeOwnerTraceRef>> ownerTraces;
+    NativeAttachedOwnerRef attachedOwner;
     bool payloadMutableAliasEscaped = false;
     // A retired record keeps its slot so stale ObjectRefs can never alias a
     // later object. Context::record rejects it before exposing any field.
@@ -25,5 +26,12 @@ struct ContextState {
     Intrinsics intrinsics;
     std::vector<std::unique_ptr<Record>> objects;
     std::vector<std::optional<std::u16string>> symbols;
+    struct ServiceEntry {
+        std::type_index type{typeid(void)};
+        std::weak_ptr<void> owner;
+    };
+    // Weak Context-scoped service lookup lets independent facades find one
+    // live owner without making Context its lifetime root or creating a cycle.
+    std::unordered_map<std::u16string,ServiceEntry> services;
 };
 }

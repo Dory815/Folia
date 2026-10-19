@@ -233,6 +233,7 @@ bool ownsPart(const Record& value,NativeOwnerPart part){
     case NativeOwnerPart::construct:return static_cast<bool>(value.construct);
     case NativeOwnerPart::nativeView:return static_cast<bool>(value.nativeRecordView)||static_cast<bool>(value.nativeIndexedView);
     case NativeOwnerPart::nativeDataField:return false;
+    case NativeOwnerPart::attachedOwner:return static_cast<bool>(value.attachedOwner);
     }
     return false;
 }
@@ -240,6 +241,8 @@ bool ownsPart(const Record& value,NativeOwnerPart part){
 
 void Context::registerNativeOwnerTrace(ObjectRef object,NativeOwnerPart part,NativeOwnerTraceRef trace){
     auto& value=record(object);
+    if(part==NativeOwnerPart::attachedOwner)
+        type_error(u"Attached owners use the Context record owner slot");
     if(!trace)type_error(u"Native owner edge trace is null");
     if(!ownsPart(value,part))type_error(u"Native owner edge trace does not match an opaque owner");
     if(part==NativeOwnerPart::payload&&value.payloadMutableAliasEscaped)
@@ -251,6 +254,24 @@ void Context::registerNativeOwnerTrace(ObjectRef object,NativeOwnerPart part,Nat
 void Context::unregisterNativeOwnerTrace(ObjectRef object,NativeOwnerPart part){
     auto& value=record(object);
     std::erase_if(value.ownerTraces,[&](const auto& entry){return entry.first==part;});
+}
+NativeAttachedOwnerRef Context::attachedOwner(ObjectRef object)const{
+    const auto* value=recordIfLive(object);
+    return value?value->attachedOwner:NativeAttachedOwnerRef{};
+}
+void Context::attachOwner(ObjectRef object,NativeAttachedOwnerRef owner){
+    if(!owner)type_error(u"Native attached owner is null");
+    auto& value=record(object);
+    if(value.attachedOwner&&value.attachedOwner!=owner)
+        type_error(u"Context record already has a different attached owner");
+    value.attachedOwner=std::move(owner);
+}
+bool Context::clearAttachedOwner(ObjectRef object,const NativeAttachedOwner* expected){
+    if(!expected)type_error(u"Native attached owner clear requires an expected owner");
+    auto* value=recordIfLive(object);
+    if(!value||value->attachedOwner.get()!=expected)return false;
+    value->attachedOwner.reset();
+    return true;
 }
 ContextTraceReport Context::traceReachable(std::span<const ObjectRef> roots)const{
     ContextTraceReport result(state_->identity,roots);
@@ -289,6 +310,7 @@ ContextTraceReport Context::traceReachable(std::span<const ObjectRef> roots)cons
             }else visitValue(descriptor.value);
         }
         const auto traceFor=[&](NativeOwnerPart part)->NativeOwnerTraceRef{
+            if(part==NativeOwnerPart::attachedOwner)return value.attachedOwner;
             for(const auto& [registeredPart,trace]:value.ownerTraces)
                 if(registeredPart==part)return trace;
             return {};
@@ -300,7 +322,8 @@ ContextTraceReport Context::traceReachable(std::span<const ObjectRef> roots)cons
             if(!complete){
                 const auto detail=part==NativeOwnerPart::payload?u"payload":
                     part==NativeOwnerPart::callable?u"callable":
-                    part==NativeOwnerPart::construct?u"construct":u"native view";
+                    part==NativeOwnerPart::construct?u"construct":
+                    part==NativeOwnerPart::attachedOwner?u"attached owner":u"native view";
                 addPin(object,part,detail);
             }
         };
@@ -308,6 +331,7 @@ ContextTraceReport Context::traceReachable(std::span<const ObjectRef> roots)cons
         traceOrPin(NativeOwnerPart::callable);
         traceOrPin(NativeOwnerPart::construct);
         traceOrPin(NativeOwnerPart::nativeView);
+        traceOrPin(NativeOwnerPart::attachedOwner);
         const auto visitFields=[&](const auto& fields){
             for(const auto& [key,field]:fields){
                 if(const auto* symbol=std::get_if<SymbolRef>(&key.data)){
@@ -330,12 +354,16 @@ ContextTraceReport Context::traceReachable(std::span<const ObjectRef> roots)cons
 }
 
 Record& Context::record(ObjectRef object) const {
+    auto* value=recordIfLive(object);
+    if(!value)type_error(u"Object handle refers to a retired Context record");
+    return *value;
+}
+Record* Context::recordIfLive(ObjectRef object)const{
     if (object.context != state_->identity || object.index >= state_->objects.size() || !state_->objects[object.index]) {
         type_error(u"Object belongs to a different or invalid Context");
     }
-    if(state_->objects[object.index]->retired)
-        type_error(u"Object handle refers to a retired Context record");
-    return *state_->objects[object.index];
+    if(state_->objects[object.index]->retired)return nullptr;
+    return state_->objects[object.index].get();
 }
 
 ObjectRef Context::allocate(ObjectKind kind, std::optional<ObjectRef> prototype) {
@@ -657,6 +685,23 @@ Context::Context() : state_(std::make_unique<ContextState>()) {
 }
 
 Context::~Context() = default;
+
+std::shared_ptr<void> Context::getOrCreateServiceImpl(std::u16string identity,
+        std::type_index type,std::function<std::shared_ptr<void>()> create){
+    if(identity.empty()||!create)throw Exception("TypeError",u"Context service requires an identity and initializer");
+    if(const auto found=state_->services.find(identity);found!=state_->services.end()){
+        if(auto owner=found->second.owner.lock()){
+            if(found->second.type!=type)throw Exception("TypeError",u"Context service identity reused for a different native owner");
+            return owner;
+        }
+        state_->services.erase(found);
+    }
+    auto owner=create();
+    if(!owner)throw Exception("TypeError",u"Context service initializer returned no owner");
+    auto [found,inserted]=state_->services.emplace(std::move(identity),ContextState::ServiceEntry{type,owner});
+    if(!inserted)throw Exception("TypeError",u"Context service registry changed during initialization");
+    return owner;
+}
 
 const Intrinsics& Context::intrinsics() const { return state_->intrinsics; }
 

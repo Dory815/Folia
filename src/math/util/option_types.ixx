@@ -40,8 +40,16 @@ public:
     virtual bool visitContextEdges(const ContextEdgeVisitor&)const=0;
 };
 using NativeOwnerTraceRef=std::shared_ptr<const NativeOwnerTrace>;
+// A strongly attached, mutable native owner whose actual Context edges are
+// reported through NativeOwnerTrace. The Record owns this separately from
+// its opaque payload and releases it when retired.
+class NativeAttachedOwner : public NativeOwnerTrace {
+public:
+    ~NativeAttachedOwner()override=default;
+};
+using NativeAttachedOwnerRef=std::shared_ptr<NativeAttachedOwner>;
 // One backing owner covers both indexed and record facets of a native array.
-enum class NativeOwnerPart : std::uint8_t { payload,callable,construct,nativeView,nativeDataField };
+enum class NativeOwnerPart : std::uint8_t { payload,callable,construct,nativeView,nativeDataField,attachedOwner };
 struct OpaqueOwnerPin { ObjectRef object; NativeOwnerPart part; std::u16string detail; };
 class ContextTraceReport {
 public:
@@ -215,6 +223,7 @@ bool sameValue(const Value& a, const Value& b);
 class Context {
     std::unique_ptr<ContextState> state_;
     Record& record(ObjectRef object) const;
+    Record* recordIfLive(ObjectRef object)const;
     ObjectRef allocate(ObjectKind kind, std::optional<ObjectRef> prototype);
     void setImpl(Value object,const Key& key,Value value,NativeDataFieldRef fieldForAbsent={});
     std::optional<Descriptor> rawDescriptor(Value,const Key&)const;
@@ -293,8 +302,23 @@ public:
     // enumerate the union of indexed/record facets; missing hooks pin.
     void registerNativeOwnerTrace(ObjectRef,NativeOwnerPart,NativeOwnerTraceRef);
     void unregisterNativeOwnerTrace(ObjectRef,NativeOwnerPart);
+    NativeAttachedOwnerRef attachedOwner(ObjectRef)const;
+    void attachOwner(ObjectRef,NativeAttachedOwnerRef);
+    bool clearAttachedOwner(ObjectRef,const NativeAttachedOwner*);
     // Fresh observational reachability report only; no promotion or reclaim.
     ContextTraceReport traceReachable(std::span<const ObjectRef> roots)const;
+    std::shared_ptr<void> getOrCreateServiceImpl(std::u16string identity,
+        std::type_index type,std::function<std::shared_ptr<void>()> create);
+    template<class T,class Factory>
+    std::shared_ptr<T> getOrCreateService(std::u16string identity,Factory&& create){
+        auto erased=[factory=std::forward<Factory>(create)]()mutable->std::shared_ptr<void>{
+            auto owner=std::invoke(std::move(factory));
+            if(!owner)throw Exception("TypeError",u"Context service initializer returned no owner");
+            return std::static_pointer_cast<void>(std::move(owner));
+        };
+        return std::static_pointer_cast<T>(getOrCreateServiceImpl(
+            std::move(identity),std::type_index(typeid(T)),std::move(erased)));
+    }
     Value call(ObjectRef function, Value receiver, std::span<const Value> arguments={});
     Value callMember(Value function, Value receiver, std::span<const Value> arguments={},
                      std::u16string_view expression=u"value.call");
