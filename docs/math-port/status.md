@@ -4,13 +4,20 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
-Latest focused evaluation (2026-10-19 local, G210 r16 build / public r7):
-API matches 9/9 and complete SVG bytes match 144/150. The remaining three
-formulas differ in both continuous and fresh-session runs. Six of the 49
-individual Factory/MML tests still fail. Shared Context MML module identity
-and survival after another ParserRuntime is destroyed pass separately in the
-focused build. This is progress, not a full acceptance result; no full gate
-has superseded Gate209. See `evidence/focused-svg-g210-r7.md`.
+Latest completed full evaluation (Gate212): all 61 targets compile with 2,179
+unchanged inputs through evaluation. API matches 9/9, Common layout 75/75,
+and public SVG/error records 150/150. This means 146 serialized SVG results
+and four matching host errors, not 150 successful SVG renders. The two Maction
+formulas still need an event-registration host capability. Paired Scene/SVG
+routes agree on all 146 successful outputs; BBoldx SVG also passes.
+
+Full acceptance still fails: Core exits with an access violation, Host and
+Foundation have failures, mhchem and two request-lifetime observations exceed
+their 60-second limits, and 16/20 package comparisons pass. Parser, Regexp and
+LinkedList pass. Gate213 is building the reviewed Tree null-property access,
+property-copy Symbols, and MML constructor-field corrections with at most four
+parallel jobs. Those new changes are not yet verified. See
+`evidence/shared-g212.md`.
 
 The Core operator-trace null read was isolated to an inactive diagnostic
 context and fixed in c6074e6. Its exact test passes. The subsequent small
@@ -19,7 +26,7 @@ module owners, ordered Map storage and Unicode cancellation checkpoints.
 Substantial Tree, MML, parser and output work remains uncommitted and must
 be split by actual interface dependencies. Folia integration remains pending.
 
-Latest completed full evaluation (2026-10-16 local, Gate209): all 61 targets compile
+Earlier completed full evaluation (2026-10-16 local, Gate209): all 61 targets compile
 with 2,160 unchanged inputs through evaluation. The native MML constructor
 now converts its actual lexical factory, attributes and children to canonical
 Context values. Rendering progresses past Gate207's conversion exception,
