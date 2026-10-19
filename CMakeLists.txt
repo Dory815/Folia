@@ -222,6 +222,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/prioritized_list.ixx
     src/math/util/property_host.ixx
     src/math/util/promise.ixx
+    src/math/util/promise_context_bindings.ixx
     src/math/util/retries.ixx
     src/math/util/function_types.ixx
     src/math/util/function_list.ixx
