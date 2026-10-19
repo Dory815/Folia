@@ -4,14 +4,17 @@
  * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
  *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.ms;
+import folia.math.core.mml_tree.node_defaults;
 import std;
 
 namespace folia::math::mml {
-void MmlMs::initializeClassFields() {
-    initializeTexClass(static_cast<double>(TEXCLASS.ORD));
+MmlMs::MmlMs(MmlDocument &document) : AbstractMmlTokenNode(document, NodeKind::ms) {}
+
+AttributeSet MmlMs::defaults() {
+    return nodeDefaultAttributes(NodeKind::ms);
 }
 
-std::string MmlMs::kind() const {
-    return "ms";
+NodeKind MmlMs::kind() const noexcept {
+    return NodeKind::ms;
 }
-}
+} // namespace folia::math::mml

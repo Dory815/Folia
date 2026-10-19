@@ -4,41 +4,39 @@
  * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
  *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mrow;
-import folia.math.core.mml_tree.leaf_host;
-import folia.math.util.property_host;
+import folia.math.core.mml_tree.node_defaults;
 import std;
 
 namespace folia::math::mml {
-void MmlMrow::initializeClassFields() {
-    core_=PropertyNull{};
+MmlMrow::MmlMrow(MmlDocument &document) : MmlMrow(document, NodeKind::mrow) {}
+
+MmlMrow::MmlMrow(MmlDocument &document, NodeKind kind) : AbstractMmlNode(document, kind) {}
+
+AttributeSet MmlMrow::defaults() {
+    return nodeDefaultAttributes(NodeKind::mrow);
 }
 
-std::string MmlMrow::kind() const { return "mrow"; }
+NodeKind MmlMrow::kind() const noexcept {
+    return NodeKind::mrow;
+}
 
 bool MmlMrow::isSpacelike() const {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto children = this->childArrayOwner();
-    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
-    for (std::size_t i = 0; i < children->size(); ++i) {
-        const NodeValue value = children->get(i);
-        if (!value.requireNode("isSpacelike")->isSpacelike()) return false;
-    }
+    for (auto *child : children())
+        if (!child->isSpacelike())
+            return false;
     return true;
 }
 
 bool MmlMrow::isEmbellished() const {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto children = this->childArrayOwner();
-    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
     bool embellished = false;
-    for (std::size_t i = 0; i < children->size(); ++i) {
-        const NodeValue value = children->get(i);
-        MmlNode* const child = value.nodeOrNull();
-        if (!child) continue;
+    for (auto *child : children()) {
+        if (!child)
+            continue;
         if (child->isEmbellished()) {
-            if (embellished) return false;
+            if (embellished)
+                return false;
             embellished = true;
-            core_ = static_cast<double>(i);
+            core_ = child;
         } else if (!child->isSpacelike()) {
             return false;
         }
@@ -46,124 +44,90 @@ bool MmlMrow::isEmbellished() const {
     return embellished;
 }
 
-NodeValue MmlMrow::core() {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (!this->isEmbellished()) return this;
-    if (host::nullish(core_)) return this;
-    const std::string index=property_host::debugText(host::string(core_));
-    const auto children = this->childArrayOwner();
-    if (!children) {
-        std::string message = "Cannot read properties of null (reading '" + index + "')";
-        throw Error("TypeError",std::u16string(message.begin(),message.end()));
-    }
-    return children->getProperty(index);
+MmlNode *MmlMrow::core() {
+    if (!isEmbellished() || !core_)
+        return this;
+    return core_;
 }
 
-NodeValue MmlMrow::coreMO() {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (!this->isEmbellished()) return this;
-    if (host::nullish(core_)) return this;
-    const std::string index=property_host::debugText(host::string(core_));
-    const auto children = this->childArrayOwner();
-    if (!children) {
-        std::string message = "Cannot read properties of null (reading '" + index + "')";
-        throw Error("TypeError",std::u16string(message.begin(),message.end()));
-    }
-    const NodeValue child = children->getProperty(index);
-    return child.requireNode("coreMO")->coreMO();
+MmlNode *MmlMrow::coreMO() {
+    if (!isEmbellished() || !core_)
+        return this;
+    return core_->coreMO();
 }
 
 std::size_t MmlMrow::nonSpaceLength() {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto children = this->childArrayOwner();
-    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
     std::size_t count = 0;
-    for (std::size_t i = 0; i < children->size(); ++i) {
-        const NodeValue value = children->get(i);
-        MmlNode* const child = value.nodeOrNull();
-        if (child && !child->isSpacelike()) ++count;
-    }
+    for (auto *child : children())
+        if (child && !child->isSpacelike())
+            ++count;
     return count;
 }
 
-MmlNode* MmlMrow::firstNonSpace() {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto children = this->childArrayOwner();
-    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
-    for (std::size_t i = 0; i < children->size(); ++i) {
-        const NodeValue value = children->get(i);
-        MmlNode* const child = value.nodeOrNull();
-        if (child && !child->isSpacelike()) return child;
+MmlNode *MmlMrow::firstNonSpace() {
+    for (auto *child : children())
+        if (child && !child->isSpacelike())
+            return child;
+    return nullptr;
+}
+
+MmlNode *MmlMrow::lastNonSpace() {
+    const auto values = children();
+    for (std::size_t index = values.size(); index > 0; --index) {
+        auto *child = values[index - 1];
+        if (child && !child->isSpacelike())
+            return child;
     }
     return nullptr;
 }
 
-MmlNode* MmlMrow::lastNonSpace() {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto initialChildren = this->childArrayOwner();
-    if (!initialChildren) {
-        throw Error("TypeError",u"Cannot read properties of null (reading 'length')");
-    }
-    std::size_t i = initialChildren->size();
-    while (i > 0) {
-        --i;
-        const auto children = this->childArrayOwner();
-        if (!children) {
-            const std::string message = "Cannot read properties of null (reading '" + std::to_string(i) + "')";
-            throw Error("TypeError",std::u16string(message.begin(),message.end()));
-        }
-        const NodeValue value = children->get(i);
-        MmlNode* const child = value.nodeOrNull();
-        if (child && !child->isSpacelike()) return child;
-    }
-    return nullptr;
-}
-
-NodeValue MmlMrow::setTeXclass(NodeValue previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (!host::nullish(getProperty("open")) || !host::nullish(getProperty("close"))) {
+MmlNode *MmlMrow::setTeXclass(MmlNode *previous) {
+    const auto &properties = this->properties().tex;
+    if (properties.open || properties.close) {
         getPrevClass(previous);
-        previous = PropertyNull{};
-        const auto children = this->childArrayOwner();
-        if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
-        for (std::size_t i = 0; i < children->size(); ++i) {
-            previous = children->get(i).requireNode("setTeXclass")->setTeXclass(previous);
-        }
-        if (host::nullish(texClass())) setTexClass(static_cast<double>(TEXCLASS.INNER));
+        previous = nullptr;
+        for (auto *child : children())
+            previous = child->setTeXclass(previous);
+        if (!texClass())
+            setTexClass(TexClass::inner);
         return this;
     }
-    const auto children = this->childArrayOwner();
-    if (!children) throw Error("TypeError",u"object null is not iterable (cannot read property Symbol(Symbol.iterator))");
-    for (std::size_t i = 0; i < children->size(); ++i) {
-        previous = children->get(i).requireNode("setTeXclass")->setTeXclass(previous);
-    }
-    const auto currentChildren = this->childArrayOwner();
-    if (!currentChildren) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
-    const NodeValue first = currentChildren->get(0);
-    if (first.nodeOrNull()) {
-        const auto latestChildren = this->childArrayOwner();
-        if (!latestChildren) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
-        updateTeXclass(latestChildren->get(0));
-    }
+    for (auto *child : children())
+        previous = child->setTeXclass(previous);
+    const auto values = children();
+    if (!values.empty() && values.front())
+        updateTeXclass(values.front());
     return previous;
 }
 
-std::string MmlInferredMrow::kind() const { return "inferredMrow"; }
-bool MmlInferredMrow::isInferred() const { return true; }
-Property MmlInferredMrow::notParent() const { return true; }
+MmlInferredMrow::MmlInferredMrow(MmlDocument &document)
+    : MmlMrow(document, NodeKind::inferred_mrow) {}
+
+AttributeSet MmlInferredMrow::defaults() {
+    return MmlMrow::defaults();
+}
+
+NodeKind MmlInferredMrow::kind() const noexcept {
+    return NodeKind::inferred_mrow;
+}
+
+bool MmlInferredMrow::isInferred() const {
+    return true;
+}
+
+bool MmlInferredMrow::notParent() const {
+    return true;
+}
 
 std::string MmlInferredMrow::toString() const {
-    tree::TreeCallGuard<MmlNode> callGuard;
-    const auto children = this->childArrayOwner();
-    if (!children) throw Error("TypeError",u"Cannot read properties of null (reading 'join')");
-    tree::TreeJoinGuard<MmlNode> joinGuard(children.get());
-    if (!joinGuard.entered()) return "[]";
-    const std::size_t length = children->size();
     std::string result = "[";
-    for (std::size_t i = 0; i < length; ++i) {
-        if (i != 0) result.push_back(',');
-        const NodeValue value = children->get(i);
-        if (MmlNode* const child = value.nodeOrNull()) result += child->toString();
+    bool first = true;
+    for (auto *child : children()) {
+        if (!first)
+            result.push_back(',');
+        first = false;
+        if (child)
+            result += child->toString();
     }
     result.push_back(']');
     return result;
