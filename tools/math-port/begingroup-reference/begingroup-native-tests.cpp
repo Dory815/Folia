@@ -39,7 +39,7 @@ struct BegingroupRuntime {
     core::FindMathModule findMath{context};
     tex::FindTeXModule findTeX{context,findMath,regex};
     tex::ParserRuntime runtime{context,functions,regex,unicode,inputJax,findTeX};
-    mml::MmlFactory mml;
+    std::shared_ptr<mml::MmlFactory> mml=std::make_shared<mml::MmlFactory>();
     tex::TeXRef jax;
 
     BegingroupRuntime(){
@@ -50,7 +50,8 @@ struct BegingroupRuntime {
         const auto options=context.object();
         context.set(options,opts::Key(u"packages"),strings(context,{u"base",u"begingroup",u"newcommand"}));
         jax=tex::TeX::make(runtime,opts::Value(options));
-        jax->setMmlFactory(&mml);
+        (void)runtime.bindMmlFactory(mml);
+        jax->setMmlFactory(mml);
     }
 
     tex::ParseOptionsRef parseOptions(){
