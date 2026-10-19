@@ -1,133 +1,140 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native port of MathJax 4.1.3 MmlNodes/mo.ts class methods.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mo;
-import folia.math.core.mml_tree.mo_host;
-import folia.math.core.mml_tree.operator_class;
-import folia.math.core.mml_tree.mml_nodes.math;
 import folia.math.core.mml_tree.mml_nodes.munderover;
+import folia.math.core.mml_tree.mml_nodes.math;
+import folia.math.core.mml_tree.operator_class;
 import std;
 
 namespace folia::math::mml {
+namespace {
+bool isUnwrappableKind(MmlNode const &node) {
+    return node.isKind(NodeKind::mrow) || node.kind() == NodeKind::tex_atom ||
+           node.kind() == NodeKind::mstyle || node.kind() == NodeKind::mphantom;
+}
 
-MmlNode* MmlMo::coreParent() {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode* embellished = nullptr;
-    NodeValue parent = this;
-    const auto mathClass = this->factoryOwner().getNodeClass("math");
-    tree::TreeWalkBudget<MmlNode> walkBudget;
-    while (parent.isNode() && parent.requireNode("isEmbellished")->isEmbellished() &&
-           parent.requireNode("coreMO")->coreMO() == NodeValue(this) &&
-           !host::moInstance(parent.nodeOrNull(), mathClass)) {
-        walkBudget.step();
-        embellished = parent.nodeOrNull();
-        parent = parent.requireNode("parent")->getParent();
+bool truthy(AttributeValue const *value) {
+    if (!value || std::holds_alternative<AttributeNull>(*value))
+        return false;
+    if (const auto *boolean = std::get_if<bool>(value))
+        return *boolean;
+    if (const auto *number = std::get_if<double>(value))
+        return *number != 0.0 && !std::isnan(*number);
+    if (const auto *text = std::get_if<std::u16string>(value))
+        return !text->empty();
+    return false;
+}
+
+bool isAccentChild(MmlNode *child, MmlNode const *target) {
+    return child && child->isEmbellished() && child->coreMO() == target;
+}
+} // namespace
+
+MmlNode *MmlMo::coreParent() {
+    MmlNode *embellished = nullptr;
+    MmlNode *current = this;
+    while (current && current->isEmbellished() && current->coreMO() == this &&
+           dynamic_cast<MmlMath *>(current) == nullptr) {
+        embellished = current;
+        current = current->parent();
     }
     return embellished ? embellished : this;
 }
 
-std::u16string MmlMo::coreText(NodeValue parent) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (!parent.isNode()) return {};
-    MmlNode* node = parent.nodeOrNull();
+std::u16string MmlMo::coreText(MmlNode *parentNode) {
+    if (!parentNode)
+        return {};
+    MmlNode *node = parentNode;
     if (node->isEmbellished()) {
-        auto* core = node->coreMO().requireNode("getText");
-        if (auto* text = dynamic_cast<TextNode*>(core)) return text->getText();
-        if (auto* token = dynamic_cast<AbstractMmlTokenNode*>(core)) return token->getText();
-        throw Error("TypeError",u"parent.coreMO(...).getText is not a function");
+        MmlNode *core = node->coreMO();
+        if (auto *text = dynamic_cast<TextNode *>(core))
+            return text->getText();
+        if (auto *token = dynamic_cast<AbstractMmlTokenNode *>(core))
+            return token->getText();
+        throw std::logic_error("embellished core operator is not a text token");
     }
-    const auto isUnwrappable = [](MmlNode& candidate) {
-        return candidate.isKind("mrow") || candidate.isKind("TeXAtom") ||
-               candidate.isKind("mstyle") || candidate.isKind("mphantom");
-    };
-    tree::TreeWalkBudget<MmlNode> walkBudget;
-    while (((isUnwrappable(*parent.requireNode("isKind")) && ([&] {
-                if (!node->childArrayOwner()) throw Error("TypeError",u"Cannot read properties of null (reading 'length')");
-                return node->childArrayOwner()->size() == 1;
-            })()) ||
-            node->isKind("munderover")) &&
-           host::moChild(NodeValue(node), 0).isNode()) {
-        walkBudget.step();
-        parent = host::moChild(NodeValue(node), 0);
-        node = parent.requireNode("isKind");
+
+    while (node && (isUnwrappableKind(*node) || node->kind() == NodeKind::munderover)) {
+        const auto children = node->children();
+        if (children.empty())
+            break;
+        if (node->kind() != NodeKind::munderover && children.size() != 1)
+            break;
+        node = children.front();
     }
-    if (!node->isToken()) return {};
-    auto* token = dynamic_cast<AbstractMmlTokenNode*>(node);
-    if (!token) throw Error("TypeError",u"parent.getText is not a function");
-    return token->getText();
+    if (!node || !node->isToken())
+        return {};
+    if (auto *token = dynamic_cast<AbstractMmlTokenNode *>(node))
+        return token->getText();
+    return {};
 }
 
-Property MmlMo::isAccent() {
-    tree::TreeCallGuard<MmlNode> guard;
-    Property accent = false;
-    MmlNode* node = NodeValue(coreParent()).requireNode("parent")->getParent().nodeOrNull();
-    if (node) {
-        std::string key;
-        if (node->isKind("mover")) {
-            auto* mover = dynamic_cast<MmlMunderover*>(node);
-            if (!mover) {
-                if (!node->childArrayOwner()) host::typeError("Cannot read properties of null (reading 'undefined')");
-                NodeValue(Missing{}).requireNode("coreMO");
-            }
-            const auto index = mover->over();
-            key = host::moChild(NodeValue(node), index).requireNode("coreMO")->coreMO().isNode()
-                ? "accent" : "";
-        } else if (node->isKind("munder")) {
-            auto* munder = dynamic_cast<MmlMunderover*>(node);
-            if (!munder) {
-                if (!node->childArrayOwner()) host::typeError("Cannot read properties of null (reading 'undefined')");
-                NodeValue(Missing{}).requireNode("coreMO");
-            }
-            const auto index = munder->under();
-            key = host::moChild(NodeValue(node), index).requireNode("coreMO")->coreMO().isNode()
-                ? "accentunder" : "";
-        } else if (node->isKind("munderover")) {
-            auto* multi = dynamic_cast<MmlMunderover*>(node);
-            if (!multi) {
-                if (!node->childArrayOwner()) host::typeError("Cannot read properties of null (reading 'undefined')");
-                NodeValue(Missing{}).requireNode("coreMO");
-            }
-            if (NodeValue(this) == host::moChild(NodeValue(node), multi->over())
-                                    .requireNode("coreMO")->coreMO()) {
-                key = "accent";
-            } else if (NodeValue(this) == host::moChild(NodeValue(node), multi->under())
-                                           .requireNode("coreMO")->coreMO()) {
-                key = "accentunder";
-            }
+bool MmlMo::isAccent() {
+    bool accent = false;
+    MmlNode *const enclosing = coreParent()->parent();
+    if (!enclosing)
+        return accent;
+    std::optional<std::u16string_view> key;
+    if (enclosing->kind() == NodeKind::mover) {
+        auto *mover = dynamic_cast<MmlMunderover *>(enclosing);
+        if (!mover)
+            throw std::logic_error("mover kind has incompatible family type");
+        const auto children = enclosing->children();
+        const auto index = mover->over();
+        if (index < children.size() && children[index]) {
+            MmlNode *const core = children[index]->coreMO();
+            if (core && core->coreMO())
+                key = u"accent";
         }
-        if (!key.empty()) {
-            const auto nodeAttributes = node->attributes();
-            if (!nodeAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
-            const Property value = nodeAttributes->getExplicit(key);
-            if (value.missing()) {
-                const auto ownAttributes = attributes();
-                if (!ownAttributes) host::typeError("Cannot read properties of null (reading 'get')");
-                accent = ownAttributes->get("accent");
-            }
+    } else if (enclosing->kind() == NodeKind::munder) {
+        auto *munder = dynamic_cast<MmlMunderover *>(enclosing);
+        if (!munder)
+            throw std::logic_error("munder kind has incompatible family type");
+        const auto children = enclosing->children();
+        const auto index = munder->under();
+        if (index < children.size() && children[index]) {
+            MmlNode *const core = children[index]->coreMO();
+            if (core && core->coreMO())
+                key = u"accentunder";
         }
+    } else if (enclosing->kind() == NodeKind::munderover) {
+        auto *multi = dynamic_cast<MmlMunderover *>(enclosing);
+        if (!multi)
+            throw std::logic_error("munderover kind has incompatible family type");
+        const auto children = enclosing->children();
+        const auto coreOfCore = [&](std::size_t index) -> MmlNode * {
+            if (index >= children.size() || !children[index])
+                return nullptr;
+            MmlNode *const core = children[index]->coreMO();
+            return core ? core->coreMO() : nullptr;
+        };
+        if (coreOfCore(multi->over()))
+            key = u"accent";
+        else if (coreOfCore(multi->under()))
+            key = u"accentunder";
     }
-    return accent;
+    if (!key)
+        return accent;
+    if (enclosing->attributes().own(*key))
+        return accent;
+    return truthy(attributes().lookup(u"accent"));
 }
 
-NodeValue MmlMo::setTeXclass(NodeValue prev) {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto currentAttributes = attributes();
-    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getList')");
-    const auto values = currentAttributes->getList({"form", "fence"});
-    const Property form = values.get("form");
-    const Property fence = values.get("fence");
-    if (getProperty("texClass").missing() && hasSpacingAttributes()) return PropertyNull{};
-    if (host::truthy(fence) && texClass() == Property(TEXCLASS.REL)) {
-        if (form == Property{std::string("prefix")}) setTexClass(TEXCLASS.OPEN);
-        if (form == Property{std::string("postfix")}) setTexClass(TEXCLASS.CLOSE);
+MmlNode *MmlMo::setTeXclass(MmlNode *previous) {
+    const auto form = attributes().lookup(u"form");
+    const auto fence = attributes().lookup(u"fence");
+    if (!properties().tex.explicit_tex_class && hasSpacingAttributes())
+        return nullptr;
+    if (truthy(fence) && texClass() == TexClass::rel) {
+        if (form && std::get_if<std::u16string>(form) &&
+            std::get<std::u16string>(*form) == u"prefix")
+            setTexClass(TexClass::open);
+        if (form && std::get_if<std::u16string>(form) &&
+            std::get<std::u16string>(*form) == u"postfix")
+            setTexClass(TexClass::close);
     }
-    return adjustTeXclass(prev);
+    return adjustTeXclass(previous);
 }
 
-NodeValue MmlMo::adjustTeXclass(NodeValue prev) {
-    return adjustOperatorTeXclass(*this, prev);
+MmlNode *MmlMo::adjustTeXclass(MmlNode *previous) {
+    return adjustOperatorTeXclass(*this, previous);
 }
-
-}
+} // namespace folia::math::mml

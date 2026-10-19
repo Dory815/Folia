@@ -1,53 +1,73 @@
-// MathJax 4.1.3 MmlNodes/mo.ts; root-frozen declarations. Apache-2.0.
+// Native typed MmlMo declaration. Pinned behavior: MathJax 4.1.3 mo.ts.
 export module folia.math.core.mml_tree.mml_nodes.mo;
-export import folia.math.core.mml_tree.mml_node;
+export import folia.math.core.mml_tree.mml_document;
 export import folia.math.core.mml_tree.mo_types;
+export import folia.math.core.mml_tree.operator_dictionary;
+export import folia.math.core.mml_tree.mo_patterns;
 import std;
+
 export namespace folia::math::mml {
-class MmlMo:public AbstractMmlTokenNode {
-protected:
-    const MoClassServices& constructorOperators()const;
-    virtual Property getOperatorDef(std::u16string_view);
+class MmlMo : public AbstractMmlTokenNode {
+    MoTexClassMode tex_class_mode_{MoTexClassMode::unset};
+
+  protected:
+    virtual operator_dict::OperatorDef getOperatorDef(std::u16string_view);
     virtual void checkOperatorTable(std::u16string_view);
-    virtual PropertyArray handleExplicitForm(PropertyArray);
+    virtual std::vector<std::u16string>
+    handleExplicitForm(std::span<std::u16string_view const> forms);
     virtual void checkPseudoScripts(std::u16string_view);
     virtual void checkPrimes(std::u16string_view);
     virtual void checkMathAccent(std::u16string_view);
-public:
-    using AbstractMmlTokenNode::AbstractMmlTokenNode;
-    // Source class fields are undefined during superclass initialization.
-    // This is the source's own _texClass field; the inherited texclass source
-    // field has a different identity and is never a fallback for Mo's getter.
-    Property _texClass=Missing{},lspace=Missing{},rspace=Missing{};
-    static PropertyList& defaults();
-    static Property& operatorTable();
-    static Property& mathSpacing();
-    static Property& remapPrimes();
-    static MoPatternHandle& pseudoScripts();
-    static MoPatternHandle& primes();
-    static MoPatternHandle& opPattern();
-    static MoPatternHandle& mathaccents();
-    static MoPatternHandle& mathaccentsWithWidth();
-    template<class T>static std::shared_ptr<MoClassServices> staticBinding(){
-        auto s=std::make_shared<MoClassServices>();
-        s->table=[] {return T::operatorTable();};s->spacing=[] {return T::mathSpacing();};s->remap=[] {return T::remapPrimes();};
-        s->pseudoScripts=[] {return T::pseudoScripts();};s->primes=[] {return T::primes();};s->opPattern=[] {return T::opPattern();};
-        s->mathaccents=[] {return T::mathaccents();};s->mathaccentsWithWidth=[] {return T::mathaccentsWithWidth();};return s;
+    void inheritAttributes(AttributeList const &, bool display, double level, bool prime) override;
+
+  public:
+    explicit MmlMo(MmlDocument &document) : AbstractMmlTokenNode(document, NodeKind::mo) {}
+
+    static AttributeSet defaults();
+    static std::span<operator_dict::OperatorEntry const> operatorTable() noexcept;
+    static std::span<std::array<double, 2> const> mathSpacing() noexcept;
+    static std::vector<std::pair<char32_t, char32_t>> const &remapPrimes();
+
+    static constexpr MoPattern pseudoScripts() noexcept {
+        return MoPattern::pseudoScripts;
     }
-    void initializeClassFields()override;
-    std::string kind()const override;
-    bool isEmbellished()const override;
-    Property texClass()override;
-    void setTexClass(Property)override;
-    virtual MmlNode* coreParent();
-    virtual std::u16string coreText(NodeValue);
-    bool hasSpacingAttributes()override;
-    virtual Property isAccent();
-    NodeValue setTeXclass(NodeValue)override;
-    virtual NodeValue adjustTeXclass(NodeValue);
-    protected: void inheritAttributes(AttributeList,Property display,Property level,Property prime)override; public:
-    virtual PropertyArray getForms();
-    virtual bool isMathAccent(std::optional<std::u16string_view> text={});
-    virtual bool isMathAccentWithWidth(std::optional<std::u16string_view> text={});
+
+    static constexpr MoPattern primes() noexcept {
+        return MoPattern::primes;
+    }
+
+    static constexpr MoPattern opPattern() noexcept {
+        return MoPattern::opPattern;
+    }
+
+    static constexpr MoPattern mathaccents() noexcept {
+        return MoPattern::mathaccents;
+    }
+
+    static constexpr MoPattern mathaccentsWithWidth() noexcept {
+        return MoPattern::mathaccentsWithWidth;
+    }
+
+    void initializeMml(AttributeSet, std::span<MmlNode *const>) override;
+    NodeKind kind() const noexcept override;
+    bool isEmbellished() const override;
+    std::optional<TexClass> texClass() override;
+    void setTexClass(std::optional<TexClass>) override;
+    std::optional<double> lspace;
+    std::optional<double> rspace;
+
+    MoTexClassMode texClassMode() const noexcept {
+        return tex_class_mode_;
+    }
+
+    virtual MmlNode *coreParent();
+    virtual std::u16string coreText(MmlNode *parent);
+    bool hasSpacingAttributes() override;
+    virtual bool isAccent();
+    MmlNode *setTeXclass(MmlNode *) override;
+    virtual MmlNode *adjustTeXclass(MmlNode *);
+    virtual std::vector<std::u16string> getForms();
+    virtual bool isMathAccent(std::optional<std::u16string_view> text = std::nullopt);
+    virtual bool isMathAccentWithWidth(std::optional<std::u16string_view> text = std::nullopt);
 };
-}
+} // namespace folia::math::mml

@@ -1,135 +1,105 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native port of MathJax 4.1.3 MmlNodes/mo.ts script/accent methods.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mo;
-import folia.math.core.mml_tree.mo_host;
-import folia.math.util.string;
 import std;
 
 namespace folia::math::mml {
+namespace {
+bool isAccentChild(MmlNode *child, MmlNode const *target) {
+    return child && child->isEmbellished() && child->coreMO() == target;
+}
+} // namespace
 
-void MmlMo::inheritAttributes(AttributeList attributes, Property display,
-                              Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-    host::inheritanceDefaults(attributes, display, level, prime);
-    AbstractMmlTokenNode::inheritAttributes(attributes, display, level, prime);
-
-    // Source takes one text snapshot after the superclass has completed, then
-    // performs these checks in this order.
-    const std::u16string mo = getText();
-    checkOperatorTable(mo);
-    checkPseudoScripts(mo);
-    checkPrimes(mo);
-    checkMathAccent(mo);
+void MmlMo::inheritAttributes(AttributeList const &inherited, bool display, double level,
+                              bool prime) {
+    AbstractMmlTokenNode::inheritAttributes(inherited, display, level, prime);
+    const std::u16string snapshot = getText();
+    checkOperatorTable(snapshot);
+    checkPseudoScripts(snapshot);
+    checkPrimes(snapshot);
+    checkMathAccent(snapshot);
 }
 
-void MmlMo::checkPseudoScripts(std::u16string_view mo) {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto& services = constructorOperators();
-    const MoPatternHandle pattern = host::moStatic(services.pseudoScripts);
-    if (!host::moMatch(pattern, mo)) return;
-
-    MmlNode* const core = coreParent();
-    if (!core) host::typeError("Cannot read properties of null (reading 'Parent')");
-    const NodeValue parentValue = core->Parent();
-    MmlNode* const parent = parentValue.nodeOrNull();
-    bool isPseudo = !parent;
-    if (parent) {
-        const bool isSubsup = parent->isKind("msubsup");
-        const bool isOnlySubsup = isSubsup ? !parent->isKind("msub") : false;
-        isPseudo = !isOnlySubsup;
+void MmlMo::checkPseudoScripts(std::u16string_view text) {
+    if (!matchMoPattern(pseudoScripts(), text))
+        return;
+    MmlNode *const core = coreParent();
+    MmlNode *const parentNode = core ? core->Parent() : nullptr;
+    bool pseudo = parentNode == nullptr;
+    if (parentNode) {
+        const bool isSubsup = parentNode->isKind(NodeKind::msubsup);
+        const bool isOnlySubsup = isSubsup && !parentNode->isKind(NodeKind::msub);
+        pseudo = !isOnlySubsup;
     }
-    setProperty("pseudoscript", isPseudo);
-    if (isPseudo) {
-        auto currentAttributes = this->attributes();
-        if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'setInherited')");
-        currentAttributes->setInherited("lspace", 0);
-        currentAttributes = this->attributes();
-        if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'setInherited')");
-        currentAttributes->setInherited("rspace", 0);
+    properties().tex.pseudo_script = pseudo;
+    if (pseudo) {
+        attributes().setInherited(u"lspace", 0.0);
+        attributes().setInherited(u"rspace", 0.0);
     }
 }
 
-void MmlMo::checkPrimes(std::u16string_view mo) {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto& services = constructorOperators();
-    const auto pattern = host::moStatic(services.primes);
-    if (!host::moMatch(pattern, mo)) return;
-
-    const Property remap = host::moStatic(services.remap);
-    const auto codepoints = string_util::unicodeChars(mo);
-    std::vector<Property> values;
-    values.reserve(codepoints.size());
-    for (const double codepoint : codepoints) {
-        // These are integral Unicode scalar/code-unit values. Decimal property
-        // keys match JavaScript's numeric Object key conversion exactly.
-        const auto key = std::to_string(static_cast<std::uint32_t>(codepoint));
-        values.push_back(host::get(remap, key));
-    }
-    std::vector<double> mapped;
-    mapped.reserve(values.size());
-    for (const Property& value : values) mapped.push_back(host::number(value));
-    const std::u16string primes = string_util::unicodeString(mapped);
-    setProperty("primes", host::debugText(primes));
-}
-
-void MmlMo::checkMathAccent(std::u16string_view mo) {
-    tree::TreeCallGuard<MmlNode> guard;
-    const NodeValue parentValue = this->Parent();
-    if (!getProperty("mathaccent").missing() || !parentValue.nodeOrNull()) return;
-    MmlNode* const parent = parentValue.nodeOrNull();
-    if (!parent->isKind("munderover")) return;
-
-    const auto nodes = parent->childArrayOwner();
-    if (!nodes) host::typeError("object null is not iterable (cannot read property Symbol(Symbol.iterator))");
-    const auto next = [&](std::size_t index) -> NodeValue {
-        if (index >= nodes->size()) return Missing{};
-        return nodes->get(index);
-    };
-    const NodeValue base = next(0);
-    const NodeValue under = next(1);
-    const NodeValue over = next(2);
-
-    MmlNode* const baseNode = base.requireNode("isEmbellished");
-    if (baseNode->isEmbellished() && baseNode->coreMO() == NodeValue(this)) return;
-
-    bool isUnder = false;
-    if (MmlNode* const underNode = under.nodeOrNull()) {
-        if (underNode->isEmbellished()) isUnder = underNode->coreMO() == NodeValue(this);
-    }
-    bool isOver = false;
-    if (MmlNode* const overNode = over.nodeOrNull()) {
-        if (overNode->isEmbellished()) {
-            MmlNode* const underNode = under.requireNode("coreMO");
-            isOver = underNode->coreMO() == NodeValue(this);
+void MmlMo::checkPrimes(std::u16string_view text) {
+    if (!matchMoPattern(primes(), text))
+        return;
+    std::u16string mapped;
+    mapped.reserve(text.size());
+    for (std::size_t index = 0; index < text.size(); ++index) {
+        char32_t codepoint = text[index];
+        if (codepoint >= 0xD800 && codepoint <= 0xDBFF && index + 1 < text.size()) {
+            const char32_t low = text[index + 1];
+            if (low >= 0xDC00 && low <= 0xDFFF) {
+                codepoint = 0x10000 + ((codepoint - 0xD800) << 10) + (low - 0xDC00);
+                ++index;
+            }
+        }
+        const auto found =
+            std::find_if(remapPrimes().begin(), remapPrimes().end(),
+                         [codepoint](auto const &item) { return item.first == codepoint; });
+        if (found == remapPrimes().end())
+            throw std::range_error("prime remap missing a codepoint");
+        const char32_t replacement = found->second;
+        if (replacement <= 0xFFFF)
+            mapped.push_back(static_cast<char16_t>(replacement));
+        else {
+            const char32_t scalar = replacement - 0x10000;
+            mapped.push_back(static_cast<char16_t>(0xD800 + (scalar >> 10)));
+            mapped.push_back(static_cast<char16_t>(0xDC00 + (scalar & 0x3FF)));
         }
     }
-    if (!isUnder && !isOver) return;
-    if (isMathAccent(mo)) {
-        setProperty("mathaccent", true);
-    } else if (isMathAccentWithWidth(mo)) {
-        setProperty("mathaccent", false);
-    }
+    properties().tex.primes = std::move(mapped);
+}
+
+void MmlMo::checkMathAccent(std::u16string_view text) {
+    if (properties().tex.math_accent || !Parent())
+        return;
+    MmlNode *const parentNode = Parent();
+    if (parentNode->kind() != NodeKind::munderover)
+        return;
+    const auto children = parentNode->children(); // snapshot before child inspection
+    MmlNode *const base = children.size() > 0 ? children[0] : nullptr;
+    MmlNode *const under = children.size() > 1 ? children[1] : nullptr;
+    MmlNode *const over = children.size() > 2 ? children[2] : nullptr;
+    if (base && base->isEmbellished() && base->coreMO() == this)
+        return;
+    const bool isUnder = isAccentChild(under, this);
+    // Preserve pinned Source's isOver branch: it intentionally compares the
+    // under child core, not the over child core.
+    const bool isOver = over && over->isEmbellished() && under && under->coreMO() == this;
+    if (!isUnder && !isOver)
+        return;
+    if (isMathAccent(text))
+        properties().tex.math_accent = true;
+    else if (isMathAccentWithWidth(text))
+        properties().tex.math_accent = false;
 }
 
 bool MmlMo::isMathAccent(std::optional<std::u16string_view> text) {
-    tree::TreeCallGuard<MmlNode> guard;
     const std::u16string defaultText = text ? std::u16string{} : getText();
-    const std::u16string_view actual = text ? *text : std::u16string_view(defaultText);
-    const auto& services = constructorOperators();
-    const auto pattern = host::moStatic(services.mathaccents);
-    return host::moMatch(pattern, actual);
+    const auto actual = text ? *text : std::u16string_view(defaultText);
+    return matchMoPattern(mathaccents(), actual);
 }
 
 bool MmlMo::isMathAccentWithWidth(std::optional<std::u16string_view> text) {
-    tree::TreeCallGuard<MmlNode> guard;
     const std::u16string defaultText = text ? std::u16string{} : getText();
-    const std::u16string_view actual = text ? *text : std::u16string_view(defaultText);
-    const auto& services = constructorOperators();
-    const auto pattern = host::moStatic(services.mathaccentsWithWidth);
-    return host::moMatch(pattern, actual);
+    const auto actual = text ? *text : std::u16string_view(defaultText);
+    return matchMoPattern(mathaccentsWithWidth(), actual);
 }
-
-}
+} // namespace folia::math::mml

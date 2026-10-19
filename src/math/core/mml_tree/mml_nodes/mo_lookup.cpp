@@ -1,165 +1,194 @@
-// MathJax 4.1.3 MmlNodes/mo.ts lookup and operator-table methods.
-// Apache-2.0; see src/math/LICENSE-MathJax.txt.
 module folia.math.core.mml_tree.mml_nodes.mo;
-import folia.math.core.mml_tree.mo_host;
 import folia.math.core.mml_tree.mml_nodes.mrow;
-import folia.math.core.mml_tree.operator_dictionary;
+import folia.math.core.mml_tree.mml_nodes.munderover;
+import folia.math.core.mml_tree.node_defaults;
 import std;
 
 namespace folia::math::mml {
 namespace {
-std::string propertyKey(const Property& value) {
-    return host::debugText(host::string(value));
+const std::vector<std::pair<char32_t, char32_t>> primeMappings{
+    {U'"', 8243}, {U'\'', 8242}, {8216, 8245}, {8217, 8242}, {8218, 8242},
+    {8219, 8245}, {8220, 8246},  {8221, 8243}, {8222, 8243}, {8223, 8246}};
+
+std::u16string_view stringAttribute(AttributeSet const &attributes, std::u16string_view name) {
+    const auto *value = attributes.lookup(name);
+    if (const auto *text = value ? std::get_if<std::u16string>(value) : nullptr)
+        return *text;
+    return {};
 }
 
-std::string propertyKey(std::u16string_view value) {
-    return host::debugText(value);
+bool truthy(AttributeValue const *value) {
+    if (!value || std::holds_alternative<AttributeNull>(*value))
+        return false;
+    if (const auto *boolean = std::get_if<bool>(value))
+        return *boolean;
+    if (const auto *number = std::get_if<double>(value))
+        return *number != 0.0 && !std::isnan(*number);
+    if (const auto *text = std::get_if<std::u16string>(value))
+        return !text->empty();
+    return false;
 }
 
-PropertyArray formOrder(std::string_view first, std::string_view second,
-                        std::string_view third) {
-    return PropertyArray{Property(std::string(first)), Property(std::string(second)),
-                         Property(std::string(third))};
-}
-}
-
-Property MmlMo::texClass() {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (_texClass == Property(PropertyNull{})) {
-        const std::u16string text = getText();
-        const Property definition = getOperatorDef(text);
-        return host::get(definition, "2");
+std::size_t spacingIndex(TexClass value) {
+    switch (value) {
+    case TexClass::ord:
+        return 0;
+    case TexClass::op:
+        return 1;
+    case TexClass::bin:
+        return 2;
+    case TexClass::rel:
+        return 3;
+    case TexClass::open:
+        return 4;
+    case TexClass::close:
+        return 5;
+    case TexClass::punct:
+        return 6;
+    case TexClass::inner:
+        return 7;
+    case TexClass::none:
+        return 0;
     }
-    return _texClass;
+    return 0;
+}
+
+} // namespace
+
+AttributeSet MmlMo::defaults() {
+    return nodeDefaultAttributes(NodeKind::mo);
+}
+
+std::span<operator_dict::OperatorEntry const> MmlMo::operatorTable() noexcept {
+    return operator_dict::OPTABLE();
+}
+
+std::span<std::array<double, 2> const> MmlMo::mathSpacing() noexcept {
+    return operator_dict::MMLSPACING();
+}
+
+std::vector<std::pair<char32_t, char32_t>> const &MmlMo::remapPrimes() {
+    return primeMappings;
+}
+
+void MmlMo::initializeMml(AttributeSet attributes, std::span<MmlNode *const> children) {
+    AbstractMmlTokenNode::initializeMml(std::move(attributes), children);
+    // Source-derived class fields initialize after the superclass body.
+    tex_class_mode_ = MoTexClassMode::cleared;
+    state().working_tex_class.reset();
+    lspace = 5.0 / 18.0;
+    rspace = 5.0 / 18.0;
+}
+
+NodeKind MmlMo::kind() const noexcept {
+    return NodeKind::mo;
+}
+
+bool MmlMo::isEmbellished() const {
+    return true;
+}
+
+void MmlMo::setTexClass(std::optional<TexClass> value) {
+    if (value) {
+        tex_class_mode_ = MoTexClassMode::explicit_value;
+        state().working_tex_class = *value;
+    } else {
+        tex_class_mode_ = MoTexClassMode::cleared;
+        state().working_tex_class.reset();
+    }
+}
+
+std::optional<TexClass> MmlMo::texClass() {
+    if (tex_class_mode_ == MoTexClassMode::unset)
+        return std::nullopt;
+    if (tex_class_mode_ == MoTexClassMode::explicit_value)
+        return state().working_tex_class;
+    return getOperatorDef(getText()).texClass;
 }
 
 bool MmlMo::hasSpacingAttributes() {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto firstAttributes = host::moAttributes(*this);
-    if (firstAttributes->isSet("lspace")) return true;
-    const auto secondAttributes = host::moAttributes(*this);
-    return secondAttributes->isSet("rspace");
+    return attributes().isSet(u"lspace") || attributes().isSet(u"rspace");
 }
 
-Property MmlMo::getOperatorDef(std::u16string_view mo) {
-    tree::TreeCallGuard<MmlNode> guard;
-
-    const PropertyArray orderedForms = handleExplicitForm(getForms());
-    const std::vector<Property> forms = host::moHead(Property(orderedForms), 3);
-    const Property form1 = forms[0];
-    const Property form2 = forms[1];
-    const Property form3 = forms[2];
-
-    host::moAttributes(*this)->setInherited("form", form1);
-
-    const MoClassServices& services = constructorOperators();
-    const Property operatorTable = host::moStatic<Property>(services.table);
-    Property formTable = host::get(operatorTable, propertyKey(form1));
-    const std::string moKey = propertyKey(mo);
-    Property definition = host::get(formTable, moKey);
-    if (!host::truthy(definition)) {
-        formTable = host::get(operatorTable, propertyKey(form2));
-        definition = host::get(formTable, moKey);
+std::vector<std::u16string> MmlMo::getForms() {
+    MmlNode *physicalParent = parent();
+    MmlNode *logicalParent = Parent();
+    MmlNode *core = nullptr;
+    while (logicalParent && logicalParent->isEmbellished()) {
+        core = physicalParent;
+        physicalParent = logicalParent->parent();
+        logicalParent = logicalParent->Parent();
     }
-    if (!host::truthy(definition)) {
-        formTable = host::get(operatorTable, propertyKey(form3));
-        definition = host::get(formTable, moKey);
-    }
-    if (host::truthy(definition)) return definition;
+    if (!core)
+        core = this;
 
-    setProperty("noDictDef", true);
-    const Property limits = host::moAttributes(*this)->get("movablelimits");
-    const MoPatternHandle opPattern = host::moStatic<MoPatternHandle>(services.opPattern);
-    const bool isOperatorName = host::moMatch(opPattern, mo);
-    const bool operatorOrLimits = isOperatorName ? true : host::truthy(limits);
-    if (operatorOrLimits) {
-        const Property texClassProperty = getProperty("texClass");
-        if (texClassProperty.missing()) {
-            return Property(operator_dict::OPDEF(
-                Property(1.0), Property(2.0), Property(static_cast<double>(TEXCLASS.OP))));
+    if (physicalParent && physicalParent->isKind(NodeKind::mrow)) {
+        auto *row = dynamic_cast<MmlMrow *>(physicalParent);
+        if (!row)
+            throw std::logic_error("mrow kind has incompatible family type");
+        const std::size_t nonSpace = row->nonSpaceLength();
+        MmlNode *const first = row->firstNonSpace();
+        MmlNode *const last = row->lastNonSpace();
+        if (nonSpace != 1) {
+            if (first == core)
+                return {u"prefix", u"infix", u"postfix"};
+            if (last == core)
+                return {u"postfix", u"infix", u"prefix"};
         }
     }
-
-    const Property range = operator_dict::getRange(mo);
-    const Property spacingTable = host::moStatic<Property>(services.spacing);
-    const Property spacingClass = host::get(range, "2");
-    const Property spacing = host::get(spacingTable, propertyKey(spacingClass));
-    const std::vector<Property> spaces = host::moHead(spacing, 2);
-    const Property texClass = host::get(range, "2");
-    return Property(operator_dict::OPDEF(spaces[0], spaces[1], texClass));
+    return {u"infix", u"prefix", u"postfix"};
 }
 
-void MmlMo::checkOperatorTable(std::u16string_view mo) {
-    tree::TreeCallGuard<MmlNode> guard;
-    const Property definition = getOperatorDef(mo);
-    if (getProperty("texClass").missing()) {
-        setTexClass(host::get(definition, "2"));
-    }
-
-    Property definitionProperties = host::get(definition, "3");
-    if (!host::truthy(definitionProperties)) definitionProperties = Property(PropertyList{});
-    const std::vector<std::string> names = host::moKeys(definitionProperties);
-    for (const std::string& name : names) {
-        const auto currentAttributes = host::moAttributes(*this);
-        const Property currentProperties = host::get(definition, "3");
-        const Property value = host::get(currentProperties, name);
-        currentAttributes->setInherited(name, value);
-    }
-
-    const Property left = host::get(definition, "0");
-    lspace = host::number(left) / 18.0;
-    const Property right = host::get(definition, "1");
-    rspace = host::number(right) / 18.0;
-}
-
-PropertyArray MmlMo::getForms() {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode* core = nullptr;
-    NodeValue parentValue = this->getParent();
-    NodeValue logicalParentValue = this->Parent();
-    tree::TreeWalkBudget<MmlNode> walkBudget;
-    while (MmlNode* const logicalParent = logicalParentValue.nodeOrNull()) {
-        if (!logicalParent->isEmbellished()) break;
-        walkBudget.step();
-        core = parentValue.nodeOrNull();
-        parentValue = logicalParent->getParent();
-        logicalParentValue = logicalParent->Parent();
-    }
-    if (!core) core = this;
-
-    MmlNode* const parent = parentValue.nodeOrNull();
-    if (parent && parent->isKind("mrow")) {
-        auto* const row = dynamic_cast<MmlMrow*>(parent);
-        if (!row) host::typeError("parent.nonSpaceLength is not a function");
-        if (row->nonSpaceLength() != 1) {
-            if (row->firstNonSpace() == core) {
-                return PropertyArray{"prefix", "infix", "postfix"};
-            }
-            if (row->lastNonSpace() == core) {
-                return PropertyArray{"postfix", "infix", "prefix"};
-            }
-        }
-    }
-    return PropertyArray{"infix", "prefix", "postfix"};
-}
-
-PropertyArray MmlMo::handleExplicitForm(PropertyArray forms) {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto firstAttributes = host::moAttributes(*this);
-    if (!firstAttributes->isSet("form")) return forms;
-
-    const Property form = host::moAttributes(*this)->get("form");
-    const std::size_t length = forms.size();
-    const Property formsValue(forms);
-    const PropertyList formRecord = forms.record();
-    PropertyArray result;
-    result.push(form);
-    for (std::size_t index = 0; index < length; ++index) {
-        const std::string key = std::to_string(index);
-        if (!formRecord.has(key)) continue;
-        const Property name = host::get(formsValue, key);
-        if (!(name == form)) result.push(name);
-    }
+std::vector<std::u16string> MmlMo::handleExplicitForm(std::span<std::u16string_view const> forms) {
+    const auto &attrs = attributes();
+    if (!attrs.isSet(u"form"))
+        return {forms.begin(), forms.end()};
+    const std::u16string form(stringAttribute(attrs, u"form"));
+    std::vector<std::u16string> result;
+    result.reserve(forms.size() + 1);
+    result.push_back(form);
+    for (const auto candidate : forms)
+        if (candidate != form)
+            result.emplace_back(candidate);
     return result;
 }
+
+operator_dict::OperatorDef MmlMo::getOperatorDef(std::u16string_view text) {
+    const auto forms = getForms();
+    std::vector<std::u16string_view> candidates;
+    candidates.reserve(4);
+    for (const auto &form : forms)
+        candidates.push_back(form);
+    const auto ordered = handleExplicitForm(candidates);
+    attributes().setInherited(u"form", ordered.front());
+
+    for (const auto &form : ordered) {
+        if (const auto *definition = operator_dict::findOperatorDefinition(form, text))
+            return *definition;
+    }
+
+    properties().tex.no_dictionary_definition = true;
+    const bool operatorName = matchMoPattern(opPattern(), text);
+    const bool movable = truthy(attributes().lookup(u"movablelimits"));
+    const bool operatorOrLimits = operatorName || movable;
+    if (operatorOrLimits && !properties().tex.explicit_tex_class)
+        return operator_dict::OPDEF(1.0, 2.0, TexClass::op);
+
+    const auto range = operator_dict::getRange(text);
+    const auto spacing = mathSpacing();
+    const std::size_t index = spacingIndex(range.texClass);
+    if (index >= spacing.size())
+        throw std::logic_error("operator spacing class out of range");
+    return operator_dict::OPDEF(spacing[index][0], spacing[index][1], range.texClass);
 }
+
+void MmlMo::checkOperatorTable(std::u16string_view text) {
+    const auto definition = getOperatorDef(text);
+    if (!properties().tex.explicit_tex_class)
+        setTexClass(definition.texClass);
+    for (const auto &[name, value] : definition.properties)
+        attributes().setInherited(name, value);
+    lspace = definition.left / 18.0;
+    rspace = definition.right / 18.0;
+}
+} // namespace folia::math::mml
