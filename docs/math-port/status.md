@@ -4,6 +4,13 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then Folia
 integration replacing the math QuickJS worker. Native conversion runs, but the
 renderer has not passed acceptance; Folia still uses its QuickJS MathJax path.
 
+Latest SVG diagnostic (Gate219): both 75-case modes produce 150 SVGs with no
+thrown render errors; 148 byte hashes match the passive-host Source baseline.
+Both differences are tooltip output. All six Maction event types and target
+paths match in a separate diagnostic. The final input audit detects 25 pure
+LF-to-CRLF changes, so this is not a passed frozen-source gate. See
+`evidence/shared-g219.md`.
+
 Latest completed focused evaluation (Gate218): all 61 targets compile with
 2,183 unchanged registered input entries. Every focused test/capture exits 0,
 including 100 Maction host assertions, 55 TextMacros assertions, 36 mfenced
