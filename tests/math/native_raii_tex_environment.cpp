@@ -145,7 +145,3 @@ suite math_native_raii_tex_environment = [] {
         expect(result.environment.script_level == std::optional<double>(0.0));
     };
 };
-
-
-
-

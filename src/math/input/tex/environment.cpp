@@ -34,4 +34,3 @@ ResolvedParserEnvironmentSeed resolveParserEnvironmentSeed(
     return {std::move(seed.environment), seed.is_inner.value_or(true)};
 }
 }
-

@@ -45,4 +45,3 @@ void overlayEnvironment(TexEnvironment& destination,
 ResolvedParserEnvironmentSeed resolveParserEnvironmentSeed(
     ParserEnvironmentSeed seed);
 }
-

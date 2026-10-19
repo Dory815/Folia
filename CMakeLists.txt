@@ -110,6 +110,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
     src/math/output/svg/writer.ixx
+    src/math/output/common/placement/fraction.ixx
+    src/math/output/common/placement/radical.ixx
     src/math/util/constants.ixx
     src/math/util/bbox.ixx
     src/math/util/lengths.ixx
@@ -131,6 +133,8 @@ target_sources(folia_math PRIVATE
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
     src/math/output/svg/node_metadata.cpp
+    src/math/output/common/placement/fraction.cpp
+    src/math/output/common/placement/radical.cpp
     src/math/util/lengths.cpp
     src/math/util/regexp_host.cpp)
 
@@ -234,7 +238,9 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/parse_util_native.cpp
     tests/math/mml_native_factory.cpp
     tests/math/mml_defaults.cpp
-    tests/math/mml_node_state.cpp)
+    tests/math/mml_node_state.cpp
+    tests/math/fraction_native.cpp
+    tests/math/radical_native.cpp)
 target_compile_features(FoliaMathTests PRIVATE cxx_std_23)
 set_target_properties(FoliaMathTests PROPERTIES CXX_MODULE_STD ON CXX_SCAN_FOR_MODULES ON)
 target_include_directories(FoliaMathTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
