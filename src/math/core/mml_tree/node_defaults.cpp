@@ -421,4 +421,28 @@ AttributeDefaultView nodeDefaults(NodeKind kind) noexcept {
 AttributeDefaultView globalDefaults() noexcept {
     return AttributeDefaultView{globalDefaultEntries};
 }
+
+AttributeSet nodeDefaultAttributes(NodeKind kind) {
+    AttributeSet result;
+    const auto defaults = nodeDefaults(kind);
+    if (defaults.empty()) return result;
+
+    const auto materialize = [](const AttributeDefaultValue& value) {
+        return std::visit([](const auto& item) -> AttributeValue {
+            if constexpr (std::same_as<std::remove_cvref_t<decltype(item)>,
+                                       std::u16string_view>) {
+                return std::u16string(item);
+            } else {
+                return item;
+            }
+        }, value);
+    };
+    for (const auto& entry : globalDefaults()) {
+        result.setGlobalDefault(std::u16string(entry.name), materialize(entry.value));
+    }
+    for (const auto& entry : defaults) {
+        result.setDefault(std::u16string(entry.name), materialize(entry.value));
+    }
+    return result;
+}
 }

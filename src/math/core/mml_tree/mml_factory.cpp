@@ -53,33 +53,8 @@ struct ExplicitRowPlan final {
     std::vector<MmlNode*> children;
 };
 
-AttributeValue materializeDefaultValue(const AttributeDefaultValue& value) {
-    return std::visit(
-        [](const auto& item) -> AttributeValue {
-            using Value = std::remove_cvref_t<decltype(item)>;
-            if constexpr (std::same_as<Value, std::u16string_view>) {
-                return std::u16string(item);
-            } else {
-                return item;
-            }
-        },
-        value);
-}
-
 AttributeSet installDefaults(NodeKind kind, const AttributeSet& supplied) {
-    AttributeSet result;
-    const auto defaults = nodeDefaults(kind);
-    if (!defaults.empty()) {
-        // The three Source leaf-content nodes have no Attributes instance.
-        for (const auto& entry : globalDefaults()) {
-            result.setGlobalDefault(
-                std::u16string(entry.name), materializeDefaultValue(entry.value));
-        }
-        for (const auto& entry : defaults) {
-            result.setDefault(
-                std::u16string(entry.name), materializeDefaultValue(entry.value));
-        }
-    }
+    AttributeSet result = nodeDefaultAttributes(kind);
 
     // Preserve caller-provided data in every layer, with caller entries taking
     // precedence over the installed Source defaults in their respective layer.

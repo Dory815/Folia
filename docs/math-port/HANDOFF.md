@@ -97,6 +97,10 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
   Source witness `tools/math-port/tree-node-source-witness.cjs` 跑过固定哈希上游；
   原生新增 3 项 / 43 断言，全量 123 项 / 30,795 断言通过：
   `build/math-port/typed-tree-node-full.log`，构建 `typed-tree-node-final-build.log`。
+- nodeDefaultAttributes(NodeKind) 已移入现有 node_defaults 模块，唯一物化 kind/global
+  默认数据；当前工厂已使用它，后续实际 MML 类初始化也使用它，避免各家族重复。
+  构建 `build/math-port/typed-mml-defaults-build.log`，组件全量 123 项 / 30,795 断言通过：
+  `build/math-port/typed-mml-defaults-full.log`。这仍不代表 MML 家族已切换。
 
 ## 下一步，按此接续
 
@@ -123,10 +127,11 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
 4. Node/AbstractNode/AbstractEmptyNode 已正式推广并验证，不要重做。MML 接入时继承
    此唯一 parent_/children_ 存储；具体 MmlDocument 的 NodeOwner 接口仍需实现。
 5. MML 基类声明草稿在 `tools/math-port/drafts/native-raii/typed-mml-base-contract/`。
-   尚未正式冻结/编译；错误 module 名、重复 texclass 状态、缺少的 Source 默认虚方法、
+   已冻结供实现，尚未正式推广/编译；错误 module 名、重复 texclass 状态、缺少的 Source 默认虚方法、
    错误 addInheritedAttributes 参数和继承规则表类型均已在草稿修正，不要重新调查。
-   typed initializeMml 签名/职责也已由 Luna 补入；下一步是 Root 复核最终头文件，然后
-   分派基类与家族方法实现。不能把未编译的声明稿当作验收。
+   typed initializeMml 签名/职责也已由 Luna 补入；Root 已分派 10 个 Luna 实施原有
+   基类/家族/运算符/消费者迁移，职责和验收见 typed-mml-implementation.md。
+   下一步是逐包复核、纠正问题并统一编译实际 43 类；不能把未编译包当作验收。
    已确定的工厂所有权：文档拥有唯一 MmlFactory；NodeFactory/测试借用 doc.factory()。
    doc.make -> factory.allocateRaw -> 单一登记表 -> 实际派生节点 -> doc.adopt；
    MmlFactory.make 做 defaults/arity 再直接 allocateRaw，不能回调 doc.make 形成递归。
@@ -148,8 +153,14 @@ placement 和 Scene 家族文件，但当前导出仍是独立输入/结果/函�
    利用现有 node_defaults 的实际 kind 数据，不创建通用 constructor/static-service 记录。
    原有任意/推断行处理应恢复在 MML 类方法，移除 Factory 中重复职责的 helpers，
    不把先前最终结构节点设计的所有 helpers 原封不动保留成第二实现。
-   Luna 已完成声明稿修正并停止；没有开始任何 MML 家族方法实现。最终 header SHA256
-   为 F81C2B339165B8C70B7A2ED7A9EE564B022AF643496460DCAA0DA1AB3910DF8F。
+   Root 复核后将 texClass() 改回非 const/非 noexcept：Mo getter 查询会写继承属性。
+   当前冻结 header SHA256 为 C0193086BA0909E10BFFA0AB92062EAD46638706FDB74F6AF5D2003102922A23。
+   分工包在 tools/math-port/drafts/native-raii/typed-mml-{base-impl,branches,row-tokens,
+   arithmetic,scripts,table,containers,operator-data,mo,consumers}/。
+   Root 的 document/factory 接入包在 typed-mml-integration/，仍未推广。
+   branches 首轮复核发现 TextNode::toString 硬编码、遗漏三个 static defaults、Source
+   witness 仅做文本匹配，已退回修正；验收证据必须真正运行上游方法并对应 native 测试。
+   mfenced 与 mtr 继承 tuple 的已裁定细节见 implementation 文档，不再从头设计。
 
 Root 负责正式文件推广、CMake、构建、原生执行和提交；Luna 在各自忽略草稿目录工作。
 给每项任务指定既有 C++ 方法、保留职责、替换类型、调用者和验收，不让代理自行重划架构。

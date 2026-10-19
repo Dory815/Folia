@@ -16,4 +16,7 @@ using AttributeDefaultView = std::span<const AttributeDefaultEntry>;
 
 AttributeDefaultView nodeDefaults(NodeKind kind) noexcept;
 AttributeDefaultView globalDefaults() noexcept;
+// Materialize one node's immutable default layers as owned native values.
+// Text/XML/HTML have no Attributes instance in Source and receive empty layers.
+AttributeSet nodeDefaultAttributes(NodeKind);
 }
