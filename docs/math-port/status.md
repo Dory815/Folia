@@ -4,17 +4,17 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then verified
 Folia integration replacing the math QuickJS worker. Folia still uses that
 QuickJS path; complete renderer/application acceptance remains open.
 
-Latest verified results are Gate267: complete Core passes 5,718 tests /
-350,271 assertions; Host passes 479 / 3,453; output foundation passes
+Latest verified results are Gate268: complete Core passes 5,723 tests /
+350,295 assertions; Host passes 484 / 3,477; output foundation passes
 116 / 1,334. The unchanged pinned profile matches common layout 75/75,
 full SVG bytes 150/150, paired Scene geometry 150/150 and all four
 listener-position pairs. Font tables, instance extensions and provider
-comparisons also pass. All 2,212 registered inputs remained unchanged.
-See [the Gate267 execution record](evidence/shared-gate267.md).
+comparisons also pass. All 2,213 registered inputs remained unchanged.
+See [the Gate268 execution record](evidence/shared-gate268.md).
 
 Request-owner growth remains unresolved: owner-bearing records grow by
-28,032 over 192 renders, down by 384 from Gate262 after exact private
-MathItem/reducer cleanup. MML projection growth is unchanged. The new
+27,264 over 192 renders, down by 768 from Gate267 after document-owned
+filter-record cleanup. MML projection growth is unchanged. The new
 Source-constructor properties capture passes its ownership tests but is
 not the native Renderer NodeFactory creation path. Further native-node,
 filter-record and Lite serializer callback ownership work remains open.
