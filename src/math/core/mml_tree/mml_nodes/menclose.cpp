@@ -1,25 +1,32 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native implementation of MmlNodes/menclose.ts (MathJax 4.1.3).
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- * Source SHA-256: ffa4ab507744cb4f190312ca8dcd692474c333bee6e19c86709554aa9dad4333
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.menclose;
-import folia.math.core.mml_tree.arithmetic_host;
-import std;
+import folia.math.core.mml_tree.node_defaults;
 
 namespace folia::math::mml {
+MmlMenclose::MmlMenclose(MmlDocument &document) : AbstractMmlNode(document, NodeKind::menclose) {}
 
-NodeValue MmlMenclose::setTeXclass(NodeValue previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    previous = host::arithmeticChild(*this, 0, "setTeXclass").setTeXclass(previous);
-
-    // The upstream method reads childNodes[0] again after the callback, so
-    // retain the live-array receiver only for this fresh slot lookup.
-    const auto children = this->childArrayOwner();
-    if (!children) host::typeError("Cannot read properties of null (reading '0')");
-    updateTeXclass(children->get(0));
-    return previous;
+AttributeSet MmlMenclose::defaults() {
+    return nodeDefaultAttributes(NodeKind::menclose);
 }
 
+NodeKind MmlMenclose::kind() const noexcept {
+    return NodeKind::menclose;
+}
+
+double MmlMenclose::arity() const {
+    return -1;
+}
+
+bool MmlMenclose::linebreakContainer() const {
+    return true;
+}
+
+MmlNode *MmlMenclose::setTeXclass(MmlNode *previous) {
+    if (children().empty())
+        throw std::out_of_range("menclose requires its inferred row");
+    previous = children()[0]->setTeXclass(previous);
+    if (children().empty())
+        throw std::out_of_range("menclose child was removed during class assignment");
+    updateTeXclass(children()[0]);
+    return previous;
+}
 } // namespace folia::math::mml

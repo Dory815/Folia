@@ -1,18 +1,15 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native port of MathJax 4.1.3 MmlNodes/Mphantom.ts.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mphantom;
-import folia.math.core.mml_tree.leaf_host;
-import std;
+import folia.math.core.mml_tree.node_defaults;
 
 namespace folia::math::mml {
+MmlMphantom::MmlMphantom(MmlDocument &document)
+    : AbstractMmlLayoutNode(document, NodeKind::mphantom) {}
 
-void MmlMphantom::initializeClassFields() {
-    initializeTexClass(TEXCLASS.ORD);
+AttributeSet MmlMphantom::defaults() {
+    return nodeDefaultAttributes(NodeKind::mphantom);
 }
 
-std::string MmlMphantom::kind() const { return "mphantom"; }
-
+NodeKind MmlMphantom::kind() const noexcept {
+    return NodeKind::mphantom;
 }
+} // namespace folia::math::mml

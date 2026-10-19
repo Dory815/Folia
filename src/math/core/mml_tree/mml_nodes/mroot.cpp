@@ -1,30 +1,40 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native port of MathJax 4.1.3 MmlNodes/mroot.ts methods.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mroot;
-import folia.math.core.mml_tree.arithmetic_host;
+import folia.math.core.mml_tree.node_defaults;
 import std;
 
 namespace folia::math::mml {
+MmlMroot::MmlMroot(MmlDocument &document) : AbstractMmlNode(document, NodeKind::mroot) {}
 
-NodeValue MmlMroot::setTeXclass(NodeValue previous) {
-    tree::TreeCallGuard<MmlNode> guard;
+AttributeSet MmlMroot::defaults() {
+    return nodeDefaultAttributes(NodeKind::mroot);
+}
+
+NodeKind MmlMroot::kind() const noexcept {
+    return NodeKind::mroot;
+}
+
+double MmlMroot::arity() const {
+    return 2;
+}
+
+bool MmlMroot::linebreakContainer() const {
+    return true;
+}
+
+MmlNode *MmlMroot::setTeXclass(MmlNode *previous) {
     getPrevClass(previous);
-    host::arithmeticChild(*this, 0, "setTeXclass").setTeXclass(PropertyNull{});
-    host::arithmeticChild(*this, 1, "setTeXclass").setTeXclass(PropertyNull{});
+    if (children().size() < 2)
+        throw std::out_of_range("mroot requires two children");
+    children()[0]->setTeXclass(nullptr);
+    children()[1]->setTeXclass(nullptr);
     return this;
 }
 
-void MmlMroot::setChildInheritedAttributes(AttributeList attributes,
-                                           Property display, Property level,
-                                           Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-    host::arithmeticChild(*this, 0, "setInheritedAttributes")
-        .setInheritedAttributes(attributes, display, level, true);
-    host::arithmeticChild(*this, 1, "setInheritedAttributes")
-        .setInheritedAttributes(attributes, false, host::add(level, Property(2)), prime);
+void MmlMroot::setChildInheritedAttributes(AttributeList const &attributes, bool display,
+                                           double level, bool prime) {
+    if (children().size() < 2)
+        throw std::out_of_range("mroot requires two children");
+    children()[0]->setInheritedAttributes(attributes, display, level, true);
+    children()[1]->setInheritedAttributes(attributes, false, level + 2, prime);
 }
-
-}
+} // namespace folia::math::mml

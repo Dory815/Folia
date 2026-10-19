@@ -1,7 +1,11 @@
-// MathJax 4.1.3 MmlNodes/mphantom.ts; Apache-2.0 (LICENSE-MathJax.txt).
 export module folia.math.core.mml_tree.mml_nodes.mphantom;
-export import folia.math.core.mml_tree.mml_node;
-import std;
+export import folia.math.core.mml_tree.mml_document;
+
 export namespace folia::math::mml {
-class MmlMphantom:public AbstractMmlLayoutNode{public:using AbstractMmlLayoutNode::AbstractMmlLayoutNode;static PropertyList& defaults();void initializeClassFields()override;std::string kind()const override;};
-}
+class MmlMphantom : public AbstractMmlLayoutNode {
+  public:
+    explicit MmlMphantom(MmlDocument &);
+    static AttributeSet defaults();
+    NodeKind kind() const noexcept override;
+};
+} // namespace folia::math::mml

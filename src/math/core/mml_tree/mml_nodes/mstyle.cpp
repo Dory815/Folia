@@ -1,83 +1,86 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native port of MathJax 4.1.3 MmlNodes/Mstyle.ts.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mstyle;
-import folia.math.core.mml_tree.leaf_host;
+import folia.math.core.mml_tree.node_defaults;
+import folia.math.util.js_numeric_input;
+import folia.math.util.js_number;
 import std;
 
 namespace folia::math::mml {
-
-std::string MmlMstyle::kind() const { return "mstyle"; }
-
-Property MmlMstyle::notParent() const {
-    const auto firstArray = this->childArrayOwner();
-    if (!firstArray) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
-    const NodeValue first = firstArray->get(0);
-    if (!first.isNode()) {
-        return first.kind() == tree::ChildKind::Null ? Property(PropertyNull{}) : Property(Missing{});
+namespace {
+std::u16string source_string(AttributeValue const &value) {
+    if (auto const *text = std::get_if<std::u16string>(&value))
+        return *text;
+    if (auto const *number = std::get_if<double>(&value)) {
+        const auto ascii = js_number::toString(*number);
+        return {ascii.begin(), ascii.end()};
     }
-
-    const auto currentArray = this->childArrayOwner();
-    if (!currentArray) throw Error("TypeError",u"Cannot read properties of null (reading '0')");
-    const NodeValue current = currentArray->get(0);
-    MmlNode* const child = current.requireNode("childNodes");
-    const auto grandchildren = child->childArrayOwner();
-    if (!grandchildren) throw Error("TypeError",u"Cannot read properties of null (reading 'length')");
-    return Property(grandchildren->size() == 1);
+    if (auto const *boolean = std::get_if<bool>(&value))
+        return *boolean ? u"true" : u"false";
+    return u"null";
 }
 
-void MmlMstyle::inheritAttributes(AttributeList attributes, Property display,
-                                  Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-    host::inheritanceDefaults(attributes, display, level, prime);
-    auto currentAttributes = this->attributes();
-    if (!currentAttributes) host::typeError("Cannot set inherited displaystyle on null attributes");
-    currentAttributes->setInherited("displaystyle", display);
-    currentAttributes = this->attributes();
-    if (!currentAttributes) host::typeError("Cannot set inherited scriptlevel on null attributes");
-    currentAttributes->setInherited("scriptlevel", level);
+double parse_script_level(AttributeValue const &value, double &level) {
+    const auto text = source_string(value);
+    std::size_t index = 0;
+    while (index < text.size() && js_input::isWhitespace(text[index]))
+        ++index;
+    const bool relative = index < text.size() && (text[index] == u'+' || text[index] == u'-');
+    const double parsed = js_input::parseInt(text);
+    return relative ? level + parsed : parsed;
+}
+
+bool explicitly_null(AttributeValue const *value) {
+    return !value || std::holds_alternative<AttributeNull>(*value);
+}
+} // namespace
+
+MmlMstyle::MmlMstyle(MmlDocument &document) : AbstractMmlLayoutNode(document, NodeKind::mstyle) {}
+
+AttributeSet MmlMstyle::defaults() {
+    return nodeDefaultAttributes(NodeKind::mstyle);
+}
+
+NodeKind MmlMstyle::kind() const noexcept {
+    return NodeKind::mstyle;
+}
+
+bool MmlMstyle::notParent() const {
+    return !children().empty() && children()[0]->children().size() == 1;
+}
+
+void MmlMstyle::inheritAttributes(AttributeList const &attributes, bool display, double level,
+                                  bool prime) {
+    this->attributes().setInherited(u"displaystyle", display);
+    this->attributes().setInherited(u"scriptlevel", level);
     AbstractMmlNode::inheritAttributes(attributes, display, level, prime);
 }
 
-void MmlMstyle::setChildInheritedAttributes(AttributeList attributes, Property display,
-                                            Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-    auto currentAttributes = this->attributes();
-    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
-    Property scriptlevel = currentAttributes->getExplicit("scriptlevel");
-    if (!host::nullish(scriptlevel)) {
-        const std::u16string text = host::methodString(scriptlevel);
-        if (host::relativeLevel(text)) {
-            level = host::add(level, Property(host::integer(text)));
-        } else {
-            level = host::integer(text);
-        }
+void MmlMstyle::setChildInheritedAttributes(AttributeList const &attributes, bool display,
+                                            double level, bool prime) {
+    auto const *script_level = this->attributes().own(u"scriptlevel");
+    if (!explicitly_null(script_level)) {
+        level = parse_script_level(*script_level, level);
         prime = false;
     }
 
-    currentAttributes = this->attributes();
-    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
-    const Property displaystyle = currentAttributes->getExplicit("displaystyle");
-    if (!host::nullish(displaystyle)) {
-        display = displaystyle == Property(true);
+    auto const *display_style = this->attributes().own(u"displaystyle");
+    if (!explicitly_null(display_style)) {
+        const auto *value = std::get_if<bool>(display_style);
+        display = value && *value;
         prime = false;
     }
+    auto const *cramped = this->attributes().own(u"data-cramped");
+    if (!explicitly_null(cramped)) {
+        const auto *value = std::get_if<bool>(cramped);
+        prime = value && *value;
+    }
 
-    currentAttributes = this->attributes();
-    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getExplicit')");
-    const Property cramped = currentAttributes->getExplicit("data-cramped");
-    if (!host::nullish(cramped)) prime = cramped;
-
-    currentAttributes = this->attributes();
-    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getAllAttributes')");
-    attributes = addInheritedAttributes(std::move(attributes), Property(currentAttributes->getAllAttributes()));
-
-    const auto children = this->childArrayOwner();
-    if (!children) host::typeError("Cannot read properties of null (reading '0')");
-    children->get(0).requireNode("setInheritedAttributes")
-        ->setInheritedAttributes(std::move(attributes), display, level, prime);
+    AttributeAdditions additions;
+    additions.reserve(this->attributes().ownEntries().size());
+    for (auto const &[name, value] : this->attributes().ownEntries())
+        additions.emplace_back(name, value);
+    auto inherited = addInheritedAttributes(attributes, additions);
+    if (children().empty())
+        throw std::out_of_range("mstyle requires its inferred row");
+    children()[0]->setInheritedAttributes(inherited, display, level, prime);
 }
-
-}
+} // namespace folia::math::mml
