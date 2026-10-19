@@ -4,29 +4,37 @@ The goal remains native TeX -> shared mathematical layout -> SVG, then verified
 Folia integration replacing the math QuickJS worker. Folia still uses that
 QuickJS path; complete renderer/application acceptance remains open.
 
-Latest verified results: Gate247 passes the complete Host suite (455 tests /
-3,185 assertions). Its 75 Common layout records exactly match an independently
+Latest verified results: Gate255 passes the complete Host suite (462 tests /
+3,269 assertions), the filtered mfenced Core corpus (228 tests / 1,008
+assertions), the font provider (40 modules / 80 requests / 24,646 glyphs), and
+font instance/extension comparison (3/3). An additional 36 SVGs at em 12, 16,
+and 32 match pinned Source byte-for-byte. Gate247's 75 Common layout records
+exactly match an independently
 regenerated pinned Source capture with the same register-only event host as
 the SVG reference; the other 73 Source records remain unchanged. Gate251
 passes the full four-source static font tables plus all synchronous dynamic
 glyphs, options and delimiters. Each build uses at most four compile jobs;
-2,204 registered inputs remained unchanged through these observations.
+2,208 registered inputs remained unchanged through the Gate255 observations.
 
 The private Renderer Source allocation domain, prototype getter lifecycle and
 canonical TeX error-formatter returns are committed and focused tests pass.
-General lifetime acceptance remains open: the new Context inventory shows
-live owner-bearing records growing from 2,745 to 39,801 over 192 requests,
-despite the narrower MML/Scene/Lite counts returning to baseline. Canonical
-Attributes, Map and property-projection retention need coordinated cleanup.
+General lifetime acceptance remains open. Gate255 retires the canonical
+Attributes and their three initial native layer projections; canonical
+Attributes stay at zero. Live owner-bearing records still grow from 2,651 to
+33,819 over 192 requests, despite the narrower MML/Scene/Lite counts returning
+to baseline. Fresh Attributes return projections and the Common layout job's
+Map are the next separately reviewed ownership paths.
 See `evidence/context-record-inventory-g246.md`,
 `evidence/private-source-domain-g247.md`,
 `evidence/tex-format-error-context-g247.md` and
-`evidence/common-font-gates247-251.md`.
+`evidence/common-font-gates247-251.md`,
+`evidence/request-owner-cleanup-g255.md` and
+`evidence/font-provider-and-svg-g255.md`.
 
 Gate236's package comparisons pass 24/24, 23/23, 16/16 and 20/20; Gate233's
 nested SVG corpus passes 12/12. These remain bounded corpus results. Private
 Renderer Context lifetime, current complete SVG/Scene and broader core/platform
-checks, font extension/provider checks, the per-file/method acceptance ledger
+checks, the per-file/method acceptance ledger
 and Folia integration are still required. The last complete 150-record SVG and
 four event-position pass remains Gate239; it is not a current-tree acceptance.
 The reviewed WinUI C ABI integration and actual-worker test packets are drafts.

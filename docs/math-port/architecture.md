@@ -5,7 +5,7 @@ The authoritative current progress and remaining requirements are in status.md.
 Accepted method packets and original observations are recorded under evidence/.
 Their bounded results do not accept a complete upstream file or a working renderer.
 
-The last fully committed normal FoliaTests baseline is commit 2e58d8a. The
+Historical baseline: the fully committed normal FoliaTests baseline was commit 2e58d8a. The
 gate-23 worktree snapshot builds and passes 345,517 assertions in 5,291 tests;
 later uncompiled candidate edits do not inherit that result. The standalone
 parser/package diagnostics and complete renderer remain unaccepted. Restored
@@ -196,7 +196,7 @@ cannot alter those to make its implementation pass.
 | G4 — common layout | per-wrapper BBox/style/scale/spacing/stretch snapshots and selected algorithm branches match upstream | only outer width or nonempty SVG checked; copied formulas run on incompatible semantics |
 | G5 — scene/SVG | every fragment; complete commands, paints, transforms, viewport/clip inheritance, geometry and serialized semantics | only first fragment or path+rect subset compared; linebreaking disabled; relevant metadata omitted |
 | G6 — native rendering | complete SVG through Folia's SVG normalizer and Direct2D, with raster comparisons at multiple em sizes and DPI | SVG parses but is blank/clipped/wrong; normalized render hides differences |
-| G7 — Folia switch | all prior gates, core/editor/build suites, cancellation/cache/settings/PDF integration, no QuickJS references in runtime/build/package | production switches early, JS fallback/feature flag remains, existing required features silently regress |
+| G7 — Folia switch | all prior gates, core/editor/build suites, cancellation/cache/settings/PDF integration, no MathJax QuickJS references in the math runtime/build/package | production switches early, math JS fallback/feature flag remains, existing required features silently regress |
 
 Discrete semantics and data must compare exactly. For numerical layout,
 compare full-precision upstream common BBoxes/placements before SVG rounding,
