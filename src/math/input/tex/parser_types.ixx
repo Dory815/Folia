@@ -45,4 +45,12 @@ using TagFormat=options::Value; // string | string[]; clearTag also passes null.
 using ParserArray=std::shared_ptr<std::vector<TexParserRef>>;
 using TagInfoArray=std::shared_ptr<std::vector<TagInfoRef>>;
 using StackItemClassRef=tree::FactoryClassRef<BaseItem>;
+// Source Newcommand dispatches to packageData.begingroup.stack dynamically.
+// This native protocol exposes the actual stack method without making the
+// Newcommand module import the concrete Begingroup module in a cycle.
+class GlobalDefinitionScope:public NativeObject {
+public:
+    virtual std::vector<TokenMapRef> checkGlobal(PropertyArray tokens,PropertyArray maps)=0;
+};
+using GlobalDefinitionScopeRef=std::shared_ptr<GlobalDefinitionScope>;
 }

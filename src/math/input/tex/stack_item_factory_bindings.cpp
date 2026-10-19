@@ -38,4 +38,9 @@ StackItemRef StackItemFactory::reference(BaseItem* item)const{
     for(const auto& owner:products_)if(owner.get()==item)return std::static_pointer_cast<StackItemContext>(owner);
     property_host::typeError("Native stack product does not belong to this session");
 }
+void StackItemFactory::retireProductsFrom(ProductMark mark){
+    if(mark.owner!=this||mark.generation!=retirementGeneration_||mark.size>products_.size())
+        throw options::Exception("TypeError",u"Stack item product mark does not belong to the current factory state");
+    products_.resize(mark.size);++retirementGeneration_;
+}
 }

@@ -8,6 +8,7 @@ export namespace folia::math::tex::stack_host {
 inline bool truthy(const StackEntry& entry){
     if(auto* p=std::get_if<Property>(&entry))return property_host::truthy(*p);
     if(auto* p=std::get_if<mml::NodeValue>(&entry))return p->isNode();
+    if(auto* p=std::get_if<options::Value>(&entry))return options::truthy(*p);
     return bool(std::get<StackItemRef>(entry));
 }
 inline BaseItem& item(const StackEntry& entry,std::string_view member){
@@ -19,10 +20,21 @@ inline BaseItem& item(const StackEntry& entry,std::string_view member){
             (p->missing()?"undefined":"null")+" (reading '"+std::string(member)+"')");
     if(auto* p=std::get_if<mml::NodeValue>(&entry);p&&!p->isNode())
         p->requireNode(member);
+    if(const auto* p=std::get_if<options::Value>(&entry);p&&
+       (std::holds_alternative<options::Undefined>(p->data)||std::holds_alternative<options::Null>(p->data)))
+        property_host::typeError(std::string("Cannot read properties of ")+
+            (std::holds_alternative<options::Undefined>(p->data)?"undefined":"null")+
+            " (reading '"+std::string(member)+"')");
+    if(std::holds_alternative<options::Value>(entry))
+        property_host::typeError("Context Stack value must be materialized before native member access");
     property_host::typeError("Native Stack item reflection is unbound");
 }
 inline StackItemFactoryService& factory(const StackFactoryReference& ref){
     if(auto* p=std::get_if<StackItemFactoryService*>(&ref);p&&*p)return **p;
+    if(const auto* raw=std::get_if<options::Value>(&ref);raw&&
+       (std::holds_alternative<options::Undefined>(raw->data)||std::holds_alternative<options::Null>(raw->data)))
+        property_host::typeError(std::string("Cannot read properties of ")+
+            (std::holds_alternative<options::Undefined>(raw->data)?"undefined":"null")+" (reading 'create')");
     property_host::typeError(std::string("Cannot read properties of ")+
         (std::holds_alternative<Missing>(ref)?"undefined":"null")+" (reading 'create')");
 }
@@ -63,20 +75,5 @@ inline void assign(const Property& target,const Property& source){
 inline void deleteEnv(BaseItem&){
     // All enabled BaseItem descendants inherit the env accessor. JS delete of
     // a missing own property succeeds without invoking its setter/backing field.
-}
-inline StackEntry index(const std::vector<StackItemRef>& entries,double n){
-    if(!std::isfinite(n)||n<0||std::trunc(n)!=n||n>=static_cast<double>(entries.size()))
-        return Property(Missing{});
-    return entries[static_cast<std::size_t>(n)];
-}
-inline std::string join(const std::vector<StackItemRef>& entries,std::string_view separator){
-    std::string out;const auto length=entries.size();
-    for(std::size_t i=0;i<length;++i){
-        if(i)out+=separator;
-        const StackEntry entry=i<entries.size()?StackEntry(entries[i]):StackEntry(Property(Missing{}));
-        if(!truthy(entry))continue;
-        out+=item(entry,"toString").toString();
-    }
-    return out;
 }
 }
