@@ -1,62 +1,51 @@
-// Numerical portion of Source CommonMfrac; wrapper orchestration remains unimplemented.
+/*************************************************************
+ * MathJax 4.1.3 output/common/Wrappers/mfrac.ts.
+ * Source-aligned fraction wrapper, using native MML and values.
+ *************************************************************/
 export module folia.math.output.common:mfrac;
+export import :wrapper;
+export import :mo;
+import folia.math.core.mml_tree.mml_nodes.mfrac;
 import std;
-import folia.math.util.bbox;
 
 export namespace folia::math::output::common {
-    enum class FractionAlignment { left, center, right };
-    enum class FractionKind { ruled, atop, bevelled };
+class CommonMfrac : public CommonWrapper {
+  public:
+    // Borrowed from the same CommonWrapperFactory arena as this wrapper.
+    CommonMo *bevel{};
+    double pad{};
 
-    struct FractionFontParameters {
-        double axis_height = 0;
-        double num1 = 0;
-        double num2 = 0;
-        double num3 = 0;
-        double denom1 = 0;
-        double denom2 = 0;
-        double rule_thickness = 0;
-        double nulldelimiterspace = 0;
+    CommonMfrac(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr);
+    void initializeSource() override;
+    void getFractionBBox(BBox &, bool display, double thickness);
+
+    struct TUV {
+        double T{}, u{}, v{};
     };
 
-    struct FractionInput {
-        BBox numerator;
-        BBox denominator;
-        FractionFontParameters font;
-        bool display = false;
-        bool with_delimiters = false;
-        double line_thickness = 0;
-        FractionAlignment numerator_alignment = FractionAlignment::center;
-        FractionAlignment denominator_alignment = FractionAlignment::center;
+    TUV getTUV(bool display, double thickness) const;
+    void getAtopBBox(BBox &, bool display);
+
+    struct UVQ {
+        double u{}, v{}, q{};
+        BBox nbox, dbox;
     };
 
-    struct FractionPoint { double x = 0; double y = 0; };
-    struct FractionRule { double x = 0; double y = 0; double width = 0; double height = 0; };
+    UVQ getUVQ(bool display) const;
+    void getBevelledBBox(BBox &, bool display);
 
-    struct BevelRequest {
-        double required_slash_height = 0;
-        double delta = 0;
-        double numerator_y = 0;
-        double denominator_y = 0;
-        BBox numerator;
-        BBox denominator;
-        FractionFontParameters font;
-        bool display = false;
+    struct BevelData {
+        double H{}, delta{}, u{}, v{};
+        BBox nbox, dbox;
     };
 
-    struct FractionLayout {
-        FractionKind kind = FractionKind::ruled;
-        BBox bbox;
-        FractionPoint numerator_origin;
-        FractionPoint denominator_origin;
-        std::optional<FractionPoint> slash_origin;
-        std::optional<FractionPoint> bbox_denominator_origin;
-        std::optional<FractionRule> rule;
-        std::optional<double> content_width;
-        double numerator_wrap_width = 0;
-        double denominator_wrap_width = 0;
-    };
+    BevelData getBevelData(bool display) const;
+    bool isDisplay() const;
+    bool canStretch(StretchDirection) override;
+    std::string getChildAlign(std::size_t) const override;
+    double getWrapWidth(std::size_t) override;
 
-    using FractionResult = std::variant<FractionLayout, BevelRequest>;
-    FractionResult measure_fraction(FractionInput const& input, FractionKind kind);
-    FractionLayout finish_bevelled_fraction(BevelRequest const& request, BBox const& actual_slash_bbox);
-}
+  protected:
+    void computeBBox(BBox &, bool recompute = false) override;
+};
+} // namespace folia::math::output::common

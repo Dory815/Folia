@@ -52,6 +52,12 @@ common::CommonWrapperCatalog catalog() {
             registration<common::CommonWrapper>(mml::NodeKind::mrow)};
 }
 
+class OperatorCreatorProbe final : public common::CommonMo {
+  public:
+    using CommonMo::CommonMo;
+    using CommonWrapper::createMo;
+};
+
 auto makeRepository() {
     common::FontRepositoryBuilder builder;
     common::FontFaceData face;
@@ -98,6 +104,35 @@ mml::MmlMo &makeMo(mml::MmlDocument &document, std::u16string text) {
 } // namespace
 
 suite common_mo_native_impl = [] {
+    "generated_operator_preserves_physical_inferred_parent_and_arena_ownership"_test = [] {
+        auto fonts = makeRepository();
+        RejectUnexpectedMeasurement measurement;
+        mml::MmlDocument document;
+        auto &source = makeMo(document, u"x");
+        std::array<mml::MmlNode *, 1> children{&source};
+        auto &math = document.factory().make(mml::NodeKind::math, {}, children);
+        document.setRoot(math);
+        auto *physicalParent = source.parent();
+        expect(physicalParent != nullptr && physicalParent->isInferred());
+        expect(source.Parent() == &math);
+        auto creators = catalog();
+        creators.front() = registration<OperatorCreatorProbe>(mml::NodeKind::mo);
+        common::CommonOutputJax jax(document, {{}, {}, fonts, "test-face"}, measurement,
+                                    std::move(creators), &makeLinebreaks);
+        (void)jax.factory().wrap(math);
+        auto *sourceWrapper = jax.wrapperFor(source);
+        expect(sourceWrapper != nullptr);
+        if (!sourceWrapper) return;
+        auto const normalCount = physicalParent->children().size();
+        auto &generated = dynamic_cast<OperatorCreatorProbe &>(*sourceWrapper).createMo(u"(");
+        expect(generated.node->parent() == physicalParent);
+        expect(generated.node->Parent() == &math);
+        expect(physicalParent->children().size() == normalCount);
+        expect(jax.wrapperFor(*generated.node) == &generated);
+        expect(generated.parent == sourceWrapper);
+        expect(generated.getText() == u"(");
+    };
+
     "CommonMo factory creation preserves Source delimiter decisions"_test = [] {
         auto fonts = makeRepository();
         RejectUnexpectedMeasurement measurement;

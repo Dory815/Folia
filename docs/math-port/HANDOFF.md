@@ -6,6 +6,19 @@
 
 ## 恢复时先看这几行
 
+- **最新原生整合：实际 CommonMfrac/CommonMsqrt/CommonMroot 已验收**。原文件已撤掉
+  仅测试使用的 FractionInput/RadicalInput scalar API，换回实际类/方法与 factory/Jax/MML
+  协作；没有新增并行的分式/根式布局模块。288/192 组数据未改，runner 已原地替换。
+  构建 `build/math-port/native-common-arithmetic-final-build-2.log` exit0；完整
+  `native-common-arithmetic-final-full.log` exit0，**236 项 / 26,299 断言**。
+  断言数比旧 scalar runner 少，代表下述输出验收缺口，不能描述成覆盖更完整。
+  分式厚度 fixture 以前通过 stub 接收已转换 em 数值，现在明确传 em 长度给真实转换；
+  没有为配对数据改生产长度公式。Source pwidth 缺省统一检查 native 空值。
+  createMo 已改 physical parent，新增 inferred-parent/auxiliary/index/owner 实际回归通过。
+  两份候选 Source 工具由 Root 实际执行 exit0：
+  `native-common-{fraction,radical}-class-source.log`（288/192）；仍只是指定方法配对。
+  下一项推广 scripts、fence/action、LinebreakVisitor 的已交付候选；limits 也已交付。
+  table、containers、menclose 包正在 Luna 实现中，具体状态须读 live agent。
 - **2026-10-20 当前停点（优先于下方历史 agent 状态）**：正式源码仍为
   `ebcb915b` 基线，最新原生验收仍是 235 项 / 32,338 断言。本次仅更新恢复记录，
   尚未推广新的 Common 家族，也没有启动构建或原生测试。

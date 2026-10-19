@@ -71,7 +71,9 @@ public:
         for (auto [name, member] : numeric_box_fields()) {
             check(actual.*member, std::string(prefix) + "." + name);
         }
-        check(std::string_view(actual.pwidth), std::string(prefix) + ".pwidth");
+        const auto width = std::string(prefix) + ".pwidth";
+        if (present(width)) check(std::string_view(actual.pwidth), width);
+        else require(actual.pwidth.empty(), width);
     }
 private:
     static std::array<std::pair<char const*, double BBox::*>, 11> numeric_box_fields() {

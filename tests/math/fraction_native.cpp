@@ -1,93 +1,203 @@
-#include "../support/folia_test.hpp"
-import folia.math.util.bbox;
+#include "support/folia_test.hpp"
 import folia.math.output.common;
+import folia.math.core.mml_tree.mml_nodes.mfrac;
+import folia.math.core.mml_tree.mml_nodes.mspace;
 #include "support/layout_source_table.hpp"
 
 using namespace boost::ut;
+namespace common = folia::math::output::common;
+namespace mml = folia::math::mml;
 using folia::math::BBox;
-using namespace folia::math::output::common;
 using folia::math::test::SourceRow;
-using folia::math::test::SourceTable;
+
 namespace {
-FractionFontParameters font(SourceRow const& row) {
-    return {row.number("input.font.axis_height"), row.number("input.font.num1"),
-        row.number("input.font.num2"), row.number("input.font.num3"),
-        row.number("input.font.denom1"), row.number("input.font.denom2"),
-        row.number("input.font.rule_thickness"), row.number("input.font.nulldelimiterspace")};
+class RejectMeasurement final : public common::MeasurementTarget {
+  public:
+    common::ExtendedMetrics measureMetrics(common::MetricRequest const &) override {
+        throw std::logic_error("fraction wrapper test did not request metrics");
+    }
+
+    common::UnknownBBox measureUnknownText(common::UnknownTextRequest const &) override {
+        throw std::logic_error("fraction wrapper test did not measure text");
+    }
+};
+
+class RejectLinebreaks final : public common::Linebreaks {
+  public:
+    using Linebreaks::Linebreaks;
+
+    void breakToWidth(common::CommonWrapper &, double) override {
+        throw std::logic_error("fraction wrapper test did not request line breaking");
+    }
+};
+
+std::unique_ptr<common::Linebreaks> makeLinebreaks(common::CommonWrapperFactory &factory) {
+    return std::make_unique<RejectLinebreaks>(factory);
 }
-FractionAlignment alignment(std::string value) {
-    if (value == "left") return FractionAlignment::left;
-    if (value == "right") return FractionAlignment::right;
-    if (value == "center") return FractionAlignment::center;
-    throw std::runtime_error("Unknown Source fraction alignment " + value);
+
+class FixedBox final : public common::CommonWrapper {
+    BBox value_;
+
+  public:
+    FixedBox(common::CommonWrapperFactory &factory, mml::MmlNode &node,
+             common::CommonWrapper *parent, BBox value)
+        : CommonWrapper(factory, node, parent), value_(std::move(value)) {
+    }
+
+  protected:
+    void computeBBox(BBox &target, bool) override {
+        target = value_;
+    }
+
+    std::shared_ptr<common::LineBBox> computeLineBBox(std::size_t) override {
+        auto line = std::make_shared<common::LineBBox>();
+        static_cast<BBox &>(*line) = getBBox();
+        return line;
+    }
+};
+
+class FixedSlash final : public common::CommonMo {
+    BBox value_;
+
+  public:
+    FixedSlash(common::CommonWrapperFactory &factory, mml::MmlNode &node,
+               common::CommonWrapper *parent, BBox value)
+        : CommonMo(factory, node, parent), value_(std::move(value)) {
+    }
+
+  protected:
+    void computeBBox(BBox &target, bool) override {
+        target = value_;
+    }
+};
+
+template <class T, class... Extra>
+common::CommonWrapperRegistration registration(mml::NodeKind kind, Extra... extra) {
+    return {kind,
+            {[extra...](common::WrapperBuildArguments const &args) {
+                 if constexpr (std::same_as<T, FixedBox>)
+                     return std::unique_ptr<common::CommonWrapper>(
+                         std::make_unique<T>(args.factory, args.node, args.parent, extra...));
+                 else
+                     return std::unique_ptr<common::CommonWrapper>(
+                         std::make_unique<T>(args.factory, args.node, args.parent, extra...));
+             },
+             [](common::CommonWrapper const &wrapper) {
+                 return dynamic_cast<T const *>(&wrapper) != nullptr;
+             }},
+            common::CommonWrapperClassData::commonDefaults()};
 }
-FractionKind kind(std::string value) {
-    if (value == "ruled") return FractionKind::ruled;
-    if (value == "atop") return FractionKind::atop;
-    if (value == "bevelled") return FractionKind::bevelled;
-    throw std::runtime_error("Unknown Source fraction kind " + value);
+
+common::CommonWrapperCatalog makeCatalog(std::map<mml::MmlNode const *, BBox> const &boxes,
+                                         BBox const &slash) {
+    common::CommonWrapperRegistration fixedChildren{
+        mml::NodeKind::mspace,
+        {[&boxes](
+             common::WrapperBuildArguments const &args) -> std::unique_ptr<common::CommonWrapper> {
+             return std::make_unique<FixedBox>(args.factory, args.node, args.parent,
+                                               boxes.at(&args.node));
+         },
+         [](common::CommonWrapper const &wrapper) {
+             return dynamic_cast<FixedBox const *>(&wrapper) != nullptr;
+         }},
+        common::CommonWrapperClassData::commonDefaults()};
+    return {registration<common::CommonMfrac>(mml::NodeKind::mfrac), std::move(fixedChildren),
+            registration<FixedBox>(mml::NodeKind::text, BBox{}),
+            registration<FixedSlash>(mml::NodeKind::mo, slash)};
 }
-void check_point(SourceRow const& row, FractionPoint point, std::string prefix) {
-    row.check(point.x, prefix + ".x"); row.check(point.y, prefix + ".y");
+
+common::FontRepository makeFonts(SourceRow const &row) {
+    common::FontRepositoryBuilder builder;
+    common::FontFaceData face;
+    face.name = "fraction-test";
+    face.cssFamilyPrefix = "MathJax_";
+    face.size_variants = {"size-0"};
+    face.parameters.values = {{"x_height", .5},
+                              {"axis_height", row.number("input.font.axis_height")},
+                              {"num1", row.number("input.font.num1")},
+                              {"num2", row.number("input.font.num2")},
+                              {"num3", row.number("input.font.num3")},
+                              {"denom1", row.number("input.font.denom1")},
+                              {"denom2", row.number("input.font.denom2")},
+                              {"rule_thickness", row.number("input.font.rule_thickness")},
+                              {"nulldelimiterspace", row.number("input.font.nulldelimiterspace")},
+                              {"delimiterfactor", 900},
+                              {"delimitershortfall", .3}};
+    common::FontVariant normal;
+    normal.name = "normal";
+    normal.cache_id = "fraction-test-normal";
+    face.variants.emplace(normal.name, std::move(normal));
+    builder.addFace(std::move(face));
+    common::DelimiterRecipe slash;
+    slash.direction = common::StretchDirection::vertical;
+    slash.sizes = {1000};
+    slash.variants = {0};
+    builder.addDelimiter("fraction-test", '/', std::move(slash));
+    return std::move(builder).freeze();
 }
-void check_font(SourceRow const& row, FractionFontParameters const& value, std::string prefix) {
-    row.check(value.axis_height, prefix + ".axis_height"); row.check(value.num1, prefix + ".num1");
-    row.check(value.num2, prefix + ".num2"); row.check(value.num3, prefix + ".num3");
-    row.check(value.denom1, prefix + ".denom1"); row.check(value.denom2, prefix + ".denom2");
-    row.check(value.rule_thickness, prefix + ".rule_thickness");
-    row.check(value.nulldelimiterspace, prefix + ".nulldelimiterspace");
-}
-void check_layout(SourceRow const& row, FractionLayout const& actual) {
+
+void runSourceRow(SourceRow const &row) {
+    const BBox numerator = row.box("input.numerator");
+    const BBox denominator = row.box("input.denominator");
     const bool bevelled = row.text("input.kind") == "bevelled";
-    row.require(actual.kind == kind(row.text("input.kind")), "input.kind");
-    row.check_box(actual.bbox, "expected.bbox");
-    check_point(row, actual.numerator_origin, "expected.svg.0");
-    check_point(row, actual.denominator_origin, bevelled ? "expected.svg.2" : "expected.svg.1");
-    row.require(actual.slash_origin.has_value() == bevelled, "expected.svg.1.child");
-    if (actual.slash_origin) check_point(row, *actual.slash_origin, "expected.svg.1");
-    row.require(actual.bbox_denominator_origin.has_value() == row.present("expected.bboxDenominatorOrigin.x"), "expected.bboxDenominatorOrigin.x");
-    if (actual.bbox_denominator_origin) check_point(row, *actual.bbox_denominator_origin, "expected.bboxDenominatorOrigin");
-    const bool has_rule = row.present("expected.svg.2.rule.width");
-    row.require(actual.rule.has_value() == has_rule, "expected.svg.2.rule.width");
-    if (actual.rule) {
-        row.check(actual.rule->x, "expected.svg.2.rule.x"); row.check(actual.rule->y, "expected.svg.2.rule.y");
-        row.check(actual.rule->width, "expected.svg.2.rule.width"); row.check(actual.rule->height, "expected.svg.2.rule.height");
+    const BBox slash = bevelled ? row.box("expected.slash") : BBox{};
+    auto fonts = makeFonts(row);
+    RejectMeasurement measurement;
+    mml::MmlDocument document;
+    auto &numeratorNode = document.factory().make(mml::NodeKind::mspace);
+    auto &denominatorNode = document.factory().make(mml::NodeKind::mspace);
+    const std::map<mml::MmlNode const *, BBox> boxes{{&numeratorNode, numerator},
+                                                     {&denominatorNode, denominator}};
+    std::array<mml::MmlNode *, 2> children{&numeratorNode, &denominatorNode};
+    mml::AttributeSet attributes;
+    attributes.set(u"displaystyle", row.boolean("input.display"));
+    attributes.set(u"scriptlevel", 0.0);
+    // The paired Source receiver supplies an already converted em thickness.
+    // Feed that quantity through the real wrapper's length conversion as em.
+    auto thickness = std::format("{}", row.number("input.lineThickness"));
+    attributes.set(u"linethickness", std::u16string(thickness.begin(), thickness.end()) + u"em");
+    attributes.set(u"bevelled", bevelled);
+    attributes.set(u"numalign", row.text("input.align.0").starts_with("l")   ? u"left"
+                                : row.text("input.align.0").starts_with("r") ? u"right"
+                                                                             : u"center");
+    attributes.set(u"denomalign", row.text("input.align.1").starts_with("l")   ? u"left"
+                                  : row.text("input.align.1").starts_with("r") ? u"right"
+                                                                               : u"center");
+    auto &fractionNode =
+        document.factory().make(mml::NodeKind::mfrac, std::move(attributes), children);
+    fractionNode.properties().tex.with_delimiters = row.boolean("input.withDelims");
+    document.setRoot(fractionNode);
+
+    common::ExtendedMetrics metrics;
+    common::CommonOptions options;
+    common::CommonOutputJax jax(document, {metrics, options, fonts, "fraction-test"}, measurement,
+                                makeCatalog(boxes, slash), &makeLinebreaks);
+    auto &actual = dynamic_cast<common::CommonMfrac &>(jax.factory().wrap(fractionNode));
+    if (bevelled) {
+        row.require(actual.bevel != nullptr && actual.bevel->size.has_value(),
+                    "expected bevel delimiter size selection");
+        const auto data = actual.getBevelData(row.boolean("input.display"));
+        row.check(data.H, "expected.H");
+        row.check(data.delta, "expected.delta");
+        row.check(data.u, "expected.u");
+        row.check(data.v, "expected.v");
     }
-    row.require(actual.content_width.has_value() == row.present("expected.contentWidth"), "expected.contentWidth");
-    if (actual.content_width) row.check(*actual.content_width, "expected.contentWidth");
-    row.check(actual.numerator_wrap_width, "expected.wrapWidths.0");
-    row.check(actual.denominator_wrap_width, "expected.wrapWidths.1");
+    row.check_box(actual.getBBox(), "expected.bbox");
+    row.check(actual.getWrapWidth(0), "expected.wrapWidths.0");
+    row.check(actual.getWrapWidth(1), "expected.wrapWidths.1");
+    const std::string numeratorAlign = bevelled ? "left" : row.text("input.align.0");
+    const std::string denominatorAlign = bevelled ? "left" : row.text("input.align.1");
+    row.require(actual.getChildAlign(0) == numeratorAlign, "input.align.0");
+    row.require(actual.getChildAlign(1) == denominatorAlign, "input.align.1");
+    row.require(!actual.canStretch(common::StretchDirection::vertical), "canStretch");
+    const auto line = actual.getLineBBox(0);
+    expect(line != nullptr);
+    expect(actual.getLineBBox(0) == line);
 }
-void check_request(SourceRow const& row, BevelRequest const& request) {
-    row.check(request.required_slash_height, "expected.H"); row.check(request.delta, "expected.delta");
-    row.check(request.numerator_y, "expected.u"); row.check(request.denominator_y, "expected.v");
-    row.check(request.display, "input.display");
-    row.check_box(request.numerator, "input.numerator"); row.check_box(request.denominator, "input.denominator");
-    check_font(row, request.font, "input.font");
-}
-void run_row(SourceRow const& row) {
-    FractionInput input{row.box("input.numerator"), row.box("input.denominator"), font(row),
-        row.boolean("input.display"), row.boolean("input.withDelims"), row.number("input.lineThickness"),
-        alignment(row.text("input.align.0")), alignment(row.text("input.align.1"))};
-    const auto result = measure_fraction(input, kind(row.text("input.kind")));
-    if (row.text("input.kind") != "bevelled") {
-        row.require(std::holds_alternative<FractionLayout>(result), "expected.kind");
-        if (const auto* layout = std::get_if<FractionLayout>(&result)) check_layout(row, *layout);
-        return;
-    }
-    if (!row.require(std::holds_alternative<BevelRequest>(result), "expected.H")) return;
-    const auto& request = std::get<BevelRequest>(result);
-    input.numerator.w = 999;
-    input.denominator.h = 999;
-    input.font.rule_thickness = 999;
-    input.display = !input.display;
-    check_request(row, request);
-    const auto layout = finish_bevelled_fraction(request, row.box("expected.slash"));
-    check_layout(row, layout);
-}
-}
-suite native_fraction_source_pairs = [] {
+} // namespace
+
+suite common_mfrac_source_pairs = [] {
     "all_generated_source_fraction_pairs"_test = [] {
-        SourceTable{"fraction_source_pairs.txt", 288}.for_each(run_row);
+        folia::math::test::SourceTable{"fraction_source_pairs.txt", 288}.for_each(runSourceRow);
     };
 };

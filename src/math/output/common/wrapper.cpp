@@ -774,7 +774,7 @@ CommonMo &CommonWrapper::createMo(std::u16string_view value) {
     auto &moNode =
         node->document().factory().make(mml::NodeKind::mo, std::move(attributes), children);
     moNode.inheritAttributesFrom(*node);
-    if (auto *parentNode = node->Parent())
+    if (auto *parentNode = node->parent())
         node->document().attachAuxiliary(*parentNode, moNode);
     auto &wrapper = wrapNode(moNode);
     auto *mo = dynamic_cast<CommonMo *>(&wrapper);
