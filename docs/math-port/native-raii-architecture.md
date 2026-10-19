@@ -328,6 +328,74 @@ oracles; no JS engine or generated JS bundle executes in native math rendering.
 
 ## Integration policy
 
+### TeX frame construction and transfer (2026-10-20 Root lock)
+
+Keep the existing generic Tree Factory registry and the actual StackItemFactory
+role. MML and Common factories return document/job-owned borrowed products;
+StackItemFactory must instead return a `unique_ptr<BaseItem>` to the caller.
+It must not retain every constructed frame in a request arena or shared_ptr
+registry. Stack owns accepted frames and releases discarded frames naturally.
+
+Extend the existing `FactoryServices` and `AbstractFactory` templates with a
+fourth result type parameter, defaulting to `Product&`. The registry still
+constructs one `unique_ptr<Product>` using the same typed FactoryClass and
+calls `adopt`; both `create` and `adopt` return the selected result type.
+StackItemFactory selects `unique_ptr<BaseItem>` and its adopt operation moves
+that owner to the caller. Existing document/wrapper factories keep their
+current reference-returning ownership contract. This is a compile-time native
+ownership signature, not a runtime migration switch, duplicated registry or
+compatibility path. Construction, registered order, fallback and predicates
+remain the already verified Factory algorithms.
+
+For Stack transitions, the active top stays alive during `checkItem`, which
+receives the Push-local incoming `unique_ptr<BaseItem>&`. Ordinary checks borrow
+the pointed-to frame and may mutate both frames before returning. A package
+that transfers incoming into an actual nested Stack moves that unique owner at
+the Source call site; ProofTreeItem does this before returning Drop. Drop only
+destroys an incoming owner still held by outer Push, never a frame already
+adopted by innerStack. This needs no generic ownership handle or frame arena.
+A typed replacement list can contain new
+unique owners, an explicit reuse-top or reuse-incoming token, and borrowed MML
+nodes. No borrowed BaseItem pointer becomes a unique_ptr. Stack first executes
+the actual Pop/environment transition, then resolves reuse tokens with the two
+original owners still available, then recursively pushes entries in order before
+continuing the outer input sequence. Unselected owners are destroyed by RAII.
+Accept and reuse-incoming require that the incoming owner was not transferred.
+Reuse may occur once per owner; package-family observations must confirm their
+actual transitions before implementation, without silently cloning frames.
+
+The actual Source observations are in ignored `tex-stack-transition-source/`:
+24 cases and 88 hash-locked files, replayed by Root. Left/middle reuses top;
+Over/Style/Position/Prime/Nonscript can reuse incoming; Prime also returns bare
+MML. Source `delete item.env` does not clear BaseItem's inherited accessor
+backing `_env`. Thus a surviving replayed/popped frame's environment cannot be
+cleared based on the source statement alone. The rest of parser/ParseOptions
+declarations remain to be frozen separately.
+This contract does not claim a native parser or the full package profile works.
+
+Use the existing closed `TexEnvironment` value record for environment contents.
+Stack and BaseItem share a `shared_ptr<TexEnvironment>` only where Source has
+one active environment scope: a non-open accepted frame aliases that scope;
+an open frame starts with a fresh empty record and overlays present fields from
+the previous scope when copyEnv is true. ArrayItem has copyEnv=false. Start
+receives the already copied parser seed. A frame's clearEnv replaces its record
+with a fresh empty record, preserving references to the previous scope until
+their actual users release them. Pop restores the remaining top's scope or a
+fresh empty scope; it does not erase the popped frame's record. This finite
+domain value contains only the declared bool/number/string optionals, with no
+parser/frame/MML owner, callbacks or universal property lookup, so it cannot
+form an ownership cycle. Copy operations copy the values rather than sharing
+the new open scope. StackGlobal is a separate typed stack-owned record borrowed
+by its frames; it is not an extension namespace in TexEnvironment.
+
+Transition results distinguish Accept, Drop and Replay explicitly. An empty
+Replay still pops the old top and is different from Accept. A result may only
+use each original owner once. Source errors are ordinary TexError exceptions;
+checkItem throws before Stack Pop, so the original owners and active scope
+remain valid while the caller handles the error. Native tests must exercise
+success and throw cleanup, scoped environment aliasing/copying, same-top replay,
+incoming replay and bare-node replay against the actual Source observations.
+
 There will be one native math implementation and one `folia_math` target.
 No `native2`, old/new selector, runtime compatibility adapter or legacy fallback
 is introduced. Replacements use the canonical file paths/module responsibilities.

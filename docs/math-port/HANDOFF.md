@@ -11,8 +11,10 @@
 
 ### 最新完成与证据
 
-- **完整 Math 组件 269 项 / 33,025 断言，exit0**：
-  `build/math-port/native-common-menclose-final-full.log`，menclose实现已提交 `82e42966`。
+- **完整 Math 组件 273 项 / 33,051 断言，exit0**：
+  `build/math-port/native-scene-factory-final-full.log`，最终构建
+  `native-factory-owned-result-build.log` exit0。menclose已提交 `82e42966`，
+  Scene用途 `e58a53b5`，Factory所有权返回类型 `a555d882`。
   正式56条native SVG对照及精确参数收紧也已通过，详情见下节。
   这不是端到端TeX/SVG/Folia验收；旧263项日志是此前table/containers基线。
 - **9cbbb155已完成**：实际Common Table/Mtr/Mtd、Mpadded/Semantics/TeXAtom，
@@ -48,12 +50,14 @@
 - 已提交：`149ddacb` Mo非accent remap短路；`1a86ac59` 正式menclose Source工具与锁；
   `82e42966` 原CommonMenclose/notation/catalog、窄sqrt projection、CMake和原生UT。
   这些已消费，canonical是权威，不能重新推广旧menclose packet。
-- **完整组件269项 / 33,025断言 exit0**：`build/math-port/native-common-menclose-final-full.log`。
+- 此前menclose完整组件269项 / 33,025断言 exit0：`build/math-port/native-common-menclose-final-full.log`。
   构建 `native-common-menclose-formatted-build.log` exit0。
   随后只收紧parameters测试为Source精确double，构建/14断言聚焦均exit0：
   `native-common-menclose-exact-parameters-{build,focused}.log`。生产代码未变，不需无故重跑全套。
 - **实际native Scene→SVG 56行全部通过**：正式 `common-menclose-compare-svg.cjs`，
   日志 `native-menclose-formal-svg-compare.log`。原始dump `native-menclose-svg.tsv`。
+  **最终Scene/Factory构建后已重新生成同一dump并再次通过**：
+  `native-menclose-final-svg-dump.log`、`native-menclose-final-svg-compare.log`，均exit0。
   使用原始Source SVG十进制有理数精确归一化（无round/epsilon），相对/绝对path等价；
   仅明示rect/ellipse转path及mitre→miter。这个范围是28装饰handler×两个受控box，
   不是完整TeX文档/SVG byte equality/Folia验收。radical另有21断言真实投影验收。
@@ -72,29 +76,51 @@
   不clone/reparent/共享旧wrapper/attachAuxiliary。已有radical geometry不覆盖。
   Module impl `module folia.math.output.common; import :family;`；fixture header不include std；
   长小数用普通double，_u不作算术。这些已修，不再当成新问题。
-- **下一候选 scene-element-roles/** 已交付（ignored根目录tools/math-port/drafts/native-raii/）。
+- **scene-element-roles已推广提交 e58a53b5**（原ignored包根目录tools/math-port/drafts/native-raii/）。
   Root契约已写common-native-implementation.md“Completed element purposes…”：11种用途值，
   Group.role/Builder最后参，writer只选typed translation separator，保留操作序列；
   unknown_text与math_wrapper/id使用comma，enclosure_content用comma-space，其余space。
-  当前尚未推广/原生构建。候选patch SHA256
+  构建native-scene-element-roles-build.log exit0，focused日志
+  native-scene-element-roles-focused.log中新增2项/12断言通过，Root核对8条Source原字符串。
+  原候选patch SHA256
   454db98ba45def0415d04e93459ed087c3b1e88d202e71c935bb0aafa3a99c6a。
   无完整Common→Scene traversal/TextRun原点/foreign XHTML/响应root实现，不可冒充完成。
 - **TeX Stack实际Source证据已新增，勿重做inventory**：ignored tex-stack-transition-source/
   {observe.cjs,expected.json,source-lock.json,README.md}；Root从C:\Windows重放24例/88文件hash
   exit0，`build/math-port/tex-stack-transition-source.log`。replay可能含原top自身、incoming和
-  裸MML，先Pop再逐项递归；checkItem时两个owner仍活着。真实BaseItem.env是prototype accessor，
+  裸MML，先Pop再逐项递归；进入checkItem时两个frame由明确owner持有。真实BaseItem.env是prototype accessor，
   delete item.env并不清除_env！旧inventory prose对此不精确。不能据此错误清空存活frame的环境。
   完整package replay去重/环境所有权协议仍待Root冻结，不是native或38包验收。
 - 已有tex-parser-architecture/{README.md,closed-inventory.md}是完整38包提案；MmlDocument拥有
   唯一MmlFactory，NodeFactory借用。parser_family.ixx已是parser primary，勿再另造竞争primary。
-- 所有本批build/native句柄已终态；现有Luna均completed，无待轮询旧句柄。
+- **Factory已提交a555d882，build36072已终态exit0**：native-factory-owned-result-build.log。
+  FactoryServices/AbstractFactory第四Result默认Product&的窄改动已推广并focused通过；
+  新UT tests/math/native_factory_owned_result.cpp两项/14断言，以及匹配的原有Factory测试均通过，
+  日志native-factory-owned-result-focused.log。候选factory-owned-result/已消费。
+  Root契约在native-raii-architecture.md“TeX frame construction and transfer”。环境用闭合
+  shared_ptr<TexEnvironment>域值保存真正scope别名/复制，不含parser/frame/MML owner或通用对象。
+  generic factory只返回unique_ptr给caller，无新产品arena/重复registry/运行时selector。
+  **完整native句柄80469已终态exit0**：native-scene-factory-final-full.log，273项/33,051断言。
+  本批所有build/native句柄均终态；所有Luna已completed，无需等旧句柄。
+- **包级ownership审查已交付并补证**：同tex-stack-transition-source包新增
+  package-replay-review.md（SHA256 3bc743d6131f79aac4806a0e21b193b3f44ec188ac07727802227a9219524a2a）、
+  package-replay-observe.cjs/package-replay-observed.json，未修改原24例。
+  Root从C:\Windows运行补充6例/28hash exit0：tex-package-replay-source.log。
+  静态未发现单replacement重复frame/第三个既存frame；唯一跨栈移交为ProofTree
+  innerStack.Push(incoming)后返回Drop，真实Open frame由inner保留，global也改为inner.global。
+  **Root已修正接口契约为checkItem(unique_ptr<BaseItem>& incoming)**：在Source实际调用点
+  move给nested Stack，Drop只销毁外层尚持有的owner。不能使用“borrow+Drop必销毁”旧理解。
+  Cases/Physics空Replay也已Source观察，必须Pop，与Accept/Drop区分。
+  未发现checkItem中Pop外层当前top后继续用this的具体路径；这是有限审查，非native验证。
 
 ### 下一步（直接接续）
 
-1. 审查并推广scene-element-roles的窄改动，验证Source observed ordered transform UT；
-   之后接通其余Common数学placement与已有immutable Scene，数学仍归Common原家族。
-2. 基于已交付24条Source transition，冻结实际Stack/BaseItem/Factory/ParseOptions的原生接口和
-   移交协议，再按原文件分派Luna实现；不得恢复Context/Property/ObjectRef/通用JS模拟。
+1. 基于已交付24+6条Source transition及Root已冻结的owner/environment协议，完成
+   原parser_family primary内Stack/BaseItem/StackItemFactory/ParseOptions等声明审查，
+   明确所有包家族的typed构造参数和服务引用后，再按原文件划界让Luna复用旧C++实现。
+   不再等待已结束测试、不重做38包inventory、不得恢复通用对象模拟。
+2. 继续接通Common数学placement与已有immutable Scene发射，数学仍归Common原家族；
+   Scene roles只保证已完成group的用途/transform写出，不是完整Scene遍历或家族发射。
 3. 完整TeX parser/38-package、Common→Scene发射与Renderer/Folia替换仍未接通，目标保持active。
    Folia仍旧QuickJS；Mermaid暂停，不做D2D像素对照。
 4. 一个构建、--parallel4/math pool2；保护文末13项无关dirty work，小批提交、不reset。
