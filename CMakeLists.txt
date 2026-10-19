@@ -978,6 +978,7 @@ add_executable(FoliaMathHostTests EXCLUDE_FROM_ALL
     tests/math/native_identity_request_capture.cpp
     tests/math/mml_context_allocator_ownership.cpp
     tests/math/mml_private_renderer_allocation_domain_g227.cpp
+    tests/math/tex_format_error_context_identity.cpp
     tests/math/native_identities_host.cpp
     tests/math/reference_native_identities.cpp
     tests/math/factory_product_mark.cpp

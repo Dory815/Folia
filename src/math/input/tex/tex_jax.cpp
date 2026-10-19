@@ -292,6 +292,11 @@ Value contextValue(Context& cx,const Property& property){
     }
     throw Exception("Unimplemented",u"ProtoMathItem contains a Property value without a Context conversion");
 }
+Value canonicalMmlValue(ParserRuntime& runtime,mml::NodeValue value){
+    const auto identity=runtime.mmlNodeIdentities.find(value.requireNode());
+    if(!identity)throw Exception("TypeError",u"TeX formatError result has no canonical Context identity");
+    return Value(*identity);
+}
 Value invokeNative(Context& cx,Value receiver,std::span<const Value> arguments,
                    ParserRuntime& runtime,std::u16string_view operation){
     const ObjectRef object=requireObject(receiver,u"TeX method receiver is not an object");
@@ -325,13 +330,12 @@ Value invokeNative(Context& cx,Value receiver,std::span<const Value> arguments,
     }else if(operation==u"formatError"){
         if(arguments.empty())throw Exception("TypeError",u"formatError requires a TexError");
         const ObjectRef errorObject=requireObject(arg0,u"formatError requires a TexError object");
-        const Value id=cx.get(Value(errorObject),key(u"id"));
         const Value message=cx.get(Value(errorObject),key(u"message"));
+        const Value id=cx.get(Value(errorObject),key(u"id"));
         const auto* idText=std::get_if<std::u16string>(&id.data);
         const auto* messageText=std::get_if<std::u16string>(&message.data);
         if(!idText||!messageText)throw Exception("TypeError",u"TexError id and message must be strings");
-        (void)jax->formatError(TexError(*idText,*messageText));
-        throw Exception("Unimplemented",u"MML NodeValue has no Context identity binding for formatError result");
+        return canonicalMmlValue(runtime,jax->formatError(TexError(*idText,*messageText)));
     }
     (void)cx;
     return Value(Undefined{});
@@ -540,14 +544,17 @@ void TeX::initializeModule(ParserRuntime& runtime){
         const auto* jax=std::get_if<ObjectRef>(&args[0].data);
         const auto* error=std::get_if<ObjectRef>(&args[1].data);
         if(!jax||!error)throw Exception("TypeError",u"formatError arguments have incompatible Context values");
-        const Value id=cx.get(Value(*error),key(u"id")),message=cx.get(Value(*error),key(u"message"));
+        const Value message=cx.get(Value(*error),key(u"message"));
+        const Value id=cx.get(Value(*error),key(u"id"));
         const auto* idText=std::get_if<std::u16string>(&id.data);
         const auto* messageText=std::get_if<std::u16string>(&message.data);
         if(!idText||!messageText)throw Exception("TypeError",u"TexError id and message must be strings");
         return std::vector<std::any>{std::any(runtime.texIdentities.resolve(*jax)),std::any(TexError(*idText,*messageText))};
     };
-    errorBinding.result=[](Context&,const std::any&)->Value{
-        throw Exception("Unimplemented",u"MML NodeValue has no Context identity adapter for a direct formatError call");
+    errorBinding.result=[&runtime](Context&,const std::any& result)->Value{
+        const auto* node=std::any_cast<mml::NodeValue>(&result);
+        if(!node)throw Exception("TypeError",u"TeX formatError result is not an MML node");
+        return canonicalMmlValue(runtime,*node);
     };
     Value formatError=runtime.functions().bind(errorBody,std::move(errorBinding),u"formatError");
     const auto* errorFunction=std::get_if<ObjectRef>(&formatError.data);
