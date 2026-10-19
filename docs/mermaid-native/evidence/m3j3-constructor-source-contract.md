@@ -24,7 +24,7 @@ function-pointer and 15-group context readers from `shader-run-observer.cjs`.
 Each JSON record has `input`, `factory` (Some/None/panic), `actual_variant`,
 `constructor` (Some/None/panic/not-called), ordered `warnings`, and nullable
 `snapshot`. All floating values use exact f32 bits. On Some, snapshot contains
-`is_mask`, optional mask logical dimensions/real width/offset/retained slice
+`is_mask`, optional `logical_mask` logical dimensions/real width/offset/retained slice
 length, target logical dimensions/real width/offset/retained slice length,
 source dimensions/retained bytes/Pattern incoming-buffer identity, optional
 premultiplied RGBA memset bytes, and separately named `anti_h`, `rect`, `mask`
