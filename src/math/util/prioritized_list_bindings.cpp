@@ -52,7 +52,7 @@ struct PrioritizedListContextBindings::State:std::enable_shared_from_this<State>
     void installMethod(std::u16string name,std::uint32_t arity,NativeCall call){
         const auto method=context.function(name,std::move(call));
         context.define(method,Key(u"length"),Descriptor::data(Value(static_cast<double>(arity)),false,false,true));
-        context.define(proto,Key(std::move(name)),Descriptor::data(Value(method),true,false,true));
+        context.define(proto,Key(std::move(name)),Descriptor::data(Value(method),true,true,true));
     }
 
     void initialize(){
@@ -105,7 +105,7 @@ struct PrioritizedListContextBindings::State:std::enable_shared_from_this<State>
             return Value(result);
         });
         context.define(iterator,Key(u"length"),Descriptor::data(Value(0),false,false,true));
-        context.define(proto,Key(context.intrinsics().symbolIterator),Descriptor::data(Value(iterator),true,false,true));
+    context.define(proto,Key(context.intrinsics().symbolIterator),Descriptor::data(Value(iterator),true,true,true));
     }
 
     struct ValueListState;

@@ -429,6 +429,8 @@ suite native_output_jax=[] {
             const auto descriptor=e.context.descriptor(opts::Value(functionProto),opts::Key(member));
             expect(descriptor&&!descriptor->accessor&&descriptor->enumerable&&descriptor->writable&&descriptor->configurable);
         }
+        const auto iterator=e.context.descriptor(opts::Value(baseProto),opts::Key(e.context.intrinsics().symbolIterator));
+        expect(iterator&&!iterator->accessor&&iterator->enumerable&&iterator->writable&&iterator->configurable);
         for(const auto member:{u"add",u"remove"}){
             const auto descriptor=e.context.descriptor(opts::Value(baseProto),opts::Key(member));
             expect(descriptor&&!descriptor->accessor&&descriptor->enumerable&&descriptor->writable&&descriptor->configurable);
