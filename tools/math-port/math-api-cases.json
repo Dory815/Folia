@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "cases": [
+    {"name":"plain","tex":"x+y"},
+    {"name":"fraction-root","tex":"\\frac{1}{2}+\\sqrt{x}"},
+    {"name":"blackboard-fonts","tex":"\\mathbb{R}+\\mathbbm{1}+\\mathds{N}"},
+    {"name":"script","tex":"\\sum_{n=1}^{\\infty}n^{-2}","display":true},
+    {"name":"narrow","tex":"a+b+c+d+e+f","width":96},
+    {"name":"aligned","tex":"\\begin{align}x&=1\\tag{A}\\\\y&=2\\tag{B}\\end{align}","display":true},
+    {"name":"invalid","tex":"\\frac{1}"},
+    {"name":"unicode","tex":"α+β","em":20},
+    {"name":"plain-after","tex":"x+y"}
+  ]
+}

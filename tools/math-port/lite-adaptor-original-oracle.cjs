@@ -155,6 +155,16 @@ observe('navigation-copy-and-empty-slots',() => {
     emptyFirst:a.firstChild(empty),emptyLast:a.lastChild(empty),outOfBounds:a.childNode(p,3),
     originalLength:p.children.length,copyLength:copy.length};
 });
+observe('sparse-child-array-array-method-semantics',() => {
+  const a=liteAdaptor(), first=a.text('a'), last=a.text('b'), parent=a.node('p');
+  parent.children.length=3;parent.children[0]=first;parent.children[2]=last;
+  first.parent=parent;last.parent=parent;
+  const sparseText=a.node('text');sparseText.children.length=3;
+  sparseText.children[0]=a.text('x');sparseText.children[2]=a.text('y');
+  const ownUndefined=a.node('undefined');ownUndefined.children=[undefined];
+  return {next:a.next(first),previous:a.previous(last),childNodes:parent.children.map(x=>x?.kind),
+    textContent:a.textContent(sparseText),ownUndefined:caught(()=>a.textContent(ownUndefined))};
+});
 observe('contains-self-and-ancestor-chain',() => {
   const a=liteAdaptor(), t=a.text('t'), child=a.node('b',{},[t]), p=a.node('p',{},[child]);
   return {self:a.contains(p,p),text:a.contains(p,t),reverse:a.contains(child,p),
