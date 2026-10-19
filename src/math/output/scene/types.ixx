@@ -83,6 +83,8 @@ struct InheritedPaint { friend bool operator==(InheritedPaint, InheritedPaint) =
 struct NoPaint { friend bool operator==(NoPaint, NoPaint) = default; };
 struct CurrentColorPaint { friend bool operator==(CurrentColorPaint, CurrentColorPaint) = default; };
 using PaintColor = std::variant<InheritedPaint, NoPaint, CurrentColorPaint, Color>;
+enum class StrokeCap { butt, round, square };
+enum class StrokeJoin { miter, round, bevel };
 struct Paint {
     // Closed CSS/SVG paint alternatives preserve inheritance, explicit none,
     // currentColor, and literal color as distinct semantics.
@@ -91,6 +93,10 @@ struct Paint {
     Unit stroke_width{};
     Unit opacity{1};
     FillRule fill_rule{FillRule::nonzero};
+    // Absence inherits the surrounding SVG stroke setting; each explicit
+    // value remains distinguishable, including the SVG initial defaults.
+    std::optional<StrokeCap> line_cap;
+    std::optional<StrokeJoin> line_join;
     friend bool operator==(Paint const&, Paint const&) = default;
 };
 

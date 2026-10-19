@@ -65,6 +65,24 @@ void append_color(std::string& out, std::string_view name,
     }, paint);
 }
 
+std::string_view stroke_cap_name(scene::StrokeCap cap) {
+    switch (cap) {
+    case scene::StrokeCap::butt: return "butt";
+    case scene::StrokeCap::round: return "round";
+    case scene::StrokeCap::square: return "square";
+    }
+    throw std::invalid_argument("unknown Scene stroke cap");
+}
+
+std::string_view stroke_join_name(scene::StrokeJoin join) {
+    switch (join) {
+    case scene::StrokeJoin::miter: return "miter";
+    case scene::StrokeJoin::round: return "round";
+    case scene::StrokeJoin::bevel: return "bevel";
+    }
+    throw std::invalid_argument("unknown Scene stroke join");
+}
+
 void append_paint(std::string& out, scene::Paint const& paint) {
     append_color(out, "fill", "fill-opacity", paint.fill);
     if (paint.fill_rule == scene::FillRule::evenodd)
@@ -73,6 +91,10 @@ void append_paint(std::string& out, scene::Paint const& paint) {
     if (paint.stroke_width != 0)
         detail::append_attribute(out, "stroke-width", number(paint.stroke_width * 1000));
     if (paint.opacity != 1) detail::append_attribute(out, "opacity", number(paint.opacity, 3));
+    if (paint.line_cap)
+        detail::append_attribute(out, "stroke-linecap", stroke_cap_name(*paint.line_cap));
+    if (paint.line_join)
+        detail::append_attribute(out, "stroke-linejoin", stroke_join_name(*paint.line_join));
 }
 
 void append_path(std::string& out, scene::PathGeometry const& path) {

@@ -172,6 +172,33 @@ suite native_svg_writer = [] {
         expect(output.find("<path d=\"M0,0\" fill=\"#112233\"/>") != output.npos);
     };
 
+    "stroke cap and join preserve inherited and explicit closed values"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::Paint inherited;
+        inherited.fill = scene::NoPaint{};
+        auto butt_miter = inherited;
+        butt_miter.line_cap = scene::StrokeCap::butt;
+        butt_miter.line_join = scene::StrokeJoin::miter;
+        auto round_round = inherited;
+        round_round.line_cap = scene::StrokeCap::round;
+        round_round.line_join = scene::StrokeJoin::round;
+        auto square_bevel = inherited;
+        square_bevel.line_cap = scene::StrokeCap::square;
+        square_bevel.line_join = scene::StrokeJoin::bevel;
+        builder.add_primitive(0, scene::Path{scene::PathGeometry{{scene::MoveTo{{0, 0}}}}, inherited});
+        builder.add_primitive(0, scene::Path{scene::PathGeometry{{scene::MoveTo{{1, 0}}}}, butt_miter});
+        builder.add_primitive(0, scene::Path{scene::PathGeometry{{scene::MoveTo{{2, 0}}}}, round_round});
+        builder.add_primitive(0, scene::Path{scene::PathGeometry{{scene::MoveTo{{3, 0}}}}, square_bevel});
+        const auto output = svg::write(std::move(builder).freeze(),
+            {.font_cache = svg::FontCacheMode::none});
+        expect(output.find("<path d=\"M0,0\" fill=\"none\"/>") != output.npos);
+        expect(output.find("<path d=\"M1000,0\" fill=\"none\" stroke-linecap=\"butt\" stroke-linejoin=\"miter\"/>") != output.npos);
+        expect(output.find("<path d=\"M2000,0\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>") != output.npos);
+        expect(output.find("<path d=\"M3000,0\" fill=\"none\" stroke-linecap=\"square\" stroke-linejoin=\"bevel\"/>") != output.npos);
+    };
+
     "SVG fixed numbers use ECMAScript tie rounding"_test = [] {
         scene::Builder builder;
         builder.set_metrics({0.00125, 0.00125, 0});
