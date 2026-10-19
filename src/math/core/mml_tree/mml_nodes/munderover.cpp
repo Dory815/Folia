@@ -14,11 +14,6 @@ std::string property_key(const Property& value) {
     return host::debugText(host::string(value));
 }
 
-Property accent_at(const PropertyArray& accents,std::size_t index) {
-    if(index>=accents.size())return Missing{};
-    return accents.get(index);
-}
-
 NodeValue child_slot(const Children& nodes, std::size_t index) {
     if (!nodes) host::typeError("Cannot read properties of null (reading '"+std::to_string(index)+"')");
     return nodes->get(index);
@@ -68,21 +63,21 @@ void MmlMunderover::setChildInheritedAttributes(AttributeList attributes,
         force = host::truthy(coreAttributes->get("movablelimits"));
     }
 
-    const auto accents = constructorAccents();
+    const auto accentAt = constructorAccentReader();
     MmlNode* const underNode = require_child(nodes, 1, "setInheritedAttributes");
-    const Property underAccent = accent_at(accents, 1);
+    const Property underAccent = accentAt(1);
     const Property underLevel = getScriptlevel(underAccent, force, level);
     const Property underPrime = host::truthy(prime) ? prime : Property(this->under() == 1);
     underNode->setInheritedAttributes(attributes, false, underLevel, underPrime);
-    setInheritedAccent(1, accent_at(accents,1), display, level, prime, force);
+    setInheritedAccent(1, accentAt(1), display, level, prime, force);
 
     if (!child_slot(nodes, 2).isNode()) return;
     MmlNode* const overNode = require_child(nodes, 2, "setInheritedAttributes");
-    const Property overAccent = accent_at(accents, 2);
+    const Property overAccent = accentAt(2);
     const Property overLevel = getScriptlevel(overAccent, force, level);
     const Property overPrime = host::truthy(prime) ? prime : Property(this->under() == 2);
     overNode->setInheritedAttributes(attributes, false, overLevel, overPrime);
-    setInheritedAccent(2, accent_at(accents,2), display, level, prime, force);
+    setInheritedAccent(2, accentAt(2), display, level, prime, force);
 }
 
 Property MmlMunderover::getScriptlevel(Property accent, bool force, Property level) {

@@ -215,15 +215,16 @@ protected:
         return constructorInfo_->staticServices;
     }
     PropertyList constructorDefaults()const;
-    PropertyArray constructorAccents()const {
-        if(constructorInfo_&&constructorInfo_->sourceAccentsPropertyBinding)
-            return constructorInfo_->sourceAccentsPropertyBinding();
+    std::function<Property(std::size_t)> constructorAccentReader()const {
+        if(constructorInfo_&&constructorInfo_->sourceAccentsPropertyBinding){
+            const PropertyArray values=constructorInfo_->sourceAccentsPropertyBinding();
+            return [values](std::size_t index){return values.get(index);};
+        }
         if(!constructorInfo_||!constructorInfo_->accentsBinding)
             throw Error("TypeError",u"Constructor has no ACCENTS binding");
-        PropertyArray result;
         const auto values=constructorInfo_->accentsBinding();
-        if(values)for(const auto& value:*values)result.push(value);
-        return result;
+        if(!values)throw Error("TypeError",u"Constructor ACCENTS binding is null");
+        return [values](std::size_t index){return index<values->size()?(*values)[index]:Property(Missing{});};
     }
     void initializeTexClass(Property value){texclass_=std::move(value);}
     virtual void updateTeXclass(NodeValue);
