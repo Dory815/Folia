@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "purpose": "G252 strict Common baseline with the pinned passive Source event host",
+  "sourceCommit": "fb987178c2d279a99b0db5ea02e751691703955e",
+  "producer": {
+    "path": "common-passive-source.cjs",
+    "sha256": "f23de472aaa05a7360530668948fd3c4b392c5781abbb1abd9c91dfb1be04c81"
+  },
+  "host": {
+    "path": "passive-event-host.cjs",
+    "sha256": "6dc22675a447e76cd14541ea25c9fc6fd56d2651b957cc280a365cf92aed5207",
+    "upstreamCapture": "tools/math-port/drafts/g213-maction-passive-host/source-passive-host-profile-75-capture.json",
+    "upstreamCaptureSha256": "47ee5698ebcdaaf919cb7efe3c3aa6a87d0f19b51ff50d86361710e9f0f1224d",
+    "listenerCapture": "tools/math-port/drafts/g213-maction-passive-host/source-passive-host-profile-75-listeners.json",
+    "listenerCaptureSha256": "c366305d8361d70c95850c396153ba82fa631feff0d2ee5bfa49b96d67521ced"
+  },
+  "sourceCaptureSha256": "29ea93906eb3a66fbb048ee9e4ac0a4eb8bad99908ad7e4d6b07ac250e50611a",
+  "profile": {
+    "scopePath": "docs/math-port/scope.json",
+    "scopeSha256": "9705d389538b2fc8bf782feea4372ace639b3727304f2971937bbcfb0042a0d1",
+    "file": "tools/mathjax-bundle/entry.cjs",
+    "sha256": "a5a03eed8a10872b9b435b9e602523a08a9f574e21cc5636e8377f0222811ac9",
+    "configuredPackages": 38
+  },
+  "corpus": {
+    "path": "tools/math-port/common-layout-reference/profile-cases.json",
+    "sha256": "f8fa7528739dbc51c0cba16b224ea8334ac3e7344984e9dd2c1047d910d838a7",
+    "profileLockPath": "tools/math-port/common-layout-reference/profile-source-lock.json",
+    "profileLockSha256": "acd3decb56eaeff289493133856413a704e7cc75d67fbc50de221cf716a0bf72",
+    "inputCapturePath": "build/math-port/common-layout-profile-root-locked.json",
+    "inputCaptureSha256": "9f58d09411512b4682b1f0049e40d6a47844ddffb9794eda52e2700998e0d740"
+  },
+  "oldSourceCaptureSha256": "9f58d09411512b4682b1f0049e40d6a47844ddffb9794eda52e2700998e0d740",
+  "baseObserverPath": "tools/math-port/common-layout-original-oracle.cjs",
+  "baseObserverSha256": "aa317e4f5e6674e74033e780d9340c56e4b5e4902442e5f191615842476b9c6e",
+  "sourceRunnerPath": "tools/math-port/drafts/g213-maction-passive-host/source-passive-host-profile-75.cjs",
+  "sourceRunnerSha256": "d0883c7f3ec6121b6ef907fb834cb7f2afffdc209283b65569e318ec2e97b6ee",
+  "sourceListenerPath": "tools/math-port/drafts/g213-maction-passive-host/source-passive-host-profile-75-listeners.json",
+  "sourceListenerSha256": "c366305d8361d70c95850c396153ba82fa631feff0d2ee5bfa49b96d67521ced",
+  "records": 75,
+  "unchangedOldRowsExpected": 73,
+  "actionRows": [
+    "action-toggle",
+    "action-tooltip"
+  ],
+  "dependencyLockPath": "tools/mathjax-bundle/package-lock.json",
+  "dependencyLockSha256": "828fefdb77d220eb3ce0f4d2ad7deedc7411072824719897f9a50f61bf462c8b"
+}
