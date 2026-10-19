@@ -1,52 +1,54 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native selected-child projections for MathJax 4.1.3 maction.ts.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- * TS SHA256: fa173b7e2b25b90e0f83ac201098357a8abf28462fa86fa69d92b65906527895
- * CJS SHA256: eddcdd2111b4b7cf5ad72937b0a4ff7eb555b98308c6771a013a18121af8ce7
- *************************************************************/
+// Source method split retained: selected-child projections from MathJax 4.1.3.
 module folia.math.core.mml_tree.mml_nodes.maction;
-import folia.math.core.mml_tree.action_host;
+import folia.math.core.mml_tree.mml_document;
+import folia.math.util.js_numeric_input;
 import std;
 
 namespace folia::math::mml {
+namespace {
+double selectionValue(const AttributeValue *value, double fallback) {
+    if (!value)
+        return fallback;
+    if (const auto *number = std::get_if<double>(value))
+        return *number;
+    if (const auto *boolean = std::get_if<bool>(value))
+        return *boolean ? 1.0 : 0.0;
+    if (const auto *text = std::get_if<std::u16string>(value))
+        return js_input::number(*text);
+    if (std::holds_alternative<AttributeNull>(*value))
+        return 0.0;
+    return 0.0;
+}
+} // namespace
 
-MmlNode* MmlMaction::selected() const {
-    tree::TreeCallGuard<MmlNode> guard;
-    const Property selection = host::arithmeticAttributes(*this)->get("selection");
-    const auto lengthNodes = childArrayOwner();
-    if (!lengthNodes) host::typeError("Cannot read properties of null (reading 'length')");
-    const double length = static_cast<double>(lengthNodes->size());
-    const double index = host::mathMax(1.0, host::mathMin(length, host::number(selection))) - 1.0;
-    const NodeValue child = host::numericChild(childArrayOwner(), index);
-    if (child.isNode()) return child.nodeOrNull();
-    return this->factoryOwner().create("mrow", {});
+MmlNode &MmlMaction::selected() const {
+    const auto raw = selectionValue(attributes().lookup(u"selection"), 1.0);
+    const auto length = children().size();
+    if (length != 0) {
+        if (std::isnan(raw))
+            return document().factory().make(NodeKind::mrow);
+        const double index = std::max(1.0, std::min(static_cast<double>(length), raw)) - 1.0;
+        if (std::isfinite(index) && index >= 0.0 && index < static_cast<double>(length) &&
+            std::floor(index) == index) {
+            return *children()[static_cast<std::size_t>(index)];
+        }
+    }
+    return document().factory().make(NodeKind::mrow);
 }
 
 bool MmlMaction::isEmbellished() const {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode* const child = selected();
-    if (!child) host::typeError("Cannot read isEmbellished from null maction selection");
-    return child->isEmbellished();
+    return selected().isEmbellished();
 }
 
 bool MmlMaction::isSpacelike() const {
-    tree::TreeCallGuard<MmlNode> guard;
-    MmlNode* const child = selected();
-    if (!child) host::typeError("Cannot read isSpacelike from null maction selection");
-    return child->isSpacelike();
+    return selected().isSpacelike();
 }
 
-NodeValue MmlMaction::core() {
-    tree::TreeCallGuard<MmlNode> guard;
-    const NodeValue child(selected());
-    return child.requireNode("core")->core();
+MmlNode *MmlMaction::core() {
+    return selected().core();
 }
 
-NodeValue MmlMaction::coreMO() {
-    tree::TreeCallGuard<MmlNode> guard;
-    const NodeValue child(selected());
-    return child.requireNode("coreMO")->coreMO();
+MmlNode *MmlMaction::coreMO() {
+    return selected().coreMO();
 }
-
-}
+} // namespace folia::math::mml

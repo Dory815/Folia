@@ -1,62 +1,92 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native port of MathJax 4.1.3 MmlNodes/maction.ts behavior methods.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- * Source SHA256: fa173b7e2b25b90e0f83ac201098357a8abf28462fa86fa69d92b65906527895
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.maction;
-import folia.math.core.mml_tree.action_host;
+import folia.math.core.mml_tree.node_defaults;
+import folia.math.util.js_numeric_input;
+import folia.math.util.js_number;
 import std;
 
 namespace folia::math::mml {
-
-void MmlMaction::verifyAttributes(Property options) {
-    tree::TreeCallGuard<MmlNode> guard;
-    AbstractMmlNode::verifyAttributes(std::move(options));
-
-    const Property actiontype = host::arithmeticAttributes(*this)->get("actiontype");
-    if (actiontype != Property(std::string("toggle")) &&
-        host::arithmeticAttributes(*this)->hasExplicit("selection")) {
-        host::arithmeticAttributes(*this)->unset("selection");
+namespace {
+std::u16string lowerAscii(std::u16string_view value) {
+    std::u16string result(value);
+    for (auto &character : result) {
+        if (character >= u'A' && character <= u'Z')
+            character += (u'a' - u'A');
     }
+    return result;
 }
 
-NodeValue MmlMaction::setTeXclass(NodeValue previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (host::arithmeticAttributes(*this)->get("actiontype") == Property(std::string("tooltip")) &&
-        host::numericChild(childArrayOwner(), 1).isNode()) {
-        host::numericChild(childArrayOwner(), 1).requireNode("setTeXclass")->setTeXclass(PropertyNull{});
+std::u16string sourceString(const AttributeValue &value) {
+    if (const auto *text = std::get_if<std::u16string>(&value))
+        return *text;
+    if (const auto *number = std::get_if<double>(&value)) {
+        const auto ascii = js_number::toString(*number);
+        return {ascii.begin(), ascii.end()};
     }
-    const NodeValue selectedNode(selected());
-    const NodeValue result = selectedNode.requireNode("setTeXclass")->setTeXclass(previous);
-    updateTeXclass(selectedNode);
+    if (const auto *boolean = std::get_if<bool>(&value))
+        return *boolean ? u"true" : u"false";
+    return u"null";
+}
+
+double parseIntegerPrefix(const AttributeValue *value, double fallback) {
+    return value ? js_input::parseInt(sourceString(*value)) : fallback;
+}
+} // namespace
+
+MmlMaction::MmlMaction(MmlDocument &document) : AbstractMmlNode(document, NodeKind::maction) {}
+
+AttributeSet MmlMaction::defaults() {
+    return nodeDefaultAttributes(NodeKind::maction);
+}
+
+NodeKind MmlMaction::kind() const noexcept {
+    return NodeKind::maction;
+}
+
+double MmlMaction::arity() const {
+    return 1.0;
+}
+
+MmlNode *MmlMaction::setTeXclass(MmlNode *previous) {
+    const auto *action = attributes().lookup(u"actiontype");
+    const auto *actionText = action ? std::get_if<std::u16string>(action) : nullptr;
+    if (actionText && *actionText == u"tooltip" && children().size() > 1) {
+        (void)children()[1]->setTeXclass(nullptr);
+    }
+    auto &child = selected();
+    auto *result = child.setTeXclass(previous);
+    updateTeXclass(&child);
     return result;
 }
 
 void MmlMaction::nextToggleSelection() {
-    tree::TreeCallGuard<MmlNode> guard;
-    const Property rawSelection = host::arithmeticAttributes(*this)->get("selection");
-    double selection = host::mathMax(1.0, host::integer(host::string(rawSelection)) + 1.0);
-    const auto children = childArrayOwner();
-    if (!children) host::typeError("Cannot read properties of null (reading 'length')");
-    if (selection > static_cast<double>(children->size())) selection = 1.0;
-    host::arithmeticAttributes(*this)->set("selection", selection);
+    const auto parsed = parseIntegerPrefix(attributes().lookup(u"selection"), 1.0);
+    auto next =
+        std::isnan(parsed) ? std::numeric_limits<double>::quiet_NaN() : std::max(1.0, parsed + 1.0);
+    if (next > static_cast<double>(children().size()))
+        next = 1.0;
+    attributes().set(u"selection", next);
 }
 
-void MmlMaction::setChildInheritedAttributes(AttributeList attributes,
-                                              Property display,
-                                              Property level,
-                                              Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-    const Property actiontype = host::arithmeticAttributes(*this)->get("actiontype");
-    if (host::lowerString(actiontype) != u"tooltip") {
-        AbstractMmlNode::setChildInheritedAttributes(attributes, display, level, prime);
+void MmlMaction::verifyAttributes(VerifyOptions const &options) {
+    AbstractMmlNode::verifyAttributes(options);
+    const auto *action = attributes().lookup(u"actiontype");
+    const auto *value = action ? std::get_if<std::u16string>(action) : nullptr;
+    if ((!value || *value != u"toggle") && attributes().own(u"selection")) {
+        attributes().erase(u"selection");
+    }
+}
+
+void MmlMaction::setChildInheritedAttributes(AttributeList const &inherited, bool display,
+                                             double level, bool prime) {
+    const auto *action = attributes().lookup(u"actiontype");
+    const auto *value = action ? std::get_if<std::u16string>(action) : nullptr;
+    if (!value || lowerAscii(*value) != u"tooltip") {
+        AbstractMmlNode::setChildInheritedAttributes(inherited, display, level, prime);
         return;
     }
-    const NodeValue base = host::numericChild(childArrayOwner(), 0);
-    if (base.isNode()) base.requireNode("setInheritedAttributes")->setInheritedAttributes(attributes, display, level, prime);
-    const NodeValue tip = host::numericChild(childArrayOwner(), 1);
-    if (tip.isNode()) tip.requireNode("setInheritedAttributes")->setInheritedAttributes(attributes, false, 1, false);
+    if (!children().empty())
+        children()[0]->setInheritedAttributes(inherited, display, level, prime);
+    if (children().size() > 1)
+        children()[1]->setInheritedAttributes(inherited, false, 1.0, false);
 }
-
 } // namespace folia::math::mml

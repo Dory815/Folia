@@ -1,25 +1,30 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native implementation of MmlNodes/TeXAtom.ts (MathJax 4.1.3).
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- * Source SHA-256: bad114224392b94852456a4636b85ad90a5a2c96b63e6c7911d155db299f7028
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.tex_atom;
-import folia.math.core.mml_tree.arithmetic_host;
+import folia.math.core.mml_tree.node_defaults;
 import folia.math.core.mml_tree.operator_class;
 import std;
 
 namespace folia::math::mml {
+MmlTeXAtom::MmlTeXAtom(MmlDocument &document) : AbstractMmlBaseNode(document, NodeKind::tex_atom) {}
 
-NodeValue MmlTeXAtom::setTeXclass(NodeValue previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    host::arithmeticChild(*this, 0, "setTeXclass")
-        .setTeXclass(NodeValue(PropertyNull{}));
-    return adjustTeXclass(previous);
+AttributeSet MmlTeXAtom::defaults() {
+    return nodeDefaultAttributes(NodeKind::tex_atom);
 }
 
-NodeValue MmlTeXAtom::adjustTeXclass(NodeValue previous) {
+NodeKind MmlTeXAtom::kind() const noexcept {
+    return NodeKind::tex_atom;
+}
+
+double MmlTeXAtom::arity() const {
+    return -1.0;
+}
+
+bool MmlTeXAtom::notParent() const {
+    return true;
+}
+
+MmlNode *MmlTeXAtom::setTeXclass(MmlNode *previous) {
+    if (!children().empty())
+        (void)children()[0]->setTeXclass(nullptr);
     return adjustOperatorTeXclass(*this, previous);
 }
-
 } // namespace folia::math::mml

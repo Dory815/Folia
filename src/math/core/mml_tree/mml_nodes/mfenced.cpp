@@ -1,172 +1,122 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native implementation of MathJax 4.1.3 MmlNodes/mfenced.ts.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- * Upstream source SHA256: 64b3f4d89d47765eb83034b480b843b2769d8de12e31d7571c50e5c4bb2bd397
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mfenced;
-import folia.math.core.mml_tree.mml_node_host;
+import folia.math.core.mml_tree.mml_document;
+import folia.math.core.mml_tree.node_defaults;
 import std;
 
 namespace folia::math::mml {
 namespace {
-
-NodeValue childAt(const Children& children, std::size_t index) {
-    if (!children) host::typeError("Cannot read properties of null (reading '"+
-                                  std::to_string(index)+"')");
-    return children->get(index);
+std::u16string requiredString(const AttributeSet &attributes, std::u16string_view name) {
+    const auto *value = attributes.lookup(name);
+    if (const auto *text = value ? std::get_if<std::u16string>(value) : nullptr)
+        return *text;
+    throw std::invalid_argument("mfenced delimiter attributes must be strings");
 }
 
-TextNode& requiredText(MmlNode* product) {
-    auto* node = NodeValue(product).requireNode("setText");
-    if (auto* text = dynamic_cast<TextNode*>(node)) return *text;
-    host::typeError("this.factory.create(...).setText is not a function");
-}
-
-std::u16string nativeStringReplaceTarget(const Property& value, std::string_view name) {
-    const auto* bytes = std::get_if<std::string>(&value.value);
-    if (!bytes) {
-        if (value.missing()) host::typeError("Cannot read properties of undefined (reading 'replace')");
-        if (std::holds_alternative<PropertyNull>(value.value))
-            host::typeError("Cannot read properties of null (reading 'replace')");
-        host::typeError(std::string(name)+".replace is not a function");
-    }
-    return host::text(*bytes);
-}
-
-void removeSourceWhitespace(std::u16string& text) {
-    std::erase_if(text, [](char16_t c) {
-        return c == u' ' || c == u'\t' || c == u'\n' || c == u'\r';
+void removeWhitespace(std::u16string &value) {
+    std::erase_if(value, [](char16_t character) {
+        return character == u' ' || character == u'\t' || character == u'\n' || character == u'\r';
     });
 }
-
 } // namespace
 
-NodeValue MmlMfenced::setTeXclass(NodeValue previous) {
-    tree::TreeCallGuard<MmlNode> guard;
-    getPrevClass(previous);
-    if (open) previous = open->setTeXclass(previous);
-    const NodeValue first = childAt(childArrayOwner(), 0);
-    if (first.isNode()) previous = first.requireNode("setTeXclass")->setTeXclass(previous);
+MmlMfenced::MmlMfenced(MmlDocument &document) : AbstractMmlNode(document, NodeKind::mfenced) {}
 
-    const Children loopChildren = childArrayOwner();
-    if (!loopChildren) host::typeError("Cannot read properties of null (reading 'length')");
-    const std::size_t count = loopChildren->size();
-    for (std::size_t i = 1; i < count; ++i) {
-        const NodeValue separator = childAt(separators, i - 1);
-        if (separator.isNode()) previous = separator.requireNode("setTeXclass")->setTeXclass(previous);
-        const NodeValue child = childAt(childArrayOwner(), i);
-        if (child.isNode()) previous = child.requireNode("setTeXclass")->setTeXclass(previous);
-    }
-    if (close) previous = close->setTeXclass(previous);
-
-    if (!open || !close) {
-        NodeValue updateTarget;
-        if (open) {
-            updateTarget = NodeValue(open);
-        } else {
-            const NodeValue currentFirst = childAt(childArrayOwner(), 0);
-            updateTarget = currentFirst.isNode() ? currentFirst : NodeValue(close);
-        }
-        updateTeXclass(updateTarget);
-    }
-    return previous;
+AttributeSet MmlMfenced::defaults() {
+    return nodeDefaultAttributes(NodeKind::mfenced);
 }
 
-void MmlMfenced::setChildInheritedAttributes(AttributeList attributes, Property display,
-                                             Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-    addFakeNodes();
+NodeKind MmlMfenced::kind() const noexcept {
+    return NodeKind::mfenced;
+}
 
-    auto fakeSnapshot = std::make_shared<tree::ChildArray<MmlNode>>();
-    fakeSnapshot->resize(2);
-    fakeSnapshot->set(0, NodeValue(open));
-    fakeSnapshot->set(1, NodeValue(close));
-    const Children separatorSnapshot = separators;
-    if (!separatorSnapshot) {
-        fakeSnapshot->push_back(PropertyNull{});
-    } else {
-        const std::size_t length = separatorSnapshot->size();
-        fakeSnapshot->resize(2 + length);
-        for (std::size_t i = 0; i < length; ++i) {
-            if (separatorSnapshot->has(i)) fakeSnapshot->set(2 + i, separatorSnapshot->get(i));
-        }
-    }
-    for (std::size_t i = 0; i < fakeSnapshot->size(); ++i) {
-        const NodeValue child = fakeSnapshot->get(i);
-        if (child.isNode()) child.requireNode("setInheritedAttributes")->setInheritedAttributes(attributes, display, level, prime);
-    }
-    AbstractMmlNode::setChildInheritedAttributes(attributes, display, level, prime);
+MmlNode &MmlMfenced::fakeNode(std::u16string character, AttributeSet nodeAttributes,
+                              std::optional<TexClass> texClassValue) {
+    auto &text = document().factory().make(NodeKind::text);
+    text.setText(std::move(character));
+    const std::array<MmlNode *, 1> textChildren{&text};
+    auto &node = document().factory().make(NodeKind::mo, std::move(nodeAttributes), textChildren);
+    node.setTexClass(texClassValue);
+    document().attachAuxiliary(*this, node);
+    return node;
 }
 
 void MmlMfenced::addFakeNodes() {
-    tree::TreeCallGuard<MmlNode> guard;
-    const auto currentAttributes = attributes();
-    if (!currentAttributes) host::typeError("Cannot read properties of null (reading 'getList')");
-    const auto values = currentAttributes->getList({"open", "close", "separators"});
-    const Property rawOpen = values.get("open");
-    const Property rawClose = values.get("close");
-    const Property rawSeparators = values.get("separators");
-    std::u16string openText = nativeStringReplaceTarget(rawOpen, "open");
-    removeSourceWhitespace(openText);
-    std::u16string closeText = nativeStringReplaceTarget(rawClose, "close");
-    removeSourceWhitespace(closeText);
-    std::u16string separatorText = nativeStringReplaceTarget(rawSeparators, "separators");
-    removeSourceWhitespace(separatorText);
+    auto openText = requiredString(attributes(), u"open");
+    auto closeText = requiredString(attributes(), u"close");
+    auto separatorText = requiredString(attributes(), u"separators");
+    removeWhitespace(openText);
+    removeWhitespace(closeText);
+    removeWhitespace(separatorText);
 
     if (!openText.empty()) {
-        open = fakeNode(openText, PropertyList{{"fence", true}, {"form", "prefix"}}, TEXCLASS.OPEN);
+        AttributeSet values;
+        values.set(u"fence", true);
+        values.set(u"form", std::u16string{u"prefix"});
+        open = &fakeNode(std::move(openText), std::move(values), TexClass::open);
     }
 
     if (!separatorText.empty()) {
-        while (true) {
-            const Children currentChildren = childArrayOwner();
-            if (!currentChildren) host::typeError("Cannot read properties of null (reading 'length')");
-            const double requiredLength = static_cast<double>(currentChildren->size()) - 1.0;
-            if (!(static_cast<double>(separatorText.size()) < requiredLength)) break;
+        while (separatorText.size() < children().size() - (children().empty() ? 0 : 1)) {
             separatorText.push_back(separatorText.back());
         }
-        const Children currentChildren = childArrayOwner();
-        if (!currentChildren) host::typeError("Cannot read properties of null (reading 'slice')");
-        const Children slicedChildren = currentChildren->slice(1);
         std::size_t index = 0;
-        for (std::size_t i = 0; i < slicedChildren->size(); ++i) {
-            const NodeValue child = slicedChildren->get(i);
-            if (!child.isNode()) continue;
-
-            const Children pushReceiver = separators;
-            if (!pushReceiver) host::typeError("Cannot read properties of null (reading 'push')");
-            std::u16string separator;
-            if (index < separatorText.size()) separator.push_back(separatorText[index]);
+        for (std::size_t childIndex = 1; childIndex < children().size(); ++childIndex) {
+            if (!children()[childIndex])
+                continue;
+            std::u16string value;
+            if (index < separatorText.size())
+                value.push_back(separatorText[index]);
             ++index;
-            MmlNode* const fake = fakeNode(separator);
-            pushReceiver->push_back(NodeValue(fake));
+            separators.push_back(&fakeNode(std::move(value)));
         }
     }
 
     if (!closeText.empty()) {
-        close = fakeNode(closeText, PropertyList{{"fence", true}, {"form", "postfix"}}, TEXCLASS.CLOSE);
+        AttributeSet values;
+        values.set(u"fence", true);
+        values.set(u"form", std::u16string{u"postfix"});
+        close = &fakeNode(std::move(closeText), std::move(values), TexClass::close);
     }
 }
 
-MmlNode* MmlMfenced::fakeNode(std::u16string character, Property properties, Property texClass) {
-    tree::TreeCallGuard<MmlNode> guard;
-    if (properties.missing()) properties = PropertyList{};
-    if (texClass.missing()) texClass = PropertyNull{};
-
-    TextNode* const text = requiredText(this->factoryOwner().create("text", {})).setText(std::move(character));
-    auto children = std::make_shared<tree::ChildArray<MmlNode>>();
-    children->push_back(NodeValue(text));
-    std::any propertiesArgument;
-    if (auto object = PropertyList::object(properties)) propertiesArgument = *object;
-    else propertiesArgument = properties;
-    const std::array<std::any, 2> arguments{
-        std::move(propertiesArgument), std::any(Children(children))
-    };
-    MmlNode* const node = this->factoryOwner().create("mo", tree::FactoryArgs(arguments));
-    NodeValue(node).requireNodeForWrite("texClass")->setTexClass(texClass);
-    NodeValue(node).requireNodeForWrite("parent")->setParent(NodeValue(static_cast<MmlNode*>(this)));
-    return node;
+void MmlMfenced::setChildInheritedAttributes(AttributeList const &inherited, bool display,
+                                             double level, bool prime) {
+    addFakeNodes();
+    if (open)
+        open->setInheritedAttributes(inherited, display, level, prime);
+    if (close)
+        close->setInheritedAttributes(inherited, display, level, prime);
+    for (auto *separator : separators) {
+        if (separator)
+            separator->setInheritedAttributes(inherited, display, level, prime);
+    }
+    AbstractMmlNode::setChildInheritedAttributes(inherited, display, level, prime);
 }
 
+MmlNode *MmlMfenced::setTeXclass(MmlNode *previous) {
+    getPrevClass(previous);
+    if (open)
+        previous = open->setTeXclass(previous);
+    if (!children().empty() && children()[0])
+        previous = children()[0]->setTeXclass(previous);
+    for (std::size_t index = 1; index < children().size(); ++index) {
+        const auto separatorIndex = index - 1;
+        if (separatorIndex < separators.size() && separators[separatorIndex]) {
+            previous = separators[separatorIndex]->setTeXclass(previous);
+        }
+        if (children()[index])
+            previous = children()[index]->setTeXclass(previous);
+    }
+    if (close)
+        previous = close->setTeXclass(previous);
+    if (!open || !close) {
+        MmlNode *target = open;
+        if (!target && !children().empty())
+            target = children()[0];
+        if (!target)
+            target = close;
+        updateTeXclass(target);
+    }
+    return previous;
+}
 } // namespace folia::math::mml

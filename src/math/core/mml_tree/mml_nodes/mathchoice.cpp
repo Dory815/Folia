@@ -1,37 +1,45 @@
-/*************************************************************
- * Copyright (c) 2018-2026 The MathJax Consortium.
- * Native implementation of MathJax 4.1.3 MmlNodes/mathchoice.ts.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- * Source SHA256: e1f9fdf92e345c7bc09e3333c4f436ae8f2d1e4c8fa9a2280877590cf9025d76
- *************************************************************/
 module folia.math.core.mml_tree.mml_nodes.mathchoice;
-import folia.math.core.mml_tree.mml_node_host;
+import folia.math.core.mml_tree.mml_document;
+import folia.math.core.mml_tree.node_defaults;
 import std;
 
 namespace folia::math::mml {
+MathChoice::MathChoice(MmlDocument &document)
+    : AbstractMmlBaseNode(document, NodeKind::math_choice) {}
 
-void MathChoice::inheritAttributes(AttributeList attributes, Property display,
-                                  Property level, Property prime) {
-    tree::TreeCallGuard<MmlNode> guard;
-
-    double selection = 0;
-    if (!host::truthy(display)) {
-        const double clamped = host::mathMax(0.0, host::mathMin(host::number(level), 2.0));
-        selection = clamped + 1.0;
-    }
-
-    // Keep the selected tagged slot even if factory callbacks mutate this node.
-    NodeValue child = host::numericChild(this->childArrayOwner(), selection);
-    if (!child.isNode()) {
-        child = NodeValue(this->factoryOwner().create("mrow", tree::FactoryArgs{}));
-    }
-
-    // Source reads the raw parent only after selection/factory effects. The
-    // replacement result is intentionally discarded; inheritance uses child.
-    const NodeValue parent = this->getParent();
-    parent.requireNode("replaceChild")->replaceChild(child, NodeValue(this));
-    child.requireNode("setInheritedAttributes")
-        ->setInheritedAttributes(attributes, display, level, prime);
+AttributeSet MathChoice::defaults() {
+    return nodeDefaultAttributes(NodeKind::math_choice);
 }
 
+NodeKind MathChoice::kind() const noexcept {
+    return NodeKind::math_choice;
 }
+
+double MathChoice::arity() const {
+    return 4.0;
+}
+
+bool MathChoice::notParent() const {
+    return true;
+}
+
+void MathChoice::setInheritedAttributes(AttributeList const &attributes, bool display, double level,
+                                        bool prime) {
+    const double selected = display ? 0.0 : std::clamp(level, 0.0, 2.0) + 1.0;
+    MmlNode *branch = nullptr;
+    if (std::isfinite(selected) && selected >= 0.0 && std::floor(selected) == selected) {
+        const auto index = static_cast<std::size_t>(selected);
+        if (index < children().size())
+            branch = children()[index];
+    }
+    if (!branch) {
+        branch = &document().factory().make(NodeKind::mrow);
+    }
+
+    MmlNode *parent = Parent();
+    if (!parent)
+        throw std::logic_error("MathChoice inheritance requires a parent");
+    parent->replaceChild(*branch, *this);
+    branch->setInheritedAttributes(attributes, display, level, prime);
+}
+} // namespace folia::math::mml

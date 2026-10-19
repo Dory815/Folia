@@ -1,22 +1,23 @@
-// Root-frozen MathJax 4.1.3 MmlNodes/mfenced.ts; Apache-2.0.
-// SHA256 64b3f4d89d47765eb83034b480b843b2769d8de12e31d7571c50e5c4bb2bd397
+// Typed native family API based on MathJax 4.1.3 MmlNodes/mfenced.ts.
 export module folia.math.core.mml_tree.mml_nodes.mfenced;
-export import folia.math.core.mml_tree.mml_node;
+export import folia.math.core.mml_tree.mml_document;
 import std;
+
 export namespace folia::math::mml {
 class MmlMfenced : public AbstractMmlNode {
-public:
-    using AbstractMmlNode::AbstractMmlNode;
-    static PropertyList& defaults();
-    void initializeClassFields() override;
-    std::string kind() const override;
-    Children separators;
-    MmlNode* open = nullptr;
-    MmlNode* close = nullptr;
-    NodeValue setTeXclass(NodeValue) override;
-protected:
-    void setChildInheritedAttributes(AttributeList,Property,Property,Property) override;
+  public:
+    explicit MmlMfenced(MmlDocument &document);
+    static AttributeSet defaults();
+    NodeKind kind() const noexcept override;
+    std::vector<MmlNode *> separators;
+    MmlNode *open{};
+    MmlNode *close{};
+    MmlNode *setTeXclass(MmlNode *previous) override;
+
+  protected:
+    void setChildInheritedAttributes(AttributeList const &, bool, double, bool) override;
     virtual void addFakeNodes();
-    virtual MmlNode* fakeNode(std::u16string,Property=Missing{},Property=Missing{});
+    virtual MmlNode &fakeNode(std::u16string character, AttributeSet attributes = {},
+                              std::optional<TexClass> texClass = std::nullopt);
 };
-}
+} // namespace folia::math::mml
