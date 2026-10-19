@@ -1,0 +1,37 @@
+// Shared named-module boundary for MathJax output/common.
+// Source: MathJax 4.1.3 output/common modules; Apache-2.0.
+export module folia.math.output.common;
+export import :types;
+export import :bindings;
+export import :linebreak_visitor;
+export import :wrapper_factory;
+export import :wrapper;
+export import :mo;
+export import :mrow;
+export import :mspace;
+export import :mi;
+export import :mn;
+export import :mfrac;
+export import :msqrt;
+export import :mroot;
+export import :mfenced;
+export import :text_node;
+export import :mtext;
+export import :maction;
+export import :semantics;
+export import :tex_atom;
+export import :math;
+export import :mglyph;
+export import :ms;
+export import :mtr;
+export import :scriptbase;
+export import :msubsup;
+export import :mmultiscripts;
+export import :munderover;
+export import :mtable;
+export import :mtd;
+export import :mpadded;
+export import :menclose;
+export import :inferred_mrow;
+export import :xml_node;
+export import :wrapper_class_bindings;
