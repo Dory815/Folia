@@ -43,10 +43,12 @@ old Scene family files/registrations have been removed.
 Review of `b030b874` found two problems: the new fraction/radical services had
 only test callers, and their equations coexisted on disk with the superseded
 Common and Scene family implementations. Duplicate family arithmetic has now
-been consolidated, but the numerical APIs still have only component-test
-callers. Complete CommonWrapper orchestration and the renderer facade remain
-outside the active graph; it cannot render TeX end to end. A successful
-component build does not resolve that integration gap.
+been consolidated. The former scalar APIs were replaced in place by actual
+CommonMfrac/CommonMsqrt/CommonMroot classes in `95a119b1`; they now participate
+in the native factory, MML, font, BBox and recursive linebreak collaboration.
+The renderer facade and complete TeX input remain outside the active graph;
+it cannot render TeX end to end. A successful component build does not resolve
+that integration gap.
 
 | Pinned upstream responsibility | Native owning files | Required boundary |
 |---|---|---|

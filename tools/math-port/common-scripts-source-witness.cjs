@@ -86,7 +86,3 @@ const output=path.join(root,'build/math-port/common-source/scripts-source.json')
 fs.mkdirSync(path.dirname(output),{recursive:true});
 fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n');
 process.stdout.write(`verified ${Object.keys(report.cases).length} scripts cases; evidence ${path.relative(root,output)}\n`);
-
-
-
-

@@ -41,7 +41,8 @@ struct LinebreakState {
     double w{};
     double prevWidth{};
     std::optional<BreakData> prevBreak;
-    std::size_t depth{};
+    // Source arithmetic permits negative depth after an unmatched close fence.
+    std::int64_t depth{};
     double mathWidth{};
     double mathLeft{};
     std::uint64_t nextIdentity{};
@@ -80,7 +81,7 @@ class LinebreakVisitor : public Linebreaks, public LinebreakVisitorBase {
     LinebreakState createState(CommonWrapper &);
     std::pair<double, double> borderLR(CommonWrapper const &) const;
     double moPenalty(CommonMo &);
-    CommonMo *getPrevious(CommonMo &) const;
+    CommonWrapper *getPrevious(CommonMo &) const;
     double mspacePenalty(CommonMspace &);
     double mtextPenalty() const;
 

@@ -7,8 +7,12 @@ The native `:types`, CommonWrapper, CommonWrapperFactory, CommonOutputJax and
 Mo/Mrow/InferredMrow classes now compile together in their original partitions.
 TextNode/Mi/Mn/Ms/Mspace/Mglyph/Mtext/Math and the inline-policy lifecycle also
 compile and pass the integrated component suite: 235 tests / 32,338 assertions.
-The actual linebreak visitor and remaining families are the next integration
-batch; no end-to-end acceptance is claimed here.
+CommonMfrac/Msqrt/Mroot, scripts/limits, Mfenced/Maction and the actual
+LinebreakVisitor now compile and pass the integrated component suite:
+251 tests / 26,461 assertions. The compact fraction/radical runners preserve
+288/192 inputs but do not yet cover every original SVG placement observation.
+Tables, containers and menclose have delivered candidate packets awaiting
+native integration. No end-to-end acceptance is claimed here.
 
 This contract reuses the current 43 polymorphic MML classes and arena, committed Tree factory/wrapper APIs, immutable NewCM FontRepository, Styles, StyleJson, LineBBox, and LengthContext. It preserves MathJax 4.1.3 Common responsibilities and method call order while replacing Context/Property/DOM object semantics with typed values. The pinned references are `.reference/MathJax-src/ts/output/common.ts`, `output/common/Wrapper.ts`, `output/common/WrapperFactory.ts`, and `core/Tree/Wrapper{,Factory}.ts`.
 

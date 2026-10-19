@@ -6,98 +6,58 @@
 
 ## 恢复时先看这几行
 
-- **最新原生整合：实际 CommonMfrac/CommonMsqrt/CommonMroot 已验收**。原文件已撤掉
-  仅测试使用的 FractionInput/RadicalInput scalar API，换回实际类/方法与 factory/Jax/MML
-  协作；没有新增并行的分式/根式布局模块。288/192 组数据未改，runner 已原地替换。
-  构建 `build/math-port/native-common-arithmetic-final-build-2.log` exit0；完整
-  `native-common-arithmetic-final-full.log` exit0，**236 项 / 26,299 断言**。
-  断言数比旧 scalar runner 少，代表下述输出验收缺口，不能描述成覆盖更完整。
-  分式厚度 fixture 以前通过 stub 接收已转换 em 数值，现在明确传 em 长度给真实转换；
-  没有为配对数据改生产长度公式。Source pwidth 缺省统一检查 native 空值。
-  createMo 已改 physical parent，新增 inferred-parent/auxiliary/index/owner 实际回归通过。
-  两份候选 Source 工具由 Root 实际执行 exit0：
-  `native-common-{fraction,radical}-class-source.log`（288/192）；仍只是指定方法配对。
-  下一项推广 scripts、fence/action、LinebreakVisitor 的已交付候选；limits 也已交付。
-  table、containers、menclose 包正在 Luna 实现中，具体状态须读 live agent。
-- **2026-10-20 当前停点（优先于下方历史 agent 状态）**：正式源码仍为
-  `ebcb915b` 基线，最新原生验收仍是 235 项 / 32,338 断言。本次仅更新恢复记录，
-  尚未推广新的 Common 家族，也没有启动构建或原生测试。
-  fraction/radical/fence-action 的定点修正包已交付；`font_assert_audit` 正在核对
-  LinebreakVisitor，`raii_graph_inventory` 正在补 scripts 测试，其余本批代理已交付。
-  恢复后核对这两个代理的实际状态，不等待历史完成消息，也不重新分派整包。
-  候选目录被忽略，必须用 `rg --no-ignore` 或直接读明确路径；默认 rg 无结果不能证明缺失。
-  分式类实际路径是 `tools/math-port/drafts/native-raii/common-fraction-class-native-impl/`
-  下的 `src/math/output/common/wrappers/mfrac.{ixx,cpp}`，不是旧 placement 目录。
-- **下一具体动作**：核对旧 scalar API 的真实消费者，将已交付的 Mfrac/Msqrt/Mroot
-  原地推广，替换现有 fraction_native/radical_native 紧凑 runner；修正 createMo 的
-  physical parent。根式候选还有一个明确 TU 问题：`selectedSurdSize` 定义在
-  msqrt.cpp 匿名 namespace，却由 mroot.cpp 使用，应移到后者，不能新造公共 helper。
-  然后单次构建、聚焦测试。不要重做字体、MML、TreeVisitor 或已验收 Common 基础。
-- **本次候选修正的验收界限**：分式测试已移除隐藏非 virtual 方法的空实现，实际调用
-  CommonMo 的初始化与伸展选择；根式测试移除 `check(true)` 并检查真实 MML 父链；
-  fence/action 已改用真实 Mo/Text、NewCM 和辅助算符。以上尚未由 Root 编译或原生执行。
-  288/192 数据保留，但最终 BBox 不能替代 SVG child origins/rules/overbar 等输出检查。
-  根式 placedHeight/placedSurdHeight 与逐项 bboxReset 同样仍有验收缺口，后续必须补齐。
-- **最新：Common 文本和 inline 数学入口已验收**，完整原生组件 **235 项 / 32,338 断言**
-  exit0；构建 `build/math-port/native-common-text-policy-final-build.log`，完整运行
-  `native-common-text-policy-final-full.log`。TextNode/Mi/Mn/Ms/Mspace/Mglyph/Mtext/Math
-  均在原有家族文件中进入 CMake；不再是待推广的候选。
-  LayoutJob 已有 overflow inherited 层更新、inline 标记协调、强制/普通策略、最后 setTeXclass
-  再构造 wrappers 的 Source 顺序；继承与输入解析仍属输入流程。SVG 使用 forced，Common 默认
-  opportunistic。正式 `common-inline-policy-source-witness.cjs` 已由 Root 运行 exit0。
-  当前没有实际 LinebreakVisitor 算法运行：本批服务 UT 是明确的拒绝/观测 fixture。
-  已提交 `d7f7a2a9`。本轮全部编译/原生进程已结束，全部 Luna 包已交付；没有旧句柄要等待。
-- **Common core 首批已验收**：原地 Wrapper/Factory/Jax、Mo/Mrow/Inferred 类、闭合 warning
-  记录，完整原生组件 **220 项 / 32,185 断言** exit0。日志
-  `build/math-port/native-common-core-batch-{build,full}.log`；格式整理后的构建
-  `native-common-core-batch-formatted-build.log` 和完整
-  `native-common-core-batch-final-full.log` 同样 exit0。不要拿下方旧 205 项结论覆盖新进展。
-  已提交 `9099dfe0`；此前正式 Source 工具提交 `f0879fb3`。文本后续结果见上一条。
-  CMake 已恢复 11 家族的正式列表，ignored common-full-CMakeLists.txt 只是旧备份，不可再覆盖。
-  六个正式 `common-*-source-witness` 已由 Root 运行成功，输出
-  `build/math-port/common-{factory,jax,variant,text,row,mo}-formal-source.log`；row reflow
-  另见 `common-row-reflow-formal-source.log`。正式工具覆盖与限制见 `common-source-witness-coverage.md`。
-  LayoutJob 的 inline policy/marking 数学生命周期已补；实际 LinebreakVisitor 和其余家族
-  候选均已交付，尚未编译整合。不要重写这些候选，也不要宣称 TeX→SVG 已完成。
-- 本轮确定的修正：cpp 是 `module folia.math.output.common; import :partition;`，
-  不能再声明与 interface 同名的 implementation partition；`coreMO()` 必须返回普通
-  `CommonWrapper*`，非 Mo 的真实 core 不能被 cast 成空；getBBox(false) 已缓存时返回 cache，
-  未缓存时从 BBox.zero() 开始；fontfamily/fontweight/fontstyle 属性优先于移除的 CSS。
-  Mrow.shiftLines 在重新对齐前清 L，重复宽度 6/8/10 的 1em 左缩进不累加，已做 Source 对照。
-  CommonOutputJax 嵌套 mstyle/semantic-added 分支标记 scanned parent；semantic 的递归也可能
-  标记 scanned node，不能断言它始终未标记。正式 Jax Source witness 已覆盖两者。
-- 还未整合的关键包：`common-fraction-class-native-impl`（实际 Mfrac+288 案例）、`common-radical-class-native-impl`
-  （实际 roots+192 案例）、`common-scripts-native-impl`、`common-fence-action-native-impl`、
-  `common-linebreak-native-impl`（完整 cpp，已改 signed depth，Source 孤立 close: -1/2700）。
-  所有包均已交付，不要重新从头分派。正式 header/source 是推广后的权威，旧 mirrors 不能覆盖。
-- 下一批推广前已实际读到的依赖问题（应具体修正，不要从零调查）：
-  Source Wrapper.ts:1457 的 createMo 使用 physical `this.node.parent`，当前正式 C++ 仍用
-  `Parent()`，整合分式/根式时改为 `parent()` 并检查生成 Mo 的辅助父链接。
-  fence/action packet 的 Maction::breakCount 仍把 coreMO 当 CommonMo，需显式 cast；其 UT 仍有旧
-  module imports，并用 Mrow 假作 open/separator/close，不符合真实 typed MML，须用真实 Mo 修正。
-  scripts UT 的 partition imports/相对 test include 也待换成 Common primary/shared header。
-  fraction/radical class UT 分别是 packet `tests/native_common_mfrac.cpp` 和
-  `tests/math/common_radical_native.cpp`；不能误读为文件缺失。推广后应替换现有 compact runner，
-  保留 288/192 对照数据。它们只验 class 数学的部分量，旧表中的 SVG origins/rules 等输出检查
-  仍须在共享几何/Scene 接通时恢复验收，不能因 scalar API 撤掉就声称这些检查已替代完成。
-- 本轮文本/入口纠正：Source physical `parent` 与 logical `Parent()` 不可混用；
-  isTopEmbellished 和 getMathMLSpacing 用前者，Mtext 的 merror 查询用后者。
-  Ms quotes 用 wrapNode 后手动前/后插入；Mglyph charWrapper 用 wrapNode 登记但不追加普通 children；
-  Mtext 测量 TextNode 用 document.attachAuxiliary 关联唯一父节点。测试已覆盖顺序、索引、owner。
-  模式切换测试检查 inherited overflow 覆盖旧 inherited 而保留 own 和 default 层，不能改回 setDefault。
-  先前 spacing UT 没有 Source SVG forced-marking/实际 getBBox 流程，不能据此改期望为 2/9；
-  现在通过真实 forced LayoutJob + getBBox 与 Source 一致：plus.L=0、TeX b.L=2/9，MathML plus.R=2/9。
-- MML 集成基线 `33ea03fb`：43 类实际 MML 已接入唯一工厂和文档 arena。
-  后续 exact clone、StyleJson、Common 值类型/字体 CSS 数据也已实现并验收，
-  TreeVisitor 也已原生实现并验收；当前组件测试 **205 项 / 32,065 断言**通过。
-  不要重新迁移这些类或重跑已完成的大盘点。
-- 下一项是恢复 Common 实际类协作，契约见 `common-native-implementation.md`。
-  `MmlClone` / `copyNativeStateTo` 已在原有模块中
-  实现并构建测试，**不再是待实现的讨论方案**；家族状态、辅助节点映射和异常回滚已补齐。
-- TeX→SVG 和 Folia 原生接入尚未完成；Mermaid 继续暂停。
-- 现有未提交改动见文末“工作区保护”，本次记事不改变其归属。
-- 2026-10-20 用户再次要求压缩后读取小本本。已有记录不能代替实际执行：
-  恢复时必须读取本文件正文，不能只凭压缩摘要或文件名声称已经恢复状态。
+- **最新：实际算术、scripts/limits、fence/action、LinebreakVisitor 已原生整合验收。**
+  完整组件 **251 项 / 26,461 断言** exit0：
+  `build/math-port/native-common-scripts-lines-fixed-full.log`；最终构建
+  `native-common-msup-slot-build.log`，此前格式整理构建
+  `native-common-scripts-lines-final-build.log` 均 exit0。这仍不是 TeX→SVG 或 Folia 验收。
+  已提交算术 `95a119b1`、算术正式Source工具 `ee233f64`、MML msup修复 `f4df0031`、
+  scripts/limits `c8dd25ec`、fence/action `5dbcc9b3`、其他Common正式Source工具 `89e8a178`。
+  visitor/CMake/新UT由本交接所在集成提交接通，不能拿旧235项结论覆盖当前进展。
+- **本轮异常已解决**：完整suite曾因span越界退出（不是普通UT失败），已停止广测，
+  有界运行 `native-common-script-bounded-diagnose.log` 定位到真实NewCM msup子case2。
+  `MmlMsubsup::setChildInheritedAttributes` 错把角色 `sub()==2` 用作两子节点的物理位置。
+  Source固定遍历0/1/可选2，角色只决定prime；已修责任MML方法并新增msup继承回归，
+  聚焦 `native-common-msup-slot-focused.log`、四家族真实NewCM
+  `native-common-script-bounded-fixed.log` 和上述完整suite均通过。不要再次当作未解决。
+- **正式类/结构结论**：Mfrac/Msqrt/Mroot原地撤掉仅测试使用的scalar API，288/192配对数据
+  未改，runner原地替换。Munder/Mover/Munderover直接继承CommonScriptbase，与Source一致；
+  不保留从Msub/Msup/Msubsup继承再抵消行为的覆盖补丁。LinebreakVisitor已是实际算法，
+  不是no-op；signed depth、Mspace具体break应用、physical getPrevious均已修正并验收。
+- **测试准备规则已实际核查**：factory.wrap(root)本身不登记root（Source相同）；需要coreMO
+  的普通row必须经真实Math根递归wrapNode完成索引，不能给生产coreMO加self fallback。
+  Mfenced原内容wrapper的parent保留fenced，只有生成Mo的parent改投影mrow，Source如此。
+  单独Mo在embellished inferred父下local breakCount可为0，embellishedBreakCount为1；不能
+  改生产算法迎合UT。Mspace要测试visitor实际选择需goodbreak，newline已在构造时断行。
+  测试长小数用普通double；Boost.UT `_d` 对这些长literal计算出错误期望，不能改数学公式。
+- **正式Source工具可独立重放**：`common-{fraction,radical,scripts,limits,fence-action,linebreak}-source-witness.cjs`
+  均由Root运行exit0，日志 `build/math-port/common-<family>-formal-source.log`。
+  fraction288×84、radical192×89逐字段重现tracked表（忽略旧provenance注释），fixtures未改。
+  范围与受控输入见 `common-source-witness-coverage.md`，不能称作完整SVG文档对照。
+- **下一具体动作：整合已交付table/containers/menclose包，不重写。** ignored根目录为
+  `tools/math-port/drafts/native-raii/`；对应 `common-table-native-impl`、
+  `common-containers-native-impl`、`common-menclose-native-impl`。下一批先table/containers。
+  table已修coreMO显式Mo cast、复用原生string.split/js_number、span借用唯一children；
+  有label/百分比/fixed/equal/frame/stretch/实际visitor的UT和8条Source记录，但尚未native执行。
+  containers需将正式CommonWrapper::containerWidth改virtual，Mpadded声明override；
+  menclose类已移回原wrappers目录，不能另建common/menclose并遗留旧文件。
+- **Menclose已冻结接口**：Common `notation`对应Source Notation.ts，闭合29种spec；
+  immutable catalog由具体creator传span，固定catalog为静态constexpr数据。Common仅依赖
+  Scene纯geometry值，SVG与未来D2D共享数学结果。辅助sqrt factory-owned且detached，
+  删除其默认inferred子关联但保留arena节点；可选projectedBaseNode在普通初始化之后
+  通过wrapNode重新wrap同一源MML作为childNodes[0]，保留源parent，按Source覆盖nodeMap；
+  不clone子树、不共享旧base wrapper、不attachAuxiliary改变Source父链。其数学走现有根式方法。
+  候选sqrt改动必须定点合并，不能整包覆盖Root已修普通根式实现。
+- **当前运行状态**：所有本轮build/native句柄已结束。其他Luna包均交付；
+  `raii_graph_inventory`正在准备 `common-scripts-real-source`，用真实Source/NewCM同构树
+  替换formula/isfinite型UT期望，尚未交付；恢复后读live状态，不重新分派整包。
+  搜索ignored包须用 `rg --no-ignore` 或直接读明确路径，无默认rg结果不能判缺失。
+- **仍未完成**：Shared Scene需恢复288/192表的SVG child origins/rules/overbar等输出验收；
+  Common的BBox测试不覆盖全部原输出字段，断言从旧32338降为当前26461不能称覆盖增加。
+  完整TeX parser/stack/38-package流程、Renderer→Common→Scene→SVG和Folia替换仍未完成；
+  Folia仍旧QuickJS路径。Mermaid暂停；不要D2D像素对照。无关dirty work保护见文末。
+- MML43类、exact clone、StyleJson、TreeVisitor、字体14,568,049字段零差异、Common基础/
+  文本/inline入口均已验收，禁止因压缩而重新从头调查或恢复JS模拟。现有正式源码是权威。
 
 ## 每次恢复上下文的执行顺序
 
@@ -380,6 +340,9 @@ Root 负责正式推广、构建、原生执行与提交；Luna 不自行改变�
 
 | 文件 | SHA-256 |
 | --- | --- |
+| common-table-native-impl/src/math/output/common/wrappers/mtable.cpp | 9EC4EACE145A172412DC1E374332775BA165D8A5102367A1FC1836BC81C68E07 |
+| common-containers-native-impl/src/math/output/common/wrappers/mpadded.cpp | 167359DBF7486A698200D2DE76A229BD219A963AE55923D4D1895341C6CF51F9 |
+| common-menclose-native-impl/src/math/output/common/wrappers/menclose.cpp | C67B3C628FB636A081BC7387CA07F04141A982CF9E47F5451C394BD2FAE322CC |
 | common-fraction-class-native-impl/src/math/output/common/wrappers/mfrac.cpp | 70F6FB35EE6E24AFB0267B40A2A9C0C948A04B9B956560B6B15DD3194977EBAF |
 | common-fraction-class-native-impl/tests/native_common_mfrac.cpp | 28EA161E9E4DB7EAE2133AEA78C952CCAAD46329EBF1C5773689942320950E01 |
 | common-radical-class-native-impl/tests/math/common_radical_native.cpp | 35A17966956A83EBA129141A78D5878D8CF9FFFA1D5D899C4F361CC7CD30A04C |

@@ -89,5 +89,3 @@ const expected=fs.readFileSync(path.join(root,'tests/math/fixtures/common-source
 assert.deepEqual(JSON.parse(contents),JSON.parse(expected),'pinned native limits comparison evidence changed');
 fs.writeFileSync(output,contents);
 process.stdout.write(`verified ${Object.keys(report.cases).length} limits cases; evidence ${path.relative(root,output)}\n`);
-
-
