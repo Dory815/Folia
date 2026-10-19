@@ -36,15 +36,23 @@ private:
     std::shared_ptr<SceneContextNodes> sceneContextNodes_;
     std::shared_ptr<adaptors::lite::LiteModule> liteModule_;
     SceneOutputConsumer sceneOutputConsumer_;
+    // Borrowed only while the top-level processMath builds its Scene.
+    scene::Builder* activeSceneBuilder_=nullptr;
     TextMeasurementProvider textMeasurementProvider_;
     std::string ex(double)const;
     std::vector<DOMNodeRef> materialized(const scene::Scene&);
+    std::vector<scene::NodeRef> buildScene(common::CommonWrapper&,DOMNodeRef,
+        scene::Builder&,bool appendToProjectedParent);
+    void appendProjectedRoot(DOMNodeRef,const scene::NodeRef&);
+    void insertProjectedBefore(const scene::NodeRef&,const scene::NodeRef&);
+    void removeProjectedRoot(const scene::NodeRef&);
     common::UnknownBBox measuredTextWidth(double)const;
     bool findCache(core::MathDocumentReference)const;
     void handleMathDisplay(common::CommonMath&);
-    std::array<scene::NodeRef,2> createSVG(scene::Builder&,double h,double d,double w);
+    std::array<scene::NodeRef,2> createSVG(scene::Builder&,double h,double d,double w,
+        DOMNodeRef projectedParent={});
     std::vector<scene::NodeRef> handleInlineBreaks(common::CommonWrapper&,
-        scene::Builder&,const scene::NodeRef&,const scene::NodeRef&);
+        scene::Builder&,const scene::NodeRef&,const scene::NodeRef&,DOMNodeRef nestedParent={});
     void addInlineBreak(std::vector<scene::NodeRef>&,double space,bool forced);
     scene::NodeRef importXmlSvgNode(scene::Builder&,scene::NodeRef,const DOMNodeRef&);
     scene::NodeRef importXmlSvgNode(scene::NodeRef,const DOMNodeRef&);

@@ -199,7 +199,7 @@ common::UnknownBBox SvgOutputJax::measuredTextWidth(double width)const{
 }
 
 std::array<scene::NodeRef,2> SvgOutputJax::createSVG(scene::Builder& builder,
-    double h,double d,double w){
+    double h,double d,double w,DOMNodeRef projectedParent){
     if(!math)throw Exception("TypeError",u"Cannot read properties of null (reading 'metrics')");
     const double em=property_host::number(metric(math->metrics,"em"));
     const double px=em/1000;
@@ -221,6 +221,7 @@ std::array<scene::NodeRef,2> SvgOutputJax::createSVG(scene::Builder& builder,
     root->geometry=scene::ViewportGeometry{0,-h,W,H,0,-h,W,H,true,false};
     std::get<scene::ViewportGeometry>(root->geometry).clipToViewport=false;
     builder.append(root,flip);
+    if(projectedParent)appendProjectedRoot(projectedParent,root);
     const auto useXlink=options::truthy(optionsContext().get(options,Key(u"useXlink")));
     if(W==.001){
         root->attributes.set("preserveAspectRatio",Property("xMidYMid slice"));
@@ -246,7 +247,8 @@ void SvgOutputJax::addInlineBreak(std::vector<scene::NodeRef>& roots,double spac
 }
 
 std::vector<scene::NodeRef> SvgOutputJax::handleInlineBreaks(common::CommonWrapper& wrapper,
-    scene::Builder& builder,const scene::NodeRef& svg,const scene::NodeRef& group){
+    scene::Builder& builder,const scene::NodeRef& svg,const scene::NodeRef& group,
+    DOMNodeRef nestedParent){
     if(!wrapper.childNodes||!*wrapper.childNodes||!(*wrapper.childNodes)->size())
         throw Exception("TypeError",u"Cannot read properties of undefined (reading 'breakCount')");
     auto* row=(*wrapper.childNodes)->get(0).requireNode("breakCount");
@@ -256,13 +258,18 @@ std::vector<scene::NodeRef> SvgOutputJax::handleInlineBreaks(common::CommonWrapp
         throw Exception("TypeError",u"Cannot read properties of null (reading 'children')");
     const auto mathNode=group->children.front();
     const auto& lines=mathNode->children.front()->children;
+    // Source detaches the typeset group before creating any line SVG.  The
+    // local group/mathNode references keep its line list alive while Builder
+    // reparents line children into their completed line groups below.
+    if(nestedParent)removeProjectedRoot(group);
     std::vector<scene::NodeRef> roots;
     for(std::size_t index=0;index<=count;++index){
         const auto line=index<row->lineBBox.size()&&row->lineBBox[index]
             ?row->lineBBox[index]:row->getLineBBox(index);
         const auto [breakWrapper,mo]=row->getBreakNode(*line);
         const double scale=breakWrapper->getBBox()->scale;
-        auto [nextSvg,nextGroup]=createSVG(builder,line->h*scale,line->d*scale,line->w*scale);
+        auto [nextSvg,nextGroup]=createSVG(builder,line->h*scale,line->d*scale,line->w*scale,
+            nestedParent);
         // Source uses adaptor.clone(math,false): copy current own fields into a
         // fresh node with an independent, empty child list.  ChildList itself
         // intentionally shares its owner on ordinary copies.
@@ -271,7 +278,9 @@ std::vector<scene::NodeRef> SvgOutputJax::handleInlineBreaks(common::CommonWrapp
             throw Exception("TypeError",u"Cannot read properties of undefined (reading 'children')");
         for(const auto& child:lines[index]->children.snapshot())builder.append(nextMath,child);
         builder.append(nextGroup,nextMath);
+        if(nestedParent)insertProjectedBefore(nextSvg,svg);
         const bool forced=mo&&property_host::truthy(mo->node->getProperty("forcebreak"));
+        const auto breakStart=roots.size();
         if(forced&&mo->node->attributes()->get("linebreakstyle")==Property("after")){
             auto* parent=breakWrapper->parent;
             if(!parent)throw Exception("TypeError",u"Cannot read properties of null (reading 'node')");
@@ -287,6 +296,8 @@ std::vector<scene::NodeRef> SvgOutputJax::handleInlineBreaks(common::CommonWrapp
             if(space||!forced)addInlineBreak(roots,space,
                 forced||property_host::truthy(breakWrapper->node->getProperty("forcebreak")));
         }
+        if(nestedParent)for(std::size_t at=breakStart;at<roots.size();++at)
+            insertProjectedBefore(roots[at],nextSvg);
         roots.push_back(std::move(nextSvg));
     }
     // The Source moves any remaining defs from the original SVG to the
@@ -294,11 +305,44 @@ std::vector<scene::NodeRef> SvgOutputJax::handleInlineBreaks(common::CommonWrapp
     for(const auto& child:svg->children.snapshot()){
         if(child!=group)builder.append(roots.front(),child);
     }
+    if(nestedParent)removeProjectedRoot(svg);
     return roots;
 }
 
-std::shared_ptr<scene::Scene> SvgOutputJax::produceScene(
-    common::CommonWrapper& wrapper,DOMNodeRef parent){
+void SvgOutputJax::appendProjectedRoot(DOMNodeRef parent,const scene::NodeRef& root){
+    if(!sceneContextNodes_||!propertyBindings_)
+        throw Exception("Unimplemented",u"Nested Scene projection is not bound");
+    auto& context=optionsContext();
+    const Value parentIdentity=propertyBindings_->to(nodeProperty(parent));
+    if(!sceneContextNodes_->projectSourceChild(parentIdentity))
+        throw Exception("TypeError",u"Nested Scene parent has no canonical projection");
+    const Value adaptor=context.get(Value(instanceIdentity()),Key(u"adaptor"));
+    const Value append=context.get(adaptor,Key(u"append"));
+    const std::array<Value,2> args={parentIdentity,Value(sceneContextNodes_->handle(root))};
+    (void)context.callMember(append,adaptor,args,u"adaptor.append");
+}
+
+void SvgOutputJax::insertProjectedBefore(const scene::NodeRef& child,
+    const scene::NodeRef& sibling){
+    auto& context=optionsContext();
+    const Value adaptor=context.get(Value(instanceIdentity()),Key(u"adaptor"));
+    const Value insert=context.get(adaptor,Key(u"insert"));
+    const std::array<Value,2> args={Value(sceneContextNodes_->handle(child)),
+        Value(sceneContextNodes_->handle(sibling))};
+    (void)context.callMember(insert,adaptor,args,u"adaptor.insert");
+}
+
+void SvgOutputJax::removeProjectedRoot(const scene::NodeRef& root){
+    auto& context=optionsContext();
+    const Value adaptor=context.get(Value(instanceIdentity()),Key(u"adaptor"));
+    const Value remove=context.get(adaptor,Key(u"remove"));
+    const std::array<Value,1> args={Value(sceneContextNodes_->handle(root))};
+    (void)context.callMember(remove,adaptor,args,u"adaptor.remove");
+}
+
+std::vector<scene::NodeRef> SvgOutputJax::buildScene(
+    common::CommonWrapper& wrapper,DOMNodeRef parent,scene::Builder& builder,
+    bool appendToProjectedParent){
     const auto mode=optionsContext().get(options,Key(u"fontCache"));
     const bool local=mode==Value(u"local");
     if(mode!=Value(u"none")&&!local)
@@ -311,8 +355,6 @@ std::shared_ptr<scene::Scene> SvgOutputJax::produceScene(
     } scope(container,parent);
     const auto bbox=wrapper.getOuterBBox();
 
-    scene::Builder builder;
-    builder.setLayoutObserver(placements_.layoutObserver());
     auto previousXmlCreator=placements_.exchangeXmlSvgNodeCreator(
         [this](scene::Builder& target,scene::NodeRef shell,
             const PropertyList& attributes,DOMNodeRef html){
@@ -323,7 +365,8 @@ std::shared_ptr<scene::Scene> SvgOutputJax::produceScene(
         scene::WrapperFactory::XmlSvgNodeCreator previous;
         ~RestoreXmlCreator(){(void)placements.exchangeXmlSvgNodeCreator(std::move(previous));}
     } restoreXmlCreator{placements_,std::move(previousXmlCreator)};
-    auto [root,flip]=createSVG(builder,bbox->h,bbox->d,bbox->w);
+    auto [root,flip]=createSVG(builder,bbox->h,bbox->d,bbox->w,
+        appendToProjectedParent?parent:DOMNodeRef{});
     if(!bbox->pwidth.empty()){
         styles::Styles style(property_host::string(root->attributes.get("style")));
         setSceneStyle(root,u"min-width",property_host::debugText(style.get(u"width")));
@@ -378,7 +421,31 @@ std::shared_ptr<scene::Scene> SvgOutputJax::produceScene(
         if(align=="center"||align=="right")setSceneStyle(root,u"margin-right",ex(-shift));
     }
     const auto roots=property_host::truthy(wrapper.node->getProperty("process-breaks"))
-        ?handleInlineBreaks(wrapper,builder,root,flip):std::vector<scene::NodeRef>{root};
+        ?handleInlineBreaks(wrapper,builder,root,flip,
+            appendToProjectedParent?parent:DOMNodeRef{}):std::vector<scene::NodeRef>{root};
+    return roots;
+}
+
+std::shared_ptr<scene::Scene> SvgOutputJax::produceScene(
+    common::CommonWrapper& wrapper,DOMNodeRef parent){
+    // Keep Source's container value visible through the top-level freeze.
+    struct ContainerScope {
+        DOMNodeRef& slot;
+        DOMNodeRef previous;
+        ContainerScope(DOMNodeRef& slot,DOMNodeRef current)
+            :slot(slot),previous(std::exchange(slot,std::move(current))){}
+        ~ContainerScope(){slot=std::move(previous);}
+    } containerScope(container,parent);
+    scene::Builder builder;
+    builder.setLayoutObserver(placements_.layoutObserver());
+    struct ActiveBuilderScope {
+        scene::Builder*& slot;
+        scene::Builder* previous;
+        ActiveBuilderScope(scene::Builder*& slot,scene::Builder& builder)
+            :slot(slot),previous(std::exchange(slot,&builder)){}
+        ~ActiveBuilderScope(){slot=previous;}
+    } active{activeSceneBuilder_,builder};
+    const auto roots=buildScene(wrapper,parent,builder,false);
     for(const auto& node:roots)builder.addRoot(node);
     cancellation::checkpoint(cancellation::CheckpointStage::Scene);
     auto sceneValue=std::make_shared<scene::Scene>(std::move(builder).finish());
@@ -387,6 +454,13 @@ std::shared_ptr<scene::Scene> SvgOutputJax::produceScene(
 }
 
 void SvgOutputJax::processMath(common::CommonWrapper& wrapper,DOMNodeRef parent){
+    if(activeSceneBuilder_){
+        if(!sceneContextNodes_||!liteModule_)
+            throw Exception("Unimplemented",u"Nested Scene target is not bound");
+        auto targets=sceneContextNodes_->installTargets(*liteModule_,*activeSceneBuilder_);
+        (void)buildScene(wrapper,std::move(parent),*activeSceneBuilder_,true);
+        return;
+    }
     auto sceneValue=produceScene(wrapper,parent);
     if(!sceneOutputConsumer_)
         throw Exception("TypeError",u"SVG output Jax has no Scene output consumer");

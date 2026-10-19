@@ -42,6 +42,45 @@ bool hasNestedTooltipSvg(const scene::FrozenNodeRef& node){
     for(const auto& child:node->children)if(hasNestedTooltipSvg(child))return true;
     return false;
 }
+struct GlyphGeometry {
+    std::uint32_t codepoint=0;
+    std::string sourcePath;
+    double unitsPerEm=0;
+    std::vector<scene::PathCommand> commands;
+};
+void collectGlyphs(const scene::FrozenNodeRef& node,std::vector<GlyphGeometry>& glyphs){
+    if(!node)return;
+    if(const auto* glyph=std::get_if<scene::GlyphPrimitive>(&node->semantic)){
+        GlyphGeometry current;
+        current.codepoint=glyph->codepoint;
+        if(glyph->outline){
+            current.sourcePath=glyph->outline->sourcePath;
+            current.unitsPerEm=glyph->outline->coordinateUnitsPerEm;
+            current.commands=glyph->outline->commands;
+        }
+        glyphs.push_back(std::move(current));
+    }
+    for(const auto& child:node->children)collectGlyphs(child,glyphs);
+}
+bool equalGlyphs(const std::vector<GlyphGeometry>& a,const std::vector<GlyphGeometry>& b){
+    if(a.size()!=b.size())return false;
+    for(std::size_t i=0;i<a.size();++i){
+        if(a[i].codepoint!=b[i].codepoint||a[i].sourcePath!=b[i].sourcePath||
+           a[i].unitsPerEm!=b[i].unitsPerEm||a[i].commands.size()!=b[i].commands.size())return false;
+        for(std::size_t j=0;j<a[i].commands.size();++j)
+            if(a[i].commands[j].operation!=b[i].commands[j].operation||
+               a[i].commands[j].arguments!=b[i].commands[j].arguments)return false;
+    }
+    return true;
+}
+std::size_t countTooltipSvgs(const scene::FrozenNodeRef& node){
+    if(!node)return 0;
+    std::size_t count=0;
+    if(node->kind==u"mjx-tip"&&node->children.size()==1&&
+       node->children.front()->kind==u"svg")++count;
+    for(const auto& child:node->children)count+=countTooltipSvgs(child);
+    return count;
+}
 }
 
 suite maction_tooltip_scene_projection_g219=[] {
@@ -51,7 +90,122 @@ suite maction_tooltip_scene_projection_g219=[] {
         expect(!rendered.roots().empty());
         if(rendered.roots().empty())return;
         expect(hasNestedTooltipSvg(rendered.roots().front()))
-            << "the nested Lite processMath append is observed by the shared SourceDom child owner";
+            << "nested processMath composes into the enclosing canonical Scene";
+        const auto tip=findKind(rendered.roots().front(),u"mjx-tip");
+        expect(tip&&tip->children.size()==1_u)
+            << "Source append adds one nested SVG child to the live tooltip owner";
+    };
+
+    "public SVG and Scene paths retain the same nested glyph layout"_test=[] {
+        std::optional<scene::Scene> sceneOnly;
+        std::optional<scene::Scene> svgScene;
+        std::string markup;
+        {
+            folia::math::Renderer renderer;
+            sceneOnly.emplace(renderer.renderScene(uR"(\mathtip{x+1}{y^2})"));
+            auto svgResult=renderer.render(uR"(\mathtip{x+1}{y^2})");
+            svgScene.emplace(std::move(svgResult.scene));
+            markup=std::move(svgResult.svg);
+        }
+        expect(sceneOnly&&svgScene&&!markup.empty());
+        if(!sceneOnly||!svgScene||sceneOnly->roots().empty()||svgScene->roots().empty())return;
+        const auto sceneTip=findKind(sceneOnly->roots().front(),u"mjx-tip");
+        const auto svgTip=findKind(svgScene->roots().front(),u"mjx-tip");
+        expect(sceneTip&&svgTip);
+        if(!sceneTip||!svgTip||sceneTip->children.size()!=1||svgTip->children.size()!=1)return;
+        expect(sceneTip->children.front()->kind==u"svg"&&svgTip->children.front()->kind==u"svg");
+        std::vector<GlyphGeometry> sceneGlyphs,svgGlyphs;
+        collectGlyphs(sceneTip->children.front(),sceneGlyphs);
+        collectGlyphs(svgTip->children.front(),svgGlyphs);
+        expect(!sceneGlyphs.empty()&&equalGlyphs(sceneGlyphs,svgGlyphs))
+            << "nested glyph outlines retain typed commands and source paths in both consumers";
+        expect(std::any_of(sceneGlyphs.begin(),sceneGlyphs.end(),[](const auto& glyph){
+            return !glyph.commands.empty()&&glyph.unitsPerEm>0;
+        })) << "nested glyphs carry decoded path geometry";
+        expect(markup.find("<mjx-tip")!=std::string::npos&&markup.find("<svg",markup.find("<mjx-tip"))!=std::string::npos)
+            << "public SVG output contains the nested tooltip SVG";
+    };
+
+    "Scene-only multi-level tooltips do not materialize SVG"_test=[] {
+        std::size_t materializeCalls=0;
+        auto previous=svg::Serializer::exchangeMaterializationObserver([&]{++materializeCalls;});
+        struct Restore {
+            svg::Serializer::MaterializationObserver previous;
+            ~Restore(){(void)svg::Serializer::exchangeMaterializationObserver(std::move(previous));}
+        } restore{std::move(previous)};
+        std::optional<scene::Scene> retained;
+        {
+            folia::math::Renderer renderer;
+            struct Case {std::u16string_view tex;double width;std::size_t minTips;};
+            const std::array cases={
+                Case{uR"(\mathtip{x}{\mathtip{y}{z}})",1280,2},
+                Case{uR"(\mathtip{x}{y}+\mathtip{a}{b})",1280,2},
+                Case{uR"(\mathtip{x}{\mathtip{y}{z}}+\mathtip{a\newline b}{c})",80,4},
+            };
+            for(const auto& item:cases){
+                auto rendered=renderer.renderScene(item.tex,
+                    RenderOptions{.containerWidth=item.width});
+                std::size_t tips=0;
+                for(const auto& root:rendered.roots())tips+=countTooltipSvgs(root);
+                expect(tips>=item.minTips&&materializeCalls==0_u)
+                    << "nested and sibling Scene paths keep projected tooltip SVGs without materialization";
+                if(!retained)retained.emplace(std::move(rendered));
+            }
+        }
+        expect(retained.has_value()&&!retained->roots().empty());
+        if(retained&& !retained->roots().empty())
+            expect(countTooltipSvgs(retained->roots().front())>=2_u)
+                << "a multi-level completed Scene outlives the Renderer request";
+    };
+
+    "nested Source processMath member calls see one append per tooltip"_test=[] {
+        svg::NativeRenderSession session(fontHost());
+        auto& context=session.context();
+        const auto outputOptions=context.object();
+        context.set(outputOptions,opts::Key(u"fontCache"),opts::Value(u"none"));
+        const auto jax=session.construct(opts::Value(outputOptions));
+        const auto inputOptions=context.object();
+        const auto packages=context.array(2);
+        context.set(opts::Value(packages),opts::Key(u"0"),opts::Value(u"base"));
+        context.set(opts::Value(packages),opts::Key(u"1"),opts::Value(u"action"));
+        context.set(opts::Value(inputOptions),opts::Key(u"packages"),opts::Value(packages));
+        auto document=svg::createNativeSvgDocument(session,opts::Undefined{},
+            opts::Value(inputOptions));
+        const auto receiver=opts::Value(jax->instanceIdentity());
+        const auto original=context.get(receiver,opts::Key(u"processMath"));
+        const auto* method=std::get_if<opts::ObjectRef>(&original.data);
+        expect(method!=nullptr);
+        if(!method)return;
+        std::vector<std::pair<std::string,std::size_t>> phases;
+        const auto childCount=[&](opts::Value parent){
+            const auto children=context.get(parent,opts::Key(u"children"));
+            return static_cast<std::size_t>(context.toNumber(
+                context.get(children,opts::Key(u"length"))));
+        };
+        const auto observed=context.function(u"",[&](opts::Context& cx,opts::Value self,
+            std::span<const opts::Value> args)->opts::Value{
+            if(args.size()<2)throw opts::Exception("TypeError",u"processMath probe requires a parent");
+            phases.emplace_back("enter",childCount(args[1]));
+            const auto result=cx.call(*method,self,args);
+            phases.emplace_back("exit",childCount(args[1]));
+            return result;
+        });
+        context.set(receiver,opts::Key(u"processMath"),opts::Value(observed));
+        const auto settings=context.object();
+        context.set(settings,opts::Key(u"display"),opts::Value(false));
+        context.set(settings,opts::Key(u"em"),opts::Value(16.0));
+        context.set(settings,opts::Key(u"ex"),opts::Value(8.0));
+        context.set(settings,opts::Key(u"containerWidth"),opts::Value(1280.0));
+        (void)document->convert(opts::Value(uR"(\mathtip{x}{\mathtip{y}{z}})"),
+            opts::Value(settings));
+        const std::vector expected={
+            std::pair{std::string("enter"),std::size_t(0)},
+            std::pair{std::string("enter"),std::size_t(0)},
+            std::pair{std::string("exit"),std::size_t(1)},
+            std::pair{std::string("exit"),std::size_t(1)},
+        };
+        expect(phases==expected)
+            << "public Context method dispatch observes the Source nested enter/exit order";
     };
 
     "Source helper absence and explicit typed foreignObject geometry stay distinct"_test=[] {
@@ -129,6 +283,11 @@ suite maction_tooltip_scene_projection_g219=[] {
     "SceneContextNodes replacement and geometry-owner freeze serialize current attributes"_test=[] {
         svg::NativeRenderSession session(fontHost());
         auto& context=session.context();
+        const auto outputOptions=context.object();
+        context.set(outputOptions,opts::Key(u"fontCache"),opts::Value(u"none"));
+        const auto jax=session.construct(opts::Value(outputOptions));
+        auto document=svg::createNativeSvgDocument(session);
+        (void)document;
         auto adaptor=session.adaptor();
         expect(adaptor!=nullptr);
         if(!adaptor)return;
@@ -198,11 +357,6 @@ suite maction_tooltip_scene_projection_g219=[] {
         expect(removedAgainTag.find(u"width=")==std::u16string::npos)
             << "removing the added width leaves it absent in serialized SVG";
 
-        const auto outputOptions=context.object();
-        context.set(outputOptions,opts::Key(u"fontCache"),opts::Value(u"none"));
-        const auto jax=session.construct(opts::Value(outputOptions));
-        auto document=svg::createNativeSvgDocument(session);
-        (void)document;
         const auto sourceJax=jax->instanceIdentity();
         const auto originalSvg=context.get(opts::Value(sourceJax),opts::Key(u"svg"));
         const auto* originalSvgFunction=std::get_if<opts::ObjectRef>(&originalSvg.data);

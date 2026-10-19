@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),cp=require('node:child_process');
 const {captureOutput}=require('./process-output.cjs');
 const [gateArg,target,output,...args]=process.argv.slice(2),gate=Number(gateArg);
-if(!Number.isSafeInteger(gate)||!/^Folia[A-Za-z]+$/.test(target)||!output)throw Error('Gate, target and output required');
+if(!Number.isSafeInteger(gate)||!/^Folia[A-Za-z][A-Za-z0-9]*$/.test(target)||!output)throw Error('Gate, target and output required');
 const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 const state=JSON.parse(fs.readFileSync('build/math-port/shared-build-state.json'));
 if(state.gate!==gate||state.status!=='terminal'||state.exitCode!==0||state.changedInputs!==0)
