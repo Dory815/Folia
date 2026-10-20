@@ -54,6 +54,15 @@ green corpora establish reference data, not acceptance for rewritten code.
 
 ## C. Source fidelity
 
+- Tagformat must compare real TeX/MML output for none/all/ams, explicit and
+  automatic tags, references, all five format callbacks, ref fallback, string
+  and vector tag results, Unicode IDs/URLs, option updates and error recovery.
+  Test custom parent behavior and formatting precedence independently. Repeated
+  construction/destruction must release selected Tags and captured factories;
+  unrelated instances and shared package registries must not accumulate entries.
+  Source's generated class names are internal registration identities, replaced
+  by a configuration-local creator; they are not the rendered-output oracle.
+
 - Freshly build and observe the current native revision against independently
   regenerated, hash-locked Source results. Preserve corpus/profile/source pins.
 - Compare all 75 common-layout cases, 150 complete SVG records byte-for-byte,

@@ -9,7 +9,45 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 BBM/Bboldx/Dsfont已验收提交）
+### 恢复时先用这个短检查点（2026-10-20 Tagformat已验收提交）
+
+- **上一goal轮为实际进展**：字体包已验收提交，详见紧随的已接受基线，不重做。
+  本轮Root已完整读Tagformat/Setoptions原TS、两组现CPP/IXx、Tags所有接口/实现与TeX构造、
+  ParseOptions有限选项schema；Setoptions未实现，不和Tagformat混改。
+  Root原位替换原Tagformat单组、修改tags.cpp/.ixx及CMake，**2c50747b已提交7文件**。
+  **无live原生构建/测试/代理**。构建16260 exit0，tagformat-build.log，并发4；完整Math
+  回归67021 exit0，tagformat-full.log，608项/149,602断言，121套suite，无失败/跳过。
+  聚焦新Tagformat8/253 exit0；原Tags工厂/格式各选1项（报告suite4项中3跳过）5/10断言均exit0。
+  GPT-6.1 Sol /root/base_methods已交付冻结tests/math/tagformat.cpp与tex-tagformat-source.cjs，
+  未改生产/共享/CMake/Git/未native构建测试；Root审查全部两文件、格式化并补配置priority10/
+  callback/默认5formatter注册断言。Root独立Source最终重放47compile/8mode/4URL/5error exit0，
+  tagformat-source-final.log；2TS+2CJS/full38锁，heap512/createReference一次。
+- **冻结Tagformat契约**：TagFormatConfiguration::initializeModule(ConfigurationHandler&)；
+  free tagformatConfig(ParserConfiguration&,TeX&)。TagsCreator为std::function<unique_ptr<Tags>
+  (ParseOptions&)>，每ParserConfiguration捕获parent creator注册本地configTags，priority10；
+  无全局tagID/永久class登记，原No/All/Ams行为产品不替换，ParseOptions仍唯一持有Tags。
+  Tags::setFormatters(TexOptionValues const&)借用长期owner，调用读取当前tagformat，防止借用
+  optional内层载荷。AbstractTags final dispatch formatTag/Ref/Url，protectedformatId/Number
+  也dispatch；protected virtual各format*Default供父类默认算法/后续包扩展，配置callback优先。
+  TagsFactory::formatters()返回原默认5callbacks（ref=nullptr），creator()解析父工厂；默认
+  数值/括号/id/url原算法在tags.cpp只有一份。原TagFormatOptions/5callback签名不变。
+  全部5callback/defaults、真实MML/counter/label/ref/id/href、none/all/ams八场景、4类URL、
+  string/vector标签、显式tag/tag*、选项整体替换/reset/恢复、错误恢复、两jax独立、父类
+  行为与格式优先级均已验。原生8轮独立ParentCounters检查每次alive1→析构0、created==
+  destroyed、registry/catalog大小恒定；不把Source全局注册积累行为当作C++要求。
+  未验Mathtools（包本身尚未改），不能声称全38包或端到端SVG完成。
+  完整38包/Common→Scene→SVG/Folia仍未完成；goal active，原13项修改保护，Mermaid暂停。
+- **下一具体行动Setoptions**：Root完整读其原单Configuration.ts与现单CPP/IXx、有限
+  TexOptionValues schema/SetOptionsOptions/OptionInputValue、keyvalOptions/AttributeSet与RegExp接口。
+  还未冻结访问契约/未改生产/未分工。继续原setoptions/set_options_configuration.*单组，
+  三filter/SetOptions/config原职责，不新增反射模块。注册检查需当前ParserConfiguration.registry
+  的只读借用（ParseOptions尚无该accessor）；选项应直接访问有限原生字段，禁止PropertyHost/
+  std::any/ObjectRef。固定38无require/autoload，不扩大profile。Source默认拒绝表含原拼写
+  package/maxMaxros（不能自作主张改成packages/maxMacros）。先冻结类型转换和所有字段范围，
+  再交代理实现/Source验收；本批字体/Tagformat不重新调查和重派。优先Luna，额度恢复前不反复试，
+  必要Sol仅GPT-6.1 Sol；一build/并发4；无异常退出则不重复旧完整回归。
+
+### 已接受基线（2026-10-20 BBM/Bboldx/Dsfont已验收提交）
 
 - **当前无live构建/测试/代理**。字体批次完整Math回归600项/149,349断言，120套suite，
   无失败/跳过，exit0，bbm-bboldx-dsfont-full.log；29495已终态。构建5782 exit0（并发4），

@@ -80,6 +80,23 @@ within the reviewed change. `util/function_list.ixx` owns FunctionList;
 `tests/math/function_list.cpp` owns its behavior tests. A source file left out
 of CMake is still unfinished cleanup when remaining consumers reference it.
 
+### Tag formatting ownership (2026-10-20)
+
+`tagformat/tag_format_configuration.*` remains the single package owner. It
+registers defaults and a priority-10 configuration callback. The selected Tags
+creator is captured by value in a factory owned by ParserConfiguration; its
+product remains uniquely owned by ParseOptions. The local catalog entry is
+`configTags`, without a process-wide counter or permanent class registration.
+
+`tags.*` retains numbering, equation/session state, tag MML construction and
+default formatting. Its public formatting dispatch applies the configured
+callbacks before the selected class's default formatting hooks, preserving the
+Source outer-subclass precedence without synthesizing classes or prototypes.
+Formatting borrows the input-jax TexOptionValues record and reads its current
+TagFormatOptions on each call; it never borrows a temporary optional payload.
+The same original default algorithms supply both ordinary Tags and the package
+defaults. No second tag builder, numbering algorithm or MML owner is introduced.
+
 The original `input/tex/ParseMethods.ts` belongs at `input/tex/parse_methods`,
 not under `base/`. Its ten compiled methods handle variables, numbers, control
 sequences, mapped character tokens and the environment entry. BaseMethods,
