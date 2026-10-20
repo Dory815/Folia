@@ -28,6 +28,9 @@ ParseOptions::~ParseOptions() = default;
 MapHandler &ParseOptions::maps() const noexcept {
     return configuration_.maps();
 }
+ConfigurationHandler const &ParseOptions::registry() const noexcept {
+    return configuration_.registry();
+}
 MacroCallbacks const &ParseOptions::callbacks() const noexcept {
     return configuration_.callbacks();
 }

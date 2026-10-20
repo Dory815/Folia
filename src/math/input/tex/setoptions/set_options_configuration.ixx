@@ -4,9 +4,14 @@ export import folia.math.input.tex.parser;
 import std;
 export namespace folia::math::tex {
 struct SetOptionsUtil {
-    static bool filterPackage(TexParser&,std::u16string_view);
-    static bool filterOption(TexParser&,std::u16string_view,std::u16string_view);
-    static options::Value filterValue(TexParser&,std::u16string_view,std::u16string_view,options::Value);
+    static bool filterPackage(TexParser &, std::u16string_view);
+    static bool filterOption(TexParser &, std::u16string_view, std::u16string_view);
+    static OptionInputValue filterValue(TexParser &, std::u16string_view, std::u16string_view,
+                                        OptionInputValue const &);
 };
-struct SetOptionsConfiguration { static ConfigurationRef initializeModule(ParserRuntime&); };
-}
+DispatchOutcome SetOptions(TexParser &, MacroInvocation const &);
+void setoptionsConfig(ParserConfiguration &, TeX &);
+struct SetOptionsConfiguration {
+    static ConfigurationRef initializeModule(ConfigurationHandler &);
+};
+} // namespace folia::math::tex

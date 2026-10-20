@@ -178,6 +178,7 @@ public:
 
     SubHandlers& handlers;
     MapHandler& maps() const noexcept;
+    ConfigurationHandler const& registry() const noexcept;
     MacroCallbacks const& callbacks() const noexcept;
     TexOptionValues& options; // borrowed input-jax lifetime record, never per-expression defaults
     std::unique_ptr<StackItemFactory> itemFactory;

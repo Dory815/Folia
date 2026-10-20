@@ -40,6 +40,7 @@ TexOptionValues TeX::defaults() {
     TexOptionValues values;
     values.preFilters.emplace();
     values.postFilters.emplace();
+    values.findTeX = std::shared_ptr<FindTeX>{};
     values.packages = std::vector<PackageSelection>{{u"base", {}}};
     values.maxBuffer = 5 * 1024;
     values.maxTemplateSubtitutions = 10000;
