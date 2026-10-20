@@ -9,3 +9,5 @@ tools/math-port/regressions/g252/compare-common-passive.cjs text eol=lf
 # Reproducible MathJax Source observation tables.
 tests/math/fixtures/fraction_source_pairs.txt text eol=lf
 tests/math/fixtures/radical_source_pairs.txt text eol=lf
+tests/math/fixtures/common_scene.inc text eol=lf
+tools/math-port/common-scene-source.cjs text eol=lf
