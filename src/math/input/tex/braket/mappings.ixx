@@ -3,5 +3,7 @@ export module folia.math.input.tex.braket.mappings;
 export import folia.math.input.tex.parser;
 import std;
 export namespace folia::math::tex {
-struct BraketMappings { static void initializeModule(ParserRuntime&); };
-}
+struct BraketMappings {
+    static void initializeModule(MapHandler &);
+};
+} // namespace folia::math::tex

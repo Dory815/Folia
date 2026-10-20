@@ -13,6 +13,7 @@ struct TexEnvironment final {
     std::optional<bool> bold_symbol;
     std::optional<bool> vector_star;
     std::optional<double> script_level;
+    std::optional<std::size_t> braket_item_depth;
     std::optional<std::u16string> font;
     std::optional<std::u16string> italic_font;
     std::optional<std::u16string> style;

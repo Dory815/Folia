@@ -15,6 +15,7 @@ void overlayEnvironment(TexEnvironment& destination,
     FOLIA_COPY_PRESENT(bold_symbol);
     FOLIA_COPY_PRESENT(vector_star);
     FOLIA_COPY_PRESENT(script_level);
+    FOLIA_COPY_PRESENT(braket_item_depth);
     FOLIA_COPY_PRESENT(font);
     FOLIA_COPY_PRESENT(italic_font);
     FOLIA_COPY_PRESENT(style);

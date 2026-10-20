@@ -66,6 +66,7 @@ class OpenItem : public BaseItem {
 
 class CloseItem : public BaseItem {
   public:
+    bool braket_bar{};
     explicit CloseItem(StackItemFactory &);
     StackKind kind() const override;
     bool isClose() const noexcept override;
