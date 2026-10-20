@@ -69,4 +69,34 @@ double CommonMroot::addRoot(RadicalGeometry &geometry, BBox const &surdBox, doub
     geometry.degree_origin = scene::Point{dimensions[2] * rootBox.rscale, dimensions[1]};
     return dimensions[0];
 }
+
+SceneNodes CommonMroot::emitScene(scene::Builder &builder, std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+    auto containers = standardSceneNodes(builder, parents);
+    auto &nodes = containers.nodes;
+    auto const &content = containers.content;
+    const auto geometry = layoutGeometry();
+    const auto surdNodes = surd->emitScene(builder, content);
+    surd->placeScene(builder, surdNodes, geometry.surd_origin.x, geometry.surd_origin.y);
+    const auto degreeIndex = root();
+    if (!degreeIndex || !geometry.degree_origin)
+        throw std::logic_error("CommonMroot is missing its degree geometry");
+    const auto degreeNodes = childNodes.at(*degreeIndex)->emitScene(builder, content);
+    childNodes.at(*degreeIndex)
+        ->placeScene(builder, degreeNodes, geometry.degree_origin->x, geometry.degree_origin->y);
+    if (!nodes.empty() && nodes.front()) {
+        const auto baseGroup = builder.add_group(*nodes.front());
+        const std::array<scene::NodeId, 1> baseParent{baseGroup};
+        const auto baseNodes = childNodes.at(base())->emitScene(builder, baseParent);
+        childNodes.at(base())->placeScene(builder, baseNodes, geometry.base_origin.x,
+                                          geometry.base_origin.y);
+    }
+    scene::Rule overbar;
+    overbar.bounds = geometry.overbar;
+    overbar.role = scene::ElementRole::radical_rule;
+    if (!nodes.empty() && nodes.back())
+        builder.add_primitive(*nodes.back(), overbar);
+    return nodes;
+}
 } // namespace folia::math::output::common

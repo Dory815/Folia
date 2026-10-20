@@ -19,5 +19,6 @@ class CommonMroot : public CommonMsqrt {
     double rootHeight(BBox const &, BBox const &, double size, double height) const;
     double rootWidth() const override;
     double addRoot(RadicalGeometry &, BBox const &surdBox, double height) override;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
 };
 } // namespace folia::math::output::common

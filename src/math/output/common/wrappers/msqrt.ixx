@@ -42,6 +42,7 @@ class CommonMsqrt : public CommonWrapper {
     virtual std::array<double, 3> getRootDimens(BBox const &, double) const;
     virtual double rootWidth() const;
     RadicalGeometry layoutGeometry();
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     virtual double addRoot(RadicalGeometry &, BBox const &surdBox, double height);
     void getStretchedSurd();
     void invalidateBBox(bool bubble = true) override;

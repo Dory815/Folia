@@ -188,6 +188,40 @@ CommonMfrac::FractionGeometry CommonMfrac::layoutGeometry() {
     return makeFraction(isDisplay(), thickness);
 }
 
+SceneNodes CommonMfrac::emitScene(scene::Builder &builder, std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+    auto containers = standardSceneNodes(builder, parents);
+    auto &nodes = containers.nodes;
+    auto const &content = containers.content;
+    const auto geometry = layoutGeometry();
+    if (truthy(node->attributes().lookup(u"bevelled"))) {
+        const auto numerator = childNodes.at(0)->emitScene(builder, content);
+        const auto slash = bevel->emitScene(builder, content);
+        const auto denominator = childNodes.at(1)->emitScene(builder, content);
+        childNodes.at(0)->placeScene(builder, numerator, geometry.numerator_origin.x,
+                                     geometry.numerator_origin.y);
+        bevel->placeScene(builder, slash, geometry.slash_origin->x, geometry.slash_origin->y);
+        childNodes.at(1)->placeScene(builder, denominator, geometry.denominator_origin.x,
+                                     geometry.denominator_origin.y);
+    } else {
+        const auto numerator = childNodes.at(0)->emitScene(builder, content);
+        const auto denominator = childNodes.at(1)->emitScene(builder, content);
+        childNodes.at(0)->placeScene(builder, numerator, geometry.numerator_origin.x,
+                                     geometry.numerator_origin.y);
+        childNodes.at(1)->placeScene(builder, denominator, geometry.denominator_origin.x,
+                                     geometry.denominator_origin.y);
+        if (geometry.rule) {
+            scene::Rule rule;
+            rule.bounds = *geometry.rule;
+            rule.role = scene::ElementRole::fraction_rule;
+            if (!nodes.empty() && nodes.front())
+                builder.add_primitive(*nodes.front(), rule);
+        }
+    }
+    return nodes;
+}
+
 bool CommonMfrac::isDisplay() const {
     const auto *level = node->attributes().lookup(u"scriptlevel");
     const auto *numericLevel = level ? std::get_if<double>(level) : nullptr;

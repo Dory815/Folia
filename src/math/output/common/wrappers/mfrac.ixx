@@ -49,6 +49,7 @@ class CommonMfrac : public CommonWrapper {
 
     BevelData getBevelData(bool display) const;
     FractionGeometry layoutGeometry();
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     FractionGeometry makeFraction(bool display, double thickness);
     FractionGeometry makeAtop(bool display);
     FractionGeometry makeBevelled(bool display);
