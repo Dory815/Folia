@@ -9,7 +9,46 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 当前已接受：Bussproofs整包（2026-10-20；本节优先于下列历史断点）
+### 当前已接受：Physics原四owner整包（2026-10-20；优先于下列旧断点）
+
+- 上一goal turn是实际progress：a083bc3f及下列Bussproofs六笔提交、完整684/196361已验收，
+  不重做Bussproofs/FunctionList/先前Common；13项原dirty修改保护。
+- Root先完整读原Physics四TS及旧Cpp，冻结architecture/acceptance Physics段；原四owner不
+  分叉。Root原位替换methods.ixx/.cpp（25 static MacroHandler+Base Macro/NamedFn/Array
+  实际指针别名；CPP621行），在原base/base_items.ixx CloseItem加pre_autoclose、MmlItem加
+  autoclose两个bool。原有PhysicsOptions/环境向量字段已具备，未造通用BaseItem properties。
+- 已有6.1 Sol base_methods完成并冻结原items/mappings/configuration六文件及physics.cpp/inc/
+  独立tex-physics-source.cjs。Root完整审读、独立Source默认bytecheck exit0：284compile/
+  192trees/37TexErrors/1有界RangeError/13steps/9direct，保留63历史含options三元组，
+  11maps196bindings；四TS/四CJS/full38 hash锁不变，Source createReference一次。全树own attrs
+  +open/close/texClass三有限properties精确对照。physics-source-root.log。
+- Root修Source已证实的旧Cpp偏差：vectorApplication花括号直接concat，不用addArgs；Bra
+  实施后接ket/let alias的Source lookahead（Macro.token/CommandDefinition.source_token）；
+  mqty方括号GetUpTo使用']'。VectorBold局部RAII在Push前恢复token creator/非空font并删除
+  vector字段；嵌套后尾字符必须按真实Source，不能自行恢复旧vector字段改变正常数学结果。
+- Source creator-throw实测留下VectorBold临时token creator，sourceCreatorLeak=true；native按
+  RAII契约恢复creator/非空font，不声称异常状态与Source相同。matrixDimension先校验finite/
+  integer/uint32 Array长度再转size_t，非法std::length_error；400位9的imat在Source parseInt
+  Infinity→Array RangeError立即失败无大分配，native单独分类并恢复后续请求。禁跑巨大有效矩阵。
+- 初build16172失败于Root Bra里Macro类型被同名成员别名遮蔽；改tex::Macro限定名后91325
+  build exit0。初native focus仅三注册attrs失败，192trees/其他组已过；Source脚本先大量编译后
+  才读全局CharacterMap且attrs未copy，被Source mathchar0mo加stretchy=false改变。Root将注册
+  capture移至首次compile前并立刻复制primitive attrs、断言三个bold初始定义；未改生产映射或
+  既定不可变Token语义迎合post-use JS对象状态。Root独立Source重放/bytecheck通过。
+- 最后build55825 exit0（physics-registration-build.log），并发4、输入冻结；focus exit0：
+  **8tests/5373asserts**（physics-package-focused.log）。full83331 exit0：
+  **692tests/201734asserts/130suites，无失败/skip**（physics-package-full.log）。
+  八组包括全部数学分支+四options组合/13连续调用、9directAutoOpen、configured creator及
+  RAII异常恢复、32轮真实Stack正常/错误混合replay的weak_ptr和实际AutoOpen析构计数。
+- 已提交 **036d2e80** 原栈标记/Items+CMake四文件，**0914f338** Methods/Mappings/
+  Configuration+CMake七文件，**87ca87ba** 测试/Source/fixture+CMake四文件，**9d483d74**
+  删除旧Physics Context observer/comparer两文件324行。无新生产文件；旧Source-only原oracle
+  保留作63数学输入约束。原13项dirty保护，现无live build/native/agent。
+- **下一真实断点：mhchem、texhtml、unicode（含Entities）** 原owner移植，再Common→Scene
+  →SVG实际链路、旧对象层退出及Folia替换QuickJS。不要重做Physics/Bussproofs或历史FunctionList
+  命名。完整goal active、Mermaid暂停，无D2D像素gate；Luna额度Oct25前不重试，必要Sol只6.1。
+
+### 上一已接受：Bussproofs整包（2026-10-20）
 
 - FunctionList命名已在2022cb1a/e6126948处理：唯一生产owner为原util/function_list.ixx，
   测试为function_list.cpp。不要再次调查/改名；旧bindings消费者尚未全退，不能宣称清理完成。

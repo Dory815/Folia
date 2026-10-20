@@ -184,6 +184,22 @@ on one document explicitly. At least 192 independent document requests with
 radicals/bevelled fractions must release every tracked auxiliary MML node on
 request destruction; a persistent session may not retain those documents.
 
+### Physics package boundary (2026-10-20)
+
+Preserve every historical Physics formula and compare full real TeX/MML trees
+and attributes with pinned Source, including all eleven maps and callback/arg
+bindings. Cover quantity stars/sizes/nesting and over items, eval/smash, vectors
+and accents/fonts, operator expressions, quad text, differential and derivative
+branches, bra/ket captured aliases, all matrix constructors and malformed input.
+Verify both physics options independently and together, environment/creator
+restoration after nested vectors and errors, next-request recovery, and native
+AutoOpen lifetime/replay behavior. Explicitly check fence properties are removed
+on inferred output and preserved by inferred=false. Record any Source runtime
+errors separately from typed native errors; do not recreate JS object mutation.
+Source fixtures must be independently generated, hash locked and byte checked;
+native output never regenerates their expected trees. Follow focused tests with
+one complete math run after the final substantive changes.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,

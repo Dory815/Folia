@@ -449,6 +449,46 @@ TexFilterData callbacks, borrows output only from that argument, and creates
 its measurement-only MathItem as a local object inside balanceRules. It stores
 no current document, runtime module, object wrapper or callback identity.
 
+### Physics package responsibilities (2026-10-20)
+
+Replace the original physics items/methods/mappings/configuration pairs in
+place; no extra implementation family, runtime object API or duplicate helpers.
+Items owns AutoOpen's open/close/big/right strings, smash/ignore flags and signed
+double openCount. It preserves short-circuit closing/decrement, nested literal
+open counting, stop error, inferred=false behavior, smash/right construction
+and removal of the three fenced-node TeX properties. Stack owns activations;
+all node pointers remain request-document borrows.
+
+The close-over marker belongs on original CloseItem as bool pre_autoclose;
+the fence-completion marker belongs on original MmlItem as bool autoclose.
+AutoOpen checks these concrete incoming classes in Source order. Do not add a
+general BaseItem property map or another Stack transition path.
+
+Methods owns all original command algorithms and their private local helpers.
+Its 25 actual methods use MacroHandler signatures, including AutoClose in the
+character MacroMap. Macro/NamedFn/Array retain BaseMethods callback identities.
+VectorBold scopes the original token creator and environment changes with RAII;
+nested vectors and errors restore the prior native collaborators, without a
+runtime binding service. Source-defined macro expansion and parser positions
+remain the original TexParser's responsibility. Matrix dimensions use parsed
+primitive numbers, checked before native allocation; no source-text exceptions.
+Normal VectorBold cleanup removes vectorFont/vectorStar rather than restoring
+their previous values; preserve Source's resulting nested-vector output. Source
+leaves its temporary creator installed after a creator exception, as observed
+independently. Native restores creator/font on throws by its RAII contract;
+report this strengthened lifetime boundary separately from normal tree parity.
+
+Mappings retains the original eleven maps and complete entries/callbacks/args.
+Configuration only registers those maps, AutoOpen and the existing typed
+PhysicsOptions defaults italicdiff=false/arrowdel=false. Root owns Methods,
+the two shared markers, CMake, all native execution and commits; the existing
+6.1 Sol agent owns the other six original files and package Source/test fixture.
+Capture registration data before compiling any Source formulas, and copy its
+primitive attribute values immediately: Source mathchar0mo modifies shared
+Token.attributes with stretchy=false during use. Post-use object state does
+not describe the immutable native registration input; rendered nodes still
+compare against the actual Source results with their parsed attributes.
+
 ## Ownership
 
 ### CSS stylesheet dependency for Common (2026-10-20)
