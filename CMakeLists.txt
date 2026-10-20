@@ -621,6 +621,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mathtools.cpp
     tests/math/bussproofs_items.cpp
     tests/math/bussproofs.cpp
+    tests/math/physics.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
