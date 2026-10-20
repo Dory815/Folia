@@ -486,6 +486,7 @@ foreach(family IN LISTS FOLIA_MML_FAMILIES)
 endforeach()
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/html_adaptor.ixx
+    src/math/core/mml_tree/xml_dom_adaptor.ixx
     src/math/core/dom_node.ixx
     src/math/core/dom_adaptor.ixx
     src/math/adaptors/lite_adaptor.ixx
@@ -506,6 +507,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/cancellation.ixx)
 target_sources(folia_math PRIVATE
     src/math/core/dom_adaptor.cpp
+    src/math/core/mml_tree/xml_dom_adaptor.cpp
     src/math/adaptors/lite_adaptor.cpp
     src/math/adaptors/lite/element.cpp
     src/math/adaptors/lite/text.cpp
@@ -688,6 +690,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mhchem_parser.cpp
     tests/math/mhchem.cpp
     tests/math/lite.cpp
+    tests/math/xml_dom_adaptor.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
