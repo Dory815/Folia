@@ -93,6 +93,20 @@ TexEnvironment additionally carries the specific multi-letter RegExp reference
 and noAutoOP flag. Shared expression state models the actual configured pattern;
 it contains no parser, frame or document owner and creates no object registry.
 
+BaseMethods keeps all 75 upstream members in the original base/base_methods
+module. The 70 character/macro members are compiled MacroHandler functions
+`DispatchOutcome(TexParser&, MacroInvocation const&)`; Array, AlignedArray,
+IndentAlign, Equation and EqnArray are EnvironmentBodyHandler functions returning
+StackEntry with a borrowed parser, real begin FrameHandle and TexArgument span.
+Definition arguments use the existing finite TexArgument types, never Property,
+any, FunctionRef or a runtime method object. Original mathematical routines are
+adapted in place, not retained beside a new dispatcher. ParseUtil owns its
+shared text/under-over/alignment/equation/expansion helpers. BaseMappings owns
+the pinned table data and direct binding of those compiled functions; package
+configuration and filters remain BaseConfiguration responsibilities. Review
+checks all original methods and real configured-parser trees/errors against
+the pinned source, with no success stubs for pending members.
+
 C++ module boundaries follow owners and dependencies. A packet, individual
 function or test seam does not automatically need its own named module.
 Family implementation details and numerical intermediates remain private
