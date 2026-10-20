@@ -1,4 +1,4 @@
-// Native implementation of the three request-local ParseUtil operations.
+// Native mathematical parsing utilities from MathJax ParseUtil.ts.
 // Source: MathJax 4.1.3 ts/input/tex/ParseUtil.ts (Apache-2.0).
 module folia.math.input.tex.parse_util;
 import std;
@@ -6,9 +6,168 @@ import folia.math.input.tex.tex_error;
 import folia.math.util.unicode_normalization;
 import folia.math.core.mml_tree.mml_nodes.munderover;
 import folia.math.input.tex.unit_util;
+import folia.math.util.js_numeric_input;
+
+namespace folia::math::tex {
+namespace {
+bool keyValueBoolean(std::u16string_view value) {
+    return value == u"true" || value == u"false";
+}
+mml::AttributeValue keyValueToBoolean(std::u16string_view value) {
+    return value == u"true";
+}
+bool keyValueNumber(std::u16string_view value) {
+    return regexp_host::RegExp(uR"(^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$)")
+        .exec(std::u16string(value))
+        .has_value();
+}
+mml::AttributeValue keyValueToNumber(std::u16string_view value) {
+    // Source exposes parseFloat as convert even when verify has not been called.
+    while (!value.empty() && js_input::isWhitespace(value.front()))
+        value.remove_prefix(1);
+    auto match =
+        regexp_host::RegExp(uR"(^[-+]?(?:Infinity|(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?))")
+            .exec(std::u16string(value));
+    return match ? js_input::number(match->at(0).value())
+                 : std::numeric_limits<double>::quiet_NaN();
+}
+bool keyValueInteger(std::u16string_view value) {
+    return regexp_host::RegExp(uR"(^[-+]?\d+$)").exec(std::u16string(value)).has_value();
+}
+mml::AttributeValue keyValueToInteger(std::u16string_view value) {
+    return js_input::parseInt(value);
+}
+bool keyValueString(std::u16string_view) {
+    return true;
+}
+mml::AttributeValue keyValueToString(std::u16string_view value) {
+    return std::u16string(value);
+}
+bool keyValueDimension(std::u16string_view value) {
+    return UnitUtil::instance().matchDimen(value).has_value();
+}
+} // namespace
+KeyValueDef::KeyValueDef(std::u16string value, Verify verify, Convert convert)
+    : name(std::move(value)), verify_(verify), convert_(convert) {
+    if (!verify_ || !convert_)
+        throw std::invalid_argument("A key-value type needs compiled verification and conversion");
+}
+KeyValueDef KeyValueDef::oneof(std::span<std::u16string_view const> values) {
+    KeyValueDef definition(u"string", &keyValueString, &keyValueToString);
+    definition.choices_.emplace();
+    for (auto value : values)
+        definition.choices_->emplace_back(value);
+    return definition;
+}
+bool KeyValueDef::verify(std::u16string_view value) const {
+    return choices_ ? std::ranges::find(*choices_, value) != choices_->end() : verify_(value);
+}
+mml::AttributeValue KeyValueDef::convert(std::u16string_view value) const {
+    return convert_(value);
+}
+namespace KeyValueTypes {
+KeyValueDef const boolean(u"boolean", &keyValueBoolean, &keyValueToBoolean);
+KeyValueDef const number(u"number", &keyValueNumber, &keyValueToNumber);
+KeyValueDef const integer(u"integer", &keyValueInteger, &keyValueToInteger);
+KeyValueDef const string(u"string", &keyValueString, &keyValueToString);
+KeyValueDef const dimen(u"dimen", &keyValueDimension, &keyValueToString);
+} // namespace KeyValueTypes
+} // namespace folia::math::tex
 
 namespace folia::math::tex::parse_util {
 namespace {
+std::u16string removeBraces(std::u16string text, std::size_t count) {
+    if (!count) {
+        if (auto leading = regexp_host::RegExp(uR"(^\s+)").exec(text))
+            text.erase(leading->index, leading->at(0)->size());
+        if (auto trailing =
+                regexp_host::RegExp(uR"(([^\\\s]|^)((?:\\\\)*(?:\\\s)?)?\s+$)").exec(text)) {
+            auto replacement = trailing->at(1).value_or(u"") + trailing->at(2).value_or(u"");
+            text.replace(trailing->index, trailing->at(0)->size(), replacement);
+        }
+        return text;
+    }
+    while (count--) {
+        std::u16string_view trimmed(text);
+        while (!trimmed.empty() && js_input::isWhitespace(trimmed.front()))
+            trimmed.remove_prefix(1);
+        while (!trimmed.empty() && js_input::isWhitespace(trimmed.back()))
+            trimmed.remove_suffix(1);
+        text = trimmed.size() > 1 ? std::u16string(trimmed.substr(1, trimmed.size() - 2)) : u"";
+    }
+    return text;
+}
+struct KeyValueRead {
+    std::u16string value;
+    char16_t end{};
+    std::u16string rest;
+};
+KeyValueRead readValue(std::u16string_view text, std::u16string_view end, bool l3keys = false,
+                       bool dropBrace = false) {
+    std::size_t braces{}, index{}, start{};
+    std::u16string value;
+    bool countBraces = true;
+    while (index < text.size()) {
+        auto c = text[index++];
+        switch (c) {
+        case u'\\':
+            value += c;
+            if (index < text.size())
+                value += text[index];
+            ++index;
+            countBraces = false;
+            continue;
+        case u' ':
+            break;
+        case u'{':
+            if (countBraces)
+                ++start;
+            ++braces;
+            break;
+        case u'}':
+            if (!braces)
+                throw TexError("ExtraCloseMissingOpen", u"Extra close brace or missing open brace");
+            --braces;
+            countBraces = false;
+            break;
+        default:
+            if (!braces && end.find(c) != end.npos)
+                return {removeBraces(std::move(value),
+                                     l3keys ? std::min(std::size_t{1}, start) : start),
+                        c, std::u16string(text.substr(index))};
+            if (start > braces)
+                start = braces;
+            countBraces = false;
+        }
+        value += c;
+    }
+    if (braces)
+        throw TexError("ExtraOpenMissingClose", u"Extra open brace or missing close brace");
+    if (dropBrace && start)
+        return {u"", 0, removeBraces(std::move(value), 1)};
+    return {removeBraces(std::move(value), l3keys ? std::min(std::size_t{1}, start) : start), 0,
+            std::u16string(text.substr(std::min(index, text.size())))};
+}
+mml::AttributeSet readKeyval(std::u16string_view source, bool l3keys) {
+    mml::AttributeSet options;
+    std::u16string rest(source);
+    bool dropBrace = true;
+    while (!rest.empty()) {
+        auto key = readValue(rest, u"=,", l3keys, dropBrace);
+        dropBrace = false;
+        rest = std::move(key.rest);
+        if (key.end == u'=') {
+            auto value = readValue(rest, u",", l3keys);
+            rest = std::move(value.rest);
+            if (value.value == u"true" || value.value == u"false")
+                options.set(std::move(key.value), value.value == u"true");
+            else
+                options.set(std::move(key.value), std::move(value.value));
+        } else if (!key.value.empty())
+            options.set(std::move(key.value), true);
+    }
+    return options;
+}
 std::u16string compressSpaces(std::u16string_view text) {
     std::u16string result;
     bool previousSpace{};
@@ -486,5 +645,34 @@ void checkMaxMacros(TexParser &parser, bool isMacro) {
         throw;
     }
     parser.macroCount = budget.macroCount;
+}
+mml::AttributeSet keyvalOptions(std::u16string_view source,
+                                std::optional<std::span<KeyValueOption const>> allowed, bool error,
+                                bool l3keys) {
+    auto definition = readKeyval(source, l3keys);
+    if (!allowed)
+        return definition;
+    std::vector<std::u16string> keys;
+    for (auto const &[key, value] : definition.ownEntries())
+        keys.push_back(key);
+    for (auto const &key : keys) {
+        auto entry = std::ranges::find(*allowed, key, &KeyValueOption::key);
+        if (entry == allowed->end()) {
+            if (error)
+                throw TexError("InvalidOption", u"Invalid option: %1", {&key, 1});
+            definition.erase(key);
+        } else if (entry->type) {
+            auto value = definition.own(key);
+            auto string = std::get_if<std::u16string>(value);
+            auto text = string                   ? *string
+                        : std::get<bool>(*value) ? std::u16string(u"true")
+                                                 : std::u16string(u"false");
+            if (!entry->type->verify(text))
+                throw TexError("InvalidValue", u"Value for key '%1' is not of the expected type",
+                               {&key, 1});
+            definition.set(key, entry->type->convert(text));
+        }
+    }
+    return definition;
 }
 } // namespace folia::math::tex::parse_util

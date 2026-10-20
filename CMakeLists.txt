@@ -505,6 +505,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/ams_items.cpp
     tests/math/amscd.cpp
     tests/math/extpfeil.cpp
+    tests/math/keyval_options.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
