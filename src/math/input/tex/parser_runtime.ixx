@@ -113,10 +113,6 @@ public:
     // CenternotConfiguration.ts exposes one named filter export per loaded
     // runtime; its postprocessor and Context callable share this FunctionRef.
     Property centernotMethods=Missing{};
-    // MathtoolsTags is one loaded Source module per runtime. Its export record
-    // and module-scoped tag counter must retain identity across TeX instances.
-    Property mathtoolsTagModuleExports=Missing{};
-    std::shared_ptr<std::uint64_t> mathtoolsTagId;
     Property begingroupMethods=Missing{};
     TagsFactory tagsFactory;
     SourceStringMap<options::Value> variantMap; // actual ParseOptions class Map

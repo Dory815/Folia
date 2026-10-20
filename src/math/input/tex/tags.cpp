@@ -63,6 +63,16 @@ void AbstractTags::setFormatters(TexOptionValues const &options) {
     if (!options.tagformat)
         throw std::invalid_argument("Tag format options are absent");
     formatterOptions_ = &options;
+    tagFormFirst_ = false;
+}
+void AbstractTags::setTagForm(std::unique_ptr<TagForm> form) {
+    if (!form)
+        throw std::invalid_argument("Tag form is absent");
+    tagForm_ = std::move(form);
+    tagFormFirst_ = true;
+}
+TagForm *AbstractTags::tagForm() noexcept {
+    return tagForm_.get();
 }
 TagFormatOptions const &AbstractTags::formatters() const {
     if (!formatterOptions_->tagformat)
@@ -70,6 +80,10 @@ TagFormatOptions const &AbstractTags::formatters() const {
     return *formatterOptions_->tagformat;
 }
 TagFormatValue AbstractTags::formatTag(std::u16string_view value) {
+    if (tagForm_ && (tagFormFirst_ || !formatterOptions_)) {
+        if (auto result = tagForm_->formatTag(value))
+            return std::move(*result);
+    }
     if (!formatterOptions_)
         return formatTagDefault(value);
     auto callback = formatters().tag.value_or(nullptr);

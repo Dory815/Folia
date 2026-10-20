@@ -9,6 +9,13 @@ export namespace folia::math::tex {
 
 using TagLabel = LabelRecord;
 
+// A named tag form can decline to format, preserving the selected parent Tags.
+class TagForm {
+  public:
+    virtual ~TagForm() = default;
+    virtual std::optional<TagFormatValue> formatTag(std::u16string_view) const = 0;
+};
+
 class Tags {
   public:
     virtual ~Tags() = default;
@@ -16,6 +23,8 @@ class Tags {
     virtual std::u16string_view label() const noexcept = 0;
     virtual void setLabel(std::u16string value) = 0;
     virtual void setFormatters(TexOptionValues const &) = 0;
+    virtual void setTagForm(std::unique_ptr<TagForm>) = 0;
+    virtual TagForm *tagForm() noexcept = 0; // borrowed, owned by this Tags product
     virtual TagFormatValue formatTag(std::u16string_view tag) = 0;
     virtual TagFormatValue formatRef(std::u16string_view tag) = 0;
     virtual std::u16string formatUrl(std::u16string_view id, std::u16string_view base) = 0;
@@ -42,6 +51,8 @@ class AbstractTags : public Tags {
     ~AbstractTags() override;
 
     void setFormatters(TexOptionValues const &) final;
+    void setTagForm(std::unique_ptr<TagForm>) final;
+    TagForm *tagForm() noexcept final;
     TagFormatValue formatTag(std::u16string_view) final;
     TagFormatValue formatRef(std::u16string_view) final;
     std::u16string formatUrl(std::u16string_view, std::u16string_view) final;
@@ -81,6 +92,8 @@ class AbstractTags : public Tags {
     ParseOptions &configuration_; // sole borrowed access to document/session/request state
     // Borrow the stable input-jax record, never an optional payload address.
     TexOptionValues const *formatterOptions_{};
+    std::unique_ptr<TagForm> tagForm_;
+    bool tagFormFirst_{}; // the last installed formatTag layer has precedence
     TagFormatOptions const &formatters() const;
 };
 
