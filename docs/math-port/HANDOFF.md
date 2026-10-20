@@ -9,7 +9,51 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 verb/upgreek/gensymb批次，已验证提交）
+### 恢复时先用这个短检查点（2026-10-20 AMS批次，已验证提交）
+
+- **完整Math回归497项/137,414断言exit0**：`ams-full.log`，64538已终态，无跳过/失败。
+  构建97088 exit0（ams-build.log，并发4），AMS聚焦12项/355断言exit0：Methods9项/259，
+  Items/配置3项/96（ams-focused.log）。当前无live构建/测试/代理；保留原13项无关修改。
+- **分批提交**：6b05b950（6文件）原Methods/Items；2255190f（6文件）原配置/映射与生成器；
+  dc2778a5（4文件）真实AMS方法/结构测试与Items Source。生产原八文件净减少359行，无平行模块。
+- **已验收原职责**：Root已完整读原
+  AmsMethods.ts（全部25成员+2 helper）、AmsItems.ts、AmsConfiguration.ts及Mappings开头，
+  当前原CPP/共享接口。原四.ixx/.cpp和tests/math/ams.cpp、ams_items.cpp已进入CMake；
+  上述实际构建/聚焦/完整回归均已覆盖这些文件，不重新审计已验功能。
+- **冻结职责**：Methods原15实现（5 EnvironmentBody、9 Macro、1 TokenInput）+10 BaseMethods
+  constexpr函数别名，不复制基础算法；helpers splitSideSet/checkSideSetBase仍同methods.cpp。
+  Items原MultlineItem:ArrayItem、FlalignItem:EqnArrayItem；Multline构造(factory,bool)，
+  Flalign构造(factory,u16name,bool numbered,bool padded,bool center)，继承原name/numbered，
+  新字段仅optional<double> xalignat（保留NaN分支）、bool zeroWidthLabel/padded/center，
+  ArrayItem原shove已存在。parser_types已有全部StackKind及Multline/FlalignItemInit，不改共享。
+- **Root已实现**：四.ixx；items.cpp、configuration.cpp、mappings.cpp及生成工具/原旧inc
+  退出、CMake、Items/配置/表测试、Source独立复放与最终验收。配置复用NewcommandConfig和
+  AmsTags:AbstractTags，items直接按真实typed init创建，映射完整原9表；不新增平行文件。
+  旧ams_mapping_data.inc仅为构建产物，无tracked文件；旧include与Property生成算法已原位删除。
+  原generate-ams-mapping-data.cjs现捕获未解析前原Source的9表/311条目，直接生成原mappings.cpp，
+  注册SHA ffad7e5d055ba41cec9827a7327c7dc886781aedad4172c94d73bbef07fe5aaf，
+  --check已从C:\Windows exit0，ams-mappings-check.log，TS/CJS+完整38profile锁齐。
+- **已有GPT-6.1 Sol /root/base_methods已完成冻结限定3文件**：原ams/methods.cpp、
+  tests/math/ams.cpp、tools/math-port/tex-ams-methods-source.cjs。不改.ixx/共享/CMake/docs/Git，
+  不跑原生构建/测试，不另派代理；已交付15实现/10别名和9组真实TeX用例后结束。Root逐段
+  复核并独立Source重放：最终73compile exit0（ams-methods-source-final.log），源锁齐全。
+- **Root额外Source**：tex-ams-items-source.cjs配置/两项/9组行形状和3种列错误共12compile
+  exit0（ams-items-source-final.log），3组原生测试ams_items.cpp覆盖相同结构与装配。
+- **两处重要修正，不能重查或改回**：Flalign Source父EqnArray无args仍start空标签层，
+  子构造再start实际环境；因此结束后stack保留1层，下一式startEquation清理。Root已保留原
+  两次调用，typed TagInfo值状态，不是对象模拟。HandleOperatorName最初只设explicit_tex_class
+  记录，working texClass未变；Root改NodeUtil::setProperties同步真实OP并补单mi/TeXAtom
+  实际texClass测试，Source已验证（73例）。没有改Source预期迁就C++。
+- **准确下一步：amscd与extpfeil**。本轮仅读原AmsCdConfiguration.ts及ExtpfeilConfiguration.ts
+  imports/开头，尚未修改。amscd原三组methods/mappings/configuration文件，extpfeil原单组
+  configuration（含原Methods和Map）；先读完Source与已有C++，冻结接口与Source验收再分工。
+  复用本轮原AmsMethods::xArrow、NewcommandConfig/定义层、既有TexEnvironment.cd_min_width/
+  cd_min_height和AmscdOptions，不另造运行时/状态层。实际缺共享字段再按原owner补充。
+  明确核对每一步exit_code，不构建时改写输入。根本目标仍完整38包、
+  共享布局→SVG对照及Folia切换，goal保持active；原13项无关修改保护。Mermaid暂停、无D2D像素门槛。
+  Luna额度到10月25日，无新信号不重试，必要Sol仅GPT-6.1 Sol；不reset或改写历史。
+
+### 上一已验证提交批次（历史；当前以顶部断点为准）
 
 - **完整Math回归485项/137,059断言exit0**：`verb-upgreek-gensymb-full.log`，2160已终态，
   无跳过/失败。统一构建62996已exit0，并发4（verb-upgreek-gensymb-build.log）；
