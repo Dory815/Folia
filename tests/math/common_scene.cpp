@@ -260,14 +260,22 @@ struct SceneStats {
     std::size_t text_runs{};
     std::size_t typed_fonts{};
     std::size_t typed_paints{};
+    std::size_t phantom_groups{};
+    std::size_t phantom_glyphs{};
+    std::size_t phantom_entries{};
     std::size_t vertical_extender_roles{};
     std::size_t vertical_extender_viewports{};
     std::size_t horizontal_extender_roles{};
     std::size_t horizontal_extender_viewports{};
 };
 
-void inspect(scene::Group const &group, SceneStats &stats) {
+void inspect(scene::Group const &group, SceneStats &stats, bool insidePhantom = false) {
     ++stats.groups;
+    const bool isPhantom = insidePhantom || group.metadata.source_tag == "mphantom";
+    if (group.metadata.source_tag == "mphantom")
+        ++stats.phantom_groups;
+    if (isPhantom)
+        stats.phantom_entries += group.entries.size();
     if (group.role == scene::ElementRole::vertical_extender_viewport) {
         ++stats.vertical_extender_roles;
         stats.vertical_extender_viewports += group.viewport.has_value();
@@ -278,7 +286,7 @@ void inspect(scene::Group const &group, SceneStats &stats) {
     for (auto const &entry : group.entries) {
         if (auto const *child = std::get_if<std::shared_ptr<scene::Group const>>(&entry)) {
             if (*child)
-                inspect(**child, stats);
+                inspect(**child, stats, isPhantom);
             continue;
         }
         auto const &primitive = std::get<scene::Primitive>(entry);
@@ -288,29 +296,23 @@ void inspect(scene::Group const &group, SceneStats &stats) {
                 if constexpr (std::same_as<T, scene::GlyphRun>) {
                     for (auto const &glyph : value.glyphs) {
                         ++stats.glyphs;
+                        if (isPhantom)
+                            ++stats.phantom_glyphs;
                         if (glyph.resource && !glyph.key.variant.empty())
                             ++stats.typed_fonts;
-                        if (std::holds_alternative<scene::InheritedPaint>(glyph.paint.fill) ||
-                            std::holds_alternative<scene::CurrentColorPaint>(glyph.paint.fill))
-                            ++stats.typed_paints;
+                        ++stats.typed_paints;
                     }
                 } else if constexpr (std::same_as<T, scene::Path>) {
                     ++stats.paths;
-                    if (std::holds_alternative<scene::InheritedPaint>(value.paint.fill) ||
-                        std::holds_alternative<scene::CurrentColorPaint>(value.paint.fill))
-                        ++stats.typed_paints;
+                    ++stats.typed_paints;
                 } else if constexpr (std::same_as<T, scene::Rule>) {
                     ++stats.rules;
-                    if (std::holds_alternative<scene::InheritedPaint>(value.paint.fill) ||
-                        std::holds_alternative<scene::CurrentColorPaint>(value.paint.fill))
-                        ++stats.typed_paints;
+                    ++stats.typed_paints;
                 } else if constexpr (std::same_as<T, scene::TextRun>) {
                     ++stats.text_runs;
                     if (value.font && !value.font->family.empty())
                         ++stats.typed_fonts;
-                    if (std::holds_alternative<scene::InheritedPaint>(value.paint.fill) ||
-                        std::holds_alternative<scene::CurrentColorPaint>(value.paint.fill))
-                        ++stats.typed_paints;
+                    ++stats.typed_paints;
                 }
             },
             primitive);
@@ -383,7 +385,7 @@ suite common_scene_source = [] {
         // Common families plus isolated script-family probes. Other pinned
         // Source cases remain outstanding until their families emit Scene
         // nodes. This is not the required 75 Common / 150 byte-exact full-profile gate.
-        constexpr std::array<std::string_view, 28> selected{"plain",
+        constexpr std::array<std::string_view, 35> selected{"plain",
                                                             "mathbb",
                                                             "fraction-inline",
                                                             "fraction-display",
@@ -410,7 +412,14 @@ suite common_scene_source = [] {
                                                             "scene-text-wordbreak",
                                                             "scene-zero-size-frame",
                                                             "scene-vertical-extender-assembly",
-                                                            "scene-horizontal-extender-assembly"};
+                                                            "scene-horizontal-extender-assembly",
+                                                            "bbox",
+                                                            "phantom",
+                                                            "base-smash-raise",
+                                                            "base-phantom-sides",
+                                                            "scene-simple-phantom",
+                                                            "scene-padding-negative-dw-center",
+                                                            "scene-padding-negative-dw-right"};
         for (auto name : selected) {
             try {
                 const auto &source = sourceCase(name);
@@ -470,6 +479,12 @@ suite common_scene_source = [] {
                     frameFragmentsMatchSource && extenderRolesMatchSource &&
                     (!sourceHasGlyphs || (stats.glyphs > 0 && stats.typed_fonts > 0)) &&
                     (!sourceHasDrawing || stats.typed_paints > 0);
+                bool phantomEmissionOk = true;
+                if (name == "scene-simple-phantom") {
+                    phantomEmissionOk = !sourceHasGlyphs && stats.phantom_groups > 0 &&
+                                        stats.phantom_glyphs == 0 && stats.phantom_entries == 0 &&
+                                        metrics.width > 0 && metrics.height + metrics.depth > 0;
+                }
                 expect(bool(stats.groups > 0)) << "no real Scene groups for " << name;
                 expect(bool(completedMetrics)) << "non-finite completed Scene metrics for " << name;
                 expect(bool(frameMetrics))
@@ -484,6 +499,12 @@ suite common_scene_source = [] {
                     << stats.vertical_extender_viewports << ", horizontal="
                     << stats.horizontal_extender_roles << "/"
                     << stats.horizontal_extender_viewports << ")";
+                if (name == "scene-simple-phantom")
+                    expect(bool(phantomEmissionOk)) << "phantom must keep nonzero measured "
+                                                       "dimensions but emit no hidden drawing for "
+                                                    << name << " (groups=" << stats.phantom_groups
+                                                    << ", entries=" << stats.phantom_entries
+                                                    << ", glyphs=" << stats.phantom_glyphs << ')';
                 if (sourceHasGlyphs) {
                     expect(bool(stats.glyphs > 0))
                         << "Source has glyphs but Scene has none for " << name;
@@ -497,11 +518,14 @@ suite common_scene_source = [] {
                 reportFirstDifference(name, source.svg, actual);
                 const bool svgMatches = actual == source.svg;
                 expect(bool(svgMatches)) << "Source SVG bytes differ for " << name;
-                std::cerr << "Common-to-Scene case=" << name
-                          << " result=" << (typedSceneOk && svgMatches ? "success" : "mismatch")
+                std::cerr << "Common-to-Scene case=" << name << " result="
+                          << (typedSceneOk && phantomEmissionOk && svgMatches ? "success"
+                                                                              : "mismatch")
                           << " viewport_roles(vertical=" << stats.vertical_extender_roles
                           << ",horizontal=" << stats.horizontal_extender_roles << ')'
-                          << '\n';
+                          << " phantom(groups=" << stats.phantom_groups
+                          << ",entries=" << stats.phantom_entries
+                          << ",glyphs=" << stats.phantom_glyphs << ')' << '\n';
             } catch (std::exception const &error) {
                 std::cerr << "Common-to-Scene case=" << name
                           << " result=exception: " << error.what() << '\n';

@@ -76,6 +76,14 @@ for (const [name, tex, display, width] of [
   ['scene-vertical-extender-assembly', '\\left(\\frac{a}{\\frac{b}{\\frac{c}{d}}}\\right)', true, 1280],
   ['scene-horizontal-extender-assembly', '\\overbrace{abcdefghij}', true, 1280],
 ]) cases.push({name, tex, display, width, features: ['base']});
+// Phantom keeps the measured box while suppressing its hidden drawing.
+// Narrow makeboxes force negative mpadded dw and preserve Source's explicit
+// center/right alignment metadata around a raised rule.
+for (const [name, tex, display, width, features] of [
+  ['scene-simple-phantom', '\\phantom{x}', true, 1280, ['base']],
+  ['scene-padding-negative-dw-center', '\\makebox[.25em][c]{\\rule[.2em]{1em}{.4em}}', false, 1280, ['base']],
+  ['scene-padding-negative-dw-right', '\\makebox[.25em][r]{\\rule[.2em]{1em}{.4em}}', false, 1280, ['base']],
+]) cases.push({name, tex, display, width, features});
 
 function cpp(value) {
   // MSVC rejects a single string literal token beyond 16K; keep each emitted
@@ -144,6 +152,27 @@ async function capture() {
     assert.ok(record && !record.error, `${name} must convert in pinned Source`);
     const pieces = nestedAssemblyPieces(record.svg, axis);
     assert.ok(pieces.length > 0, `${name} must contain Source nested SVG extender pieces`);
+  }
+  const phantom = byName.get('scene-simple-phantom');
+  assert.ok(phantom && !phantom.error, 'simple phantom must convert in pinned Source');
+  assert.ok(phantom.svg.includes('data-mml-node="mphantom"'),
+    'simple phantom must preserve its Source wrapper');
+  assert.ok(!phantom.svg.includes('data-c='), 'simple phantom must suppress all glyph drawing');
+  const [viewX, viewY, viewWidth, viewHeight] = phantom.root.viewBox.split(/\s+/).map(Number);
+  assert.ok(Number.isFinite(viewX) && Number.isFinite(viewY) && viewWidth > 0 && viewHeight > 0,
+    'simple phantom must retain nonzero completed Source dimensions');
+  for (const [name, alignment] of [
+    ['scene-padding-negative-dw-center', 'center'],
+    ['scene-padding-negative-dw-right', 'right'],
+  ]) {
+    const record = byName.get(name);
+    assert.ok(record && !record.error, `${name} must convert in pinned Source`);
+    assert.ok(record.svg.includes(`data-mml-node="mpadded" data-align="${alignment}"`),
+      `${name} must retain Source data-align=${alignment}`);
+    assert.ok(record.svg.includes('width="1000"') && record.root.viewBox.includes(' 250 '),
+      `${name} must demonstrate negative dw against its wider rule content`);
+    assert.ok(record.svg.includes('transform="translate(0,200)"'),
+      `${name} must retain its positive vertical offset`);
   }
   return {records};
 }
