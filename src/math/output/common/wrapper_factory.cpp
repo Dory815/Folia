@@ -71,7 +71,23 @@ CommonWrapperRegistration unsupported(mml::NodeKind kind, std::string_view famil
     return {kind, std::move(creator), CommonWrapperClassData::commonDefaults()};
 }
 
-CommonWrapperCatalog makeStandardNodes() {
+CommonWrapperRegistration mencloseRegistration(std::span<NotationSpec const> notationProfile) {
+    if (notationProfile.empty())
+        return unsupported(mml::NodeKind::menclose, "menclose notation profile");
+
+    using Args = WrapperBuildArguments;
+    tree::FactoryClass<CommonWrapper, Args> creator;
+    creator.construct = [notationProfile](Args const &args) -> std::unique_ptr<CommonWrapper> {
+        return std::make_unique<CommonMenclose>(args.factory, args.node, args.parent,
+                                                notationProfile);
+    };
+    creator.isInstance = [](CommonWrapper const &product) {
+        return dynamic_cast<CommonMenclose const *>(&product) != nullptr;
+    };
+    return {mml::NodeKind::menclose, std::move(creator), CommonWrapperClassData::commonDefaults()};
+}
+
+CommonWrapperCatalog makeStandardNodes(std::span<NotationSpec const> notationProfile) {
     using K = mml::NodeKind;
     CommonWrapperCatalog result;
     result.reserve(mml::allNodeKinds.size());
@@ -92,9 +108,9 @@ CommonWrapperCatalog makeStandardNodes() {
     result.push_back(registration<CommonMpadded>(K::mpadded));
     result.push_back(registration<CommonMphantom>(K::mphantom));
     result.push_back(registration<CommonMfenced>(K::mfenced));
-    // The exact 29-entry menclose profile is currently owned by the SVG
-    // module. Common must not import or duplicate that backend profile.
-    result.push_back(unsupported(K::menclose, "menclose notation profile"));
+    // The catalog is borrowed from the composition boundary. Common owns no
+    // copy and does not import the SVG profile that defines it.
+    result.push_back(mencloseRegistration(notationProfile));
     result.push_back(registration<CommonMaction>(K::maction));
     result.push_back(registration<CommonMsub>(K::msub));
     result.push_back(registration<CommonMsup>(K::msup));
@@ -204,8 +220,9 @@ CommonWrapperCatalog CommonWrapperFactory::defaultNodes() {
     return {};
 }
 
-CommonWrapperCatalog CommonWrapperFactory::standardNodes() {
-    return makeStandardNodes();
+CommonWrapperCatalog CommonWrapperFactory::standardNodes(
+    std::span<NotationSpec const> notationProfile) {
+    return makeStandardNodes(notationProfile);
 }
 
 std::vector<mml::NodeKind> CommonWrapperFactory::getKinds() const {

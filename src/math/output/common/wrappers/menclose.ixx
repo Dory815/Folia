@@ -27,6 +27,7 @@ class CommonMenclose : public CommonWrapper {
     CommonMenclose(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *,
                    std::span<NotationSpec const> profileCatalog);
     void initializeSource() override;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     void getParameters();
     void getNotations();
     void removeRedundantNotations();

@@ -1,6 +1,7 @@
 export module folia.math.output.common:wrapper_factory;
 export import :types;
 export import :wrapper;
+export import :notation;
 export import folia.math.core.tree.wrapper_factory;
 import std;
 
@@ -26,7 +27,7 @@ class CommonWrapperFactory
     // The concrete backend-neutral Common profile used by native rendering
     // and tests. This is deliberately separate from Source's abstract empty
     // CommonWrapperFactory.defaultNodes() contract.
-    static CommonWrapperCatalog standardNodes();
+    static CommonWrapperCatalog standardNodes(std::span<NotationSpec const> notationProfile = {});
     std::vector<mml::NodeKind> getKinds() const;
     std::optional<tree::FactoryClass<CommonWrapper, WrapperBuildArguments>>
         getWrapperClass(mml::NodeKind) const;
