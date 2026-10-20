@@ -105,12 +105,13 @@ void TeX::reset(std::int64_t offset) {
     parseOptions_->clear();
     parseOptions_->tags->reset(offset);
 }
-mml::MmlNode &TeX::compile(core::MathItem &math, mml::MmlDocument &document) {
+mml::MmlNode &TeX::compile(core::MathItem &math, mml::MmlDocument &document,
+                          core::MathOutputJaxService *output) {
     setMmlFactory(document.factory());
     auto &parsed = *parseOptions_;
     parsed.clear();
     parsed.mathItem = &math;
-    executeFilters(preFilters, math, document, parsed);
+    executeFilters(preFilters, math, document, parsed, output);
     latex_ = math.math;
     parsed.tags->startEquation(math);
     std::unique_ptr<TexParser> parser;
@@ -132,7 +133,7 @@ mml::MmlNode &TeX::compile(core::MathItem &math, mml::MmlDocument &document) {
         root.attributes().set(u"display", u"block");
     parsed.tags->finishEquation(math);
     parsed.root = &root;
-    executeFilters(postFilters, math, document, parsed);
+    executeFilters(postFilters, math, document, parsed, output);
     if (parser) {
         auto const &width = parser->stack.env().horizontal_size;
         if (width && !width->empty()) {

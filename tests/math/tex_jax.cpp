@@ -81,9 +81,164 @@ MmlNode &dynamicNode(NodeFactory &factory, NodeKind kind, std::span<MmlNode *con
     definition.attributes.set(u"data-created", u"dynamic");
     return NodeFactory::createNode(factory, kind, children, std::move(definition), text);
 }
+struct CompileOutput final : folia::math::core::MathOutputJaxService {
+    bool *destroyed{};
+    explicit CompileOutput(bool *flag = nullptr) : destroyed(flag) {}
+    ~CompileOutput() override {
+        if (destroyed)
+            *destroyed = true;
+    }
+    folia::math::output::scene::Scene typeset(folia::math::core::MathItem &,
+                                              MmlDocument &) override {
+        throw std::logic_error("Unexpected typeset in compile borrow test");
+    }
+    folia::math::output::scene::Scene escaped(folia::math::core::MathItem &,
+                                              MmlDocument &) override {
+        throw std::logic_error("Unexpected escaped output in compile borrow test");
+    }
+    folia::math::BBox getBBox(folia::math::core::MathItem &, MmlDocument &) override {
+        throw std::logic_error("Unexpected measurement in compile borrow test");
+    }
+};
+struct CompileObservation {
+    folia::math::core::MathOutputJaxService *output;
+    MmlDocument *document;
+    folia::math::core::MathItem *math;
+    bool post;
+};
+struct CompileProbe {
+    std::vector<CompileObservation> observations;
+    bool failPre{}, failPost{};
+    TeX *nestedJax{};
+    MmlDocument *nestedDocument{};
+    folia::math::core::MathOutputJaxService *nestedOutput{};
+};
+thread_local CompileProbe *compileProbe{};
+struct ObserveCompilation {
+    CompileProbe *previous{compileProbe};
+    explicit ObserveCompilation(CompileProbe &probe) {
+        compileProbe = &probe;
+    }
+    ~ObserveCompilation() {
+        compileProbe = previous;
+    }
+};
+void observeCompilePre(TexFilterData &data) {
+    auto &probe = *compileProbe;
+    probe.observations.push_back({data.output, &data.document, &data.math, false});
+    if (probe.failPre)
+        throw std::runtime_error("Compile prefilter failed");
+    if (probe.nestedJax && &data.document != probe.nestedDocument) {
+        folia::math::core::AbstractMathItem nested(u"y", probe.nestedJax);
+        nested.compile(*probe.nestedDocument, probe.nestedOutput);
+    }
+}
+void observeCompilePost(TexFilterData &data) {
+    auto &probe = *compileProbe;
+    probe.observations.push_back({data.output, &data.document, &data.math, true});
+    if (probe.failPost)
+        throw std::runtime_error("Compile postfilter failed");
+}
 } // namespace
 
 suite tex_jax = [] {
+    "TeX compile borrows output through both filter phases and does not retain it"_test = [] {
+        JaxFixture f;
+        f.configure();
+        f.jax->preFilters.add(observeCompilePre);
+        f.jax->postFilters.add(observeCompilePost);
+        CompileProbe probe;
+        ObserveCompilation observer(probe);
+        bool destroyed = false;
+        {
+            CompileOutput output(&destroyed);
+            folia::math::core::AbstractMathItem math(u"x", f.jax.get());
+            math.compile(f.document, &output);
+            expect(probe.observations.size() == 2_u);
+            for (auto const &observation : probe.observations) {
+                expect(observation.output == &output);
+                expect(observation.document == &f.document);
+                expect(observation.math == &math);
+            }
+            expect(!probe.observations[0].post);
+            expect(probe.observations[1].post);
+            expect(math.root == f.jax->parseOptions().root);
+        }
+        expect(destroyed) << "TeX holds no ownership of the compile output service";
+        probe.observations.clear();
+        folia::math::core::AbstractMathItem next(u"z", f.jax.get());
+        next.compile(f.document);
+        expect(probe.observations.size() == 2_u);
+        for (auto const &observation : probe.observations)
+            expect(observation.output == nullptr);
+        expect(!findNodes(*next.root, NodeKind::mi).empty());
+    };
+    "TeX compile output borrows survive error formatting and unwind after filter errors"_test = [] {
+        JaxFixture f;
+        f.configure();
+        f.jax->preFilters.add(observeCompilePre);
+        f.jax->postFilters.add(observeCompilePost);
+        CompileOutput output;
+        CompileProbe probe;
+        ObserveCompilation observer(probe);
+        folia::math::core::AbstractMathItem invalid(u"\\notACommand", f.jax.get());
+        invalid.compile(f.document, &output);
+        expect(findNodes(*invalid.root, NodeKind::merror).size() == 1_u);
+        expect(probe.observations.size() == 2_u);
+        for (auto const &observation : probe.observations)
+            expect(observation.output == &output);
+        for (bool failBeforeParsing : {true, false}) {
+            probe.observations.clear();
+            probe.failPre = failBeforeParsing;
+            probe.failPost = !failBeforeParsing;
+            folia::math::core::AbstractMathItem failed(u"x", f.jax.get());
+            expect(throws<std::runtime_error>([&] { failed.compile(f.document, &output); }));
+            expect(failed.root == nullptr);
+            expect(failed.state() == folia::math::core::STATE.UNPROCESSED);
+            expect(probe.observations.size() == std::size_t(failBeforeParsing ? 1 : 2));
+            for (auto const &observation : probe.observations)
+                expect(observation.output == &output);
+            expect(f.jax->parseOptions().parsers.empty());
+            probe.failPre = probe.failPost = false;
+            probe.observations.clear();
+            folia::math::core::AbstractMathItem recovered(u"y", f.jax.get());
+            recovered.compile(f.document);
+            expect(probe.observations.size() == 2_u);
+            for (auto const &observation : probe.observations)
+                expect(observation.output == nullptr);
+            expect(recovered.state() == folia::math::core::STATE.COMPILED);
+        }
+    };
+    "TeX nested compilation keeps each invocation output borrow and document"_test = [] {
+        JaxFixture outer, inner;
+        outer.configure();
+        inner.configure();
+        for (auto *jax : {outer.jax.get(), inner.jax.get()}) {
+            jax->preFilters.add(observeCompilePre);
+            jax->postFilters.add(observeCompilePost);
+        }
+        CompileOutput outerOutput, innerOutput;
+        CompileProbe probe;
+        probe.nestedJax = inner.jax.get();
+        probe.nestedDocument = &inner.document;
+        probe.nestedOutput = &innerOutput;
+        ObserveCompilation observer(probe);
+        folia::math::core::AbstractMathItem math(u"x", outer.jax.get());
+        math.compile(outer.document, &outerOutput);
+        expect(probe.observations.size() == 4_u);
+        const std::array expectedOutputs{&outerOutput, &innerOutput, &innerOutput, &outerOutput};
+        const std::array expectedDocuments{&outer.document, &inner.document, &inner.document,
+                                           &outer.document};
+        const std::array expectedPhases{false, false, true, true};
+        for (std::size_t i = 0; i < probe.observations.size(); ++i) {
+            expect(probe.observations[i].output == expectedOutputs[i]);
+            expect(probe.observations[i].document == expectedDocuments[i]);
+            expect(probe.observations[i].post == expectedPhases[i]);
+        }
+        expect(!findNodes(*math.root, NodeKind::mi).empty());
+        expect(outer.jax->parseOptions().parsers.empty());
+        expect(inner.jax->parseOptions().parsers.empty());
+    };
     "TeX input jax compiles base syntax through all original postfilters"_test = [] {
         JaxFixture f;
         f.configure();
@@ -131,28 +286,32 @@ suite tex_jax = [] {
         f.configure();
         auto &root = f.compile(u"\\notACommand");
         expect(f.jax->parseOptions().error) << "TexError marks the expression";
-        expect(findNodes(root, NodeKind::merror).size() == 1_u) << "Default formatter returns merror";
+        expect(findNodes(root, NodeKind::merror).size() == 1_u)
+            << "Default formatter returns merror";
         expect(tokenText(root).find(u"Undefined control sequence") != std::u16string::npos)
             << "Default formatter retains the diagnostic text";
         expect(f.jax->parseOptions().parsers.empty()) << "Parser scope unwinds after TexError";
         f.jax->options.formatError = customError;
         auto &custom = f.compile(u"\\notACommand");
         expect(findNodes(custom, NodeKind::merror).empty()) << "Custom formatter replaces merror";
-        expect(findNodes(custom, NodeKind::mtext).size() == 1_u) << "Custom formatter creates mtext";
+        expect(findNodes(custom, NodeKind::mtext).size() == 1_u)
+            << "Custom formatter creates mtext";
         f.jax->preFilters.add(failPre);
         expect(throws<std::runtime_error>([&] { f.compile(u"x"); }));
         f.jax->preFilters.remove(failPre);
         expect(!findNodes(f.compile(u"x"), NodeKind::mi).empty());
         expect(!f.jax->parseOptions().error);
         expect(tokenText(f.jax->formatError(TexError("Multiline", u"first\nsecond"))) == u"first");
-        const std::array<std::pair<std::u16string_view, std::u16string_view>, 6> messages{{
-            {u"first\nsecond\nthird", u"first\nthird"},
-            {u"first\nsecond\rthird", u"first\rthird"},
-            {u"first\nsecond\u2028third", u"first\u2028third"},
-            {u"first\nsecond\u2029third", u"first\u2029third"},
-            {u"first\rsecond", u"first\rsecond"}, {u"\n", u""}}};
-        for (auto const& [message, expected] : messages)
-            expect(tokenText(f.jax->formatError(TexError("Multiline", std::u16string(message)))) == expected);
+        const std::array<std::pair<std::u16string_view, std::u16string_view>, 6> messages{
+            {{u"first\nsecond\nthird", u"first\nthird"},
+             {u"first\nsecond\rthird", u"first\rthird"},
+             {u"first\nsecond\u2028third", u"first\u2028third"},
+             {u"first\nsecond\u2029third", u"first\u2029third"},
+             {u"first\rsecond", u"first\rsecond"},
+             {u"\n", u""}}};
+        for (auto const &[message, expected] : messages)
+            expect(tokenText(f.jax->formatError(TexError("Multiline", std::u16string(message)))) ==
+                   expected);
     };
     "TeX input jax applies hsize after filtering and stops filters on false"_test = [] {
         JaxFixture f;

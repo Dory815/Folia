@@ -18,14 +18,17 @@ struct RecordingInput final : core::MathInputJaxService {
     int calls{};
     mml::MmlNode* selected{};
     mml::MmlDocument* lastDocument{};
+    core::MathOutputJaxService* lastOutput{};
     bool fail{};
     std::optional<std::int64_t> captureCounter;
     std::vector<core::MathState> states;
     std::vector<std::optional<core::MathRecompile>> recompiles;
 
-    mml::MmlNode& compile(core::MathItem& item, mml::MmlDocument& document) override {
+    mml::MmlNode& compile(core::MathItem& item, mml::MmlDocument& document,
+                          core::MathOutputJaxService* output = nullptr) override {
         ++calls;
         lastDocument = &document;
+        lastOutput = output;
         states.push_back(item.state());
         recompiles.push_back(item.inputData.recompile);
         if (captureCounter) item.inputData.recompile = core::MathRecompile{item.state(), *captureCounter};
@@ -178,6 +181,32 @@ suite native_math_item = [] {
         expect(failed);
         expect(item.root == first);
         expect(item.state() == static_cast<core::MathState>(19));
+    };
+
+    "math_item_compile_borrows_output_for_only_the_current_compilation"_test = [] {
+        mml::MmlDocument document;
+        RecordingInput input;
+        RecordingOutput first, second;
+        core::AbstractMathItem item(u"x", &input);
+        core::MathItem& expression = item;
+        expression.compile(document, &first);
+        expect(input.lastOutput == &first);
+        expect(input.calls == 1_i);
+        expression.compile(document, &second);
+        expect(input.calls == 1_i) << "Completed compile is still state-gated";
+        expect(input.lastOutput == &first);
+
+        expression.state(static_cast<core::MathState>(19));
+        input.fail = true;
+        expect(throws<std::runtime_error>([&] { expression.compile(document, &second); }));
+        expect(input.lastOutput == &second);
+        expect(expression.state() == static_cast<core::MathState>(19));
+        input.fail = false;
+        expression.compile(document);
+        expect(input.lastOutput == nullptr) << "A new call never inherits the previous borrow";
+        expect(expression.state() == core::STATE.COMPILED);
+        expect(first.measures == 0_i);
+        expect(second.measures == 0_i);
     };
 
     "math_item_null_input_is_measurement_only_without_dummy_compile"_test = [] {

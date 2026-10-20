@@ -9,6 +9,7 @@ template <class Data> struct InputJaxFilterData {
     MathItem &math;
     mml::MmlDocument &document;
     Data &data;
+    MathOutputJaxService *output{}; // borrowed only for this compile/filter invocation
 };
 template <class Options, class Data> class AbstractInputJax : public MathInputJaxService {
   protected:
@@ -21,8 +22,9 @@ template <class Options, class Data> class AbstractInputJax : public MathInputJa
             postFilters.addList(*options.postFilters);
     }
     Data &executeFilters(FunctionList<InputJaxFilterData<Data> &> &filters, MathItem &math,
-                         mml::MmlDocument &document, Data &data) {
-        InputJaxFilterData<Data> arguments{math, document, data};
+                         mml::MmlDocument &document, Data &data,
+                         MathOutputJaxService *output = nullptr) {
+        InputJaxFilterData<Data> arguments{math, document, data, output};
         (void)filters.execute(arguments);
         return arguments.data;
     }

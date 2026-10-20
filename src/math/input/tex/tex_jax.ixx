@@ -29,7 +29,8 @@ class TeX : public core::AbstractInputJax<TexOptionValues, ParseOptions> {
     void installTextMacros(std::unique_ptr<TextMacrosData>);
     void setMmlFactory(mml::MmlFactory &) override;
     void reset(std::int64_t offset = 0);
-    mml::MmlNode &compile(core::MathItem &, mml::MmlDocument &) override;
+    mml::MmlNode &compile(core::MathItem &, mml::MmlDocument &,
+                          core::MathOutputJaxService *output = nullptr) override;
     virtual mml::MmlNode &formatError(TexError const &);
 };
 } // namespace folia::math::tex

@@ -47,12 +47,14 @@ struct MathOutputData {
 };
 
 class MathItem;
+class MathOutputJaxService;
 // Retained existing service roles, narrowed to the native expression pipeline.
 // No service owns a MathItem or a second MmlDocument.
 class MathInputJaxService {
 public:
     virtual ~MathInputJaxService() = default;
-    virtual mml::MmlNode& compile(MathItem&, mml::MmlDocument&) = 0;
+    virtual mml::MmlNode& compile(MathItem&, mml::MmlDocument&,
+                                 MathOutputJaxService* output = nullptr) = 0;
 };
 class MathOutputJaxService {
 public:
@@ -92,7 +94,7 @@ public:
                           MathState start = STATE.RERENDER) = 0;
     virtual void convert(MathRenderActionsService&, mml::MmlDocument&,
                          MathState end = STATE.LAST) = 0;
-    virtual void compile(mml::MmlDocument&) = 0;
+    virtual void compile(mml::MmlDocument&, MathOutputJaxService* output = nullptr) = 0;
     virtual void typeset(MathOutputJaxService&, mml::MmlDocument&) = 0;
     // Core Source defaults only; no HTML insertion shell is implemented.
     virtual void updateDocument() = 0;
@@ -122,7 +124,7 @@ public:
                   MathState start = STATE.RERENDER) override;
     void convert(MathRenderActionsService&, mml::MmlDocument&,
                  MathState end = STATE.LAST) override;
-    void compile(mml::MmlDocument&) override;
+    void compile(mml::MmlDocument&, MathOutputJaxService* output = nullptr) override;
     void typeset(MathOutputJaxService&, mml::MmlDocument&) override;
     void updateDocument() override;
     void removeFromDocument(bool restore = false) override;

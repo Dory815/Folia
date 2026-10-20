@@ -21,12 +21,12 @@ void AbstractMathItem::convert(MathRenderActionsService& actions,
     actions.renderConvert(*this, document, end);
 }
 
-void AbstractMathItem::compile(mml::MmlDocument& document) {
+void AbstractMathItem::compile(mml::MmlDocument& document, MathOutputJaxService* output) {
     if (this->state() < STATE.COMPILED) {
         if (!inputJax) {
             throw std::logic_error("MathItem compile requires an input jax");
         }
-        auto& compiled = inputJax->compile(*this, document);
+        auto& compiled = inputJax->compile(*this, document, output);
         if (&compiled.document() != &document) {
             throw std::invalid_argument("MathItem compile result belongs to another MML document");
         }
