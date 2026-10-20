@@ -10,7 +10,9 @@ export namespace folia::math::output::common {
 class CommonTeXAtom : public CommonWrapper {
 public:
     using CommonWrapper::CommonWrapper;
-protected:
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
+
+  protected:
     void computeBBox(BBox&, bool recompute=false) override;
 };
 }
