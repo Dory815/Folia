@@ -36,6 +36,7 @@ class CommonMmultiscripts : public CommonMsubsup {
     std::array<double, 3> getUVQ(const BBox *subbox, const BBox *supbox) override;
     BBox appendScripts(BBox &) const override;
     std::shared_ptr<LineBBox> computeLineBBox(std::size_t) override;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
 
     const ScriptData &scriptsData() const noexcept {
         return scriptData_;

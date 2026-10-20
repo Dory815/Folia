@@ -188,4 +188,100 @@ std::shared_ptr<LineBBox> CommonMmultiscripts::computeLineBBox(std::size_t index
     addMiddleBorders(box);
     return std::make_shared<LineBBox>(std::move(box));
 }
+
+SceneNodes CommonMmultiscripts::emitScene(scene::Builder &builder,
+                                          std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+
+    auto containers = standardSceneNodes(builder, parents);
+    auto &nodes = containers.nodes;
+    const auto &content = containers.content;
+    if (nodes.empty())
+        return nodes;
+
+    const auto uv = getCombinedUV();
+    std::string_view preAlign = "right";
+    std::string_view postAlign = "left";
+    if (const auto alignment = node->properties().tex.script_alignment) {
+        switch (*alignment) {
+        case mml::HorizontalAlignment::left:
+            preAlign = postAlign = "left";
+            break;
+        case mml::HorizontalAlignment::center:
+            preAlign = postAlign = "center";
+            break;
+        case mml::HorizontalAlignment::right:
+            preAlign = postAlign = "right";
+            break;
+        }
+    }
+
+    auto addScripts = [&](scene::NodeId owner, double x, std::size_t first, std::size_t count,
+                          std::string_view alignment) {
+        const auto supRow =
+            builder.add_group(owner, {}, {}, {}, {}, {}, scene::ElementRole::anonymous_group);
+        const auto subRow =
+            builder.add_group(owner, {}, {}, {}, {}, {}, scene::ElementRole::anonymous_group);
+        const std::array<scene::NodeId, 1> supParent{supRow};
+        const std::array<scene::NodeId, 1> subParent{subRow};
+        placeScene(builder, nodes, x, uv[0], supRow);
+        placeScene(builder, nodes, x, uv[1], subRow);
+
+        double dx = 0;
+        const auto alignScript = [alignment](double scriptWidth, double pairWidth) {
+            if (alignment == "left")
+                return 0.0;
+            if (alignment == "center")
+                return (pairWidth - scriptWidth) / 2;
+            if (alignment == "right")
+                return pairWidth - scriptWidth;
+            return 0.0;
+        };
+        for (std::size_t pair = 0; pair < count; ++pair) {
+            const auto subIndex = first + pair * 2;
+            const auto supIndex = subIndex + 1;
+            if (subIndex >= childNodes.size() || supIndex >= childNodes.size() ||
+                !childNodes[subIndex] || !childNodes[supIndex])
+                throw std::logic_error("multiscripts wrapper has an incomplete script pair");
+            auto *sub = childNodes[subIndex];
+            auto *sup = childNodes[supIndex];
+            const BBox subbox = sub->getOuterBBox();
+            const BBox supbox = sup->getOuterBBox();
+            const double subWidth = subbox.w * subbox.rscale;
+            const double supWidth = supbox.w * supbox.rscale;
+            const double width = std::max(subWidth, supWidth);
+            const auto subNodes = sub->emitScene(builder, subParent);
+            const auto supNodes = sup->emitScene(builder, supParent);
+            sub->placeScene(builder, subNodes, dx + alignScript(subWidth, width), 0);
+            sup->placeScene(builder, supNodes, dx + alignScript(supWidth, width), 0);
+            dx += width;
+        }
+        return x + dx;
+    };
+
+    double x = 0;
+    if (scriptData_.numPrescripts) {
+        if (!nodes.front())
+            throw std::logic_error("multiscripts pre-script container segment is absent");
+        x = addScripts(*nodes.front(), parameter(*this, "scriptspace"), firstPrescript_,
+                       scriptData_.numPrescripts, preAlign);
+    }
+
+    auto *base = baseChild();
+    if (!base)
+        throw std::logic_error("multiscripts wrapper has no base child");
+    const auto baseNodes = base->emitScene(builder, content);
+    base->placeScene(builder, baseNodes, x, 0);
+    if (base->breakCount())
+        x = 0;
+    x += base->getLineBBox(base->breakCount())->w;
+
+    if (scriptData_.numScripts) {
+        if (!nodes.back())
+            throw std::logic_error("multiscripts post-script container segment is absent");
+        addScripts(*nodes.back(), x, 1, scriptData_.numScripts, postAlign);
+    }
+    return nodes;
+}
 } // namespace folia::math::output::common
