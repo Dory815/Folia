@@ -877,6 +877,72 @@ verify nonzero completed dimensions while hidden descendants have no Scene
 glyphs, exact SVG bytes and existing lifetime checks. No expected SVG is derived
 from native output. Semantics/fenced/table/actions remain separately scoped.
 
+### Table emission (2026-10-21 Root lock)
+
+Keep the existing mtable/mtr/mtd pairs. Mtable owns row origins, rules/frame,
+percentage-width adjustment, labels and their completed viewports. Mtr owns
+cell traversal, row/cell spacing and background expansion. Mtd owns cell
+alignment/default placement and its background bounds. Reuse Common TableData,
+computed widths/half-spacing, BBox and alignment methods; move only missing
+Source SVG numerical work into these owners. No new table directory or wrapper
+hierarchy. Existing 14-case table Source witnesses remain independent evidence.
+
+In mtr.ixx, TableRowGeometry holds h,d,t_space,b_space,t_line,b_line;
+TableCellPlacement holds x,y,l_space,width,r_space,l_line,r_line. They are
+call-local completed numbers. TableRowScene holds own SceneNodes and label_nodes.
+Mtable calls virtual Mtr::emitTableScene(builder,parents,geometry,label_parent),
+retaining each row's result/geometry only in its emission stack. Mlabeledtr emits
+its label separately into the supplied label group. Mtr::placeSceneCell takes
+the cell, its emitted optional segments, row geometry and placement by reference.
+Mtd::placeSceneCell returns alignX/alignY and places the existing emitted cells;
+placeSceneColor adjusts completed rectangles. No output ids/Builder/label DOM
+are stored on wrappers. Standalone Mtd overrides emitScene using Source's base
+embellished/standard/addChildren protocol; table rows require table context.
+
+Builder gains finite background_bounds/set_background_bounds (first entry only,
+Rule with background_box role and data-bgcolor, otherwise absent/false),
+reparent_group(child,parent) (root/cycle/multiple-owner validation before move),
+and set_viewport_bounds(role,bounds), which only copies a completed Rect to
+matching existing viewports. These are typed drawing-value edits, no property
+lookup or identity/runtime service. Table labels may temporarily be root-owned
+while assembling, then are moved once into their completed parent before freeze.
+
+Scene roles table_frame/table_vertical_line/table_horizontal_line preserve
+Source data-frame/data-line,class and attribute order. Common records actual
+Paint: fill none, inherited stroke, width .07; dashed {.14}, dotted {0,.14}
+and round cap. Writer does not repeat these CSS-supplied paint attributes;
+Source class remains spelling only. Nondefault stroke-thickness/dasharray are
+serialized after geometry from completed Paint values, in Source units; do not
+duplicate numerical thickness strings in Common metadata. Mtable's emission is
+thin orchestration over its original Source-shaped private methods for rows,
+lines, frame, percentage width and labels, not one accumulated function.
+Viewport adds clip_content=true; table viewports use false, reflecting Source's
+overflow-visible CSS. Existing extenders retain true. Scaling gains trailing
+precision=3 metadata (0..12); table alignment uses 2, as Source topTable explicitly
+calls jax.fixed(scale,2). This new table evidence does not alter the settled Mo
+default precision. Transform matrices ignore spelling fields.
+
+FrameLayout gains optional PercentageFrame {percent,width_text,bounds,scale}.
+Percent is a resolved percentage, width_text only Source spelling, bounds are
+the completed absolute root viewport expressed as CSS pixels/1000 (the shared
+Scene unit at this no-viewBox frame), and scale is ex/(x_height*1000).
+Common OutputJax completes it after emission from root.pwidth, input metrics and
+DisplayLayout minimum_width; it updates the two table viewport roles to those
+bounds before freeze. Bounds.width=max(containerWidth*percent/100,
+minimum_width*ex/x_height)/1000; bounds.height=max(h+d,em/1000)*scale.
+FontMetrics.em/ex retain actual input CSS metrics (x_height/cap_height remain
+em ratios): Source createRoot needs actual ex, not the previously normalized
+ratio. Root-level percentage projection is completed once, never guessed from
+MML names in the writer. SVG uses width_text, data-mjx-viewBox, scale(s,-s)
+translate(0,-h*1000), with s fixed6. Ordinary and inline frames remain unchanged.
+
+Acceptance: existing real-TeX matrix/arrays/aligned/colortbl cases plus independent
+Source inputs covering labels on both sides, nested labels, percentage widths,
+rules/frames, equal rows/columns, row/cell backgrounds, and nondefault em/ex
+that distinguish Source scale precision. Inspect finite Paint/viewport/ownership,
+compare complete SVG bytes, repeat after request retirement. Full75/150 and Folia
+integration remain required after the remaining families, not accepted by this batch.
+
 ### CSS stylesheet dependency for Common (2026-10-20)
 
 Keep `StyleJsonSheet` in existing `util/style_json.ixx/.cpp`; no Common-local
@@ -1346,3 +1412,41 @@ Folia retains its current math worker until the complete native SVG path passes
 the new acceptance gates. Then it switches once through the C ABI. Mermaid is
 unchanged and paused. An additional D2D pixel comparison is not a gate for this
 SVG integration; the future D2D backend remains a separate consumer of Scene.
+
+### Enclosure Scene entry (2026-10-21 Root lock)
+
+The table hline Source case creates a real menclose; the observed factory error
+requires the existing CommonMenclose to become reachable. Keep the immutable
+29-notation SVG profile in its original svg/menclose_notations owner. Add an
+explicit optional notation span to CommonWrapperFactory::standardNodes; callers
+at the composition boundary supply that existing profile. An empty span keeps
+the explicit missing-profile error. Common never imports SVG or duplicates the
+catalog. The supplied catalog must outlive its layout job (the pinned SVG catalog
+has static storage), just as CommonMenclose already requires.
+
+CommonMenclose::emitScene owns traversal on its original menclose pair:
+standardSceneNodes, one enclosure_content group translated by the existing bbox
+left extender, the original child or initialized msqrt, then ordered notations.
+Reuse notationGeometry/sceneGeometry completed em geometry; do not recalculate
+line endpoints in the writer. The first accepted subset is the Source line
+recipes (side, paired side, diagonal and horizontal/vertical strike), plus radical
+child traversal. Other shape recipes remain explicitly unsupported by emission
+until their exact typed primitive projection is implemented and Source-tested;
+a path approximation must not be presented as byte-equal rect/ellipse output.
+Line marks are Scene PathElement::line with enclosure_mark role; SVG serializes
+completed coordinates then Source stroke-width, with inherited fill/stroke.
+No additional group is introduced around each line. The table row-rule case is
+required and remains failing until real native output equals the pinned SVG.
+
+Table follow-up Source evidence: SvgMtable.handleColor unconditionally writes
+getWidth() to its first output child; that child can be the bottom broken-border
+line, rather than a bgcolor rectangle. The 48-case run exposed the missing width
+attribute. Keep that completed table width as Path::layout_width (optional em
+value, not line stroke thickness or a second geometry). Builder::set_background_width
+updates only a first background Rule's bounds.width or first background Path's
+layout_width. Other first entries return false. Mtable calls it at the original
+handleColor stage; SVG writes the optional path width after paint/metadata.
+The width does not change path geometry. Validate it finite and nonnegative.
+This replaces the earlier assumption that table color sizing only reaches a rect.
+Solid border insertion also retains the original captured child anchor; broken
+borders independently insert before the current first child, as Source specifies.

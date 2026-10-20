@@ -4,14 +4,15 @@
 
 ## 当前状态与下一步
 
-- 最近代码提交`83ea50c6`（Source102/测试）；paintorder `aeec4a31`、mphantom `b8af994c`、mpadded `d83bcfc3`、helper guard `372ce351`均已提交。目标未完成；本记录的独立docs提交见git log。
-- 无活动build/test/session/agent；本批所有build成功，最后`common-padded-paint-tests-build.log`。full math `common-padded-full-math.log` exit0，766tests/211042assert/150suites。
-- 本批owner全部freeze；Root102Source bytecheck通过（padded-source-root.log）；35selected全byteequal/376assert（padded-final-source-focused.log），含simple phantom与negative-dw center/right；fixture SHA256 `1265a2ba8a9dda9d8a9811b8b7fff3df8e3551bf7743d6d049983ac644fbb943`。另padded2tests/29assert、lifetime8、paintorder2均通过。
-- 下一步：Root冻结table原mtable/mtr/mtd pair职责与call-local行/单元格输出协议，再派Luna。需处理背景矩形bounds调整、labels/percentage viewport和Source CSS对应的共享Paint值；未锁API前不让agent自行造框架。semantics/fenced/mglyph/foreign/menclose仍待后续。
-## 现有验证边界
+- 最近代码提交 `0e91715c`；本批table/Scene/entry/menclose/Source验收已分7批提交（起点3d0f24f5）。最终build `common-table-final-build.log` exit0，parallel4；完整math `common-table-final-full-math.log` exit0：773tests/211281assert/150suites。无活动build/test。
+- 独立Source112已由Root bytecheck（`table-source-root-bytecheck.log`）；fixture SHA256 `bbb73b2a93b5069dc9e7b20b0ca77bdcc760941a4d7fab138e8144daadb6c018`。native 48/48 byteequal（`table-source-final-focused.log` exit0）。Source48聚焦567assert；7个retirement cases/14assert也包含在上述完整测试中。
+- 生产owner全部freeze。CommonMenclose沿用原pair/geometry，只开放line recipes与radical child；29notation SVG profile由composition传入standardNodes(span)，Common不import SVG，其余shape明确throw。Table首border path的Source width由Path.layout_width承载；solid用原anchor，broken用当前first-child，详见architecture末段。
+- Luna全部freeze；`common_radicals_emission`已完善ignored `tools/math-port/drafts/native-raii/table-direct-mml/` 8-case Source/原生测试候选。另Source owner已freeze的3-case enclosure候选在 `tools/math-port/drafts/native-raii/enclosure-scene-cases/`。用 `rg --no-ignore` 找；均未native验收，不可把candidate消息当pass。
+- 下一步：Root审查并提取direct-MML packet到现有table测试职责，比较完整SVG；再补menclose3条实际TeX对照。equalrows/columns/dotted未验收；Source mtr mathsize="150%" rscale仍1，mstyle仅content rscale1.5，不得混称row缩放。
+## 现有验证边界（此前已完成）
 
-- 最新full math766tests/211042assert/150suites，包含35Source cases与4个重复请求case；不是完整75/150渲染gate。
-- 当前Source witness102 records的Root bytecheck通过：`padded-source-root.log`；默认生成工具不读取native输出。102不是最终75/150 gate。
+- 此前full math766tests/211042assert/150suites，包含35Source cases与4个重复请求case；不是完整75/150渲染gate。
+- 此前Source witness102 records的Root bytecheck通过：`padded-source-root.log`；默认生成工具不读取native输出。102不是最终75/150 gate。
 - 最新viewport-review/report.json的59 Scene/writer/limits/scripts tests477assert全过；随后namespace/split补充改动复验viewport值9assert、writer13、split16，lifetime8均过，日志`assembly-*.log`。28Source全部匹配，不代表全profile。
 - 实际full38/Newcm limits witness已重建并提交`ac8270e1`，`common-limits-source-current-root.log`通过；3个concrete Source native tests17assert通过。旧手工叠mixin零offset不是验收标准。
 
@@ -19,12 +20,12 @@
 owner handles（未注明活动者均freeze，只有Root派followup）：
 - `scene_values_writer`：Scene 5 files、SVG writer、两份原 UT。
 - `common_base_emission`：Wrapper、TextNode、TeXAtom；`common_mo_emission`：Mo。
-- `common_rows_emission`：Mrow、Mtext、Math、Mphantom；`common_radicals_emission`：Mfrac、Msqrt、Mroot、Mpadded。
+- `common_rows_emission`：Mrow、Mtext、Math、Mphantom、Mtr/Mtd；`common_radicals_emission`：Mfrac、Msqrt、Mroot、Mpadded、Mtable。
 - `common_scene_entry`：OutputJax、WrapperFactory；`common_scene_source_tests`：Source tool、fixture、UT。
-- `common_scripts_emission`：当前统一拥有scriptbase/msubsup/munderover/mmultiscripts后续；旧limits/multiscripts owner不要并行改同文件。
+- `common_scripts_emission`：当前统一拥有scriptbase/msubsup/munderover/mmultiscripts及menclose emitter后续；旧limits/multiscripts owner不要并行改同文件。
 - Root 拥有公共契约、CMake、build/tests、Git；不可假设上述 agent 仍在运行。
 - Unicode/Entities/mhchem 原 owner 已完成组件验收；texhtml 的既有 Source/native 证据已接受。组件验收不代表 75/150 gate 或 Folia 集成。
-- Source标准catalog为43个native NodeKind；menclose/XML/HTML仍throw。entry限定核对Source有效class metadata：Common字段均匹配commonDefaults；六组不同的SVG CSS归SVG原owner，不复制到Common，无scale字段。没有把该核对当作完整catalog渲染验收。
+- Source标准catalog为43个native NodeKind；menclose无profile时throw，有profile仅line/radical；XML/HTML仍throw。entry限定核对Source有效class metadata：Common字段均匹配commonDefaults；六组不同的SVG CSS归SVG原owner，不复制到Common，无scale字段。没有把该核对当作完整catalog渲染验收。
 ## 实现约束与未完成项
 
 Common→Scene Root contract 见架构文档 2026-10-21 的 Common-to-Scene 与 Script-family 段。保持统一 em/y-up；SceneContainers.nodes 是 own 输出，content 给 children；断行 Mrow 是单 outer 加多个 lineboxes。输出SceneNodes现为vector<optional<NodeId>>，content为valid SceneParents；默认place用child自身dx/id且跳缺失首段，显式target不额外叠加；Rule 不反转。
@@ -33,7 +34,7 @@ Inline fragments已验收：移动line entries到shell副本仅留一棵树；fi
 
 新viewport契约见架构Completed viewports段：Group末尾optional<Viewport>，bounds/view_box均em/y-up，aspect可选；Glyph末尾Transform；Scaling.explicit_axes仅序列化。Builder split必须保留viewport值；writer直接nested svg与path/use transform，禁止额外g。Mo一个viewport对应一个Source svg，不重复clip/scale节点。
 
-仍待实现/验证：table的viewport只是值类型，实际table emitter尚未接入；mglyph image、Xml/HTML foreignObject、table与其余专用families。`CommonXmlNode`仍是Property，不得导入active路径。完整75-case layout、150条SVG byte comparison、请求所有权、Folia集成、旧对象层退出均未完成。
+仍待实现/验证：table完整属性覆盖；mglyph image、Xml/HTML foreignObject及其余专用families。`CommonXmlNode`仍是Property，不得导入active路径。完整75-case layout、150条SVG byte comparison、请求所有权、Folia集成、旧对象层退出均未完成。
 
 ## 继续有效的既定边界
 
