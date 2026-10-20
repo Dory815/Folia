@@ -12,6 +12,7 @@
 ### 恢复时先用这个短检查点
 
 - **本轮配置前置已恢复原Unicode16Normalization到实际folia_math图**，复用原算法和
+  本轮代码/夹具提交`158d828e`，仅原13项受保护修改留在worktree。
   数据，未另写NFD实现。French样式需要这个依赖，但不是French resolver验收。
   原reference_unicode_normalization.cpp含20,077行/8.67MB生成C++测试数据，首次编译
   cl占5.2GB；Root核对进程命令后主动停止该次编译，句柄27161终态exit1，非测试崩溃。
