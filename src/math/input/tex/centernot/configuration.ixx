@@ -3,9 +3,9 @@ export module folia.math.input.tex.centernot.configuration;
 export import folia.math.input.tex.parser;
 import std;
 export namespace folia::math::tex {
-struct CenternotMethods {
-    static Property initializeModule(ParserRuntime&);
-    static FunctionRef filterCenterOver(ParserRuntime&);
+DispatchOutcome CenterOver(TexParser &, MacroInvocation const &);
+void filterCenterOver(TexFilterData &);
+struct CenternotConfiguration {
+    static ConfigurationRef initializeModule(ConfigurationHandler &, MapHandler &);
 };
-struct CenternotConfiguration { static ConfigurationRef initializeModule(ParserRuntime&); };
-}
+} // namespace folia::math::tex
