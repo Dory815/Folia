@@ -41,6 +41,9 @@ data. Native C++ owns pattern matching, buffer mutations, state transitions,
 recursive parsing, error construction and TeX generation. Generated TeX is fed
 back into the existing TeX parser, then its ordinary MML/Common/Scene route.
 
-Source and native observations and unfinished tests remain under
-`tools/math-port/drafts`. The module remains unregistered pending Root's review
-and current-graph build. Isolated checks against Gate101 are recorded as such.
+The current target registers these original owners. Independent canonical
+witnesses are `tools/math-port/mhchem-parser-source.cjs` and `mhchem-source.cjs`;
+neither requires ignored draft scripts or corpora. Root bytechecked both from
+outside the repository and ran the full current math target successfully.
+Acceptance counts and limits are in `native-raii-acceptance.md` and the current
+checkpoint in `HANDOFF.md`; historical isolated draft checks are not acceptance.

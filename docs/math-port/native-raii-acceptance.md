@@ -233,6 +233,29 @@ steps and an actual configured token-creator request. Root reran both witnesses
 and the full38 pinned profile; compiled Source hash remains unchanged. Logs are
 under ignored `build/math-port/`. This accepts these owners, not SVG integration.
 
+### Mhchem boundary (accepted 2026-10-21)
+
+The original configuration pair owns Machine, relmo, nine commands, fourteen
+characters and six ordered replacements. Its retained original maps preserve
+ordinary typed mutations independently of later registry replacement. Existing
+pure C++ mhchemparser algorithms remain their original dependency owners.
+The MathChoice owner now replaces through its physical parent as Source does.
+
+Independent self-contained Source witnesses bytecheck all 7960 dependency rows
+(1679 parses, 6279 patterns, all fourteen FSMs and 62 regexes), 220 package inputs
+including all 113 original tests, 63 inputs at each of six replacement stages,
+bindings, creator requests, aliases, errors and recovery. Fourteen Source map
+mutation observations include eight native typed scenarios and six observations
+of withdrawn JS APIs; these six are not claimed as native supported APIs.
+Fixture regeneration preserves unchanged bytes and modification time.
+
+Root final bytechecks: `mhchem-parser-source-root-final.log` and
+`mhchem-source-root-final.log`. Build: `mhchem-physical-parent-build.log`.
+Full current target: `mhchem-full.log`, exit 0, 713 tests / 208874 assertions /
+138 suites, no failures or skips. Dependency UT aggregates all rows into nine
+assertions; row counts are not assertion counts. Logs are in `build/math-port/`.
+This accepts these package/dependency owners, not SVG or Folia integration.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,
