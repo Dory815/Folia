@@ -23,15 +23,15 @@ Source responsibilities are assigned before implementation:
 | `_mhchemTexify`: go, _goInner, _go2, arrow/bond/operator maps | `texify.cpp` |
 | `mhchemParser.d.ts`: parsed records, Buffer, Match and transition types | `parser.ixx` |
 
-The package has one `MhchemModule` owner in the render session's existing
-`util::RuntimeModules`. Initialization requires both that cache and the actual
-`ParserRuntime`; there is no implicit singleton registration route. The module
-owns its exported methods/utils records, its original command and character
-maps, its ordered replacement rules and configuration. Map mutation does not
-replace the module's exported callable references. A registry replacement does
-not redirect the replacement callback away from its original lexical maps.
-The Machine callable holds a weak module reference, avoiding a native ownership
-cycle between the module, maps and callback.
+The native package keeps one configuration source pair with typed Machine/relmo
+callbacks, immutable replacement data, and original command/character maps.
+Initialization receives ConfigurationHandler and MapHandler; RuntimeModules,
+ParserRuntime and generic exported object/callable records are withdrawn.
+Replacement helpers receive the two original TokenMap references explicitly.
+Machine obtains retained handler maps, preserving their ordinary mutations;
+a later registry replacement must not redirect its lexical map references.
+Ownership uses ordinary native map references with no cycle or synthetic JS
+module object. See native-raii-architecture.md for the current integration plan.
 
 `mhchem-generate-data.cjs` executes the original only as a development data
 transcription tool. It writes the literal regular-expression definitions and

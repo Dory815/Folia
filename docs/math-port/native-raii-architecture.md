@@ -489,6 +489,67 @@ Token.attributes with stretchy=false during use. Post-use object state does
 not describe the immutable native registration input; rendered nodes still
 compare against the actual Source results with their parsed attributes.
 
+### Unicode and Entities responsibilities (2026-10-20)
+
+Unicode remains its original single configuration pair, containing the three
+methods and one CommandMap. The private UnicodeCommandMap derives from the
+existing CommandMap and owns the finite codepoint-to-font cache. A MapHandler
+represents one loaded module environment: its TeX instances share this cache,
+including across reset, while destroying the registry releases it. Independent
+registries represent independent Source module environments. There is no
+process-global cache, per-equation copy or universal package-state dictionary.
+Initialization reuses an already installed UnicodeCommandMap in that registry.
+The former height/depth cache slots have no consumer anywhere in Source;
+preserve their bracket syntax and font argument selection without storing dead
+metrics. Validate codepoints before inserting native cache entries.
+
+The unicode MML marker is an optional bool on the original TexNodeProperties,
+with the same original copy/merge owner. No new node or property bridge exists.
+Use Entities.numeric on the original TeX spelling, including its radix rules;
+RawUnicode and Char reuse the already verified string_util.unicodeString and
+UTF-16 codepoint helpers. Macro aliases retain the three compiled callbacks.
+
+Entities stays in util/entities.ixx/.cpp with a typed string table, loaded shard
+set and bool loadMissingEntities option. Reuse the existing hash-locked 29-shard
+generator/data. Install local compiled shards synchronously on first demand;
+compare against Source's completed translate result after actual loader retries.
+Each first-use installation restarts translation from the original input, since
+a shard can restore an overridden base entry already visited in the prefix.
+Generated shards preserve the actual add() entries, including base overlaps.
+No JS Promise/retry scheduler or external resource loader belongs in the native
+math pipeline. Disabled loading, explicit installation, typed add/remove,
+case-sensitive table lookup and numeric range errors remain explicit behavior.
+Use existing string_util.unicodeString for numeric conversion, including NUL,
+supplementary characters and isolated UTF-16 surrogates; never duplicate it.
+
+### Mhchem responsibilities (next package, 2026-10-21)
+
+Keep the original `input/tex/mhchem/configuration` pair as the package owner:
+MhchemMethods.Machine, compiled BaseMethods.Macro/AmsMethods.xArrow aliases,
+MhchemUtils.relmo, the six ordered replacements, both maps and configuration.
+Expose typed callbacks and `initializeModule(ConfigurationHandler&, MapHandler&)`;
+remove MhchemModule's Context/Property/callable fabrication rather than retaining
+parallel implementations. Source defines nine command entries (ce, pu and seven
+x-arrows) and fourteen character entries. relmo preserves the captured Token's
+attribute overrides after stretchy/REL/-mhchem defaults; the last replacement
+queries the original lexical command/character maps rather than a reduced arrow
+allowlist or the registry's later replacements. Native replacements take those
+two TokenMap references explicitly. Machine uses the retained handler maps;
+ordinary map mutation remains visible while registry replacement does not
+redirect an existing package instance. Do not recreate generic module objects
+or callable identities to preserve this typed ownership relationship.
+
+The existing `dependencies/mhchem_parser/parser.ixx`, parser.cpp, patterns.cpp,
+actions.cpp, texify.cpp and immutable pattern/transition data remain the owners
+of mhchemparser 4.2.1. Reuse these native algorithms and correct proven Source
+differences in place. No second parser, arbitrary object record, JS evaluator or
+example-output lookup belongs here. Audit the native closed Parsed/Buffer/Match
+records against the pinned declaration and every action consumer before changing
+their representation. Prove regex-cache keys are bounded by source patterns;
+request text must not accumulate in a process cache. Root owns CMake and the one
+native build/test stream. Accept independent parser-to-TeX evidence, complete
+package MML/errors/recovery, maps and replacements before advancing to texhtml.
+
 ## Ownership
 
 ### CSS stylesheet dependency for Common (2026-10-20)

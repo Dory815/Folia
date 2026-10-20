@@ -200,6 +200,39 @@ Source fixtures must be independently generated, hash locked and byte checked;
 native output never regenerates their expected trees. Follow focused tests with
 one complete math run after the final substantive changes.
 
+### Unicode and Entities boundary (2026-10-20)
+
+Compare all three Unicode commands with actual Source, preserving historical
+cases and adding font/HD parsing, variant weight/style, radix and boundary
+values, NUL/surrogates/supplementary text, Char scan widths and following input,
+captured aliases, errors and following-request recovery. Verify shared fonts
+across two TeX instances and reset in one registry, plus destruction/isolation
+of independent native registries against independent Source module loads.
+Record native range_error separately from Source RangeError. Check the unicode
+marker and configured token creator's exact request, and native cache release.
+
+For Entities, compare base and every one of the 29 shard tables with pinned
+Source, and exercise actual on-demand completed translations using Source's
+real asyncLoad/retry protocol. Native resources are local and synchronous;
+do not claim JS retry object/API equivalence. Test unknown names, one-load
+behavior, disabled loading, explicit add/remove and reinstallation, case and
+syntax boundaries, numeric conversion/errors, independent modules and exact
+UTF-16 output. Fixtures must preserve embedded NUL and lone surrogates; emit
+length-aware string literals and valid C++ escapes. Keep generated data ignored.
+
+Accepted 2026-10-21: `unicode-entities-full.log` exit 0, 706 tests / 206757
+assertions / 136 suites, no failures or skips; final build exit 0 in
+`unicode-entities-build.log`. Entities focus: 9 tests / 4768 assertions.
+Unicode focus (including existing matching tests): 12 tests / 414 assertions.
+The independent `entities-source.cjs` bytecheck covers 406 base entries, 29
+shards and 2128 raw records, 21 numeric cases, 19 completed translations, three
+overlap reinstall cases, three full-input retry cases and two numeric/load
+ordering cases. `unicode-source.cjs` covers all 11 historical cases within 51
+inputs, six cache/reset/module-isolation observations, six same-jax recovery
+steps and an actual configured token-creator request. Root reran both witnesses
+and the full38 pinned profile; compiled Source hash remains unchanged. Logs are
+under ignored `build/math-port/`. This accepts these owners, not SVG integration.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,
