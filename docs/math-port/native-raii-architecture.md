@@ -392,6 +392,61 @@ oracles; no JS engine or generated JS bundle executes in native math rendering.
 
 ## Integration policy
 
+### TeX request and stack implementation (2026-10-20)
+
+The original `StackItem`/`MmlStack`, `StackItemFactory`, `Stack`, `TexParser`,
+`ParseOptions`, `Tags`, `base/BaseItems` and `ColumnParser` responsibilities now
+have native implementations in their corresponding files. The obsolete flat
+`input/tex/base_items.cpp` implementation is removed; `base/base_items.cpp` is
+the sole owner of the 26 base frame algorithms. Factory construction uses the
+existing typed class registry and returns activation handles without retaining
+a product history. Stack owns the actual activation slots and keeps the top
+and incoming handles alive through a check/pop/replay transition.
+
+`TexScanner` remains the sole owner of the parser's immutable source snapshot,
+UTF-16 cursor and current control sequence. `TexParser` delegates its lexical
+methods to that owner and preserves the original dispatch, stack and LaTeX
+provenance algorithms. Its private scope member registers before constructing
+Stack and unregisters the exact parser on exceptions or normal `mml()` exit.
+It never retains a parser in a registry after that activation ends.
+
+`ParseOptions` borrows the effective input-jax options, package configuration
+and session. It owns its factories, column parser, tagging service and
+equation scratch. Its node lists contain document-owned MML borrows, preserve
+registration duplicates and filter by the current root's parent chain. The
+finite `in_lists` node property records additional postprocessing memberships;
+it is copied by the original MML clone operation. It does not represent a
+second node owner or a generic property bag. `clear()` clears only the original
+ephemeral fields and tag scratch, retaining session definitions and options.
+
+`Tags` uses the one equation record and the existing session counter/labels/ids
+APIs. Numbering, nested environments, references and equation recompile state
+remain on those owners. Formatted tag content invokes the actual TexParser;
+there is no replacement text parser inside Tags. Source `enTag` table creation
+uses the configured NodeFactory. Tag creators and the default name belong to
+the actual ParserConfiguration instead of a process-wide JS class registry.
+
+TeX assembles script nodes by physical child slot before input-jax postfilters
+select the final single/double script family. `MmlDocument::setChildSlot` owns
+this operation, validating document ownership and parent links. An absent slot
+is a null mathematical child, not a generated placeholder or a JS array object.
+Exact cloning preserves these slots. Completed layout must receive the result
+of the original TeX postfilters; this addition does not authorize incomplete
+script nodes to flow into Common layout.
+
+The original ParseUtil fence/palette/initial-operator helpers and NodeUtil
+child/text/operator helpers are implemented on their original owners. Token
+text delegates existing MML virtual methods so HTML content retains its
+meaning. No BaseItems-local copies of those helpers are introduced.
+
+These implementations are component progress. Native BaseMethods, package
+mappings, the input-jax compile/filter phases and full nested tag parsing are
+still required. Tests using a small configured callback map exercise the real
+TexParser collaboration, not the complete selected package profile. Source
+full-profile parses are reference evidence only until the corresponding native
+pipeline produces and compares their results. Full TeX-to-SVG/Folia acceptance
+remains open.
+
 ### TeX frame construction and transfer (2026-10-20 Root lock)
 
 Keep the existing generic Tree Factory registry and the actual StackItemFactory

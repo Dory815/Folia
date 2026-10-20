@@ -11,6 +11,47 @@
 
 ### 恢复时先用这个短检查点
 
+- **2026-10-20 当前断点：原 TeX 请求/栈/编号服务已实现并通过组件验收，完整输入管线仍未完成。**
+  上轮为实质进展：清理提交 e6126948、配置实现 cc845a34、记录0284444c；完整357项/
+  134,547断言exit0。本轮Root在原 stack_item/stack_item_factory/stack/tex_parser/
+  parse_options/tags 文件实现 Source 类协作，同时原 NodeUtil/ParseUtil 恢复实际所需helper。
+  新的栈工厂不留产品注册表；FrameHandle只共享真实激活，最后引用自然销毁；ParserScope
+  负责异常退栈，TexScanner仍是唯一字符串/游标/currentCS。没有新 native_* 源文件。
+  MmlDocument新增setChildSlot以表达原TeX脚本临时缺席槽，不造占位节点；需聚焦验证
+  所有权/槽位/clone及真实parser后处理，不能据此声称Common已接受缺席脚本输入。
+  34711首构建已终态exit0；代理基础帧/列文件及Source/测试候选已由Root审查并推广，
+  代理本轮已完成，无live agent。Luna已知额度到10月25日，没有重复尝试；必要协作仅
+  /root/base_items_column（GPT-6.1 Sol）。Root还删了旧错误路径input/tex/base_items.cpp，
+  数学类/方法仅保留MathJax原base目录中的实现；旧ParserRuntime已退出构建图待整体退掉。
+  正式Source tex-base-items-source.cjs（26类/13列用例/4完整Source公式），
+  tex-parser-source.cjs（八TS锁+完整compiled profile、真实配置解析器/列表/编号/Stack）
+  均Root从C:\Windows重放exit0。原生曾聚焦22项/346断言exit0；**完整379项/
+  134,893断言exit0**，3436已终态，parser-stack-full.log。测试初稿variant赋值不允许
+  reference alternatives，改返回值初始化；MML token walk不访问TextNode，断言按原Source
+  改3；单个分式分子不额外包mrow，Source检查先发现该预期错误并修测试，未改数学算法。
+  **最新审查修正尚待重验**：Root新NodeUtil.getText重复遍历漏HtmlNode，已改为委托真实
+  TextNode/AbstractMmlTokenNode.getText虚方法，在原typed_mml_branches测试加两断言。
+  索引槽/clone测试已从tex_parser.cpp归回mml_exact_clone_document.cpp。新代码完成
+  clang-format（4空格/100列），未格式化原13项无关文件。
+  75633构建已终态exit0（`parser-reviewed-build.log`）。最终新增测试及相关原MML/HTML/
+  ParseUtil聚焦 **33项/452断言exit0**（`parser-reviewed-focused.log`）。当前唯一live
+  最终完整Math测试 **379项/134,895断言exit0**，**56363已终态**，
+  `parser-reviewed-full.log`；当前无live构建/测试/agent。分批提交：MML基础 **0f5a9fb4**；
+  原TeX类实现 **daa66700**（22文件互相依赖的原类协作；净减少约988行，非新增替代路径）；
+  正式Source/真实C++类测试 **8f4bb493**。原13项无关修改继续保留，不能混入提交。
+  **准确下一步**：原 `CommandMap` 构造/parse仍声明，之前唯一缺口是真实TexParser.currentCS，
+  现在已具备；先在原token_map中补该路径及真实命令调用/异常行为对照，不再回头重查
+  工厂/配置/列表/帧所有权。随后原 `base/base_parse_methods`、`base/base_methods`、
+  `base/base_mappings`、`base/base_configuration` 改写并绑定实际编译函数表，闭合原
+  `tex_jax.{ixx,cpp}`（真实路径，不是tex.ixx）及input-jax/filter数据协作。不要再推广
+  仅声明的占位服务；ParserRuntime及Context消费者仍退出构建图待相应owner退掉。
+  完整38包、原TeX input-jax/filter、
+  BaseMethods/映射、nested tag TeX、完整SVG对照/Folia接入仍未完成，禁止把Source的完整
+  公式用例说成本地完整TeX已通过。
+  原13项无关修改继续保护。
+
+### 上轮已完成检查点（历史；本轮以顶部执行断点为准）
+
 - **2026-10-20 当前断点：用户再次指出 `native function list` 命名及旧文件残留。**
   先前提交 `2022cb1a` 已把 `native_function_list.cpp` 归回 `function_list.cpp`，
   生产实现一直在原 `util/function_list.ixx`，没有第二个 native FunctionList 模块。
