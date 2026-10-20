@@ -137,7 +137,7 @@ std::string hexCodepoint(std::uint32_t value) {
 
 void addPolygon(scene::Builder &builder, scene::NodeId parent,
                 std::array<scene::Point, 4> const &points, scene::Paint paint,
-                scene::ElementRole role) {
+                scene::ElementRole role, std::optional<std::size_t> insertionIndex) {
     scene::Path path;
     path.element = scene::PathElement::polygon;
     path.role = role;
@@ -145,7 +145,10 @@ void addPolygon(scene::Builder &builder, scene::NodeId parent,
     path.geometry.segments = {scene::MoveTo{points[0]}, scene::LineTo{points[1]},
                               scene::LineTo{points[2]}, scene::LineTo{points[3]},
                               scene::ClosePath{}};
-    builder.add_primitive(parent, std::move(path));
+    if (insertionIndex)
+        builder.insert_primitive(parent, *insertionIndex, std::move(path));
+    else
+        builder.add_primitive(parent, std::move(path));
 }
 
 constexpr double smallMathSpace = 2.0 / 18.0;
@@ -932,6 +935,9 @@ void CommonWrapper::handleSceneBorder(scene::Builder &builder, std::span<SceneNo
     for (std::size_t k = 0; k < nodes.size(); ++k) {
         if (!nodes[k])
             continue;
+        std::optional<std::size_t> solidAnchor;
+        if (builder.entry_count(*nodes[k]) != 0)
+            solidAnchor = 0;
         const double left = (!n || k == 0) ? 1 : 0;
         const double right = (!n || k == n) ? 1 : 0;
         const auto box = embellished ? getOuterBBox() : getLineBBox(k)->copy();
@@ -974,7 +980,7 @@ void CommonWrapper::handleSceneBorder(scene::Builder &builder, std::span<SceneNo
                 scene::Path line;
                 line.element = scene::PathElement::line;
                 line.role = scene::ElementRole::background_box;
-                line.paint.stroke = cssPaint(border.color[side]);
+                line.paint.stroke = scene::CssColor{border.color[side]};
                 line.paint.stroke_width = border.width[side];
                 line.paint.line_cap = border.style[side] == "dotted" ? scene::StrokeCap::round
                                                                      : scene::StrokeCap::square;
@@ -995,10 +1001,14 @@ void CommonWrapper::handleSceneBorder(scene::Builder &builder, std::span<SceneNo
                                             ? std::vector<double>{0.001, length / count - 0.002}
                                             : std::vector<double>{m, 3 * m};
                 line.geometry.segments = {scene::MoveTo{{x1, y1}}, scene::LineTo{{x2, y2}}};
-                builder.add_primitive(*nodes[k], std::move(line));
+                builder.insert_primitive(*nodes[k], 0, std::move(line));
+                if (solidAnchor)
+                    ++*solidAnchor;
             } else {
                 addPolygon(builder, *nodes[k], points, std::move(paint),
-                           scene::ElementRole::background_box);
+                           scene::ElementRole::background_box, solidAnchor);
+                if (solidAnchor)
+                    ++*solidAnchor;
             }
         }
     }
@@ -1145,7 +1155,9 @@ double CommonWrapper::handleSceneId(scene::Builder &builder, std::span<SceneNode
     const auto scale = getBBox().rscale;
     scene::TextRun alignment;
     alignment.role = scene::ElementRole::id_alignment_marker;
-    builder.wrap_contents(*nodes.front(), translated(0, -h), {},
+    scene::SemanticMetadata metadata;
+    metadata.ordered_attributes.push_back({"data-idbox", "true"});
+    builder.wrap_contents(*nodes.front(), translated(0, -h), std::move(metadata),
                           scene::ElementRole::id_alignment_box);
     builder.insert_primitive(*nodes.front(), 0, std::move(alignment));
     return y + h * scale;
