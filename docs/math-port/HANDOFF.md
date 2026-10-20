@@ -1,16 +1,18 @@
 # MathJax 原生移植交接入口
 
-当前：Lite/Xml/HTMLDomStrings/texhtml/Finder 已通过组件验收；最新 build exit 0（texhtml-final-build.log），四组 *-accepted-focus.log 全 exit 0。完整 texhtml-full.log exit 0：741 tests / 210529 assertions / 149 suites，无失败/跳过。DOM/Lite 已提交 4c379ef7，Xml bridge 为 c9d76a1f，CompileServices/Finder 为 ef04091d；正在提交 texhtml/验收。无活动 build/test；全部 Luna 冻结。额度已恢复。
+当前：Lite/Xml/HTMLDomStrings/texhtml/Finder 组件已验收并分批提交：4c379ef7（DOM/Lite）、c9d76a1f（Xml bridge）、ef04091d（CompileServices/Finder）、f0f4aaef（HTMLDomStrings/texhtml，删除旧 methods/services 四文件及旧 UT）。最后 build texhtml-final-build.log exit 0；完整 texhtml-full.log exit 0：741 tests / 210529 assertions / 149 suites，无失败/跳过。工作区仅剩末尾原13个保护 dirty 路径。无活动 agent/build/test handles；额度已恢复。
 
-下一步：提交 HTMLDomStrings/texhtml/验收，再冻结 Common→Scene 的原 family emission 接口并分 Luna。旧 texhtml methods/services 四文件与未注册 html_methods_identity UT 已删除，职责只在原 configuration pair。旧 Finder host 有 inactive parser_runtime/render_session 入边，随旧对象层退出显式清理；node_store/source_text_content 受保护 dirty Lite consumers 仍需，暂不删。
+下一步：Root 先在现 architecture 文件锁定 Common→Scene emission 的实际 C++ 接口/文件职责/验收，再改声明并分 Luna。需解决：CommonWrapper 多行 segments/后置 place 与 Builder transform/wrap/prepend 能力；Scene 缺 group paint/opacity、unknown TextRun 字体语义；CommonMo assembly 只有 bbox，尚无 glyph piece placements。这些是新出口缺口，不重写已验的 BBox/字体/分式根式算法。现 CommonMfrac/Msqrt/Mroot::layoutGeometry 可直接复用。SVG writer 只做拼写、路径/cache、数值格式，不选字形、不计算数学位置。
 
-最近修正：LiteParser.checkDocument 的 replace(new,old) 参数顺序；测试 JSON/片段选择、parsed document 无 defaultView、有效 Element 不触发 span 包装、texhtml 空根、disabled TeX 的 U+2212。texhtml UT 空指针来自丢弃 compile 返回值再读 bad.root，已修并单例 exit 0；无未诊断异常退出。direct fixture 现从 pinned inputs 保存 initialAllowTexHTML，而非 jax.options 输出；22 direct + 1 recovery，Source JSON/期望未改。Source Ref/eqref 显式 display=false 已核对，无待修问题。
+固定边界：六个 Lite 原文件是同一 lite_adaptor primary 的 partitions。Xml payload 冻结独立子树；CompileServices 只借用 output/adaptor，本次 compile 后正常/异常均清理。Lite parsed document.defaultView 为空，window.document 才指 window；HtmlNode 对有效 Element 缺 marker 不包装 span；FindTeX Ref/eqref 显式 display=false。direct fixture 输入取 initialAllowTexHTML（不能拿 jax.options 最终观测当初值）。这些已测试，不重开。
 
-架构/职责：六个 Lite 原文件是同一 folia.math.adaptors.lite_adaptor primary partitions；core native DOM / Lite / immutable Xml bridge / HTMLDomStrings / texhtml 原 pair / FindMath 与 FindTeX 原 pair 均已交付冻结。Root 持有 CompileServices 借用/异常清理、ProtoItem、CMake 和共享调用点。旧 render_session 为 inactive JS 路径，不补兼容 overload。具体架构见下方链接。
+证据：Lite Source 41 records / 30 parser inputs，native 11 tests/95 asserts；Xml 5/48；Finder Source 22 inputs/59 ProtoItems，native 3/1330；texhtml 22 direct + recovery + 5真实pipeline，native 9/182，五份原 snapshot 精确匹配。Root 从 C:/Windows 的三个 *-source-current-root.log 全 exit 0；canonical tools/fixtures 自包含。完整 Source JSON/fixture hashes 在工具和验收文档，不重复抄历史日志。
 
-Source witnesses：Lite 41 records / 30 parser inputs，当前 C++ fixture SHA bb5c7ee4c20104b67cebb486d7e52f350b44dc54d0cad34e89baa9d0d768251c；texhtml 22 direct + recovery + 5真实pipeline，5份原 snapshot 全匹配，Source JSON SHA c13c8eb7ca5c9dea20e5a264a4b1437194949c01bd4f8c719dbf5a2959dfc4d5；Finder 22 inputs / 59 records。Root 从 C:/Windows 最新 bytechecks 三者全 exit 0（*-source-current-root.log）；canonical 自包含。生成物 tools/math-port/*-source.cjs、tests/math/fixtures/{lite,texhtml,find_tex}.inc。
+本轮只读 Luna common_scene_contract、scene_paint_contract、glyph_emission_contract 已结束：旧 scene/wrapper、scene/wrappers/*、glyph_paint 都不在 active CMake，不能注册回来。CommonTextNode 只有 remappedText() 方法，不是存好的 glyph 输出；composition/unknown buffering 与实际 stretch piece 数学须回原 CommonWrapper/TextNode/Mo owner。Source place 区分默认 dom[0]+dx/id 调整与显式 segment；多行 parents[] 不可简化成单 origin。Scene metadata 可保留 SVG 拼写，但不能替代后端共用的 paint/font 语义。
 
-所有 agent 已结束，无活动 build/test handles；需要语义修复时 followup 原 Luna owner（lite_parser、lite_native_contract、mhchem_package、html_dom_strings、mhchem_package_cases、mhchem_dependency、texhtml_tests）。common_scene_contract 的只读结论：现 Common 缺实际 Scene emitter，分式/根式 geometry 已可复用；不注册旧 Scene wrapper hierarchy，不重算数学位置。候选仍在 ignored build/math-port/{lite-source-candidate,texhtml-source-candidate,find-tex-source-candidate}/。Root 独占 build/test/Git/CMake/HANDOFF。保护的原 13 dirty 路径见末尾。
+需要续用时 followup 原 Luna owners（lite_parser、lite_native_contract、mhchem_package、html_dom_strings、mhchem_package_cases、mhchem_dependency、texhtml_tests）；新阶段写任务需 Root 先锁接口。旧 Finder hosts 有 inactive parser_runtime/render_session 入边，随旧对象层退出清理；node_store/source_text_content 仍被保护 dirty Lite consumers 引用，暂不删。旧 render_session 不补兼容 overload。
+
+候选在 ignored build/math-port/{lite-source-candidate,texhtml-source-candidate,find-tex-source-candidate}/，当前 canonical 工具不依赖它们。Root 独占 build/test/Git/CMake/HANDOFF；无未诊断异常退出。上次 texhtml UT 的空 bad.root 已改为读取 compile 返回值并经聚焦/完整验证。
 
 恢复时先读本文件，再检查相关当前改动。架构见 [native-raii-architecture.md](native-raii-architecture.md)，验收见 [native-raii-acceptance.md](native-raii-acceptance.md)。只更新这一个当前 checkpoint；历史交给 Git、测试和 Source witness，不追加阶段流水账。
 
@@ -23,21 +25,13 @@ Source witnesses：Lite 41 records / 30 parser inputs，当前 C++ fixture SHA b
 - Full38 compiled hash：`cbb0d3b6a08fbde6614b070f111fb58cc3cfe9d00a9713163fd4cd6d0300355a`
 - Profile/pins：`tools/math-port/reference-profile.cjs`、`docs/math-port/scope.json`
 
-## 已接受状态与下一步
+## 已接受组件与剩余边界
 
-最近提交：`1f909e64` MML unicode marker，`c858e986` Entities 原 owner / 全量实体数据 / 测试，`d348900a` Unicode 原 owner / 测试。此前已接受包不重做。FunctionList 命名已恢复原 owner，不再重查。
+Unicode/Entities/mhchem 原 owner 已完成 Source 和 native 组件验收，记录见 native-raii-acceptance.md 与 Git；不重复全域审查、FunctionList 命名或已移除的 JS API 兼容测试。
 
-- 最终 build：`build/math-port/unicode-entities-build.log`；full：`unicode-entities-full.log`。
-- Root Source bytecheck：`entities-source-root.log`、`unicode-source-root.log`；完整 profile：`unicode-entities-profile-root.log`。以上日志均在 `build/math-port/`。
-- Entities 已保留全部 2128 raw records（含 base/shard 重复项）；同步首次装表后重扫整个原输入，匹配 Source 完成 retry 的结果。
-- Unicode 字体缓存由私有 CommandMap / MapHandler registry 拥有；同 registry 跨 TeX/reset 保留，不同 registry 隔离，析构释放。fixture 保留 NUL/孤立 surrogate；捕获别名依赖编译回调表。
-- mhchem：220 package inputs（含全部 113 原用例）、63×6 replacement stages、14 Source mutations，其中 8 个是原生 typed 场景，6 个仅记录已撤销的 JS API 行为。依赖完整比较 7960 records（1679 parse、6279 pattern、14 FSM / 62 regex 的两个全表记录）。最终 build `mhchem-physical-parent-build.log`；包 focus `mhchem-package-focused-fixed.log`。parser UT 聚合检查全部 rows，当前为 9 assertions，不把 row 数当断言数。
-- Mhchem 原 maps 单向 RAII 持有，无 JS module 对象；重复初始化保留状态。MathChoice 按 Source 用物理 `parent()` 替换节点；`Parent()` 跳过 inferred row 会留下未替换节点。此处已有真实包级 MML 对照覆盖。
-- 两个 mhchem canonical Source 工具已自包含，Root 最终 bytechecks `mhchem-source-root-final.log`、`mhchem-parser-source-root-final.log` 通过，不依赖 ignored 草稿 oracle/corpus。replacement helper 使用原 lexical TokenMap 引用，不取当前 registry replacements。
+顺序：已完成 texhtml → Common→Scene 实际发射 → SVG 全量对照 → Folia 集成 → 旧对象层退出。不可把包级测试当成完整 SVG/Folia 验收。
 
-顺序：mhchem 包与依赖 → texhtml → 实际 Common→Scene 发射 → SVG 全量对照 → Folia 集成 → 旧对象层退出。不可把包级测试当成完整 SVG/Folia 验收。
-
-Common 测量辅助 MML 属于本次请求的 MmlDocument；同 document 重测可能增长至 document 析构。最终 renderer 每 request 新建 document，不把 document 留在 session 或 Scene。
+Common 测量辅助 MML 属于本次请求 MmlDocument；同 document 重测可能增长至 document 析构。最终 renderer 每 request 新建 document，session/Scene 不保留 document。
 
 ## 工作约束与检查
 
