@@ -3,5 +3,11 @@ export module folia.math.input.tex.cancel.configuration;
 export import folia.math.input.tex.parser;
 import std;
 export namespace folia::math::tex {
-struct CancelConfiguration { static ConfigurationRef initializeModule(ParserRuntime&); };
-}
+struct CancelMethods {
+    static DispatchOutcome Cancel(TexParser &, MacroInvocation const &);
+    static DispatchOutcome CancelTo(TexParser &, MacroInvocation const &);
+};
+struct CancelConfiguration {
+    static ConfigurationRef initializeModule(ConfigurationHandler &, MapHandler &);
+};
+} // namespace folia::math::tex
