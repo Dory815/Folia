@@ -9,7 +9,44 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 configmacros/noundefined批次，已验证提交）
+### 恢复时先用这个短检查点（2026-10-20 verb/upgreek/gensymb批次，已验证提交）
+
+- **完整Math回归485项/137,059断言exit0**：`verb-upgreek-gensymb-full.log`，2160已终态，
+  无跳过/失败。统一构建62996已exit0，并发4（verb-upgreek-gensymb-build.log）；
+  verb聚焦6项/95断言、upgreek4项/650断言、gensymb4项/127断言均exit0。
+  当前无live测试/构建/代理；工作区仅原13项无关修改，继续保护。
+- **按包提交**：76d98fe6（5文件）verb；e56c38d7（5文件）upgreek；4dfefdf2（5文件）gensymb。
+  各包原Configuration owner原位替换旧对象层，未新增Methods/Mappings平行文件。
+- **Root拥有原verb/configuration两文件**：原位替换成原VerbMethods::Verb+CommandMap+配置；
+  没有另拆Methods/Mappings模块。复用TexParser扫描、NodeFactory token(mtext,monospace)。
+  新tests/math/verb.cpp 6组、tex-verb-source.cjs，CMake只加入verb，不含代理仍编辑的文件。
+  首构建29465终态exit1：测试pair不能从两string_view隐式构造，已改分别赋值；重建终态
+  exit1因dispatch_token的array CTAD生成string_view而TexError要求string span，已显式string。
+  两处均仅C++类型转换错误，未发生原生进程异常退出。
+- **Source已独立通过**：Root从C:\Windows重放verb20次真实编译exit0，verb-source.log，
+  TS/CJS及完整38profile锁。空内容保留一个空TextNode，只有U+0020转NBSP，空白前缀跳过；
+  Source GetNext返回完整码点但charAt比较单UTF-16单元，补充字符分隔符报NoClosingDelim，
+  旧C++误用front可接受它，已按Source原扫描修正。错误分别用dispatch_token/currentCS。
+- **已有GPT-6.1 Sol /root/base_methods已交付冻结限定8文件**：原upgreek/gensymb各
+  configuration两文件、各tests/math/{upgreek,gensymb}.cpp和各tex-*-source.cjs。
+  职责已冻结：原41Greek/5单位表和原名typed TokenInput回调，复制Token attributes后覆盖normal，
+  gensymb另MathML-Unit，ohm U+2126；不改ParseMethods、不另建模块，不构建/改共享/Git。
+  Root已纳入CMake并格式化、逐owner审查；Source由Root独立从C:\Windows重放128/20compile
+  exit0（upgreek-source.log/gensymb-source.log）。Root校正Source的let/bold公式使逐字匹配
+  C++用例（Upomega、micro、degree），并删upgreek空unit()及两包无用MapHandler导入。
+  代理只读复核Root Verb未发现差异，已结束，未编辑/构建/测试。
+- **准确下一步：AMS**。本轮仅只读了原AmsConfiguration.ts、AmsMethods/AmsItems的imports
+  和AmsMappings头、当前mappings.cpp；未改任何ams生产文件。先读完原四职责及现共享接口，
+  再冻结typed接口/文件职责/Source验收后分工。配置复用已验NewcommandConfig与AbstractTags，
+  Items保留MultlineItem/FlalignItem继承原ArrayItem/EqnArrayItem，Methods保留原数学算法，
+  Mappings保留原9表。现mappings.cpp引ams_mapping_data.inc（旧Property表），需按原owner
+  生成typed表并移除被替代的旧表/注册，参考已验BaseMappings做法，不创建第二套实现。
+  检查StackKind/StackItemInit、tags/array字段是否需要原owner扩展；不要凭旧summary猜API。
+  完整38包、共享布局→SVG对照、Folia切换仍未完成；goal保持active。原13项修改保护。
+  Luna额度到10月25日，无新信号不重试；必要Sol仅GPT-6.1 Sol。Mermaid暂停，无D2D像素门槛。
+  不重复FunctionList命名/Stack/BaseMethods已验结论，不执行reset或改写历史。
+
+### 上一已验证提交批次（历史；当前以顶部断点为准）
 
 - **完整Math回归471项/136,187断言exit0**：`configmacros-noundefined-full.log`，28086已终态，
   无跳过/失败。构建18050/70852/84061均exit0，最终configmacros-noundefined-final-build.log，
