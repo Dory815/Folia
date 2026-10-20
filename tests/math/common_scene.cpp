@@ -531,7 +531,7 @@ suite common_scene_source = [] {
         // Common families, table branches, and isolated script-family probes.
         // Other pinned Source cases remain outstanding until their families
         // emit Scene nodes. This is not the required 75/150 full-profile gate.
-        constexpr std::array<std::string_view, 48> selected{"plain",
+        constexpr std::array<std::string_view, 51> selected{"plain",
                                                             "mathbb",
                                                             "fraction-inline",
                                                             "fraction-display",
@@ -578,7 +578,10 @@ suite common_scene_source = [] {
                                                             "scene-table-column-dashed",
                                                             "scene-table-label-right",
                                                             "scene-table-label-left-metric",
-                                                            "scene-table-nested-label"};
+                                                            "scene-table-nested-label",
+                                                            "scene-enclose-all-lines",
+                                                            "scene-enclose-paired-sides",
+                                                            "scene-enclose-radical-top"};
         for (auto name : selected) {
             try {
                 const auto &source = sourceCase(name);
@@ -804,13 +807,14 @@ suite common_scene_source = [] {
     "frozen_Scene_serializes_after_job_and_document_retirement_and_repeat_request"_test = [] {
         InputOwner owner;
         NoUnexpectedMeasurement measurement;
-        constexpr std::array<std::string_view, 7> repeatedCases{"fraction-inline",
+        constexpr std::array<std::string_view, 8> repeatedCases{"fraction-inline",
                                                                 "plain",
                                                                 "scene-inline-break-before",
                                                                 "scene-inline-break-after",
                                                                 "scene-table-array-row-rules",
                                                                 "scene-table-label-right",
-                                                                "scene-table-label-left-metric"};
+                                                                "scene-table-label-left-metric",
+                                                                "scene-enclose-radical-top"};
         for (auto name : repeatedCases) {
             const auto &source = sourceCase(name);
             auto first = buildScene(source, owner, measurement);

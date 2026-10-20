@@ -99,6 +99,13 @@ for (const item of [
   {name: 'scene-table-label-left-metric', tex: String.raw`\begin{align}x&=1\tag{TableSceneLeftA}\\y&=2\tag{TableSceneLeftB}\end{align}`, display: true, em: 20, ex: 7, tagSide: 'left'},
   {name: 'scene-table-nested-label', tex: String.raw`\begin{align}\begin{aligned}x&=1\\y&=2\end{aligned}&=0\tag{TableSceneNestedA}\end{align}`, display: true, tagSide: 'right'},
 ]) cases.push({...item, width: 1280, features: ['base', 'ams']});
+// Source-validated CommonMenclose line/radical cases promoted from the ignored
+// enclosure discovery witness. Preserve their exact full38 input metrics.
+for (const [name, tex, display, em, ex, width] of [
+  ['scene-enclose-all-lines', String.raw`\enclose{top bottom left right horizontalstrike verticalstrike updiagonalstrike downdiagonalstrike}{x}`, false, 16, 8, 1280],
+  ['scene-enclose-paired-sides', String.raw`\enclose{actuarial madruwb}{x}`, false, 16, 8, 1280],
+  ['scene-enclose-radical-top', String.raw`\enclose{radical top}{x}`, false, 16, 8, 1280],
+]) cases.push({name, tex, display, em, ex, width, features: ['enclose']});
 
 function cpp(value) {
   // MSVC rejects a single string literal token beyond 16K; keep each emitted
@@ -206,6 +213,24 @@ async function capture() {
   requireSourceMarkup('scene-table-array-column-rules', ['data-mml-node="mtable"', 'data-line="v"', 'mjx-solid']);
   requireSourceMarkup('scene-table-row-dashed', ['data-mml-node="mtable"', 'data-frame-styles="dashed', 'data-line="h"', 'mjx-dashed', 'stroke-dasharray=']);
   requireSourceMarkup('scene-table-column-dashed', ['data-mml-node="mtable"', 'data-line="v"', 'mjx-dashed']);
+  const sourceEnclosureLines = (name, count) => {
+    const record = byName.get(name);
+    assert.ok(record && !record.error, `${name} must convert in pinned Source`);
+    assert.ok(record.svg.includes('data-mml-node="menclose"'), `${name} must contain Source menclose`);
+    assert.equal((record.svg.match(/<line\b/g) || []).length, count,
+      `${name} Source enclosure line count`);
+  };
+  sourceEnclosureLines('scene-enclose-all-lines', 8);
+  sourceEnclosureLines('scene-enclose-paired-sides', 4);
+  const radicalEnclosure = byName.get('scene-enclose-radical-top');
+  assert.ok(radicalEnclosure && !radicalEnclosure.error,
+    'scene-enclose-radical-top must convert in pinned Source');
+  assert.ok(radicalEnclosure.svg.includes('data-mml-node="menclose"') &&
+    radicalEnclosure.svg.includes('data-mml-node="msqrt"') &&
+    radicalEnclosure.svg.includes('data-c="221A"') &&
+    radicalEnclosure.svg.includes('translate(853,0)') &&
+    (radicalEnclosure.svg.match(/<line\b/g) || []).length === 1,
+    'radical+top Source must retain nested sqrt, left offset and top line');
   for (const [name, side] of [['scene-table-label-right', 'right'],
                               ['scene-table-label-left-metric', 'left'],
                               ['scene-table-nested-label', 'right']]) {
