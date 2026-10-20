@@ -112,8 +112,8 @@ MmlNode *child(MmlNode &parent, std::size_t index) {
     auto children = parent.children();
     return index < children.size() ? children[index] : nullptr;
 }
-std::size_t maxBuffer(TexParser &parser) {
-    return parser.options().maxBuffer.value_or(std::numeric_limits<std::size_t>::max());
+double maxBuffer(TexParser &parser) {
+    return parser.options().maxBuffer.value_or(std::numeric_limits<double>::infinity());
 }
 std::u16string addArgs(TexParser &parser, std::u16string_view left, std::u16string_view right) {
     return parse_util::addArgs(left, right, maxBuffer(parser));
@@ -676,7 +676,7 @@ void ArrayItem::StartEntry() {
             entry = u"\\text{" + UnitUtil::instance().trimSpaces(entry) + u"}";
         if (!start.empty() || !end.empty() || align) {
             if (++templateSubs > parser->options().maxTemplateSubtitutions.value_or(
-                                     std::numeric_limits<std::size_t>::max()))
+                                     std::numeric_limits<double>::infinity()))
                 error("MaxTemplateSubs", u"Maximum template substitutions exceeded; is there an "
                                          u"invalid use of \\\\ in the template?");
         }

@@ -31,15 +31,15 @@ struct KeyValueOption {
 };
 namespace parse_util {
 struct ExpansionBudget final {
-    std::size_t maxMacros;
-    std::size_t maxBuffer;
+    double maxMacros;
+    double maxBuffer;
     std::size_t macroCount = 0;
 };
 
-std::u16string addArgs(std::u16string_view left, std::u16string_view right, std::size_t maxBuffer);
+std::u16string addArgs(std::u16string_view left, std::u16string_view right, double maxBuffer);
 
 std::u16string substituteArgs(std::span<std::u16string const> arguments,
-                              std::u16string_view replacement, std::size_t maxBuffer);
+                              std::u16string_view replacement, double maxBuffer);
 
 void checkMaxMacros(ExpansionBudget &budget, bool isMacro = true);
 std::u16string addArgs(TexParser &, std::u16string_view, std::u16string_view);

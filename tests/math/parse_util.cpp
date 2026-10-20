@@ -269,6 +269,22 @@ suite parse_util_tests = [] {
                        u"MathJax internal buffer size exceeded; is there a recursive macro call?");
     };
 
+    "expansion limits remain numeric comparison thresholds"_test = [] {
+        expect(addArgs(u"", u"", 0.0).empty());
+        texError([] { (void)addArgs(u"", u"", -1.0); }, "MaxBufferSize");
+        expect(addArgs(u"a", u"b", 2.9) == u"ab");
+        texError([] { (void)addArgs(u"ab", u"c", 2.9); }, "MaxBufferSize");
+        const auto nan = std::numeric_limits<double>::quiet_NaN();
+        const auto infinity = std::numeric_limits<double>::infinity();
+        expect(addArgs(u"a", u"b", nan) == u"ab");
+        expect(addArgs(u"a", u"b", infinity) == u"ab");
+        ExpansionBudget rejected{nan, infinity, 0};
+        texError([&] { checkMaxMacros(rejected); }, "MaxMacroSub1");
+        expect(rejected.macroCount == 1_u);
+        ExpansionBudget unlimited{infinity, nan, 0};
+        checkMaxMacros(unlimited);
+        expect(unlimited.macroCount == 1_u);
+    };
     "check_max_macros_increments_before_error"_test = [] {
         ExpansionBudget budget{2, 100, 0};
         checkMaxMacros(budget);

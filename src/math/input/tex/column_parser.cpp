@@ -79,8 +79,8 @@ std::u16string ascii16(std::string_view value) {
     throw TexError(std::move(id), std::move(message), arguments);
 }
 
-std::size_t maxBuffer(TexParser &parser) {
-    return parser.options().maxBuffer.value_or(std::numeric_limits<std::size_t>::max());
+double maxBuffer(TexParser &parser) {
+    return parser.options().maxBuffer.value_or(std::numeric_limits<double>::infinity());
 }
 
 std::u16string lowerAscii(std::u16string value) {

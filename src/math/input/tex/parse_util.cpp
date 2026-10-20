@@ -553,7 +553,7 @@ bool endsWithControlWord(std::u16string_view text) {
 }
 } // namespace
 
-std::u16string addArgs(std::u16string_view left, std::u16string_view right, std::size_t maxBuffer) {
+std::u16string addArgs(std::u16string_view left, std::u16string_view right, double maxBuffer) {
     const bool insert_space = startsWithAsciiLetter(right) && endsWithControlWord(left);
 
     if (left.size() > maxBuffer)
@@ -564,11 +564,14 @@ std::u16string addArgs(std::u16string_view left, std::u16string_view right, std:
             throwMaxBuffer();
         ++combined_size;
     }
-    if (combined_size > maxBuffer || right.size() > maxBuffer - combined_size)
+    if (right.size() > std::numeric_limits<std::size_t>::max() - combined_size)
+        throwMaxBuffer();
+    const auto total_size = combined_size + right.size();
+    if (total_size > maxBuffer)
         throwMaxBuffer();
 
     std::u16string result;
-    result.reserve(combined_size + right.size());
+    result.reserve(total_size);
     result.append(left);
     if (insert_space)
         result.push_back(u' ');
@@ -577,7 +580,7 @@ std::u16string addArgs(std::u16string_view left, std::u16string_view right, std:
 }
 
 std::u16string substituteArgs(std::span<std::u16string const> arguments,
-                              std::u16string_view replacement, std::size_t maxBuffer) {
+                              std::u16string_view replacement, double maxBuffer) {
     std::u16string pending;
     std::u16string expanded;
     std::size_t i = 0;

@@ -117,7 +117,8 @@ struct TexOptionValues {
     std::optional<std::vector<FilterList::Item>> preFilters, postFilters;
     std::optional<std::shared_ptr<FindTeX>> findTeX;
     std::optional<std::vector<PackageSelection>> packages;
-    std::optional<std::size_t> maxBuffer, maxTemplateSubtitutions, maxMacros;
+    // Numeric comparison thresholds, not allocation sizes or counters.
+    std::optional<double> maxBuffer, maxTemplateSubtitutions, maxMacros;
     std::optional<std::u16string> mathStyle;
     std::optional<FormatError> formatError;
     std::optional<std::u16string> tags, tagSide, tagIndent, tagAlign;
