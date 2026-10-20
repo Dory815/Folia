@@ -11,8 +11,9 @@
 
 ### 恢复时先用这个短检查点
 
-- **最新实际代码：原ParseOptions已原位移除Context实现并纳入构建**。`parser_types.ixx`
-  已从审过的候选推广（增加core MathItem及FindTeX/TexFilterData前置声明）；parser_family
+- **最新实际代码：原ParseOptions已原位移除Context实现并纳入构建**；本批提交`9041b961`。
+  仅原13项受保护修改留在worktree。`parser_types.ixx`已从审过的候选推广
+  （增加core MathItem及FindTeX/TexFilterData前置声明）；parser_family
   当前只导出真实已构建的:types、:parse_options，没有旧runtime/fallback/第二parser。
   parse_options.ixx含42个观测top-level字段的TexOptionValues稀疏类型记录、14个包选项组及
   原ParseOptions服务声明。cpp实现这些值的mergeDefaults和原四种getVariant；约138行，
