@@ -1,88 +1,78 @@
 'use strict';
-
-// Emit the immutable BaseMappings literals from the pinned-CJS oracle snapshot.
-// The native library consumes only the generated C++ include; it never loads JS.
-const fs = require('node:fs');
-const path = require('node:path');
-
-const root = path.resolve(__dirname, '../..');
-const args = new Map();
-for (let i = 2; i < process.argv.length; i++) {
-  const name = process.argv[i];
-  if (name !== '--input' && name !== '--output') throw new Error(`Unknown argument ${name}`);
-  if (i + 1 >= process.argv.length) throw new Error(`Missing value for ${name}`);
-  args.set(name, process.argv[++i]);
+// Generate the original BaseMappings literals with direct compiled callbacks.
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'../..');
+const args=new Map();
+for(let i=2;i<process.argv.length;i++) {
+  const name=process.argv[i];
+  if(name==='--check'){args.set(name,true);continue;}
+  if(!['--input','--output'].includes(name)||i+1>=process.argv.length)throw new Error(`Invalid argument ${name}`);
+  args.set(name,process.argv[++i]);
 }
-const input = path.resolve(args.get('--input') || path.join(root, 'build/math-port/base-mappings-initial.json'));
-const output = path.resolve(args.get('--output') || path.join(root, 'build/math-port/base-generated/base_mapping_data.inc'));
-const snapshot = JSON.parse(fs.readFileSync(input, 'utf8'));
-if (snapshot.version !== '4.1.3') throw new Error('Unexpected MathJax snapshot version');
-const byName = new Map(snapshot.mappings.map(mapping => [mapping.name, mapping]));
-
-function quote16(value) {
-  let out = 'u"';
-  for (const char of value) {
-    const cp = char.codePointAt(0);
-    if (char === '\\') out += '\\\\';
-    else if (char === '"') out += '\\"';
-    else if (char === '\n') out += '\\n';
-    else if (char === '\r') out += '\\r';
-    else if (char === '\t') out += '\\t';
-    else if (cp < 0x20 || cp === 0x7f) out += `\\u${cp.toString(16).padStart(4, '0')}`;
-    else if (cp <= 0xffff) out += char;
-    else {
-      const n = cp - 0x10000;
-      out += `\\u${(0xd800 + (n >> 10)).toString(16)}\\u${(0xdc00 + (n & 0x3ff)).toString(16)}`;
-    }
+const input=path.resolve(args.get('--input')||path.join(root,'build/math-port/base-mappings-initial.json'));
+const output=path.resolve(args.get('--output')||path.join(root,'build/math-port/base-generated/base_mappings.cpp'));
+const bytes=fs.readFileSync(input),sha=crypto.createHash('sha256').update(bytes).digest('hex');
+assert.equal(sha,'0dd8a1605cc7736bd18ba36f1452b14d640cb5d7dae42689339fffed785566c4','Pristine pinned mapping snapshot');
+const snapshot=JSON.parse(bytes);assert.equal(snapshot.version,'4.1.3');
+const byName=new Map(snapshot.mappings.map(mapping=>[mapping.name,mapping]));
+const names=['letter','digit','command','special','lcGreek','ucGreek','mathchar0mi','mathchar0mo','mathchar7','delimiter','macros','environment','not_remap'];
+for(const name of names)assert.ok(byName.has(name),name);
+function quote(value) {
+  let text='u"';
+  for(const c of value) {
+    const cp=c.codePointAt(0);
+    if(c==='\\')text+='\\\\';else if(c==='"')text+='\\"';
+    else if(c==='\n')text+='\\n';else if(c==='\r')text+='\\r';else if(c==='\t')text+='\\t';
+    else if(cp<32||cp===127)text+='\\u'+cp.toString(16).padStart(4,'0');
+    else if(cp>65535)text+='\\U'+cp.toString(16).padStart(8,'0');else text+=c;
   }
-  return out + '"';
+  return text+'"';
 }
-
-function property(value) {
-  if (value === null) return 'Property(PropertyNull{})';
-  if (typeof value === 'string') return `Property(property_host::debugText(${quote16(value)}))`;
-  if (typeof value === 'boolean') return `Property(${value ? 'true' : 'false'})`;
-  if (typeof value === 'number') return `Property(${Number.isInteger(value) ? `${value}.0` : value})`;
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const fields = Object.entries(value).map(([name, child]) =>
-      `{property_host::debugText(${quote16(name)}), ${property(child)}}`).join(', ');
-    return `object({${fields}})`;
+function argument(value) {
+  if(value===null)return 'NullArgument{}';
+  if(typeof value==='string')return `std::u16string(${quote(value)})`;
+  if(typeof value==='boolean')return String(value);
+  if(typeof value==='number'&&Number.isFinite(value))return Number.isInteger(value)?`${value}.0`:String(value);
+  throw new Error(`Unexpected macro argument ${JSON.stringify(value)}`);
+}
+function attribute(value) {
+  if(value===null)return 'mml::AttributeNull{}';
+  return argument(value);
+}
+function token(key,value) {
+  const chars=value._char===null?'std::nullopt':`std::u16string(${quote(value._char)})`;
+  const attrs=value._attributes===null?'':', attributes({'+Object.entries(value._attributes).map(([k,v])=>`{${quote(k)},${attribute(v)}}`).join(',')+'})';
+  return `Token(${quote(key)},${chars}${attrs})`;
+}
+const macroNames=new Set([...fs.readFileSync(path.join(root,'src/math/input/tex/base/base_methods.ixx'),'utf8').matchAll(/static DispatchOutcome (\w+)\(/g)].map(m=>m[1]));
+const environmentNames=new Set(['Array','AlignedArray','IndentAlign','Equation','EqnArray']);
+function macro(key,value,environment) {
+  const method=value._func.name;
+  assert.ok((environment?environmentNames:macroNames).has(method),method);
+  return `Macro(${quote(key)},MacroMethod{&BaseMethods::${method}},{${value._args.items.map(argument).join(',')}})`;
+}
+function map(mapping) {
+  const name=quote(mapping.name);
+  if(mapping.regex)return `    registry.registerMap(std::make_shared<RegExpMap>(RegExpMapInit{{${name},TokenMapParser{&ParseMethods::${mapping.parser.name}}},std::make_shared<regexp_host::RegExp>(${quote(mapping.regex.source)},${quote(mapping.regex.flags)})}));`;
+  const type=mapping.class;
+  let init,entries;
+  if(['MacroMap','CommandMap','EnvironmentMap'].includes(type)) {
+    entries=mapping.entries.map(([key,value])=>'        '+macro(key,value,type==='EnvironmentMap')).join(',\n');
+    init=`MacroMapInit{{${name},std::nullopt},{\n${entries}\n    }}`;
+    if(type==='CommandMap')init=`CommandMapInit{${init}}`;
+    if(type==='EnvironmentMap')init=`EnvironmentMapInit{${init},&ParseMethods::environment}`;
+  } else {
+    entries=mapping.entries.map(([key,value])=>'        '+token(key,value)).join(',\n');
+    const parser=mapping.parser===null?'std::nullopt':`TokenMapParser{&ParseMethods::${mapping.parser.name}}`;
+    init=`CharacterMapInit{{${name},${parser}},{\n${entries}\n    }}`;
   }
-  throw new Error(`Unsupported mapping literal ${JSON.stringify(value)}`);
+  return `    registry.registerMap(std::make_shared<${type}>(${init}));`;
 }
-
-function array(values) {
-  return `Property(PropertyArray{${values.map(property).join(', ')}})`;
-}
-
-function characterValue(value) {
-  if (value._attributes === null) return property(value._char);
-  return array([value._char, value._attributes]);
-}
-
-function mappingValue(mapping, entry) {
-  const [token, value] = entry;
-  if (mapping.name === 'special' || mapping.name === 'macros' || mapping.name === 'environment') {
-    const args = value._args.items;
-    return array([value._func.name, ...args]);
-  }
-  return characterValue(value);
-}
-
-function emitTable(mapping) {
-  const entries = mapping.entries.map(([token, value]) =>
-    `    {property_host::debugText(${quote16(token)}), ${mappingValue(mapping, [token, value])}}`).join(',\n');
-  return `  tables.emplace(${JSON.stringify(mapping.name)}, object({\n${entries}\n  }));`;
-}
-
-const names = ['special', 'lcGreek', 'ucGreek', 'mathchar0mi', 'mathchar0mo', 'mathchar7',
-  'delimiter', 'macros', 'environment', 'not_remap'];
-for (const name of names) if (!byName.has(name)) throw new Error(`Missing map ${name}`);
-
-const source = `// Generated by tools/math-port/generate-base-mapping-data.cjs from the pinned MathJax 4.1.3 CJS oracle.\n` +
-  `// Do not edit by hand. Source license: Apache-2.0.\n` +
-  `void appendPinnedBaseMappingTables(std::map<std::string, Property>& tables) {\n` +
-  names.map(name => emitTable(byName.get(name))).join('\n') + '\n}\n';
-fs.mkdirSync(path.dirname(output), { recursive: true });
-fs.writeFileSync(output, source, 'utf8');
-process.stdout.write(`${output}\n`);
+const source=`// MathJax 4.1.3 input/tex/base/BaseMappings.ts; Apache-2.0.\n`+
+  `// Generated by tools/math-port/generate-base-mapping-data.cjs; immutable table data.\n`+
+  `// Pristine source snapshot SHA256 ${sha}.\n`+
+  `module folia.math.input.tex.base_mappings;\nimport folia.math.input.tex.parse_methods;\nimport std;\n\nnamespace folia::math::tex {\nnamespace {\nmml::AttributeSet attributes(std::initializer_list<mml::AttributeSet::Entry> entries) {\n    mml::AttributeSet result;\n    for (auto const &[key,value]:entries) result.set(key,value);\n    return result;\n}\n}\nvoid BaseMappings::initialize(MapHandler &registry) {\n`+
+  names.map(name=>map(byName.get(name))).join('\n')+'\n}\n}\n';
+if(args.has('--check'))assert.equal(fs.readFileSync(output,'utf8').replaceAll('\r\n','\n'),source);
+else {fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,source);}
+console.log(JSON.stringify({status:args.has('--check')?'checked':'generated',maps:names.length,entries:names.reduce((n,name)=>n+(byName.get(name).entries?.length||0),0),output}));
