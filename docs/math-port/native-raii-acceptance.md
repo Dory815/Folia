@@ -25,7 +25,9 @@ green corpora establish reference data, not acceptance for rewritten code.
   payloads, identity registries or manual request retirement scopes.
 - Check transitive imports and linked source lists, not only spelling searches.
   Inspect implementation for renamed equivalent object-heap machinery.
-- Common measurement and placement run once. SVG depends on completed Scene,
+- Both backends share one completed mathematical layout and placement. Source-required
+  package subtree measurements may repeat during compilation using the same
+  Common implementation. SVG depends on completed Scene,
   never the TeX parser or mutable MML/wrappers. Scene contains no raw SVG DOM,
   parser pointers or callbacks into a request. The future D2D boundary is the
   same Scene interface; implementing that backend is not this SVG gate.
@@ -148,6 +150,24 @@ successful and failing frame scopes and confirm all tracked frames are released.
 No full Bussproofs or SVG claim follows from these component tests: real Common
 subtree widths, sequent/rule adjustments, semantic attributes and package filter
 ordering still require end-to-end Source comparison after integration.
+
+For Common subtree measurement, compare real Source getBBox outputs for
+fixed-space, padded/styled, nested fraction/radical/table and token layouts
+using the same profile fonts. Verify root/physical parents/attributes/layout
+flags are unchanged apart from Source's intended setTeXclass state. A later
+MML change must affect the next measurement, with no cached wrapper reuse.
+Track actual custom wrappers/visitors through repeated successes and throws;
+each call destroys its transient arena, and no BBox result borrows it. Exercise
+supplied class registrations, metrics and MeasurementTarget callbacks as well
+as a foreign-document rejection. Compile tests must observe the same output
+borrow in both filter phases, null on a later unbound compile, correct nested
+borrows, and recovery after pre/postfilter exceptions without retained service
+or document ownership.
+The per-call arena claim concerns Common wrappers/visitors. Source-generated
+auxiliary MML stays document-owned: report its growth under repeated measures
+on one document explicitly. At least 192 independent document requests with
+radicals/bevelled fractions must release every tracked auxiliary MML node on
+request destruction; a persistent session may not retain those documents.
 
 ## D. Application integration
 

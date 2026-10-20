@@ -9,7 +9,60 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 当前已接受组件：Bussproofs ProofTreeItem（2026-10-20）
+### 当前已接受基线：Common子树测量及compile输出借用（2026-10-20）
+
+- 上轮是实际progress，22efabce/74d070eb/84aab382已提交；665 tests/172266 asserts的
+  ProofTreeItem基线不重做。本轮Root恢复先实际读本文件顶部及工作树；原13项修改继续保护。
+- 架构/验收已先冻结：原CommonOutputJax新增六参数static getBBox(document,subtree,
+  config,MeasurementTarget,catalog,linebreakFactory)，局部真实Common实例、setTeXclass、
+  wrap.getOuterBBox返回值；不改document根/物理父链、不调LayoutJob.build、不留wrapper arena。
+- Root改原core/math_item.ixx/.cpp、core/input_jax.ixx、tex_jax.ixx/.cpp共5生产文件：
+  compile按call传MathOutputJaxService* output=nullptr，到InputJaxFilterData末字段；
+  无TeX/ParseOptions持久output指针。新增native_math_item一组、tex_jax三组borrow测试，
+  涵盖两phase、null后续调用、TexError、前后filter异常和独立jax嵌套compile。
+- 已有GPT-6.1 Sol base_methods完成并冻结原Common output_jax pair和mtable pair、原
+  tests/math/native_common_jax.cpp、新common-bbox-source.cjs和common-source/bbox.inc。
+  Root已读完整新增tests/Source/production。mtable.containerI恢复Source optional，独立
+  root/table没有position是合法；两个实际container分支value()。旧Scene/wrappers/mtable
+  两消费者不在CMake，未为旧路径修接口，后续整体退。
+- Root独立Source默认复验 **exit0：32 rows/34真实getBBox调用**，TS/CJS/full38 hash锁。
+  build/math-port/common-bbox-source.log；无改fixture适配native。Source 16cases×inline/display，
+  另两次radical/bevel重复。Production无新文件，无JS对象服务。
+- **6ad94335**提交Common原四生产文件（21+/11-）；**d5268cb8**提交core/TeX原五生产
+  文件及两测试文件；**59e10df7**提交Common原测试文件、Source脚本及fixture三文件。
+  无新生产文件，无CMake修改。build **59489 exit0**（common-bbox-build.log），并发4。
+  Root focus **17258 exit0：5实际执行tests/20424 asserts**（common-bbox-focused.log，
+  suite报告11含6skip，不把skip算执行）；*compil* focus exit0 **22实际tests/5739 asserts**
+  （compile-output-focused.log），含Root四新增borrow tests。输入保持冻结。
+  full **48222 exit0：674 tests/192757 asserts/128 suites**（common-bbox-full.log），
+  Root实际统计，无失败/跳过。本轮生产/tests都已提交，无live build/native/agent。
+- 新Common测试5组：32Source快照/11BBox字段+pwidth，tree/own+inherited+default/global
+  attrs/layoutflags/root不变，catalog/metrics/unknown-text host、foreign-doc先拒绝、detached
+  table；192次成功/init异常/compute异常真实wrapper和visitor析构；192独立MmlDocument
+  requests×2次radical/bevel测量，注册真实MmlMo/TextNode子类计数。预期共768mo/768text、
+  384visitor/1152space-wrapper释放，Root focus已实际通过，不再只是expect。
+- **明确所有权边界**：Source createMo的aux mo/text仍由每次请求MmlDocument独占，
+  同文档每次这组测量增加4节点，直到document析构。不是每个getBBox释放全部MML。
+  不加watermark/retirement补丁；最终renderer必须每request新document且不留进session/Scene。
+  本轮native counters已通过，可认定这组请求无跨request残留，不能据此宣称整个renderer通过。
+- **下一真实断点：Bussproofs四原owner及整包oracle**。现已具备真实Common测量入口和按call
+  output借用，不重做本轮依赖；尚需真正的服务caller及包配置，不能宣称Bussproofs/SVG已接。
+  先在原node_properties owner实现有限proof属性序，再改Items唯一proof写点；随后在原
+  methods/mappings/util/configuration替换旧JS语义，给实际包运行独立Source整包对照。
+- 最后窄审查已得Source证据：ignored build/math-port/bussproofs-property-order-probe.cjs，
+  Root读脚本并独立复验exit0，3个真实MML/TeX ParseOptions/makeBsprAttributes案例，
+  bussproofs-property-order.log。10个bspr字段，覆盖原key不移位；删再写追加末尾；0/false保留；
+  ';'连接无空格；无bspr字段不清已有semantics。proof-left/right不进semantics。
+  原顺序：createRule的inferenceRule先；有label外row labelledRule先、随后inference；
+  AxiomF sequent→axiom；最终proof后加；moveProperties严格inference→proof→labelledRule，
+  逐项写目标再删源。sequentProcessed临时加/删，sequentAdjust先left后right。
+  Root下一步采用原ProofNodeProperties中的有限10-key enum/顺序数组，只存key元数据，
+  各optional值仍唯一存储，具名强类型setters/erase维护；copy/merge/move同步，不重建Value字典。
+  这项尚未实现，不能把Source-only probe当native通过。
+- 架构/验收细则已写同一原文档；原13项修改继续保护；完整goal active、Mermaid暂停，
+  Luna额度Oct25前不重试、必要Sol仅6.1。当前无live agent/build/native进程。
+
+### 上一已接受组件：Bussproofs ProofTreeItem（2026-10-20）
 
 - **22efabce**：原bussproofs/items.ixx/.cpp直接替换及CMake生产条目三文件，净减163行。
   **74d070eb**：测试、Source oracle/fixture及CMake测试条目四文件。无新生产文件。

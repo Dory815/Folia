@@ -21,7 +21,10 @@ TeX string + RenderOptions
 The future Direct2D consumer takes the identical completed Scene. It performs
 no TeX parsing, stretching, mathematical spacing, baseline calculation, table
 layout or script placement. SVG performs none of those calculations either.
-There is one layout pass. Backend-specific XML spelling, escaping, attribute
+Both backends consume one completed layout. Packages such as Bussproofs may
+perform Source-required Common subtree measurements while compiling MML;
+those reuse the same mathematical implementation before the final Scene is
+produced, without backend-specific placement. XML spelling, escaping, attribute
 order and numeric formatting belong to SVG serialization.
 
 MathJax's TeX packages, NodeFactory, MmlFactory/MmlNode/Attributes, CommonWrapper,
@@ -383,6 +386,53 @@ so neither a constant width nor skipping balanceRules is acceptable. Freeze a
 real subtree measurement/compile-output borrow in the original owners before
 activating the complete configuration. The inactive methods/configuration/util
 pairs and their old consumers remain explicitly pending.
+
+The native measurement operation is `CommonOutputJax::getBBox(document,
+subtree, config, measurement, catalog, linebreakFactory) -> BBox`. It creates
+one local CommonOutputJax from the caller's actual immutable font/profile
+values and class registrations, calls setTeXclass(nullptr) on the supplied
+subtree and returns factory.wrap(subtree).getOuterBBox() by value. This API is
+an operation with explicit configuration, not a clone of an existing output
+instance: it does not silently drop virtual customizations or class changes.
+The local factory, visitor and node index die before returning; neither a
+wrapper nor an expression pointer escapes. No document-root replacement,
+parent edits, LayoutJob::build or inline-break/overflow marking is involved.
+This retains Source's fresh nodeMap behavior without accumulating measurement
+wrappers in the final layout job. MeasurementTarget remains the explicit host
+for unknown-text metrics; mathematical measurement stays in Common.
+
+Source createMo also constructs auxiliary mo/text MML. In the native model
+these remain owned by the caller's request MmlDocument, including when a
+measurement wrapper has died; they are not inserted into the primary child
+tree. Repeated measurements on one document can increase its arena size.
+This is an explicit request-lifetime tradeoff, not per-measurement MML release:
+the final renderer must own a fresh MmlDocument per request and retain neither
+that document nor its auxiliary nodes in session state or completed Scene.
+Do not add manual arena rollback/retirement to mask that ownership contract.
+
+An optional MathOutputJaxService pointer is borrowed per compile call along
+the existing MathItem -> MathInputJaxService -> TeX -> InputJaxFilterData path.
+It defaults to null for inputs that do not require an output service. There
+is no stored output/request pointer on TeX, ParseOptions or package state.
+Both pre/postfilters see the same current borrow, including error formatting;
+exceptions and nested compile calls cannot overwrite a persistent binding.
+The Bussproofs preprocessor will reject an absent measurement service using
+the Source diagnostic. Full SVG service implementation still must provide
+typeset/escaped; a measurement-only test service throws on those unused paths
+and cannot stand in for a completed renderer.
+
+The next Bussproofs change keeps semantic-property insertion order in the
+existing ProofNodeProperties owner. The ten finite keys are axiom, proof,
+sequent, sequentProcessed, inference, inferenceRule, labelledRule, prooflabel,
+sequentAdjust_left and sequentAdjust_right. Store only their enum order (at
+most ten entries) alongside the existing uniquely held typed optional values.
+Named typed setters and erase maintain it: updating a present key keeps its
+position; erase followed by set appends. Copy/merge and the existing three-key
+move operation must preserve the relevant Source order. Util serializes that
+order into semantics, retaining zero/false and leaving existing semantics
+untouched when there are no prefixed keys. proof-left/proof-right remain plain
+spacing values outside this order. This decision is not yet implemented and
+does not authorize a generic property dictionary or a competing node owner.
 
 ## Ownership
 
