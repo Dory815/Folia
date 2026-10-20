@@ -296,6 +296,56 @@ option collation) in their original configuration files. This remains a real
 service-closure task before those bodies are promoted. Do not silently collapse
 the three responsibilities into a new profile facade.
 
+The original util/PrioritizedList and util/FunctionList are now native templates
+in their original module files. Configuration composition uses
+PrioritizedList<Configuration const*>; init/config processors use
+FunctionList<ParserConfiguration&> and
+FunctionList<ParserConfiguration&, TeX&>, respectively. Mathematical filter
+lists use their own concrete argument signature. FunctionList retains its
+PrioritizedList base and stores only statically typed void/bool C++ function
+pointers; it has no erased args, FunctionValue, Context, record identity or
+receiver. The obsolete function_list.cpp implementation has been removed.
+The old binding units are inactive migration consumers, not native dependencies.
+
+The native list follows Source insertion and last-match removal, including
+equal priorities and numeric NaN comparisons. Its indexed borrowed iteration
+and synchronous execute observe live growth/removal at the Source positions;
+the callback pointer is copied before invocation to survive vector relocation.
+False stops the list; void continues; exceptions propagate with no implicit
+rollback. The mathematical input/Common paths use execute, with no
+asyncExecute calls in those Source directories; the removed JS Promise model
+is not an alternative native execution path. Formal util-function-list-source.cjs
+passes 10 observations with four TS/CJS hashes. Native five tests/26 assertions
+and the component build passed; this does not prove Configuration integration.
+
+#### Effective option lifetime and permission correction
+
+New evidence from actual scope38 TeX execution supersedes the earlier ignored
+ParseOptions sketch's maxBuffer/FalseOption claim. In
+SetOptionsConfiguration.allowOptions, maxBuffer:false denies setting that key.
+The actual command `\\setOptions{maxBuffer=false}` produces TeXOptionNotSettable
+and leaves 5120 unchanged. It is not an input-reachable permitted false value.
+The native buffer limit is the already-used size_t numerical bound, including
+zero; do not add a JS-shaped FalseOption variant for this misread permission.
+
+Actual effective options persist across compile and TeX.reset(). In particular
+physics.italicdiff and tagSide changes survive the next expression/reset. Keep
+one mutable effective typed option record for the input jax lifetime; request
+ParseOptions borrows it, and clear/reset only clear the Source scratch/tag state.
+Initial immutable package defaults remain a different configuration role.
+The old request-owned effective-options proposal must not reset settings per
+expression or copy changed values into another authoritative option store.
+
+ParseOptions.mathStyle selects its resolver during construction. Setting the
+mathStyle option to ISO later updates the option value but does not replace
+that resolver: actual Source still returns the original TeX variant for A.
+Keep its captured style choice separate from the subsequently mutable option,
+as Source does. Formal tex-options-lifetime-source.cjs fixes these five
+observations against the locked complete profile; Root replayed it from
+C:\\Windows, native-options-lifetime-source.log. This is a correction to an
+unpromoted declaration, not a reason to change the accepted scanner/ParseUtil
+or repeat the completed MML/Common/component audits.
+
 The original independent `begingroup/stack.{ixx,cpp}` module now contains the
 actual BegingroupStack algorithms over a borrowed TexDefinitionState. It has no
 parser dependency, handlers, marker Symbol, registry or shared_from_this. Source
