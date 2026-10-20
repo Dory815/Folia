@@ -33,8 +33,8 @@ void validate(Transform const &transform) {
                         value.separator != TranslationSeparator::comma_space)
                         throw std::invalid_argument("Scene translation separator is invalid");
                 } else if constexpr (std::same_as<T, Scaling>) {
-                    if (!finite(value.x) || !finite(value.y))
-                        throw std::invalid_argument("Scene scale must be finite");
+                    if (!finite(value.x) || !finite(value.y) || value.precision > 12)
+                        throw std::invalid_argument("Scene scale values are invalid");
                 } else if constexpr (std::same_as<T, Rotation>) {
                     if (!finite(value.degrees))
                         throw std::invalid_argument("Scene rotation angle must be finite");
@@ -82,6 +82,8 @@ FrameLayout validate_frames(Group const &root, FrameLayout frames) {
         }
     }
     if (!frames.inline_fragments.empty()) {
+        if (frames.percentage)
+            throw std::invalid_argument("Percentage SVG frames cannot contain inline fragments");
         if (frames.inline_fragments.size() != direct_groups.size())
             throw std::invalid_argument("Scene inline frame roots must match root child groups");
         for (std::size_t i = 0; i < frames.inline_fragments.size(); ++i) {
@@ -98,6 +100,16 @@ FrameLayout validate_frames(Group const &root, FrameLayout frames) {
                     throw std::invalid_argument("Scene inline break spacing must be finite");
             }
         }
+    }
+    if (frames.percentage) {
+        auto const &percentage = *frames.percentage;
+        auto const &bounds = percentage.bounds;
+        if (!finite(percentage.percent) || percentage.percent < 0 ||
+            !(finite(bounds.x) && finite(bounds.y) && finite(bounds.width) &&
+              finite(bounds.height)) ||
+            bounds.width < 0 || bounds.height < 0 || !finite(percentage.scale) ||
+            percentage.scale <= 0)
+            throw std::invalid_argument("Scene percentage frame is invalid");
     }
     return frames;
 }
@@ -192,6 +204,9 @@ Primitive clone_primitive(Primitive const &source) {
                 validate(value.geometry);
                 validate(value.paint);
                 validate(value.metadata);
+                if (value.layout_width &&
+                    (!finite(*value.layout_width) || *value.layout_width < 0))
+                    throw std::invalid_argument("Scene path layout width is invalid");
             } else if constexpr (std::same_as<T, TextRun>) {
                 copy.metrics = validate_metrics(value.metrics);
                 validate(value.origin);

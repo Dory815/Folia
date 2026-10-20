@@ -25,6 +25,11 @@ class Builder {
                                    std::optional<Viewport> viewport = {});
     void add_primitive(NodeId group, Primitive primitive);
     void discard_group(NodeId group);
+    [[nodiscard]] std::optional<Rect> background_bounds(NodeId group) const;
+    bool set_background_bounds(NodeId group, Rect bounds);
+    bool set_background_width(NodeId group, Unit width);
+    void reparent_group(NodeId child, NodeId parent);
+    void set_viewport_bounds(ElementRole role, Rect bounds);
     [[nodiscard]] Transform transform(NodeId id) const;
     void set_transform(NodeId id, Transform value);
     [[nodiscard]] SemanticMetadata metadata(NodeId id) const;

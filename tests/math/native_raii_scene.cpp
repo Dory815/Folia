@@ -314,6 +314,177 @@ suite scene_freeze = [] {
                    ->viewport->view_box == viewport.view_box);
     };
 
+    "table builder geometry edits stay typed and reparenting validates ancestry"_test = [] {
+        Builder background_builder;
+        auto background = background_builder.add_group();
+        SemanticMetadata background_metadata;
+        background_metadata.ordered_attributes.push_back({"data-bgcolor", "red"});
+        Rect const original{0.1, -0.2, 1.3, 0.4};
+        background_builder.add_primitive(
+            background, Rule{original, {}, background_metadata, ElementRole::background_box});
+        expect(background_builder.background_bounds(background) == original);
+        Rect const adjusted{0.2, -0.3, 1.4, 0.5};
+        expect(background_builder.set_background_bounds(background, adjusted));
+        expect(background_builder.set_background_width(background, 2.25));
+        auto resized = adjusted;
+        resized.width = 2.25;
+        expect(background_builder.background_bounds(background) == resized);
+        auto no_background = background_builder.add_group();
+        expect(!background_builder.set_background_bounds(no_background, adjusted));
+        bool invalid_bounds = false;
+        try {
+            (void)background_builder.set_background_bounds(background, Rect{0, 0, -1, 1});
+        } catch (std::invalid_argument const &) {
+            invalid_bounds = true;
+        }
+        expect(invalid_bounds);
+
+        Builder width_builder;
+        auto width_group = width_builder.add_group();
+        Path width_path;
+        width_path.role = ElementRole::background_box;
+        width_builder.add_primitive(width_group, width_path);
+        expect(width_builder.set_background_width(width_group, 3.049));
+        auto non_background_first = width_builder.add_group();
+        width_builder.add_primitive(non_background_first, Path{});
+        Path later_background;
+        later_background.role = ElementRole::background_box;
+        width_builder.add_primitive(non_background_first, later_background);
+        expect(!width_builder.set_background_width(non_background_first, 9));
+        bool negative_width = false;
+        try {
+            (void)width_builder.set_background_width(width_group, -1);
+        } catch (std::invalid_argument const &) {
+            negative_width = true;
+        }
+        bool nonfinite_width = false;
+        try {
+            (void)width_builder.set_background_width(
+                width_group, std::numeric_limits<Unit>::quiet_NaN());
+        } catch (std::invalid_argument const &) {
+            nonfinite_width = true;
+        }
+        expect(negative_width && nonfinite_width);
+        auto frozen_width_scene = std::move(width_builder).freeze();
+        auto const &frozen_width_group =
+            *std::get<std::shared_ptr<Group const>>(frozen_width_scene.root().entries.front());
+        expect(std::get<Path>(std::get<Primitive>(frozen_width_group.entries.front())).layout_width ==
+               3.049);
+
+        Path owned_width_path;
+        owned_width_path.layout_width = 2.75;
+        Group owned_width_root;
+        owned_width_root.entries.emplace_back(Primitive{owned_width_path});
+        Scene owned_width_scene{owned_width_root, {}, {}};
+        std::get<Path>(std::get<Primitive>(owned_width_root.entries.front())).layout_width = 8;
+        expect(std::get<Path>(std::get<Primitive>(owned_width_scene.root().entries.front()))
+                   .layout_width == 2.75);
+        auto rejects_layout_width = [](Unit invalid_width) {
+            Path invalid_path;
+            invalid_path.layout_width = invalid_width;
+            Group invalid_root;
+            invalid_root.entries.emplace_back(Primitive{std::move(invalid_path)});
+            try {
+                Scene invalid_scene{std::move(invalid_root), {}, {}};
+            } catch (std::invalid_argument const &) {
+                return true;
+            }
+            return false;
+        };
+        expect(rejects_layout_width(-1));
+        expect(rejects_layout_width(std::numeric_limits<Unit>::quiet_NaN()));
+
+        Builder builder;
+        auto owner = builder.add_group();
+        auto child = builder.add_group(owner);
+        auto destination = builder.add_group();
+        builder.add_primitive(child, TextRun{"owned"});
+        auto viewport =
+            builder.add_group(0, {}, {}, {}, {}, {}, ElementRole::table_content_viewport, {},
+                              Viewport{{0, 0, 1, 1}, {0, 0, 1, 1}, {}, false});
+        Rect const completed{0.4, -0.7, 2.2, 1.1};
+        builder.set_viewport_bounds(ElementRole::table_content_viewport, completed);
+        builder.reparent_group(child, destination);
+        expect(builder.child_groups(owner).empty());
+        expect(builder.child_groups(destination) == std::vector<NodeId>{child});
+        bool cycle = false;
+        try {
+            builder.reparent_group(destination, child);
+        } catch (std::invalid_argument const &) {
+            cycle = true;
+        }
+        bool root = false;
+        try {
+            builder.reparent_group(0, destination);
+        } catch (std::invalid_argument const &) {
+            root = true;
+        }
+        bool missing = false;
+        try {
+            builder.reparent_group(999, destination);
+        } catch (std::out_of_range const &) {
+            missing = true;
+        }
+        expect(cycle && root && missing);
+        auto frozen = std::move(builder).freeze();
+        auto const find_group = [&](auto const &self, Group const &group,
+                                    NodeId target) -> Group const * {
+            if (group.id == target)
+                return &group;
+            for (auto const &entry : group.entries)
+                if (auto const *nested = std::get_if<std::shared_ptr<Group const>>(&entry);
+                    nested && *nested)
+                    if (auto const *found = self(self, **nested, target))
+                        return found;
+            return nullptr;
+        };
+        auto const *viewport_group = find_group(find_group, frozen.root(), viewport);
+        auto const *saved_child = find_group(find_group, frozen.root(), child);
+        expect(viewport_group && viewport_group->viewport->bounds == completed);
+        expect(viewport_group && !viewport_group->viewport->clip_content);
+        expect(saved_child &&
+               std::get<TextRun>(std::get<Primitive>(saved_child->entries.front())).utf8 ==
+                   "owned");
+    };
+
+    "percentage frame values are owned and validated"_test = [] {
+        auto rejects = [](FrameLayout layout) {
+            try {
+                Scene invalid{Group{}, {}, {}, {}, std::move(layout)};
+            } catch (std::invalid_argument const &) {
+                return true;
+            }
+            return false;
+        };
+        FrameLayout valid{0.001, {}, PercentageFrame{80, "80%", {2, 0, 4, 1}, 0.375}};
+        Scene saved{Group{}, {}, {}, {}, valid};
+        valid.percentage->width_text = "mutated";
+        expect(saved.frame_layout().percentage->width_text == "80%");
+        auto bad_percent = FrameLayout{0.001, {}, PercentageFrame{-1, "80%", {2, 0, 4, 1}, 1}};
+        auto nonfinite_percent = FrameLayout{
+            0.001,
+            {},
+            PercentageFrame{std::numeric_limits<Unit>::infinity(), "80%", {2, 0, 4, 1}, 1}};
+        auto bad_scale = FrameLayout{0.001, {}, PercentageFrame{80, "80%", {2, 0, 4, 1}, 0}};
+        auto bad_bounds = FrameLayout{0.001, {}, PercentageFrame{80, "80%", {2, 0, -1, 1}, 1}};
+        auto mixed = FrameLayout{0.001, {{1, {}, {}}}, PercentageFrame{80, "80%", {}, 1}};
+        expect(rejects(bad_percent));
+        expect(rejects(nonfinite_percent));
+        expect(rejects(bad_scale));
+        expect(rejects(bad_bounds));
+        expect(rejects(mixed));
+        Group invalid_scale;
+        invalid_scale.transform =
+            Transform{std::vector<TransformOperation>{Scaling{1, 1, false, 13}}};
+        bool rejected_precision = false;
+        try {
+            Scene invalid{invalid_scale, {}, {}};
+        } catch (std::invalid_argument const &) {
+            rejected_precision = true;
+        }
+        expect(rejected_precision);
+    };
+
     "builder edits existing group values and wraps contents in place"_test = [] {
         Builder builder;
         auto id = builder.add_group();

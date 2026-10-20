@@ -30,6 +30,9 @@ enum class ElementRole {
     radical_rule,
     vertical_extender_viewport,
     horizontal_extender_viewport,
+    table_frame,
+    table_vertical_line,
+    table_horizontal_line,
 };
 
 struct Point {
@@ -67,6 +70,7 @@ struct Translation {
 struct Scaling {
     Unit x{1}, y{1};
     bool explicit_axes{};
+    unsigned precision{3};
     friend bool operator==(Scaling const &, Scaling const &) = default;
 };
 // Degrees are positive counterclockwise in Scene's y-up coordinate system;
@@ -132,6 +136,7 @@ struct Metrics {
     friend bool operator==(Metrics const &, Metrics const &) = default;
 };
 struct FontMetrics {
+    // em/ex are actual CSS-pixel metrics; x_height/cap_height are em ratios.
     Unit em{1}, ex{}, x_height{}, cap_height{};
     friend bool operator==(FontMetrics const &, FontMetrics const &) = default;
 };
@@ -275,6 +280,9 @@ struct Path {
     SemanticMetadata metadata{};
     ElementRole role{ElementRole::math_wrapper};
     PathElement element{PathElement::path};
+    // Source table background sizing may target a first-child border path.
+    // This completed width does not change the path geometry or stroke width.
+    std::optional<Unit> layout_width;
 };
 struct TextFont {
     std::string family;
@@ -302,6 +310,7 @@ struct Viewport {
     Rect bounds;
     Rect view_box;
     std::optional<ViewportAspectRatio> aspect_ratio;
+    bool clip_content{true};
 };
 struct Clip {
     PathGeometry geometry;
@@ -343,9 +352,16 @@ struct InlineFragment {
     Metrics metrics;
     std::optional<InlineBreak> before;
 };
+struct PercentageFrame {
+    Unit percent{100};
+    std::string width_text;
+    Rect bounds;
+    Unit scale{1};
+};
 struct FrameLayout {
     Unit minimum_extent{0.001};
     std::vector<InlineFragment> inline_fragments;
+    std::optional<PercentageFrame> percentage;
 };
 using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, ForeignContent>;
 } // namespace folia::math::output::scene

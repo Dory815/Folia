@@ -2,6 +2,17 @@ module folia.math.output.scene.builder;
 import std;
 
 namespace folia::math::output::scene {
+namespace {
+bool finite_rect(Rect const &bounds) noexcept {
+    return std::isfinite(bounds.x) && std::isfinite(bounds.y) && std::isfinite(bounds.width) &&
+           std::isfinite(bounds.height) && bounds.width >= 0 && bounds.height >= 0;
+}
+bool has_attribute(SemanticMetadata const &metadata, std::string_view name) noexcept {
+    return std::ranges::any_of(metadata.ordered_attributes,
+                               [name](auto const &attribute) { return attribute.name == name; });
+}
+} // namespace
+
 struct Builder::State {
     struct Entry {
         std::variant<Primitive, NodeId> value;
@@ -95,6 +106,130 @@ NodeId Builder::add_group(NodeId parent, Transform transform, std::optional<Clip
     owner = state_->find(parent); // vector growth can invalidate the previous pointer
     owner->entries.push_back(State::Entry{NodeId{id}});
     return id;
+}
+
+std::optional<Rect> Builder::background_bounds(NodeId id) const {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    auto const &entries = state_->require(id).entries;
+    if (entries.empty())
+        return {};
+    auto const *primitive = std::get_if<Primitive>(&entries.front().value);
+    auto const *rule = primitive ? std::get_if<Rule>(primitive) : nullptr;
+    if (!rule || rule->role != ElementRole::background_box ||
+        !has_attribute(rule->metadata, "data-bgcolor"))
+        return {};
+    return rule->bounds;
+}
+bool Builder::set_background_bounds(NodeId id, Rect bounds) {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    if (!finite_rect(bounds))
+        throw std::invalid_argument("Scene background bounds are invalid");
+    auto &entries = state_->require(id).entries;
+    if (entries.empty())
+        return false;
+    auto *primitive = std::get_if<Primitive>(&entries.front().value);
+    auto *rule = primitive ? std::get_if<Rule>(primitive) : nullptr;
+    if (!rule || rule->role != ElementRole::background_box ||
+        !has_attribute(rule->metadata, "data-bgcolor"))
+        return false;
+    rule->bounds = bounds;
+    return true;
+}
+bool Builder::set_background_width(NodeId id, Unit width) {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    if (!std::isfinite(width) || width < 0)
+        throw std::invalid_argument("Scene background width is invalid");
+    auto &entries = state_->require(id).entries;
+    if (entries.empty())
+        return false;
+    auto *primitive = std::get_if<Primitive>(&entries.front().value);
+    if (!primitive)
+        return false;
+    if (auto *rule = std::get_if<Rule>(primitive)) {
+        if (rule->role != ElementRole::background_box)
+            return false;
+        rule->bounds.width = width;
+        return true;
+    }
+    if (auto *path = std::get_if<Path>(primitive)) {
+        if (path->role != ElementRole::background_box)
+            return false;
+        path->layout_width = width;
+        return true;
+    }
+    return false;
+}
+void Builder::reparent_group(NodeId child_id, NodeId parent_id) {
+    static_assert(std::is_nothrow_move_constructible_v<State::Entry>);
+    static_assert(std::is_nothrow_move_assignable_v<State::Entry>);
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    if (child_id == 0)
+        throw std::invalid_argument("Scene root group cannot be reparented");
+    auto const *child_group = state_->find(child_id);
+    auto *new_parent = state_->find(parent_id);
+    if (!child_group || !new_parent)
+        throw std::out_of_range("Scene reparent group does not exist");
+
+    std::unordered_map<NodeId, NodeId> parents;
+    parents.reserve(state_->groups.size());
+    for (auto const &owner : state_->groups) {
+        for (auto const &entry : owner.entries) {
+            auto const *descendant = std::get_if<NodeId>(&entry.value);
+            if (!descendant)
+                continue;
+            if (!state_->find(*descendant))
+                throw std::logic_error("Scene group has a dangling child entry");
+            if (!parents.emplace(*descendant, owner.id).second)
+                throw std::invalid_argument("Scene group has multiple parent entries");
+        }
+    }
+    auto const owner_it = parents.find(child_id);
+    if (owner_it == parents.end())
+        throw std::invalid_argument("Scene group has no parent entry");
+    auto const old_parent_id = owner_it->second;
+    if (old_parent_id == parent_id)
+        return;
+    std::unordered_set<NodeId> ancestors;
+    ancestors.reserve(state_->groups.size());
+    auto ancestor = parent_id;
+    while (ancestor != 0) {
+        if (!ancestors.insert(ancestor).second)
+            throw std::invalid_argument("Scene group hierarchy contains a cycle");
+        if (ancestor == child_id)
+            throw std::invalid_argument("Scene reparent would create a cycle");
+        auto const found = parents.find(ancestor);
+        if (found == parents.end())
+            break;
+        ancestor = found->second;
+    }
+    auto &old_entries = state_->require(old_parent_id).entries;
+    auto const old_entry = std::ranges::find_if(old_entries, [child_id](auto const &entry) {
+        auto const *id = std::get_if<NodeId>(&entry.value);
+        return id && *id == child_id;
+    });
+    if (old_entry == old_entries.end())
+        throw std::logic_error("Scene group parent entry is inconsistent");
+    auto const old_index = static_cast<std::size_t>(old_entry - old_entries.begin());
+    if (new_parent->entries.size() == new_parent->entries.max_size())
+        throw std::length_error("Scene parent cannot accept another group entry");
+    new_parent->entries.reserve(new_parent->entries.size() + 1);
+    auto &stable_old_entries = state_->require(old_parent_id).entries;
+    State::Entry moving = std::move(stable_old_entries[old_index]);
+    stable_old_entries.erase(stable_old_entries.begin() + static_cast<std::ptrdiff_t>(old_index));
+    state_->require(parent_id).entries.push_back(std::move(moving));
+}
+void Builder::set_viewport_bounds(ElementRole role, Rect bounds) {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    if (!finite_rect(bounds))
+        throw std::invalid_argument("Scene viewport bounds are invalid");
+    for (auto &group : state_->groups)
+        if (group.role == role && group.viewport)
+            group.viewport->bounds = bounds;
 }
 
 Transform Builder::transform(NodeId id) const {
