@@ -1177,23 +1177,6 @@ void CommonWrapper::placeScene(scene::Builder &builder, std::span<SceneNode cons
 
 void CommonWrapper::addSceneChildren(scene::Builder &builder,
                                      std::span<scene::NodeId const> parents) {
-    switch (node->kind()) {
-    case mml::NodeKind::mi:
-    case mml::NodeKind::mn:
-    case mml::NodeKind::ms:
-    case mml::NodeKind::mspace:
-    case mml::NodeKind::mstyle:
-    case mml::NodeKind::math:
-    case mml::NodeKind::mtext:
-    case mml::NodeKind::mo:
-    case mml::NodeKind::tex_atom:
-    case mml::NodeKind::none:
-        break;
-    default:
-        throw std::logic_error("CommonWrapper scene emission for MathML kind '" +
-                               std::string(node->document().kindName(node->kind())) +
-                               "' requires a specialized wrapper");
-    }
     double x = 0;
     for (auto *child : childNodes) {
         if (!child)
@@ -1236,6 +1219,23 @@ SceneNodes CommonWrapper::emitScene(scene::Builder &builder,
                                     std::span<scene::NodeId const> parents) {
     if (auto embellished = toEmbellishedScene(builder, parents))
         return *embellished;
+    switch (node->kind()) {
+    case mml::NodeKind::mi:
+    case mml::NodeKind::mn:
+    case mml::NodeKind::ms:
+    case mml::NodeKind::mspace:
+    case mml::NodeKind::mstyle:
+    case mml::NodeKind::math:
+    case mml::NodeKind::mtext:
+    case mml::NodeKind::mo:
+    case mml::NodeKind::tex_atom:
+    case mml::NodeKind::none:
+        break;
+    default:
+        throw std::logic_error("CommonWrapper scene emission for MathML kind '" +
+                               std::string(node->document().kindName(node->kind())) +
+                               "' requires a specialized wrapper");
+    }
     auto containers = standardSceneNodes(builder, parents);
     addSceneChildren(builder, containers.content);
     return containers.nodes;
