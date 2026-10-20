@@ -9,7 +9,45 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 action/centernot/fontsizev3已验收提交）
+### 恢复时先用这个短检查点（2026-10-20 Braket/Units已验收提交）
+
+- **当前无live构建/测试/代理**。完整Math回归570项/139,762断言，115套suite，无失败/
+  跳过，exit0，braket-units-full.log；96246已终态。构建98047 exit0（并发4），
+  braket-units-build.log。聚焦Braket8/323、Units6/135均exit0，*units*另匹配旧测试不算新增。
+- **提交**：5306baf4 Braket（14文件，原四组8文件+3共享+测试/Source/CMake），
+  b96122de Units（5文件，原单组+测试/Source/CMake）。无平行实现；原13项无关修改保留。
+- **Braket职责**：Root完整读取原4TS和原8CPP/IXx；冻结原四组文件职责。
+  items/methods与mappings/configuration均原位替换；共享仅增加
+  TexEnvironment::braket_item_depth（optional<size_t>，overlay复制）及CloseItem::braket_bar。
+  GPT-6.1 Sol /root/base_methods交付items/methods CPP与测试/Source四文件；Root接管并
+  独立重放Source85实际compile/17错误类/11bar场景/6种over分段及直接factory/items检查
+  exit0，braket-source-final.log，原4TS+4CJS/full38锁。其余共享/注册/构建/验证/Git由Root做。
+  源码算法保留：先验证参数再恢复scanner，Push后写当前item.env depth；非stretchy不增加
+  barcount（原行为），只stretchy保存CLOSE/BINbar/OPEN并累加；标记Close解决over分段，
+  toMml(false)仅返回当前段，不加围栏；不增JS对象语义或平行布局。验收实际所有映射、
+  single/braced/nested、font环境、单双bar/限数/低优先回退、over前中后、creator/let/错误恢复。
+  Source特殊\\Braket{a|{b|c}|d}报ExtraCloseMissingOpen，不能改成成功；mspace省略text在
+  Source callback为undefined/native固定接口为emptyview，均落到空mspace无Text子节点。
+- **Units职责**：Root完整读原UnitsConfiguration.ts及现旧CPP/IXx，原单配置内三个方法
+  Unit/UnitFrac/NiceFrac直接操作scanner或创建现有MML mfrac，不增布局算法/包文件。
+  使用已存在UnitsOptions(loose/ugly)，原两个CPP/IXx和tests/math/units.cpp六组已验收。
+  Source witness Root从C:/Windows/512MB实跑35compile/6错误类exit0，锁原TS+CJS/full38。
+  loose=true原~生成NBSP mtext，false原\\,生成0.167em mspace；0字符串参数仍真值。
+- **下一具体行动**：Textmacros/Textcomp。Textcomp只读了原configuration和当前配置，
+  未更改；实际依赖Textmacros服务，不能只接数学
+  映射就宣布整包完成。Root另读原TextcompMappings.ts前95行及当前methods/mappings、
+  原TextMacrosConfiguration.ts/TextParser.ts全部、现四个TextMacros头及旧configuration.cpp前190行。
+  当前TextMacros八文件实际平铺在input/tex/（text_parser、textmacros_methods等），不在
+  textmacros子目录；不新造同名平行文件。剩余原Methods/Mappings和现CPP需读完再冻结。
+  文本子配置需要同一session/options与独立ParseOptions/Tags，主TexParser只能按作用域借用；
+  TexSessionState当前明确只拥有可持久值，不能塞入请求parser/MML或复活Context对象图。
+  原TextParser的Parse/Push/saveText/PushMath/addAttributes/ParseTextArg/ParseArg/copyLists
+  等职责继续在原TextParser；未冻结下一批接口，需先读完原Methods/Mappings及现CPP再派工。
+  上两批已验收包不重派、不重测；完整38包、Common→Scene emission、端到端SVG对照与
+  Folia切换仍未完成，goal保持active。Mermaid暂停；Luna额度到10月25日，无新信号不重试，
+  必要Sol只GPT-6.1 Sol；编译一次一个build、并发4。FunctionList命名已解决，不重新调查。
+
+### 上一批基线（action/centernot/fontsizev3；历史证据，不重做）
 
 - **当前无live构建/测试/代理**。完整Math回归556项/139,304断言，113套suite，无失败/
   跳过，exit0；action-centernot-fontsize-full.log，16303已终态。构建72843 exit0，
@@ -28,8 +66,7 @@
   texClass与属性同时更新；不另加overlay模块。Fontsizev3直接复用BaseMethods::SetSize
   原10映射，保留tiny/Tiny和全部原版本比例，无新尺寸算法。Source实测连续tiny/large
   的creator调用顺序为1.2em再0.5em（退出栈时内到外），不是树的外到内顺序；测试已更正。
-- **下一具体行动**：处理braket包前，先完整读取其原TS、当前CPP/IXx与已有实际调用，
-  冻结原文件职责/API及Source验收，再分工或实现；本批三个包不重派、不重测。
+- **历史下一步Braket现已完成**，见顶部当前批次；上一批三个包不重派、不重测。
   共享布局→Scene emission、完整38包、端到端SVG对照和Folia切换仍未完成，goal保持active。
   现有Scene提案尚未采纳，不从头另造Common布局；Mermaid继续暂停。Luna额度到10月25日，
   无新信号不重试；必要Sol只GPT-6.1 Sol。
