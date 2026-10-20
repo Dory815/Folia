@@ -1268,9 +1268,12 @@ double CommonWrapper::emitUnknownText(scene::Builder &builder, scene::NodeId par
 
 double CommonWrapper::emitChar(scene::Builder &builder, scene::NodeId parent,
                                std::uint32_t codepoint, double x, double y,
-                               std::string_view selected, std::u16string &unknown, bool buffer) {
+                               std::string_view selected, std::u16string &unknown, bool buffer,
+                               scene::Transform transform) {
     auto resolved = getVariantChar(selected, codepoint);
     if (!resolved) {
+        if (!transform.operations().empty())
+            throw std::logic_error("transformed unknown glyph output is unsupported");
         const std::array<double, 1> point{static_cast<double>(codepoint)};
         unknown += string_util::unicodeString(point);
         return buffer ? 0
@@ -1283,9 +1286,15 @@ double CommonWrapper::emitChar(scene::Builder &builder, scene::NodeId parent,
     if (!glyph.composition.empty()) {
         scene::SemanticMetadata metadata;
         metadata.ordered_attributes.push_back({"data-c", hexCodepoint(codepoint)});
+        std::vector<scene::TransformOperation> operations;
+        if (x + dx != 0 || y != 0)
+            operations.emplace_back(
+                scene::Translation{x + dx, y, scene::TranslationSeparator::comma});
+        operations.insert(operations.end(), transform.operations().begin(),
+                          transform.operations().end());
         const auto group =
-            builder.add_group(parent, translated(x + dx, y), {}, {}, {}, std::move(metadata),
-                              scene::ElementRole::glyph_composition);
+            builder.add_group(parent, scene::Transform(std::move(operations)), {}, {}, {},
+                              std::move(metadata), scene::ElementRole::glyph_composition);
         double advance = 0;
         for (auto cp : glyph.composition)
             advance += emitChar(builder, group, cp, advance, 0, selected, unknown, false);
@@ -1293,6 +1302,7 @@ double CommonWrapper::emitChar(scene::Builder &builder, scene::NodeId parent,
     }
     if (glyph.resource) {
         scene::Glyph item{glyph.resource, resolved->key, {x + dx, y}, glyph.metrics.w, {}};
+        item.transform = std::move(transform);
         scene::GlyphRun run;
         run.glyphs.push_back(std::move(item));
         builder.add_primitive(parent, std::move(run));

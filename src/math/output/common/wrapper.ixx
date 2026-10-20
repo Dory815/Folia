@@ -177,7 +177,7 @@ class CommonWrapper : public tree::AbstractWrapper<CommonWrapper, mml::MmlNode> 
     double handleSceneId(scene::Builder &, std::span<SceneNode const>, double y);
     double emitChar(scene::Builder &, scene::NodeId parent, std::uint32_t codepoint, double x,
                     double y, std::string_view variant, std::u16string &unknown,
-                    bool buffer = false);
+                    bool buffer = false, scene::Transform transform = {});
     double emitUnknownText(scene::Builder &, scene::NodeId parent, double x, double y,
                            std::u16string &unknown, std::string_view variant,
                            CssFontData font = {});

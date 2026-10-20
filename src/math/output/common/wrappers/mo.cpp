@@ -8,6 +8,7 @@ import folia.math.core.mml_tree.mml_nodes.mrow;
 import folia.math.util.lengths;
 import folia.math.util.js_number;
 import folia.math.util.utf16;
+import folia.math.output.scene.builder;
 import std;
 
 namespace folia::math::output::common {
@@ -128,6 +129,230 @@ void CommonMo::initializeSource() {
     isAccent = mo().isAccent();
     getMultChar();
     setBreakStyle();
+}
+
+SceneNodes CommonMo::emitScene(scene::Builder &builder, std::span<scene::NodeId const> parents) {
+    auto containers = standardSceneNodes(builder, parents);
+    auto &nodes = containers.nodes;
+    auto &content = containers.content;
+    if (nodes.empty())
+        return std::move(nodes);
+
+    // Source keeps the two line-segment slots but physically removes the
+    // suppressed standard SVG node. Preserve that slot as null in Scene so
+    // later placement retains the original line index.
+    if (nodes.size() > 1 && breakStyle != "duplicate") {
+        const std::size_t suppressed = breakStyle == "after" ? 1 : 0;
+        if (suppressed < nodes.size() && nodes[suppressed]) {
+            builder.discard_group(*nodes[suppressed]);
+            nodes[suppressed].reset();
+        }
+    }
+
+    const bool stretchy = !std::holds_alternative<NoStretch>(stretch);
+    if (stretchy && !size)
+        getStretchedVariant({});
+
+    const auto *active = std::get_if<ActiveStretch>(&stretch);
+    const auto *recipe =
+        active ? jax().fonts().delimiter(jax().face().name, active->sourceCodepoint) : nullptr;
+    if (active && !recipe)
+        throw std::out_of_range("active delimiter recipe is missing during scene emission");
+
+    const bool assembly = size && std::holds_alternative<AssemblyStretchSize>(*size);
+    const auto characters = unicodeChars(getText());
+    if (characters.empty())
+        return std::move(nodes);
+
+    auto emitText = [&](CommonMo &owner, scene::NodeId parent, double x, double y,
+                        std::span<std::uint32_t const> cps, std::string_view selectedVariant) {
+        std::u16string unknown;
+        double cursor = x;
+        for (const auto cp : cps) {
+            cursor += owner.emitChar(builder, parent, cp, cursor, y, selectedVariant, unknown);
+        }
+        owner.emitUnknownText(builder, parent, cursor, y, unknown, selectedVariant);
+    };
+
+    if (assembly) {
+        auto const &face = jax().face();
+        auto const &pieces = recipe->stretch;
+        const auto variantCharacter = recipeCharacter(*recipe, characters.front());
+        const auto *variantRecipe = jax().fonts().delimiter(jax().face().name, variantCharacter);
+        auto variantAt = [&](std::size_t i) -> std::string const & {
+            // Source FontData::getStretchVariant(c, i) consults the delimiter
+            // indexed by stretch.c (or the original character), defaulting to
+            // stretch variant zero when that recipe has no stretchv map.
+            const auto vi = variantRecipe && i < variantRecipe->stretchv.size()
+                                ? variantRecipe->stretchv[i]
+                                : 0u;
+            if (vi >= face.stretch_variants.size())
+                throw std::out_of_range("stretch variant index is outside face data");
+            return face.stretch_variants[vi];
+        };
+        auto glyphData = [&](std::uint32_t cp, std::string_view v) -> FontGlyph const * {
+            if (cp == 0)
+                return nullptr;
+            auto resolved = getVariantChar(v, cp);
+            static const FontGlyph missing{};
+            return resolved ? resolved->data : &missing;
+        };
+        const auto box = getBBox();
+        constexpr double vFuzz = 0.07;
+        constexpr double hFuzz = 0.07;
+        auto addGlyph = [&](scene::NodeId parent, std::uint32_t cp, std::string_view v, double x,
+                            double y) {
+            emitText(*this, parent, x, y, std::span<std::uint32_t const>(&cp, 1), v);
+        };
+        auto clipped = [&](scene::NodeId parent, std::uint32_t cp, std::string_view v, double x,
+                           double y, double sx, double sy, double clipX, double clipY, double clipW,
+                           double clipH) {
+            if (!(clipW > 0) || !(clipH > 0))
+                return;
+            const auto role = recipe->direction == StretchDirection::vertical
+                                  ? scene::ElementRole::vertical_extender_viewport
+                                  : scene::ElementRole::horizontal_extender_viewport;
+            scene::Viewport viewport{.bounds = {x, y, clipW, clipH},
+                                     .view_box = {clipX, clipY, clipW, clipH},
+                                     .aspect_ratio = {}};
+            const auto group = builder.add_group(parent, {}, {}, {}, {}, {}, role, {}, viewport);
+            std::u16string unknown;
+            scene::Transform transform{
+                std::vector<scene::TransformOperation>{scene::Scaling{sx, sy, true}}};
+            (void)emitChar(builder, group, cp, 0, 0, v, unknown, false, std::move(transform));
+        };
+
+        for (std::size_t segment = 0; segment < content.size(); ++segment) {
+            if (segment < nodes.size() && !nodes[segment])
+                continue;
+            const auto parent = content[segment];
+            if (recipe->direction == StretchDirection::vertical) {
+                const auto piece = [&](std::size_t i) {
+                    return i < pieces.size() ? pieces[i] : 0u;
+                };
+                const auto topChar = piece(0), extChar = piece(1), bottomChar = piece(2);
+                auto const *top = glyphData(topChar, variantAt(0));
+                auto const *ext = glyphData(extChar, variantAt(1));
+                auto const *bottom = glyphData(bottomChar, variantAt(2));
+                double t = 0, b = 0;
+                if (topChar) {
+                    t = top->metrics.h + top->metrics.d;
+                    addGlyph(parent, topChar, variantAt(0), (box.w - top->metrics.w) / 2,
+                             box.h - top->metrics.h);
+                }
+                if (bottomChar) {
+                    b = bottom->metrics.h + bottom->metrics.d;
+                    addGlyph(parent, bottomChar, variantAt(2), (box.w - bottom->metrics.w) / 2,
+                             bottom->metrics.d - box.d);
+                }
+                if (pieces.size() == 4) {
+                    const auto midChar = piece(3);
+                    auto const *mid = glyphData(midChar, variantAt(3));
+                    double H = 0, D = 0;
+                    if (midChar) {
+                        const double y =
+                            (mid->metrics.d - mid->metrics.h) / 2 + parameter(face, "axis_height");
+                        H = mid->metrics.h + y;
+                        D = mid->metrics.d - y;
+                        addGlyph(parent, midChar, variantAt(3), (box.w - mid->metrics.w) / 2, y);
+                    }
+                    auto extPart = [&](double H0, double D0, double T, double B) {
+                        if (!extChar)
+                            return;
+                        T = std::max(0.0, T - vFuzz);
+                        B = std::max(0.0, B - vFuzz);
+                        const double Y = H0 + D0 - T - B;
+                        const double s = (1.5 * Y) / (ext->metrics.h + ext->metrics.d);
+                        const double clipY = (s * (ext->metrics.h - ext->metrics.d) - Y) / 2;
+                        if (Y > 0)
+                            clipped(parent, extChar, variantAt(1), (box.w - ext->metrics.w) / 2,
+                                    B - D0, 1, s, 0, clipY, ext->metrics.w, Y);
+                    };
+                    extPart(box.h, -H, t, 0);
+                    extPart(-D, box.d, 0, b);
+                } else if (extChar) {
+                    double T = std::max(0.0, t - vFuzz), B = std::max(0.0, b - vFuzz);
+                    const double Y = box.h + box.d - T - B;
+                    const double s = (1.5 * Y) / (ext->metrics.h + ext->metrics.d);
+                    const double clipY = (s * (ext->metrics.h - ext->metrics.d) - Y) / 2;
+                    if (Y > 0)
+                        clipped(parent, extChar, variantAt(1), (box.w - ext->metrics.w) / 2,
+                                B - box.d, 1, s, 0, clipY, ext->metrics.w, Y);
+                }
+            } else {
+                const auto piece = [&](std::size_t i) {
+                    return i < pieces.size() ? pieces[i] : 0u;
+                };
+                const auto leftChar = piece(0), extChar = piece(1), rightChar = piece(2);
+                auto const *left = glyphData(leftChar, variantAt(0));
+                auto const *ext = glyphData(extChar, variantAt(1));
+                auto const *right = glyphData(rightChar, variantAt(2));
+                const double L = left ? left->metrics.w : 0;
+                const double R = right ? right->metrics.w : 0;
+                if (leftChar)
+                    addGlyph(parent, leftChar, variantAt(0), 0, 0);
+                if (rightChar)
+                    addGlyph(parent, rightChar, variantAt(2), box.w - R, 0);
+                auto extPart = [&](double W, double leftEdge, double rightEdge, double x) {
+                    if (!extChar)
+                        return;
+                    const double rr = std::max(0.0, rightEdge - hFuzz);
+                    const double ll = std::max(0.0, leftEdge - hFuzz);
+                    const double X = W - ll - rr;
+                    const double Y = ext->metrics.h + ext->metrics.d + 2 * vFuzz;
+                    const double s = 1.5 * (X / ext->metrics.w);
+                    const double D = -(ext->metrics.d + vFuzz);
+                    if (X > 0)
+                        clipped(parent, extChar, variantAt(1), x + ll, D, s, 1,
+                                (s * ext->metrics.w - X) / 2, D, X, Y);
+                };
+                if (pieces.size() == 4) {
+                    const auto midChar = piece(3);
+                    auto const *mid = glyphData(midChar, variantAt(3));
+                    double x1 = 0, x2 = 0;
+                    if (midChar) {
+                        x1 = (box.w - mid->metrics.w) / 2;
+                        x2 = (box.w + mid->metrics.w) / 2;
+                        addGlyph(parent, midChar, variantAt(3), (box.w - mid->metrics.w) / 2, 0);
+                    }
+                    const double w2 = box.w / 2;
+                    extPart(w2, L, w2 - x1, 0);
+                    extPart(w2, x2 - w2, R, w2);
+                } else {
+                    extPart(box.w, L, R, 0);
+                }
+            }
+        }
+        return std::move(nodes);
+    }
+
+    const bool symmetric = truthy(attribute(*node, "symmetric")) &&
+                           (!recipe || recipe->direction != StretchDirection::horizontal);
+    const double u = symmetric || truthy(attribute(*node, "largeop")) ? getCenterOffset() : 0;
+    const double v = node->properties().tex.math_accent.value_or(false) ? getAccentOffset() : 0;
+    for (std::size_t i = 0; i < nodes.size(); ++i) {
+        if (!nodes[i])
+            continue;
+        if (u != 0 || v != 0) {
+            auto existing = builder.transform(*nodes[i]);
+            std::vector<scene::TransformOperation> operations;
+            operations.reserve(existing.operations().size() + 1);
+            for (const auto &operation : existing.operations()) {
+                const auto *affine = std::get_if<scene::Affine>(&operation);
+                if (affine && *affine == scene::Affine{})
+                    continue;
+                operations.push_back(operation);
+            }
+            operations.emplace_back(scene::Translation{v, u, scene::TranslationSeparator::space});
+            builder.set_transform(*nodes[i], scene::Transform{std::move(operations)});
+        }
+        auto &owner = i == 1 && multChar ? *multChar : *this;
+        if (owner.childNodes.empty() || !owner.childNodes.front())
+            throw std::logic_error("CommonMo scene emission requires its text child wrapper");
+        const std::array<scene::NodeId, 1> target{content.at(i)};
+        (void)owner.childNodes.front()->emitScene(builder, target);
+    }
+    return std::move(nodes);
 }
 
 void CommonMo::getMultChar() {

@@ -21,6 +21,7 @@ class CommonMo : public CommonWrapper {
 
     CommonMo(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr);
     void initializeSource() override;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     std::size_t breakCount() override;
     std::size_t embellishedBreakCount() const;
     std::string embellishedBreakStyle() const;
