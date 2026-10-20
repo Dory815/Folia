@@ -1,139 +1,115 @@
-// Root-frozen declarations for complete MathJax 4.1.3 TokenMap.ts.
-// Apache-2.0; source SHA256 0209895b13569008b2129b61c88050e7c70e70ce9477d234b9a6e303a86a738e.
-export module folia.math.input.tex.token_map;
-export import folia.math.input.tex.token_map_types;
-export import folia.math.input.tex.map_handler;
-export import folia.math.util.ordered_map_storage;
+// MathJax 4.1.3 input/tex/TokenMap.ts; Apache-2.0.
+export module folia.math.input.tex.parser:token_map;
+export import :macro;
+export import folia.math.util.regexp_host;
 import std;
 
 export namespace folia::math::tex {
-class TokenMapHost;
-class TokenMapAllocation {
-    TokenMapAllocation()=default;
-    friend class TokenMapHost;
-};
+using TokenLookup = std::variant<std::monostate, std::u16string_view,
+                                 Token const*, Macro const*, CommandDefinition const*>;
+DispatchOutcome parseResult(DispatchOutcome);
 
-// Engine dependency: identity-bearing live test service. Controlled services
-// prove map dispatch only; no engine is accepted by this declaration.
-class RegExpContext:public NativeObject {
+class TokenMap {
 public:
-    virtual ~RegExpContext()=default;
-    virtual bool test(const Property&)=0;
+    virtual ~TokenMap() = default;
+    virtual std::u16string_view name() const noexcept = 0;
+    virtual std::optional<TokenMapParser> parser() const = 0;
+    virtual void setParser(std::optional<TokenMapParser>) = 0;
+    virtual std::optional<TokenMapParser> parserFor(std::u16string_view) const = 0;
+    virtual bool contains(std::u16string_view) const = 0;
+    virtual TokenLookup lookup(std::u16string_view) const = 0;
+    virtual DispatchOutcome parse(TexParser&, std::u16string_view) = 0;
 };
-using RegExpRef=std::shared_ptr<RegExpContext>;
-
-struct TokenPropertyEqual {
-    bool operator()(const Property&,const Property&)const;
+using TokenMapRef = std::shared_ptr<TokenMap>;
+struct TokenMapInit {
+    std::u16string name;
+    std::optional<TokenMapParser> parser;
 };
-using TokenLookupStorage=OrderedMapAccess<Property,TokenLookup>;
-using TokenLookupOrderedStorage=OrderedMapStorage<Property,TokenLookup,TokenPropertyEqual>;
+struct RegExpMapInit { TokenMapInit base; regexp_host::RegExpRef regexp; };
+struct CharacterMapInit { TokenMapInit base; std::vector<Token> entries; };
+struct MacroMapInit { TokenMapInit base; std::vector<Macro> entries; };
+struct SessionMacroMapInit {
+    TokenMapInit base;
+    TexSessionState& session;
+    MacroCallbacks const& callbacks;
+    MacroHandler expansion;
+};
+struct CommandMapInit { MacroMapInit macros; };
+struct EnvironmentMapInit { MacroMapInit macros; EnvironmentHandler parser; };
 
-ParseResult parseResult(ParseResult);
-
-class AbstractTokenMap:public TokenMap,public std::enable_shared_from_this<AbstractTokenMap> {
-    Property name_=Missing{};
-    ParseMethod parser_=Property(Missing{});
+class AbstractTokenMap : public TokenMap {
+    std::u16string name_;
+    std::optional<TokenMapParser> parser_;
 protected:
-    explicit AbstractTokenMap(TokenMapAllocation){}
-    void initializeSource(MapHandler&,Property,ParseMethod);
-    friend class TokenMapHost;
+    explicit AbstractTokenMap(TokenMapInit);
+    static DispatchOutcome parseValue(TexParser&, TokenMapParser const&, TokenInput const&);
 public:
-    AbstractTokenMap(const AbstractTokenMap&)=delete;
-    AbstractTokenMap& operator=(const AbstractTokenMap&)=delete;
-    AbstractTokenMap(AbstractTokenMap&&)=delete;
-    AbstractTokenMap& operator=(AbstractTokenMap&&)=delete;
-    Property name() const override;
-    ParseMethod parser() const override;
-    void parser(ParseMethod) override;
-    // Raw Source own-field accessors. These do not dispatch through virtual
-    // TokenMap methods and therefore preserve field semantics in subclasses.
-    Property sourceNameField()const{return name_;}
-    void sourceNameField(Property value){name_=std::move(value);}
-    ParseMethod sourceParserField()const{return parser_;}
-    void sourceParserField(ParseMethod value){parser_=std::move(value);}
-    ParseMethod parserFor(const Property&) override;
-    ParseResult parse(const ParseInput&) override;
+    std::u16string_view name() const noexcept override { return name_; }
+    std::optional<TokenMapParser> parser() const override { return parser_; }
+    void setParser(std::optional<TokenMapParser>) override;
+    std::optional<TokenMapParser> parserFor(std::u16string_view) const override;
+    DispatchOutcome parse(TexParser&, std::u16string_view) override;
+};
+class RegExpMap : public AbstractTokenMap {
+    regexp_host::RegExpRef regexp_;
+public:
+    explicit RegExpMap(RegExpMapInit);
+    bool contains(std::u16string_view) const override;
+    TokenLookup lookup(std::u16string_view) const override;
 };
 
-class RegExpMap:public AbstractTokenMap {
+template<class Entry> class AbstractParseMap : public AbstractTokenMap {
+    std::map<std::u16string, Entry, std::less<>> entries_;
 protected:
-    RegExpRef regexp_;
-    void initializeSource(MapHandler&,Property,ParseMethod,RegExpRef);
-    friend class TokenMapHost;
-public:
-    explicit RegExpMap(TokenMapAllocation tag):AbstractTokenMap(tag){}
-    RegExpRef sourceRegExpField()const{return regexp_;}
-    void sourceRegExpField(RegExpRef value){regexp_=std::move(value);}
-    bool contains(const Property&) override;
-    TokenLookup lookup(const Property&) override;
-};
-
-class AbstractParseMap:public AbstractTokenMap {
-protected:
-    // Source field initializer happens after base registration, not allocation.
-    std::optional<std::shared_ptr<TokenLookupStorage>> map_;
-    void initializeSource(MapHandler&,Property,ParseMethod);
-    friend class TokenMapHost;
-public:
-    explicit AbstractParseMap(TokenMapAllocation tag):AbstractTokenMap(tag){}
-    TokenLookup lookup(const Property&) override;
-    bool contains(const Property&) override;
-    virtual void add(Property,TokenLookup);
-    virtual void remove(const Property&);
-    // Aliases the actual map member and retains this owner for the Context
-    // projection lifetime. The returned handle contains no copied entries.
-    std::shared_ptr<TokenLookupStorage> mapStorage()const;
-    void rebindMapStorage(std::shared_ptr<TokenLookupStorage>);
-};
-
-class CharacterMap:public AbstractParseMap,public CharacterMapIdentity {
-protected:
-    void initializeSource(MapHandler&,Property,ParseMethod,Property);
-    friend class TokenMapHost;
-public:
-    explicit CharacterMap(TokenMapAllocation tag):AbstractParseMap(tag){}
-};
-
-class DelimiterMap:public CharacterMap {
-public:
-    explicit DelimiterMap(TokenMapAllocation tag):CharacterMap(tag){}
-    ParseResult parse(const ParseInput&) override;
-};
-
-class MacroMap:public AbstractParseMap {
-protected:
-    void initializeSource(MapHandler&,Property,Property,Property=Missing{});
-    friend class TokenMapHost;
-public:
-    explicit MacroMap(TokenMapAllocation tag):AbstractParseMap(tag){}
-    ParseMethod parserFor(const Property&) override;
-    ParseResult parse(const ParseInput&) override;
-};
-
-class CommandMap:public MacroMap {
-public:
-    explicit CommandMap(TokenMapAllocation tag):MacroMap(tag){}
-    ParseResult parse(const ParseInput&) override;
-};
-
-class EnvironmentMap:public MacroMap {
-protected:
-    void initializeSource(MapHandler&,Property,ParseMethod,Property,Property=Missing{});
-    friend class TokenMapHost;
-public:
-    explicit EnvironmentMap(TokenMapAllocation tag):MacroMap(tag){}
-    ParseResult parse(const ParseInput&) override;
-};
-
-class TokenMapHost {
-public:
-    template<class T,class...Args>
-    static std::shared_ptr<T> create(MapHandler& registry,Args&&...args){
-        static_assert(std::derived_from<T,AbstractTokenMap>);
-        // One final allocation, then original base-to-derived initializer order.
-        auto object=std::make_shared<T>(TokenMapAllocation{});
-        object->initializeSource(registry,std::forward<Args>(args)...);
-        return object;
+    AbstractParseMap(TokenMapInit init, std::vector<Entry> entries)
+        : AbstractTokenMap(std::move(init)) {
+        for (auto& entry : entries) {
+            auto name = entry.token;
+            add(std::move(name), std::move(entry));
+        }
     }
+public:
+    bool contains(std::u16string_view token) const override { return entries_.contains(token); }
+    TokenLookup lookup(std::u16string_view token) const override {
+        auto entry = entries_.find(token);
+        return entry == entries_.end() ? TokenLookup{} : TokenLookup{&entry->second};
+    }
+    void add(std::u16string key, Entry value) { entries_.insert_or_assign(std::move(key), std::move(value)); }
+    void add(Entry value) { auto key = value.token; add(std::move(key), std::move(value)); }
+    void remove(std::u16string_view token) { auto entry = entries_.find(token); if (entry != entries_.end()) entries_.erase(entry); }
+};
+class CharacterMap : public AbstractParseMap<Token> {
+public:
+    explicit CharacterMap(CharacterMapInit);
+};
+class DelimiterMap : public CharacterMap {
+public:
+    explicit DelimiterMap(CharacterMapInit);
+    DispatchOutcome parse(TexParser&, std::u16string_view) override;
+};
+class MacroMap : public AbstractParseMap<Macro> {
+    TexSessionState* session_{};
+    MacroCallbacks const* callbacks_{};
+    MacroHandler expansion_{};
+public:
+    explicit MacroMap(MacroMapInit);
+    explicit MacroMap(SessionMacroMapInit);
+    bool contains(std::u16string_view) const override;
+    TokenLookup lookup(std::u16string_view) const override;
+    std::optional<TokenMapParser> parserFor(std::u16string_view) const override;
+    DispatchOutcome parse(TexParser&, std::u16string_view) override;
+};
+// The currentCS wrapper needs the actual TexParser implementation. It remains
+// unimplemented rather than calling a different parser or fabricating success.
+class CommandMap : public MacroMap {
+public:
+    explicit CommandMap(CommandMapInit);
+    explicit CommandMap(SessionMacroMapInit);
+    DispatchOutcome parse(TexParser&, std::u16string_view) override;
+};
+class EnvironmentMap : public MacroMap {
+public:
+    explicit EnvironmentMap(EnvironmentMapInit);
+    DispatchOutcome parse(TexParser&, std::u16string_view) override;
 };
 }

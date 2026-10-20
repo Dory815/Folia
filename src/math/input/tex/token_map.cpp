@@ -1,333 +1,137 @@
-/*************************************************************
- * Copyright (c) 2017-2026 The MathJax Consortium.
- * Native implementation of MathJax 4.1.3 input/tex/TokenMap.ts.
- * Licensed under Apache-2.0; see src/math/LICENSE-MathJax.txt.
- * Source SHA256: 0209895b13569008b2129b61c88050e7c70e70ce9477d234b9a6e303a86a738e
- *************************************************************/
-module folia.math.input.tex.token_map;
-
-import folia.math.input.tex.map_handler;
-import folia.math.util.argument_expansion;
-import folia.math.util.property_host;
+// MathJax 4.1.3 TokenMap.ts; Apache-2.0.
+module folia.math.input.tex.parser;
 import std;
 
 namespace folia::math::tex {
-namespace {
-
-using property_host::typeError;
-
-bool truthy(const ParseMethod& method) {
-    if (const auto* function = std::get_if<FunctionRef>(&method)) return bool(*function);
-    return property_host::truthy(std::get<Property>(method));
+DispatchOutcome parseResult(DispatchOutcome result) {
+    return std::holds_alternative<NoParseResult>(result) ? DispatchOutcome{Handled{}} : std::move(result);
 }
-
-bool truthy(const TokenLookup& lookup) {
-    return std::visit([](const auto& value) {
-        using T = std::decay_t<decltype(value)>;
-        if constexpr (std::same_as<T, Property>) return property_host::truthy(value);
-        else return bool(value);
-    }, lookup);
+AbstractTokenMap::AbstractTokenMap(TokenMapInit init)
+    : name_(std::move(init.name)) { setParser(init.parser); }
+void AbstractTokenMap::setParser(std::optional<TokenMapParser> method) {
+    if (method && !std::visit([](auto callback) { return callback != nullptr; }, *method)) method.reset();
+    parser_ = method;
 }
-
-ParseAtom atom(const TokenLookup& lookup) {
-    return std::visit([](const auto& value) -> ParseAtom {
-        using T = std::decay_t<decltype(value)>;
-        if constexpr (std::same_as<T, Property> || std::same_as<T, TokenRef>) {
-            return value;
-        } else {
-            return std::static_pointer_cast<NativeObject>(value);
-        }
-    }, lookup);
+std::optional<TokenMapParser> AbstractTokenMap::parserFor(std::u16string_view token) const {
+    return contains(token) ? parser_ : std::nullopt;
 }
-
-Property tokenValue(const Property& token) {
-    std::u16string result = u"\\";
-    result += property_host::string(property_host::primitive(token, false));
-    return Property(property_host::debugText(result));
+DispatchOutcome AbstractTokenMap::parseValue(TexParser& parser, TokenMapParser const& method,
+                                            TokenInput const& input) {
+    auto callback = std::get_if<TokenInputHandler>(&method);
+    if (!callback) throw std::logic_error("Token map requires a typed token callback");
+    return *callback ? parseResult((*callback)(parser, input)) : DispatchOutcome{ContinueDispatch{}};
 }
-
-Property prefixedToken(std::u16string_view prefix, const Property& token) {
-    std::u16string result(prefix);
-    result += property_host::string(property_host::primitive(token, false));
-    return Property(property_host::debugText(result));
-}
-
-std::pair<Property, Property> destructureTwo(const Property& value) {
-    if (const auto array = PropertyArray::array(value)) {
-        const std::size_t length = array->size();
-        const Property first = length > 0 ? array->get(0) : Property(Missing{});
-        const Property second = length > 1 ? array->get(1) : Property(Missing{});
-        return {first, second};
+DispatchOutcome AbstractTokenMap::parse(TexParser& parser, std::u16string_view token) {
+    auto method = parserFor(token);
+    auto mapped = lookup(token); // Source evaluates this even when parserFor returned null.
+    if (!method) return ContinueDispatch{};
+    if (auto text = std::get_if<std::u16string_view>(&mapped)) {
+        if (text->empty()) return ContinueDispatch{};
+        std::u16string captured(*text);
+        return parseValue(parser, *method, TokenInput{std::u16string_view(captured)});
     }
-    return {property_host::get(value, "0"), property_host::get(value, "1")};
-}
-
-Property field(const TokenLookup& lookup, std::string_view name) {
-    return std::visit([&](const auto& value) -> Property {
-        using T = std::decay_t<decltype(value)>;
-        if constexpr (std::same_as<T, Property>) {
-            return property_host::get(value, name);
-        } else if constexpr (std::same_as<T, TokenRef>) {
-            if (!value) typeError("Cannot read property of null token");
-            if (name == "token") return value->token();
-            return Missing{};
-        } else {
-            if (!value) typeError("Cannot read property of null macro");
-            if (name == "token") return value->token();
-            if (name == "args") return value->args();
-            return Missing{};
-        }
-    }, lookup);
-}
-
-ParseMethod methodField(const TokenLookup& lookup) {
-    if (const auto* macro = std::get_if<MacroRef>(&lookup)) {
-        if (!*macro) typeError("Cannot read property of null macro");
-        return (*macro)->func();
+    if (auto value = std::get_if<Token const*>(&mapped); value && *value) {
+        Token captured = **value;
+        return parseValue(parser, *method, TokenInput{&captured});
     }
-    return functions::fromProperty(field(lookup, "func"));
+    return ContinueDispatch{};
 }
-
-Property methodFromConfig(const Property& value, const Property& functionMap) {
-    if (const auto* name = std::get_if<std::string>(&value.value)) {
-        return property_host::get(functionMap, *name);
+RegExpMap::RegExpMap(RegExpMapInit init)
+    : AbstractTokenMap(std::move(init.base)), regexp_(std::move(init.regexp)) {
+    if (!regexp_) throw std::invalid_argument("A regular expression map needs its expression");
+}
+bool RegExpMap::contains(std::u16string_view token) const {
+    return regexp_->exec(std::u16string(token)).has_value();
+}
+TokenLookup RegExpMap::lookup(std::u16string_view token) const {
+    return contains(token) ? TokenLookup{token} : TokenLookup{};
+}
+CharacterMap::CharacterMap(CharacterMapInit init)
+    : AbstractParseMap(std::move(init.base), std::move(init.entries)) {}
+DelimiterMap::DelimiterMap(CharacterMapInit init) : CharacterMap(std::move(init)) {}
+DispatchOutcome DelimiterMap::parse(TexParser& parser, std::u16string_view token) {
+    auto escaped = u"\\" + std::u16string(token);
+    return CharacterMap::parse(parser, escaped);
+}
+MacroMap::MacroMap(MacroMapInit init)
+    : AbstractParseMap(std::move(init.base), std::move(init.entries)) {}
+MacroMap::MacroMap(SessionMacroMapInit init)
+    : AbstractParseMap(std::move(init.base), {}), session_(&init.session),
+      callbacks_(&init.callbacks), expansion_(init.expansion) {
+    if (!expansion_) throw std::invalid_argument("A session macro map needs its expansion callback");
+}
+bool MacroMap::contains(std::u16string_view token) const {
+    return session_ ? session_->findCommand(token) != nullptr : AbstractParseMap::contains(token);
+}
+TokenLookup MacroMap::lookup(std::u16string_view token) const {
+    if (!session_) return AbstractParseMap::lookup(token);
+    auto definition = session_->findCommand(token);
+    return definition ? TokenLookup{definition} : TokenLookup{};
+}
+std::optional<TokenMapParser> MacroMap::parserFor(std::u16string_view token) const {
+    auto mapped = lookup(token);
+    if (auto macro = std::get_if<Macro const*>(&mapped); macro && *macro)
+        return std::visit([](auto method) -> std::optional<TokenMapParser> {
+            return method ? std::optional<TokenMapParser>(TokenMapParser{method}) : std::nullopt;
+        }, (*macro)->function);
+    if (auto definition = std::get_if<CommandDefinition const*>(&mapped); definition && *definition) {
+        return std::visit([&](auto const& body) -> std::optional<TokenMapParser> {
+            using T = std::decay_t<decltype(body)>;
+            if constexpr (std::is_same_v<T, MacroDefinition>) return TokenMapParser{expansion_};
+            else if constexpr (std::is_same_v<T, NativeMacroAlias>)
+                return TokenMapParser{callbacks_->macroHandler(body.handler)};
+            else if constexpr (std::is_same_v<T, CharacterMacroAlias>)
+                return TokenMapParser{callbacks_->tokenParser(body.parser)};
+            else return std::nullopt;
+        }, (*definition)->body);
     }
-    return value;
+    return std::nullopt;
 }
-
-std::vector<std::pair<std::string, Property>> entries(const Property& object) {
-    const auto keys = property_host::ownKeys(object);
-    std::vector<std::pair<std::string, Property>> result;
-    result.reserve(keys.size());
-    for (const auto& key : keys) result.emplace_back(key, property_host::get(object, key));
-    return result;
-}
-
-std::any callableSlot(const ParseMethod& method) {
-    if (const auto* function = std::get_if<FunctionRef>(&method)) return *function;
-    const Property& property = std::get<Property>(method);
-    if (const auto* function = std::get_if<FunctionRef>(&property.value)) return *function;
-    return property;
-}
-
-ParseResult invokeBare(const ParseMethod& method, ParserContext& parser,
-                       const Property& token, const Property& args) {
-    const ParseAtom parseAtom(token);
-    const std::vector<Property> values = arguments::expand(args);
-    std::vector<std::any> rest;
-    rest.reserve(values.size());
-    for (const auto& value : values) rest.emplace_back(value);
-    const ParseResult result = invokeParseMethod(
-        method, FunctionReceiver{Missing{}}, parser, parseAtom, rest);
-    return parseResult(result);
-}
-
-} // namespace
-
-bool TokenPropertyEqual::operator()(const Property& left,const Property& right)const{
-    return property_host::sameValueZero(left,right);
-}
-
-ParseResult parseResult(ParseResult result) {
-    if (const auto* value = std::get_if<Property>(&result); value && value->missing()) {
-        return Property(true);
+DispatchOutcome MacroMap::parse(TexParser& parser, std::u16string_view input) {
+    auto mapped = lookup(input);
+    auto method = parserFor(input);
+    if (!method) return ContinueDispatch{};
+    std::u16string received(input);
+    if (auto definition = std::get_if<CommandDefinition const*>(&mapped); definition && *definition) {
+        // Snapshot the selected mathematical definition. A callback can replace
+        // the same session entry; it must not invalidate its in-flight arguments.
+        CommandDefinition captured = **definition;
+        if (auto character = std::get_if<CharacterMacroAlias>(&captured.body))
+            return parseValue(parser, *method, TokenInput{&character->captured});
+        auto callback = std::get_if<MacroHandler>(&*method);
+        if (!callback) throw std::logic_error("Macro map requires a typed macro callback");
+        if (!*callback) return ContinueDispatch{};
+        auto const& dispatch = captured.source_token;
+        MacroArguments arguments = std::cref(captured);
+        if (auto alias = std::get_if<NativeMacroAlias>(&captured.body))
+            arguments = std::span<TexArgument const>(alias->arguments);
+        return parseResult((*callback)(parser, MacroInvocation{received, dispatch, arguments}));
     }
-    return result;
-}
-
-void AbstractTokenMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser) {
-    name_ = std::move(name);
-    parser_ = std::move(parser);
-    registry.registerMap(std::static_pointer_cast<TokenMap>(shared_from_this()));
-}
-
-Property AbstractTokenMap::name() const {
-    return name_;
-}
-
-ParseMethod AbstractTokenMap::parser() const {
-    return parser_;
-}
-
-void AbstractTokenMap::parser(ParseMethod parser) {
-    parser_ = std::move(parser);
-}
-
-ParseMethod AbstractTokenMap::parserFor(const Property& token) {
-    if (!contains(token)) return Property(PropertyNull{});
-    return parser();
-}
-
-ParseResult AbstractTokenMap::parse(const ParseInput& input) {
-    const ParseMethod method = parserFor(input.token);
-    const TokenLookup mapped = lookup(input.token);
-    if (!truthy(method) || !truthy(mapped)) return Property(PropertyNull{});
-    const ParseAtom parseAtom = atom(mapped);
-    const ParseResult result = invokeParseMethod(
-        method, FunctionReceiver{Missing{}}, input.parser, parseAtom);
-    return parseResult(result);
-}
-
-void RegExpMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser, RegExpRef regexp) {
-    AbstractTokenMap::initializeSource(registry,std::move(name), std::move(parser));
-    regexp_ = std::move(regexp);
-}
-
-bool RegExpMap::contains(const Property& token) {
-    if (!regexp_) typeError("RegExpMap regular expression is uninitialized");
-    return regexp_->test(token);
-}
-
-TokenLookup RegExpMap::lookup(const Property& token) {
-    return contains(token) ? TokenLookup{token}
-                           : TokenLookup{Property(PropertyNull{})};
-}
-
-void AbstractParseMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser) {
-    AbstractTokenMap::initializeSource(registry,std::move(name), std::move(parser));
-    map_.emplace(std::make_shared<TokenLookupOrderedStorage>());
-}
-
-TokenLookup AbstractParseMap::lookup(const Property& token) {
-    if (!map_) typeError("TokenMap map is uninitialized");
-    if(auto value=(*map_)->get(token))return std::move(*value);
-    return Property(Missing{});
-}
-
-bool AbstractParseMap::contains(const Property& token) {
-    if (!map_) typeError("TokenMap map is uninitialized");
-    return (*map_)->has(token);
-}
-
-void AbstractParseMap::add(Property token, TokenLookup object) {
-    if (!map_) typeError("TokenMap map is uninitialized");
-    if(const auto* number=std::get_if<double>(&token.value);number&&*number==0)token=Property(0.0);
-    (*map_)->set(std::move(token),std::move(object));
-}
-
-void AbstractParseMap::remove(const Property& token) {
-    if (!map_) typeError("TokenMap map is uninitialized");
-    (*map_)->erase(token);
-}
-
-std::shared_ptr<TokenLookupStorage> AbstractParseMap::mapStorage()const{
-    if(!map_)typeError("TokenMap map is uninitialized");
-    if(!*map_)typeError("TokenMap map storage is null");
-    return *map_;
-}
-
-void AbstractParseMap::rebindMapStorage(std::shared_ptr<TokenLookupStorage> storage){
-    if(!map_)typeError("TokenMap map is uninitialized");
-    if(!storage)typeError("TokenMap map storage is null");
-    *map_=std::move(storage);
-}
-
-void CharacterMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser, Property json) {
-    AbstractParseMap::initializeSource(registry,std::move(name), std::move(parser));
-    const std::vector<std::string> keys = property_host::ownKeys(json);
-    for (const auto& key : keys) {
-        const Property value = property_host::get(json, key);
-        Property character;
-        Property attributes;
-        if (std::holds_alternative<std::string>(value.value)) {
-            character = value;
-            attributes = Property(PropertyNull{});
-        } else {
-            auto [sourceCharacter, sourceAttributes] = destructureTwo(value);
-            character = std::move(sourceCharacter);
-            attributes = std::move(sourceAttributes);
-        }
-        auto token = std::make_shared<Token>(Property(key), std::move(character),
-                                             std::move(attributes));
-        this->add(Property(key), TokenLookup{std::move(token)});
+    if (auto macro = std::get_if<Macro const*>(&mapped); macro && *macro) {
+        Macro captured = **macro;
+        auto callback = std::get_if<MacroHandler>(&*method);
+        if (!callback) throw std::logic_error("Macro map requires a typed macro callback");
+        if (!*callback) return ContinueDispatch{};
+        auto const& dispatch = captured.token;
+        return parseResult((*callback)(parser, MacroInvocation{received, dispatch,
+            std::span<TexArgument const>(captured.arguments)}));
     }
+    return ContinueDispatch{};
 }
-
-ParseResult DelimiterMap::parse(const ParseInput& input) {
-    const Property token = tokenValue(input.token);
-    const ParseInput modified{input.parser, token};
-    return AbstractTokenMap::parse(modified);
+EnvironmentMap::EnvironmentMap(EnvironmentMapInit init) : MacroMap(std::move(init.macros)) {
+    setParser(TokenMapParser{init.parser});
 }
-
-void MacroMap::initializeSource(MapHandler& registry,Property name, Property json, Property functionMap) {
-    if (functionMap.missing()) functionMap = Property(PropertyList{});
-    AbstractParseMap::initializeSource(registry,std::move(name), ParseMethod{Property(PropertyNull{})});
-
-    const auto capturedEntries = entries(json);
-    for (const auto& [key, value] : capturedEntries) {
-        Property method;
-        Property args;
-        if (const auto array = PropertyArray::array(value)) {
-            const Property sourceMethod = array->get(0);
-            method = methodFromConfig(sourceMethod, functionMap);
-            args = Property(array->slice(1));
-        } else {
-            method = methodFromConfig(value, functionMap);
-            args = Property(PropertyArray{});
-        }
-        auto macro = std::make_shared<Macro>(Property(key),
-                                             functions::fromProperty(method),
-                                             std::move(args));
-        this->add(Property(key), TokenLookup{std::move(macro)});
-    }
+DispatchOutcome EnvironmentMap::parse(TexParser& parser, std::u16string_view token) {
+    auto mapped = lookup(token);
+    auto method = parserFor(token);
+    auto generic = this->parser();
+    auto macro = std::get_if<Macro const*>(&mapped);
+    if (!method || !generic || !macro || !*macro) return ContinueDispatch{};
+    auto callback = std::get_if<EnvironmentHandler>(&*generic);
+    auto body = std::get_if<EnvironmentBodyHandler>(&*method);
+    if (!callback || !body) throw std::logic_error("Environment map requires its typed environment callbacks");
+    if (!*callback || !*body) return ContinueDispatch{};
+    Macro captured = **macro;
+    return parseResult((*callback)(parser, captured.token, *body, captured.arguments));
 }
-
-ParseMethod MacroMap::parserFor(const Property& token) {
-    const TokenLookup macro = lookup(token);
-    if (!truthy(macro)) return Property(PropertyNull{});
-    return methodField(macro);
 }
-
-ParseResult MacroMap::parse(const ParseInput& input) {
-    const TokenLookup macro = lookup(input.token);
-    const ParseMethod method = parserFor(input.token);
-    if (!truthy(macro) || !truthy(method)) return Property(PropertyNull{});
-    const Property token = field(macro, "token");
-    const Property args = field(macro, "args");
-    return invokeBare(method, input.parser, token, args);
-}
-
-ParseResult CommandMap::parse(const ParseInput& input) {
-    const TokenLookup macro = lookup(input.token);
-    const ParseMethod method = parserFor(input.token);
-    if (!truthy(macro) || !truthy(method)) return Property(PropertyNull{});
-
-    const Property savedCommand = input.parser.currentCS();
-    input.parser.setCurrentCS(tokenValue(input.token));
-    const Property macroToken = prefixedToken(u"\\", field(macro, "token"));
-    const Property args = field(macro, "args");
-    const ParseAtom parseAtom(macroToken);
-    const std::vector<Property> values = arguments::expand(args);
-    std::vector<std::any> rest;
-    rest.reserve(values.size());
-    for (const auto& value : values) rest.emplace_back(value);
-    const ParseResult result = invokeParseMethod(
-        method, FunctionReceiver{Missing{}}, input.parser, parseAtom, rest);
-    input.parser.setCurrentCS(savedCommand);
-    return parseResult(result);
-}
-
-void EnvironmentMap::initializeSource(MapHandler& registry,Property name, ParseMethod parser,
-                                       Property json, Property functionMap) {
-    MacroMap::initializeSource(registry,std::move(name), std::move(json), std::move(functionMap));
-    this->parser(std::move(parser));
-}
-
-ParseResult EnvironmentMap::parse(const ParseInput& input) {
-    const TokenLookup macro = lookup(input.token);
-    const ParseMethod envParser = parserFor(input.token);
-    if (!truthy(macro) || !truthy(envParser)) return Property(PropertyNull{});
-
-    const ParseMethod generalParser = parser();
-    const Property token = field(macro, "token");
-    const std::any specificParser = callableSlot(envParser);
-    const Property args = field(macro, "args");
-    const std::array<std::any, 2> rest{specificParser, args};
-    const ParseAtom parseAtom(token);
-    const auto owner = std::static_pointer_cast<NativeObject>(shared_from_this());
-    const ParseResult result = invokeParseMethod(
-        generalParser, FunctionReceiver{owner}, input.parser, parseAtom, rest);
-    return parseResult(result);
-}
-
-} // namespace folia::math::tex

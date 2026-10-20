@@ -11,10 +11,55 @@
 
 ### 恢复时先用这个短检查点
 
-- **最新实际代码：原ParseOptions已原位移除Context实现并纳入构建**；本批提交`9041b961`。
+- **最新实际代码：原Macro/TokenMap/MapHandler三家族已原位改写并进入构建**。
+  parser_family当前导出:types/:macro/:token_map/:map_handler/:parse_options；新代码无
+  Context/Property/原通用函数对象。Macro为owned token+typed方法+TeX实参数组。
+  MacroCallbacks复制两个固定C++函数指针表，输入jax生命周期不可复制/赋值/重绑；
+  macroHandler/tokenParser和逆向binding使用one-based ID，0表示缺席，坏ID抛异常。
+  **实际38包的函数表尚未绑定，也没有通过真实TexParser执行回调。**
+  原MapHandler只持每名当前shared_ptr<TokenMap>，SubHandler优先队列持选中map的真实
+  shared所有权；替换后仅真实配置/局部引用保留旧map，最后释放即RAII销毁。禁止照抄旧
+  ignored map_handler候选的owned_maps_累积所有替换对象设计。256次同名替换weak_ptr
+  检查已通过；这不是完整渲染请求内存验收。Registry/WarningSink由input-jax拥有，
+  SubHandlers只借这两者，不能让它们先于借用者销毁。
+  TokenMap保留lookup key与Token/Macro.token的区别；static查找返回值借用，实际调用
+  保存本次Token/Macro/CommandDefinition值快照，防止回调改写原条目后参数失效。
+  MacroMap动态查找直接读canonical session.findCommand，不复制出第二份定义存储；
+  替换定义/native alias/character alias/suppression均选择当前项，Char alias保留捕获Token。
+  RegExpMap的两次Source test顺序、null-char contains、反向add、last同对象remove、缺名
+  中途停止且保留已加项、SubHandlers首次key顺序均按原Source实现/观察。
+  **CommandMap构造/parse仍只有声明**：需要真实TexParser.currentCS协作；不能当普通
+  MacroMap替用，不能伪造parser测试通过。其他map parse方法已编译，但本轮native只验
+  lookup/composition/binding/lifetime，未执行这些parse方法或任何真实TeX回调。
+  老token_map_raw_edge_trace纯Context边/符号保留测试两项已删（API已撤下）；旧
+  reference_token_map/reference_map_handler含回调和currentCS行为要求，保留待原位替换，
+  不在构建图/不算通过。token_map_types、token_map_context_bindings、handler_context_bindings
+  仍由旧parser_runtime引用，须跟其native改写退掉；不是已清完的文件图。
+  **验收**：focused13项/331断言exit0，map-handler-focused.log；Source正式
+  tex-map-handler-source.cjs十TS/CJS锁从C:\Windows重放exit0，map-handler-source-replay.log。
+  初测编译9591因Boost.UT不能打印vector<enum>而失败，已改ranges::equal；51887、48379
+  重建终态exit0，map-handler-tests-rebuild.log、map-handler-final-build.log。
+  **最新完整342项/134,166断言exit0**，map-handler-full.log，句柄37356已终态。
+  随后职责复核把未被调用的command-prefix bool分支从MacroMap去掉，留给原CommandMap
+  自己实现；MacroMap.parse保持原无前缀分发，没有另加helper角色。86784重建终态exit0，
+  token-map-source-roles-build.log；最终focused13项/331断言再次exit0，
+  map-handler-final-focused.log，未重跑完整suite；新旧parse方法本来都未作执行验收。
+  当前无live build/native/agent，仅原13项无关修改受保护。
+  **下一步仍是三配置类**：原configuration文件使用canonical选项schema、这次实际
+  SubHandlers和已验FunctionList，保留Configuration/ConfigurationHandler/ParserConfiguration。
+  节点creator hook/StackItem/Tags catalog仍须按原owner定义，不能用空配置记录假装接通；
+  完成后实现ParseOptions构造/列表/工厂及真正TexParser，不另造profile facade。
+  本轮为下一步精读NodeFactory.ts/BoldsymbolConfiguration.ts：原creator四槽是node/token/
+  text/error；默认createToken要经configured text→node，createError也经这些槽；外层只有
+  request kind=node在成功返回creator后登记。boldsymbol配置仅覆token：先默认token，再非
+  mtext时读当前env.boldsymbol，标fixBold并登记同名list；节点creator typed catalog必须先
+  补回这套原NodeFactory协作，不能只把原makeToken默认实现当configured路径。原Factory
+  typed class map已经是vector<pair<Kind,FactoryClass>>，构造/last同kind覆盖可复用，不重写。
+
+- **已完成前置：原ParseOptions已原位移除Context实现并纳入构建**；提交`9041b961`。
   仅原13项受保护修改留在worktree。`parser_types.ixx`已从审过的候选推广
   （增加core MathItem及FindTeX/TexFilterData前置声明）；parser_family
-  当前只导出真实已构建的:types、:parse_options，没有旧runtime/fallback/第二parser。
+  当时只导出真实已构建的:types、:parse_options，没有旧runtime/fallback/第二parser。
   parse_options.ixx含42个观测top-level字段的TexOptionValues稀疏类型记录、14个包选项组及
   原ParseOptions服务声明。cpp实现这些值的mergeDefaults和原四种getVariant；约138行，
   不是另建helper或新的JS对象模型。**构造、factory/Tags/ColumnParser、临时列表方法仍只有
@@ -28,7 +73,7 @@
   clear Context测试已删（withdrawn JS API）；real_owner旧测试含root/list/clear数学状态需求，
   保留待原位改写，不在构建图/不算通过。原ParseOptions.cpp旧约739行实现已被替代。
   构建89232/51362均终态exit0；parse-options-build.log、parse-options-tests-build.log。
-  focused五项/266断言exit0；**最新完整329项/133,835断言exit0**，parse-options-full.log，
+  focused五项/266断言exit0；**当时完整329项/133,835断言exit0**，parse-options-full.log，
   句柄41215已终态。没有live build/native/agent。原13项无关改动继续保护。
   **下一步**：原configuration.ixx应导入此canonical :parse_options值schema，不再写另一份
   ProfileTables/option schema；闭合原Configuration、ConfigurationHandler、ParserConfiguration

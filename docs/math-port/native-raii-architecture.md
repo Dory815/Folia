@@ -306,8 +306,29 @@ math-style function captured at input-jax construction. Later mathStyle option
 updates do not select a new resolver. `ParseOptions::getVariant` implements the
 four actual Source functions, including Unicode 16 NFD for French style; the
 constructor and its configured factory/Tags/ColumnParser collaboration remain
-incomplete. The actual parser primary currently exports `:types` and
-`:parse_options`; it does not export or call the withdrawn Context runtime.
+incomplete. The actual parser primary exports the completed declaration/value
+and map families; it does not export or call the withdrawn Context runtime.
+
+`macro.*`, `token_map.*` and `map_handler.*` keep the original Macro, token-map,
+registry and subhandler responsibilities in that same parser primary. Macro
+arguments are owned TeX values. `MacroCallbacks` copies two fixed typed function
+tables at input-jax creation and has no rebinding/registration API; definitions
+use stable one-based IDs and can recover a compiled pointer or its binding.
+The actual 38-package callback table still has to be supplied by its native
+configuration code. An invalid binding fails instead of selecting an erased
+callable or returning a fabricated parse result.
+
+MapHandler owns only each name's current real TokenMap. Selected SubHandlers
+share those map owners, so a replacement does not invalidate an existing
+configuration; after its last real owner releases it, the old map is destroyed.
+Do not keep a vector of all past replacements. The ignored early declaration
+packet used that retention scheme and is superseded here. A lookup key remains
+separate from the stored token, as needed by let aliases. In-flight callback
+arguments use value snapshots so replacement does not leave dangling borrows.
+Subhandler lookup/composition and map replacement are Source-checked; native
+callback execution through a real TexParser and CommandMap's currentCS wrapper
+remain incomplete. Do not replace CommandMap with MacroMap or use a dummy parser
+to claim that pipeline acceptance.
 
 ## File responsibility map
 
