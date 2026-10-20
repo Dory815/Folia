@@ -151,6 +151,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/environment.ixx
     src/math/input/tex/tex_error.ixx
     src/math/input/tex/tex_scanner.ixx
+    src/math/input/tex/unit_util.ixx
     src/math/input/tex/parse_util.ixx
     src/math/input/tex/node_factory.ixx
     src/math/input/tex/color/constants.ixx
@@ -200,6 +201,7 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/environment.cpp
     src/math/input/tex/tex_error.cpp
     src/math/input/tex/tex_scanner.cpp
+    src/math/input/tex/unit_util.cpp
     src/math/input/tex/parse_util.cpp
     src/math/input/tex/node_factory.cpp
     src/math/input/tex/color/constants.cpp
@@ -375,6 +377,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_node_registration.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
+    tests/math/native_tex_unit_util.cpp
     tests/math/native_math_item.cpp
     tests/math/parse_util_native.cpp
     tests/math/mml_native_factory.cpp

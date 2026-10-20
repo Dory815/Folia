@@ -1,0 +1,860 @@
+{
+  "defaults": [
+    {
+      "unit": "em",
+      "factor": 1,
+      "input": "1em",
+      "rest": false,
+      "match": {
+        "value": "1",
+        "unit": "em",
+        "matched_length": 3
+      },
+      "em": 1
+    },
+    {
+      "unit": "ex",
+      "factor": 0.43,
+      "input": "1ex",
+      "rest": false,
+      "match": {
+        "value": "1",
+        "unit": "ex",
+        "matched_length": 3
+      },
+      "em": 0.43
+    },
+    {
+      "unit": "pt",
+      "factor": 0.1,
+      "input": "1pt",
+      "rest": false,
+      "match": {
+        "value": "1",
+        "unit": "pt",
+        "matched_length": 3
+      },
+      "em": 0.1
+    },
+    {
+      "unit": "pc",
+      "factor": 1.2,
+      "input": "1pc",
+      "rest": false,
+      "match": {
+        "value": "1",
+        "unit": "pc",
+        "matched_length": 3
+      },
+      "em": 1.2
+    },
+    {
+      "unit": "px",
+      "factor": 0.1,
+      "input": "1px",
+      "rest": false,
+      "match": {
+        "value": "1",
+        "unit": "px",
+        "matched_length": 3
+      },
+      "em": 0.1
+    },
+    {
+      "unit": "in",
+      "factor": 7.2,
+      "input": "1in",
+      "rest": false,
+      "match": {
+        "value": "1",
+        "unit": "in",
+        "matched_length": 3
+      },
+      "em": 7.2
+    },
+    {
+      "unit": "cm",
+      "factor": 2.8346456692913384,
+      "input": "1cm",
+      "rest": false,
+      "match": {
+        "value": "1",
+        "unit": "cm",
+        "matched_length": 3
+      },
+      "em": 2.8346456692913384
+    },
+    {
+      "unit": "mm",
+      "factor": 0.28346456692913385,
+      "input": "1mm",
+      "rest": false,
+      "match": {
+        "value": "1",
+        "unit": "mm",
+        "matched_length": 3
+      },
+      "em": 0.28346456692913385
+    },
+    {
+      "unit": "mu",
+      "factor": 0.05555555555555555,
+      "input": "1mu",
+      "rest": false,
+      "match": {
+        "value": "0.056",
+        "unit": "em",
+        "matched_length": 3
+      },
+      "em": 0.056
+    }
+  ],
+  "matches": [
+    {
+      "input": "",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": "bad",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": "2",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": "2EM",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": "em",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": "2%",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": "+2.pt",
+      "rest": false,
+      "match": {
+        "value": "+2.",
+        "unit": "pt",
+        "matched_length": 5
+      },
+      "em": 0.2
+    },
+    {
+      "input": "-,5em",
+      "rest": false,
+      "match": {
+        "value": "-.5",
+        "unit": "em",
+        "matched_length": 5
+      },
+      "em": -0.5
+    },
+    {
+      "input": "1,25ex",
+      "rest": false,
+      "match": {
+        "value": "1.25",
+        "unit": "ex",
+        "matched_length": 6
+      },
+      "em": 0.5375
+    },
+    {
+      "input": "2..em",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": "2e3em",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": " 2 em \t",
+      "rest": false,
+      "match": {
+        "value": "2",
+        "unit": "em",
+        "matched_length": 7
+      },
+      "em": 2
+    },
+    {
+      "input": " +2,5 em﻿",
+      "rest": false,
+      "match": {
+        "value": "+2.5",
+        "unit": "em",
+        "matched_length": 9
+      },
+      "em": 2.5
+    },
+    {
+      "input": "2em tail",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": "2em  tail",
+      "rest": true,
+      "match": {
+        "value": "2",
+        "unit": "em",
+        "matched_length": 4
+      },
+      "em": 0.1
+    },
+    {
+      "input": "2em\ttail",
+      "rest": true,
+      "match": {
+        "value": "2",
+        "unit": "em",
+        "matched_length": 3
+      },
+      "em": 0.1
+    },
+    {
+      "input": "\t2 em  tail",
+      "rest": true,
+      "match": {
+        "value": "2",
+        "unit": "em",
+        "matched_length": 6
+      },
+      "em": 0.1
+    },
+    {
+      "input": "2em\r\n",
+      "rest": false,
+      "match": {
+        "value": "2",
+        "unit": "em",
+        "matched_length": 5
+      },
+      "em": 2
+    },
+    {
+      "input": "2em",
+      "rest": false,
+      "match": null,
+      "em": 0.1
+    },
+    {
+      "input": "-0em",
+      "rest": false,
+      "match": {
+        "value": "-0",
+        "unit": "em",
+        "matched_length": 4
+      },
+      "em": "-0"
+    },
+    {
+      "input": "-0mu",
+      "rest": false,
+      "match": {
+        "value": "0",
+        "unit": "em",
+        "matched_length": 4
+      },
+      "em": 0
+    },
+    {
+      "input": "1mu",
+      "rest": false,
+      "match": {
+        "value": "0.056",
+        "unit": "em",
+        "matched_length": 3
+      },
+      "em": 0.056
+    },
+    {
+      "input": "18mu",
+      "rest": false,
+      "match": {
+        "value": "1",
+        "unit": "em",
+        "matched_length": 4
+      },
+      "em": 1
+    },
+    {
+      "input": "-18mu",
+      "rest": false,
+      "match": {
+        "value": "-1",
+        "unit": "em",
+        "matched_length": 5
+      },
+      "em": -1
+    },
+    {
+      "input": "0,01mu",
+      "rest": false,
+      "match": {
+        "value": "0",
+        "unit": "em",
+        "matched_length": 6
+      },
+      "em": 0
+    },
+    {
+      "input": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999em",
+      "rest": false,
+      "match": {
+        "value": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+        "unit": "em",
+        "matched_length": 402
+      },
+      "em": "Infinity"
+    },
+    {
+      "input": "-0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001em",
+      "rest": false,
+      "match": {
+        "value": "-0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "unit": "em",
+        "matched_length": 406
+      },
+      "em": "-0"
+    },
+    {
+      "input": "0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001mu",
+      "rest": false,
+      "match": {
+        "value": "0",
+        "unit": "em",
+        "matched_length": 405
+      },
+      "em": 0
+    },
+    {
+      "input": "100000000000000000000000000000000mu",
+      "rest": false,
+      "match": {
+        "value": "5.555555555555556e+3",
+        "unit": "em",
+        "matched_length": 35
+      },
+      "em": 5555.555555555556
+    }
+  ],
+  "formats": [
+    {
+      "input": 0,
+      "output": "0em"
+    },
+    {
+      "input": "-0",
+      "output": "0em"
+    },
+    {
+      "input": 0.0006,
+      "output": "0.001em"
+    },
+    {
+      "input": 0.0006,
+      "output": "0.001em"
+    },
+    {
+      "input": -0.0006,
+      "output": "-0.001em"
+    },
+    {
+      "input": 0.000999,
+      "output": "0.001em"
+    },
+    {
+      "input": 1,
+      "output": "1em"
+    },
+    {
+      "input": 1.2345,
+      "output": "1.234em"
+    },
+    {
+      "input": 1.2346,
+      "output": "1.235em"
+    },
+    {
+      "input": -1.2345,
+      "output": "-1.234em"
+    },
+    {
+      "input": 1.0005,
+      "output": "1em"
+    },
+    {
+      "input": 2.675,
+      "output": "2.675em"
+    },
+    {
+      "input": 1000,
+      "output": "1000em"
+    },
+    {
+      "input": 999999999999999900000,
+      "output": "999999999999999868928em"
+    },
+    {
+      "input": 1e+21,
+      "output": "1e+21em"
+    },
+    {
+      "input": -1e+21,
+      "output": "-1e+21em"
+    },
+    {
+      "input": 1e+30,
+      "output": "1e+3em"
+    },
+    {
+      "input": 1e+100,
+      "output": "1e+1em"
+    },
+    {
+      "input": 1.234e+100,
+      "output": "1.234e+1em"
+    },
+    {
+      "input": 1.7976931348623157e+308,
+      "output": "1.7976931348623157e+308em"
+    },
+    {
+      "input": "NaN",
+      "output": "NaNem"
+    },
+    {
+      "input": "Infinity",
+      "output": "Infinityem"
+    },
+    {
+      "input": "-Infinity",
+      "output": "-Infinityem"
+    }
+  ],
+  "trims": [
+    {
+      "input": "",
+      "output": ""
+    },
+    {
+      "input": "  a  ",
+      "output": "a"
+    },
+    {
+      "input": " a\\ ",
+      "output": "a\\ "
+    },
+    {
+      "input": " a\\  ",
+      "output": "a\\ "
+    },
+    {
+      "input": "a\\\t",
+      "output": "a\\"
+    },
+    {
+      "input": "a\\ ",
+      "output": "a\\"
+    },
+    {
+      "input": "a\\  ",
+      "output": "a\\ "
+    },
+    {
+      "input": "\\\\ ",
+      "output": "\\\\ "
+    },
+    {
+      "input": "𝛼 ",
+      "output": "𝛼"
+    },
+    {
+      "input": "a",
+      "output": "a"
+    },
+    {
+      "input": "᠎a᠎",
+      "output": "᠎a᠎"
+    },
+    {
+      "input": "​a​",
+      "output": "​a​"
+    },
+    {
+      "input": "\tx\t",
+      "output": "x"
+    },
+    {
+      "input": "\nx\n",
+      "output": "x"
+    },
+    {
+      "input": "\u000bx\u000b",
+      "output": "x"
+    },
+    {
+      "input": "\fx\f",
+      "output": "x"
+    },
+    {
+      "input": "\rx\r",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": " x ",
+      "output": "x"
+    },
+    {
+      "input": "　x　",
+      "output": "x"
+    },
+    {
+      "input": "﻿x﻿",
+      "output": "x"
+    }
+  ],
+  "maps": [
+    {
+      "name": "duplicate-order",
+      "unit": "(x|pt)",
+      "end": "^\\s*([-+]?([.,]\\d+|\\d+([.,]\\d*)?))\\s*(x|pt)\\s*$",
+      "rest": "^\\s*([-+]?([.,]\\d+|\\d+([.,]\\d*)?))\\s*(x|pt) ?",
+      "x": 2
+    },
+    {
+      "name": "update-append",
+      "unit": "(x|pt|z)",
+      "end": "^\\s*([-+]?([.,]\\d+|\\d+([.,]\\d*)?))\\s*(x|pt|z)\\s*$",
+      "rest": false,
+      "same": true,
+      "input": "2z",
+      "match": {
+        "value": "2",
+        "unit": "z",
+        "matched_length": 2
+      },
+      "em": 8
+    },
+    {
+      "name": "erase-reinsert",
+      "unit": "(pt|z|x)",
+      "end": "^\\s*([-+]?([.,]\\d+|\\d+([.,]\\d*)?))\\s*(pt|z|x)\\s*$",
+      "rest": "^\\s*([-+]?([.,]\\d+|\\d+([.,]\\d*)?))\\s*(pt|z|x) ?",
+      "absent": false,
+      "kept": true,
+      "removed": true,
+      "rebuilt": true
+    },
+    {
+      "name": "truthy-fallback",
+      "values": [
+        {
+          "key": "zero",
+          "value": 0.1
+        },
+        {
+          "key": "nan",
+          "value": 0.1
+        },
+        {
+          "key": "neg",
+          "value": -2
+        },
+        {
+          "key": "inf",
+          "value": "Infinity"
+        },
+        {
+          "key": "missing",
+          "value": 0.1
+        }
+      ],
+      "input": "2zero",
+      "rest": false,
+      "match": {
+        "value": "2",
+        "unit": "zero",
+        "matched_length": 5
+      },
+      "em": 0.2
+    },
+    {
+      "name": "missing-pt",
+      "values": [
+        {
+          "key": "zero",
+          "value": "absent"
+        },
+        {
+          "key": "nan",
+          "value": "absent"
+        },
+        {
+          "key": "neg",
+          "value": -2
+        },
+        {
+          "key": "missing",
+          "value": "absent"
+        }
+      ],
+      "invalid": {
+        "input": "bad",
+        "rest": false,
+        "match": null,
+        "em": "NaN"
+      },
+      "zero": {
+        "input": "2zero",
+        "rest": false,
+        "match": {
+          "value": "2",
+          "unit": "zero",
+          "matched_length": 5
+        },
+        "em": "NaN"
+      }
+    },
+    {
+      "name": "zero-pt",
+      "value": 0,
+      "input": "bad",
+      "rest": false,
+      "match": null,
+      "em": 0
+    },
+    {
+      "name": "nan-pt",
+      "value": "NaN",
+      "input": "bad",
+      "rest": false,
+      "match": null,
+      "em": "NaN"
+    },
+    {
+      "name": "empty",
+      "unit": "()",
+      "end": "^\\s*([-+]?([.,]\\d+|\\d+([.,]\\d*)?))\\s*()\\s*$",
+      "rest": false,
+      "input": "2",
+      "match": {
+        "value": "2",
+        "unit": "",
+        "matched_length": 1
+      },
+      "em": "NaN"
+    },
+    {
+      "name": "empty-unit",
+      "valid": {
+        "input": "2",
+        "rest": false,
+        "match": {
+          "value": "2",
+          "unit": "",
+          "matched_length": 1
+        },
+        "em": 6
+      },
+      "invalid": {
+        "input": "bad",
+        "rest": false,
+        "match": null,
+        "em": 0.1
+      }
+    },
+    {
+      "name": "prefix",
+      "partial": {
+        "input": "2emtail",
+        "rest": true,
+        "match": {
+          "value": "2",
+          "unit": "e",
+          "matched_length": 2
+        },
+        "em": 0.1
+      },
+      "complete": {
+        "input": "2em",
+        "rest": false,
+        "match": {
+          "value": "2",
+          "unit": "em",
+          "matched_length": 3
+        },
+        "em": 4
+      }
+    },
+    {
+      "name": "raw-regex",
+      "literal": {
+        "input": "2xy",
+        "rest": false,
+        "match": {
+          "value": "2",
+          "unit": "xy",
+          "matched_length": 3
+        },
+        "em": 0.2
+      },
+      "rest": {
+        "input": "2xyMORE",
+        "rest": true,
+        "match": {
+          "value": "2",
+          "unit": "xy",
+          "matched_length": 3
+        },
+        "em": 0.1
+      }
+    },
+    {
+      "name": "utf16-unit",
+      "input": "2𝛼tail",
+      "rest": true,
+      "match": {
+        "value": "2",
+        "unit": "𝛼",
+        "matched_length": 3
+      },
+      "em": 0.1
+    },
+    {
+      "name": "live-mu-factor",
+      "input": "2mu",
+      "rest": false,
+      "match": {
+        "value": "0.5",
+        "unit": "em",
+        "matched_length": 3
+      },
+      "em": 0.5
+    },
+    {
+      "name": "mu-second-em-factor",
+      "input": "2mu",
+      "rest": false,
+      "match": {
+        "value": "0.5",
+        "unit": "em",
+        "matched_length": 3
+      },
+      "em": 1
+    },
+    {
+      "name": "mu-zero-fallback",
+      "input": "2mu",
+      "rest": false,
+      "match": {
+        "value": "0.2",
+        "unit": "em",
+        "matched_length": 3
+      },
+      "em": 0.4
+    },
+    {
+      "name": "mu-infinite-factor",
+      "input": "2mu",
+      "rest": false,
+      "match": {
+        "value": "Infinity",
+        "unit": "em",
+        "matched_length": 3
+      },
+      "em": "Infinity"
+    }
+  ]
+}
