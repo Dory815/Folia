@@ -125,6 +125,39 @@ foreach(FOLIA_FONT_INDEX RANGE 0 ${FOLIA_FONT_GENERATED_LAST})
     endif()
 endforeach()
 target_include_directories(folia_math PRIVATE ${FOLIA_FONT_GENERATED_DIR})
+# Entity resources are local data, generated from all locked Source add() calls.
+set(FOLIA_ENTITIES_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/entities")
+execute_process(
+    COMMAND ${FOLIA_NODE_EXECUTABLE} --max-old-space-size=512
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/math-port/entities-data-generate.cjs"
+        --output "${FOLIA_ENTITIES_GENERATED_DIR}/entities_data.inc"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    RESULT_VARIABLE FOLIA_ENTITIES_GENERATE_RESULT
+    OUTPUT_VARIABLE FOLIA_ENTITIES_GENERATE_OUTPUT
+    ERROR_VARIABLE FOLIA_ENTITIES_GENERATE_ERROR)
+if(NOT FOLIA_ENTITIES_GENERATE_RESULT EQUAL 0)
+    message(FATAL_ERROR "Native entity data generation failed: ${FOLIA_ENTITIES_GENERATE_ERROR}")
+endif()
+set(FOLIA_ENTITIES_LOCK "${CMAKE_CURRENT_SOURCE_DIR}/docs/math-port/evidence/entities-source-lock.json")
+file(READ "${FOLIA_ENTITIES_LOCK}" FOLIA_ENTITIES_DEPENDENCIES)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/math-port/entities-data-generate.cjs"
+    "${FOLIA_ENTITIES_LOCK}")
+foreach(FOLIA_ENTITIES_KIND IN ITEMS ts cjs)
+    string(JSON FOLIA_ENTITIES_COUNT LENGTH "${FOLIA_ENTITIES_DEPENDENCIES}" source ${FOLIA_ENTITIES_KIND})
+    math(EXPR FOLIA_ENTITIES_LAST "${FOLIA_ENTITIES_COUNT} - 1")
+    if(FOLIA_ENTITIES_KIND STREQUAL "ts")
+        set(FOLIA_ENTITIES_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.reference/MathJax-src/ts/util")
+    else()
+        set(FOLIA_ENTITIES_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/tools/mathjax-bundle/node_modules/@mathjax/src/cjs/util")
+    endif()
+    foreach(FOLIA_ENTITIES_INDEX RANGE 0 ${FOLIA_ENTITIES_LAST})
+        string(JSON FOLIA_ENTITIES_FILE MEMBER "${FOLIA_ENTITIES_DEPENDENCIES}" source ${FOLIA_ENTITIES_KIND} ${FOLIA_ENTITIES_INDEX})
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+            "${FOLIA_ENTITIES_ROOT}/${FOLIA_ENTITIES_FILE}")
+    endforeach()
+endforeach()
+target_include_directories(folia_math PRIVATE ${FOLIA_ENTITIES_GENERATED_DIR})
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS folia_math_compile=2)
 set_property(TARGET folia_math PROPERTY JOB_POOL_COMPILE folia_math_compile)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
@@ -451,6 +484,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/utf16_types.ixx
     src/math/util/utf16.ixx
     src/math/util/string.ixx
+    src/math/util/entities.ixx
     src/math/cancellation.ixx)
 target_sources(folia_math PRIVATE
     src/math/core/mml_tree/mml_branches.cpp
@@ -463,6 +497,7 @@ target_sources(folia_math PRIVATE
     src/math/core/mml_tree/operator_class.cpp
     src/math/cancellation.cpp)
 target_sources(folia_math PRIVATE src/math/util/string.cpp)
+target_sources(folia_math PRIVATE src/math/util/entities.cpp)
 target_sources(folia_math PRIVATE src/math/util/js_case.cpp src/math/util/js_case_data.cpp)
 
 # ---------------------------------------------------------------------------
@@ -622,6 +657,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/bussproofs_items.cpp
     tests/math/bussproofs.cpp
     tests/math/physics.cpp
+    tests/math/entities.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
