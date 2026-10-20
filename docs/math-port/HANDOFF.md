@@ -50,7 +50,7 @@
 - **命名与清理约束仍生效**：FunctionList早已归原名（2022cb1a/e6126948），不要重新调查。
   旧function_list_bindings及handler_context_bindings/parser_runtime/output_jax/common_bindings
   消费者尚未全清，退出当前CMake不代表删除完成。工作区只剩原13项无关修改，继续保护；
-  Mermaid暂停，不加D2D像素门槛；不做破坏性Git操作，不改写提交历史。
+  Mermaid暂停，不加D2D像素门槛；不执行reset，不改写提交历史。
 
 ### 上一已验收批次（历史；以下不是当前 live 状态）
 
