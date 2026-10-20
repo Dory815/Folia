@@ -13,7 +13,7 @@ std::optional<std::u16string_view> ProofTreeItem::getName() const noexcept {
 CheckResult ProofTreeItem::checkItem(FrameHandle const &incoming) {
     if (incoming->isKind(StackKind::end) && incoming->getName() == u"prooftree") {
         auto &node = toMml();
-        node.properties().proof.proof = true;
+        node.properties().proof.setProof(true);
         return CheckResult(std::vector<ReplayEntry>{
             factory().create(StackKind::mml, MmlItemInit{node}), ReuseIncoming{}});
     }

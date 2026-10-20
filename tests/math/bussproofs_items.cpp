@@ -82,7 +82,7 @@ std::u16string proofSnapshot(MmlNode const &root) {
         add(std::u16string(kind.begin(), kind.end()));
         add(node.isToken() ? NodeUtil::getText(node) : u"");
         expect(node.attributes().ownEntries().empty());
-        auto marker = node.properties().proof.proof;
+        auto marker = node.properties().proof.proof();
         add(marker ? (*marker ? u"true" : u"false") : u"");
         auto count = std::to_string(node.isToken() ? 0 : node.children().size());
         add(std::u16string(count.begin(), count.end()));
@@ -188,7 +188,7 @@ suite bussproofs_items = [] {
         auto &empty = frame->toMml();
         expect(empty.kind() == NodeKind::inferred_mrow);
         expect(empty.children().empty());
-        expect(!empty.properties().proof.proof.has_value());
+        expect(!empty.properties().proof.proof().has_value());
         expect(&empty.document() == &f.document);
     };
     "bussproofs direct proof nodes stay borrowed and toMml ignores both inherited flags"_test = [] {
@@ -259,7 +259,7 @@ suite bussproofs_items = [] {
         expect(replay->kind() == StackKind::mml);
         expect(replay->First() == &node);
         expect(std::holds_alternative<ReuseIncoming>(result.replacements[1]));
-        expect(node.properties().proof.proof.value_or(false));
+        expect(node.properties().proof.proof().value_or(false));
         expect(incoming->kind() == StackKind::end);
     };
     "bussproofs stop mismatched end and unfinished group retain original TeX errors"_test = [] {
@@ -342,7 +342,7 @@ suite bussproofs_items = [] {
         outer.Push(f.item(StackKind::stop));
         expect(outer.Top()->kind() == StackKind::mml);
         expect(&outer.Top()->toMml() == &node);
-        expect(node.properties().proof.proof.value_or(false));
+        expect(node.properties().proof.proof().value_or(false));
     };
     "bussproofs prefix creator receives original document children without cloning"_test = [] {
         Fixture f;
