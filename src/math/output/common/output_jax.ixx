@@ -4,6 +4,7 @@ export import :wrapper;
 export import :wrapper_factory;
 export import :linebreak_visitor;
 export import folia.math.core.mml_tree.mml_document;
+export import folia.math.output.scene;
 import std;
 
 export namespace folia::math::output::common {
@@ -31,9 +32,12 @@ class CommonOutputJax {
 
     friend class CommonMtable;
     friend class CommonWrapper;
+    friend class LayoutJob;
     void recordUnknownMathVariant(mml::NodeKind, std::string);
     // Source CommonMtable::findContainer is the only caller.
     void setTable(CommonWrapper &); // called only from CommonMtable::findContainer
+    void finishInlineScene(scene::Builder &, CommonWrapper &, std::span<SceneNode const>);
+
   public:
     CommonOutputJax(mml::MmlDocument &, CommonOutputJaxConfig, MeasurementTarget &,
                     CommonWrapperCatalog, LinebreakFactory);
@@ -89,5 +93,6 @@ class LayoutJob final {
     CommonOutputJax const &jax() const noexcept;
     CommonWrapperFactory &factory() noexcept;
     CommonWrapper &build(); // obtains the root from document; stores no second root
+    [[nodiscard]] scene::Scene buildScene(); // freezes an owned snapshot; retains no MML root
 };
 } // namespace folia::math::output::common

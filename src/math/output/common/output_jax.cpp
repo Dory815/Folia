@@ -9,6 +9,7 @@ import folia.math.core.mml_tree.mml_nodes.mspace;
 import folia.math.util.lengths;
 import folia.math.util.js_number;
 import folia.math.util.utf16;
+import folia.math.output.scene.builder;
 
 namespace folia::math::output::common {
 
@@ -184,6 +185,126 @@ CommonWrapper &LayoutJob::build() {
     }
     root->setTeXclass(nullptr);
     return factory().wrap(*root);
+}
+
+scene::Scene LayoutJob::buildScene() {
+    auto &root = build();
+    // getOuterBBox completes the same Source-aligned width/height/depth
+    // quantities used by SVG, including root margins and display overflow.
+    (void)root.getOuterBBox(); // force Common's completed root layout before traversal
+    const auto &parameters = jax_.face().parameters;
+    scene::Builder builder;
+    const std::array<scene::NodeId, 1> rootParent{scene::NodeId{0}};
+    const auto rootNodes = root.emitScene(builder, rootParent);
+    jax_.finishInlineScene(builder, root, rootNodes);
+    const BBox outer = root.getOuterBBox();
+    builder.set_metrics({outer.w, outer.h, outer.d});
+    builder.set_font_metrics({1.0, jax_.currentMetrics().ex / jax_.currentMetrics().em,
+                              parameters.required("x_height"),
+                              parameters.find("cap_height").value_or(0.0)});
+    return std::move(builder).freeze();
+}
+
+void CommonOutputJax::finishInlineScene(scene::Builder &builder, CommonWrapper &root,
+                                        std::span<SceneNode const> rootNodes) {
+    scene::FrameLayout frame;
+    frame.minimum_extent = metrics_.em / 1000.0;
+
+    const bool processBreaks = root.node->properties().layout.process_breaks.value_or(false);
+    if (!processBreaks)
+        return builder.set_frame_layout(std::move(frame));
+    if (root.childNodes.size() != 1 || !root.childNodes.front())
+        throw std::logic_error("inline fragment extraction requires the single Common math child");
+
+    CommonWrapper &lines = *root.childNodes.front();
+    const auto breakCount = lines.breakCount();
+    if (!breakCount)
+        return builder.set_frame_layout(std::move(frame));
+    if (rootNodes.size() != 1 || !rootNodes.front())
+        throw std::logic_error("inline fragment extraction requires one emitted math shell");
+
+    const auto shell = *rootNodes.front();
+    const auto shellChildren = builder.child_groups(shell);
+    if (shellChildren.size() != 1)
+        throw std::logic_error("inline-break math shell must contain one line stack");
+    const auto stack = shellChildren.front();
+    const auto lineGroups = builder.child_groups(stack);
+    if (lineGroups.size() != breakCount + 1)
+        throw std::logic_error("inline-break line stack does not match Common break count");
+
+    struct PendingFragment {
+        scene::Metrics metrics;
+        std::optional<scene::InlineBreak> before;
+    };
+    std::vector<PendingFragment> pending;
+    pending.reserve(breakCount + 1);
+    for (std::size_t index = 0; index <= breakCount; ++index) {
+        auto line =
+            index < lines.lineBBox.size() ? lines.lineBBox[index] : std::shared_ptr<LineBBox>{};
+        if (!line)
+            line = lines.getLineBBox(index);
+        if (!line)
+            throw std::logic_error("inline-break line has no completed Common LineBBox");
+        const auto [breakMml, breakMo] = lines.getBreakNode(*line);
+        if (!breakMml)
+            throw std::logic_error("inline-break line has no Source break MML wrapper");
+        const double scale = breakMml->getBBox().scale;
+        PendingFragment fragment{{line->w * scale, line->h * scale, line->d * scale}, {}};
+
+        const bool forcedMo =
+            breakMo && breakMo->node->properties().layout.force_break.value_or(false);
+        const bool forcedMml = breakMml->node->properties().layout.force_break.value_or(false);
+        const auto *styleValue =
+            breakMo ? breakMo->node->attributes().lookup(u"linebreakstyle") : nullptr;
+        const auto *styleText = styleValue ? std::get_if<std::u16string>(styleValue) : nullptr;
+        const bool forcedAfter = forcedMo && styleText && *styleText == u"after";
+
+        if (forcedAfter) {
+            double spacing = 0;
+            auto *parent = breakMml->parent;
+            if (!parent)
+                throw std::logic_error("forced-after inline break has no Common parent");
+            const auto childIndex = parent->node->childIndex(*breakMml->node);
+            if (childIndex && *childIndex + 1 < parent->childNodes.size()) {
+                auto *next = parent->childNodes[*childIndex + 1];
+                if (next) {
+                    auto nextLine = next->getLineBBox(0);
+                    if (!nextLine)
+                        throw std::logic_error("forced-after next sibling has no first line box");
+                    spacing = nextLine->originalL * scale;
+                }
+            }
+            if (spacing != 0)
+                fragment.before = scene::InlineBreak{scene::InlineBreakKind::forced, spacing};
+            pending.emplace_back(std::move(fragment));
+        } else {
+            double spacing = 0;
+            if (index) {
+                auto firstLine = breakMml->getLineBBox(0);
+                if (!firstLine)
+                    throw std::logic_error("Source break MML wrapper has no first line box");
+                spacing = firstLine->originalL * scale;
+            }
+            if (forcedMo || index) {
+                if (spacing != 0 || !forcedMo) {
+                    fragment.before = scene::InlineBreak{(forcedMo || forcedMml)
+                                                             ? scene::InlineBreakKind::forced
+                                                             : scene::InlineBreakKind::opportunity,
+                                                         spacing};
+                }
+            }
+            pending.emplace_back(std::move(fragment));
+        }
+    }
+
+    const auto fragmentRoots = builder.split_group_contents(shell, lineGroups);
+    if (fragmentRoots.size() != pending.size())
+        throw std::logic_error("Scene split returned a different number of inline fragments");
+    frame.inline_fragments.reserve(fragmentRoots.size());
+    for (std::size_t index = 0; index < fragmentRoots.size(); ++index)
+        frame.inline_fragments.push_back(
+            {fragmentRoots[index], pending[index].metrics, std::move(pending[index].before)});
+    builder.set_frame_layout(std::move(frame));
 }
 
 namespace {
