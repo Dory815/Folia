@@ -155,6 +155,44 @@ environment argument splitting, nesting/errors and the next parse. Direct
 utility tests also check copied-node independence, parent links and all moved
 inferred children. These package checks do not prove final Scene/SVG integration.
 
+### Cases numbering and text column (2026-10-20)
+
+The single upstream `CasesConfiguration.ts` maps to `cases/configuration.*`.
+CasesBeginItem, CasesTags, CasesMethods and their registrations belong there;
+the previous items/methods/tags module pairs are removed, without forwarding
+modules. CasesBeginItem still derives from BeginItem and owns its one-shot end
+marker. CasesTags still derives from AmsTags and owns its subcounter; the
+existing equation state owns equation counters, labels and tag records.
+
+NumCases retains the original duplicate Push of the same begin frame: the
+first matching end pops one activation with an empty replay, and the final end
+completes the remaining activation of that frame.
+The original ArrayItem::numCases flag and BeginItem::left string already exist;
+do not add another property store or alternate cases-array implementation.
+Side material uses the accepted EmpheqUtil::left and original ParseUtil copies.
+Entry dispatches ordinary arrays back to BaseMethods::Entry, otherwise scans
+the second column with the original brace/control-sequence stopping rules,
+trims only leading whitespace and invokes original internalMath at level zero.
+Its explicit null result means ContinueDispatch: the base character map also
+processes that entry afterward. Preserve that continuation and the resulting
+extra cell/column metadata; NoParseResult would incorrectly stop dispatch.
+
+Freeze signatures in the existing configuration module: initializeModule takes
+ConfigurationHandler& and MapHandler&; NumCases takes TexParser&, FrameHandle
+const&, span<TexArgument const> and returns StackEntry. Entry is a MacroHandler;
+environment is an EnvironmentHandler and forwards its full argument span.
+CasesBeginItem exposes its native bool end marker and overrides kind/checkItem.
+CasesTags overrides start/autoTag and the inherited formatNumberDefault hook;
+configured tagformat callbacks retain their existing outer precedence.
+
+Acceptance compares independently generated Source MML for both environments,
+text/math and escaped/nested second columns, row endings, tags/labels/references,
+tag sides, selected tag modes and tagformat, empty/error/recovery states and
+ordinary array fallback. Direct tests verify the one-shot end consumption,
+number/subnumber formatting including explicit zero, environment argument
+forwarding and real native factory products. These remain package checks,
+separate from the final Common-to-Scene/SVG gate.
+
 The original `input/tex/ParseMethods.ts` belongs at `input/tex/parse_methods`,
 not under `base/`. Its ten compiled methods handle variables, numbers, control
 sequences, mapped character tokens and the environment entry. BaseMethods,

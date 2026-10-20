@@ -58,6 +58,13 @@ green corpora establish reference data, not acceptance for rewritten code.
 
 ## C. Source fidelity
 
+- Cases must compare actual Source MML, text-column scanning, ordinary-array
+  fallback, tags/labels/references, tag modes/sides and configured formatters.
+  The first matching end must pop one activation through an empty replay;
+  Entry's explicit null must continue character dispatch to the base map.
+  Verify explicit zero and UTF-16 subnumber wrapping, and preserve each error's
+  consumed equation numbering in the next request rather than resetting it.
+
 - Empheq must compare actual Source trees for all allowed environments and
   starred forms, side material and labels, all fixed/delimiter commands, and
   direct table transformations. Check creator dispatch, copied-node isolation,

@@ -9,7 +9,46 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 当前唯一断点：Empheq已验收提交，下一包Cases（2026-10-20）
+### 当前唯一断点：Cases已验收提交，下一包Colortbl（2026-10-20）
+
+- 上轮Empheq、本轮Cases都是真实进展，不重做。**c0c48d90**归回Cases原单配置职责9文件
+  （含删除旧items/methods/tags六生产文件），**19ea8aaf**为对照测试及旧导出清理6文件。
+  Root核对原EqnArray/Stack.Push/BeginItem/Tags，在原cases/configuration.*保留三个角色和注册，
+  无转发/新生产文件。原ArrayItem.numCases/BeginItem.left已有，不新增共享字段。
+- 最终构建**19717 exit0**，cases-dispatch-build.log；生产79240、测试59212、诊断31093也
+  exit0，始终并发4。完整Math回归**91732 exit0**，cases-full.log：**632项/161,163断言/
+  124套suite，无失败/跳过**。Cases新6项/4,388断言通过，聚焦还选中原相关3项20/28/20断言。
+  **无live构建/测试/代理；当前批次代码已提交，原13项无关修改保持。**
+- **第一匹配end是空replay并Pop一层，不是drop**：Source [[],true]在Stack.Push中会Pop，
+  native CheckResult(vector<ReplayEntry>{})。保留EqnArray已Push后NumCases再Push同frame。
+  后续关闭留下同frame另一激活完成；不要因同指针就合并这两次Push或造另一个Frame对象。
+- CasesTags继承AmsTags，start重置subcounter，formatNumberDefault保留null/explicit0差别和
+  UTF16 modulo；tagformat外层number callback覆盖字母部分。Entry用原regex控制字扫描和
+  仅前导空白trim，原internalMath(level0)；普通Array fallback原BaseMethods::Entry。
+- **已修复并验收，不能重做**：Entry原显式null对应ContinueDispatch，基础Entry还会接着执行，
+  多出一个cell及columnalign/data-break-align。Root首轮错写NoParseResult造成29个快照差异；
+  随后只跑有界tree诊断，实测原EndRow/EndTable列数（cases-array-probe.log），并核对原
+  TokenMap.parseResult（只把undefined变true）与SubHandler。只改Cases返回值后全部通过，
+  没有改共享表格算法/补空列特例/回填fixture。测试保留首差异位置及上下文诊断。
+- GPT-6.1 Sol /root/base_methods仅交付tests/math/cases.cpp、tex-cases-source.cjs和fixtures/cases.inc；
+  Root完整读三文件、格式化、独立从C:/Windows重放默认校验exit0并做所有native验收。
+  Source73实际compile，32成功树快照（4tag mode×2env×2side及text/fallback/tagformat）、
+  12错误各自恢复编号、8格式边界、5步跨式序列；原TS+CJS/full38锁、heap512、一次reference。
+  日志cases-source-final.log，fixture仅显式--write-fixture生成。escaped \\&在depth0也会
+  ExtraCasesAlignTab（braces里才成功）；某些错误后label=2，其他=1，原生逐项匹配，勿reset。
+- Root读完并删旧cases_method_table_identity测试（对象identity及callback绑定，后者须新测保留），
+  删parser_runtime.casesMethods字段，真实callback/factory绑定在新测试保留；旧render_session
+  仍是inactive API消费者，完整renderer清理尚未完成。下一具体入口Colortbl，不重复Cases。
+- Root等待期间读完Colortbl原单Configuration.ts（没有Methods.ts），发现现额外items/methods
+  两组应归回单配置。原3组ixx已读、configuration.cpp前85行和Color configure已读，现CPP
+  尚未完整读/未改/未冻结。需要原ArrayItem::createMml成为virtual以保持Source override协作，
+  不另做平行表格装配。Color session可color()/enableColor()；未选color时需调用已注册color
+  package的config（不加loader），先核对现ColorModel接口及原优先级10/creator覆盖后再派工。
+  完整38包/Common→Scene→SVG/Folia仍未完成，goal active；Mermaid暂停，无D2D像素gate。
+
+## 历史阶段记录（保留证据；以下“下一步”和“未完成”只描述当时状态）
+
+### 已接受基线：Empheq（2026-10-20）
 
 - 上轮Setoptions、本轮Empheq都是真实进展，不重复。**2a4ea611**为Empheq原职责实现及
   对照测试9文件，**f731dd88**删除旧动态字段和对象语义测试2文件。Root完整读原2TS和
@@ -39,8 +78,6 @@
   先核对原EqnArray对begin重复Push/closing marker和第二列扫描职责，再冻结API/分工。
   Luna额度恢复前不反复调用，必要Sol只6.1。完整38包/Common→Scene→SVG/Folia仍未完成，
   goal active；Mermaid暂停，无D2D像素gate。
-
-## 历史阶段记录（保留证据；以下“下一步”和“未完成”只描述当时状态）
 
 ### 最近已接受基线（2026-10-20 Setoptions已验收提交）
 
