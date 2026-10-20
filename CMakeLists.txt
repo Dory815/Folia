@@ -464,7 +464,7 @@ target_sources(folia_math PRIVATE
 set(FOLIA_COMMON_NATIVE_FAMILIES
     mo mrow inferred_mrow text_node mi mn ms mspace mglyph mtext math
     scriptbase msubsup mmultiscripts munderover mfenced maction
-    mtable mtr mtd mpadded semantics tex_atom menclose)
+    mtable mtr mtd mpadded mphantom semantics tex_atom menclose)
 foreach(family IN LISTS FOLIA_COMMON_NATIVE_FAMILIES)
     target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
         src/math/output/common/wrappers/${family}.ixx)

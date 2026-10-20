@@ -19,6 +19,7 @@ import :msqrt;
 import :mroot;
 import :mfenced;
 import :mpadded;
+import :mphantom;
 import :msubsup;
 import :munderover;
 import :mmultiscripts;
@@ -89,7 +90,7 @@ CommonWrapperCatalog makeStandardNodes() {
     result.push_back(generic(K::mstyle));
     result.push_back(generic(K::merror));
     result.push_back(registration<CommonMpadded>(K::mpadded));
-    result.push_back(generic(K::mphantom));
+    result.push_back(registration<CommonMphantom>(K::mphantom));
     result.push_back(registration<CommonMfenced>(K::mfenced));
     // The exact 29-entry menclose profile is currently owned by the SVG
     // module. Common must not import or duplicate that backend profile.

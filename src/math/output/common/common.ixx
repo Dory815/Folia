@@ -29,6 +29,7 @@ export import :mtable;
 export import :mtr;
 export import :mtd;
 export import :mpadded;
+export import :mphantom;
 export import :semantics;
 export import :tex_atom;
 export import :notation;
