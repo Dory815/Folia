@@ -11,6 +11,37 @@ import folia.math.util.utf16;
 import std;
 
 namespace folia::math::output::common {
+SceneNodes CommonMtd::emitScene(scene::Builder &builder, std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+    auto containers = standardSceneNodes(builder, parents);
+    addSceneChildren(builder, containers.content);
+    return containers.nodes;
+}
+
+std::array<double, 2> CommonMtd::placeSceneCell(scene::Builder &builder,
+                                                std::span<SceneNode const> nodes, double x,
+                                                double y, double width, double height,
+                                                double depth) {
+    const auto &box = getBBox();
+    const double h = std::max(box.h, 0.75);
+    const double d = std::max(box.d, 0.25);
+    const double dx = getAlignX(width, box, getChildAlign(0));
+    std::string rowAlign;
+    if (const auto *value = node->attributes().lookup(u"rowalign"))
+        if (const auto *text = std::get_if<std::u16string>(value))
+            rowAlign = utf16::encode(*text);
+    const double dy = getAlignY(height, depth, h, d, rowAlign);
+    placeScene(builder, nodes, x + dx, y + dy);
+    return {dx, dy};
+}
+
+void CommonMtd::placeSceneColor(scene::Builder &builder, std::span<SceneNode const> nodes,
+                                scene::Rect bounds) {
+    if (!nodes.empty() && nodes.front())
+        builder.set_background_bounds(*nodes.front(), bounds);
+}
+
 void CommonMtd::invalidateBBox(bool) {
     bboxComputed = false;
     lineBBox.clear();

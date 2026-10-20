@@ -31,6 +31,7 @@ class CommonMtable : public CommonWrapper {
     std::vector<std::pair<CommonWrapper *, std::size_t>> pwidthCells;
     explicit CommonMtable(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr);
     void initializeSource() override;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     std::vector<CommonMtr *> tableRows() const;
     CommonWrapper *findContainer();
     double getPercentageWidth();
@@ -81,6 +82,25 @@ class CommonMtable : public CommonWrapper {
 
     bool setChildPWidths(bool, std::optional<double> width = {}, bool clear = true) override;
     std::pair<std::string, double> getAlignShift() override;
+
+  private:
+    struct EmittedRow {
+        CommonMtr *wrapper{};
+        TableRowGeometry geometry;
+        TableRowScene scene;
+    };
+
+    std::array<double, 2> getRowHD(bool equal, double HD, double H, double D) const;
+    std::vector<EmittedRow> placeSceneRows(scene::Builder &, scene::NodeId,
+                                           std::optional<scene::NodeId> labelParent);
+    void handleSceneColumnLines(scene::Builder &, scene::NodeId);
+    void handleSceneRowLines(scene::Builder &, scene::NodeId);
+    void handleSceneFrame(scene::Builder &, scene::NodeId);
+    double handleScenePWidth(scene::Builder &, scene::NodeId);
+    void spaceSceneLabels(scene::Builder &, std::span<EmittedRow const>);
+    void topSceneTable(scene::Builder &, scene::NodeId, scene::NodeId labelsGroup);
+    void subSceneTable(scene::Builder &, scene::NodeId, scene::NodeId labelsGroup,
+                       double pWidthShift);
 
   protected:
     void computeBBox(BBox &, bool = false) override;

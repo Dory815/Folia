@@ -19,6 +19,41 @@ namespace {
 using mml::AttributeNull;
 using mml::AttributeValue;
 
+double sourceMax(double left, double right) {
+    return std::isnan(left) || std::isnan(right) ? std::numeric_limits<double>::quiet_NaN()
+                                                 : std::max(left, right);
+}
+
+std::string tableLineClass(std::string_view style) {
+    return "mjx-" + std::string(style);
+}
+
+scene::Paint tableLinePaint(double thickness, std::string_view style) {
+    scene::Paint paint;
+    paint.fill = scene::NoPaint{};
+    paint.stroke = scene::InheritedPaint{};
+    paint.stroke_width = thickness;
+    if (style == "dashed")
+        paint.dash_array = std::vector<double>{2 * thickness};
+    else if (style == "dotted") {
+        paint.dash_array = std::vector<double>{0, 2 * thickness};
+        paint.line_cap = scene::StrokeCap::round;
+    }
+    return paint;
+}
+
+scene::SemanticMetadata tableLineMetadata(std::string_view marker, std::string_view value,
+                                          std::string_view style) {
+    scene::SemanticMetadata metadata;
+    metadata.ordered_attributes.push_back({std::string(marker), std::string(value)});
+    metadata.ordered_attributes.push_back({"class", tableLineClass(style)});
+    return metadata;
+}
+
+scene::ViewportAspectRatio tableAspect(scene::ViewportAlignment horizontal) {
+    return {horizontal, scene::ViewportAlignment::mid, scene::ViewportFit::meet};
+}
+
 const AttributeValue *attr(CommonMtable const &table, std::u16string_view name) {
     return table.node->attributes().lookup(name);
 }
@@ -102,6 +137,284 @@ std::vector<CommonMtr *> CommonMtable::tableRows() const {
         rows.push_back(row);
     }
     return rows;
+}
+
+std::array<double, 2> CommonMtable::getRowHD(bool equal, double HD, double H, double D) const {
+    return equal ? std::array<double, 2>{(HD + H - D) / 2, (HD - H + D) / 2}
+                 : std::array<double, 2>{H, D};
+}
+
+std::vector<CommonMtable::EmittedRow>
+CommonMtable::placeSceneRows(scene::Builder &builder, scene::NodeId tableNode,
+                             std::optional<scene::NodeId> labelParent) {
+    const auto rows = tableRows();
+    const auto &table = getTableData();
+    const bool equalRows = truthy(attr(*this, u"equalrows"));
+    const double equalHeight = getEqualRowHeight();
+    const auto rowSpace = getRowHalfSpacing();
+    std::vector<double> rowLines{fLine};
+    rowLines.insert(rowLines.end(), rLines.begin(), rLines.end());
+    rowLines.push_back(fLine);
+    if (rowSpace.size() < numRows + 1 || rowLines.size() < numRows + 1 ||
+        table.H.size() < numRows || table.D.size() < numRows)
+        throw std::logic_error("mtable layout arrays do not cover every source row");
+
+    std::vector<EmittedRow> emittedRows;
+    emittedRows.reserve(rows.size());
+    const std::array<scene::NodeId, 1> rowParents{tableNode};
+    double rowY = getBBox().h - rowLines[0];
+    for (std::size_t i = 0; i < numRows; ++i) {
+        auto *row = rows.at(i);
+        const auto [h, d] = getRowHD(equalRows, equalHeight, table.H[i], table.D[i]);
+        const TableRowGeometry geometry{
+            h, d, rowSpace[i], rowSpace[i + 1], rowLines[i], rowLines[i + 1]};
+        auto rowScene = row->emitTableScene(builder, rowParents, geometry, labelParent);
+        row->placeScene(builder, rowScene.nodes, 0, rowY - rowSpace[i] - h);
+        emittedRows.push_back({row, geometry, std::move(rowScene)});
+        rowY -= rowSpace[i] + h + d + rowSpace[i + 1] + rowLines[i + 1];
+    }
+    return emittedRows;
+}
+
+void CommonMtable::handleSceneColumnLines(scene::Builder &builder, scene::NodeId tableNode) {
+    const auto widths = getComputedWidths();
+    const auto columnSpace = getColumnHalfSpacing();
+    if (auto lines = getColumnAttributes("columnlines")) {
+        double x = fLine;
+        for (std::size_t i = 0; i < lines->size(); ++i) {
+            x += columnSpace.at(i) + widths.at(i) + columnSpace.at(i + 1);
+            const auto thickness = cLines.at(i);
+            if ((*lines)[i] != "none") {
+                const auto style = (*lines)[i];
+                const double dt = style == "dotted" ? thickness / 2 : 0;
+                const double lineX = x + thickness / 2;
+                scene::Path path;
+                path.element = scene::PathElement::line;
+                path.role = scene::ElementRole::table_vertical_line;
+                path.paint = tableLinePaint(thickness, style);
+                path.metadata = tableLineMetadata("data-line", "v", style);
+                path.geometry.segments = {scene::MoveTo{{lineX, dt - getBBox().d}},
+                                          scene::LineTo{{lineX, getBBox().h - dt}}};
+                builder.add_primitive(tableNode, std::move(path));
+            }
+            x += thickness;
+        }
+    }
+}
+
+void CommonMtable::handleSceneRowLines(scene::Builder &builder, scene::NodeId tableNode) {
+    if (auto lines = getRowAttributes("rowlines")) {
+        const auto &table = getTableData();
+        const bool equalRows = truthy(attr(*this, u"equalrows"));
+        const double equalHeight = getEqualRowHeight();
+        const auto rowSpace = getRowHalfSpacing();
+        double y = getBBox().h - fLine;
+        for (std::size_t i = 0; i < lines->size(); ++i) {
+            const auto [h, d] = getRowHD(equalRows, equalHeight, table.H.at(i), table.D.at(i));
+            y -= rowSpace.at(i) + h + d + rowSpace.at(i + 1);
+            const auto thickness = rLines.at(i);
+            if ((*lines)[i] != "none") {
+                const auto style = (*lines)[i];
+                const double dt = style == "dotted" ? thickness / 2 : 0;
+                const double lineY = y - thickness / 2;
+                scene::Path path;
+                path.element = scene::PathElement::line;
+                path.role = scene::ElementRole::table_horizontal_line;
+                path.paint = tableLinePaint(thickness, style);
+                path.metadata = tableLineMetadata("data-line", "h", style);
+                path.geometry.segments = {scene::MoveTo{{dt, lineY}},
+                                          scene::LineTo{{getBBox().w - dt, lineY}}};
+                builder.add_primitive(tableNode, std::move(path));
+            }
+            y -= thickness;
+        }
+    }
+}
+
+void CommonMtable::handleSceneFrame(scene::Builder &builder, scene::NodeId tableNode) {
+    if (frame && fLine) {
+        const auto box = getBBox();
+        scene::Rule rule;
+        rule.bounds = {fLine / 2, fLine / 2 - box.d, box.w - fLine, box.h + box.d - fLine};
+        const auto style = text8(attr(*this, u"frame"));
+        rule.paint = tableLinePaint(fLine, style);
+        rule.metadata = tableLineMetadata("data-frame", "true", style);
+        rule.role = scene::ElementRole::table_frame;
+        builder.add_primitive(tableNode, std::move(rule));
+    }
+}
+
+double CommonMtable::handleScenePWidth(scene::Builder &builder, scene::NodeId tableNode) {
+    if (!pWidth)
+        return 0;
+    const auto box = getBBox();
+    if (!container || !containerI)
+        throw std::logic_error("percentage-width mtable requires its Source container");
+    const double widthWithLabels = box.L + pWidth + box.R;
+    const auto alignment = getAlignShift().first;
+    const double maximum =
+        sourceMax(isTop ? widthWithLabels : 0, container->getWrapWidth(*containerI));
+    const double contentWidth = maximum - box.L - box.R;
+    const double difference = box.w - (pWidth > contentWidth ? contentWidth : pWidth);
+    const double shift = alignment == "left"    ? 0
+                         : alignment == "right" ? difference
+                                                : difference / 2;
+    if (!std::isnan(shift) && shift != 0) {
+        const auto inner = builder.wrap_contents(tableNode);
+        const std::array<SceneNode, 1> emittedInner{SceneNode{inner}};
+        placeScene(builder, emittedInner, shift, 0, inner);
+    }
+    return shift;
+}
+
+void CommonMtable::spaceSceneLabels(scene::Builder &builder,
+                                    std::span<EmittedRow const> emittedRows) {
+    double y = getBBox().h - fLine;
+    const double labelWidth = getTableData().L;
+    const auto rowSpace = getRowHalfSpacing();
+    for (std::size_t i = 0; i < emittedRows.size(); ++i) {
+        const auto &entry = emittedRows[i];
+        const auto &geometry = entry.geometry;
+        if (entry.wrapper->labeled()) {
+            y -= rowSpace[i] + geometry.h;
+            if (entry.wrapper->childNodes.empty())
+                throw std::logic_error("mlabeledtr has no leading label cell");
+            auto *cell = dynamic_cast<CommonMtd *>(entry.wrapper->childNodes.front());
+            if (!cell)
+                throw std::logic_error("mlabeledtr leading child is not an mtd wrapper");
+            const TableCellPlacement placement{0, y, 0, labelWidth, 0, 0, 0};
+            (void)entry.wrapper->placeSceneCell(builder, *cell, entry.scene.label_nodes, geometry,
+                                                placement);
+            if (i + 1 < emittedRows.size())
+                y -= geometry.d + rowSpace[i + 1] + rLines.at(i);
+        } else if (i + 1 < emittedRows.size()) {
+            y -= rowSpace[i] + geometry.h + geometry.d + rowSpace[i + 1] + rLines[i];
+        }
+    }
+}
+
+void CommonMtable::topSceneTable(scene::Builder &builder, scene::NodeId tableNode,
+                                 scene::NodeId labelsGroup) {
+    const auto side = text8(attr(*this, u"side"), u"right");
+    const auto box = getBBox();
+    const double labelWidth = getTableData().L;
+    const double width = box.L + (pWidth ? pWidth : box.w) + box.R;
+    const auto [pad, alignment, shift] = getPadAlignShift(side);
+    (void)pad;
+    const double dx = shift +
+                      (alignment == "right"    ? -width
+                       : alignment == "center" ? -width / 2
+                                               : 0) +
+                      box.L;
+    const double scale = jax().face().parameters.required("x_height") * 1000 / metrics().ex;
+
+    scene::SemanticMetadata matrixMetadata;
+    matrixMetadata.initial_transform = true;
+    const auto contentTransform =
+        builder.wrap_contents(tableNode, scene::Transform(scene::Affine{1, 0, 0, -1, 0, 0}),
+                              std::move(matrixMetadata), scene::ElementRole::anonymous_group);
+
+    scene::SemanticMetadata transformMetadata;
+    transformMetadata.initial_transform = true;
+    const scene::Transform transform(std::vector<scene::TransformOperation>{
+        scene::Translation{0, box.h, scene::TranslationSeparator::space},
+        scene::Affine{1, 0, 0, -1, 0, 0}, scene::Scaling{scale, scale, false, 2}});
+    const auto transformGroup =
+        builder.add_group(tableNode, transform, {}, {}, {}, std::move(transformMetadata),
+                          scene::ElementRole::anonymous_group);
+
+    scene::Viewport tableViewport;
+    tableViewport.bounds = {};
+    tableViewport.view_box = {-dx, -box.h, .001, box.h + box.d};
+    const auto horizontal = alignment == "left"    ? scene::ViewportAlignment::min
+                            : alignment == "right" ? scene::ViewportAlignment::max
+                                                   : scene::ViewportAlignment::mid;
+    tableViewport.aspect_ratio = tableAspect(horizontal);
+    tableViewport.clip_content = false;
+    scene::SemanticMetadata tableMetadata;
+    tableMetadata.ordered_attributes.push_back({"data-table", "true"});
+    const auto tableViewportGroup =
+        builder.add_group(transformGroup, {}, {}, {}, {}, std::move(tableMetadata),
+                          scene::ElementRole::table_content_viewport, {}, tableViewport);
+    builder.reparent_group(contentTransform, tableViewportGroup);
+
+    scene::Viewport labelViewport;
+    labelViewport.bounds = {};
+    labelViewport.view_box = {side == "left" ? 0.0 : labelWidth, -box.h, .001, box.h + box.d};
+    labelViewport.aspect_ratio =
+        tableAspect(side == "left" ? scene::ViewportAlignment::min : scene::ViewportAlignment::max);
+    labelViewport.clip_content = false;
+    scene::SemanticMetadata labelMetadata;
+    labelMetadata.ordered_attributes.push_back({"data-labels", "true"});
+    const auto labelViewportGroup =
+        builder.add_group(transformGroup, {}, {}, {}, {}, std::move(labelMetadata),
+                          scene::ElementRole::table_label_frame, {}, labelViewport);
+    builder.reparent_group(labelsGroup, labelViewportGroup);
+
+    const std::array<SceneNode, 1> emitted{SceneNode{tableNode}};
+    placeScene(builder, emitted, -box.L, 0, tableNode);
+}
+
+void CommonMtable::subSceneTable(scene::Builder &builder, scene::NodeId tableNode,
+                                 scene::NodeId labelsGroup, double pWidthShift) {
+    if (!container || !containerI)
+        throw std::logic_error("subtable labels require their Source container");
+    const auto side = text8(attr(*this, u"side"), u"right");
+    const auto box = getBBox();
+    const double labelWidth = getTableData().L;
+    const double width = box.L + (pWidth ? pWidth : box.w) + box.R;
+    const auto alignment = getAlignShift().first;
+    const double containerWidth = container->getWrapWidth(*containerI);
+    const double commonWidth = sourceMax(width, containerWidth);
+    const double x = side == "left"
+                         ? (alignment == "left"    ? 0
+                            : alignment == "right" ? width - commonWidth + pWidthShift
+                                                   : (width - commonWidth) / 2 + pWidthShift) -
+                               box.L
+                         : (alignment == "left"    ? commonWidth
+                            : alignment == "right" ? width + pWidthShift
+                                                   : (commonWidth + width) / 2 + pWidthShift) -
+                               box.L - labelWidth;
+    const std::array<SceneNode, 1> emittedLabels{SceneNode{labelsGroup}};
+    placeScene(builder, emittedLabels, x, 0, labelsGroup);
+    builder.reparent_group(labelsGroup, tableNode);
+}
+
+SceneNodes CommonMtable::emitScene(scene::Builder &builder,
+                                   std::span<scene::NodeId const> parents) {
+    auto containers = standardSceneNodes(builder, parents);
+    auto &nodes = containers.nodes;
+    if (nodes.empty() || !nodes.front())
+        throw std::logic_error("mtable Scene emission requires its first output segment");
+    const auto tableNode = *nodes.front();
+    (void)builder.set_background_width(tableNode, getWidth());
+
+    std::optional<scene::NodeId> labelsGroup;
+    if (hasLabels) {
+        scene::SemanticMetadata metadata;
+        metadata.ordered_attributes.push_back({"data-labels", "true"});
+        scene::Transform transform;
+        if (isTop)
+            transform = scene::Transform(scene::Affine{1, 0, 0, -1, 0, 0});
+        labelsGroup = builder.add_group(0, std::move(transform), {}, {}, {}, std::move(metadata),
+                                        scene::ElementRole::anonymous_group);
+    }
+
+    auto emittedRows = placeSceneRows(builder, tableNode, labelsGroup);
+    handleSceneColumnLines(builder, tableNode);
+    handleSceneRowLines(builder, tableNode);
+    handleSceneFrame(builder, tableNode);
+    const double pWidthShift = handleScenePWidth(builder, tableNode);
+    if (hasLabels) {
+        if (!labelsGroup)
+            throw std::logic_error("mtable labels group was not created");
+        spaceSceneLabels(builder, emittedRows);
+        if (isTop)
+            topSceneTable(builder, tableNode, *labelsGroup);
+        else
+            subSceneTable(builder, tableNode, *labelsGroup, pWidthShift);
+    }
+    return std::move(nodes);
 }
 
 CommonWrapper *CommonMtable::findContainer() {

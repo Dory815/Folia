@@ -9,6 +9,10 @@ export namespace folia::math::output::common {
 class CommonMtd : public CommonWrapper {
 public:
     using CommonWrapper::CommonWrapper;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
+    std::array<double, 2> placeSceneCell(scene::Builder &, std::span<SceneNode const>, double x,
+                                         double y, double width, double height, double depth);
+    void placeSceneColor(scene::Builder &, std::span<SceneNode const>, scene::Rect bounds);
     bool fixesPWidth() const override { return false; }
     void invalidateBBox(bool bubble=true) override;
     double getWrapWidth(std::size_t) override;
