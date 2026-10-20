@@ -231,6 +231,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/setoptions/set_options_configuration.ixx
     src/math/input/tex/empheq/util.ixx
     src/math/input/tex/empheq/configuration.ixx
+    src/math/input/tex/cases/configuration.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -357,6 +358,7 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/setoptions/set_options_configuration.cpp
     src/math/input/tex/empheq/util.cpp
     src/math/input/tex/empheq/configuration.cpp
+    src/math/input/tex/cases/configuration.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
