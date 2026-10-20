@@ -103,6 +103,32 @@ void CommonScriptbase::initializeSource() {
     baseRemoveIc = !isLineAbove && !isLineBelow && (!useItalicCorrection_ || isMathAccent);
 }
 
+SceneNodes CommonScriptbase::emitScene(scene::Builder &builder,
+                                       std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+
+    auto containers = standardSceneNodes(builder, parents);
+    auto &nodes = containers.nodes;
+    const auto &content = containers.content;
+    auto *base = baseChild();
+    auto *script = scriptChild();
+    if (!base || !script)
+        throw std::logic_error("CommonScriptbase requires base and script wrappers");
+
+    const double width = getBaseWidth();
+    const auto offset = getOffset();
+    const auto baseNodes = base->emitScene(builder, content);
+    base->placeScene(builder, baseNodes, 0, 0);
+    if (content.empty())
+        throw std::logic_error("CommonScriptbase has no Scene container for its script");
+    const std::array<scene::NodeId, 1> scriptParent{content.back()};
+    const auto scriptNodes = script->emitScene(builder, scriptParent);
+
+    script->placeScene(builder, scriptNodes, width + offset[0], offset[1]);
+    return nodes;
+}
+
 CommonWrapper *CommonScriptbase::baseChild() const {
     if (const auto *nodeValue = dynamic_cast<mml::MmlMsubsup const *>(node))
         return childAt(*const_cast<CommonScriptbase *>(this), nodeValue->base());
@@ -120,16 +146,18 @@ CommonWrapper *CommonScriptbase::getBaseCore() {
     if (!current)
         current = childAt(*this, 0);
     while (current) {
-        const auto kind = current->node->kind();
         const bool oneChild = current->childNodes.size() == 1;
         const auto &vbox = current->node->properties().tex.vertical_box;
         const bool sourceVboxTruthy = vbox && !vbox->empty();
-        const bool unwrapKind = kind == mml::NodeKind::mrow || kind == mml::NodeKind::tex_atom ||
-                                kind == mml::NodeKind::mstyle || kind == mml::NodeKind::mphantom ||
-                                kind == mml::NodeKind::semantics ||
-                                (kind == mml::NodeKind::mpadded && !sourceVboxTruthy);
+        const bool unwrapKind =
+            current->node->isKind(mml::NodeKind::mrow) ||
+            current->node->isKind(mml::NodeKind::tex_atom) ||
+            current->node->isKind(mml::NodeKind::mstyle) ||
+            (current->node->isKind(mml::NodeKind::mpadded) && !sourceVboxTruthy) ||
+            current->node->isKind(mml::NodeKind::mphantom) ||
+            current->node->isKind(mml::NodeKind::semantics);
         bool unwrap = oneChild && unwrapKind;
-        if (kind == mml::NodeKind::munderover) {
+        if (current->node->isKind(mml::NodeKind::munderover)) {
             if (auto *script = dynamic_cast<CommonScriptbase *>(current);
                 script && script->isMathAccent)
                 unwrap = true;
@@ -147,7 +175,7 @@ CommonWrapper *CommonScriptbase::getBaseCore() {
 }
 
 void CommonScriptbase::setBaseAccentsFor(CommonWrapper &core) {
-    if (core.node->kind() != mml::NodeKind::munderover)
+    if (!core.node->isKind(mml::NodeKind::munderover))
         return;
     if (!baseHasAccentOver)
         baseHasAccentOver = truthy(attribute(*core.node, u"accent"));

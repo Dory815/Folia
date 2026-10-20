@@ -29,6 +29,7 @@ class CommonScriptbase : public CommonWrapper {
     CommonScriptbase(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr,
                      bool useItalicCorrection = true, std::size_t constructorScriptChild = 1);
     void initializeSource() override;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     virtual CommonWrapper *baseChild() const;
     virtual CommonWrapper *scriptChild() const;
     virtual CommonWrapper *getBaseCore();

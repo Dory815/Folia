@@ -87,6 +87,36 @@ CommonWrapper *CommonMsubsup::scriptChild() const {
     return supChild();
 }
 
+SceneNodes CommonMsubsup::emitScene(scene::Builder &builder,
+                                    std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+
+    auto containers = standardSceneNodes(builder, parents);
+    auto &nodes = containers.nodes;
+    const auto &content = containers.content;
+    auto *base = baseChild();
+    auto *sup = supChild();
+    auto *sub = subChild();
+    if (!base || !sup || !sub)
+        throw std::logic_error("CommonMsubsup requires base, superscript and subscript wrappers");
+
+    const double width = getBaseWidth();
+    const double x = getAdjustedIc();
+    const auto uvq = getUVQ();
+    const auto baseNodes = base->emitScene(builder, content);
+    if (content.empty())
+        throw std::logic_error("CommonMsubsup has no Scene container for its scripts");
+    const std::array<scene::NodeId, 1> scriptParent{content.back()};
+    const auto supNodes = sup->emitScene(builder, scriptParent);
+    const auto subNodes = sub->emitScene(builder, scriptParent);
+
+    base->placeScene(builder, baseNodes, 0, 0);
+    sub->placeScene(builder, subNodes, width + (baseIsChar ? 0 : x), uvq[1]);
+    sup->placeScene(builder, supNodes, width + x, uvq[0]);
+    return nodes;
+}
+
 std::array<double, 3> CommonMsubsup::getUVQ(const BBox *subboxValue, const BBox *supboxValue) {
     // Preserve Source default-argument evaluation order: fetch both child boxes
     // before checking the cache.

@@ -30,6 +30,7 @@ class CommonMsubsup : public CommonScriptbase {
     std::optional<std::array<double, 3>> UVQ;
     CommonMsubsup(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr,
                   std::optional<std::size_t> scriptChildIndex = {});
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     virtual CommonWrapper *subChild() const;
     virtual CommonWrapper *supChild() const;
     CommonWrapper *scriptChild() const override;
