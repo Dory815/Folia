@@ -600,6 +600,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/cases.cpp
     tests/math/colortbl.cpp
     tests/math/mathtools_tags.cpp
+    tests/math/mathtools.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
