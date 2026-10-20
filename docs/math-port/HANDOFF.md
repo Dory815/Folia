@@ -12,6 +12,7 @@
 ### 恢复时先用这个短检查点
 
 - **最新用户纠正：禁止用native/typed/新旧前缀掩盖重复职责或保留替代实现。**
+  本轮清理已提交`2022cb1a`；Git仅剩原13项受保护修改，无live build/native/agent。
   本轮将新测试`native_function_list.cpp`归回`function_list.cpp`，priority测试归
   `prioritized_list.cpp`，各对应同名类；没有另建生产模块，生产代码仍在原两个ixx内。
   删除旧reference_function_list/function_list_array_owner/function_list_void_result/
