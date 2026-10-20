@@ -9,7 +9,51 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 已验收提交）
+### 恢复时先用这个短检查点（2026-10-20 已验收包接通批次）
+
+- **原boldsymbol/newcommand包已接通，完整Math回归443项/135,926断言 exit0。**
+  最终日志 `build/math-port/newcommand-full-final.log`，**83606已终态**。
+  当前无live agent、构建或测试；工作区仅原13项无关修改，继续保护。goal保持active。
+  完整38包、Common→Scene→SVG端到端对照和Folia切换仍未完成，不能据此宣称全移植完成。
+- **本轮提交**：`3fccf8e8`（13文件）原boldsymbol配置/宏/后处理及可null文本creator；
+  `a1b2a998`（2文件）修正遗漏文本的Source默认参数；`11fa87ac`（10文件）共享持久定义
+  与TokenMap借用接口；`bab72b31`（14文件）原newcommand五对文件、CMake、实际测试/Source。
+  没有新增平行实现或兼容旧对象层；newcommand生产代码原位减少，方法/utility各约350/250行。
+- **原职责/关键语义已验收**：boldsymbol原creator、作用域恢复、真实fixBold列表、继承后
+  priority5字体重写，嵌套/Greek/mathbb/mtext均验证。newcommand原7成员（Macro直接复用
+  BaseMethods）、6命令映射、BeginEnvItem、扫描/保护/定义/配置分别在原owner内。
+  TexSessionState拥有唯一命令/分隔符/环境定义，TokenMap借用；展开时捕获值防止重定义悬空。
+  Macro/EnvironmentDefinition.arity为double，普通宏可超过9且不分配arity个delimiter；
+  template才检查最多9与delimiter匹配。substitute_parameters保留显式[0]的替换/default语义。
+  MacroMap有固定templateExpansion，NativeMacroAlias/CharacterMacroAlias仍用固定callback ID；
+  全38包callback表尚未组装。MacroSuppression直接InvokeFallback；null delimiter生成空mo；
+  BeginEnd识别用户环境结束，环境begin/end定义按Source解析。全局写入复用原BegingroupStack。
+- **重要默认参数结论，不要重犯**：NodeFactory.makeToken的text是optional<string_view>，
+  **缺省值是present-empty的string_view{}，不能用nullopt当缺省值**。
+  Source createToken(text='')：遗漏文本/显式空字符串有一个空TextNode，显式null才没有。
+  Root首次全回归77071因把缺省误设nullopt而在旧重绑定测试.front异常退出，已立即停止广泛
+  测试；限定`*node factory*`复现，真实Source新增default/null/empty三分支后发现差异。
+  已修生产默认值并保留旧.front断言，未放松测试。最终相关6项/35断言及完整443项都通过。
+- **构建/原生证据**：Root构建81620/4896/20697均终态exit0，最终token-default-build.log，
+  并发4。newcommand10项/94断言（newcommand-focused-final.log）；boldsymbol4项/76断言；
+  定义2项/9断言、command map3项/20断言、null token1项/4断言聚焦均通过，已纳入完整443项。
+  覆盖参数10/显式0、def前后模板与控制序列边界、let快照/原生宏/字符/分隔符/隐藏、环境
+  嵌套/错误、跨公式/reset/独立jax、作用域global、宏次数限制及下一式恢复。
+- **Root独立Source重放**：原tex-node-creators-source.cjs增加3组真实boldsymbol包解析、
+  10字体variant及default/null/empty文本；tex-newcommand-source.cjs实际54次compile，
+  五TS+五CJS及完整profile锁，均从 C:\Windows exit0。Newcommand native global fixture用
+  固定测试命令调用实际BegingroupStack remove/finish等，**不等于begingroup包已接通**。
+  不把一次包测试成功当作38包或最终SVG验收。
+- **代理已结束**：已有/root/base_methods（GPT-6.1 Sol）仅实现newcommand限定12文件；
+  Root定义共享接口并负责boldsymbol、Source重放、实际构建、聚焦及全回归。该代理最后只读
+  对照共享Map/Macro/BeginEnd/NodeFactory边界，未发现其他具体差异，未再改文件。
+  Luna额度到10月25日，无新信号不重试；必要Sol仅GPT-6.1 Sol。
+- **准确下一步**：接通原begingroup的configuration/methods/mappings，复用已验BegingroupStack
+  和本轮newcommand定义层；不重写Stack，不把现有测试scope命令当作正式包。随后color等原包，
+  继续完整38包及共享输出到SVG。原13项修改、Mermaid暂停、无D2D像素门槛及命名约束均保持；
+  不重新处理FunctionList旧命名已完成的提交，不执行reset或改写历史。
+
+### 上一已验收输入链（历史；当前live状态以上节为准）
 
 - **原 base 输入链已接通，完整 Math 回归430项/135,800断言 exit0。**
   最终日志 `build/math-port/tex-jax-full-final.log`；句柄 **75033已终态**。
