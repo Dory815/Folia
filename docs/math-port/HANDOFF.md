@@ -9,7 +9,37 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 AMS批次，已验证提交）
+### 恢复时先用这个短检查点（2026-10-20 amscd/extpfeil批次，进行中）
+
+- **最新命名反馈的既有结论**：`native_function_list.cpp` 已在2022cb1a归回
+  `tests/math/function_list.cpp`；生产唯一实现是原 `util/function_list.ixx`。
+  e6126948已删除旧对象语义测试/配置投影。旧 `function_list_bindings` 文件仍有未迁移
+  消费者，尚未完成退场，不能称为全量清理。没有新证据时不要因历史消息再次重开命名调查。
+  后续生产文件沿MathJax原模块职责原位改造，不用native/new/typed等前缀建立平行实现；
+  删除旧实现需连同消费者和构建引用处理，不能只改名掩盖遗留职责。本次仅复核此既有结论，
+  未改算法、未重复运行测试；amscd/extpfeil仍在下面记录的断点，代理尚未重新派工。
+- **无live构建/测试**；上一批完整497项/137,414断言仍为最新验收。Root已完整读原
+  AmsCdMethods/Mappings/Configuration、ExtpfeilConfiguration及当前旧CPP；已改amscd三.ixx
+  为typed接口，Base ArrayItem新增两个optional<string> cd_min_width/cd_min_height，其余尚未改。
+- **冻结职责**：amscd保持原methods/mappings/configuration三组文件，5原方法（CD为env builder，
+  arrow/cell/minCDarrowwidth/minCDarrowheight为MacroHandler）；3原映射、原AmscdOptions。
+  CD仍创建原ArrayItem，环境尺寸在打开时捕获到ArrayItem两字段，不另建CD帧/对象状态层。
+  cell在非Array顶层须按Source把缺席table/row视作空，再Push strut/cell让原栈产生Misplaced&，
+  不能dynamic_cast引用抛bad_cast。arrow保留fallback Other的位置恢复、奇偶行/列补格、标签布局。
+- **Root负责**：amscd三组原生产文件、Base字段、tests/math/amscd.cpp及tex-amscd-source.cjs，
+  CMake、Source独立复放/统一原生验证与分批提交。AMS已验算法不改、不复制。
+- **准备复用已有GPT-6.1 Sol /root/base_methods限定4文件**：原extpfeil/configuration两文件、
+  tests/math/extpfeil.cpp、tex-extpfeil-source.cjs。原单owner含NewExtArrow方法、xArrow编译别名、
+  原6命令Map及配置；复用AmsMethods::xArrow/NewcommandConfig/NewcommandUtil，定义使用现
+  NativeMacroAlias固定callback ID和3个numeric TexArgument，不引运行时函数对象或新registry。
+  代理不得改共享/CMake/docs/Git、不得原生构建/测试或另派代理；缺口报告Root，不造替代API。
+- **验收**：完整Source TS/CJS/full38profile锁；amscd方向/单双标签/空格/尺寸捕获/隐藏标签/
+  奇偶表格及错误恢复；extpfeil 5固定箭头+Newextarrow decimal/hex、参数错误、scopes/global、
+  alias与跨式/reset、configured creator前属性和复用原箭头布局。先聚焦再完整回归，并发4。
+  完整38包、共享布局→SVG对照、Folia切换仍未完成，goal保持active。原13项无关修改保护。
+  Luna额度到10月25日，无新信号不重试，必要Sol仅GPT-6.1 Sol；Mermaid暂停，不reset改历史。
+
+### 上一已验证提交批次（历史；当前以顶部断点为准）
 
 - **完整Math回归497项/137,414断言exit0**：`ams-full.log`，64538已终态，无跳过/失败。
   构建97088 exit0（ams-build.log，并发4），AMS聚焦12项/355断言exit0：Methods9项/259，
