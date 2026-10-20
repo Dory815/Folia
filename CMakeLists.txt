@@ -195,6 +195,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/verb/configuration.ixx
     src/math/input/tex/upgreek/configuration.ixx
     src/math/input/tex/gensymb/configuration.ixx
+    src/math/input/tex/ams/methods.ixx
+    src/math/input/tex/ams/items.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -285,6 +287,8 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/verb/configuration.cpp
     src/math/input/tex/upgreek/configuration.cpp
     src/math/input/tex/gensymb/configuration.cpp
+    src/math/input/tex/ams/methods.cpp
+    src/math/input/tex/ams/items.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
