@@ -1,6 +1,7 @@
 #include "support/folia_test.hpp"
 import folia.math.core.mml_tree.mml_document;
 import folia.math.core.mml_tree.mml_nodes.html_node;
+import folia.math.input.tex.node_util;
 using namespace boost::ut;
 using namespace folia::math::mml;
 
@@ -75,6 +76,8 @@ suite typed_mml_branches = [] {
         std::vector<MmlNode *> walked;
         token.walkTree([&](MmlNode &n) { walked.push_back(&n); });
         expect(token.getText() == u"A\U0001F600html text");
+        expect(folia::math::tex::NodeUtil::getText(token) == u"A\U0001F600html text");
+        expect(folia::math::tex::NodeUtil::getText(text) == u"A\U0001F600");
         expect(!token.isEmpty());
         expect(walked.size() == 1_u);
         auto &emptyToken = dynamic_cast<AbstractMmlTokenNode &>(doc.make(NodeKind::mi));

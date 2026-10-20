@@ -55,6 +55,9 @@ class MmlDocument final : public tree::NodeOwner<MmlNode, NodeKind> {
     void setRoot(MmlNode &);
     void reserveChildren(MmlNode &parent, std::size_t count);
     void setChildren(MmlNode &, std::span<MmlNode *const>) override;
+    // TeX scripts are assembled by physical child slot before postfilters
+    // choose msub/msup or munder/mover. nullptr means an absent math slot.
+    void setChildSlot(MmlNode &, std::size_t index, MmlNode *);
     void append(MmlNode &parent, MmlNode &child) override;
     void insert(MmlNode &parent, std::size_t index, MmlNode &child);
     void replace(MmlNode &parent, MmlNode &oldChild, MmlNode &replacement) override;

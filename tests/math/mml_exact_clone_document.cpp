@@ -39,6 +39,26 @@ void registerRow(MmlDocument &document, int &live, bool const &fail) {
 } // namespace
 
 suite mml_exact_clone_document = [] {
+    "MML indexed script slots preserve physical roles ownership and clone"_test=[] {
+        MmlDocument document;
+        auto& script=document.factory().make(NodeKind::msubsup);
+        auto baseText=&document.factory().make(NodeKind::text);baseText->setText(u"x");
+        auto upperText=&document.factory().make(NodeKind::text);upperText->setText(u"n");
+        auto& base=document.factory().make(NodeKind::mi,{},std::span(&baseText,1));
+        auto& upper=document.factory().make(NodeKind::mi,{},std::span(&upperText,1));
+        document.setChildSlot(script,0,&base);document.setChildSlot(script,2,&upper);
+        expect(script.children().size()==3_u);expect(script.children()[1]==nullptr);
+        expect(upper.parent()==&script);
+        auto& clone=document.cloneSubtree(script);
+        expect(clone.children().size()==3_u);expect(clone.children()[1]==nullptr);
+        expect(clone.children()[2]!=&upper);expect(clone.children()[2]->parent()==&clone);
+        // Original token walkTree visits mathematical nodes and skips TextNodes.
+        std::size_t count{};clone.walkTree([&](MmlNode&){++count;});expect(count==3_u);
+        document.setChildSlot(script,2,nullptr);expect(upper.parent()==nullptr);expect(script.children()[2]==nullptr);
+        MmlDocument other;auto& foreign=other.make(NodeKind::mi);
+        expect(throws<std::invalid_argument>([&]{document.setChildSlot(script,1,&foreign);}));
+        expect(script.children()[1]==nullptr);
+    };
     "exact clone rollback destroys partial destination nodes and keeps existing tree"_test = [] {
         int sourceLive = 0, targetLive = 0;
         bool fail = true;

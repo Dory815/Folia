@@ -99,13 +99,30 @@ void MmlDocument::setChildren(MmlNode &parent, std::span<MmlNode *const> childre
     }
     parent.children_.reserve(prepared.size());
     for (auto *child : parent.children_)
-        child->parent_ = nullptr;
+        if (child) child->parent_ = nullptr;
     parent.children_.clear();
     for (auto *child : prepared) {
         detach(*child);
         parent.children_.push_back(child);
         child->parent_ = &parent;
     }
+}
+
+void MmlDocument::setChildSlot(MmlNode &parent, std::size_t index, MmlNode *child) {
+    requireOwned(parent);
+    if (index >= parent.children_.max_size()) throw std::length_error("MML child slot exceeds vector limit");
+    if (child) {
+        requireOwned(*child);
+        requireAcyclic(parent, *child);
+        if (index < parent.children_.size() && parent.children_[index] == child) return;
+    }
+    parent.children_.resize(std::max(parent.children_.size(), index + 1), nullptr);
+    if (child && child->parent_ == &parent) {
+        for (auto& slot : parent.children_) if (slot == child) slot = nullptr;
+    } else if (child) detach(*child);
+    if (auto previous = parent.children_[index]) previous->parent_ = nullptr;
+    parent.children_[index] = child;
+    if (child) child->parent_ = &parent;
 }
 
 void MmlDocument::insert(MmlNode &parent, std::size_t index, MmlNode &child) {
@@ -211,8 +228,9 @@ MmlNode &MmlClone::clone(MmlNode const &source) {
     clone.attributes_ = source.attributes_;
     clone.properties_ = source.properties_;
     clone.state_ = source.state_;
-    for (auto *child : source.children()) {
-        document_.append(clone, this->clone(*child));
+    for (std::size_t i = 0; i < source.children().size(); ++i) {
+        auto child = source.children()[i];
+        document_.setChildSlot(clone, i, child ? &this->clone(*child) : nullptr);
     }
     source.copyNativeStateTo(clone, *this);
     return clone;

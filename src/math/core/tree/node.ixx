@@ -66,7 +66,7 @@ public:
     void walkTree(std::function<void(Product&)> const& visit) override {
         visit(static_cast<Product&>(*this));
         for (std::size_t i = 0; i < this->children().size(); ++i)
-            this->children()[i]->walkTree(visit);
+            if (auto child = this->children()[i]) child->walkTree(visit);
     }
     std::string toString() const override {
         std::string result{this->treeOwner().kindName(this->kind())};
@@ -75,7 +75,7 @@ public:
         for (auto* child : this->children()) {
             if (!first) result += ',';
             first = false;
-            result += child->toString();
+            if (child) result += child->toString();
         }
         result += ')';
         return result;

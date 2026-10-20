@@ -12,6 +12,7 @@ enum class ProofSide : std::uint8_t { left, right };
 using Thickness = std::variant<double, std::u16string>;
 
 struct TexNodeProperties {
+    std::optional<std::vector<std::u16string>> in_lists;
     std::optional<bool> auto_operator, function_operator, fix_bold, fix_prescript, fix_stretchy,
         ignore_variant, math_accent, movable_limits, move_sup_sub,
         no_dictionary_definition, pseudo_script, relations_combined,
