@@ -9,6 +9,60 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
+### 当前Mathtools执行断点（2026-10-20；标签组件已验收，整包未完成）
+
+- 上轮Colortbl为真实进展且已提交，基线见下一节。当前保留上游六owner（config/items/
+  methods/mappings/tags/util），总合同已写architecture/acceptance。先打通tags组合边界；
+  原mathtools/tags.*已原位替换，Tags product保持真实父类，通过unique_ptr<TagForm>拥有
+  MathtoolsTags（mtFormats + optional当前triple），shared tags.*按setter次序处理优先级。
+  **6a62683d**提交此6文件改动，净减190行，无新生产文件。
+  ParserRuntime旧tags模块export/counter字段已删，旧Mathtools config/methods
+  仍待迁移（其旧API调用暂不在active graph，不能宣称整包清理/接通）。
+- Root负责tests/math/mathtools_tags.cpp（7组）、生产/shared/CMake/docs/Git。CMake已添加
+  原tags.*及测试。Source两文件已冻结，Root完整读并独立最终重放exit0：98compile/72trees/
+  8steps/10 Source-only methodErrors/3 invalidShapes，mathtools-tags-source-final.log。
+  build50897和修正测试期望后的78157均exit0，并发4。首次focus仅测试catalog数量期望
+  漏base（实际6项不是5），80快照无差异；改为核对六名称集合，生产无改动，最终focus
+  **7 tests/3366 asserts exit0**，mathtools-tags-focused-final.log。完整run95204已终态
+  **647 tests/165250 asserts/126 suites exit0**，mathtools-tags-full.log，无失败/跳过。
+  **4f6a63b1**提交4个测试/Source/fixture/CMake文件。无livebuild/native/agent。
+- Source ignored probe mathtools-tags-probe.cjs已终态exit0：84compile/21记录。MT5→TF10
+  时TF覆盖formatTag，反向配置且重新materialize产品后非空MTcurrent覆盖TF，空current
+  fallbackTF；显式ref callback优先，TFnumber不变；renew不改变已选triple直到重选。
+  Source late config只变factory，不替换已有Tags；原生同样保持已有product。无全局类名契约。
+- fixture冻结schema：MtTagTree{mode,tagformat,reverse,selected,source,snapshot}，固定forms
+  box=['[',']','']、bold=['<','>','\\mathbf']，TF number=Nn/tag=['<',tag,'>']/ref空。
+  MtTagStep{int action,source,snapshot}，action0不变/1选box/2替换box为'('/')'/3重选box/
+  4清空/5选bold；数组mtTagTrees/mtTagSequence。全部为direct typed state后真实TeX编译，
+  不把未接入的new/renew/usetagform宏放到native公式，也不宣称这些宏已验收。
+- Root已完整读Source六TS（Methods分三段/全部Mappings）及native tags/items/util/config/
+  mappings，native methods读前235行及4处差异片段；/root/base_methods已完成整个Methods/
+  Util只读审计，无liveagent。其余方法保留已有公式构造、扫描顺序、错误判断；替换旧Property/
+  Context/any/callable绑定边界，勿从头重写，勿复制Base/AMS/Newcommand算法。
+- 下一阶段已确认：32自身方法=5环境入口+27宏；5环境MtMatrix/MtSmallMatrix/MtMultlined/
+  SpreadLines/Cases均用现EnvironmentBodyHandler签名，SpreadLines自行Push后monostate，
+  其余返回实际FrameHandle；27宏现MacroHandler签名且正常/早退均NoParseResult（Source无null/
+  false），保留显式Push null帧。6aliases直接原函数地址。LEGACYCONFIG/priority4仍Methods owner。
+- 必须修旧算法差异：SplitFrac上下用两个独立mspace token（现重复同node）；VDotsWithin用
+  createText→create node mo，ShortVDotsWithin委托原方法且固定\\vdotswithin名；Aboxed尾部
+  tex+rest不是addArgs；UnderOverBracket用lengths::length2em(size_em=.1)，局部parser逐个
+  立即mml完成借用；PairedDelimiters替换只遍历原body一次，不重复扫描replacement。
+  前4处Root已对照旧CPP/原TS，后续再直接核对范围。无生产Methods代码修改。
+- PairedDelimiters参数缺席才默认n=1，DeclareX/XPP缺[]传显式NullArgument，[]空字符串假，
+  [0]字符串真且0次GetArgument但仍substituteArgs，数值0假；保留TexArgument原类型及span
+  缺席，不一律变double/uint8。宏别名存immutable ID+owned args（MacroCallbacks::macroBinding）。
+  MakeAboxedCommand原直接NEW_COMMAND.add，用session.defineCommand当前layer，不能调addMacro
+  （会改global/清delimiter/isGlobal）；PairedDelims原调NewcommandUtil::addMacro仍保留。
+- SetOptions尚须Root确定scalar typed边界，不能照代理建议直接缩小TeX功能：Source排除项拼成
+  pariedDelimiters，正确pairedDelimiters会进allowed；tagforms/allow-mathtoolsset排除，allowed
+  来自optional presence。keys全部验证后按insertion order写；legacy toggle严格不等并按旧值
+  truthiness决定remove/add。当前schema20字段（15string/3bool/2map），直接bool化任意字符串会
+  丢严格比较。先读真实keyvalOptions/probe命令输入，决定有限native值域，不引入反射option存储。
+  现ArrayItem已有shove/flushspaceabove/casesEnv、BeginItem.spread/nestStart、env.closing_environment；
+  Prescript用真实null postscript slots及properties.tex.fix_prescript，不能提前补none。
+  Luna额度Oct25恢复前不重试；只1个Sol必要Source子任务，其余旧代理已终态。原13项受保护。
+  全38包/Common→Scene→SVG/Folia未完成，goal active；Mermaid暂停，无D2D像素gate。
+
 ### 当前已接受基线：Colortbl（2026-10-20）
 
 - **c40f69e4**原configuration.*归回ColorData/ColorArrayItem/TableColor/colortblConfig/注册，

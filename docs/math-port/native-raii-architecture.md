@@ -193,6 +193,42 @@ number/subnumber formatting including explicit zero, environment argument
 forwarding and real native factory products. These remain package checks,
 separate from the final Common-to-Scene/SVG gate.
 
+### Mathtools responsibilities and tag composition (2026-10-20)
+
+Keep the six original Mathtools owners: configuration selects package handlers,
+defaults, the multlined factory and fixPrescripts; mappings contains immutable
+command/environment/delimiter tables; methods implements the original macro and
+environment algorithms; items extends AMS MultlineItem; util owns the six original
+helpers; tags owns named forms, the selected form and MathtoolsTagFormat. Existing
+Base/AMS/Newcommand methods stay their original owners, referenced directly by
+the mappings rather than copied into Mathtools. Do not introduce another table
+assembler, parser, option store, tag-numbering class or rendering family.
+
+The selected Tags product remains uniquely owned by ParseOptions, retaining its
+actual AMS/Cases/custom parent behavior. AbstractTags owns one optional TagForm
+strategy through unique_ptr; its narrow interface returns an optional formatted
+tag (no result means use the parent). MathtoolsTags in mathtools/tags.* is the
+concrete strategy and owns its finite string triples and optional current triple.
+Selecting a form copies its triple, so replacing that name leaves the selected
+value unchanged until the next selection, as in Source. No strategy owns or
+captures a parser, Tags product, request, MML node or input jax.
+The native option uses array<u16string,3>. Source validates the array length but
+allows non-string elements; that arbitrary option mutation is outside this typed
+API, rather than a runtime shape/coercion facility to reproduce.
+
+setTagForm and the existing setFormatters record which was installed last for
+formatTag precedence. Only these two formatting layers occur in this profile;
+do not introduce a generic dynamic subclass/extension registry. A selected form
+installed after Tagformat overrides its tag callback; an unselected form falls
+through. Tagformat installed after Mathtools overrides the form. Other formatters
+and parent numbering/finalization remain on the original Tags object. Factories
+are configuration-local and capture the original parent creator by value; neither
+global generated class names nor retained prototype chains are ported.
+
+The full package is not accepted until its original mappings, methods, options,
+factory, postfilter and tag composition run together through real TeX compilation
+against pinned Source. A tag strategy test alone is component evidence only.
+
 ### Colortbl array extension (2026-10-20)
 
 The one upstream `ColortblConfiguration.ts` remains `colortbl/configuration.*`.

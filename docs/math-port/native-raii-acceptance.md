@@ -58,6 +58,17 @@ green corpora establish reference data, not acceptance for rewritten code.
 
 ## C. Source fidelity
 
+- Mathtools must preserve all six upstream file responsibilities and every
+  implemented mapping. Compare matrices/cases/multlined/spreadlines, alignment
+  commands, paired delimiters and expansion limits, relations/options, struts,
+  laps/brackets/fractions and prescripts with actual Source MML. Check null/void
+  dispatch results, pre/postscript holes and postfilter priority -6. Exercise
+  named forms, renewal of a selected name, empty selection, errors/recovery,
+  none/all/ams/cases/custom parents and both orders of Tagformat composition.
+  Repeated input-jax construction must release forms and local creators without
+  growing a shared registry. Closed typed option shapes replace arbitrary JS
+  object/array mutation; report that boundary separately from rendered fidelity.
+
 - Colortbl must compare actual Source trees for cell/row/column precedence,
   clearing, sparse columns, preambles, overlap arguments and each array wrapper.
   Preserve unset versus defined-empty column values, color-argument errors before
