@@ -282,6 +282,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/physics/mappings.ixx
     src/math/input/tex/physics/configuration.ixx
     src/math/input/tex/unicode/configuration.ixx
+    src/math/input/tex/mhchem/configuration.ixx
     src/math/dependencies/mhchem_parser/parser.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
@@ -427,6 +428,7 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/physics/mappings.cpp
     src/math/input/tex/physics/configuration.cpp
     src/math/input/tex/unicode/configuration.cpp
+    src/math/input/tex/mhchem/configuration.cpp
     src/math/dependencies/mhchem_parser/parser.cpp
     src/math/dependencies/mhchem_parser/patterns.cpp
     src/math/dependencies/mhchem_parser/actions.cpp
@@ -667,6 +669,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/entities.cpp
     tests/math/unicode.cpp
     tests/math/mhchem_parser.cpp
+    tests/math/mhchem.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp

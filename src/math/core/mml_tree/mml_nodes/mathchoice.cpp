@@ -36,7 +36,7 @@ void MathChoice::setInheritedAttributes(AttributeList const &attributes, bool di
         branch = &document().factory().make(NodeKind::mrow);
     }
 
-    MmlNode *parent = Parent();
+    MmlNode *parent = this->parent();
     if (!parent)
         throw std::logic_error("MathChoice inheritance requires a parent");
     parent->replaceChild(*branch, *this);

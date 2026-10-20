@@ -1,44 +1,34 @@
 // MathJax 4.1.3 input/tex/mhchem/MhchemConfiguration.ts.
 export module folia.math.input.tex.mhchem.configuration;
 export import folia.math.input.tex.parser;
-export import folia.math.util.runtime_modules;
+export import folia.math.input.tex.base_methods;
+export import folia.math.input.tex.ams.methods;
+export import folia.math.input.tex.node_util;
 import std;
+
 export namespace folia::math::tex {
+enum class MhchemReplacementKind { text, arrow };
 struct MhchemReplacement {
-    std::u16string pattern;
-    std::variant<std::u16string, FunctionRef> replacement;
+    std::u16string_view pattern;
+    std::u16string_view replacement;
+    MhchemReplacementKind kind;
 };
-// One actual loaded MhchemConfiguration.ts module environment. The maps retain
-// its original callable references; exported records remain independent owners.
-class MhchemModule {
-    ParserRuntime& runtime_;
-    Property methods_, utils_;
-    TokenMapRef macros_, characters_;
-    ConfigurationRef configuration_;
-    std::array<MhchemReplacement, 6> rules_;
-    explicit MhchemModule(ParserRuntime&);
-    void initialize(const std::shared_ptr<MhchemModule>&);
-public:
-    static std::shared_ptr<MhchemModule> initializeModule(ParserRuntime&, util::RuntimeModules&);
-    options::Context& context() const;
-    Property methods() const { return methods_; }
-    Property utils() const { return utils_; }
-    Property method(std::u16string_view name) const;
-    ParseMethod relmo() const;
-    TokenMapRef macros() const { return macros_; }
-    TokenMapRef characters() const { return characters_; }
-    ConfigurationRef configuration() const { return configuration_; }
-    std::span<const MhchemReplacement> replacementRules() const { return rules_; }
-    std::u16string replacement(std::u16string tex, std::size_t index) const;
-    std::u16string replacements(std::u16string tex) const;
-};
+
+std::span<MhchemReplacement const> mhchemReplacements() noexcept;
+std::u16string applyMhchemReplacement(std::u16string, MhchemReplacement const &,
+                                      TokenMap const &macros, TokenMap const &characters);
+std::u16string applyMhchemReplacements(std::u16string, TokenMap const &macros,
+                                       TokenMap const &characters);
+
 struct MhchemConfiguration {
-    static ConfigurationRef initializeModule(ParserRuntime&, util::RuntimeModules&);
+    static ConfigurationRef initializeModule(ConfigurationHandler &, MapHandler &);
 };
 struct MhchemMethods {
-    static Property get(ParserRuntime&, util::RuntimeModules&, std::u16string_view name);
+    static DispatchOutcome Machine(TexParser &, MacroInvocation const &);
+    static constexpr MacroHandler Macro = &BaseMethods::Macro;
+    static constexpr MacroHandler xArrow = &AmsMethods::xArrow;
 };
 struct MhchemUtils {
-    static ParseMethod relmo(ParserRuntime&, util::RuntimeModules&);
+    static DispatchOutcome relmo(TexParser &, TokenInput const &);
 };
-}
+} // namespace folia::math::tex
