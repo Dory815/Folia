@@ -10,7 +10,8 @@ const hashes={
   Stack:'36be7583b14111961367e9e3f1dd5911456d235b096a2fcee62f438d37c7e11a',
   StackItemFactory:'229bf0f6bd58642bff86102bb8fb6fd2b9a61d3f52ad31ce738f3f2cefa2e405',
   NodeUtil:'bd7e048c49cf042cb5878c6a73d049ae49e7d6437fb4ba975651dae5a5125cc2',
-  ParseUtil:'b43646071997f88f27df51610c7972a8cb5791ea76194e7318d17d1a2f81f76a'
+  ParseUtil:'b43646071997f88f27df51610c7972a8cb5791ea76194e7318d17d1a2f81f76a',
+  TokenMap:'0209895b13569008b2129b61c88050e7c70e70ce9477d234b9a6e303a86a738e'
 };
 for(const [name,expected] of Object.entries(hashes))assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,`.reference/MathJax-src/ts/input/tex/${name}.ts`))).digest('hex'),expected,name);
 const ref=require('./reference-profile.cjs').createReference();
@@ -19,6 +20,8 @@ const base=path.join(root,'tools/mathjax-bundle/node_modules/@mathjax/src/cjs');
 const load=name=>require(path.join(base,name));
 const {Configuration,ParserConfiguration}=load('input/tex/Configuration.js');
 const {RegExpMap}=load('input/tex/TokenMap.js');
+const {CommandMap,MacroMap}=load('input/tex/TokenMap.js');
+const {Macro}=load('input/tex/Token.js');
 const Base=load('input/tex/base/BaseItems.js');
 const ParseOptions=load('input/tex/ParseOptions.js').default;
 const TexParser=load('input/tex/TexParser.js').default;
@@ -31,6 +34,32 @@ const configuration=new ParserConfiguration([]);
 configuration.append(Configuration.local({items:Object.fromEntries(Object.values(Base).map(Class=>[Class.prototype.kind,Class])),handler:{character:['literal-test']}}));
 const options=new ParseOptions(configuration,[{mathStyle:'TeX',tagSide:'right',tagIndent:'0.8em'}]);
 options.nodeFactory.setMmlFactory(new MmlFactory());options.tags=new NoTags();options.tags.configuration=options;
+// These callbacks run against the real parser, not an object with a currentCS field.
+{
+  const parser=new TexParser('',{},options);parser.currentCS='previous';
+  const calls=[];
+  const commands=new CommandMap('command-request-check',{});
+  commands.add('alias',new Macro('definition',(p,name,arg)=>{
+    commands.remove('alias');calls.push(p.currentCS,name,arg);
+  },['bound']));
+  assert.equal(commands.parse([parser,'alias']),true);
+  assert.deepEqual(calls,['\\alias','\\definition','bound']);
+  assert.equal(commands.contains('alias'),false);assert.equal(parser.currentCS,'previous');
+  assert.equal(commands.parse([parser,'absent']),null);
+  commands.add('missing',new Macro('missing',null));
+  assert.equal(commands.parse([parser,'missing']),null);assert.equal(parser.currentCS,'previous');
+  commands.add('stop',new Macro('stop',()=>false));
+  assert.equal(commands.parse([parser,'stop']),false);assert.equal(parser.currentCS,'previous');
+  const raw=new MacroMap('raw-request-check',{raw:(p,name)=>{calls.push(p.currentCS,name);}});
+  calls.length=0;raw.parse([parser,'raw']);assert.deepEqual(calls,['previous','raw']);
+  let failed=false;
+  commands.add('inner',new Macro('inner',p=>{calls.push(p.currentCS);if(failed)throw new Error('command failure');}));
+  commands.add('outer',new Macro('outer',p=>{calls.push(p.currentCS);commands.parse([p,'inner']);calls.push(p.currentCS);}));
+  calls.length=0;commands.parse([parser,'outer']);
+  assert.deepEqual(calls,['\\outer','\\inner','\\outer']);assert.equal(parser.currentCS,'previous');
+  failed=true;assert.throws(()=>commands.parse([parser,'outer']),/command failure/);
+  assert.equal(parser.currentCS,'\\inner');parser.mml();
+}
 const shape=node=>node.kind==='text'?'text('+node.getText()+')':node.kind+'('+node.childNodes.map(shape).join(',')+')';
 for(const [source,expected] of [['','inferredMrow()'],['abc','inferredMrow(mi(text(a)),mi(text(b)),mi(text(c)))'],['α𝛼','inferredMrow(mi(text(α)),mi(text(𝛼)))']]){
   const parser=new TexParser(source,{},options);assert.equal(options.parsers.length,1);
@@ -69,5 +98,5 @@ const numerator=nf.create('token','mi',{},'a'),denominator=nf.create('token','mi
 fractionStack.Push(numerator);fractionStack.Push(options.itemFactory.create('over'));fractionStack.Push(denominator);fractionStack.Push(options.itemFactory.create('stop'));
 assert.equal(fractionStack.height,1);assert.equal(fractionStack.Top().kind,'mml');
 const fraction=fractionStack.Top().First;assert.equal(fraction.kind,'mfrac');assert.equal(fraction.childNodes[0]===numerator,true);assert.equal(fraction.childNodes[1]===denominator,true);
-console.log(JSON.stringify({status:'passed',sourceFiles:8,compiledProfile:ref.provenance.compiled_source_sha256,
+console.log(JSON.stringify({status:'passed',sourceFiles:9,compiledProfile:ref.provenance.compiled_source_sha256,
   limit:'Original configurable parser, lists and tag state/table construction. Native exception cleanup and indexed slot ownership are C++ invariants. Full native packages, nested tag TeX, postfilters and SVG integration remain separate acceptance requirements.'}));

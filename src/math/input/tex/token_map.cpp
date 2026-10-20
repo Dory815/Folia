@@ -91,32 +91,49 @@ DispatchOutcome MacroMap::parse(TexParser& parser, std::u16string_view input) {
     auto mapped = lookup(input);
     auto method = parserFor(input);
     if (!method) return ContinueDispatch{};
+    return parseResult(invoke(parser, mapped, *method, input, {}));
+}
+DispatchOutcome MacroMap::invoke(TexParser& parser, TokenLookup const& mapped,
+    TokenMapParser const& method, std::u16string_view input, std::u16string_view prefix) {
     std::u16string received(input);
     if (auto definition = std::get_if<CommandDefinition const*>(&mapped); definition && *definition) {
         // Snapshot the selected mathematical definition. A callback can replace
         // the same session entry; it must not invalidate its in-flight arguments.
         CommandDefinition captured = **definition;
         if (auto character = std::get_if<CharacterMacroAlias>(&captured.body))
-            return parseValue(parser, *method, TokenInput{&character->captured});
-        auto callback = std::get_if<MacroHandler>(&*method);
+            return parseValue(parser, method, TokenInput{&character->captured});
+        auto callback = std::get_if<MacroHandler>(&method);
         if (!callback) throw std::logic_error("Macro map requires a typed macro callback");
         if (!*callback) return ContinueDispatch{};
-        auto const& dispatch = captured.source_token;
+        auto dispatch = std::u16string(prefix) + captured.source_token;
         MacroArguments arguments = std::cref(captured);
         if (auto alias = std::get_if<NativeMacroAlias>(&captured.body))
             arguments = std::span<TexArgument const>(alias->arguments);
-        return parseResult((*callback)(parser, MacroInvocation{received, dispatch, arguments}));
+        return (*callback)(parser, MacroInvocation{received, dispatch, arguments});
     }
     if (auto macro = std::get_if<Macro const*>(&mapped); macro && *macro) {
         Macro captured = **macro;
-        auto callback = std::get_if<MacroHandler>(&*method);
+        auto callback = std::get_if<MacroHandler>(&method);
         if (!callback) throw std::logic_error("Macro map requires a typed macro callback");
         if (!*callback) return ContinueDispatch{};
-        auto const& dispatch = captured.token;
-        return parseResult((*callback)(parser, MacroInvocation{received, dispatch,
-            std::span<TexArgument const>(captured.arguments)}));
+        auto dispatch = std::u16string(prefix) + captured.token;
+        return (*callback)(parser, MacroInvocation{received, dispatch,
+            std::span<TexArgument const>(captured.arguments)});
     }
     return ContinueDispatch{};
+}
+CommandMap::CommandMap(CommandMapInit init) : MacroMap(std::move(init.macros)) {}
+CommandMap::CommandMap(SessionMacroMapInit init) : MacroMap(std::move(init)) {}
+DispatchOutcome CommandMap::parse(TexParser& parser, std::u16string_view input) {
+    auto mapped = lookup(input);
+    auto method = parserFor(input);
+    if (!method || std::holds_alternative<std::monostate>(mapped)) return ContinueDispatch{};
+    auto previous = parser.currentCS();
+    parser.setCurrentCS(u"\\" + std::u16string(input));
+    // Source retains the failed command for error reporting on an exception.
+    auto result = invoke(parser, mapped, *method, input, u"\\");
+    parser.setCurrentCS(std::move(previous));
+    return parseResult(std::move(result));
 }
 EnvironmentMap::EnvironmentMap(EnvironmentMapInit init) : MacroMap(std::move(init.macros)) {
     setParser(TokenMapParser{init.parser});

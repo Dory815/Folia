@@ -1,5 +1,4 @@
-#include "support/folia_test.hpp"
-import folia.math.input.tex.parser;
+#include "math/support/tex_fixture.hpp"
 
 using namespace boost::ut;
 using namespace folia::math::tex;
@@ -7,9 +6,119 @@ namespace {
 DispatchOutcome macroMethod(TexParser&, MacroInvocation const&) { return Handled{}; }
 DispatchOutcome expansion(TexParser&, MacroInvocation const&) { return NoParseResult{}; }
 DispatchOutcome tokenMethod(TexParser&, TokenInput const&) { return Handled{}; }
+struct CommandTrace {
+    MacroMap* map{};
+    std::vector<std::u16string> observations;
+    bool stop{}, fail{}, remove{};
+};
+thread_local CommandTrace* commandTrace{};
+struct CommandTraceScope {
+    CommandTrace* previous = commandTrace;
+    explicit CommandTraceScope(CommandTrace& trace) { commandTrace = &trace; }
+    ~CommandTraceScope() { commandTrace = previous; }
+};
+DispatchOutcome recordCommand(TexParser& parser, MacroInvocation const& invocation) {
+    auto& trace = *commandTrace;
+    trace.observations.push_back(parser.currentCS());
+    trace.observations.emplace_back(invocation.input_token);
+    trace.observations.emplace_back(invocation.dispatch_token);
+    if (trace.remove) trace.map->remove(invocation.input_token);
+    auto args = std::get<std::span<TexArgument const>>(invocation.arguments);
+    if (!args.empty()) trace.observations.push_back(std::get<std::u16string>(args.front()));
+    if (trace.fail) throw TexError("CommandTrace", u"Command callback failed");
+    return trace.stop ? DispatchOutcome{ContinueDispatch{}} : DispatchOutcome{NoParseResult{}};
+}
+DispatchOutcome nestedCommand(TexParser& parser, MacroInvocation const&) {
+    commandTrace->observations.push_back(parser.currentCS());
+    commandTrace->map->parse(parser, u"inner");
+    commandTrace->observations.push_back(parser.currentCS());
+    return NoParseResult{};
+}
+DispatchOutcome recordCharacter(TexParser& parser, TokenInput const& input) {
+    auto& trace = *commandTrace;
+    trace.observations.push_back(parser.currentCS());
+    trace.observations.push_back(std::get<Token const*>(input.value)->character.value());
+    return NoParseResult{};
+}
+DispatchOutcome recordExpansion(TexParser& parser, MacroInvocation const& invocation) {
+    auto& trace = *commandTrace;
+    trace.observations.push_back(parser.currentCS());
+    trace.observations.emplace_back(invocation.dispatch_token);
+    auto& definition = std::get<std::reference_wrapper<CommandDefinition const>>(invocation.arguments).get();
+    trace.observations.push_back(std::get<MacroDefinition>(definition.body).replacement_source);
+    return NoParseResult{};
+}
 }
 
 suite token_map = [] {
+    "command map invokes captured definitions and restores currentCS after normal results"_test = [] {
+        Fixture fixture;
+        TexParser parser(u"", ParserEnvironmentSeed{}, *fixture.options);
+        parser.setCurrentCS(u"previous");
+        CommandMap map(CommandMapInit{MacroMapInit{{u"commands", std::nullopt}, {}}});
+        map.add(u"alias", Macro(u"definition", MacroMethod{recordCommand}, {std::u16string(u"bound")}));
+        CommandTrace trace{.map=&map, .remove=true};
+        CommandTraceScope scope(trace);
+        expect(std::holds_alternative<Handled>(map.parse(parser, u"alias")));
+        expect(std::ranges::equal(trace.observations,
+            std::array<std::u16string,4>{u"\\alias",u"alias",u"\\definition",u"bound"}));
+        expect(!map.contains(u"alias"));
+        expect(parser.currentCS() == u"previous");
+        expect(std::holds_alternative<ContinueDispatch>(map.parse(parser,u"absent")));
+        map.add(Macro(u"missing", MacroMethod{static_cast<MacroHandler>(nullptr)}));
+        expect(std::holds_alternative<ContinueDispatch>(map.parse(parser,u"missing")));
+        expect(parser.currentCS() == u"previous");
+        trace.remove=false; trace.stop=true;
+        map.add(Macro(u"stop", MacroMethod{recordCommand}));
+        expect(std::holds_alternative<ContinueDispatch>(map.parse(parser,u"stop")));
+        expect(parser.currentCS() == u"previous");
+        MacroMap macros(MacroMapInit{{u"macros", std::nullopt}, {Macro(u"raw",MacroMethod{recordCommand})}});
+        trace.observations.clear();
+        macros.parse(parser,u"raw");
+        expect(std::ranges::equal(trace.observations,
+            std::array<std::u16string,3>{u"previous",u"raw",u"raw"}));
+    };
+    "command map nesting restores enclosing commands and retains the failed command on exception"_test = [] {
+        Fixture fixture;
+        TexParser parser(u"", ParserEnvironmentSeed{}, *fixture.options);
+        parser.setCurrentCS(u"previous");
+        CommandMap map(CommandMapInit{MacroMapInit{{u"nested", std::nullopt}, {
+            Macro(u"outer", MacroMethod{nestedCommand}), Macro(u"inner", MacroMethod{recordCommand})}}});
+        CommandTrace trace{.map=&map};
+        CommandTraceScope scope(trace);
+        expect(std::holds_alternative<Handled>(map.parse(parser,u"outer")));
+        expect(std::ranges::equal(trace.observations,
+            std::array<std::u16string,5>{u"\\outer",u"\\inner",u"inner",u"\\inner",u"\\outer"}));
+        expect(parser.currentCS() == u"previous");
+        trace.fail=true;
+        texError([&] { map.parse(parser,u"outer"); }, "CommandTrace");
+        expect(parser.currentCS() == u"\\inner");
+    };
+    "command map uses canonical session definitions for aliases characters suppression and expansion"_test = [] {
+        Fixture fixture;
+        TexParser parser(u"", ParserEnvironmentSeed{}, *fixture.options);
+        const std::array<MacroHandler,1> macros{recordCommand};
+        const std::array<TokenInputHandler,1> tokens{recordCharacter};
+        MacroCallbacks callbacks(macros,tokens);
+        CommandMap map(SessionMacroMapInit{{u"session-commands",std::nullopt},fixture.session,callbacks,recordExpansion});
+        CommandTrace trace{.map=&map};
+        CommandTraceScope scope(trace);
+        fixture.session.defineCommand(u"alias",CommandDefinition{u"original",NativeMacroAlias{MacroHandlerId{1},{std::u16string(u"captured")}}});
+        map.parse(parser,u"alias");
+        expect(std::ranges::equal(trace.observations,
+            std::array<std::u16string,4>{u"\\alias",u"alias",u"\\original",u"captured"}));
+        trace.observations.clear();
+        fixture.session.defineCommand(u"char",CommandDefinition{u"alpha",CharacterMacroAlias{TokenParserId{1},Token(u"alpha",std::u16string(u"α"))}});
+        map.parse(parser,u"char");
+        expect(std::ranges::equal(trace.observations,std::array<std::u16string,2>{u"\\char",u"α"}));
+        trace.observations.clear();
+        fixture.session.defineMacro(u"expand",MacroDefinition{.replacement_source=u"replacement"});
+        map.parse(parser,u"expand");
+        expect(std::ranges::equal(trace.observations,std::array<std::u16string,3>{u"\\expand",u"\\expand",u"replacement"}));
+        fixture.session.defineCommand(u"expand",CommandDefinition{u"expand",MacroSuppression{}});
+        expect(std::holds_alternative<ContinueDispatch>(map.parse(parser,u"expand")));
+        expect(parser.currentCS().empty());
+    };
     "token map lookup keeps the lookup key separate from the captured token"_test = [] {
         CharacterMap map(CharacterMapInit{{u"characters", std::nullopt},
             {Token(u"x", std::u16string(u"a")), Token(u"nil", std::nullopt)}});

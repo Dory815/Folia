@@ -26,12 +26,15 @@
   exit0（parser-reviewed-build.log）；聚焦33项/452断言exit0；完整379项/134,895断言
   exit0，56363已终态（parser-reviewed-full.log）。Source 两份正式检查也已通过。
   不重复跑这些已验收内容，除非新改动影响它们。
-- **工作区真实断点**：上个连续工作阶段在原 `token_map.{ixx,cpp}` 留有未提交修改：
+- **CommandMap 已组件验收**：在原 `token_map.{ixx,cpp}` 完成修改：
   提取 MacroMap::invoke，补 CommandMap 构造与 parse，区分输入名/定义名并保留 Source
-  currentCS 成功恢复、异常保留失败命令行为。**这些修改尚未构建或测试，不算验收。**
+  currentCS 成功恢复、异常保留失败命令行为。42122构建已终态exit0，
+  command-map-build.log；新增3项/20断言和原5项/38断言均exit0，分别见
+  command-map-focused.log、token-map-focused.log。正式tex-parser-source.cjs补实际
+  Source parser命令调用，九TS锁/完整compiled profile，从C:\Windows执行exit0，
+  command-map-source.log。会话宏/字符捕获/屏蔽使用既有定义存储，没有复制注册表。
   当前没有 live agent、构建或测试；原13项无关修改继续保护，禁止混入提交。
-- **下一步**：先对上述 CommandMap 修改补实际 TexParser 调用及 Source 对照并聚焦验收，
-  然后处理原 ParseMethods 和 BaseMethods/映射。Source `ParseMethods.ts` 实际在
+- **下一步**：处理原 ParseMethods 和 BaseMethods/映射。Source `ParseMethods.ts` 实际在
   `input/tex` 根目录；现有 `base/base_parse_methods.{ixx,cpp}` 路径不对应，应在迁移时
   归回 `input/tex/parse_methods.{ixx,cpp}` 并删除旧文件，不造第二个实现或兼容模块。
   `base/base_methods`、`base/base_mappings`、`base/base_configuration` 保持各自职责。

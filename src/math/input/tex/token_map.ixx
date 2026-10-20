@@ -91,6 +91,9 @@ class MacroMap : public AbstractParseMap<Macro> {
     TexSessionState* session_{};
     MacroCallbacks const* callbacks_{};
     MacroHandler expansion_{};
+protected:
+    DispatchOutcome invoke(TexParser&, TokenLookup const&, TokenMapParser const&,
+                           std::u16string_view input, std::u16string_view prefix);
 public:
     explicit MacroMap(MacroMapInit);
     explicit MacroMap(SessionMacroMapInit);
@@ -99,8 +102,7 @@ public:
     std::optional<TokenMapParser> parserFor(std::u16string_view) const override;
     DispatchOutcome parse(TexParser&, std::u16string_view) override;
 };
-// The currentCS wrapper needs the actual TexParser implementation. It remains
-// unimplemented rather than calling a different parser or fabricating success.
+// Commands preserve their input name separately from the definition's name.
 class CommandMap : public MacroMap {
 public:
     explicit CommandMap(CommandMapInit);
