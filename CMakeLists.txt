@@ -701,6 +701,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/xml_dom_adaptor.cpp
     tests/math/find_tex.cpp
     tests/math/texhtml.cpp
+    tests/math/common_scene.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
