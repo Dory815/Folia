@@ -239,6 +239,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/mathtools/util.ixx
     src/math/input/tex/mathtools/mappings.ixx
     src/math/input/tex/mathtools/configuration.ixx
+    src/math/input/tex/bussproofs/items.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -373,6 +374,7 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/mathtools/util.cpp
     src/math/input/tex/mathtools/mappings.cpp
     src/math/input/tex/mathtools/configuration.cpp
+    src/math/input/tex/bussproofs/items.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp

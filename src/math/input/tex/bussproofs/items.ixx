@@ -1,22 +1,17 @@
-// MathJax 4.1.3 input/tex/bussproofs/BussproofsItems.ts.
+// MathJax 4.1.3 input/tex/bussproofs/BussproofsItems.ts; Apache-2.0.
 export module folia.math.input.tex.bussproofs.items;
 export import folia.math.input.tex.parser;
 import std;
 export namespace folia::math::tex {
 class ProofTreeItem final : public BaseItem {
-    using InnerStackValue=std::variant<std::monostate,StackRef,options::Value>;
-    InnerStackValue innerStack_;
-    Stack& innerStack(std::string_view member="Push");
-public:
-    StackRef innerStackOwner(){(void)innerStack();return std::get<StackRef>(innerStack_);}
-    options::Value innerStackSourceValue(ParserRuntime&);
-    void setInnerStackSourceValue(ParserRuntime&,options::Value);
-    options::Value leftLabel=options::Null{};
-    options::Value rigthLabel=options::Null{};
-    std::string kind() const override;
-    CheckType checkItem(BaseItem*) override;
-    mml::NodeValue toMml(Property inferred=Missing{},Property forceRow=Missing{}) override;
-    static tree::FactoryClassRef<BaseItem> initializeModule(ParserRuntime&);
+    Stack innerStack_;
+
+  public:
+    std::optional<std::u16string> name;
+    explicit ProofTreeItem(StackItemFactory &);
+    StackKind kind() const override;
+    std::optional<std::u16string_view> getName() const noexcept override;
+    CheckResult checkItem(FrameHandle const &) override;
+    mml::MmlNode &toMml(bool inferred = true, bool forceRow = false) override;
 };
-struct BussproofsItems { static tree::FactoryClassRef<BaseItem> initializeModule(ParserRuntime&); };
-}
+} // namespace folia::math::tex
