@@ -87,6 +87,7 @@ public:
     TexOptionValues options;
     NodeCreators nodes;
     MapHandler& maps() const noexcept { return maps_; }
+    std::u16string defaultTags{u"none"};
     TexSessionState& session() const noexcept { return session_; }
     MacroCallbacks const& callbacks() const noexcept { return callbacks_; }
     void append(ConfigurationRef, std::optional<double> priority = {});

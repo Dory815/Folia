@@ -148,9 +148,8 @@ struct TexOptionValues {
     void mergeDefaults(TexOptionValues const&);
 };
 
-// The service interface remains on the original owner. Constructor/factory,
-// Tags, ColumnParser and request-list implementations are still being ported;
-// no Context implementation is used behind this declaration.
+// The original request owner borrows the input-jax options/configuration and
+// session, and owns its factories, column parser, tags and equation scratch.
 class ParseOptions : public NodeFactoryConfiguration {
 public:
     using MathStyleResolver = std::u16string (*)(std::u16string_view, bool);
@@ -162,6 +161,7 @@ public:
     ParseOptions& operator=(ParseOptions const&) = delete;
 
     SubHandlers& handlers;
+    MapHandler& maps() const noexcept;
     TexOptionValues& options; // borrowed input-jax lifetime record, never per-expression defaults
     std::unique_ptr<StackItemFactory> itemFactory;
     NodeFactory nodeFactory;
@@ -186,6 +186,7 @@ public:
     std::span<mml::MmlNode* const> getList(std::u16string_view);
     void removeFromList(std::u16string_view, std::span<mml::MmlNode* const>);
 private:
+    ParserConfiguration& configuration_;
     bool inTree(mml::MmlNode const&) const noexcept;
 };
 }

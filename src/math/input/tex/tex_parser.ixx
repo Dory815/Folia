@@ -1,64 +1,114 @@
 // MathJax 4.1.3 input/tex/TexParser.ts; Apache-2.0.
+// Native parser interface. Shared dispatch aliases belong to :types.
 export module folia.math.input.tex.parser:tex_parser;
 export import :types;
+export import :stack;
+export import :token_map;
 import std;
+
 export namespace folia::math::tex {
-class TexParser:public ParserContext,public NativeObject {
-    // Native allocation handle, bound once by make before Source initialization.
-    std::optional<options::ObjectRef> identity_;
-    std::u16string string_;
-    Property currentCS_=""; // sole Source currentCS, accessed by bridge
-    double saveI=0;
-    void updateResult(std::u16string,double old);
-    void composeLatex(mml::NodeValue,std::u16string,double pos1,double pos2);
-    void composeBraces(mml::NodeValue);
-    std::u16string composeBracedContent(mml::NodeValue);
-protected:
+class TexParser {
+    // The order is significant: every Source field used by pushParser/start
+    // construction is ready before the parser scope enters and Stack is built.
+    TexScanner scanner_; // sole source, position (Source i), and currentCS
+  public:
+    ParseOptions &configuration;
+    std::size_t macroCount{};
+
+  private:
+    std::size_t saveI{};
+
+    class ParserScope final {
+        ParseOptions &configuration_;
+        TexParser &parser_;
+        bool active_{true};
+
+      public:
+        ParserScope(ParseOptions &, TexParser &); // enters immediately
+        ~ParserScope() noexcept;                  // removes this exact parser
+        ParserScope(ParserScope const &) = delete;
+        ParserScope &operator=(ParserScope const &) = delete;
+        ParserScope(ParserScope &&) = delete;
+        ParserScope &operator=(ParserScope &&) = delete;
+        void release(); // normal Source popParser point, idempotent thereafter
+    } scope_;
+
+  public:
+    Stack stack; // constructed after scope_; owns activation handles, not MML
+  private:
+    void updateResult(std::u16string_view input, std::size_t old);
+    void composeLatex(mml::MmlNode &, std::u16string_view comp, std::size_t pos1, std::size_t pos2);
+    void composeBraces(mml::MmlNode &);
+    std::u16string composeBracedContent(mml::MmlNode &);
+    mml::MmlNode &finishCreatedNode(mml::MmlNode &); // create's ignore-variant rule
+
+  protected:
+    // Actual TextParser needs its Parse/Push overrides during initialization.
+    // It calls initializeTexParser in its constructor body before assigning level.
+    struct DeferParsing final {};
+    TexParser(std::u16string source, ParserEnvironmentSeed, ParseOptions &, DeferParsing);
+    void initializeTexParser(); // Parse; Push(stop); restore initial env scope
+    void finishParserScope();   // mml(), including TextParser::mml(), releases here
     virtual std::u16string trimTex(std::u16string);
-    void bindIdentity(options::ObjectRef identity){identity_=std::move(identity);}
-public:
-    static void initializeModule(ParserRuntime&);
-    double macroCount=0,i=0;
-    ParserShared<Stack> stack=Missing{};
-    ParserBorrowed<ParseOptions> configuration=Missing{};
-    TexParser()=default; // allocation only; initialize after retaining identity
-    static TexParserRef make(std::u16string string,Property env,ParseOptions&);
-    void initializeTexParser(std::u16string string,Property env,ParseOptions&);
-    options::ObjectRef instanceIdentity()const {
-        if(!identity_)throw options::Exception("Unimplemented",u"TexParser has no canonical native instance binding");
-        return *identity_;
-    }
-    ParserContextIdentity contextIdentity()const override;
-    virtual options::Value options()const;
-    virtual ParserShared<StackItemFactory> itemFactory()const;
-    virtual ParserShared<Tags> tags()const;
+
+  private:
+    TexParser(std::u16string source, ResolvedParserEnvironmentSeed, ParseOptions &, DeferParsing);
+
+  public:
+    TexParser(std::u16string source, ParserEnvironmentSeed, ParseOptions &);
+    virtual ~TexParser();
+    TexParser(TexParser const &) = delete;
+    TexParser &operator=(TexParser const &) = delete;
+    TexParser(TexParser &&) = delete;
+    TexParser &operator=(TexParser &&) = delete;
+
+    virtual TexOptionValues &options() const noexcept;
+    virtual StackItemFactory &itemFactory() const noexcept;
+    virtual Tags &tags() const;
     virtual void setString(std::u16string);
-    virtual std::u16string string()const;
-    Property currentCS()const override;
-    void setCurrentCS(Property)override;
-    virtual ParseResult parse(Property kind,const ParseInput&);
-    virtual TokenLookup lookup(Property kind,std::u16string);
-    virtual bool contains(Property kind,std::u16string);
-    virtual std::u16string toString()const;
+    virtual std::u16string_view string() const noexcept;
+    virtual std::u16string currentCS() const;
+    virtual void setCurrentCS(std::u16string);
+    std::size_t position() const noexcept;
+    void setPosition(std::size_t) noexcept;
+    SourceSnapshot sourceSnapshot() const noexcept;
+
+    // ParseInput belongs to :types: {TexParser& parser; u16string token;}.
+    // Preserve its receiver; Source parse may dispatch a parser other than *this.
+    virtual DispatchOutcome parse(HandlerKind, ParseInput const &);
+    virtual TokenLookup lookup(HandlerKind, std::u16string_view);
+    virtual bool contains(HandlerKind, std::u16string_view);
+    virtual std::u16string toString() const;
     virtual void Parse();
     virtual void Push(StackEntry);
-    virtual void PushAll(CheckList);
-    virtual void PushAll(mml::Children);
-    virtual mml::NodeValue mml();
-    virtual Property convertDelimiter(std::u16string); // string | null
+    virtual void PushAll(std::span<StackEntry const>);
+    virtual void PushAll(std::span<mml::MmlNode *const>);
+    virtual mml::MmlNode *mml(); // nullable borrow from configuration.document()
+    virtual std::optional<std::u16string> convertDelimiter(std::u16string_view);
     virtual std::u16string getCodePoint();
     virtual bool nextIsSpace();
     virtual std::u16string GetNext();
     virtual std::u16string GetCS();
-    virtual Property GetArgument(std::u16string,bool noneOK=false); // string | null
-    virtual Property GetBrackets(std::u16string,Property def=Missing{},bool matchBrackets=false);
-    virtual Property GetDelimiter(std::u16string,bool braceOK=false); // string | null
-    virtual std::u16string GetDimen(std::u16string);
-    virtual std::u16string GetUpTo(std::u16string,std::u16string);
-    virtual mml::NodeValue ParseArg(std::u16string);
-    virtual mml::NodeValue ParseUpTo(std::u16string,std::u16string);
-    virtual Property GetDelimiterArg(std::u16string); // string | null
+    virtual std::optional<std::u16string> GetArgument(std::u16string_view name,
+                                                      bool noneOK = false);
+    virtual std::optional<std::u16string>
+    GetBrackets(std::u16string_view name, std::optional<std::u16string> fallback = std::nullopt,
+                bool matchBrackets = false);
+    virtual std::optional<std::u16string> GetDelimiter(std::u16string_view name,
+                                                       bool braceOK = false);
+    virtual std::u16string GetDimen(std::u16string_view name);
+    virtual std::u16string GetUpTo(std::u16string_view name, std::u16string_view token);
+    virtual mml::MmlNode *ParseArg(std::u16string_view name);
+    virtual mml::MmlNode *ParseUpTo(std::u16string_view name, std::u16string_view token);
+    virtual std::optional<std::u16string> GetDelimiterArg(std::u16string_view name);
     virtual bool GetStar();
-    virtual mml::NodeValue create(std::u16string,FunctionArgs rest={});
+
+    // Original create(kind,...rest), expressed by its four actual creator domains.
+    virtual mml::MmlNode &create(mml::NodeKind, std::span<mml::MmlNode *const> children = {},
+                                 mml::AttributeSet = {});
+    virtual mml::MmlNode &createToken(mml::NodeKind, std::u16string_view text,
+                                      mml::AttributeSet = {});
+    virtual mml::MmlNode &createText(std::u16string_view text);
+    virtual mml::MmlNode &createError(std::u16string_view message);
 };
-}
+} // namespace folia::math::tex

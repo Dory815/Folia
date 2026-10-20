@@ -98,6 +98,7 @@ struct TagsCreatorEntry final {
 
 class TagsFactory final {
 public:
+    static TexOptionValues defaults();
     static void add(ParserConfiguration&, TagsCreatorEntry);
     static void addTags(ParserConfiguration&,
                         std::span<TagsCreatorEntry const> entries);

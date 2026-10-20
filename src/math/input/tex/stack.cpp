@@ -1,140 +1,113 @@
-module folia.math.input.tex.stack;
-import folia.math.input.tex.stack_host;
-import folia.math.util.property_host;
-import folia.math.util.js_number;
+// MathJax 4.1.3 Stack.ts; Apache-2.0.
+module folia.math.input.tex.parser;
+import :stack_item_factory;
+import :stack;
 import std;
 namespace folia::math::tex {
-namespace {
-StackEntry entryFromArray(const StackArrayStorageValue& value){
-    if(const auto* entry=std::get_if<StackEntry>(&value))return *entry;
-    return StackEntry(std::get<options::Value>(value));
+Stack::Stack(StackItemFactory &factory, TexEnvironment environment, bool inner)
+    : factory_(factory), global_{.is_inner = inner},
+      env_(std::make_shared<TexEnvironment>(std::move(environment))) {
+    auto start = factory_.create(StackKind::start, StartItemInit{global_});
+    start->setEnv(env_);
+    stack_.push_back(std::move(start));
 }
-StackArrayStorageValue arrayValue(const StackEntry& entry){return StackArrayStorageValue(entry);}
-std::string entryString(const StackArrayStorageValue& value){
-    const StackEntry entry=entryFromArray(value);
-    if(const auto* property=std::get_if<Property>(&entry)){
-        if(property_host::nullish(*property))return {};
-        return property_host::debugText(property_host::string(*property));
+Stack::~Stack() = default;
+StackGlobal &Stack::global() noexcept {
+    return global_;
+}
+StackGlobal const &Stack::global() const noexcept {
+    return global_;
+}
+TexEnvironment &Stack::env() noexcept {
+    return *env_;
+}
+TexEnvironment const &Stack::env() const noexcept {
+    return *env_;
+}
+EnvironmentScope Stack::environmentScope() const noexcept {
+    return env_;
+}
+void Stack::setEnv(EnvironmentScope value) {
+    if (!value)
+        throw std::invalid_argument("Stack requires an environment");
+    env_ = std::move(value);
+}
+void Stack::accept(FrameHandle item) {
+    if (!item->isKind(StackKind::null_item))
+        stack_.push_back(item);
+    if (auto local = item->environmentScope()) {
+        if (item->copyEnv())
+            overlayEnvironment(*local, *env_);
+        env_ = std::move(local);
+    } else
+        item->setEnv(env_);
+}
+void Stack::replay(CheckResult result, FrameHandle top, FrameHandle incoming) {
+    Pop();
+    for (auto const &entry : result.replacements)
+        std::visit(
+            [&](auto const &value) {
+                using T = std::decay_t<decltype(value)>;
+                if constexpr (std::is_same_v<T, ReuseTop>)
+                    Push(top);
+                else if constexpr (std::is_same_v<T, ReuseIncoming>)
+                    Push(incoming);
+                else
+                    Push(value);
+            },
+            entry);
+}
+void Stack::Push(StackEntry entry) {
+    FrameHandle incoming;
+    if (auto node = std::get_if<mml::MmlNode *>(&entry)) {
+        if (!*node)
+            return;
+        incoming = factory_.create(StackKind::mml, MmlItemInit{**node});
+    } else if (auto frame = std::get_if<FrameHandle>(&entry))
+        incoming = *frame;
+    if (!incoming)
+        return;
+    incoming->setGlobal(global_);
+    auto top = stack_.empty() ? FrameHandle{} : stack_.back();
+    auto result = top ? top->checkItem(incoming) : CheckResult(CheckAction::accept);
+    if (result.action == CheckAction::drop)
+        return;
+    if (result.action == CheckAction::replay) {
+        replay(std::move(result), std::move(top), std::move(incoming));
+        return;
     }
-    if(const auto* raw=std::get_if<options::Value>(&entry)){
-        if(std::holds_alternative<options::Undefined>(raw->data)||std::holds_alternative<options::Null>(raw->data))return {};
-        if(const auto* text=std::get_if<std::u16string>(&raw->data))return property_host::debugText(*text);
-        if(const auto* n=std::get_if<double>(&raw->data))return js_number::toString(*n);
-        if(const auto* b=std::get_if<bool>(&raw->data))return *b?"true":"false";
-    }
-    return stack_host::item(entry,"toString").toString();
+    accept(std::move(incoming));
 }
-bool rawTruthy(const options::Value& value){return options::truthy(value);}
+void Stack::PushAll(std::vector<StackEntry> values) {
+    for (auto &value : values)
+        Push(std::move(value));
 }
-void Stack::initializeStack(StackFactoryReference factory,Property environment,Property inner){
-    factory_=std::move(factory);env_=environment;
-    auto storage=std::make_shared<StackArrayStorage>();
-    stack_=std::make_shared<NativeStackArrayAccess>(storage,
-        [](const options::Value& value){return StackEntry(value);},entryString);
-    global=PropertyList{{"isInner",std::move(inner)}};
-    const StackEntry start=stack_host::create(factory_,"start",std::any(global));
-    stack_->pushEntry(start);
-    if(property_host::truthy(environment)){
-        BaseItem& first=stack_host::item(start,"env");first.setEnv(environment);
-    }
-    BaseItem& first=stack_host::item(start,"env");
-    const Property firstEnvironment=first.env();this->setEnv(firstEnvironment);
-}
-void Stack::setEnv(Property value){env_=std::move(value);}
-Property Stack::env()const{return env_;}
-options::Value Stack::height()const{return stack_->readLength();}
-StackEntry Stack::Top(StackArrayScalar n)const{
-    if(const auto* property=std::get_if<Property>(&n);property&&property->missing())n=Property(1);
-    if(const auto* value=std::get_if<options::Value>(&n);value&&std::holds_alternative<options::Undefined>(value->data))n=Property(1);
-    const auto comparisonBase=stack_;
-    const options::Value comparisonLength=comparisonBase->readLength();
-    if(comparisonBase->lessThan(comparisonLength,n))return StackEntry(Property(PropertyNull{}));
-    const auto indexedBase=stack_;
-    const auto lengthBase=stack_;
-    const options::Value indexLength=lengthBase->readLength();
-    const StackArrayScalar index=indexedBase->subtract(indexLength,n);
-    return indexedBase->getIndex(index);
-}
-void Stack::Push(std::span<const StackEntry> values){
-    const std::vector<StackEntry> arguments(values.begin(),values.end());
-    for(const StackEntry& input:arguments){
-        if(!stack_host::truthy(input))continue;
-        StackEntry current=stack_->materialize(input);
-        if(stack_host::isNode(current)){
-            const mml::NodeValue node=std::get<mml::NodeValue>(current);
-            current=stack_host::create(factory_,"mml",std::any(node));
-        }
-        BaseItem& item=stack_host::item(current,"global");item.global=global;
-        bool succeeded=true,checkedTop=false;
-        std::variant<Missing,PropertyNull,CheckList> topValue=PropertyNull{};
-        const options::Value length=stack_->readLength();
-        if(rawTruthy(length)){
-            const StackEntry topEntry=this->Top();
-            BaseItem& top=stack_host::item(stack_->materialize(topEntry),"checkItem");
-            const CheckType checked=top.checkItem(&item);
-            const auto tuple=stack_host::tuple(checked);topValue=tuple->items;
-            checkedTop=true;succeeded=property_host::truthy(tuple->success);
-        }
-        if(!succeeded)continue;
-        if(checkedTop&&stack_host::replacement(topValue)){
-            // Source evaluates Pop() before spreading the live replacement
-            // value. Keep those observable steps sequenced explicitly.
-            this->Pop();const std::vector<StackEntry> replacement=stack_host::spread(topValue);
-            this->Push(replacement);continue;
-        }
-        if(!item.isKind("null")){
-            const StackArrayAccessRef receiver=stack_;
-            const StackArrayMethod method=receiver->getMethod(u"push");
-            const std::array<StackArrayStorageValue,1> pushed{arrayValue(current)};
-            (void)receiver->callMethod(method,pushed);
-        }
-        const Property itemEnvironment=item.env();
-        if(property_host::truthy(itemEnvironment)){
-            const bool shouldCopy=item.copyEnv();
-            if(shouldCopy){
-                // Object.assign(item.env, this.env): Source resolves the
-                // receiver first, then reads this.env for the argument.
-                const Property target=item.env();
-                const Property source=this->env();
-                stack_host::assign(target,source);
-            }
-            const Property nextEnvironment=item.env();
-            this->setEnv(nextEnvironment);
-        }else{
-            // Source reads this.env before assigning item.env.
-            const Property source=this->env();
-            item.setEnv(source);
-        }
-    }
-}
-StackEntry Stack::Pop(){
-    const StackArrayAccessRef base=stack_;
-    const StackArrayMethod method=base->getMethod(u"pop");
-    const StackArrayStorageValue raw=base->callMethod(method,{});
-    // The `pop` call belongs to the array captured before the call. A getter
-    // or replacement triggered by that call must not redirect conversion of
-    // its return value through a later `this.stack` owner.
-    StackEntry item=base->materialize(entryFromArray(raw));
-    BaseItem& popped=stack_host::item(item,"isOpen");
-    if(!popped.isOpen())stack_host::deleteEnv(popped);
-    const options::Value length=stack_->readLength();
-    if(rawTruthy(length)){
-        const StackEntry top=this->Top();BaseItem& current=stack_host::item(stack_->materialize(top),"env");
-        this->setEnv(current.env());
-    }else this->setEnv(PropertyList{});
+FrameHandle Stack::Pop() {
+    if (stack_.empty())
+        throw std::out_of_range("Cannot pop an empty TeX stack");
+    auto item = std::move(stack_.back());
+    stack_.pop_back();
+    // Source delete item.env leaves the inherited accessor backing _env intact.
+    env_ = stack_.empty() ? std::make_shared<TexEnvironment>() : stack_.back()->environmentScope();
     return item;
 }
-mml::NodeValue Stack::Prev(Property noPop){
-    const StackEntry top=this->Top();
-    if(property_host::truthy(noPop))return stack_host::item(stack_->materialize(top),"First").First();
-    return stack_host::item(stack_->materialize(top),"Pop").Pop();
+BaseItem *Stack::Top(std::size_t n) const noexcept {
+    return n == 0 || n > stack_.size() ? nullptr : stack_[stack_.size() - n].get();
 }
-std::string Stack::toString(){
-    const StackArrayAccessRef receiver=stack_;
-    const StackArrayMethod method=receiver->getMethod(u"join");
-    const std::array<StackArrayStorageValue,1> args{StackArrayStorageValue(options::Value(u"\n  "))};
-    const StackArrayStorageValue joined=receiver->callMethod(method,args);
-    const std::u16string text=receiver->toStringValue(joined);
-    return "stack[\n  "+property_host::debugText(text)+"\n]";
+mml::MmlNode *Stack::Prev(bool noPop) {
+    auto top = Top();
+    return !top ? nullptr : noPop ? top->First() : top->Pop();
 }
+std::size_t Stack::height() const noexcept {
+    return stack_.size();
 }
+std::string Stack::toString() const {
+    std::string text = "stack[\n  ";
+    for (std::size_t i = 0; i < stack_.size(); ++i) {
+        if (i)
+            text += "\n  ";
+        text += stack_[i]->toString();
+    }
+    return text + "\n]";
+}
+} // namespace folia::math::tex
