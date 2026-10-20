@@ -1,10 +1,16 @@
 # MathJax 原生移植交接入口
 
-当前：mhchem 已验收提交（`83e82d7e`、`4bbfac62`，记录 `47fbc3a4`）。完整 math exit 0：713 tests、208874 assertions、138 suites，无失败/跳过（`build/math-port/mhchem-full.log`）。无活动 build/test；已结束 full session `73574`。texhtml/Lite 正在准备，尚未验收。
+当前：Lite/Xml/HTMLDomStrings/texhtml/Finder 已通过组件验收；最新 build exit 0（texhtml-final-build.log），四组 *-accepted-focus.log 全 exit 0。完整 texhtml-full.log exit 0：741 tests / 210529 assertions / 149 suites，无失败/跳过。HEAD bae9411e，正按职责分批提交。无活动 build/test；全部 Luna 冻结。额度已恢复。
 
-下一步：核对 `/root/lite_native_contract` 的 canonical core/节点声明，Root freeze 后再分派 parser/adaptor/Xml bridge 实现。Root 已在 architecture/acceptance 加入 texhtml/Lite 的原文件职责、shared子节点/weak父引用、不可变XmlRef边界与验收。不可把旧 Property/Context Lite 接回 native 图；不在 Common→Scene→SVG 间放 DOM。
+下一步：按 DOM/Lite、Xml bridge、CompileServices/Finder、HTMLDomStrings/texhtml 分批提交验收结果，再冻结 Common→Scene 的原 family emission 接口并分 Luna。旧 texhtml methods/services 已由原 configuration pair 接管，可连同未注册旧 UT 删除；旧 Finder host 有 inactive parser_runtime/render_session 入边，清理须显式处理。node_store/source_text_content 受保护 dirty Lite consumers 仍需，暂不删。
 
-活动 Luna：`lite_native_contract` 独占 core/dom_node、core/dom_adaptor、Lite element/text/document/window/list 原 pairs 与 lite_adaptor/parser 两份声明，Root 待核对。`mhchem_package_cases` 只改 ignored `build/math-port/texhtml-source-candidate/`，补真实原测试 render2mml 流程（不能用 direct parser 替代）、pins/default bytecheck/mtime/raw comments。`mhchem_dependency` 只改 ignored `build/math-port/lite-source-candidate/`，补 entities真实retry与split/clone边界，不得丢掉 unknown entity 场景。上述 source 候选尚未被 Root 接受。Root 独占 CMake/build/Git。
+最近修正：LiteParser.checkDocument 的 replace(new,old) 参数顺序；测试 JSON/片段选择、parsed document 无 defaultView、有效 Element 不触发 span 包装、texhtml 空根、disabled TeX 的 U+2212。texhtml UT 空指针来自丢弃 compile 返回值再读 bad.root，已修并单例 exit 0；无未诊断异常退出。direct fixture 现从 pinned inputs 保存 initialAllowTexHTML，而非 jax.options 输出；22 direct + 1 recovery，Source JSON/期望未改。Source Ref/eqref 显式 display=false 已核对，无待修问题。
+
+架构/职责：六个 Lite 原文件是同一 folia.math.adaptors.lite_adaptor primary partitions；core native DOM / Lite / immutable Xml bridge / HTMLDomStrings / texhtml 原 pair / FindMath 与 FindTeX 原 pair 均已交付冻结。Root 持有 CompileServices 借用/异常清理、ProtoItem、CMake 和共享调用点。旧 render_session 为 inactive JS 路径，不补兼容 overload。具体架构见下方链接。
+
+Source witnesses：Lite 41 records / 30 parser inputs，当前 C++ fixture SHA bb5c7ee4c20104b67cebb486d7e52f350b44dc54d0cad34e89baa9d0d768251c；texhtml 22 direct + recovery + 5真实pipeline，5份原 snapshot 全匹配，Source JSON SHA c13c8eb7ca5c9dea20e5a264a4b1437194949c01bd4f8c719dbf5a2959dfc4d5；Finder 22 inputs / 59 records。Root 从 C:/Windows 最新 bytechecks 三者全 exit 0（*-source-current-root.log）；canonical 自包含。生成物 tools/math-port/*-source.cjs、tests/math/fixtures/{lite,texhtml,find_tex}.inc。
+
+所有 agent 已结束，无活动 build/test handles；需要语义修复时 followup 原 Luna owner（lite_parser、lite_native_contract、mhchem_package、html_dom_strings、mhchem_package_cases、mhchem_dependency、texhtml_tests）。common_scene_contract 的只读结论：现 Common 缺实际 Scene emitter，分式/根式 geometry 已可复用；不注册旧 Scene wrapper hierarchy，不重算数学位置。候选仍在 ignored build/math-port/{lite-source-candidate,texhtml-source-candidate,find-tex-source-candidate}/。Root 独占 build/test/Git/CMake/HANDOFF。保护的原 13 dirty 路径见末尾。
 
 恢复时先读本文件，再检查相关当前改动。架构见 [native-raii-architecture.md](native-raii-architecture.md)，验收见 [native-raii-acceptance.md](native-raii-acceptance.md)。只更新这一个当前 checkpoint；历史交给 Git、测试和 Source witness，不追加阶段流水账。
 

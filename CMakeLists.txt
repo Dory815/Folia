@@ -486,6 +486,15 @@ foreach(family IN LISTS FOLIA_MML_FAMILIES)
 endforeach()
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/html_adaptor.ixx
+    src/math/core/dom_node.ixx
+    src/math/core/dom_adaptor.ixx
+    src/math/adaptors/lite_adaptor.ixx
+    src/math/adaptors/lite/element.ixx
+    src/math/adaptors/lite/text.ixx
+    src/math/adaptors/lite/document.ixx
+    src/math/adaptors/lite/window.ixx
+    src/math/adaptors/lite/list.ixx
+    src/math/adaptors/lite/parser.ixx
     src/math/core/mml_tree/mo_types.ixx
     src/math/core/mml_tree/operator_class.ixx
     src/math/util/js_numeric_input.ixx
@@ -496,6 +505,14 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/entities.ixx
     src/math/cancellation.ixx)
 target_sources(folia_math PRIVATE
+    src/math/core/dom_adaptor.cpp
+    src/math/adaptors/lite_adaptor.cpp
+    src/math/adaptors/lite/element.cpp
+    src/math/adaptors/lite/text.cpp
+    src/math/adaptors/lite/document.cpp
+    src/math/adaptors/lite/window.cpp
+    src/math/adaptors/lite/list.cpp
+    src/math/adaptors/lite/parser.cpp
     src/math/core/mml_tree/mml_branches.cpp
     src/math/core/mml_tree/mml_empty.cpp
     src/math/core/mml_tree/mml_nodes/maction_selection.cpp
@@ -670,6 +687,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/unicode.cpp
     tests/math/mhchem_parser.cpp
     tests/math/mhchem.cpp
+    tests/math/lite.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp

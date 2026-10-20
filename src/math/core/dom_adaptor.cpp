@@ -1,38 +1,84 @@
 module folia.math.core.dom_adaptor;
-import folia.math.util.property_host;
+import folia.math.util.js_number;
 import std;
+
 namespace folia::math {
-DOMNodeRef AbstractDOMAdaptor::node(std::u16string_view kind, PropertyList def, PropertyArray children, std::u16string_view ns) {
-    auto result=create(kind,ns); setAttributes(result,def);
-    for(std::size_t i=0;i<children.size();++i){
-        auto child=propertyNode(children.get(i));
-        if(!std::holds_alternative<DOMNodeRef>(child))property_host::typeError("DOM node child is not a node");
-        append(result,std::get<DOMNodeRef>(child));
+namespace {
+std::u16string widenAscii(std::string_view text) {
+    std::u16string result;
+    result.reserve(text.size());
+    for (const unsigned char ch : text) result.push_back(static_cast<char16_t>(ch));
+    return result;
+}
+}
+
+DOMNodeRef AbstractDOMAdaptor::node(std::u16string_view kind,
+                                    std::span<AttributeData const> attributes,
+                                    std::span<DOMNodeRef const> children,
+                                    std::u16string_view ns) {
+    auto result = create(kind, ns);
+    setAttributes(result, attributes);
+    for (auto const& child : children) append(result, child);
+    return result;
+}
+
+void AbstractDOMAdaptor::setAttributes(DOMNodeRef const& node,
+                                       std::span<AttributeData const> attributes) {
+    for (auto const& attribute : attributes)
+        setAttribute(node, attribute.name, attribute.value);
+}
+
+DOMNodeRef AbstractDOMAdaptor::parent(DOMNodeRef const& node) const noexcept {
+    return node ? node->parent() : DOMNodeRef{};
+}
+
+DOMNodeRef AbstractDOMAdaptor::replace(DOMNodeRef replacement,
+                                       DOMNodeRef const& oldNode) {
+    insert(std::move(replacement), oldNode);
+    return remove(oldNode);
+}
+
+DOMNodeRef AbstractDOMAdaptor::childNode(DOMNodeRef const& node, double index) const {
+    if (!std::isfinite(index) || index < 0 || std::floor(index) != index) return {};
+    const auto children = childNodes(node);
+    if (index >= static_cast<double>(children.size())) return {};
+    return children[static_cast<std::size_t>(index)];
+}
+
+std::u16string_view AbstractDOMAdaptor::kind(DOMNodeRef const& node) const noexcept {
+    return node ? node->kind() : std::u16string_view{};
+}
+
+std::vector<std::u16string>
+AbstractDOMAdaptor::allClasses(DOMNodeRef const& node) const {
+    auto attribute = getAttribute(node, u"class");
+    if (!attribute || attribute->empty()) return {};
+    auto classes = std::move(*attribute);
+    for (std::size_t at = 0; (at = classes.find(u"  ", at)) != std::u16string::npos;)
+        classes.erase(at, 1);
+    if (!classes.empty() && classes.front() == u' ') classes.erase(classes.begin());
+    if (!classes.empty() && classes.back() == u' ') classes.pop_back();
+
+    std::vector<std::u16string> result;
+    std::size_t start = 0;
+    for (;;) {
+        const auto end = classes.find(u' ', start);
+        result.emplace_back(classes.substr(start, end == std::u16string::npos
+                                                       ? end : end - start));
+        if (end == std::u16string::npos) break;
+        start = end + 1;
     }
     return result;
 }
-void AbstractDOMAdaptor::setAttributes(DOMNodeRef node,const PropertyList& def){
-    auto style=def.get("style");
-    if(auto styleObject=PropertyList::record(style)) {
-        for(const auto& key:styleObject->keys()){
-            std::u16string name=property_host::text(key),converted;converted.reserve(name.size());
-            for(std::size_t i=0;i<name.size();++i){if(name[i]==u'-'&&i+1<name.size()&&name[i+1]>=u'a'&&name[i+1]<=u'z'){converted.push_back(static_cast<char16_t>(name[i+1]-32));++i;}else converted.push_back(name[i]);}
-            setStyle(node,converted,property_host::string(styleObject->get(key)));
-        }
-    }
-    auto properties=def.get("properties");
-    if(property_host::truthy(properties)) if(auto object=PropertyList::record(properties)) for(const auto& key:object->keys())setProperty(node,key,object->get(key));
-    for(const auto& key:def.keys()){
-        if((key!="style"||std::holds_alternative<std::string>(style.value))&&key!="properties")
-            setAttribute(node,property_host::text(key),def.get(key));
-    }
+
+std::u16string AbstractDOMAdaptor::cssText(DOMNodeRef const& node) const {
+    return kind(node) == u"style" ? textContent(node) : std::u16string{};
 }
-DOMNodeRef AbstractDOMAdaptor::replace(DOMNodeRef node,DOMNodeRef oldNode){insert(node,oldNode);remove(oldNode);return oldNode;}
-DOMNodeValue AbstractDOMAdaptor::childNode(DOMNodeRef node,double index)const{auto nodes=childNodes(node);if(index<0||!std::isfinite(index)||std::floor(index)!=index||index>=nodes.slots.size())return Missing{};return propertyNode(nodes.slots.get(static_cast<std::size_t>(index)));}
-std::vector<std::u16string> AbstractDOMAdaptor::allClasses(DOMNodeRef node)const{
-    auto classes=getAttribute(node,u"class");if(classes.missing()||!property_host::truthy(classes))return{};
-    auto text=property_host::string(classes);std::vector<std::u16string> out;std::size_t start=0;
-    while(start<text.size()){while(start<text.size()&&text[start]==u' ')++start;if(start==text.size())break;auto end=text.find(u' ',start);if(end==std::u16string::npos)end=text.size();out.emplace_back(text.substr(start,end-start));start=end+1;}return out;
+
+void AbstractDOMAdaptor::setAttribute(DOMNodeRef const& node,
+                                      std::u16string_view name,
+                                      double value,
+                                      std::u16string_view ns) {
+    setAttribute(node, name, widenAscii(js_number::toString(value)), ns);
 }
-std::u16string AbstractDOMAdaptor::cssText(DOMNodeRef node)const{return kind(node)==u"style"?textContent(node):std::u16string{};}
 }

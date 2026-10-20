@@ -1,322 +1,884 @@
 module folia.math.adaptors.lite_adaptor;
-import folia.math.util.property_host;
-import folia.math.util.utf16;
-import folia.math.util.styles;
+import :document;
+import :element;
+import :list;
+import :parser;
+import :text;
+import :window;
 import folia.math.util.js_numeric_input;
-import folia.math.util.regexp_host;
+import folia.math.util.styles;
 import std;
 
 namespace folia::math::adaptors::lite {
 namespace {
-std::string keyOf(std::u16string_view text){return property_host::debugText(text);}
-std::u16string textOf(const Property& value){return property_host::string(value);}
-std::u16string trimEcma(std::u16string_view text){std::size_t first=0,last=text.size();while(first<last&&js_input::isWhitespace(text[first]))++first;while(last>first&&js_input::isWhitespace(text[last-1]))--last;return std::u16string(text.substr(first,last-first));}
-std::u16string joinWithSpace(const std::vector<std::u16string>& values){std::u16string result;for(std::size_t i=0;i<values.size();++i){if(i)result.push_back(u' ');result+=values[i];}return result;}
-bool isNode(const LiteNodeValue& value){return std::holds_alternative<LiteNodeRef>(value);}
-LiteNodeRef nodeValue(const LiteNodeValue& value){return std::get<LiteNodeRef>(value);}
-void appendScalar(std::u16string& out,std::uint32_t value){
-    if(value<=0xFFFF){out.push_back(static_cast<char16_t>(value));return;}
-    value-=0x10000;out.push_back(static_cast<char16_t>(0xD800+(value>>10)));out.push_back(static_cast<char16_t>(0xDC00+(value&0x3FF)));
+
+LiteElementRef element(DOMNodeRef const &node) {
+    auto result = std::dynamic_pointer_cast<LiteElement>(node);
+    if (!result)
+        throw std::invalid_argument("LiteAdaptor operation requires an element");
+    return result;
 }
-std::u16string nodeMixinCjkPattern(){
-    std::u16string pattern=u"[";
-    const std::array<std::pair<std::uint32_t,std::uint32_t>,16> ranges{{
-        {0x1100,0x115F},{0x2329,0x232A},{0x2E80,0x303E},{0x3040,0x3247},
-        {0x3250,0x4DBF},{0x4E00,0xA4C6},{0xA960,0xA97C},{0xAC00,0xD7A3},
-        {0xF900,0xFAFF},{0xFE10,0xFE19},{0xFE30,0xFE6B},{0xFF01,0xFF60},
-        {0xFFE0,0xFFE6},{0x1B000,0x1B001},{0x1F200,0x1F251},{0x20000,0x3FFFD}
+
+LiteTextRef textNode(DOMNodeRef const &node) {
+    auto result = std::dynamic_pointer_cast<LiteText>(node);
+    if (!result)
+        throw std::invalid_argument("LiteAdaptor operation requires a text node");
+    return result;
+}
+
+LiteDocumentRef documentNode(DOMDocumentRef const &document) {
+    auto result = std::dynamic_pointer_cast<LiteDocument>(document);
+    if (!result)
+        throw std::invalid_argument("LiteAdaptor operation requires a document");
+    return result;
+}
+
+std::u16string trimEcma(std::u16string_view text) {
+    std::size_t first = 0;
+    std::size_t last = text.size();
+    while (first < last && js_input::isWhitespace(text[first]))
+        ++first;
+    while (last > first && js_input::isWhitespace(text[last - 1]))
+        --last;
+    return std::u16string(text.substr(first, last - first));
+}
+
+std::vector<std::u16string> splitSingleSpaces(std::u16string_view text) {
+    std::vector<std::u16string> result;
+    std::size_t start = 0;
+    for (;;) {
+        const auto end = text.find(u' ', start);
+        if (end == std::u16string_view::npos) {
+            result.emplace_back(text.substr(start));
+            return result;
+        }
+        result.emplace_back(text.substr(start, end - start));
+        start = end + 1;
+    }
+}
+
+std::vector<std::u16string> classSearchWords(std::u16string_view text) {
+    const auto trimmed = trimEcma(text);
+    std::vector<std::u16string> result;
+    std::size_t start = 0;
+    while (start < trimmed.size()) {
+        while (start < trimmed.size() && trimmed[start] == u' ')
+            ++start;
+        if (start == trimmed.size())
+            break;
+        const auto end = trimmed.find(u' ', start);
+        result.emplace_back(trimmed.substr(start, end == std::u16string::npos
+                                                      ? end
+                                                      : end - start));
+        if (end == std::u16string::npos)
+            break;
+        start = end + 1;
+    }
+    if (result.empty())
+        result.emplace_back();
+    return result;
+}
+
+std::u16string joinWithSpace(std::span<std::u16string const> values) {
+    std::u16string result;
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (i)
+            result.push_back(u' ');
+        result += values[i];
+    }
+    return result;
+}
+
+void appendScalar(std::u16string &out, std::uint32_t value) {
+    if (value <= 0xFFFF) {
+        out.push_back(static_cast<char16_t>(value));
+        return;
+    }
+    value -= 0x10000;
+    out.push_back(static_cast<char16_t>(0xD800 + (value >> 10)));
+    out.push_back(static_cast<char16_t>(0xDC00 + (value & 0x3FF)));
+}
+
+std::u16string nodeMixinCjkPattern() {
+    std::u16string pattern = u"[";
+    constexpr std::array<std::pair<std::uint32_t, std::uint32_t>, 16> ranges{{
+        {0x1100, 0x115F}, {0x2329, 0x232A}, {0x2E80, 0x303E}, {0x3040, 0x3247},
+        {0x3250, 0x4DBF}, {0x4E00, 0xA4C6}, {0xA960, 0xA97C}, {0xAC00, 0xD7A3},
+        {0xF900, 0xFAFF}, {0xFE10, 0xFE19}, {0xFE30, 0xFE6B}, {0xFF01, 0xFF60},
+        {0xFFE0, 0xFFE6}, {0x1B000, 0x1B001}, {0x1F200, 0x1F251}, {0x20000, 0x3FFFD},
     }};
-    for(const auto [first,last]:ranges){appendScalar(pattern,first);if(first!=last){pattern.push_back(u'-');appendScalar(pattern,last);}}
-    pattern.push_back(u']');return pattern;
-}
-std::u16string regexpReplaceWithEmpty(regexp_host::RegExp& expression,std::u16string_view input){
-    const std::u16string text(input);const bool global=expression.flags().find(u'g')!=std::u16string::npos;
-    expression.lastIndex=0;std::size_t copied=0;std::u16string output;
-    while(const auto match=expression.exec(text)){
-        const auto whole=match->at(0);if(!whole)break;
-        const auto end=match->index+whole->size();
-        if(match->index>text.size()||end>text.size())property_host::typeError("Invalid RegExp match range");
-        output.append(text,copied,match->index-copied);copied=end;
-        if(!global)break;
-        if(whole->empty()){
-            // String.prototype.replace advances empty global matches using the
-            // regexp's Unicode-aware AdvanceStringIndex operation.
-            auto next=match->index;
-            const bool unicode=expression.flags().find(u'u')!=std::u16string::npos||expression.flags().find(u'v')!=std::u16string::npos;
-            if(next<text.size()){
-                if(unicode&&text[next]>=0xD800&&text[next]<=0xDBFF&&next+1<text.size()&&text[next+1]>=0xDC00&&text[next+1]<=0xDFFF)next+=2;
-                else ++next;
-            }else ++next;
-            expression.lastIndex=static_cast<double>(next);
+    for (const auto &[first, last] : ranges) {
+        appendScalar(pattern, first);
+        if (first != last) {
+            pattern.push_back(u'-');
+            appendScalar(pattern, last);
         }
     }
-    output.append(text,copied,std::u16string::npos);
-    if(global)expression.lastIndex=0;
+    pattern.push_back(u']');
+    return pattern;
+}
+
+std::u16string replaceCjkMatches(regexp_host::RegExp &expression,
+                                 std::u16string_view input) {
+    const std::u16string text(input);
+    const bool global = expression.flags().find(u'g') != std::u16string::npos;
+    expression.last_index = 0;
+    std::size_t copied = 0;
+    std::u16string output;
+    while (const auto match = expression.exec(text)) {
+        const auto whole = match->at(0);
+        if (!whole)
+            break;
+        const auto end = match->index + whole->size();
+        if (match->index > text.size() || end > text.size())
+            throw std::logic_error("CJK regexp returned an invalid match range");
+        output.append(text, copied, match->index - copied);
+        copied = end;
+        if (!global)
+            break;
+        if (whole->empty()) {
+            auto next = match->index;
+            const bool unicode = expression.flags().find(u'u') != std::u16string::npos ||
+                                 expression.flags().find(u'v') != std::u16string::npos;
+            if (next < text.size()) {
+                if (unicode && text[next] >= 0xD800 && text[next] <= 0xDBFF &&
+                    next + 1 < text.size() && text[next + 1] >= 0xDC00 &&
+                    text[next + 1] <= 0xDFFF)
+                    next += 2;
+                else
+                    ++next;
+            } else {
+                ++next;
+            }
+            expression.last_index = next;
+        }
+    }
+    output.append(text, copied, std::u16string::npos);
+    if (global)
+        expression.last_index = 0;
     return output;
 }
-std::size_t codePointLength(std::u16string_view text){
-    std::size_t count=0;
-    for(std::size_t i=0;i<text.size();++i){
-        if(text[i]>=0xD800&&text[i]<=0xDBFF&&i+1<text.size()&&text[i+1]>=0xDC00&&text[i+1]<=0xDFFF)++i;
+
+std::size_t codePointLength(std::u16string_view text) {
+    std::size_t count = 0;
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        if (text[i] >= 0xD800 && text[i] <= 0xDBFF && i + 1 < text.size() &&
+            text[i + 1] >= 0xDC00 && text[i + 1] <= 0xDFFF)
+            ++i;
         ++count;
     }
     return count;
 }
-Property documentArgument(const LiteNodeValue& input, const LiteNodeValue& defaultDocument, std::string_view member) {
-    Property doc;
-    if (std::holds_alternative<Missing>(input)) {
-        if(const auto* node=std::get_if<LiteNodeRef>(&defaultDocument))doc=nodeProperty(*node);
-        else if(std::holds_alternative<PropertyNull>(defaultDocument))doc=Property(PropertyNull{});
-        else if(const auto* raw=std::get_if<Property>(&defaultDocument))doc=*raw;
-        else doc=Property(Missing{});
-    }
-    else if (std::holds_alternative<PropertyNull>(input)) doc = Property(PropertyNull{});
-    else if (const auto* node = std::get_if<LiteNodeRef>(&input)) doc = nodeProperty(*node);
-    else doc = std::get<Property>(input);
-    if (doc.missing() || std::holds_alternative<PropertyNull>(doc.value)) {
-        const auto kind = doc.missing() ? "undefined" : "null";
-        property_host::typeError(std::string("Cannot read properties of ") + kind + " (reading '" + std::string(member) + "')");
-    }
-    return doc;
-}
-Property documentField(const Property& document, std::string_view name) {
-    if (auto object = PropertyList::record(document)) return object->get(name);
-    return Property(Missing{});
-}
-LiteNodeValue domValue(Property value) { return propertyNode(std::move(value)); }
-std::u16string jsSlice(std::u16string_view s,double start,double end){
-    auto integer=[](double n,std::size_t len)->std::int64_t{
-        if(std::isnan(n)||n==0)return 0;
-        if(std::isinf(n))return n<0?-static_cast<std::int64_t>(len):static_cast<std::int64_t>(len);
-        double v=std::trunc(n);if(v< -static_cast<double>(len))return 0;if(v<0)return static_cast<std::int64_t>(len)+static_cast<std::int64_t>(v);if(v>static_cast<double>(len))return static_cast<std::int64_t>(len);return static_cast<std::int64_t>(v);
+
+std::u16string jsSlice(std::u16string_view text, double start, double end) {
+    const auto length = static_cast<std::int64_t>(text.size());
+    const auto relativeIndex = [length](double value) -> std::int64_t {
+        if (std::isnan(value) || value == 0)
+            return 0;
+        if (std::isinf(value))
+            return value < 0 ? -length : length;
+        value = std::trunc(value);
+        if (value <= -static_cast<double>(length))
+            return 0;
+        if (value < 0)
+            return length + static_cast<std::int64_t>(value);
+        if (value >= static_cast<double>(length))
+            return length;
+        return static_cast<std::int64_t>(value);
     };
-    const auto n=static_cast<std::int64_t>(s.size());auto a=integer(start,s.size()),b=integer(end,s.size());a=std::clamp<std::int64_t>(a,0,n);b=std::clamp<std::int64_t>(b,0,n);if(b<a)b=a;return std::u16string(s.substr(static_cast<std::size_t>(a),static_cast<std::size_t>(b-a)));
+    auto first = std::clamp<std::int64_t>(relativeIndex(start), 0, length);
+    auto last = std::clamp<std::int64_t>(relativeIndex(end), 0, length);
+    if (last < first)
+        last = first;
+    return std::u16string(text.substr(static_cast<std::size_t>(first),
+                                      static_cast<std::size_t>(last - first)));
 }
-std::vector<LiteNodeRef> search(LiteNodeRef root,const std::function<bool(LiteNodeRef)>& predicate,std::optional<std::size_t> stop={}){
-    std::vector<LiteNodeRef> result,stack{root};
-    while(!stack.empty()){
-        auto current=stack.front();stack.erase(stack.begin());
-        auto& node=record(current);
-        if(node.nodeKind==NodeKind::Element){
-            if(predicate(current)){result.push_back(current);if(stop&&result.size()==*stop)return result;}
-            auto children=nodeArrayValues(childArray(current));
-            stack.insert(stack.begin(),children.begin(),children.end());
+
+std::optional<std::pair<std::u16string, std::u16string>>
+parseAttributeSelector(std::u16string_view selector) {
+    if (selector.size() < 5 || selector.front() != u'[' || selector.back() != u']')
+        return std::nullopt;
+    const auto equals = selector.find(u"=\"");
+    if (equals == std::u16string_view::npos)
+        return std::nullopt;
+    const auto closing = selector.find(u"\"]", equals + 2);
+    if (closing != selector.size() - 2)
+        return std::nullopt;
+    const auto hasLineTerminator = [](std::u16string_view text) {
+        return std::any_of(text.begin(), text.end(), [](char16_t ch) {
+            return ch == u'\n' || ch == u'\r' || ch == 0x2028 || ch == 0x2029;
+        });
+    };
+    if (hasLineTerminator(selector.substr(1, equals - 1)) ||
+        hasLineTerminator(selector.substr(equals + 2, closing - equals - 2)))
+        return std::nullopt;
+    return std::pair{std::u16string(selector.substr(1, equals - 1)),
+                     std::u16string(selector.substr(equals + 2, closing - equals - 2))};
+}
+
+bool tagName(std::u16string_view name) {
+    const auto alpha = [](char16_t ch) {
+        return (ch >= u'a' && ch <= u'z') || (ch >= u'A' && ch <= u'Z');
+    };
+    if (name.empty() || (!alpha(name.front()) && name.front() != u'-'))
+        return false;
+    for (const auto ch : name)
+        if (!alpha(ch) && !(ch >= u'0' && ch <= u'9') && ch != u'-')
+            return false;
+    return true;
+}
+
+const std::u16string *attribute(DOMAttributes const &attributes, std::u16string_view name) {
+    const auto it = std::find_if(attributes.begin(), attributes.end(), [&](auto const &entry) {
+        return entry.name == name;
+    });
+    return it == attributes.end() ? nullptr : &it->value;
+}
+
+std::optional<std::uint32_t> arrayIndex(std::u16string_view name) {
+    if (name.empty() || (name.size() > 1 && name.front() == u'0'))
+        return std::nullopt;
+    std::uint64_t value = 0;
+    for (const auto ch : name) {
+        if (ch < u'0' || ch > u'9')
+            return std::nullopt;
+        value = value * 10 + static_cast<unsigned>(ch - u'0');
+        if (value > 0xFFFFFFFEu)
+            return std::nullopt;
+    }
+    return static_cast<std::uint32_t>(value);
+}
+
+bool containsNode(DOMNodeRef const &root, DOMNodeRef const &target) {
+    if (!root || !target)
+        return false;
+    std::vector<DOMNodeRef> pending{root};
+    std::unordered_set<DOMNode const *> visited;
+    while (!pending.empty()) {
+        auto current = std::move(pending.back());
+        pending.pop_back();
+        if (current == target)
+            return true;
+        if (!visited.insert(current.get()).second)
+            continue;
+        if (auto currentElement = std::dynamic_pointer_cast<LiteElement>(current))
+            for (const auto &child : currentElement->children())
+                pending.push_back(child);
+    }
+    return false;
+}
+
+std::vector<LiteElementRef> search(
+    DOMNodeRef const &root, std::function<bool(LiteElementRef const &)> const &predicate,
+    std::optional<std::size_t> stop = {}) {
+    std::vector<LiteElementRef> result;
+    std::vector<DOMNodeRef> stack{root};
+    while (!stack.empty()) {
+        auto current = std::move(stack.front());
+        stack.erase(stack.begin());
+        auto currentElement = std::dynamic_pointer_cast<LiteElement>(current);
+        if (!currentElement)
+            continue;
+        if (predicate(currentElement)) {
+            result.push_back(currentElement);
+            if (stop && result.size() == *stop)
+                return result;
+        }
+        const auto &children = currentElement->children();
+        stack.insert(stack.begin(), children.begin(), children.end());
+    }
+    return result;
+}
+
+std::size_t insertionIndex(std::ptrdiff_t index, std::size_t length) {
+    auto start = index;
+    if (start < 0)
+        start = std::max<std::ptrdiff_t>(0, static_cast<std::ptrdiff_t>(length) + start);
+    return std::min(static_cast<std::size_t>(start), length);
+}
+
+void validateAcyclicReparent(DOMNodeRef const &child, DOMNodeRef const &parent) {
+    if (!child || !parent)
+        throw std::invalid_argument("LiteAdaptor reparent requires non-null nodes");
+    if (containsNode(child, parent))
+        throw std::invalid_argument("LiteAdaptor reparent would create a child cycle");
+}
+
+} // namespace
+
+LiteBase::LiteBase(LiteWindowRef window, std::shared_ptr<entities::EntityModule> entities)
+    : window_(window ? std::move(window) : LiteWindow::create()),
+      parser_(std::make_shared<LiteParser>(std::move(entities))) {
+    canMeasureNodes = false;
+}
+
+void LiteBase::window(LiteWindowRef value) { window_ = std::move(value); }
+
+DOMNodeRef LiteBase::create(std::u16string_view kind, std::u16string_view) {
+    return LiteElement::create(std::u16string(kind));
+}
+
+DOMDocumentRef LiteBase::parse(std::u16string_view text, std::u16string_view format) {
+    return parser_->parseFromString(text, format, *this);
+}
+
+DOMNodeRef LiteBase::text(std::u16string_view text) {
+    return LiteText::create(std::u16string(text));
+}
+
+DOMNodeRef LiteBase::comment(std::u16string_view text) {
+    return LiteComment::create(std::u16string(text));
+}
+
+LiteDocumentRef LiteBase::createDocument() { return LiteDocument::create(); }
+
+DOMNodeRef LiteBase::head(DOMDocumentRef doc) const {
+    if (!doc)
+        doc = document;
+    return documentNode(doc)->head();
+}
+
+DOMNodeRef LiteBase::body(DOMDocumentRef doc) const {
+    if (!doc)
+        doc = document;
+    return documentNode(doc)->body();
+}
+
+DOMNodeRef LiteBase::root(DOMDocumentRef doc) const {
+    if (!doc)
+        doc = document;
+    return documentNode(doc)->root();
+}
+
+std::u16string LiteBase::doctype(DOMDocumentRef doc) const {
+    if (!doc)
+        doc = document;
+    return documentNode(doc)->type();
+}
+
+std::vector<DOMNodeRef> LiteBase::tags(DOMNodeRef const &node, std::u16string_view name,
+                                      std::u16string_view ns) const {
+    return tags(node, name, ns, {});
+}
+
+std::vector<DOMNodeRef> LiteBase::tags(DOMNodeRef const &node, std::u16string_view name,
+                                      std::u16string_view ns,
+                                      std::optional<std::size_t> stop) const {
+    if (!ns.empty())
+        return {};
+    auto found = search(node, [&](LiteElementRef const &candidate) {
+        return candidate->kind() == name;
+    }, stop);
+    return std::vector<DOMNodeRef>(found.begin(), found.end());
+}
+
+LiteElementRef LiteBase::elementById(DOMNodeRef const &node, std::u16string_view id) const {
+    auto found = search(node, [&](LiteElementRef const &candidate) {
+        const auto *value = attribute(candidate->attributes(), u"id");
+        return value && *value == id;
+    }, 1);
+    return found.empty() ? LiteElementRef{} : found.front();
+}
+
+std::vector<LiteElementRef>
+LiteBase::elementsByClass(DOMNodeRef const &node, std::u16string_view name,
+                          std::optional<std::size_t> stop) const {
+    return search(node, [&](LiteElementRef const &candidate) {
+        const auto *value = attribute(candidate->attributes(), u"class");
+        const auto words = classSearchWords(value ? std::u16string_view(*value)
+                                                  : std::u16string_view{});
+        return std::find(words.begin(), words.end(), name) != words.end();
+    }, stop);
+}
+
+std::vector<LiteElementRef>
+LiteBase::elementsByAttribute(DOMNodeRef const &node, std::u16string_view name,
+                              std::u16string_view value,
+                              std::optional<std::size_t> stop) const {
+    return search(node, [&](LiteElementRef const &candidate) {
+        const auto *found = attribute(candidate->attributes(), name);
+        return found && *found == value;
+    }, stop);
+}
+
+std::vector<DOMNodeRef> LiteBase::getElements(std::span<LiteSearchInput const> selectors,
+                                              DOMDocumentRef const &doc) const {
+    const auto searchRoot = body(doc);
+    std::vector<DOMNodeRef> result;
+    for (const auto &selector : selectors) {
+        if (const auto *textSelector = std::get_if<std::u16string>(&selector)) {
+            const auto &value = *textSelector;
+            if (value.empty())
+                continue;
+            if (value.front() == u'#') {
+                auto node = elementById(searchRoot, std::u16string_view(value).substr(1));
+                if (node)
+                    result.push_back(std::move(node));
+            } else if (value.front() == u'.') {
+                auto nodes = elementsByClass(searchRoot, std::u16string_view(value).substr(1));
+                result.insert(result.end(), nodes.begin(), nodes.end());
+            } else if (tagName(value)) {
+                auto nodes = tags(searchRoot, value);
+                result.insert(result.end(), nodes.begin(), nodes.end());
+            } else if (auto parsed = parseAttributeSelector(value)) {
+                auto nodes = elementsByAttribute(searchRoot, parsed->first, parsed->second);
+                result.insert(result.end(), nodes.begin(), nodes.end());
+            }
+        } else if (const auto *nodes = std::get_if<std::vector<DOMNodeRef>>(&selector)) {
+            result.insert(result.end(), nodes->begin(), nodes->end());
+        } else if (const auto *node = std::get_if<DOMNodeRef>(&selector)) {
+            result.push_back(*node);
         }
     }
     return result;
 }
-std::optional<std::pair<std::u16string,std::u16string>> parseAttributeSelector(std::u16string_view s){
-    if(s.size()<5||s.front()!=u'['||s.back()!=u']')return{};auto eq=s.find(u"=\"");if(eq==std::u16string_view::npos||s.size()<eq+4||s[s.size()-2]!=u'"')return{};
-    return std::pair{std::u16string(s.substr(1,eq-1)),std::u16string(s.substr(eq+2,s.size()-eq-4))};
-}
-bool tagName(std::u16string_view s){if(s.empty())return false;auto alpha=[](char16_t c){return(c>=u'a'&&c<=u'z')||(c>=u'A'&&c<=u'Z');};auto extra=[&](char16_t c){return alpha(c)||(c>=u'0'&&c<=u'9')||c==u'-';};if(!alpha(s.front())&&s.front()!=u'-')return false;for(auto c:s)if(!extra(c))return false;return true;}
-void splice(PropertyArray& array,std::size_t start,std::size_t removeCount,std::span<const Property> insertions={}){
-    const auto old=array.size();start=std::min(start,old);removeCount=std::min(removeCount,old-start);
-    const auto tailStart=start+removeCount;const auto tailCount=old-tailStart;
-    if(insertions.size()<removeCount){
-        for(std::size_t i=0;i<tailCount;++i){const auto src=tailStart+i,dst=start+insertions.size()+i;if(array.has(src))array.set(dst,array.get(src));else array.erase(dst);}
-        array.resize(old-removeCount+insertions.size());
-    }else if(insertions.size()>removeCount){
-        const auto grow=insertions.size()-removeCount;array.resize(old+grow);
-        for(std::size_t i=tailCount;i>0;--i){const auto src=tailStart+i-1,dst=src+grow;if(array.has(src))array.set(dst,array.get(src));else array.erase(dst);}
+
+DOMNodeRef LiteBase::getElement(std::u16string_view selector, DOMDocumentRef doc) const {
+    if (!doc)
+        doc = document;
+    const auto searchRoot = body(doc);
+    if (selector.starts_with(u"#"))
+        return elementById(searchRoot, selector.substr(1));
+    if (selector.starts_with(u".")) {
+        auto found = elementsByClass(searchRoot, selector.substr(1), 1);
+        return found.empty() ? DOMNodeRef{} : found.front();
     }
-    for(std::size_t i=0;i<insertions.size();++i)array.set(start+i,insertions[i]);
-}
-void removeChildAt(LiteNodeRef parent,std::ptrdiff_t index){auto ids=childArray(parent);if(index<0)index+=static_cast<std::ptrdiff_t>(ids.size());if(index>=0&&static_cast<std::size_t>(index)<ids.size())splice(ids,static_cast<std::size_t>(index),1);}
+    if (tagName(selector)) {
+        auto found = tags(searchRoot, selector, {}, 1);
+        return found.empty() ? DOMNodeRef{} : found.front();
+    }
+    if (auto parsed = parseAttributeSelector(selector)) {
+        auto found = elementsByAttribute(searchRoot, parsed->first, parsed->second, 1);
+        return found.empty() ? DOMNodeRef{} : found.front();
+    }
+    return {};
 }
 
-LiteBase::LiteBase(std::shared_ptr<LiteNodeStore> store,std::shared_ptr<entities::EntityModule> entities):store_(store?std::move(store):LiteNodeStore::create()) {
-    window_=LiteWindow(store_).ref();
-    parser_=std::make_shared<LiteParser>(std::move(entities));
-}
-LiteNodeRef LiteBase::create(std::u16string_view kind,std::u16string_view){return LiteElement(std::u16string(kind),{}, {},store_).ref();}
-LiteNodeRef LiteBase::parse(std::u16string_view text,std::u16string_view format){return parser_->parseFromString(text,format,*this);}
-LiteNodeRef LiteBase::text(std::u16string_view text){return LiteText(std::u16string(text),false,store_).ref();}
-void LiteBase::setProperty(LiteNodeRef node,std::string_view name,Property value){liteStore(node)->object(node).set(name,std::move(value));}
-Property LiteBase::getProperty(LiteNodeRef node,std::string_view name)const{return liteStore(node)->object(node).get(name);}
-LiteNodeRef LiteBase::comment(std::u16string_view text){return LiteText(std::u16string(text),true,store_).ref();}
-LiteNodeRef LiteBase::createDocument(){return LiteDocument(LiteNodeValue(PropertyNull{}),store_).ref();}
-LiteNodeValue LiteBase::head(LiteNodeValue doc)const{return domValue(documentField(documentArgument(doc,document,"head"),"head"));}
-LiteNodeValue LiteBase::body(LiteNodeValue doc)const{return domValue(documentField(documentArgument(doc,document,"body"),"body"));}
-LiteNodeValue LiteBase::root(LiteNodeValue doc)const{return domValue(documentField(documentArgument(doc,document,"root"),"root"));}
-std::u16string LiteBase::doctype(LiteNodeValue doc)const{return property_host::string(documentField(documentArgument(doc,document,"type"),"type"));}
-std::vector<LiteNodeRef> LiteBase::tags(LiteNodeRef node,std::u16string_view name,std::u16string_view ns)const{return tags(node,name,ns,{});}
-std::vector<LiteNodeRef> LiteBase::tags(LiteNodeRef node,std::u16string_view name,std::u16string_view ns,std::optional<std::size_t> stop)const{if(!ns.empty())return{};const Property wanted(property_host::debugText(name));return search(node,[&](LiteNodeRef n){return recordConst(n).nodeKind==NodeKind::Element&&nodeField(n,"kind")==wanted;},stop);}
-LiteNodeRef LiteBase::elementById(LiteNodeRef node,std::u16string_view id)const{auto found=search(node,[&](LiteNodeRef n){auto a=attributeList(n).get("id");const auto* text=std::get_if<std::string>(&a.value);return text&&property_host::text(*text)==id;},1);return found.empty()?LiteNodeRef{}:found.front();}
-std::vector<LiteNodeRef> LiteBase::elementsByClass(LiteNodeRef node,std::u16string_view name,std::optional<std::size_t> stop)const{
-    return search(node,[&](LiteNodeRef n){auto value=attributeList(n).get("class");std::u16string s;if(property_host::truthy(value)){const auto* raw=std::get_if<std::string>(&value.value);if(!raw)property_host::typeError("class.trim is not a function");s=trimEcma(property_host::text(*raw));}std::vector<std::u16string> words;if(s.empty())words.emplace_back();else{std::size_t i=0;while(i<s.size()){auto e=s.find(u' ',i);if(e==std::u16string::npos)e=s.size();words.emplace_back(s.substr(i,e-i));i=e;while(i<s.size()&&s[i]==u' ')++i;}}return std::find(words.begin(),words.end(),name)!=words.end();},stop);
-}
-std::vector<LiteNodeRef> LiteBase::elementsByAttribute(LiteNodeRef node,std::u16string_view name,std::u16string_view value,std::optional<std::size_t> stop)const{
-    return search(node,[&](LiteNodeRef n){auto a=attributeList(n).get(keyOf(name));return std::holds_alternative<std::string>(a.value)&&textOf(a)==value;},stop);
-}
-std::vector<LiteNodeRef> LiteBase::getElements(const std::vector<LiteSearchInput>& selectors,LiteNodeRef doc)const{
-    auto bodyValue=body(LiteNodeValue(doc));
-    if(!std::holds_alternative<LiteNodeRef>(bodyValue))property_host::typeError("document.body is not a node");
-    auto container=std::get<LiteNodeRef>(std::move(bodyValue));std::vector<LiteNodeRef> out;
-    for(const auto& selector:selectors){
-        if(auto s=std::get_if<std::u16string>(&selector)){
-            auto& t=*s;if(t.empty())continue;
-            if(t.front()==u'#'){auto n=elementById(container,std::u16string_view(t).substr(1));if(n)out.push_back(n);}
-            else if(t.front()==u'.'){auto found=elementsByClass(container,std::u16string_view(t).substr(1));out.insert(out.end(),found.begin(),found.end());}
-            else if(tagName(t)){auto found=tags(container,t);out.insert(out.end(),found.begin(),found.end());}
-            else if(auto attr=parseAttributeSelector(t)){auto found=elementsByAttribute(container,attr->first,attr->second);out.insert(out.end(),found.begin(),found.end());}
-        } else if(auto array=std::get_if<std::vector<LiteNodeRef>>(&selector))out.insert(out.end(),array->begin(),array->end());
-        else if(auto node=std::get_if<LiteNodeRef>(&selector)){
-            const auto& r=recordConst(*node);
-            if(r.nodeKind==NodeKind::List){auto nodes=nodeArrayValues(r.listNodes);out.insert(out.end(),nodes.begin(),nodes.end());}
-            else out.push_back(*node);
-        }
+DOMNodeRef LiteBase::getElement(std::u16string_view selector,
+                                DOMNodeRef const &node) const {
+    if (!node)
+        throw std::invalid_argument("LiteAdaptor getElement requires a node");
+    const auto rootElement = element(node);
+    if (selector.starts_with(u"#"))
+        return elementById(rootElement, selector.substr(1));
+    if (selector.starts_with(u".")) {
+        auto found = elementsByClass(rootElement, selector.substr(1), 1);
+        return found.empty() ? DOMNodeRef{} : found.front();
     }
-    return out;
-}
-LiteNodeValue LiteBase::getElement(std::u16string_view selector,LiteNodeValue input)const{
-    if(std::holds_alternative<Missing>(input))input=document;
-    LiteNodeRef node;
-    if(const auto* ref=std::get_if<LiteNodeRef>(&input))node=*ref;
-    else if(const auto* property=std::get_if<Property>(&input)){auto ref=LiteNodeStore::fromProperty(*property);if(ref)node=*ref;}
-    if(!node)property_host::typeError("Cannot read properties of undefined (reading 'attributes')");
-    if(recordConst(node).nodeKind==NodeKind::Document){auto bodyValue=body(LiteNodeValue(node));if(!std::holds_alternative<LiteNodeRef>(bodyValue))property_host::typeError("document.body is not a node");node=std::get<LiteNodeRef>(std::move(bodyValue));}
-    if(!selector.empty()&&selector.front()==u'#'){auto found=elementById(node,selector.substr(1));return found?LiteNodeValue(found):LiteNodeValue(PropertyNull{});}
-    if(!selector.empty()&&selector.front()==u'.'){auto found=elementsByClass(node,selector.substr(1),1);return found.empty()?LiteNodeValue(Missing{}):LiteNodeValue(found.front());}
-    if(tagName(selector)){auto found=tags(node,selector,{},1);return found.empty()?LiteNodeValue(Missing{}):LiteNodeValue(found.front());}
-    if(auto attr=parseAttributeSelector(selector)){auto found=elementsByAttribute(node,attr->first,attr->second,1);return found.empty()?LiteNodeValue(Missing{}):LiteNodeValue(found.front());}
-    return PropertyNull{};
-}
-bool LiteBase::contains(LiteNodeRef container,LiteNodeRef node)const{while(node&&node!=container){auto p=parentValue(node);if(!std::holds_alternative<LiteNodeRef>(p))return false;node=std::get<LiteNodeRef>(p);}return node==container;}
-LiteNodeValue LiteBase::parent(LiteNodeRef node)const{return parentValue(node);}
-std::ptrdiff_t LiteBase::childIndex(LiteNodeRef node)const{auto p=parentValue(node);if(!std::holds_alternative<LiteNodeRef>(p))return -1;auto parentNode=std::get<LiteNodeRef>(p);const auto ids=childArray(parentNode);for(std::size_t i=0;i<ids.size();++i)if(ids.has(i)&&nodeFromProperty(ids.get(i))==node)return static_cast<std::ptrdiff_t>(i);return -1;}
-LiteNodeRef LiteBase::append(LiteNodeRef node,LiteNodeRef child){if(!node||!child)property_host::typeError("Cannot read properties of null (reading 'parent')");auto p=parentValue(child);if(std::holds_alternative<LiteNodeRef>(p))remove(child);auto children=childArray(node);appendNode(children,child);setNodeField(child,"parent",nodeProperty(node));return child;}
-void LiteBase::insert(LiteNodeRef child,LiteNodeRef sibling){if(!child)property_host::typeError("Cannot read properties of null (reading 'parent')");auto p=parentValue(child);if(std::holds_alternative<LiteNodeRef>(p))remove(child);if(sibling){auto sp=parentValue(sibling);if(std::holds_alternative<LiteNodeRef>(sp)){auto parentNode=std::get<LiteNodeRef>(sp);auto index=childIndex(sibling);std::array<Property,1> inserted{nodeProperty(child)};auto children=childArray(parentNode);const auto length=static_cast<std::ptrdiff_t>(children.size());const auto normalized=index<0?std::max<std::ptrdiff_t>(0,length+index):std::min(index,length);splice(children,static_cast<std::size_t>(normalized),0,inserted);setNodeField(child,"parent",nodeProperty(parentNode));}}}
-LiteNodeRef LiteBase::remove(LiteNodeRef child){auto i=childIndex(child);auto p=parentValue(child);if(i>=0&&std::holds_alternative<LiteNodeRef>(p))removeChildAt(std::get<LiteNodeRef>(p),i);setNodeField(child,"parent",Property(PropertyNull{}));return child;}
-LiteNodeRef LiteBase::replace(LiteNodeRef node,LiteNodeRef oldNode){auto i=childIndex(oldNode);if(i>=0){auto p=std::get<LiteNodeRef>(parentValue(oldNode));auto children=childArray(p);children.set(static_cast<std::size_t>(i),nodeProperty(node));setNodeField(node,"parent",nodeProperty(p));setNodeField(oldNode,"parent",Property(PropertyNull{}));}return oldNode;}
-LiteNodeRef LiteBase::clone(LiteNodeRef node,bool deep)const{
-    if(recordConst(node).nodeKind!=NodeKind::Element)property_host::typeError("LiteAdaptor clone expects an element");
-    auto store=liteStore(node);auto source=recordConst(node);auto sourceAttributes=attributeList(node);auto sourceChildren=childArray(node);auto copy=LiteElement(nodeField(node,"kind"),{}, {},store).ref();record(copy).attributes=PropertyList{};for(const auto& key:sourceAttributes.keys())record(copy).attributes.set(key,sourceAttributes.get(key));
-    if(deep){
-        const auto length=sourceChildren.size();
-        PropertyArray clonedChildren;clonedChildren.resize(length);
-        // Array.map captures length, checks HasProperty per index, then Gets
-        // live. Holes stay holes; an own undefined still reaches `n.kind` and
-        // throws as the Source callback does.
-        for(std::size_t i=0;i<length;++i){
-            if(!sourceChildren.has(i))continue;
-            const auto rawChild=sourceChildren.get(i);
-            const auto childValue=propertyNode(rawChild);
-            if(!std::holds_alternative<LiteNodeRef>(childValue)){
-                if(std::holds_alternative<PropertyNull>(rawChild.value))
-                    property_host::typeError("Cannot read properties of null (reading 'kind')");
-                property_host::typeError("Cannot read properties of undefined (reading 'kind')");
-            }
-            const auto child=std::get<LiteNodeRef>(childValue);
-            const auto& childRecord=recordConst(child);
-            LiteNodeRef cloned;
-            if(childRecord.nodeKind==NodeKind::Text)
-                cloned=LiteText(childRecord.value,false,store).ref();
-            else if(childRecord.nodeKind==NodeKind::Comment)
-                cloned=LiteText(childRecord.value,true,store).ref();
-            else{
-                cloned=clone(child,true);
-                setNodeField(cloned,"parent",nodeProperty(copy));
-            }
-            clonedChildren.set(i,nodeProperty(cloned));
-        }
-        record(copy).children=std::move(clonedChildren);
+    if (tagName(selector)) {
+        auto found = tags(rootElement, selector, {}, 1);
+        return found.empty() ? DOMNodeRef{} : found.front();
     }
-    return copy;
-}
-LiteNodeRef LiteBase::split(LiteNodeRef textNode,double index){auto& node=record(textNode);if(node.nodeKind!=NodeKind::Text&&node.nodeKind!=NodeKind::Comment)property_host::typeError("Cannot read properties of undefined (reading 'children')");auto store=liteStore(textNode);const auto* raw=std::get_if<std::string>(&node.value.value);if(!raw)property_host::typeError("node.value.slice is not a function");auto old=property_host::text(*raw);auto newText=LiteText(Property(property_host::debugText(jsSlice(old,index,static_cast<double>(old.size())))),false,store).ref();node.value=Property(property_host::debugText(jsSlice(old,0,index)));auto parent=propertyNode(nodeField(textNode,"parent"));if(!std::holds_alternative<LiteNodeRef>(parent))property_host::typeError("Cannot read properties of null (reading 'children')");auto parentNode=std::get<LiteNodeRef>(parent);auto at=childIndex(textNode)+1;std::array<Property,1> inserted{nodeProperty(newText)};auto children=childArray(parentNode);splice(children,static_cast<std::size_t>(std::max<std::ptrdiff_t>(0,at)),0,inserted);setNodeField(newText,"parent",nodeProperty(parentNode));return newText;}
-LiteNodeValue LiteBase::next(LiteNodeRef node)const{auto p=parentValue(node);if(!std::holds_alternative<LiteNodeRef>(p))return PropertyNull{};auto parentNode=std::get<LiteNodeRef>(p);auto i=childIndex(node)+1;const auto ids=childArray(parentNode);if(i<0||static_cast<std::size_t>(i)>=ids.size())return PropertyNull{};return ids.has(static_cast<std::size_t>(i))?LiteNodeValue(nodeFromProperty(ids.get(static_cast<std::size_t>(i)))):LiteNodeValue(Missing{});}
-LiteNodeValue LiteBase::previous(LiteNodeRef node)const{auto p=parentValue(node);if(!std::holds_alternative<LiteNodeRef>(p))return PropertyNull{};auto parentNode=std::get<LiteNodeRef>(p);auto i=childIndex(node)-1;const auto ids=childArray(parentNode);if(i<0)return PropertyNull{};return static_cast<std::size_t>(i)<ids.size()&&ids.has(static_cast<std::size_t>(i))?LiteNodeValue(nodeFromProperty(ids.get(static_cast<std::size_t>(i)))):LiteNodeValue(Missing{});}
-LiteNodeValue LiteBase::firstChild(LiteNodeRef node)const{const auto ids=childArray(node);return ids.size()&&!ids.has(0)?LiteNodeValue(Missing{}):ids.size()?LiteNodeValue(nodeFromProperty(ids.get(0))):LiteNodeValue(Missing{});}
-LiteNodeValue LiteBase::lastChild(LiteNodeRef node)const{const auto ids=childArray(node);return ids.size()&&ids.has(ids.size()-1)?LiteNodeValue(nodeFromProperty(ids.get(ids.size()-1))):LiteNodeValue(Missing{});}
-DOMNodeArray LiteBase::childNodes(LiteNodeRef node)const{
-    const auto source=childNodesArray(node);
-    PropertyArray result;
-    for(std::size_t i=0;i<source.size();++i) result.push(source.get(i));
-    return {std::move(result),liteStore(node)};
-}
-std::u16string LiteBase::kind(LiteNodeRef node)const{const auto& r=recordConst(node);if(r.nodeKind==NodeKind::Text)return u"#text";if(r.nodeKind==NodeKind::Comment)return u"#comment";if(r.nodeKind==NodeKind::Document)return u"#document";return property_host::string(nodeField(node,"kind"));}
-std::u16string LiteBase::value(LiteNodeRef node)const{const auto& r=recordConst(node);if(r.nodeKind==NodeKind::Text)return property_host::string(nodeField(node,"value"));if(r.nodeKind==NodeKind::Comment){auto text=property_host::string(nodeField(node,"value"));static regexp_host::RegExp comment(u"^<!(--)?((?:.|\\n)*)\\1>$");auto match=comment.exec(text);if(match){if(auto capture=match->at(2))return *capture;}return text;}return{};}
-std::u16string LiteBase::textContent(LiteNodeRef node)const{
-    const auto& receiver=recordConst(node);
-    // Source reads `node.children` and immediately calls `.reduce`. Only
-    // LiteElement owns that field; Text, Comment, and Document receivers fail
-    // at the same missing-property operation.
-    if(receiver.nodeKind!=NodeKind::Element)
-        property_host::typeError("Cannot read properties of undefined (reading 'reduce')");
-    std::u16string out;
-    const auto children=childArray(node);
-    for(std::size_t i=0;i<children.size();++i){
-        if(!children.has(i))continue;
-        const auto childValue=propertyNode(children.get(i));
-        const auto* child=std::get_if<LiteNodeRef>(&childValue);
-        if(!child){
-            if(std::holds_alternative<Missing>(childValue))
-                property_host::typeError("Cannot read properties of undefined (reading 'kind')");
-            if(std::holds_alternative<PropertyNull>(childValue))
-                property_host::typeError("Cannot read properties of null (reading 'kind')");
-            property_host::typeError("Cannot read properties of undefined (reading 'kind')");
-        }
-        const auto kindValue=recordConst(*child).nodeKind;
-        if(kindValue==NodeKind::Text)out+=property_host::string(recordConst(*child).value);
-        else if(kindValue!=NodeKind::Comment)out+=textContent(*child);
+    if (auto parsed = parseAttributeSelector(selector)) {
+        auto found = elementsByAttribute(rootElement, parsed->first, parsed->second, 1);
+        return found.empty() ? DOMNodeRef{} : found.front();
     }
-    return out;
+    return {};
 }
-std::u16string LiteBase::innerHTML(LiteNodeRef node)const{return parser_->serializeInner(*const_cast<LiteBase*>(this),node);}
-std::u16string LiteBase::outerHTML(LiteNodeRef node)const{return parser_->serialize(*const_cast<LiteBase*>(this),node);}
-std::u16string LiteBase::serializeXML(LiteNodeRef node)const{
-    if(serializeXmlObserver_)serializeXmlObserver_();
-    return parser_->serialize(*const_cast<LiteBase*>(this),node,true);
-}
-void LiteBase::setAttribute(LiteNodeRef node,std::u16string_view name,Property value,std::u16string_view ns){auto key=std::u16string(name);if(!ns.empty()){auto slash=ns.find_last_of(u'/');auto prefix=ns.substr(slash==std::u16string_view::npos?0:slash+1);auto colon=key.find_last_of(u':');key=std::u16string(prefix)+u":"+key.substr(colon==std::u16string::npos?0:colon+1);}attributeList(node).set(keyOf(key),Property(property_host::debugText(textOf(value))));if(key==u"style")liteStore(node)->setNodeStyles(node,{});}
-Property LiteBase::getAttribute(LiteNodeRef node,std::u16string_view name)const{return attributeList(node).get(keyOf(name));}
-void LiteBase::removeAttribute(LiteNodeRef node,std::u16string_view name){attributeList(node).erase(keyOf(name));}
-bool LiteBase::hasAttribute(LiteNodeRef node,std::u16string_view name)const{return attributeList(node).hasOwn(keyOf(name));}
-std::vector<AttributeData> LiteBase::allAttributes(LiteNodeRef node)const{std::vector<AttributeData> out;auto attrs=attributeList(node);for(const auto& name:attrs.keys())out.push_back({property_host::text(name),attrs.get(name)});return out;}
-void LiteBase::addClass(LiteNodeRef node,std::u16string_view name){auto raw=getAttribute(node,u"class");if(raw.missing()||std::holds_alternative<PropertyNull>(raw.value)){setAttribute(node,u"class",Property(property_host::debugText(name)));return;}if(!std::holds_alternative<std::string>(raw.value))property_host::typeError("class.split is not a function");auto classes=textOf(raw);std::vector<std::u16string> split;std::size_t pos=0;for(;;){auto end=classes.find(u' ',pos);if(end==std::u16string::npos){split.push_back(classes.substr(pos));break;}split.push_back(classes.substr(pos,end-pos));pos=end+1;}if(std::find(split.begin(),split.end(),name)==split.end()){split.emplace_back(name);setAttribute(node,u"class",Property(property_host::debugText(joinWithSpace(split))));}}
-void LiteBase::removeClass(LiteNodeRef node,std::u16string_view name){auto raw=getAttribute(node,u"class");if(raw.missing()||std::holds_alternative<PropertyNull>(raw.value))return;if(!std::holds_alternative<std::string>(raw.value))property_host::typeError("class.split is not a function");auto classes=textOf(raw);std::vector<std::u16string> split;std::size_t pos=0;for(;;){auto end=classes.find(u' ',pos);if(end==std::u16string::npos){split.push_back(classes.substr(pos));break;}split.push_back(classes.substr(pos,end-pos));pos=end+1;}auto it=std::find(split.begin(),split.end(),name);if(it!=split.end()){split.erase(it);setAttribute(node,u"class",Property(property_host::debugText(joinWithSpace(split))));}}
-bool LiteBase::hasClass(LiteNodeRef node,std::u16string_view name)const{auto raw=getAttribute(node,u"class");if(!property_host::truthy(raw))raw=Property(std::string{});if(!std::holds_alternative<std::string>(raw.value))property_host::typeError("class.split is not a function");auto classes=textOf(raw);std::vector<std::u16string> split;std::size_t pos=0;for(;;){auto end=classes.find(u' ',pos);if(end==std::u16string::npos){split.push_back(classes.substr(pos));break;}split.push_back(classes.substr(pos,end-pos));pos=end+1;}return std::find(split.begin(),split.end(),name)!=split.end();}
-void LiteBase::setStyle(LiteNodeRef node,std::u16string_view name,std::u16string_view value){auto store=liteStore(node);auto style=store->nodeStyles(node);auto attrs=attributeList(node);if(!style){style=std::make_shared<styles::Styles>(textOf(attrs.get("style")));store->setNodeStyles(node,style);}style->set(name,styles::StyleValue(std::u16string(value)));attrs.set("style",Property(property_host::debugText(style->cssText())));}
-std::u16string LiteBase::getStyle(LiteNodeRef node,std::u16string_view name){auto store=liteStore(node);auto style=store->nodeStyles(node);if(!style){auto raw=attributeList(node).get("style");if(!property_host::truthy(raw))return{};style=std::make_shared<styles::Styles>(textOf(raw));store->setNodeStyles(node,style);}return style->get(name);}
-Property LiteBase::allStyles(LiteNodeRef node)const{return attributeList(node).get("style");}
-void LiteBase::insertRules(LiteNodeRef node,const std::vector<std::u16string>& rules){auto content=textContent(node)+u"\n\n";for(std::size_t i=0;i<rules.size();++i){if(i)content+=u"\n\n";content+=rules[i];}auto textNode=LiteText(std::move(content),false,liteStore(node)).ref();setNodeField(node,"children",Property(PropertyArray{}));auto children=childArray(node);appendNode(children,textNode);setNodeField(textNode,"parent",nodeProperty(node));}
-double LiteBase::fontSize(LiteNodeRef)const{return 0;}
-std::u16string LiteBase::fontFamily(LiteNodeRef)const{return{};}
-std::pair<double,double> LiteBase::nodeSize(LiteNodeRef,double,std::optional<bool>)const{return{0,0};}
-PageBBox LiteBase::nodeBBox(LiteNodeRef)const{return{};}
 
-PropertyList LiteAdaptor::classOptions(){static PropertyList options=[](){PropertyList o;o.set("fontSize",16.0);o.set("fontFamily","Times");o.set("cjkCharWidth",1.0);o.set("unknownCharWidth",.6);o.set("unknownCharHeight",.8);return o;}();return options;}
-PropertyList LiteAdaptor::mixinOptions(){static PropertyList options=[](){PropertyList o;o.set("badCSS",true);o.set("badSizes",true);return o;}();return options;}
-LiteAdaptor::LiteAdaptor(LiteNodeRef window,PropertyList options,std::shared_ptr<LiteNodeStore> store,std::shared_ptr<entities::EntityModule> entities):LiteBase(store?std::move(store):(window?liteStore(window):LiteNodeStore::create()),std::move(entities)){(void)window;canMeasureNodes=false;auto cls=classOptions();for(auto& key:cls.keys())options_.set(key,cls.get(key));for(auto& key:options.keys())options_.set(key,options.get(key));auto b=mixinOptions();auto bc=b.get("badCSS"),bs=b.get("badSizes");badCSS_=property_host::truthy(bc);badSizes_=property_host::truthy(bs);}
-std::u16string LiteAdaptor::cjkPatternSource(){return nodeMixinCjkPattern();}
-std::u16string LiteAdaptor::replaceCjk(std::u16string_view text,regexp_host::RegExp& pattern){return regexpReplaceWithEmpty(pattern,text);}
-double LiteAdaptor::fontSize(LiteNodeRef node)const{return badCSS_?(sourceNumberOption_?sourceNumberOption_("fontSize"):property_host::number(options_.get("fontSize"))):LiteBase::fontSize(node);}
-std::u16string LiteAdaptor::fontFamily(LiteNodeRef node)const{return badCSS_?property_host::string(sourceOption_?sourceOption_("fontFamily"):options_.get("fontFamily")):LiteBase::fontFamily(node);}
-Property LiteAdaptor::fontFamilyProperty()const{
-    if(badCSS_)return sourceOption_?sourceOption_("fontFamily"):options_.get("fontFamily");
-    return Property(utf16::encode(LiteBase::fontFamily(LiteNodeRef{})));
+bool LiteBase::contains(DOMNodeRef const &container, DOMNodeRef const &node) const {
+    auto current = node;
+    while (current && current != container)
+        current = current->parent();
+    return current && current == container;
 }
-std::pair<double,double> LiteAdaptor::nodeSize(LiteNodeRef node,double,std::optional<bool>)const{
-    if(!badSizes_)return LiteBase::nodeSize(node);
-    const Property source=sourceTextContent_?sourceTextContent_(node):Property(property_host::debugText(textContent(node)));
-    const auto* rawText=std::get_if<std::string>(&source.value);
-    if(!rawText){
-        if(source.missing())property_host::typeError("Cannot read properties of undefined (reading 'replace')");
-        if(std::holds_alternative<PropertyNull>(source.value))property_host::typeError("Cannot read properties of null (reading 'replace')");
-        property_host::typeError("text.replace is not a function");
+
+std::ptrdiff_t LiteBase::childIndex(DOMNodeRef const &node) const {
+    if (!node)
+        return -1;
+    const auto parent = node->parent();
+    const auto parentElement = std::dynamic_pointer_cast<LiteElement>(parent);
+    if (!parentElement)
+        return -1;
+    const auto &children = parentElement->children();
+    const auto found = std::find(children.begin(), children.end(), node);
+    return found == children.end() ? -1 : std::distance(children.begin(), found);
+}
+
+DOMNodeRef LiteBase::append(DOMNodeRef const &parent, DOMNodeRef child) {
+    auto parentElement = element(parent);
+    validateAcyclicReparent(child, parent);
+    auto oldParent = child->parent();
+    if (auto oldElement = std::dynamic_pointer_cast<LiteElement>(oldParent)) {
+        auto &oldChildren = oldElement->children_;
+        const auto old = std::find(oldChildren.begin(), oldChildren.end(), child);
+        if (old != oldChildren.end())
+            oldChildren.erase(old);
     }
-    const auto text=property_host::text(*rawText);
-    std::u16string withoutCjk;
-    if(cjkStripper_)withoutCjk=cjkStripper_(text);
-    else {regexp_host::RegExp pattern(cjkPatternSource(),u"gu");withoutCjk=replaceCjk(text,pattern);}
-    const auto non=codePointLength(withoutCjk);
-    const auto cjk=codePointLength(text)-non;
-    const auto numberOption=[&](std::string_view name){return sourceNumberOption_?sourceNumberOption_(name):property_host::number(options_.get(name));};
-    const auto cjkWidth=numberOption("cjkCharWidth");
-    const auto unknownWidth=numberOption("unknownCharWidth");
-    const auto unknownHeight=numberOption("unknownCharHeight");
-    return {static_cast<double>(cjk)*cjkWidth+static_cast<double>(non)*unknownWidth,unknownHeight};
+    child->setParent({});
+    parentElement->children_.push_back(child);
+    child->setParent(parentElement);
+    return child;
 }
-PageBBox LiteAdaptor::nodeBBox(LiteNodeRef node)const{return badSizes_?PageBBox{}:LiteBase::nodeBBox(node);}
+
+DOMNodeRef LiteBase::replace(DOMNodeRef replacement, DOMNodeRef const &oldNode) {
+    if (!replacement || !oldNode)
+        throw std::invalid_argument("LiteAdaptor replace requires non-null nodes");
+    const auto oldParent = oldNode->parent();
+    const auto parentElement = std::dynamic_pointer_cast<LiteElement>(oldParent);
+    if (!parentElement)
+        return oldNode;
+    auto &children = parentElement->children_;
+    const auto found = std::find(children.begin(), children.end(), oldNode);
+    if (found == children.end())
+        return oldNode;
+    validateAcyclicReparent(replacement, parentElement);
+    *found = replacement;
+    replacement->setParent(parentElement);
+    oldNode->setParent({});
+    return oldNode;
 }
+
+void LiteBase::insert(DOMNodeRef child, DOMNodeRef const &sibling) {
+    if (!child)
+        throw std::invalid_argument("LiteAdaptor insert requires a child");
+    if (sibling) {
+        const auto siblingParent = sibling->parent();
+        if (siblingParent && child != sibling)
+            validateAcyclicReparent(child, siblingParent);
+    }
+    auto oldParent = child->parent();
+    if (auto oldElement = std::dynamic_pointer_cast<LiteElement>(oldParent)) {
+        auto &oldChildren = oldElement->children_;
+        const auto old = std::find(oldChildren.begin(), oldChildren.end(), child);
+        if (old != oldChildren.end())
+            oldChildren.erase(old);
+    }
+    child->setParent({});
+    if (!sibling)
+        return;
+    const auto parent = sibling->parent();
+    const auto parentElement = std::dynamic_pointer_cast<LiteElement>(parent);
+    if (!parentElement)
+        return;
+    const auto index = childIndex(sibling);
+    auto &children = parentElement->children_;
+    const auto at = insertionIndex(index, children.size());
+    children.insert(children.begin() + static_cast<std::ptrdiff_t>(at), child);
+    child->setParent(parentElement);
+}
+
+DOMNodeRef LiteBase::remove(DOMNodeRef const &child) {
+    if (!child)
+        throw std::invalid_argument("LiteAdaptor remove requires a child");
+    auto oldParent = child->parent();
+    if (auto oldElement = std::dynamic_pointer_cast<LiteElement>(oldParent)) {
+        auto &oldChildren = oldElement->children_;
+        const auto old = std::find(oldChildren.begin(), oldChildren.end(), child);
+        if (old != oldChildren.end())
+            oldChildren.erase(old);
+    }
+    child->setParent({});
+    return child;
+}
+
+DOMNodeRef LiteBase::clone(DOMNodeRef const &node, bool deep) const {
+    const auto source = element(node);
+    DOMAttributes attributes = source->attributes();
+    std::vector<DOMNodeRef> children;
+    if (deep) {
+        children.reserve(source->children().size());
+        for (const auto &child : source->children()) {
+            if (const auto text = std::dynamic_pointer_cast<LiteText>(child)) {
+                if (std::dynamic_pointer_cast<LiteComment>(child))
+                    children.push_back(LiteComment::create(text->value()));
+                else
+                    children.push_back(LiteText::create(text->value()));
+            } else {
+                auto copy = clone(child, true);
+                children.push_back(std::move(copy));
+            }
+        }
+    }
+    auto result = LiteElement::create(std::u16string(source->kind()), std::move(attributes),
+                                      std::move(children));
+    // Source assigns parents only for recursively cloned elements. Text and
+    // comment child copies deliberately remain parentless.
+    for (const auto &child : result->children_)
+        if (std::dynamic_pointer_cast<LiteText>(child))
+            child->setParent({});
+    return result;
+}
+
+DOMNodeRef LiteBase::split(DOMNodeRef const &node, double index) {
+    auto source = textNode(node);
+    auto suffix = LiteText::create(jsSlice(source->value(), index,
+                                           static_cast<double>(source->value().size())));
+    source->value(jsSlice(source->value(), 0, index));
+    const auto parent = source->parent();
+    const auto parentElement = std::dynamic_pointer_cast<LiteElement>(parent);
+    if (!parentElement)
+        throw std::invalid_argument("LiteAdaptor split requires a parent element");
+    const auto at = childIndex(source) + 1;
+    auto &children = parentElement->children_;
+    const auto insertion = insertionIndex(at, children.size());
+    children.insert(children.begin() + static_cast<std::ptrdiff_t>(insertion), suffix);
+    suffix->setParent(parentElement);
+    return suffix;
+}
+
+DOMNodeRef LiteBase::next(DOMNodeRef const &node) const {
+    if (!node)
+        return {};
+    const auto parent = node->parent();
+    const auto parentElement = std::dynamic_pointer_cast<LiteElement>(parent);
+    if (!parentElement)
+        return {};
+    const auto index = childIndex(node) + 1;
+    const auto &children = parentElement->children();
+    return index < 0 || static_cast<std::size_t>(index) >= children.size()
+               ? DOMNodeRef{}
+               : children[static_cast<std::size_t>(index)];
+}
+
+DOMNodeRef LiteBase::previous(DOMNodeRef const &node) const {
+    if (!node)
+        return {};
+    const auto parent = node->parent();
+    const auto parentElement = std::dynamic_pointer_cast<LiteElement>(parent);
+    if (!parentElement)
+        return {};
+    const auto index = childIndex(node) - 1;
+    const auto &children = parentElement->children();
+    return index < 0 || static_cast<std::size_t>(index) >= children.size()
+               ? DOMNodeRef{}
+               : children[static_cast<std::size_t>(index)];
+}
+
+DOMNodeRef LiteBase::firstChild(DOMNodeRef const &node) const {
+    const auto source = element(node);
+    return source->children().empty() ? DOMNodeRef{} : source->children().front();
+}
+
+DOMNodeRef LiteBase::lastChild(DOMNodeRef const &node) const {
+    const auto source = element(node);
+    return source->children().empty() ? DOMNodeRef{} : source->children().back();
+}
+
+std::vector<DOMNodeRef> LiteBase::childNodes(DOMNodeRef const &node) const {
+    return element(node)->children();
+}
+
+std::u16string LiteBase::value(DOMNodeRef const &node) const {
+    if (auto text = std::dynamic_pointer_cast<LiteText>(node)) {
+        if (!std::dynamic_pointer_cast<LiteComment>(node))
+            return text->value();
+        regexp_host::RegExp comment(u"^<!(--)?((?:.|\\n)*)\\1>$");
+        const auto match = comment.exec(text->value());
+        if (match)
+            if (const auto capture = match->at(2))
+                return *capture;
+        return text->value();
+    }
+    return {};
+}
+
+std::u16string LiteBase::textContent(DOMNodeRef const &node) const {
+    const auto source = element(node);
+    std::u16string result;
+    for (const auto &child : source->children()) {
+        if (const auto text = std::dynamic_pointer_cast<LiteText>(child)) {
+            if (!std::dynamic_pointer_cast<LiteComment>(child))
+                result += text->value();
+        } else {
+            result += textContent(child);
+        }
+    }
+    return result;
+}
+
+std::u16string LiteBase::innerHTML(DOMNodeRef const &node) const {
+    return parser_->serializeInner(*const_cast<LiteBase *>(this), element(node));
+}
+
+std::u16string LiteBase::outerHTML(DOMNodeRef const &node) const {
+    return parser_->serialize(*const_cast<LiteBase *>(this), element(node));
+}
+
+std::u16string LiteBase::serializeXML(DOMNodeRef const &node) const {
+    return parser_->serialize(*const_cast<LiteBase *>(this), element(node), true);
+}
+
+void LiteBase::setAttribute(DOMNodeRef const &node, std::u16string_view name,
+                            std::u16string_view value, std::u16string_view ns) {
+    auto target = element(node);
+    std::u16string key(name);
+    if (!ns.empty()) {
+        const auto slash = ns.find_last_of(u'/');
+        const auto prefix = ns.substr(slash == std::u16string_view::npos ? 0 : slash + 1);
+        const auto colon = key.find_last_of(u':');
+        key = std::u16string(prefix) + u":" +
+              key.substr(colon == std::u16string::npos ? 0 : colon + 1);
+    }
+    auto &attributes = target->attributes_;
+    const auto found = std::find_if(attributes.begin(), attributes.end(), [&](auto const &entry) {
+        return entry.name == key;
+    });
+    const bool isStyle = key == u"style";
+    if (found == attributes.end())
+        attributes.push_back({std::move(key), std::u16string(value)});
+    else
+        found->value = value;
+    if (isStyle)
+        target->styles_.reset();
+}
+
+void LiteBase::removeAttribute(DOMNodeRef const &node, std::u16string_view name) {
+    auto &attributes = element(node)->attributes_;
+    const auto found = std::find_if(attributes.begin(), attributes.end(), [&](auto const &entry) {
+        return entry.name == name;
+    });
+    if (found != attributes.end())
+        attributes.erase(found);
+}
+
+std::optional<std::u16string> LiteBase::getAttribute(DOMNodeRef const &node,
+                                                      std::u16string_view name) const {
+    const auto *value = attribute(element(node)->attributes(), name);
+    return value ? std::optional<std::u16string>(*value) : std::nullopt;
+}
+
+bool LiteBase::hasAttribute(DOMNodeRef const &node, std::u16string_view name) const {
+    return attribute(element(node)->attributes(), name) != nullptr;
+}
+
+DOMAttributes LiteBase::allAttributes(DOMNodeRef const &node) const {
+    auto attributes = element(node)->attributes();
+    std::stable_sort(attributes.begin(), attributes.end(), [](auto const &left, auto const &right) {
+        const auto leftIndex = arrayIndex(left.name);
+        const auto rightIndex = arrayIndex(right.name);
+        if (leftIndex && rightIndex)
+            return *leftIndex < *rightIndex;
+        return leftIndex.has_value() && !rightIndex.has_value();
+    });
+    return attributes;
+}
+
+void LiteBase::addClass(DOMNodeRef const &node, std::u16string_view name) {
+    auto target = element(node);
+    const auto *classValue = attribute(target->attributes(), u"class");
+    auto classes = classValue ? splitSingleSpaces(*classValue) : std::vector<std::u16string>{};
+    if (std::find(classes.begin(), classes.end(), name) == classes.end()) {
+        classes.emplace_back(name);
+        setAttribute(node, u"class", joinWithSpace(classes));
+    }
+}
+
+void LiteBase::removeClass(DOMNodeRef const &node, std::u16string_view name) {
+    auto target = element(node);
+    const auto *classValue = attribute(target->attributes(), u"class");
+    if (!classValue)
+        return;
+    auto classes = splitSingleSpaces(*classValue);
+    const auto found = std::find(classes.begin(), classes.end(), name);
+    if (found != classes.end()) {
+        classes.erase(found);
+        setAttribute(node, u"class", joinWithSpace(classes));
+    }
+}
+
+bool LiteBase::hasClass(DOMNodeRef const &node, std::u16string_view name) const {
+    const auto *classValue = attribute(element(node)->attributes(), u"class");
+    const auto classes = splitSingleSpaces(classValue ? std::u16string_view(*classValue)
+                                                      : std::u16string_view{});
+    return std::find(classes.begin(), classes.end(), name) != classes.end();
+}
+
+void LiteBase::setStyle(DOMNodeRef const &node, std::u16string_view name,
+                        std::u16string_view value) {
+    auto target = element(node);
+    if (!target->styles_) {
+        const auto *initial = attribute(target->attributes(), u"style");
+        target->styles_ = std::make_shared<styles::Styles>(
+            initial ? std::u16string_view(*initial) : std::u16string_view{});
+    }
+    target->styles_->set(name, styles::StyleValue(std::u16string(value)));
+    const auto cssText = target->styles_->cssText();
+    auto &attributes = target->attributes_;
+    const auto found = std::find_if(attributes.begin(), attributes.end(), [](auto const &entry) {
+        return entry.name == u"style";
+    });
+    if (found == attributes.end())
+        attributes.push_back({u"style", cssText});
+    else
+        found->value = cssText;
+}
+
+std::u16string LiteBase::getStyle(DOMNodeRef const &node, std::u16string_view name) {
+    auto target = element(node);
+    if (!target->styles_) {
+        const auto *initial = attribute(target->attributes(), u"style");
+        if (!initial || initial->empty())
+            return {};
+        target->styles_ = std::make_shared<styles::Styles>(*initial);
+    }
+    return target->styles_->get(name);
+}
+
+std::optional<std::u16string> LiteBase::allStyles(DOMNodeRef const &node) const {
+    return getAttribute(node, u"style");
+}
+
+void LiteBase::insertRules(DOMNodeRef const &node, std::span<std::u16string const> rules) {
+    auto target = element(node);
+    auto content = textContent(target) + u"\n\n";
+    for (std::size_t i = 0; i < rules.size(); ++i) {
+        if (i)
+            content += u"\n\n";
+        content += rules[i];
+    }
+    auto text = LiteText::create(std::move(content));
+    target->children_ = {std::move(text)};
+}
+
+double LiteBase::fontSize(DOMNodeRef const &) const { return 0; }
+
+std::u16string LiteBase::fontFamily(DOMNodeRef const &) const { return {}; }
+
+std::pair<double, double> LiteBase::nodeSize(DOMNodeRef const &, double,
+                                             std::optional<bool>) const {
+    return {0, 0};
+}
+
+PageBBox LiteBase::nodeBBox(DOMNodeRef const &) const { return {}; }
+
+LiteAdaptor::LiteAdaptor(LiteAdaptorOptions options, LiteWindowRef window,
+                         std::shared_ptr<entities::EntityModule> entities)
+    : LiteBase(std::move(window), std::move(entities)), options_(std::move(options)) {
+    canMeasureNodes = false;
+}
+
+std::u16string LiteAdaptor::cjkPatternSource() { return nodeMixinCjkPattern(); }
+
+std::u16string LiteAdaptor::replaceCjk(std::u16string_view text,
+                                       regexp_host::RegExp &pattern) {
+    return replaceCjkMatches(pattern, text);
+}
+
+double LiteAdaptor::fontSize(DOMNodeRef const &node) const {
+    return options_.badCSS ? options_.fontSize : LiteBase::fontSize(node);
+}
+
+std::u16string LiteAdaptor::fontFamily(DOMNodeRef const &node) const {
+    return options_.badCSS ? options_.fontFamily : LiteBase::fontFamily(node);
+}
+
+std::pair<double, double> LiteAdaptor::nodeSize(DOMNodeRef const &node, double,
+                                                std::optional<bool>) const {
+    if (!options_.badSizes)
+        return LiteBase::nodeSize(node);
+    const auto text = textContent(node);
+    regexp_host::RegExp pattern(cjkPatternSource(), u"gu");
+    const auto withoutCjk = replaceCjkMatches(pattern, text);
+    const auto nonCjk = codePointLength(withoutCjk);
+    const auto cjk = codePointLength(text) - nonCjk;
+    return {static_cast<double>(cjk) * options_.cjkCharWidth +
+                static_cast<double>(nonCjk) * options_.unknownCharWidth,
+            options_.unknownCharHeight};
+}
+
+PageBBox LiteAdaptor::nodeBBox(DOMNodeRef const &node) const {
+    return options_.badSizes ? PageBBox{} : LiteBase::nodeBBox(node);
+}
+
+} // namespace folia::math::adaptors::lite

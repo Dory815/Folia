@@ -1,21 +1,33 @@
-export module folia.math.adaptors.lite.element;
-export import folia.math.adaptors.lite.node_store;
+export module folia.math.adaptors.lite_adaptor:element;
+export import folia.math.core.dom_adaptor;
 export import folia.math.util.styles;
 import std;
+
 export namespace folia::math::adaptors::lite {
-class LiteElement {
-    LiteNodeRef ref_;
-    static PropertyList spread(const PropertyList& source);
+class LiteText;
+class LiteComment;
+class LiteElement;
+
+using LiteNodeRef = folia::math::DOMNodeRef;
+using LiteElementRef = std::shared_ptr<LiteElement>;
+
+class LiteElement final : public folia::math::DOMNode {
+    friend class LiteBase;
+    std::u16string kind_;
+    folia::math::DOMAttributes attributes_;
+    std::vector<LiteNodeRef> children_;
+    std::shared_ptr<styles::Styles> styles_;
+
+    LiteElement(std::u16string kind, folia::math::DOMAttributes attributes,
+                std::vector<LiteNodeRef> children);
+
 public:
-    LiteElement(std::u16string kind, PropertyList attributes = {}, PropertyArray children = {}, std::shared_ptr<LiteNodeStore> store = {});
-    LiteElement(Property kind, PropertyList attributes, PropertyArray children, std::shared_ptr<LiteNodeStore> store = {});
-    explicit LiteElement(LiteNodeRef ref);
-    LiteNodeRef ref() const { return ref_; }
-    std::u16string kind() const;
-    PropertyList attributes() const;
-    PropertyArray children() const;
-    LiteNodeValue parent() const;
-    PropertyList properties() const;
-    std::shared_ptr<styles::Styles> styles() const;
+    static LiteElementRef create(std::u16string kind,
+                                 folia::math::DOMAttributes attributes = {},
+                                 std::vector<LiteNodeRef> children = {});
+    std::u16string_view kind() const noexcept override { return kind_; }
+    folia::math::DOMAttributes const& attributes() const noexcept { return attributes_; }
+    std::vector<LiteNodeRef> const& children() const noexcept { return children_; }
+    std::shared_ptr<styles::Styles> const& styles() const noexcept { return styles_; }
 };
 }

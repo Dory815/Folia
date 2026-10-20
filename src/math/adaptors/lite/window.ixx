@@ -1,13 +1,18 @@
-export module folia.math.adaptors.lite.window;
-export import folia.math.adaptors.lite.document;
+export module folia.math.adaptors.lite_adaptor:window;
+export import :document;
 import std;
+
 export namespace folia::math::adaptors::lite {
-class LiteWindow {
-    LiteNodeRef ref_;
+class LiteWindow;
+using LiteWindowRef = std::shared_ptr<LiteWindow>;
+
+class LiteWindow final : public folia::math::DOMWindow {
+    LiteDocumentRef document_;
+
+    LiteWindow() = default;
+
 public:
-    explicit LiteWindow(std::shared_ptr<LiteNodeStore> store = {});
-    explicit LiteWindow(LiteNodeRef ref);
-    LiteNodeRef ref() const { return ref_; }
-    LiteNodeValue document() const;
+    static LiteWindowRef create();
+    LiteDocumentRef document() const noexcept { return document_; }
 };
 }
