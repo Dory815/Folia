@@ -1,17 +1,21 @@
-// MathJax 4.1.3 input/tex/physics/PhysicsItems.ts.
+// MathJax 4.1.3 input/tex/physics/PhysicsItems.ts; Apache-2.0.
 export module folia.math.input.tex.physics.items;
 export import folia.math.input.tex.parser;
 import std;
 export namespace folia::math::tex {
-class AutoOpen final:public BaseItem {
-    double openCount_=0;
-public:
-    std::string kind()const override;
-    bool isOpen()const override;
+class AutoOpen : public BaseItem {
+  protected:
+    std::optional<StackErrorDefinition> getErrors(StackErrorKey) const override;
+
+  public:
+    std::u16string open, close, big, right;
+    bool smash{}, ignore{};
+    double openCount{};
+    explicit AutoOpen(StackItemFactory &);
+    StackKind kind() const override;
+    bool isOpen() const noexcept override;
     bool closing(std::u16string_view fence);
-    CheckType checkItem(BaseItem*)override;
-    mml::NodeValue toMml(Property inferred=Missing{},Property forceRow=Missing{})override;
-    static tree::FactoryClassRef<BaseItem> initializeModule(ParserRuntime&);
+    CheckResult checkItem(FrameHandle const &) override;
+    mml::MmlNode &toMml(bool inferred = true, bool forceRow = false) override;
 };
-struct PhysicsItems { static options::Value initializeModule(ParserRuntime&); };
-}
+} // namespace folia::math::tex

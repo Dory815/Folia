@@ -244,6 +244,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/bussproofs/methods.ixx
     src/math/input/tex/bussproofs/mappings.ixx
     src/math/input/tex/bussproofs/configuration.ixx
+    src/math/input/tex/physics/items.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -383,6 +384,7 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/bussproofs/methods.cpp
     src/math/input/tex/bussproofs/mappings.cpp
     src/math/input/tex/bussproofs/configuration.cpp
+    src/math/input/tex/physics/items.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp

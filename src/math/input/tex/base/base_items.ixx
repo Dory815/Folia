@@ -67,6 +67,7 @@ class OpenItem : public BaseItem {
 class CloseItem : public BaseItem {
   public:
     bool braket_bar{};
+    bool pre_autoclose{};
     explicit CloseItem(StackItemFactory &);
     StackKind kind() const override;
     bool isClose() const noexcept override;
@@ -215,6 +216,7 @@ class CellItem : public BaseItem {
 
 class MmlItem : public BaseItem {
   public:
+    bool autoclose{};
     MmlItem(StackItemFactory &, mml::MmlNode &node);
     StackKind kind() const override;
     bool isFinal() const noexcept override;
