@@ -1,30 +1,31 @@
-// Native port of MathJax 4.1.3 input/tex/gensymb/GensymbConfiguration.ts.
+// MathJax 4.1.3 input/tex/gensymb/GensymbConfiguration.ts; Apache-2.0.
 module folia.math.input.tex.gensymb.configuration;
-import folia.math.input.tex.handler_types;
-import folia.math.input.tex.tex_constants;
-import folia.math.input.tex.token_map;
-import folia.math.util.property_host;
 import std;
+
 namespace folia::math::tex {
-namespace {
-using namespace options;
-Key key(std::u16string_view name){return Key(std::u16string(name));}
-TexParser& parser(ParserContext& source){auto* value=dynamic_cast<TexParser*>(&source);if(!value)property_host::typeError("Gensymb requires a TexParser");return *value;}
-Value array(Context& cx,std::initializer_list<Value> values){const ObjectRef out=cx.array(static_cast<std::uint32_t>(values.size()));std::uint32_t i=0;for(const auto& value:values){const std::string digits=std::to_string(i++);cx.set(Value(out),key(std::u16string(digits.begin(),digits.end())),value);}return Value(out);}
-Value record(Context& cx,std::initializer_list<std::pair<std::u16string_view,Value>> values){Value out(cx.object());for(const auto& [name,value]:values)cx.set(out,key(name),value);return out;}
-FunctionRef mathcharUnit(){return makeParseCallable([](const FunctionReceiver&,ParserContext& source,const ParseAtom& atom,ParseRest)->ParseResult{
-    auto& p=parser(source);const auto* token=std::get_if<TokenRef>(&atom);if(!token||!*token)property_host::typeError("Cannot read properties of null or undefined (reading 'attributes')");
-    Property attributes=(*token)->attributes();if(!property_host::truthy(attributes))attributes=Property(PropertyList{});
-    auto record=PropertyList::record(attributes);if(!record)property_host::typeError("Cannot create property 'mathvariant' on a primitive value");
-    const auto normal=property_host::get(property_host::get(TexConstant,"Variant"),"NORMAL");record->setOwn("mathvariant",normal);record->setOwn("class",Property("MathML-Unit"));
-    const std::array<std::any,3> args{std::any(Property("mi")),std::any(attributes),std::any((*token)->character())};const auto node=p.create(u"token",FunctionArgs(args));p.Push(node);return Property(Missing{});
-});}
+DispatchOutcome mathcharUnit(TexParser &parser, TokenInput const &input) {
+    auto entry = std::get_if<Token const *>(&input.value);
+    if (!entry || !*entry)
+        throw std::invalid_argument("A unit requires a character token");
+    auto const &token = **entry;
+    NodeDefinition definition;
+    if (token.attributes)
+        definition.attributes = *token.attributes;
+    definition.attributes.set(u"mathvariant", std::u16string(u"normal"));
+    definition.attributes.set(u"class", std::u16string(u"MathML-Unit"));
+    const auto text =
+        token.character ? std::optional<std::u16string_view>(*token.character) : std::nullopt;
+    parser.Push(&parser.createToken(mml::NodeKind::mi, text, std::move(definition)));
+    return NoParseResult{};
 }
-ConfigurationRef GensymbConfiguration::initializeModule(ParserRuntime& runtime){
-    const auto loaded=runtime.configurationHandler.get(u"gensymb");if(const auto* prior=std::get_if<ConfigurationRef>(&loaded);prior&&*prior)return *prior;
-    const Property mappings(PropertyList{{"ohm",Property("Ω")},{"degree",Property("°")},{"celsius",Property("℃")},{"perthousand",Property("‰")},{"micro",Property("µ")}});
-    (void)TokenMapHost::create<CharacterMap>(runtime.mapHandler,Property("gensymb-symbols"),ParseMethod{mathcharUnit()},mappings);
-    auto& cx=runtime.context();const Value handlers=record(cx,{{u"macro",array(cx,{Value(u"gensymb-symbols")})}});
-    return Configuration::create(runtime,u"gensymb",record(cx,{{u"handler",handlers}}));
+ConfigurationRef GensymbConfiguration::initializeModule(ConfigurationHandler &registry,
+                                                        MapHandler &maps) {
+    maps.registerMap(std::make_shared<CharacterMap>(CharacterMapInit{
+        {u"gensymb-symbols", TokenMapParser{&mathcharUnit}},
+        {Token(u"ohm", u"\u2126"), Token(u"degree", u"\u00B0"), Token(u"celsius", u"\u2103"),
+         Token(u"perthousand", u"\u2030"), Token(u"micro", u"\u00B5")}}));
+    ConfigurationDefinition definition;
+    definition.handler = {{HandlerKind::macro, {u"gensymb-symbols"}}};
+    return Configuration::create(registry, u"gensymb", std::move(definition));
 }
-}
+} // namespace folia::math::tex
