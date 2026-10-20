@@ -129,8 +129,9 @@ DispatchOutcome ParseMethods::delimiter(TexParser &parser, TokenInput const &inp
     if (value.attributes)
         for (auto const &[key, attribute] : value.attributes->ownEntries())
             definition.attributes.set(key, attribute);
-    auto &node = parser.createToken(mml::NodeKind::mo, character(value), std::move(definition));
-    if (character(value) == u"|")
+    const auto text = value.character ? std::optional<std::u16string_view>{*value.character} : std::nullopt;
+    auto &node = parser.createToken(mml::NodeKind::mo, text, std::move(definition));
+    if (text && *text == u"|")
         node.properties().tex.keep_attributes = u"stretchy";
     parser.Push(&node);
     return NoParseResult{};

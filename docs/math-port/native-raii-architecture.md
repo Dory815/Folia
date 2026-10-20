@@ -121,6 +121,14 @@ HTML delimiter discovery/DOM adaptor methods are outside this string compile
 service and remain explicit pending owners; they are not replaced by fake DOM
 results or called through the withdrawn object layer.
 
+The token creator takes `optional<u16string_view>` through TexParser and
+NodeFactory. An absent token text creates no TextNode; an explicitly empty
+text creates an empty TextNode. This is the original creator collaboration,
+including the configured boldsymbol token creator, rather than a second node
+construction path for hidden delimiters. Boldsymbol owns its command mapping,
+scoped argument parsing, token marking and priority-5 variant rewrite in its
+original configuration module. Its scope is restored before pushing the result.
+
 C++ module boundaries follow owners and dependencies. A packet, individual
 function or test seam does not automatically need its own named module.
 Family implementation details and numerical intermediates remain private

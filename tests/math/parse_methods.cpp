@@ -58,7 +58,7 @@ struct CreationObservation {
 };
 thread_local CreationObservation *creationObservation{};
 MmlNode &observeCreation(NodeFactory &factory, NodeKind kind, NodeDefinition definition,
-                         std::u16string_view text) {
+                         std::optional<std::u16string_view> text) {
     auto &observed = *creationObservation;
     observed.auto_operator = definition.properties.tex.auto_operator;
     observed.fix_stretchy_before = definition.properties.tex.fix_stretchy.has_value();

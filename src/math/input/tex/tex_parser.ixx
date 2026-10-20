@@ -106,7 +106,7 @@ class TexParser {
     // Original create(kind,...rest), expressed by its four actual creator domains.
     virtual mml::MmlNode &create(mml::NodeKind, std::span<mml::MmlNode *const> children = {},
                                  NodeDefinition = {}, mml::MmlNode *text = nullptr);
-    virtual mml::MmlNode &createToken(mml::NodeKind, std::u16string_view text,
+    virtual mml::MmlNode &createToken(mml::NodeKind, std::optional<std::u16string_view> text,
                                       NodeDefinition = {});
     virtual mml::MmlNode &createText(std::u16string_view text);
     virtual mml::MmlNode &createError(std::u16string_view message);

@@ -46,7 +46,7 @@ MmlNode &traceNode(NodeFactory &factory, NodeKind kind, std::span<MmlNode *const
     creationCalls->push_back("node");
     return NodeFactory::createNode(factory, kind, children, std::move(definition), text);
 }
-MmlNode &unexpectedToken(NodeFactory &, NodeKind, NodeDefinition, std::u16string_view) {
+MmlNode &unexpectedToken(NodeFactory &, NodeKind, NodeDefinition, std::optional<std::u16string_view>) {
     throw std::logic_error("Internal text must use text and node creators");
 }
 struct CreationCallsScope {

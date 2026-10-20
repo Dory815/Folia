@@ -268,7 +268,7 @@ mml::MmlNode &TexParser::create(mml::NodeKind kind, std::span<mml::MmlNode *cons
     return finishCreatedNode(
         configuration.nodeFactory.makeNode(kind, children, std::move(attributes), text));
 }
-mml::MmlNode &TexParser::createToken(mml::NodeKind kind, std::u16string_view text,
+mml::MmlNode &TexParser::createToken(mml::NodeKind kind, std::optional<std::u16string_view> text,
                                      NodeDefinition attributes) {
     return finishCreatedNode(
         configuration.nodeFactory.makeToken(kind, text, std::move(attributes)));

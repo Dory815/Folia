@@ -4,14 +4,14 @@ export import folia.math.input.tex.parser;
 import std;
 
 export namespace folia::math::tex {
-mml::MmlNode& createBoldToken(NodeFactory&, mml::NodeKind, NodeDefinition, std::u16string_view);
-void rewriteBoldTokens(std::span<mml::MmlNode* const>);
-// These real package entry points await the native parser/configuration services.
-void rewriteBoldTokens(TexFilterData&);
+mml::MmlNode &createBoldToken(NodeFactory &, mml::NodeKind, NodeDefinition,
+                              std::optional<std::u16string_view>);
+void rewriteBoldTokens(std::span<mml::MmlNode *const>);
+void rewriteBoldTokens(TexFilterData &);
 namespace BoldsymbolMethods {
-    DispatchOutcome Boldsymbol(TexParser&, MacroInvocation const&);
+DispatchOutcome Boldsymbol(TexParser &, MacroInvocation const &);
 }
 struct BoldsymbolConfiguration {
-    static std::shared_ptr<Configuration const> initializeModule(ConfigurationHandler&);
+    static ConfigurationRef initializeModule(ConfigurationHandler &, MapHandler &);
 };
-}
+} // namespace folia::math::tex

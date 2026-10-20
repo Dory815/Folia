@@ -9,7 +9,8 @@ const root = path.resolve(__dirname, '../..');
 const locks = {
   '.reference/MathJax-src/ts/input/tex/NodeFactory.ts': 'bf20e8d4f7ed43450df42d65556ccbceea1469541b214c37544f180aa205c840',
   '.reference/MathJax-src/ts/input/tex/NodeUtil.ts': 'bd7e048c49cf042cb5878c6a73d049ae49e7d6437fb4ba975651dae5a5125cc2',
-  '.reference/MathJax-src/ts/input/tex/boldsymbol/BoldsymbolConfiguration.ts': 'f017f7d31a5f6bf17a2d9d2468cf515b1f7e5948009a55304578bb93ffddb334'
+  '.reference/MathJax-src/ts/input/tex/boldsymbol/BoldsymbolConfiguration.ts': 'f017f7d31a5f6bf17a2d9d2468cf515b1f7e5948009a55304578bb93ffddb334',
+  'tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/boldsymbol/BoldsymbolConfiguration.js': 'b552f0c41e5929e19d967897118cb92960f873eb7a8a21e467d532158f6dfccb'
 };
 for (const [file, hash] of Object.entries(locks))
   assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex'), hash, file);
@@ -86,6 +87,8 @@ assert.equal(observed.some(row => row.kind === 'mi' && row.text === 'y' && !row.
 // With no active parser, mtext still short-circuits the environment read.
 assert.equal(options.parser, undefined);
 factory.create('token', 'mtext', {}, 'text');
+assert.equal(factory.create('token', 'mtext', {}, null).childNodes.length, 0);
+assert.equal(factory.create('token', 'mtext', {}, '').childNodes.length, 1);
 events.length = 0;
 assert.throws(() => factory.create('token', 'mi', {}, 'outside'));
 assert.deepEqual(events, ['save:mi']);
@@ -109,5 +112,27 @@ for (const [from, to] of variants) {
   rewriteBoldTokens({data: options});
   assert.equal(current.getProperty('fixBold'), false);
 }
-console.log(JSON.stringify({status: 'passed', sourceFiles: 3, compiledProfileLocked: true, variants: variants.length,
-  limit: 'Configured NodeFactory and boldsymbol creator/rewrite behavior. Native parser/package initialization and live-node list integration remain unverified.'}));
+const {TeX} = ref.require('@mathjax/src/cjs/input/tex.js');
+const {MmlFactory} = ref.require('@mathjax/src/cjs/core/MmlTree/MmlFactory.js');
+const {AbstractMathItem} = ref.require('@mathjax/src/cjs/core/MathItem.js');
+const jax = new TeX({packages: ['base', 'boldsymbol']});
+jax.setMmlFactory(new MmlFactory());
+function actualTokens(tex) {
+  const math = new AbstractMathItem(tex, jax, false), nodes = [];
+  jax.compile(math, ref.document).walkTree(n => {if (n.isToken) nodes.push(n);});
+  return nodes;
+}
+let nodes = actualTokens(String.raw`\boldsymbol{x+\boldsymbol{y}}z`);
+assert.deepEqual(nodes.map(n => n.getText()), ['x','+','y','z']);
+assert.deepEqual(nodes.map(n => n.attributes.get('mathvariant')), ['bold-italic','bold','bold-italic','italic']);
+assert.equal(jax.parseOptions.getList('fixBold').length, 3);
+assert.ok(jax.parseOptions.getList('fixBold').every(n => n.getProperty('fixBold') === undefined));
+assert.equal(jax.parseOptions.parsers.length, 0);
+nodes = actualTokens(String.raw`\boldsymbol{\Gamma+\alpha+1+\mathbb{R}+\mathrm{x}}z`);
+assert.deepEqual(nodes.map(n => n.attributes.get('mathvariant')), ['bold','bold','bold-italic','bold','bold','bold','double-struck','bold','bold','italic']);
+nodes = actualTokens(String.raw`\boldsymbol{\text{hello}}y`);
+assert.deepEqual(nodes.map(n => n.kind), ['mtext','mi']);
+assert.deepEqual(nodes.map(n => n.attributes.get('mathvariant')), ['normal','italic']);
+assert.equal(jax.parseOptions.getList('fixBold').length, 0);
+console.log(JSON.stringify({status: 'passed', sourceLocks: 4, compiledProfileLocked: true,
+  variants: variants.length, actualPackageCases: 3}));
