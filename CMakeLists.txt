@@ -418,6 +418,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/base_items.cpp
     tests/math/column_parser.cpp
     tests/math/tex_parser.cpp
+    tests/math/parse_methods.cpp
     tests/math/stack.cpp
     tests/math/tags.cpp
     tests/math/macro.cpp

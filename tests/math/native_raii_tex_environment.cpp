@@ -14,6 +14,8 @@ TexEnvironment fullEnvironment() {
     value.display = true;
     value.in_root = true;
     value.operator_letters = true;
+    value.multi_letter_identifiers = std::make_shared<folia::math::regexp_host::RegExp>(u"^[a-z]+");
+    value.no_auto_op = true;
     value.is_global = true;
     value.bold_symbol = true;
     value.vector_star = true;
@@ -64,6 +66,8 @@ suite math_native_raii_tex_environment = [] {
         source.display = false;
         source.in_root = false;
         source.operator_letters = false;
+        source.multi_letter_identifiers = folia::math::regexp_host::RegExpRef{};
+        source.no_auto_op = false;
         source.is_global = false;
         source.bold_symbol = false;
         source.vector_star = false;
