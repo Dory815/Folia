@@ -196,30 +196,28 @@ scene::Scene LayoutJob::buildScene() {
     scene::Builder builder;
     const std::array<scene::NodeId, 1> rootParent{scene::NodeId{0}};
     const auto rootNodes = root.emitScene(builder, rootParent);
-    jax_.finishInlineScene(builder, root, rootNodes);
+    jax_.finishScene(builder, root, rootNodes);
     const BBox outer = root.getOuterBBox();
     builder.set_metrics({outer.w, outer.h, outer.d});
-    builder.set_font_metrics({1.0, jax_.currentMetrics().ex / jax_.currentMetrics().em,
+    builder.set_font_metrics({jax_.currentMetrics().em, jax_.currentMetrics().ex,
                               parameters.required("x_height"),
                               parameters.find("cap_height").value_or(0.0)});
     return std::move(builder).freeze();
 }
 
-void CommonOutputJax::finishInlineScene(scene::Builder &builder, CommonWrapper &root,
-                                        std::span<SceneNode const> rootNodes) {
-    scene::FrameLayout frame;
-    frame.minimum_extent = metrics_.em / 1000.0;
-
+void CommonOutputJax::finishInlineFrames(scene::Builder &builder, CommonWrapper &root,
+                                         std::span<SceneNode const> rootNodes,
+                                         scene::FrameLayout &frame) {
     const bool processBreaks = root.node->properties().layout.process_breaks.value_or(false);
     if (!processBreaks)
-        return builder.set_frame_layout(std::move(frame));
+        return;
     if (root.childNodes.size() != 1 || !root.childNodes.front())
         throw std::logic_error("inline fragment extraction requires the single Common math child");
 
     CommonWrapper &lines = *root.childNodes.front();
     const auto breakCount = lines.breakCount();
     if (!breakCount)
-        return builder.set_frame_layout(std::move(frame));
+        return;
     if (rootNodes.size() != 1 || !rootNodes.front())
         throw std::logic_error("inline fragment extraction requires one emitted math shell");
 
@@ -276,7 +274,6 @@ void CommonOutputJax::finishInlineScene(scene::Builder &builder, CommonWrapper &
             }
             if (spacing != 0)
                 fragment.before = scene::InlineBreak{scene::InlineBreakKind::forced, spacing};
-            pending.emplace_back(std::move(fragment));
         } else {
             double spacing = 0;
             if (index) {
@@ -293,8 +290,8 @@ void CommonOutputJax::finishInlineScene(scene::Builder &builder, CommonWrapper &
                                                          spacing};
                 }
             }
-            pending.emplace_back(std::move(fragment));
         }
+        pending.emplace_back(std::move(fragment));
     }
 
     const auto fragmentRoots = builder.split_group_contents(shell, lineGroups);
@@ -304,6 +301,40 @@ void CommonOutputJax::finishInlineScene(scene::Builder &builder, CommonWrapper &
     for (std::size_t index = 0; index < fragmentRoots.size(); ++index)
         frame.inline_fragments.push_back(
             {fragmentRoots[index], pending[index].metrics, std::move(pending[index].before)});
+}
+
+void CommonOutputJax::finishScene(scene::Builder &builder, CommonWrapper &root,
+                                  std::span<SceneNode const> rootNodes) {
+    scene::FrameLayout frame;
+    frame.minimum_extent = metrics_.em / 1000.0;
+    finishInlineFrames(builder, root, rootNodes, frame);
+
+    // Percentage width belongs to the completed outer Common BBox.  Keep the
+    // original pwidth spelling alongside its resolved numeric percentage.
+    const auto &rootBBox = root.getBBox();
+    if (!rootBBox.pwidth.empty()) {
+        if (!frame.inline_fragments.empty())
+            throw std::logic_error("percentage frame cannot coexist with inline fragments");
+        lengths::LengthContext percentContext;
+        percentContext.size_em = 1;
+        const double percentValue = 100 * lengths::length2em(rootBBox.pwidth, percentContext);
+        const double xHeight = face_.parameters.required("x_height");
+        if (!std::isfinite(xHeight) || xHeight <= 0)
+            throw std::domain_error("percentage frame requires positive font x_height");
+        const double scale = metrics_.ex / (xHeight * 1000);
+        const auto displayLayout = builder.display_layout();
+        const double minimumWidth = displayLayout.minimum_width * metrics_.ex / xHeight;
+        const double width =
+            std::max(metrics_.containerWidth * percentValue / 100, minimumWidth) / 1000;
+        const BBox outer = root.getOuterBBox();
+        const double height = std::max(outer.h + outer.d, metrics_.em / 1000) * scale;
+        frame.percentage = scene::PercentageFrame{percentValue, rootBBox.pwidth,
+                                                  scene::Rect{0, 0, width, height}, scale};
+        builder.set_viewport_bounds(scene::ElementRole::table_content_viewport,
+                                    frame.percentage->bounds);
+        builder.set_viewport_bounds(scene::ElementRole::table_label_frame,
+                                    frame.percentage->bounds);
+    }
     builder.set_frame_layout(std::move(frame));
 }
 

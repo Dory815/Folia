@@ -36,7 +36,9 @@ class CommonOutputJax {
     void recordUnknownMathVariant(mml::NodeKind, std::string);
     // Source CommonMtable::findContainer is the only caller.
     void setTable(CommonWrapper &); // called only from CommonMtable::findContainer
-    void finishInlineScene(scene::Builder &, CommonWrapper &, std::span<SceneNode const>);
+    void finishInlineFrames(scene::Builder &, CommonWrapper &, std::span<SceneNode const>,
+                            scene::FrameLayout &);
+    void finishScene(scene::Builder &, CommonWrapper &, std::span<SceneNode const>);
 
   public:
     CommonOutputJax(mml::MmlDocument &, CommonOutputJaxConfig, MeasurementTarget &,
