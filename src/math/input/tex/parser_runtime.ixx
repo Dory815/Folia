@@ -105,8 +105,6 @@ public:
     Property htmlMethods=Missing{},texHtmlMethods=Missing{};
     Property textcompInsert=Missing{};
     bool textcompMappingsInitialized=false;
-    Property empheqMethods=Missing{};
-    options::Value empheqUtilModuleExports=options::Undefined{};
     // AmsCdMethods is one default-export object in the Source module instance.
     Property amsCdMethods=Missing{};
     // CasesConfiguration.ts exports one CasesMethods object per module instance.
