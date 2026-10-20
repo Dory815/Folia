@@ -1,931 +1,621 @@
-// Native port of MathJax 4.1.3 input/tex/physics/PhysicsMethods.ts.
+// MathJax 4.1.3 input/tex/physics/PhysicsMethods.ts; Apache-2.0.
 module folia.math.input.tex.physics.methods;
-import folia.math.input.tex.base_methods;
-import folia.math.input.tex.handler_types;
-import folia.math.input.tex.node_util;
-import folia.math.input.tex.macro;
-import folia.math.input.tex.node_factory;
-import folia.math.input.tex.parser;
-import folia.math.input.tex.stack_item_factory;
-import folia.math.input.tex.stack_item_host;
-import folia.math.input.tex.tex_constants;
-import folia.math.input.tex.tex_error;
-import folia.math.util.property_host;
+import folia.math.input.tex.parse_util;
 import folia.math.util.js_numeric_input;
 import folia.math.util.js_number;
 import std;
+
 namespace folia::math::tex {
 namespace {
-using namespace options;
-Key key(std::u16string_view v) { return Key(std::u16string(v)); }
-Property val(ParseRest rest, std::size_t i) {
-  if (i >= rest.size())
-    return Missing{};
-  if (const auto *p = std::any_cast<Property>(&rest[i]))
-    return *p;
-  if (const auto *s = std::any_cast<std::u16string>(&rest[i]))
-    return Property(property_host::debugText(*s));
-  if (const auto *s = std::any_cast<std::string>(&rest[i]))
-    return Property(*s);
-  if (const auto *b = std::any_cast<bool>(&rest[i]))
-    return Property(*b);
-  if (const auto *n = std::any_cast<double>(&rest[i]))
-    return Property(*n);
-  return Missing{};
+using mml::MmlNode;
+using mml::NodeKind;
+using Args = std::span<TexArgument const>;
+Args arguments(MacroInvocation const &invocation) {
+    return std::get<Args>(invocation.arguments);
 }
-TexParser &parser(ParserContext &c) {
-  auto *p = dynamic_cast<TexParser *>(&c);
-  if (!p)
-    property_host::typeError("Physics requires a TexParser");
-  return *p;
+std::u16string stringArg(Args args, std::size_t i, std::u16string_view fallback = {}) {
+    return i < args.size() ? std::get<std::u16string>(args[i]) : std::u16string(fallback);
 }
-std::u16string atom(const ParseAtom &a) {
-  if (const auto *p = std::get_if<Property>(&a))
-    return property_host::string(*p);
-  if (const auto *t = std::get_if<TokenRef>(&a); t && *t)
-    return property_host::string((*t)->token());
-  property_host::typeError("Physics parse method requires a token name");
-}
-ParseOptions &config(TexParser &p) {
-  auto *c = std::get_if<ParseOptions *>(&p.configuration);
-  if (!c || !*c)
-    property_host::typeError(
-        "Cannot read properties of null or undefined (reading 'nodeFactory')");
-  return **c;
-}
-Stack &stack(TexParser &p) {
-  auto *s = std::get_if<std::shared_ptr<Stack>>(&p.stack);
-  if (!s || !*s)
-    property_host::typeError(
-        "Cannot read properties of null or undefined (reading 'env')");
-  return **s;
-}
-StackItemFactory &itemFactory(TexParser &p) {
-  auto f = p.itemFactory();
-  auto *s = std::get_if<std::shared_ptr<StackItemFactory>>(&f);
-  if (!s || !*s)
-    property_host::typeError(
-        "Cannot read properties of null or undefined (reading 'create')");
-  return **s;
-}
-std::u16string str(ParseRest r, std::size_t i) {
-  return property_host::string(val(r, i));
+bool flagArg(Args args, std::size_t i, bool fallback = false) {
+    return i < args.size() ? std::get<bool>(args[i]) : fallback;
 }
 std::u16string numberText(double value) {
-  const auto s = js_number::toString(value);
-  std::u16string out;
-  out.reserve(s.size());
-  for (unsigned char c : s)
-    out.push_back(static_cast<char16_t>(c));
-  return out;
+    const auto text = js_number::toString(value);
+    return {text.begin(), text.end()};
 }
-bool truth(ParseRest r, std::size_t i) {
-  return property_host::truthy(val(r, i));
+MmlNode &nested(TexParser &parser, std::u16string source) {
+    auto *node = TexParser(std::move(source), ParserEnvironmentSeed{parser.stack.env()},
+                           parser.configuration)
+                     .mml();
+    if (!node)
+        throw std::logic_error("Physics subexpression requires MML");
+    return *node;
 }
-mml::NodeValue node(TexParser &p, std::u16string_view kind) {
-  std::array<std::any, 1> a{std::any(Property(property_host::debugText(kind)))};
-  return p.create(u"node", a);
+DispatchOutcome pushNested(TexParser &parser, std::u16string source) {
+    parser.Push(&nested(parser, std::move(source)));
+    return NoParseResult{};
 }
-mml::NodeValue node(TexParser &p, std::u16string_view kind, mml::Children c,
-                    Property d = PropertyList{}) {
-  std::array<std::any, 3> a{std::any(Property(property_host::debugText(kind))),
-                            std::any(std::move(c)), std::any(std::move(d))};
-  return p.create(u"node", a);
+void replaceRemaining(TexParser &parser, std::u16string replacement) {
+    replacement += parser.string().substr(parser.position());
+    parser.setString(std::move(replacement));
+    parser.setPosition(0);
 }
-mml::NodeValue token(TexParser &p, std::u16string_view kind, Property d,
-                     Property t) {
-  std::array<std::any, 3> a{std::any(Property(property_host::debugText(kind))),
-                            std::any(std::move(d)), std::any(std::move(t))};
-  return p.create(u"token", a);
+void insertAtPosition(TexParser &parser, std::u16string replacement) {
+    auto source = std::u16string(parser.string());
+    source.insert(parser.position(), replacement);
+    parser.setString(std::move(source));
 }
-mml::Children children(std::initializer_list<mml::NodeValue> nodes) {
-  auto a = std::make_shared<tree::ChildArray<mml::MmlNode>>();
-  for (auto n : nodes)
-    a->push_back(n);
-  return a;
+FrameHandle autoOpen(TexParser &parser, std::u16string open, std::u16string close) {
+    auto item = parser.itemFactory().create(StackKind::auto_open);
+    auto &frame = dynamic_cast<AutoOpen &>(*item);
+    frame.open = std::move(open);
+    frame.close = std::move(close);
+    return item;
 }
-TexParserRef nested(TexParser &p, std::u16string s) {
-  return TexParser::make(std::move(s), stack(p).env(), config(p));
-}
-ParseResult push(TexParser &p, mml::NodeValue n) {
-  p.Push(std::move(n));
-  return Property(Missing{});
-}
-ParseResult pushNested(TexParser &p, std::u16string s) {
-  return push(p, nested(p, std::move(s))->mml());
-}
-BaseItem *createItem(TexParser &p, std::string_view kind) {
-  return itemFactory(p).create(kind, {});
-}
-ParseResult pushAutoOpen(TexParser &p, std::u16string open,
-                         std::u16string close, PropertyList extra = {}) {
-  extra.setOwn("open", Property(property_host::debugText(open)));
-  extra.setOwn("close", Property(property_host::debugText(close)));
-  auto *item = createItem(p, "auto open");
-  item->setProperties(StackProperty(std::move(extra)));
-  p.Push(itemFactory(p).reference(item));
-  return Property(Missing{});
-}
-void rewrite(TexParser &p, std::u16string replacement) {
-  auto s = p.string();
-  const auto i = static_cast<std::size_t>(
-      std::clamp(p.i, 0.0, static_cast<double>(s.size())));
-  s.replace(i, 0, replacement);
-  p.setString(std::move(s));
-}
-FunctionRef method(ParseBody body) {
-  return makeParseCallable(std::move(body));
-}
-bool inRange(std::uint32_t n, std::uint32_t a, std::uint32_t b) {
-  return n >= a && n <= b;
-}
-const std::array<std::pair<char16_t, char16_t>, 5> pairs{
-    {{u'(', u')'}, {u'[', u']'}, {u'{', u'}'}, {u'|', u'|'}, {u'\\', 0}}};
-char16_t pairFor(std::u16string_view s) {
-  if (s.empty())
+char16_t closingFence(std::u16string_view fence) {
+    if (fence == u"(")
+        return u')';
+    if (fence == u"[")
+        return u']';
+    if (fence == u"{")
+        return u'}';
+    if (fence == u"|")
+        return u'|';
     return 0;
-  for (auto [a, b] : pairs)
-    if (s.front() == a && b)
-      return b;
-  return 0;
 }
-bool isBigFence(std::u16string_view value) {
-  return value == u"big" || value == u"bigg" || value == u"Big" ||
-         value == u"Bigg";
+bool bigFence(std::u16string_view value) {
+    return value == u"big" || value == u"Big" || value == u"bigg" || value == u"Bigg";
 }
-std::u16string outputBraket(const std::array<std::u16string, 3> &a, bool star1,
-                            bool star2) {
-  if (star1 && star2)
-    return u"\\left\\langle{" + a[0] + u"}\\middle\\vert{" + a[1] +
-           u"}\\middle\\vert{" + a[2] + u"}\\right\\rangle";
-  if (star1)
-    return u"\\langle{" + a[0] + u"}\\vert{" + a[1] + u"}\\vert{" + a[2] +
-           u"}\\rangle";
-  return u"\\left\\langle{" + a[0] + u"}\\right\\vert{" + a[1] +
-         u"}\\left\\vert{" + a[2] + u"}\\right\\rangle";
+[[noreturn]] void missingArgument(TexParser &parser) {
+    const std::array args{parser.currentCS()};
+    throw TexError("MissingArgFor", u"Missing argument for %1", args);
 }
-FunctionRef quantity() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    const auto name = atom(a);
-    const auto open =
-        property_host::string(val(r, 0).missing() ? Property("(") : val(r, 0));
-    const auto close =
-        property_host::string(val(r, 1).missing() ? Property(")") : val(r, 1));
-    const bool arg = property_host::truthy(val(r, 2));
-    const auto namedValue = val(r, 3);
-    const auto variantValue = val(r, 4);
-    // TypeScript default parameters apply when the argument is undefined.
-    // Converting Missing first would turn it into the literal "undefined".
-    const auto named = namedValue.missing()
-                           ? std::u16string{}
-                           : property_host::string(namedValue);
-    const auto variant = variantValue.missing()
-                             ? std::u16string{}
-                             : property_host::string(variantValue);
-    const bool star = arg ? p.GetStar() : false;
-    auto next = p.GetNext();
-    const auto position = p.i;
-    std::u16string big;
-    if (next == u"\\") {
-      p.i++;
-      big = p.GetCS();
-      if (!isBigFence(big)) {
-        auto empty = node(p, u"mrow");
-        p.Push(ParseUtil::fenced(config(p), open, empty, close));
-        p.i = position;
-        return Property(Missing{});
-      }
-      next = p.GetNext();
-    }
-    const auto right = pairFor(next);
-    if (arg && next != u"{")
-      throw TexError(u"MissingArgFor", u"Missing argument for %1",
-                     std::array<Property, 1>{p.currentCS()});
-    if (!right) {
-      auto empty = node(p, u"mrow");
-      p.Push(ParseUtil::fenced(config(p), open, empty, close));
-      p.i = position;
-      return Property(Missing{});
-    }
-    if (!named.empty()) {
-      auto m = token(p, u"mi",
-                     Property(PropertyList{{"texClass", mml::TEXCLASS.OP}}),
-                     Property(property_host::debugText(named)));
-      if (!variant.empty())
-        NodeUtil::instance().setAttribute(
-            m, "mathvariant", Property(property_host::debugText(variant)));
-      const std::any x(m);
-      auto *fn = itemFactory(p).create("fn", tree::FactoryArgs(&x, 1));
-      p.Push(itemFactory(p).reference(fn));
-    }
-    if (next == u"{") {
-      auto argument = property_host::string(p.GetArgument(name));
-      const auto left = arg ? open : std::u16string(u"\\{");
-      const auto rightText = arg ? close : std::u16string(u"\\}");
-      if (star)
-        argument = left + u" " + argument + u" " + rightText;
-      else if (!big.empty())
-        argument = u"\\" + big + u"l" + left + u" " + argument + u" \\" + big +
-                   u"r" + rightText;
-      else
-        argument = u"\\left" + left + u" " + argument + u" \\right" + rightText;
-      return pushNested(p, std::move(argument));
-    }
-    ++p.i;
-    return pushAutoOpen(
-        p, next, std::u16string(1, right),
-        PropertyList{{"big", big.empty()
-                                 ? Property(PropertyNull{})
-                                 : Property(property_host::debugText(big))}});
-  });
+NodeDefinition operatorDefinition() {
+    NodeDefinition result;
+    result.properties.tex.explicit_tex_class = mml::TexClass::op;
+    return result;
 }
-FunctionRef eval() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest) -> ParseResult {
-    auto &p = parser(c);
-    const auto name = atom(a);
-    const bool star = p.GetStar();
-    const auto next = p.GetNext();
-    if (next == u"(" || next == u"[") {
-      ++p.i;
-      PropertyList x{{"smash", star}, {"right", Property("\\vphantom{\\int}")}};
-      return pushAutoOpen(p, next, u"|", std::move(x));
-    }
-    std::u16string replacement = u"\\left.\\vphantom{\\int}\\right|";
-    if (next == u"{") {
-      auto arg = property_host::string(p.GetArgument(name));
-      replacement = u"\\left." + (star ? u"\\smash{" + arg + u"}" : arg) +
-                    u"\\vphantom{\\int}\\right|";
-    }
-    rewrite(p, std::move(replacement));
-    return Property(Missing{});
-  });
+std::u16string fencedSource(std::u16string const &open, std::u16string const &body,
+                            std::u16string const &close, bool star, std::u16string const &big) {
+    if (star)
+        return open + u" " + body + u" " + close;
+    if (!big.empty())
+        return u"\\" + big + u"l" + open + u" " + body + u" \\" + big + u"r" + close;
+    return u"\\left" + open + u" " + body + u" \\right" + close;
 }
-FunctionRef commutator() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    const auto name = atom(a);
-    const auto open =
-        property_host::string(val(r, 0).missing() ? Property("[") : val(r, 0));
-    const auto close =
-        property_host::string(val(r, 1).missing() ? Property("]") : val(r, 1));
-    const bool star = p.GetStar();
-    auto next = p.GetNext();
-    std::u16string big;
-    if (next == u"\\") {
-      ++p.i;
-      big = p.GetCS();
-      if (!isBigFence(big))
-        throw TexError(u"MissingArgFor", u"Missing argument for %1",
-                       std::array<Property, 1>{p.currentCS()});
-      next = p.GetNext();
-    }
-    if (next != u"{")
-      throw TexError(u"MissingArgFor", u"Missing argument for %1",
-                     std::array<Property, 1>{p.currentCS()});
-    auto a1 = property_host::string(p.GetArgument(name));
-    auto a2 = property_host::string(p.GetArgument(name));
-    auto body = a1 + u"," + a2;
-    auto s = star
-                 ? open + u" " + body + u" " + close
-                 : (!big.empty()
-                        ? u"\\" + big + u"l" + open + u" " + body + u" \\" +
-                              big + u"r" + close
-                        : u"\\left" + open + u" " + body + u" \\right" + close);
-    return pushNested(p, std::move(s));
-  });
+MmlNode &createVectorToken(NodeFactory &factory, NodeKind kind, NodeDefinition definition,
+                           std::optional<std::u16string_view> text) {
+    auto &token = NodeFactory::createToken(factory, kind, std::move(definition), text);
+    auto const &env = factory.configuration().environment();
+    if (!text || text->size() != 1 || (env.font && !env.font->empty()) || !env.vector_font ||
+        env.vector_font->empty())
+        return token;
+    const auto code = (*text)[0];
+    auto between = [&](char16_t low, char16_t high) { return low <= code && code <= high; };
+    const auto *accent = token.attributes().lookup(u"accent");
+    const auto *accentFlag = accent ? std::get_if<bool>(accent) : nullptr;
+    if (between(0x41, 0x5a) || between(0x61, 0x7a) || between(0x391, 0x3a9) ||
+        between(0x30, 0x39) || (between(0x3b1, 0x3c9) && env.vector_star.value_or(false)) ||
+        (accentFlag && *accentFlag))
+        token.attributes().set(u"mathvariant", *env.vector_font);
+    return token;
 }
-FunctionRef starMacro() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    const auto name = atom(a);
-    const bool star = p.GetStar();
-    const double n = property_host::number(val(r, 0));
-    std::vector<std::u16string> parts;
-    for (std::size_t i = 1; i < r.size(); ++i)
-      parts.push_back(property_host::string(val(r, i)));
-    std::u16string macro;
-    for (std::size_t i = 0; i < parts.size(); ++i) {
-      if (i)
-        macro += star ? u"*" : u"";
-      macro += parts[i];
-    }
-    PropertyArray arguments;
-    for (int i = 0; i < static_cast<int>(n); ++i)
-      arguments.push(Property(property_host::debugText(
-          property_host::string(p.GetArgument(name)))));
-    auto &runtime = config(p).runtime();
-    macro = ParseUtil::substituteArgs(
-        p, runtime.properties.to(Property(arguments)), std::move(macro));
-    p.setString(ParseUtil::addArgs(
-        p, std::move(macro), p.string().substr(static_cast<std::size_t>(p.i))));
-    p.i = 0;
-    ParseUtil::checkMaxMacros(p);
-    return Property(Missing{});
-  });
-}
-FunctionRef operatorApplication(bool vector) {
-  return method([vector](const FunctionReceiver &, ParserContext &c,
-                         const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    const auto name = atom(a), op = str(r, 0);
-    auto operation = nested(p, op)->mml();
-    const std::any arg(operation);
-    auto *item = itemFactory(p).create(vector ? "mml" : "fn",
-                                       tree::FactoryArgs(&arg, 1));
-    p.Push(itemFactory(p).reference(item));
-    const auto left = p.GetNext();
-    const auto right = pairFor(left);
+void vectorApplication(TexParser &parser, MacroInvocation const &invocation, bool vector) {
+    auto args = arguments(invocation);
+    auto &op = nested(parser, stringArg(args, 0));
+    parser.Push(vector ? parser.itemFactory().create(StackKind::mml, MmlItemInit{op})
+                       : parser.itemFactory().create(StackKind::fn, FnItemInit{op}));
+    auto left = parser.GetNext();
+    const auto right = closingFence(left);
     if (!right)
-      return Property(Missing{});
-    std::vector<std::u16string> fences;
-    for (std::size_t i = 1; i < r.size(); ++i)
-      fences.push_back(str(r, i));
-    const bool enlarge = std::ranges::find(fences, left) != fences.end();
+        return;
+    const bool enlarge = std::ranges::any_of(
+        args.subspan(1), [&](auto const &arg) { return std::get<std::u16string>(arg) == left; });
     if (left == u"{") {
-      auto value = property_host::string(p.GetArgument(name));
-      std::u16string macro = enlarge ? u"\\left\\{" : u"";
-      macro += u" " + value + u" ";
-      if (enlarge)
-        macro += u"\\right\\}";
-      p.setString(ParseUtil::addArgs(
-          p, macro, p.string().substr(static_cast<std::size_t>(p.i))));
-      p.i = 0;
-      return Property(Missing{});
+        auto argument = parser.GetArgument(invocation.dispatch_token).value();
+        auto macro = (enlarge ? std::u16string(u"\\left\\{") : u"") + u" " + argument + u" " +
+                     (enlarge ? u"\\right\\}" : u"");
+        // Source concatenates directly here; it does not insert macro argument spacing.
+        replaceRemaining(parser, std::move(macro));
+    } else if (enlarge) {
+        parser.setPosition(parser.position() + 1);
+        parser.Push(autoOpen(parser, left, std::u16string(1, right)));
     }
-    if (enlarge) {
-      ++p.i;
-      return pushAutoOpen(p, left, std::u16string(1, right));
-    }
-    return Property(Missing{});
-  });
 }
-FunctionRef expression() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    auto name = atom(a);
-    const bool opt = val(r, 0).missing() || property_host::truthy(val(r, 0));
-    const auto idValue = val(r, 1);
-    auto id = property_host::string(idValue);
-    if (!property_host::truthy(idValue))
-      id = name.size() > 1 ? name.substr(1) : name;
-    const auto exp = opt ? p.GetBrackets(name) : Property(PropertyNull{});
-    auto op =
-        token(p, u"mi", Property(PropertyList{{"texClass", mml::TEXCLASS.OP}}),
-              Property(property_host::debugText(id)));
-    if (property_host::truthy(exp)) {
-      auto sup = nested(p, property_host::string(exp))->mml();
-      op = node(p, u"msup", children({op, sup}));
-    }
-    const std::any arg(op);
-    auto *fn = itemFactory(p).create("fn", tree::FactoryArgs(&arg, 1));
-    p.Push(itemFactory(p).reference(fn));
-    if (p.GetNext() == u"(") {
-      ++p.i;
-      return pushAutoOpen(p, u"(", u")");
-    }
-    return Property(Missing{});
-  });
+std::u16string outputBraket(std::array<std::u16string, 3> const &args, bool star1, bool star2) {
+    if (star1 && star2)
+        return u"\\left\\langle{" + args[0] + u"}\\middle\\vert{" + args[1] + u"}\\middle\\vert{" +
+               args[2] + u"}\\right\\rangle";
+    if (star1)
+        return u"\\langle{" + args[0] + u"}\\vert{" + args[1] + u"}\\vert{" + args[2] +
+               u"}\\rangle";
+    return u"\\left\\langle{" + args[0] + u"}\\right\\vert{" + args[1] + u"}\\left\\vert{" +
+           args[2] + u"}\\right\\rangle";
 }
-FunctionRef vectorBold() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest) -> ParseResult {
-    auto &p = parser(c);
-    const auto name = atom(a);
-    const bool star = p.GetStar();
-    const auto argument = property_host::string(p.GetArgument(name));
-    auto &parseOptions = config(p);
-    auto factory = parseOptions.nodeFactoryOwnerRef();
-    const Property oldToken = factory->get("token");
-    const Property env = stack(p).env();
-    const Property oldFont = property_host::get(env, "font");
-    if (auto record = PropertyList::record(env))
-      record->erase("font");
-    const auto vectorFont =
-        Property(property_host::debugText(star ? u"bold-italic" : u"bold"));
-    property_host::set(env, "vectorFont", vectorFont);
-    property_host::set(env, "vectorStar", Property(star));
-    auto custom = std::make_shared<Function>();
-    custom->call = [factory, env](const FunctionReceiver &,
-                                  FunctionArgs args) -> std::any {
-      const auto read = [&](std::size_t index) -> Property {
-        if (index >= args.size())
-          return Missing{};
-        if (const auto *value = std::any_cast<Property>(&args[index]))
-          return *value;
-        property_host::typeError(
-            "NodeFactory token argument is not a Property");
-      };
-      auto result =
-          NodeFactory::createToken(*factory, read(1), read(2), read(3));
-      const auto text = property_host::string(read(3));
-      if (text.size() == 1) {
-        const auto ch = static_cast<std::uint32_t>(text[0]);
-        const bool ordinary =
-            inRange(ch, 0x41, 0x5a) || inRange(ch, 0x61, 0x7a) ||
-            inRange(ch, 0x391, 0x3a9) || inRange(ch, 0x30, 0x39) ||
-            (inRange(ch, 0x3b1, 0x3c9) &&
-             property_host::truthy(property_host::get(env, "vectorStar")));
-        if (!property_host::truthy(property_host::get(env, "font")) &&
-            property_host::truthy(property_host::get(env, "vectorFont")) &&
-            (ordinary ||
-             property_host::truthy(
-                 NodeUtil::instance().getAttribute(result, "accent"))))
-          NodeUtil::instance().setAttribute(
-              result, "mathvariant", property_host::get(env, "vectorFont"));
-      }
-      return result;
-    };
-    factory->set("token", Property(FunctionRef(custom)));
-    auto result = nested(p, argument)->mml();
-    if (property_host::truthy(oldFont))
-      property_host::set(env, "font", oldFont);
-    else if (auto record = PropertyList::record(env))
-      record->erase("font");
-    if (auto record = PropertyList::record(env)) {
-      record->erase("vectorFont");
-      record->erase("vectorStar");
-    }
-    factory->set("token", oldToken);
-    return push(p, result);
-  });
-}
-FunctionRef qqtext() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    auto name = atom(a);
-    const bool star = p.GetStar();
-    const auto textValue = val(r, 0);
-    auto text = property_host::string(textValue);
-    if (!property_host::truthy(textValue))
-      text = property_host::string(p.GetArgument(name));
-    std::u16string replacement = star ? u"" : u"\\quad";
-    replacement += u"\\text{" + text + u"}\\quad ";
-    rewrite(p, std::move(replacement));
-    return Property(Missing{});
-  });
-}
-FunctionRef differential() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    auto name = atom(a), op = str(r, 0);
-    const auto exponent = p.GetBrackets(name);
-    const auto power = property_host::nullish(exponent)
-                           ? std::u16string(u" ")
-                           : u"^{" + property_host::string(exponent) + u"}";
-    const bool parens = p.GetNext() == u"(", braces = p.GetNext() == u"{";
-    std::u16string macro = op + power;
-    if (!parens && !braces) {
-      const auto argument = p.GetArgument(name, true);
-      if (property_host::truthy(argument))
-        macro += property_host::string(argument);
-      return pushNested(p, std::move(macro));
-    }
-    if (braces) {
-      macro += property_host::string(p.GetArgument(name));
-      auto inner = nested(p, macro)->mml();
-      return push(p,
-                  node(p, u"TeXAtom", children({inner}),
-                       Property(PropertyList{{"texClass", mml::TEXCLASS.OP}})));
-    }
-    pushNested(p, std::move(macro));
-    ++p.i;
-    return pushAutoOpen(p, u"(", u")");
-  });
-}
-FunctionRef derivative() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    auto name = atom(a);
-    const auto max = property_host::number(val(r, 0));
-    const auto op = str(r, 1);
-    const bool star = p.GetStar();
-    const auto opt = p.GetBrackets(name);
-    std::vector<std::u16string> args{
-        property_host::string(p.GetArgument(name))};
-    while (p.GetNext() == u"{" && args.size() < max)
-      args.push_back(property_host::string(p.GetArgument(name)));
-    bool ignore = false;
-    std::u16string pow1 = u" ", pow2 = u" ";
-    if (max > 2 && args.size() > 2) {
-      pow1 = u"^{" +
-             std::u16string(1, static_cast<char16_t>(u'0' + args.size() - 1)) +
-             u"}";
-      ignore = true;
-    } else if (!property_host::nullish(opt)) {
-      if (max > 2 && args.size() > 1)
-        ignore = true;
-      pow1 = pow2 = u"^{" + property_host::string(opt) + u"}";
-    }
-    const auto first = args.size() > 1 ? args[0] : u"";
-    const auto second = args.size() > 1 ? args[1] : args[0];
-    std::u16string rest;
-    for (std::size_t i = 2; i < args.size() && !args[i].empty(); ++i)
-      rest += op + u" " + args[i];
-    std::u16string fraction = star ? u"\\flatfrac" : u"\\frac";
-    fraction += u"{" + op + pow1 + first + u"}{" + op + u" " + second + pow2 +
-                u" " + rest + u"}";
-    pushNested(p, std::move(fraction));
-    if (p.GetNext() == u"(") {
-      ++p.i;
-      return pushAutoOpen(p, u"(", u")", PropertyList{{"ignore", ignore}});
-    }
-    return Property(Missing{});
-  });
-}
-FunctionRef simpleBraKet(std::string kind) {
-  return method([kind = std::move(kind)](const FunctionReceiver &,
-                                         ParserContext &c, const ParseAtom &a,
-                                         ParseRest) -> ParseResult {
-    auto &p = parser(c);
-    auto name = atom(a);
-    const bool star = p.GetStar();
-    auto x = property_host::string(p.GetArgument(name));
-    std::u16string macro;
-    if (kind == "ket")
-      macro = star ? u"\\vert{" + x + u"}\\rangle"
-                   : u"\\left\\vert{" + x + u"}\\right\\rangle";
-    else if (kind == "bra")
-      macro = star ? u"\\langle{" + x + u"}\\vert"
-                   : u"\\left\\langle{" + x + u"}\\right\\vert";
-    else {
-      std::optional<std::u16string> y;
-      if (p.GetNext() == u"{")
-        y = property_host::string(p.GetArgument(name, true));
-      if (kind == "braket") {
-        const auto ket = y ? *y : x;
-        macro = star ? u"\\langle{" + x + u"}\\vert{" + ket + u"}\\rangle"
-                     : u"\\left\\langle{" + x + u"}\\middle\\vert{" + ket +
-                           u"}\\right\\rangle";
-      } else {
-        const auto bra = y ? *y : x;
-        macro =
-            star ? u"\\vert{" + x + u"}\\rangle\\!\\langle{" + bra + u"}\\vert"
-                 : u"\\left\\vert{" + x +
-                       u"}\\middle\\rangle\\!\\middle\\langle{" + bra +
-                       u"}\\right\\vert";
-      }
-    }
-    return pushNested(p, std::move(macro));
-  });
-}
-FunctionRef matrixElement() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest) -> ParseResult {
-    auto &p = parser(c);
-    auto name = atom(a);
-    const bool s1 = p.GetStar(), s2 = s1 && p.GetStar();
-    std::array<std::u16string, 3> x{property_host::string(p.GetArgument(name)),
-                                    property_host::string(p.GetArgument(name)),
-                                    property_host::string(p.GetArgument(name))};
-    return pushNested(p, outputBraket(x, s1, s2));
-  });
-}
-FunctionRef expectation() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest) -> ParseResult {
-    auto &p = parser(c);
-    auto name = atom(a);
-    const bool s1 = p.GetStar(), s2 = s1 && p.GetStar();
-    auto op = property_host::string(p.GetArgument(name));
-    std::u16string state;
-    if (p.GetNext() == u"{")
-      state = property_host::string(p.GetArgument(name, true));
-    const auto m = (!op.empty() && !state.empty())
-                       ? outputBraket({state, op, state}, s1, s2)
-                       : (s1 ? u"\\langle {" + op + u"} \\rangle"
-                             : u"\\left\\langle {" + op + u"} \\right\\rangle");
-    return pushNested(p, m);
-  });
-}
-FunctionRef matrixQuantity() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    auto name = atom(a);
-    const bool star = p.GetStar();
-    const auto next = p.GetNext();
-    const std::u16string array = truth(r, 0) ? u"smallmatrix" : u"array";
-    std::u16string arg, open, close;
-    if (next == u"{")
-      arg = property_host::string(p.GetArgument(name));
-    else if (next == u"(" || next == u"[" || next == u"|") {
-      ++p.i;
-      open = next == u"(" ? (star ? u"\\lgroup" : u"(") : next;
-      close = next == u"("   ? (star ? u"\\rgroup" : u")")
-              : next == u"[" ? u"]"
-                             : u"|";
-      arg = p.GetUpTo(name, next == u"(" ? u")" : next);
-    } else {
-      open = u"(";
-      close = u")";
-    }
-    std::u16string macro = open.empty() ? u"" : u"\\left";
-    macro += open + u"\\begin{" + array + u"}{} " + arg + u"\\end{" + array +
-             u"}" + (open.empty() ? u"" : u"\\right") + close;
-    return pushNested(p, std::move(macro));
-  });
-}
-FunctionRef identityMatrix() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest) -> ParseResult {
-    auto &p = parser(c);
-    const auto source = property_host::string(p.GetArgument(atom(a)));
-    const double parsed =
-        js_input::parseInt(source, js_input::IntegerRadix::Decimal);
-    if (std::isnan(parsed))
-      throw TexError(u"InvalidNumber", u"Invalid number");
-    if (parsed <= 1) {
-      p.setString(u"1" + p.string().substr(static_cast<std::size_t>(p.i)));
-      p.i = 0;
-      return Property(Missing{});
-    }
-    const auto size = static_cast<std::size_t>(parsed);
-    std::u16string matrix;
-    for (std::size_t i = 0; i < size; ++i) {
-      if (i)
-        matrix += u"\\\\ ";
-      for (std::size_t j = 0; j < size; ++j) {
-        if (j)
-          matrix += u" & ";
-        matrix += i == j ? u"1" : u"0";
-      }
-    }
-    p.setString(matrix + p.string().substr(static_cast<std::size_t>(p.i)));
-    p.i = 0;
-    return Property(Missing{});
-  });
-}
-FunctionRef xmatrix() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest) -> ParseResult {
-    auto &p = parser(c);
-    auto name = atom(a);
-    const bool star = p.GetStar();
-    const auto fill = property_host::string(p.GetArgument(name));
-    const auto ns = property_host::string(p.GetArgument(name)),
-               ms = property_host::string(p.GetArgument(name));
-    double nd = js_input::parseInt(ns, js_input::IntegerRadix::Decimal),
-           md = js_input::parseInt(ms, js_input::IntegerRadix::Decimal);
-    if (std::isnan(nd) || std::isnan(md) || numberText(nd) != ns ||
-        numberText(md) != ms)
-      throw TexError(u"InvalidNumber", u"Invalid number");
-    const auto n = static_cast<std::size_t>(std::max(nd, 1.0)),
-               m = static_cast<std::size_t>(std::max(md, 1.0));
-    std::u16string matrix;
-    if (!star) {
-      for (std::size_t i = 0; i < n; ++i) {
-        if (i)
-          matrix += u"\\\\ ";
-        for (std::size_t j = 0; j < m; ++j) {
-          if (j)
-            matrix += u" & ";
-          matrix += fill;
-        }
-      }
-    } else if (n == 1 && m == 1)
-      matrix = fill;
-    else if (n == 1) {
-      for (std::size_t j = 1; j <= m; ++j) {
-        if (j > 1)
-          matrix += u" & ";
-        matrix += fill + u"_{" + numberText(static_cast<double>(j)) + u"}";
-      }
-    } else if (m == 1) {
-      for (std::size_t i = 1; i <= n; ++i) {
-        if (i > 1)
-          matrix += u"\\\\ ";
-        matrix += fill + u"_{" + numberText(static_cast<double>(i)) + u"}";
-      }
-    } else {
-      for (std::size_t i = 1; i <= n; ++i) {
-        if (i > 1)
-          matrix += u"\\\\ ";
-        for (std::size_t j = 1; j <= m; ++j) {
-          if (j > 1)
-            matrix += u" & ";
-          matrix += fill + u"_{{" + numberText(static_cast<double>(i)) + u"}{" +
-                    numberText(static_cast<double>(j)) + u"}}";
-        }
-      }
-    }
-    p.setString(matrix + p.string().substr(static_cast<std::size_t>(p.i)));
-    p.i = 0;
-    return Property(Missing{});
-  });
-}
-FunctionRef pauli() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest) -> ParseResult {
-    auto &p = parser(c);
-    auto arg = property_host::string(p.GetArgument(atom(a)));
-    std::u16string matrix = arg.size() > 1 ? arg.substr(1) : u"";
-    if (!arg.empty())
-      switch (arg[0]) {
-      case u'0':
-        matrix += u" 1 & 0\\\\ 0 & 1";
-        break;
-      case u'1':
-      case u'x':
-        matrix += u" 0 & 1\\\\ 1 & 0";
-        break;
-      case u'2':
-      case u'y':
-        matrix += u" 0 & -i\\\\ i & 0";
-        break;
-      case u'3':
-      case u'z':
-        matrix += u" 1 & 0\\\\ 0 & -1";
-        break;
-      }
-    p.setString(matrix + p.string().substr(static_cast<std::size_t>(p.i)));
-    p.i = 0;
-    return Property(Missing{});
-  });
-}
-FunctionRef diagonal() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    const auto name = atom(a);
-    const bool anti = truth(r, 0);
-    if (p.GetNext() != u"{")
-      return Property(Missing{});
-    const auto start = static_cast<std::size_t>(p.i);
-    (void)p.GetArgument(name);
-    const auto end = static_cast<std::size_t>(p.i);
-    p.i = static_cast<double>(start + 1);
-    std::vector<std::u16string> entries;
-    std::size_t current = static_cast<std::size_t>(p.i);
-    while (current < end) {
-      try {
-        entries.push_back(p.GetUpTo(name, u","));
-        current = static_cast<std::size_t>(p.i);
-      } catch (...) {
-        p.i = static_cast<double>(end);
-        entries.push_back(
-            p.string().substr(current, end > 0 ? end - 1 - current : 0));
-        break;
-      }
-    }
-    std::u16string matrix;
-    for (std::size_t i = 0; i < entries.size(); ++i) {
-      if (i)
-        matrix += u"\\\\ ";
-      for (std::size_t j = 0; j < (anti ? entries.size() - i - 1 : i); ++j)
-        matrix += u"&";
-      matrix += u"\\mqty{" + entries[i] + u"}";
-    }
-    p.setString(matrix + p.string().substr(end));
-    p.i = 0;
-    return Property(Missing{});
-  });
-}
-FunctionRef autoClose() {
-  return method([](const FunctionReceiver &, ParserContext &c,
-                   const ParseAtom &a, ParseRest r) -> ParseResult {
-    auto &p = parser(c);
-    const auto fence = std::get_if<Property>(&a)
-                           ? property_host::string(std::get<Property>(a))
-                           : u"";
-    const auto cls = val(r, 0);
-    auto top = stack(p).Top();
-    auto *ref = std::get_if<StackItemRef>(&top);
-    if (ref && *ref) {
-      auto *base = dynamic_cast<BaseItem *>(ref->get());
-      if (base && base->isKind("over"))
-        top = stack(p).Top(Property(2));
-    }
-    ref = std::get_if<StackItemRef>(&top);
-    auto *item = ref && *ref ? dynamic_cast<AutoOpen *>(ref->get()) : nullptr;
-    if (!item || !item->closing(fence))
-      return Property(false);
-    auto mo = token(p, u"mo", Property(PropertyList{{"texClass", cls}}),
-                    Property(property_host::debugText(fence)));
-    auto *close = createItem(p, "close");
-    close->setProperty("pre-autoclose", StackProperty(true));
-    p.Push(itemFactory(p).reference(close));
-    auto *mmlitem = createItem(p, "mml");
-    mmlitem->Push(std::array<mml::NodeValue, 1>{mo});
-    mmlitem->setProperty("autoclose", StackProperty(true));
-    p.Push(itemFactory(p).reference(mmlitem));
-    return Property(true);
-  });
-}
-FunctionRef togglePush(bool arrow) {
-  return method([arrow](const FunctionReceiver &, ParserContext &c,
-                        const ParseAtom &, ParseRest) -> ParseResult {
-    auto &p = parser(c);
-    auto &runtime = config(p).runtime();
-    const Property sourceOptions = runtime.properties.from(config(p).options);
-    const Property physics = property_host::get(sourceOptions, "physics");
-    const Property option =
-        property_host::get(physics, arrow ? "arrowdel" : "italicdiff");
-    const auto enabled = property_host::truthy(option);
-    return pushNested(
-        p, arrow ? (enabled ? u"\\vec{\\gradientnabla}" : u"{\\gradientnabla}")
-                 : (enabled ? u"d" : u"{\\rm d}"));
-  });
+std::size_t matrixDimension(double value) {
+    // Source Array(length) has a finite integral uint32 length. Validate before native conversion.
+    if (!std::isfinite(value) || value < 0 || std::trunc(value) != value ||
+        value > std::numeric_limits<std::uint32_t>::max())
+        throw std::length_error("Invalid matrix dimension");
+    return static_cast<std::size_t>(value);
 }
 } // namespace
-Property PhysicsMethodSet::get(std::u16string_view name) const {
-  return property_host::get(methods, property_host::debugText(name));
-}
-PhysicsMethodSet PhysicsMethods::create(ParserRuntime &runtime) {
-  PropertyList table;
-  const auto add = [&](std::u16string_view name, FunctionRef f,
-                       std::size_t length) {
-    const auto bound = BaseMethods::bind(runtime, f, std::u16string(name));
-    const auto *id = std::get_if<options::ObjectRef>(&bound.data);
-    if (!id)
-      throw options::Exception("TypeError",
-                               u"Physics method has no Context identity");
-    runtime.context().define(
-        *id, options::Key(u"length"),
-        options::Descriptor::data(options::Value(static_cast<double>(length)),
-                                  false, false, true));
-    table.setOwn(std::string(name.begin(), name.end()), Property(std::move(f)));
-  };
-  add(u"Quantity", quantity(), 7);
-  add(u"Eval", eval(), 2);
-  add(u"Commutator", commutator(), 4);
-  add(u"VectorBold", vectorBold(), 2);
-  add(u"StarMacro", starMacro(), 3);
-  add(u"OperatorApplication", operatorApplication(false), 3);
-  add(u"VectorOperator", operatorApplication(true), 3);
-  add(u"Expression", expression(), 4);
-  add(u"Qqtext", qqtext(), 3);
-  add(u"Differential", differential(), 3);
-  add(u"Derivative", derivative(), 4);
-  const auto bra = method([](const FunctionReceiver &, ParserContext &context,
-                             const ParseAtom &atomValue,
-                             ParseRest) -> ParseResult {
-    auto &active = parser(context);
-    const auto name = atom(atomValue);
-    const bool starBra = active.GetStar();
-    const auto braText = property_host::string(active.GetArgument(name));
-    std::u16string ketText;
-    bool hasKet = false;
-    bool starKet = false;
-    if (active.GetNext() == u"\\") {
-      const auto savedIndex = active.i;
-      ++active.i;
-      const auto command = active.GetCS();
-      const auto found = active.lookup(HandlerType.get("MACRO"), command);
-      if (const auto *macro = std::get_if<MacroRef>(&found);
-          macro && *macro &&
-          property_host::string((*macro)->token()) == u"ket") {
-        hasKet = true;
-        const auto afterCommand = active.i;
-        starKet = active.GetStar();
-        if (active.GetNext() == u"{") {
-          ketText = property_host::string(active.GetArgument(command, true));
-        } else {
-          active.i = afterCommand;
-          starKet = false;
+
+DispatchOutcome PhysicsMethods::Quantity(TexParser &parser, MacroInvocation const &invocation) {
+    auto args = arguments(invocation);
+    auto open = stringArg(args, 0, u"("), close = stringArg(args, 1, u")");
+    const bool arg = flagArg(args, 2), star = arg ? parser.GetStar() : false;
+    auto next = parser.GetNext();
+    const auto position = parser.position();
+    std::u16string big;
+    if (next == u"\\") {
+        parser.setPosition(parser.position() + 1);
+        big = parser.GetCS();
+        if (!bigFence(big)) {
+            auto &empty = parser.create(NodeKind::mrow);
+            parser.Push(&parse_util::fenced(parser.configuration, open, empty, close));
+            parser.setPosition(position);
+            return NoParseResult{};
         }
-      } else {
-        active.i = savedIndex;
-      }
+        next = parser.GetNext();
     }
-    std::u16string expanded;
-    if (hasKet) {
-      expanded =
-          (starBra || starKet)
-              ? u"\\langle{" + braText + u"}\\vert{" + ketText + u"}\\rangle"
-              : u"\\left\\langle{" + braText + u"}\\middle\\vert{" + ketText +
-                    u"}\\right\\rangle";
+    const auto right = closingFence(next);
+    if (arg && next != u"{")
+        missingArgument(parser);
+    if (!right) {
+        auto &empty = parser.create(NodeKind::mrow);
+        parser.Push(&parse_util::fenced(parser.configuration, open, empty, close));
+        parser.setPosition(position);
+        return NoParseResult{};
+    }
+    auto named = stringArg(args, 3), variant = stringArg(args, 4);
+    if (!named.empty()) {
+        auto &function = parser.createToken(NodeKind::mi, named, operatorDefinition());
+        if (!variant.empty())
+            function.attributes().set(u"mathvariant", variant);
+        parser.Push(parser.itemFactory().create(StackKind::fn, FnItemInit{function}));
+    }
+    if (next == u"{") {
+        auto body = parser.GetArgument(invocation.dispatch_token).value();
+        return pushNested(parser,
+                          fencedSource(arg ? open : u"\\{", body, arg ? close : u"\\}", star, big));
+    }
+    parser.setPosition(parser.position() + 1);
+    auto frame = autoOpen(parser, next, std::u16string(1, right));
+    dynamic_cast<AutoOpen &>(*frame).big = std::move(big);
+    parser.Push(std::move(frame));
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::Eval(TexParser &parser, MacroInvocation const &invocation) {
+    const bool star = parser.GetStar();
+    auto next = parser.GetNext();
+    if (next == u"(" || next == u"[") {
+        parser.setPosition(parser.position() + 1);
+        auto frame = autoOpen(parser, next, u"|");
+        auto &open = dynamic_cast<AutoOpen &>(*frame);
+        open.smash = star;
+        open.right = u"\\vphantom{\\int}";
+        parser.Push(std::move(frame));
     } else {
-      expanded = starBra ? u"\\langle{" + braText + u"}\\vert"
-                         : u"\\left\\langle{" + braText + u"}\\right\\vert";
+        std::u16string replacement = u"\\left.\\vphantom{\\int}\\right|";
+        if (next == u"{") {
+            auto body = parser.GetArgument(invocation.dispatch_token).value();
+            replacement = u"\\left." + (star ? u"\\smash{" + body + u"}" : body) +
+                          u"\\vphantom{\\int}\\right|";
+        }
+        insertAtPosition(parser, std::move(replacement));
     }
-    return pushNested(active, std::move(expanded));
-  });
-  add(u"Bra", bra, 2);
-  add(u"Ket", simpleBraKet("ket"), 2);
-  add(u"BraKet", simpleBraKet("braket"), 2);
-  add(u"KetBra", simpleBraKet("ketbra"), 2);
-  add(u"Expectation", expectation(), 2);
-  add(u"MatrixElement", matrixElement(), 2);
-  add(u"MatrixQuantity", matrixQuantity(), 3);
-  add(u"IdentityMatrix", identityMatrix(), 2);
-  add(u"XMatrix", xmatrix(), 2);
-  add(u"PauliMatrix", pauli(), 2);
-  add(u"DiagonalMatrix", diagonal(), 3);
-  add(u"AutoClose", autoClose(), 3);
-  add(u"Vnabla", togglePush(true), 2);
-  add(u"DiffD", togglePush(false), 2);
-  table.setOwn("Macro", BaseMethods::get(runtime, u"Macro"));
-  table.setOwn("NamedFn", BaseMethods::get(runtime, u"NamedFn"));
-  table.setOwn("Array", BaseMethods::get(runtime, u"Array"));
-  return {Property(std::move(table))};
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::Commutator(TexParser &parser, MacroInvocation const &invocation) {
+    auto args = arguments(invocation);
+    const bool star = parser.GetStar();
+    auto next = parser.GetNext();
+    std::u16string big;
+    if (next == u"\\") {
+        parser.setPosition(parser.position() + 1);
+        big = parser.GetCS();
+        if (!bigFence(big))
+            missingArgument(parser);
+        next = parser.GetNext();
+    }
+    if (next != u"{")
+        missingArgument(parser);
+    auto first = parser.GetArgument(invocation.dispatch_token).value();
+    auto second = parser.GetArgument(invocation.dispatch_token).value();
+    return pushNested(parser, fencedSource(stringArg(args, 0, u"["), first + u"," + second,
+                                           stringArg(args, 1, u"]"), star, big));
+}
+DispatchOutcome PhysicsMethods::VectorBold(TexParser &parser, MacroInvocation const &invocation) {
+    const bool star = parser.GetStar();
+    auto source = parser.GetArgument(invocation.dispatch_token).value();
+    auto &factory = parser.configuration.nodeFactory;
+    auto environment = parser.stack.environmentScope();
+    MmlNode *result{};
+    {
+        struct Restore {
+            NodeFactory &factory;
+            TokenCreator token;
+            EnvironmentScope environment;
+            std::optional<std::u16string> font;
+            ~Restore() {
+                environment->font = font && !font->empty() ? std::move(font) : std::nullopt;
+                // Source removes these fields after nested parsing, even inside a vector
+                // expression.
+                environment->vector_font.reset();
+                environment->vector_star.reset();
+                factory.setCreators(NodeCreators{.token = token});
+            }
+        } restore{factory, factory.creators().token.value(), environment, environment->font};
+        environment->font.reset();
+        factory.setCreators(NodeCreators{.token = &createVectorToken});
+        environment->vector_font = star ? u"bold-italic" : u"bold";
+        environment->vector_star = star;
+        result = &nested(parser, std::move(source));
+    }
+    parser.Push(result);
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::StarMacro(TexParser &parser, MacroInvocation const &invocation) {
+    auto args = arguments(invocation);
+    const bool star = parser.GetStar();
+    const double count = std::get<double>(args[0]);
+    std::vector<std::u16string> values;
+    for (std::size_t i = 0; static_cast<double>(i) < count; ++i)
+        values.push_back(parser.GetArgument(invocation.dispatch_token).value());
+    std::u16string macro;
+    for (std::size_t i = 1; i < args.size(); ++i) {
+        if (star && i > 1)
+            macro += u"*";
+        macro += std::get<std::u16string>(args[i]);
+    }
+    macro = parse_util::substituteArgs(parser, values, macro);
+    auto combined = parse_util::addArgs(parser, macro, parser.string().substr(parser.position()));
+    parser.setString(std::move(combined));
+    parser.setPosition(0);
+    parse_util::checkMaxMacros(parser);
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::OperatorApplication(TexParser &parser,
+                                                    MacroInvocation const &invocation) {
+    vectorApplication(parser, invocation, false);
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::VectorOperator(TexParser &parser,
+                                               MacroInvocation const &invocation) {
+    vectorApplication(parser, invocation, true);
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::Expression(TexParser &parser, MacroInvocation const &invocation) {
+    auto args = arguments(invocation);
+    auto id = stringArg(args, 1);
+    if (id.empty())
+        id = std::u16string(invocation.dispatch_token.substr(1));
+    auto exponent =
+        flagArg(args, 0, true) ? parser.GetBrackets(invocation.dispatch_token) : std::nullopt;
+    auto *function = &parser.createToken(NodeKind::mi, id, operatorDefinition());
+    if (exponent && !exponent->empty()) {
+        auto &power = nested(parser, *exponent);
+        const std::array children{function, &power};
+        function = &parser.create(NodeKind::msup, children);
+    }
+    parser.Push(parser.itemFactory().create(StackKind::fn, FnItemInit{*function}));
+    if (parser.GetNext() == u"(") {
+        parser.setPosition(parser.position() + 1);
+        parser.Push(autoOpen(parser, u"(", u")"));
+    }
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::Qqtext(TexParser &parser, MacroInvocation const &invocation) {
+    const bool star = parser.GetStar();
+    auto text = stringArg(arguments(invocation), 0);
+    if (text.empty())
+        text = parser.GetArgument(invocation.dispatch_token).value();
+    insertAtPosition(parser,
+                     (star ? std::u16string{} : u"\\quad") + u"\\text{" + text + u"}\\quad ");
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::Differential(TexParser &parser, MacroInvocation const &invocation) {
+    auto exponent = parser.GetBrackets(invocation.dispatch_token);
+    auto macro = stringArg(arguments(invocation), 0) + (exponent ? u"^{" + *exponent + u"}" : u" ");
+    const bool parens = parser.GetNext() == u"(", braces = parser.GetNext() == u"{";
+    if (!parens && !braces) {
+        macro += parser.GetArgument(invocation.dispatch_token, true).value_or(u"");
+        return pushNested(parser, std::move(macro));
+    }
+    if (braces) {
+        macro += parser.GetArgument(invocation.dispatch_token).value();
+        auto &content = nested(parser, std::move(macro));
+        const std::array children{&content};
+        parser.Push(&parser.create(NodeKind::tex_atom, children, operatorDefinition()));
+    } else {
+        pushNested(parser, std::move(macro));
+        parser.setPosition(parser.position() + 1);
+        parser.Push(autoOpen(parser, u"(", u")"));
+    }
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::Derivative(TexParser &parser, MacroInvocation const &invocation) {
+    auto args = arguments(invocation);
+    const double maximum = std::get<double>(args[0]);
+    const auto op = stringArg(args, 1);
+    const bool star = parser.GetStar();
+    auto exponent = parser.GetBrackets(invocation.dispatch_token);
+    std::vector<std::u16string> values{parser.GetArgument(invocation.dispatch_token).value()};
+    while (parser.GetNext() == u"{" && static_cast<double>(values.size()) < maximum)
+        values.push_back(parser.GetArgument(invocation.dispatch_token).value());
+    bool ignore = false;
+    std::u16string power1 = u" ", power2 = u" ";
+    if (maximum > 2 && values.size() > 2) {
+        power1 = u"^{" + numberText(static_cast<double>(values.size() - 1)) + u"}";
+        ignore = true;
+    } else if (exponent) {
+        ignore = maximum > 2 && values.size() > 1;
+        power1 = power2 = u"^{" + *exponent + u"}";
+    }
+    auto first = values.size() > 1 ? values[0] : u"";
+    auto second = values.size() > 1 ? values[1] : values[0];
+    std::u16string rest;
+    for (std::size_t i = 2; i < values.size() && !values[i].empty(); ++i)
+        rest += op + u" " + values[i];
+    auto fraction = star ? std::u16string(u"\\flatfrac") : u"\\frac";
+    pushNested(parser, fraction + u"{" + op + power1 + first + u"}{" + op + u" " + second + power2 +
+                           u" " + rest + u"}");
+    if (parser.GetNext() == u"(") {
+        parser.setPosition(parser.position() + 1);
+        auto frame = autoOpen(parser, u"(", u")");
+        dynamic_cast<AutoOpen &>(*frame).ignore = ignore;
+        parser.Push(std::move(frame));
+    }
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::Bra(TexParser &parser, MacroInvocation const &invocation) {
+    const bool starBra = parser.GetStar();
+    auto bra = parser.GetArgument(invocation.dispatch_token).value();
+    std::u16string ket;
+    bool hasKet = false, starKet = false;
+    if (parser.GetNext() == u"\\") {
+        auto saved = parser.position();
+        parser.setPosition(saved + 1);
+        auto cs = parser.GetCS();
+        auto found = parser.lookup(HandlerKind::macro, cs);
+        std::u16string_view token;
+        if (auto macro = std::get_if<tex::Macro const *>(&found); macro && *macro)
+            token = (*macro)->token;
+        if (auto command = std::get_if<CommandDefinition const *>(&found); command && *command)
+            token = (*command)->source_token;
+        if (token == u"ket") {
+            hasKet = true;
+            saved = parser.position();
+            starKet = parser.GetStar();
+            if (parser.GetNext() == u"{")
+                ket = parser.GetArgument(cs, true).value_or(u"");
+            else {
+                parser.setPosition(saved);
+                starKet = false;
+            }
+        } else
+            parser.setPosition(saved);
+    }
+    std::u16string macro;
+    if (hasKet)
+        macro = starBra || starKet
+                    ? u"\\langle{" + bra + u"}\\vert{" + ket + u"}\\rangle"
+                    : u"\\left\\langle{" + bra + u"}\\middle\\vert{" + ket + u"}\\right\\rangle";
+    else
+        macro = starBra ? u"\\langle{" + bra + u"}\\vert"
+                        : u"\\left\\langle{" + bra + u"}\\right\\vert{" + ket + u"}";
+    return pushNested(parser, std::move(macro));
+}
+DispatchOutcome PhysicsMethods::Ket(TexParser &parser, MacroInvocation const &invocation) {
+    const bool star = parser.GetStar();
+    auto ket = parser.GetArgument(invocation.dispatch_token).value();
+    return pushNested(parser, star ? u"\\vert{" + ket + u"}\\rangle"
+                                   : u"\\left\\vert{" + ket + u"}\\right\\rangle");
+}
+DispatchOutcome PhysicsMethods::BraKet(TexParser &parser, MacroInvocation const &invocation) {
+    const bool star = parser.GetStar();
+    auto bra = parser.GetArgument(invocation.dispatch_token).value();
+    auto ket = parser.GetNext() == u"{" ? parser.GetArgument(invocation.dispatch_token, true)
+                                        : std::nullopt;
+    auto const &right = ket ? *ket : bra;
+    return pushNested(parser, star ? u"\\langle{" + bra + u"}\\vert{" + right + u"}\\rangle"
+                                   : u"\\left\\langle{" + bra + u"}\\middle\\vert{" + right +
+                                         u"}\\right\\rangle");
+}
+DispatchOutcome PhysicsMethods::KetBra(TexParser &parser, MacroInvocation const &invocation) {
+    const bool star = parser.GetStar();
+    auto ket = parser.GetArgument(invocation.dispatch_token).value();
+    auto bra = parser.GetNext() == u"{" ? parser.GetArgument(invocation.dispatch_token, true)
+                                        : std::nullopt;
+    auto const &right = bra ? *bra : ket;
+    return pushNested(parser,
+                      star ? u"\\vert{" + ket + u"}\\rangle\\!\\langle{" + right + u"}\\vert"
+                           : u"\\left\\vert{" + ket + u"}\\middle\\rangle\\!\\middle\\langle{" +
+                                 right + u"}\\right\\vert");
+}
+DispatchOutcome PhysicsMethods::Expectation(TexParser &parser, MacroInvocation const &invocation) {
+    const bool star1 = parser.GetStar(), star2 = star1 && parser.GetStar();
+    auto op = parser.GetArgument(invocation.dispatch_token).value();
+    auto state = parser.GetNext() == u"{" ? parser.GetArgument(invocation.dispatch_token, true)
+                                          : std::nullopt;
+    return pushNested(parser, !op.empty() && state && !state->empty()
+                                  ? outputBraket({*state, op, *state}, star1, star2)
+                              : star1 ? u"\\langle {" + op + u"} \\rangle"
+                                      : u"\\left\\langle {" + op + u"} \\right\\rangle");
+}
+DispatchOutcome PhysicsMethods::MatrixElement(TexParser &parser,
+                                              MacroInvocation const &invocation) {
+    const bool star1 = parser.GetStar(), star2 = star1 && parser.GetStar();
+    std::array<std::u16string, 3> values;
+    for (auto &value : values)
+        value = parser.GetArgument(invocation.dispatch_token).value();
+    return pushNested(parser, outputBraket(values, star1, star2));
+}
+DispatchOutcome PhysicsMethods::MatrixQuantity(TexParser &parser,
+                                               MacroInvocation const &invocation) {
+    const bool small = flagArg(arguments(invocation), 0), star = parser.GetStar();
+    auto next = parser.GetNext();
+    const std::u16string array = small ? u"smallmatrix" : u"array";
+    std::u16string body, open, close;
+    if (next == u"{")
+        body = parser.GetArgument(invocation.dispatch_token).value();
+    else if (next == u"(" || next == u"[" || next == u"|") {
+        parser.setPosition(parser.position() + 1);
+        open = next == u"(" ? (star ? u"\\lgroup" : u"(") : next;
+        close = next == u"(" ? (star ? u"\\rgroup" : u")") : next == u"[" ? u"]" : u"|";
+        const auto delimiter = next == u"(" ? u")" : next == u"[" ? u"]" : u"|";
+        body = parser.GetUpTo(invocation.dispatch_token, delimiter);
+    } else {
+        open = u"(";
+        close = u")";
+    }
+    return pushNested(parser, (open.empty() ? std::u16string{} : u"\\left") + open + u"\\begin{" +
+                                  array + u"}{} " + body + u"\\end{" + array + u"}" +
+                                  (open.empty() ? u"" : u"\\right") + close);
+}
+DispatchOutcome PhysicsMethods::IdentityMatrix(TexParser &parser,
+                                               MacroInvocation const &invocation) {
+    auto source = parser.GetArgument(invocation.dispatch_token).value();
+    const double parsed = js_input::parseInt(source, js_input::IntegerRadix::Decimal);
+    if (std::isnan(parsed))
+        throw TexError("InvalidNumber", u"Invalid number");
+    if (parsed <= 1) {
+        replaceRemaining(parser, u"1");
+        return NoParseResult{};
+    }
+    auto size = matrixDimension(parsed);
+    std::u16string matrix;
+    for (std::size_t i = 0; i < size; ++i) {
+        if (i)
+            matrix += u"\\\\ ";
+        for (std::size_t j = 0; j < size; ++j) {
+            if (j)
+                matrix += u" & ";
+            matrix += i == j ? u"1" : u"0";
+        }
+    }
+    replaceRemaining(parser, std::move(matrix));
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::XMatrix(TexParser &parser, MacroInvocation const &invocation) {
+    const bool star = parser.GetStar();
+    auto fill = parser.GetArgument(invocation.dispatch_token).value();
+    auto ns = parser.GetArgument(invocation.dispatch_token).value();
+    auto ms = parser.GetArgument(invocation.dispatch_token).value();
+    double nd = js_input::parseInt(ns, js_input::IntegerRadix::Decimal);
+    double md = js_input::parseInt(ms, js_input::IntegerRadix::Decimal);
+    if (std::isnan(nd) || std::isnan(md) || numberText(nd) != ns || numberText(md) != ms)
+        throw TexError("InvalidNumber", u"Invalid number");
+    const auto n = matrixDimension(std::max(nd, 1.0)), m = matrixDimension(std::max(md, 1.0));
+    std::u16string matrix;
+    for (std::size_t i = 1; i <= n; ++i) {
+        if (i > 1)
+            matrix += u"\\\\ ";
+        for (std::size_t j = 1; j <= m; ++j) {
+            if (j > 1)
+                matrix += u" & ";
+            matrix += fill;
+            if (star && n > 1 && m > 1)
+                matrix += u"_{{" + numberText(static_cast<double>(i)) + u"}{" +
+                          numberText(static_cast<double>(j)) + u"}}";
+            else if (star && (n > 1 || m > 1))
+                matrix += u"_{" + numberText(static_cast<double>(n > 1 ? i : j)) + u"}";
+        }
+    }
+    replaceRemaining(parser, std::move(matrix));
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::PauliMatrix(TexParser &parser, MacroInvocation const &invocation) {
+    auto arg = parser.GetArgument(invocation.dispatch_token).value();
+    std::u16string matrix = arg.empty() ? u"" : arg.substr(1);
+    if (!arg.empty())
+        switch (arg[0]) {
+        case u'0':
+            matrix += u" 1 & 0\\\\ 0 & 1";
+            break;
+        case u'1':
+        case u'x':
+            matrix += u" 0 & 1\\\\ 1 & 0";
+            break;
+        case u'2':
+        case u'y':
+            matrix += u" 0 & -i\\\\ i & 0";
+            break;
+        case u'3':
+        case u'z':
+            matrix += u" 1 & 0\\\\ 0 & -1";
+            break;
+        default:
+            break;
+        }
+    replaceRemaining(parser, std::move(matrix));
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::DiagonalMatrix(TexParser &parser,
+                                               MacroInvocation const &invocation) {
+    const bool anti = flagArg(arguments(invocation), 0);
+    if (parser.GetNext() != u"{")
+        return NoParseResult{};
+    const auto start = parser.position();
+    (void)parser.GetArgument(invocation.dispatch_token);
+    const auto end = parser.position();
+    parser.setPosition(start + 1);
+    std::vector<std::u16string> elements;
+    auto current = parser.position();
+    while (current < end) {
+        try {
+            auto element = parser.GetUpTo(invocation.dispatch_token, u",");
+            current = parser.position();
+            elements.push_back(std::move(element));
+        } catch (...) {
+            parser.setPosition(end);
+            elements.emplace_back(parser.string().substr(current, end - 1 - current));
+            break;
+        }
+    }
+    std::u16string matrix;
+    for (std::size_t i = 0; i < elements.size(); ++i) {
+        if (i)
+            matrix += u"\\\\ ";
+        matrix.append(anti ? elements.size() - i - 1 : i, u'&');
+        matrix += u"\\mqty{" + elements[i] + u"}";
+    }
+    matrix += parser.string().substr(end);
+    parser.setString(std::move(matrix));
+    parser.setPosition(0);
+    return NoParseResult{};
+}
+DispatchOutcome PhysicsMethods::AutoClose(TexParser &parser, MacroInvocation const &invocation) {
+    auto *top = parser.stack.Top();
+    if (top && top->isKind(StackKind::over))
+        top = parser.stack.Top(2);
+    auto *open = dynamic_cast<AutoOpen *>(top);
+    if (!open || !open->closing(invocation.dispatch_token))
+        return ContinueDispatch{};
+    NodeDefinition definition;
+    auto args = arguments(invocation);
+    if (!args.empty())
+        definition.properties.tex.explicit_tex_class =
+            static_cast<mml::TexClass>(static_cast<int>(std::get<double>(args[0])));
+    auto &fence =
+        parser.createToken(NodeKind::mo, invocation.dispatch_token, std::move(definition));
+    auto close = parser.itemFactory().create(StackKind::close);
+    dynamic_cast<CloseItem &>(*close).pre_autoclose = true;
+    parser.Push(std::move(close));
+    auto item = parser.itemFactory().create(StackKind::mml, MmlItemInit{fence});
+    dynamic_cast<MmlItem &>(*item).autoclose = true;
+    parser.Push(std::move(item));
+    return Handled{};
+}
+DispatchOutcome PhysicsMethods::Vnabla(TexParser &parser, MacroInvocation const &) {
+    const bool arrow =
+        parser.options().physics && parser.options().physics->arrowdel.value_or(false);
+    return pushNested(parser, arrow ? u"\\vec{\\gradientnabla}" : u"{\\gradientnabla}");
+}
+DispatchOutcome PhysicsMethods::DiffD(TexParser &parser, MacroInvocation const &) {
+    const bool italic =
+        parser.options().physics && parser.options().physics->italicdiff.value_or(false);
+    return pushNested(parser, italic ? u"d" : u"{\\rm d}");
 }
 } // namespace folia::math::tex

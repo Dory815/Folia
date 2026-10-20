@@ -1,333 +1,300 @@
-// Native port of MathJax 4.1.3 input/tex/physics/PhysicsMappings.ts.
+// MathJax 4.1.3 input/tex/physics/PhysicsMappings.ts; Apache-2.0.
+// Immutable literals transcribed from the actual pinned eleven Source maps.
 module folia.math.input.tex.physics.mappings;
-import folia.math.input.tex.base_methods;
-import folia.math.input.tex.physics.methods;
-import folia.math.input.tex.token_map;
-import folia.math.input.tex.tex_constants;
-import folia.math.util.function_types;
-import folia.math.util.property_host;
+import folia.math.input.tex.parse_methods;
 import std;
 namespace folia::math::tex {
 namespace {
-using namespace options;
-Property callable(const PhysicsMethodSet &methods, std::u16string_view name) {
-  return methods.get(name);
-}
-Property tuple(Property method, std::initializer_list<Property> args) {
-  PropertyArray a;
-  a.push(std::move(method));
-  for (const auto &v : args)
-    a.push(v);
-  return Property(a);
-}
-Property character(std::u16string_view text) {
-  return Property(property_host::debugText(text));
-}
-void command(MapHandler &registry, std::string_view name,
-             PropertyList entries) {
-  (void)TokenMapHost::create<CommandMap>(registry, Property(std::string(name)),
-                                         Property(std::move(entries)));
+mml::AttributeSet attrs(std::initializer_list<mml::AttributeSet::Entry> entries) {
+    mml::AttributeSet result;
+    for (auto const &[key, value] : entries)
+        result.set(key, value);
+    return result;
 }
 } // namespace
-void PhysicsMappings::initializeModule(ParserRuntime &runtime) {
-  const auto m = PhysicsMethods::create(runtime);
-  const auto macro = callable(m, u"Macro"), namedFn = callable(m, u"NamedFn");
-  PropertyList automatic;
-  automatic.setOwn("quantity", callable(m, u"Quantity"));
-  automatic.setOwn("qty", callable(m, u"Quantity"));
-  automatic.setOwn("pqty",
-                   tuple(callable(m, u"Quantity"),
-                         {Property("("), Property(")"), Property(true)}));
-  automatic.setOwn("bqty",
-                   tuple(callable(m, u"Quantity"),
-                         {Property("["), Property("]"), Property(true)}));
-  automatic.setOwn("vqty",
-                   tuple(callable(m, u"Quantity"),
-                         {Property("|"), Property("|"), Property(true)}));
-  automatic.setOwn("Bqty",
-                   tuple(callable(m, u"Quantity"),
-                         {Property("\\{"), Property("\\}"), Property(true)}));
-  automatic.setOwn("absolutevalue",
-                   tuple(callable(m, u"Quantity"),
-                         {Property("|"), Property("|"), Property(true)}));
-  automatic.setOwn("abs",
-                   tuple(callable(m, u"Quantity"),
-                         {Property("|"), Property("|"), Property(true)}));
-  automatic.setOwn("norm",
-                   tuple(callable(m, u"Quantity"),
-                         {Property("\\|"), Property("\\|"), Property(true)}));
-  automatic.setOwn("evaluated", callable(m, u"Eval"));
-  automatic.setOwn("eval", callable(m, u"Eval"));
-  automatic.setOwn("order",
-                   tuple(callable(m, u"Quantity"),
-                         {Property("("), Property(")"), Property(true),
-                          Property("O"), Property("-tex-calligraphic")}));
-  automatic.setOwn("commutator", callable(m, u"Commutator"));
-  automatic.setOwn("comm", callable(m, u"Commutator"));
-  for (const auto name : {"anticommutator", "acomm", "poissonbracket", "pb"})
-    automatic.setOwn(name, tuple(callable(m, u"Commutator"),
-                                 {Property("\\{"), Property("\\}")}));
-  command(runtime.mapHandler, "Physics-automatic-bracing-macros",
-          std::move(automatic));
-
-  auto characterParser =
-      property_host::get(runtime.parseMethods, "mathchar0mo");
-  PropertyList mo{
-      {"dotproduct",
-       PropertyArray{character(u"⋅"), Property(PropertyList{
-                                          {"mathvariant", Property("bold")}})}},
-      {"vdot",
-       PropertyArray{character(u"⋅"), Property(PropertyList{
-                                          {"mathvariant", Property("bold")}})}},
-      {"crossproduct", character(u"×")},
-      {"cross", character(u"×")},
-      {"cp", character(u"×")},
-      {"gradientnabla",
-       PropertyArray{character(u"∇"), Property(PropertyList{
-                                          {"mathvariant", Property("bold")}})}},
-      {"divsymbol", character(u"÷")},
-      {"divisionsymbol", character(u"÷")}};
-  (void)TokenMapHost::create<CharacterMap>(runtime.mapHandler,
-      Property("Physics-vector-mo"), functions::fromProperty(characterParser),
-      Property(std::move(mo)));
-  auto miParser = property_host::get(runtime.parseMethods, "mathchar0mi");
-  PropertyList mi{
-      {"real", PropertyArray{character(u"ℜ"),
-                             Property(PropertyList{
-                                 {"mathvariant", Property("normal")}})}},
-      {"imaginary", PropertyArray{character(u"ℑ"),
-                                  Property(PropertyList{
-                                      {"mathvariant", Property("normal")}})}}};
-  (void)TokenMapHost::create<CharacterMap>(runtime.mapHandler,Property("Physics-vector-mi"),
-                                           functions::fromProperty(miParser),
-                                           Property(std::move(mi)));
-
-  PropertyList vectors{{"vnabla", callable(m, u"Vnabla")},
-                       {"vectorbold", callable(m, u"VectorBold")},
-                       {"vb", callable(m, u"VectorBold")}};
-  vectors.setOwn("vectorarrow", tuple(callable(m, u"StarMacro"),
-                                      {Property(1), Property("\\vec{\\vb"),
-                                       Property("{#1}}")}));
-  vectors.setOwn(
-      "va", tuple(callable(m, u"StarMacro"),
-                  {Property(1), Property("\\vec{\\vb"), Property("{#1}}")}));
-  vectors.setOwn("vectorunit", tuple(callable(m, u"StarMacro"),
-                                     {Property(1), Property("\\hat{\\vb"),
-                                      Property("{#1}}")}));
-  vectors.setOwn(
-      "vu", tuple(callable(m, u"StarMacro"),
-                  {Property(1), Property("\\hat{\\vb"), Property("{#1}}")}));
-  for (const auto name : {"gradient", "grad"})
-    vectors.setOwn(name,
-                   tuple(callable(m, u"OperatorApplication"),
-                         {Property("\\vnabla"), Property("("), Property("[")}));
-  for (const auto name : {"divergence", "div"})
-    vectors.setOwn(name, tuple(callable(m, u"VectorOperator"),
-                               {Property("\\vnabla\\vdot"), Property("("),
-                                Property("[")}));
-  vectors.setOwn("curl", tuple(callable(m, u"VectorOperator"),
-                               {Property("\\vnabla\\crossproduct"),
-                                Property("("), Property("[")}));
-  vectors.setOwn("laplacian",
-                 tuple(callable(m, u"OperatorApplication"),
-                       {Property("\\nabla^2"), Property("("), Property("[")}));
-  command(runtime.mapHandler, "Physics-vector-macros", std::move(vectors));
-
-  PropertyList expressions;
-  for (const auto name :
-       {"sin", "sinh", "arcsin", "asin", "cos", "cosh", "arccos", "acos",
-        "tan", "tanh", "arctan", "atan", "csc", "csch", "arccsc", "acsc",
-        "sec", "sech", "arcsec", "asec", "cot", "coth", "arccot", "acot"})
-    expressions.setOwn(name, callable(m, u"Expression"));
-  expressions.setOwn("exp",
-                     tuple(callable(m, u"Expression"), {Property(false)}));
-  expressions.setOwn("log", callable(m, u"Expression"));
-  expressions.setOwn("ln", callable(m, u"Expression"));
-  expressions.setOwn("det",
-                     tuple(callable(m, u"Expression"), {Property(false)}));
-  expressions.setOwn("Pr",
-                     tuple(callable(m, u"Expression"), {Property(false)}));
-  expressions.setOwn("tr",
-                     tuple(callable(m, u"Expression"), {Property(false)}));
-  expressions.setOwn("trace", tuple(callable(m, u"Expression"),
-                                    {Property(false), Property("tr")}));
-  expressions.setOwn("Tr",
-                     tuple(callable(m, u"Expression"), {Property(false)}));
-  expressions.setOwn("Trace", tuple(callable(m, u"Expression"),
-                                    {Property(false), Property("Tr")}));
-  expressions.setOwn("rank", namedFn);
-  expressions.setOwn("erf",
-                     tuple(callable(m, u"Expression"), {Property(false)}));
-  expressions.setOwn("Residue", tuple(macro, {Property("\\mathrm{Res}")}));
-  expressions.setOwn("Res", tuple(callable(m, u"OperatorApplication"),
-                                  {Property("\\Residue"), Property("("),
-                                   Property("["), Property("{")}));
-  for (const auto name : {"principalvalue", "pv"})
-    expressions.setOwn(name, tuple(callable(m, u"OperatorApplication"),
-                                   {Property("{\\cal P}")}));
-  expressions.setOwn("PV", tuple(callable(m, u"OperatorApplication"),
-                                 {Property("{\\rm P.V.}")}));
-  expressions.setOwn("Re", tuple(callable(m, u"OperatorApplication"),
-                                 {Property("\\mathrm{Re}"), Property("{")}));
-  expressions.setOwn("Im", tuple(callable(m, u"OperatorApplication"),
-                                 {Property("\\mathrm{Im}"), Property("{")}));
-  constexpr std::array<std::pair<std::string_view, std::string_view>, 29>
-      aliases{{{"sine", "sin"},
-               {"hypsine", "sinh"},
-               {"arcsine", "arcsin"},
-               {"asine", "asin"},
-               {"cosine", "cos"},
-               {"hypcosine", "cosh"},
-               {"arccosine", "arccos"},
-               {"acosine", "acos"},
-               {"tangent", "tan"},
-               {"hyptangent", "tanh"},
-               {"arctangent", "arctan"},
-               {"atangent", "atan"},
-               {"cosecant", "csc"},
-               {"hypcosecant", "csch"},
-               {"arccosecant", "arccsc"},
-               {"acosecant", "acsc"},
-               {"secant", "sec"},
-               {"hypsecant", "sech"},
-               {"arcsecant", "arcsec"},
-               {"asecant", "asec"},
-               {"cotangent", "cot"},
-               {"hypcotangent", "coth"},
-               {"arccotangent", "arccot"},
-               {"acotangent", "acot"},
-               {"exponential", "exp"},
-               {"logarithm", "log"},
-               {"naturallogarithm", "ln"},
-               {"determinant", "det"},
-               {"Probability", "Pr"}}};
-  for (const auto &[alias, target] : aliases)
-    if (!alias.empty())
-      expressions.setOwn(std::string(alias),
-                         tuple(namedFn, {Property(std::string(target))}));
-  command(runtime.mapHandler, "Physics-expressions-macros",
-          std::move(expressions));
-
-  PropertyList qq{{"qqtext", callable(m, u"Qqtext")},
-                  {"qq", callable(m, u"Qqtext")},
-                  {"qcomma", tuple(macro, {Property("\\qqtext*{,}")})},
-                  {"qc", tuple(macro, {Property("\\qqtext*{,}")})}};
-  constexpr std::array<std::pair<std::string_view, std::string_view>, 20>
-      qqAliases{{{"qcc", "c.c."},
-                 {"qif", "if"},
-                 {"qthen", "then"},
-                 {"qelse", "else"},
-                 {"qotherwise", "otherwise"},
-                 {"qunless", "unless"},
-                 {"qgiven", "given"},
-                 {"qusing", "using"},
-                 {"qassume", "assume"},
-                 {"qsince", "since"},
-                 {"qlet", "let"},
-                 {"qfor", "for"},
-                 {"qall", "all"},
-                 {"qeven", "even"},
-                 {"qodd", "odd"},
-                 {"qinteger", "integer"},
-                 {"qand", "and"},
-                 {"qor", "or"},
-                 {"qas", "as"},
-                 {"qin", "in"}}};
-  for (auto [n, t] : qqAliases)
-    qq.setOwn(std::string(n),
-              tuple(callable(m, u"Qqtext"), {Property(std::string(t))}));
-  command(runtime.mapHandler, "Physics-quick-quad-macros", std::move(qq));
-
-  PropertyList derivative{
-      {"diffd", callable(m, u"DiffD")},
-      {"flatfrac",
-       tuple(macro, {Property("\\left.#1\\middle/#2\\right."), Property(2)})}};
-  for (const auto name : {"differential", "dd"})
-    derivative.setOwn(
-        name, tuple(callable(m, u"Differential"), {Property("\\diffd")}));
-  for (const auto name : {"variation", "var"})
-    derivative.setOwn(
-        name, tuple(callable(m, u"Differential"), {Property("\\delta")}));
-  for (const auto name : {"derivative", "dv"})
-    derivative.setOwn(name, tuple(callable(m, u"Derivative"),
-                                  {Property(2), Property("\\diffd")}));
-  for (const auto name : {"partialderivative", "pderivative", "pdv"})
-    derivative.setOwn(name, tuple(callable(m, u"Derivative"),
-                                  {Property(3), Property("\\partial")}));
-  for (const auto name : {"functionalderivative", "fderivative", "fdv"})
-    derivative.setOwn(name, tuple(callable(m, u"Derivative"),
-                                  {Property(2), Property("\\delta")}));
-  command(runtime.mapHandler, "Physics-derivative-macros",
-          std::move(derivative));
-
-  PropertyList braket{{"bra", callable(m, u"Bra")},
-                      {"ket", callable(m, u"Ket")},
-                      {"innerproduct", callable(m, u"BraKet")},
-                      {"ip", callable(m, u"BraKet")},
-                      {"braket", callable(m, u"BraKet")},
-                      {"outerproduct", callable(m, u"KetBra")},
-                      {"dyad", callable(m, u"KetBra")},
-                      {"ketbra", callable(m, u"KetBra")},
-                      {"op", callable(m, u"KetBra")},
-                      {"expectationvalue", callable(m, u"Expectation")},
-                      {"expval", callable(m, u"Expectation")},
-                      {"ev", callable(m, u"Expectation")},
-                      {"matrixelement", callable(m, u"MatrixElement")},
-                      {"matrixel", callable(m, u"MatrixElement")},
-                      {"mel", callable(m, u"MatrixElement")}};
-  command(runtime.mapHandler, "Physics-bra-ket-macros", std::move(braket));
-
-  PropertyList matrix{{"matrixquantity", callable(m, u"MatrixQuantity")},
-                      {"mqty", callable(m, u"MatrixQuantity")}};
-  matrix.setOwn("pmqty", tuple(macro, {Property("\\mqty(#1)"), Property(1)}));
-  matrix.setOwn("Pmqty", tuple(macro, {Property("\\mqty*(#1)"), Property(1)}));
-  matrix.setOwn("bmqty", tuple(macro, {Property("\\mqty[#1]"), Property(1)}));
-  matrix.setOwn("vmqty", tuple(macro, {Property("\\mqty|#1|"), Property(1)}));
-  for (const auto name : {"smallmatrixquantity", "smqty"})
-    matrix.setOwn(name,
-                  tuple(callable(m, u"MatrixQuantity"), {Property(true)}));
-  matrix.setOwn("spmqty", tuple(macro, {Property("\\smqty(#1)"), Property(1)}));
-  matrix.setOwn("sPmqty",
-                tuple(macro, {Property("\\smqty*(#1)"), Property(1)}));
-  matrix.setOwn("sbmqty", tuple(macro, {Property("\\smqty[#1]"), Property(1)}));
-  matrix.setOwn("svmqty", tuple(macro, {Property("\\smqty|#1|"), Property(1)}));
-  matrix.setOwn("matrixdeterminant",
-                tuple(macro, {Property("\\vmqty{#1}"), Property(1)}));
-  matrix.setOwn("mdet", tuple(macro, {Property("\\vmqty{#1}"), Property(1)}));
-  matrix.setOwn("smdet", tuple(macro, {Property("\\svmqty{#1}"), Property(1)}));
-  matrix.setOwn("identitymatrix", callable(m, u"IdentityMatrix"));
-  matrix.setOwn("imat", callable(m, u"IdentityMatrix"));
-  matrix.setOwn("xmatrix", callable(m, u"XMatrix"));
-  matrix.setOwn("xmat", callable(m, u"XMatrix"));
-  matrix.setOwn("zeromatrix",
-                tuple(macro, {Property("\\xmat{0}{#1}{#2}"), Property(2)}));
-  matrix.setOwn("zmat",
-                tuple(macro, {Property("\\xmat{0}{#1}{#2}"), Property(2)}));
-  matrix.setOwn("paulimatrix", callable(m, u"PauliMatrix"));
-  matrix.setOwn("pmat", callable(m, u"PauliMatrix"));
-  matrix.setOwn("diagonalmatrix", callable(m, u"DiagonalMatrix"));
-  matrix.setOwn("dmat", callable(m, u"DiagonalMatrix"));
-  matrix.setOwn("antidiagonalmatrix",
-                tuple(callable(m, u"DiagonalMatrix"), {Property(true)}));
-  matrix.setOwn("admat",
-                tuple(callable(m, u"DiagonalMatrix"), {Property(true)}));
-  command(runtime.mapHandler, "Physics-matrix-macros", std::move(matrix));
-
-  auto envParser = property_host::get(runtime.parseMethods, "environment");
-  PropertyList small{
-      {"smallmatrix",
-       PropertyArray{callable(m, u"Array"), Property(PropertyNull{}),
-                     Property(PropertyNull{}), Property(PropertyNull{}),
-                     Property("c"), Property("0.333em"), Property(".2em"),
-                     Property("S"), Property(1)}}};
-  (void)TokenMapHost::create<EnvironmentMap>(runtime.mapHandler,Property("Physics-aux-envs"),
-                                             functions::fromProperty(envParser),
-                                             Property(std::move(small)));
-  PropertyList chars{
-      {"|", tuple(callable(m, u"AutoClose"), {Property(mml::TEXCLASS.ORD)})},
-      {")", callable(m, u"AutoClose")},
-      {"]", callable(m, u"AutoClose")}};
-  (void)TokenMapHost::create<MacroMap>(runtime.mapHandler,Property("Physics-characters"),
-                                       Property(std::move(chars)));
+void PhysicsMappings::initializeModule(MapHandler &maps) {
+    maps.registerMap(std::make_shared<CommandMap>(CommandMapInit{
+        MacroMapInit{{u"Physics-automatic-bracing-macros", std::nullopt},
+                     {
+                         Macro(u"quantity", &PhysicsMethods::Quantity),
+                         Macro(u"qty", &PhysicsMethods::Quantity),
+                         Macro(u"pqty", &PhysicsMethods::Quantity,
+                               {std::u16string(u"("), std::u16string(u")"), true}),
+                         Macro(u"bqty", &PhysicsMethods::Quantity,
+                               {std::u16string(u"["), std::u16string(u"]"), true}),
+                         Macro(u"vqty", &PhysicsMethods::Quantity,
+                               {std::u16string(u"|"), std::u16string(u"|"), true}),
+                         Macro(u"Bqty", &PhysicsMethods::Quantity,
+                               {std::u16string(u"\\{"), std::u16string(u"\\}"), true}),
+                         Macro(u"absolutevalue", &PhysicsMethods::Quantity,
+                               {std::u16string(u"|"), std::u16string(u"|"), true}),
+                         Macro(u"abs", &PhysicsMethods::Quantity,
+                               {std::u16string(u"|"), std::u16string(u"|"), true}),
+                         Macro(u"norm", &PhysicsMethods::Quantity,
+                               {std::u16string(u"\\|"), std::u16string(u"\\|"), true}),
+                         Macro(u"evaluated", &PhysicsMethods::Eval),
+                         Macro(u"eval", &PhysicsMethods::Eval),
+                         Macro(u"order", &PhysicsMethods::Quantity,
+                               {std::u16string(u"("), std::u16string(u")"), true,
+                                std::u16string(u"O"), std::u16string(u"-tex-calligraphic")}),
+                         Macro(u"commutator", &PhysicsMethods::Commutator),
+                         Macro(u"comm", &PhysicsMethods::Commutator),
+                         Macro(u"anticommutator", &PhysicsMethods::Commutator,
+                               {std::u16string(u"\\{"), std::u16string(u"\\}")}),
+                         Macro(u"acomm", &PhysicsMethods::Commutator,
+                               {std::u16string(u"\\{"), std::u16string(u"\\}")}),
+                         Macro(u"poissonbracket", &PhysicsMethods::Commutator,
+                               {std::u16string(u"\\{"), std::u16string(u"\\}")}),
+                         Macro(u"pb", &PhysicsMethods::Commutator,
+                               {std::u16string(u"\\{"), std::u16string(u"\\}")}),
+                     }}}));
+    maps.registerMap(std::make_shared<CharacterMap>(
+        CharacterMapInit{{u"Physics-vector-mo", TokenMapParser{&ParseMethods::mathchar0mo}},
+                         {
+                             Token(u"dotproduct", std::u16string(u"\u22c5"),
+                                   attrs({{u"mathvariant", std::u16string(u"bold")}})),
+                             Token(u"vdot", std::u16string(u"\u22c5"),
+                                   attrs({{u"mathvariant", std::u16string(u"bold")}})),
+                             Token(u"crossproduct", std::u16string(u"\u00d7")),
+                             Token(u"cross", std::u16string(u"\u00d7")),
+                             Token(u"cp", std::u16string(u"\u00d7")),
+                             Token(u"gradientnabla", std::u16string(u"\u2207"),
+                                   attrs({{u"mathvariant", std::u16string(u"bold")}})),
+                             Token(u"divsymbol", std::u16string(u"\u00f7")),
+                             Token(u"divisionsymbol", std::u16string(u"\u00f7")),
+                         }}));
+    maps.registerMap(std::make_shared<CharacterMap>(
+        CharacterMapInit{{u"Physics-vector-mi", TokenMapParser{&ParseMethods::mathchar0mi}},
+                         {
+                             Token(u"real", std::u16string(u"\u211c"),
+                                   attrs({{u"mathvariant", std::u16string(u"normal")}})),
+                             Token(u"imaginary", std::u16string(u"\u2111"),
+                                   attrs({{u"mathvariant", std::u16string(u"normal")}})),
+                         }}));
+    maps.registerMap(std::make_shared<CommandMap>(CommandMapInit{MacroMapInit{
+        {u"Physics-vector-macros", std::nullopt},
+        {
+            Macro(u"vnabla", &PhysicsMethods::Vnabla),
+            Macro(u"vectorbold", &PhysicsMethods::VectorBold),
+            Macro(u"vb", &PhysicsMethods::VectorBold),
+            Macro(u"vectorarrow", &PhysicsMethods::StarMacro,
+                  {1.0, std::u16string(u"\\vec{\\vb"), std::u16string(u"{#1}}")}),
+            Macro(u"va", &PhysicsMethods::StarMacro,
+                  {1.0, std::u16string(u"\\vec{\\vb"), std::u16string(u"{#1}}")}),
+            Macro(u"vectorunit", &PhysicsMethods::StarMacro,
+                  {1.0, std::u16string(u"\\hat{\\vb"), std::u16string(u"{#1}}")}),
+            Macro(u"vu", &PhysicsMethods::StarMacro,
+                  {1.0, std::u16string(u"\\hat{\\vb"), std::u16string(u"{#1}}")}),
+            Macro(u"gradient", &PhysicsMethods::OperatorApplication,
+                  {std::u16string(u"\\vnabla"), std::u16string(u"("), std::u16string(u"[")}),
+            Macro(u"grad", &PhysicsMethods::OperatorApplication,
+                  {std::u16string(u"\\vnabla"), std::u16string(u"("), std::u16string(u"[")}),
+            Macro(u"divergence", &PhysicsMethods::VectorOperator,
+                  {std::u16string(u"\\vnabla\\vdot"), std::u16string(u"("), std::u16string(u"[")}),
+            Macro(u"div", &PhysicsMethods::VectorOperator,
+                  {std::u16string(u"\\vnabla\\vdot"), std::u16string(u"("), std::u16string(u"[")}),
+            Macro(u"curl", &PhysicsMethods::VectorOperator,
+                  {std::u16string(u"\\vnabla\\crossproduct"), std::u16string(u"("),
+                   std::u16string(u"[")}),
+            Macro(u"laplacian", &PhysicsMethods::OperatorApplication,
+                  {std::u16string(u"\\nabla^2"), std::u16string(u"("), std::u16string(u"[")}),
+        }}}));
+    maps.registerMap(std::make_shared<CommandMap>(CommandMapInit{MacroMapInit{
+        {u"Physics-expressions-macros", std::nullopt},
+        {
+            Macro(u"sin", &PhysicsMethods::Expression),
+            Macro(u"sinh", &PhysicsMethods::Expression),
+            Macro(u"arcsin", &PhysicsMethods::Expression),
+            Macro(u"asin", &PhysicsMethods::Expression),
+            Macro(u"cos", &PhysicsMethods::Expression),
+            Macro(u"cosh", &PhysicsMethods::Expression),
+            Macro(u"arccos", &PhysicsMethods::Expression),
+            Macro(u"acos", &PhysicsMethods::Expression),
+            Macro(u"tan", &PhysicsMethods::Expression),
+            Macro(u"tanh", &PhysicsMethods::Expression),
+            Macro(u"arctan", &PhysicsMethods::Expression),
+            Macro(u"atan", &PhysicsMethods::Expression),
+            Macro(u"csc", &PhysicsMethods::Expression),
+            Macro(u"csch", &PhysicsMethods::Expression),
+            Macro(u"arccsc", &PhysicsMethods::Expression),
+            Macro(u"acsc", &PhysicsMethods::Expression),
+            Macro(u"sec", &PhysicsMethods::Expression),
+            Macro(u"sech", &PhysicsMethods::Expression),
+            Macro(u"arcsec", &PhysicsMethods::Expression),
+            Macro(u"asec", &PhysicsMethods::Expression),
+            Macro(u"cot", &PhysicsMethods::Expression),
+            Macro(u"coth", &PhysicsMethods::Expression),
+            Macro(u"arccot", &PhysicsMethods::Expression),
+            Macro(u"acot", &PhysicsMethods::Expression),
+            Macro(u"exp", &PhysicsMethods::Expression, {false}),
+            Macro(u"log", &PhysicsMethods::Expression),
+            Macro(u"ln", &PhysicsMethods::Expression),
+            Macro(u"det", &PhysicsMethods::Expression, {false}),
+            Macro(u"Pr", &PhysicsMethods::Expression, {false}),
+            Macro(u"tr", &PhysicsMethods::Expression, {false}),
+            Macro(u"trace", &PhysicsMethods::Expression, {false, std::u16string(u"tr")}),
+            Macro(u"Tr", &PhysicsMethods::Expression, {false}),
+            Macro(u"Trace", &PhysicsMethods::Expression, {false, std::u16string(u"Tr")}),
+            Macro(u"rank", PhysicsMethods::NamedFn),
+            Macro(u"erf", &PhysicsMethods::Expression, {false}),
+            Macro(u"Residue", PhysicsMethods::Macro, {std::u16string(u"\\mathrm{Res}")}),
+            Macro(u"Res", &PhysicsMethods::OperatorApplication,
+                  {std::u16string(u"\\Residue"), std::u16string(u"("), std::u16string(u"["),
+                   std::u16string(u"{")}),
+            Macro(u"principalvalue", &PhysicsMethods::OperatorApplication,
+                  {std::u16string(u"{\\cal P}")}),
+            Macro(u"pv", &PhysicsMethods::OperatorApplication, {std::u16string(u"{\\cal P}")}),
+            Macro(u"PV", &PhysicsMethods::OperatorApplication, {std::u16string(u"{\\rm P.V.}")}),
+            Macro(u"Re", &PhysicsMethods::OperatorApplication,
+                  {std::u16string(u"\\mathrm{Re}"), std::u16string(u"{")}),
+            Macro(u"Im", &PhysicsMethods::OperatorApplication,
+                  {std::u16string(u"\\mathrm{Im}"), std::u16string(u"{")}),
+            Macro(u"sine", PhysicsMethods::NamedFn, {std::u16string(u"sin")}),
+            Macro(u"hypsine", PhysicsMethods::NamedFn, {std::u16string(u"sinh")}),
+            Macro(u"arcsine", PhysicsMethods::NamedFn, {std::u16string(u"arcsin")}),
+            Macro(u"asine", PhysicsMethods::NamedFn, {std::u16string(u"asin")}),
+            Macro(u"cosine", PhysicsMethods::NamedFn, {std::u16string(u"cos")}),
+            Macro(u"hypcosine", PhysicsMethods::NamedFn, {std::u16string(u"cosh")}),
+            Macro(u"arccosine", PhysicsMethods::NamedFn, {std::u16string(u"arccos")}),
+            Macro(u"acosine", PhysicsMethods::NamedFn, {std::u16string(u"acos")}),
+            Macro(u"tangent", PhysicsMethods::NamedFn, {std::u16string(u"tan")}),
+            Macro(u"hyptangent", PhysicsMethods::NamedFn, {std::u16string(u"tanh")}),
+            Macro(u"arctangent", PhysicsMethods::NamedFn, {std::u16string(u"arctan")}),
+            Macro(u"atangent", PhysicsMethods::NamedFn, {std::u16string(u"atan")}),
+            Macro(u"cosecant", PhysicsMethods::NamedFn, {std::u16string(u"csc")}),
+            Macro(u"hypcosecant", PhysicsMethods::NamedFn, {std::u16string(u"csch")}),
+            Macro(u"arccosecant", PhysicsMethods::NamedFn, {std::u16string(u"arccsc")}),
+            Macro(u"acosecant", PhysicsMethods::NamedFn, {std::u16string(u"acsc")}),
+            Macro(u"secant", PhysicsMethods::NamedFn, {std::u16string(u"sec")}),
+            Macro(u"hypsecant", PhysicsMethods::NamedFn, {std::u16string(u"sech")}),
+            Macro(u"arcsecant", PhysicsMethods::NamedFn, {std::u16string(u"arcsec")}),
+            Macro(u"asecant", PhysicsMethods::NamedFn, {std::u16string(u"asec")}),
+            Macro(u"cotangent", PhysicsMethods::NamedFn, {std::u16string(u"cot")}),
+            Macro(u"hypcotangent", PhysicsMethods::NamedFn, {std::u16string(u"coth")}),
+            Macro(u"arccotangent", PhysicsMethods::NamedFn, {std::u16string(u"arccot")}),
+            Macro(u"acotangent", PhysicsMethods::NamedFn, {std::u16string(u"acot")}),
+            Macro(u"exponential", PhysicsMethods::NamedFn, {std::u16string(u"exp")}),
+            Macro(u"logarithm", PhysicsMethods::NamedFn, {std::u16string(u"log")}),
+            Macro(u"naturallogarithm", PhysicsMethods::NamedFn, {std::u16string(u"ln")}),
+            Macro(u"determinant", PhysicsMethods::NamedFn, {std::u16string(u"det")}),
+            Macro(u"Probability", PhysicsMethods::NamedFn, {std::u16string(u"Pr")}),
+        }}}));
+    maps.registerMap(std::make_shared<CommandMap>(CommandMapInit{MacroMapInit{
+        {u"Physics-quick-quad-macros", std::nullopt},
+        {
+            Macro(u"qqtext", &PhysicsMethods::Qqtext),
+            Macro(u"qq", &PhysicsMethods::Qqtext),
+            Macro(u"qcomma", PhysicsMethods::Macro, {std::u16string(u"\\qqtext*{,}")}),
+            Macro(u"qc", PhysicsMethods::Macro, {std::u16string(u"\\qqtext*{,}")}),
+            Macro(u"qcc", &PhysicsMethods::Qqtext, {std::u16string(u"c.c.")}),
+            Macro(u"qif", &PhysicsMethods::Qqtext, {std::u16string(u"if")}),
+            Macro(u"qthen", &PhysicsMethods::Qqtext, {std::u16string(u"then")}),
+            Macro(u"qelse", &PhysicsMethods::Qqtext, {std::u16string(u"else")}),
+            Macro(u"qotherwise", &PhysicsMethods::Qqtext, {std::u16string(u"otherwise")}),
+            Macro(u"qunless", &PhysicsMethods::Qqtext, {std::u16string(u"unless")}),
+            Macro(u"qgiven", &PhysicsMethods::Qqtext, {std::u16string(u"given")}),
+            Macro(u"qusing", &PhysicsMethods::Qqtext, {std::u16string(u"using")}),
+            Macro(u"qassume", &PhysicsMethods::Qqtext, {std::u16string(u"assume")}),
+            Macro(u"qsince", &PhysicsMethods::Qqtext, {std::u16string(u"since")}),
+            Macro(u"qlet", &PhysicsMethods::Qqtext, {std::u16string(u"let")}),
+            Macro(u"qfor", &PhysicsMethods::Qqtext, {std::u16string(u"for")}),
+            Macro(u"qall", &PhysicsMethods::Qqtext, {std::u16string(u"all")}),
+            Macro(u"qeven", &PhysicsMethods::Qqtext, {std::u16string(u"even")}),
+            Macro(u"qodd", &PhysicsMethods::Qqtext, {std::u16string(u"odd")}),
+            Macro(u"qinteger", &PhysicsMethods::Qqtext, {std::u16string(u"integer")}),
+            Macro(u"qand", &PhysicsMethods::Qqtext, {std::u16string(u"and")}),
+            Macro(u"qor", &PhysicsMethods::Qqtext, {std::u16string(u"or")}),
+            Macro(u"qas", &PhysicsMethods::Qqtext, {std::u16string(u"as")}),
+            Macro(u"qin", &PhysicsMethods::Qqtext, {std::u16string(u"in")}),
+        }}}));
+    maps.registerMap(std::make_shared<CommandMap>(CommandMapInit{MacroMapInit{
+        {u"Physics-derivative-macros", std::nullopt},
+        {
+            Macro(u"diffd", &PhysicsMethods::DiffD),
+            Macro(u"flatfrac", PhysicsMethods::Macro,
+                  {std::u16string(u"\\left.#1\\middle/#2\\right."), 2.0}),
+            Macro(u"differential", &PhysicsMethods::Differential, {std::u16string(u"\\diffd")}),
+            Macro(u"dd", &PhysicsMethods::Differential, {std::u16string(u"\\diffd")}),
+            Macro(u"variation", &PhysicsMethods::Differential, {std::u16string(u"\\delta")}),
+            Macro(u"var", &PhysicsMethods::Differential, {std::u16string(u"\\delta")}),
+            Macro(u"derivative", &PhysicsMethods::Derivative, {2.0, std::u16string(u"\\diffd")}),
+            Macro(u"dv", &PhysicsMethods::Derivative, {2.0, std::u16string(u"\\diffd")}),
+            Macro(u"partialderivative", &PhysicsMethods::Derivative,
+                  {3.0, std::u16string(u"\\partial")}),
+            Macro(u"pderivative", &PhysicsMethods::Derivative, {3.0, std::u16string(u"\\partial")}),
+            Macro(u"pdv", &PhysicsMethods::Derivative, {3.0, std::u16string(u"\\partial")}),
+            Macro(u"functionalderivative", &PhysicsMethods::Derivative,
+                  {2.0, std::u16string(u"\\delta")}),
+            Macro(u"fderivative", &PhysicsMethods::Derivative, {2.0, std::u16string(u"\\delta")}),
+            Macro(u"fdv", &PhysicsMethods::Derivative, {2.0, std::u16string(u"\\delta")}),
+        }}}));
+    maps.registerMap(std::make_shared<CommandMap>(
+        CommandMapInit{MacroMapInit{{u"Physics-bra-ket-macros", std::nullopt},
+                                    {
+                                        Macro(u"bra", &PhysicsMethods::Bra),
+                                        Macro(u"ket", &PhysicsMethods::Ket),
+                                        Macro(u"innerproduct", &PhysicsMethods::BraKet),
+                                        Macro(u"ip", &PhysicsMethods::BraKet),
+                                        Macro(u"braket", &PhysicsMethods::BraKet),
+                                        Macro(u"outerproduct", &PhysicsMethods::KetBra),
+                                        Macro(u"dyad", &PhysicsMethods::KetBra),
+                                        Macro(u"ketbra", &PhysicsMethods::KetBra),
+                                        Macro(u"op", &PhysicsMethods::KetBra),
+                                        Macro(u"expectationvalue", &PhysicsMethods::Expectation),
+                                        Macro(u"expval", &PhysicsMethods::Expectation),
+                                        Macro(u"ev", &PhysicsMethods::Expectation),
+                                        Macro(u"matrixelement", &PhysicsMethods::MatrixElement),
+                                        Macro(u"matrixel", &PhysicsMethods::MatrixElement),
+                                        Macro(u"mel", &PhysicsMethods::MatrixElement),
+                                    }}}));
+    maps.registerMap(std::make_shared<CommandMap>(CommandMapInit{MacroMapInit{
+        {u"Physics-matrix-macros", std::nullopt},
+        {
+            Macro(u"matrixquantity", &PhysicsMethods::MatrixQuantity),
+            Macro(u"mqty", &PhysicsMethods::MatrixQuantity),
+            Macro(u"pmqty", PhysicsMethods::Macro, {std::u16string(u"\\mqty(#1)"), 1.0}),
+            Macro(u"Pmqty", PhysicsMethods::Macro, {std::u16string(u"\\mqty*(#1)"), 1.0}),
+            Macro(u"bmqty", PhysicsMethods::Macro, {std::u16string(u"\\mqty[#1]"), 1.0}),
+            Macro(u"vmqty", PhysicsMethods::Macro, {std::u16string(u"\\mqty|#1|"), 1.0}),
+            Macro(u"smallmatrixquantity", &PhysicsMethods::MatrixQuantity, {true}),
+            Macro(u"smqty", &PhysicsMethods::MatrixQuantity, {true}),
+            Macro(u"spmqty", PhysicsMethods::Macro, {std::u16string(u"\\smqty(#1)"), 1.0}),
+            Macro(u"sPmqty", PhysicsMethods::Macro, {std::u16string(u"\\smqty*(#1)"), 1.0}),
+            Macro(u"sbmqty", PhysicsMethods::Macro, {std::u16string(u"\\smqty[#1]"), 1.0}),
+            Macro(u"svmqty", PhysicsMethods::Macro, {std::u16string(u"\\smqty|#1|"), 1.0}),
+            Macro(u"matrixdeterminant", PhysicsMethods::Macro,
+                  {std::u16string(u"\\vmqty{#1}"), 1.0}),
+            Macro(u"mdet", PhysicsMethods::Macro, {std::u16string(u"\\vmqty{#1}"), 1.0}),
+            Macro(u"smdet", PhysicsMethods::Macro, {std::u16string(u"\\svmqty{#1}"), 1.0}),
+            Macro(u"identitymatrix", &PhysicsMethods::IdentityMatrix),
+            Macro(u"imat", &PhysicsMethods::IdentityMatrix),
+            Macro(u"xmatrix", &PhysicsMethods::XMatrix),
+            Macro(u"xmat", &PhysicsMethods::XMatrix),
+            Macro(u"zeromatrix", PhysicsMethods::Macro,
+                  {std::u16string(u"\\xmat{0}{#1}{#2}"), 2.0}),
+            Macro(u"zmat", PhysicsMethods::Macro, {std::u16string(u"\\xmat{0}{#1}{#2}"), 2.0}),
+            Macro(u"paulimatrix", &PhysicsMethods::PauliMatrix),
+            Macro(u"pmat", &PhysicsMethods::PauliMatrix),
+            Macro(u"diagonalmatrix", &PhysicsMethods::DiagonalMatrix),
+            Macro(u"dmat", &PhysicsMethods::DiagonalMatrix),
+            Macro(u"antidiagonalmatrix", &PhysicsMethods::DiagonalMatrix, {true}),
+            Macro(u"admat", &PhysicsMethods::DiagonalMatrix, {true}),
+        }}}));
+    maps.registerMap(std::make_shared<EnvironmentMap>(EnvironmentMapInit{
+        MacroMapInit{{u"Physics-aux-envs", std::nullopt},
+                     {
+                         Macro(u"smallmatrix", MacroMethod{PhysicsMethods::Array},
+                               {NullArgument{}, NullArgument{}, NullArgument{},
+                                std::u16string(u"c"), std::u16string(u"0.333em"),
+                                std::u16string(u".2em"), std::u16string(u"S"), 1.0}),
+                     }},
+        &ParseMethods::environment}));
+    maps.registerMap(
+        std::make_shared<MacroMap>(MacroMapInit{{u"Physics-characters", std::nullopt},
+                                                {
+                                                    Macro(u"|", &PhysicsMethods::AutoClose, {0.0}),
+                                                    Macro(u")", &PhysicsMethods::AutoClose),
+                                                    Macro(u"]", &PhysicsMethods::AutoClose),
+                                                }}));
 }
 } // namespace folia::math::tex
