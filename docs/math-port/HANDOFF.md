@@ -9,7 +9,38 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点
+### 恢复时先用这个短检查点（当前未提交批次）
+
+- **用户最新反馈：反对 `native function list` 这类无职责意义的命名，以及保留旧文件后另建实现。**
+  本轮已核对实际文件与 Git：`2022cb1a` 已将测试 `native_function_list.cpp` 归名
+  `tests/math/function_list.cpp`；`e6126948` 已删除旧参数对象模拟测试和配置投影。
+  唯一当前 FunctionList 实现在原 `src/math/util/function_list.ixx`，CMake 引用该接口。
+  **不要在恢复后再次把这些已完成改动当成新的待办，也不要声称本轮又做了一遍。**
+  旧 `function_list_bindings.{ixx,cpp}` 仍被尚未改写的 handler_context_bindings、
+  parser_runtime、output_jax、common_bindings 引用；未进入当前构建不代表全图清理完成。
+  后续在各消费者原职责内改写并移除旧连接，不新增 native/new/typed 第二套实现。
+- **当前实现批次尚未闭合构建，最近通过的完整结果仍是下节409项。** Root 已把
+  `core/input_jax.ixx` 改为 `AbstractInputJax<Options,Data>`，删除纯模板不再需要的
+  `core/input_jax.cpp`；`parser_types.ixx` 使用真实 `InputJaxFilterData<ParseOptions>`，
+  `tex_jax.ixx` 声明真实 TeX owner 并由 parser_family 导出。
+  **tex_jax.cpp 仍是旧实现，CMake 尚未接入本批次，当前工作树不可宣称编译通过。**
+  架构文档记录了 options/session/configuration/ParseOptions 所有权；DOM 查找仍待实现。
+- RangeDef 已补 Source 第五个 optional variant 字段；operator-data.cjs 生成器已修改，
+  生成到忽略目录 `build/math-port/operator-variant-generator` 后只复制原字典实现。
+  原数据仅六行变化，新增区段字体断言；生成命令 exit0，C++测试尚未运行。
+- **代理已结束**：`/root/base_methods`（GPT-6.1 Sol）此轮负责原 FilterUtil 七个方法，
+  限定 `filter_util.{ixx,cpp}`、`tests/math/filter_util.cpp`、
+  `tools/math-port/tex-filter-util-source.cjs`。已交付7/7方法、9组原生测试。
+  代理报告正式 Source 检查覆盖7方法/24场景，从 C:\Windows 重放 exit0，TS/CJS及
+  完整profile锁通过；Root 尚未独立验收。文件已冻结，无 live agent/构建/测试句柄；
+  原生测试尚未编译/执行。
+- **精确下一步**：先审查该代理交付。NodeUtil 仍需原 copyAttributes：复制 attributes
+  值和已有 NodeProperties，**不复制 intrinsic texClass**，Source已由双方核实。
+  然后在原 BaseConfiguration/TeX/ParserConfiguration owner 中闭合实现及 CMake，
+  再做聚焦构建和测试。不要把旧 tex_jax.cpp 内嵌的 FilterUtil 保留为第二套实现。
+  原13项无关修改仍保护；本批次不涉及 destructive Git 操作，不改写提交历史。
+
+### 上一已验收批次（历史；以下不是当前 live 状态）
 
 - **2026-10-20 当前断点：原 BaseMethods、BaseMappings 和所需共享 ParseUtil 已接入编译图。**
   最新完整 Math 回归 **409项/135,195断言，exit0**，`base-methods-full.log`，
