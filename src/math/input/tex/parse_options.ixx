@@ -151,11 +151,25 @@ struct TexOptionValues {
 
 // The original request owner borrows the input-jax options/configuration and
 // session, and owns its factories, column parser, tags and equation scratch.
+// Input-jax-owned text parsing service. Both ParseOptions borrow this record;
+// the main parser borrow exists only while internalMath is on the call stack.
+struct TextMacrosData {
+    std::unique_ptr<ParserConfiguration> textConf;
+    std::unique_ptr<ParseOptions> parseOptions;
+    TexParser *texParser{};
+    TextMacrosData();
+    ~TextMacrosData();
+};
+// Source's text parser shares the already configured input-jax options after
+// capturing its own math-style resolver; it must not reapply text defaults.
+struct SharedTexOptions { TexOptionValues &values; };
 class ParseOptions : public NodeFactoryConfiguration {
 public:
     using MathStyleResolver = std::u16string (*)(std::u16string_view, bool);
     static MathStyleResolver getVariant(std::u16string_view) noexcept;
     ParseOptions(ParserConfiguration&, TexOptionValues&, TexSessionState&,
+                 mml::MmlFactory&, MathStyleResolver capturedMathStyle);
+    ParseOptions(ParserConfiguration&, SharedTexOptions, TexSessionState&,
                  mml::MmlFactory&, MathStyleResolver capturedMathStyle);
     ~ParseOptions() override;
     ParseOptions(ParseOptions const&) = delete;
@@ -172,6 +186,7 @@ public:
     MathStyleResolver mathStyle; // captured by input-jax construction, independent of later options
     std::unique_ptr<ColumnParser> columnParser;
     TexSessionState& packageData;
+    TextMacrosData *textmacros{}; // borrowed from TeX, never stored in session values
     TexEquationState equation;
     std::vector<TexParser*> parsers;
     core::MathItem* mathItem{};

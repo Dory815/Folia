@@ -87,6 +87,8 @@ public:
     TexOptionValues options;
     NodeCreators nodes;
     MapHandler& maps() const noexcept { return maps_; }
+    ConfigurationHandler& registry() const noexcept { return registry_; }
+    WarningSink& warnings() const noexcept { return warnings_; }
     std::u16string defaultTags{u"none"};
     TexSessionState& session() const noexcept { return session_; }
     MacroCallbacks const& callbacks() const noexcept { return callbacks_; }

@@ -75,6 +75,8 @@ TeX::TeX(ConfigurationHandler &registry, MapHandler &maps, MacroCallbacks const 
     postFilters.add(FilterUtil::combineRelations, -1);
 }
 TeX::~TeX() = default;
+TextMacrosData::TextMacrosData() = default;
+TextMacrosData::~TextMacrosData() = default;
 std::string_view TeX::name() const noexcept {
     return "TeX";
 }
@@ -86,6 +88,13 @@ ParserConfiguration &TeX::configuration() const noexcept {
 }
 TexSessionState &TeX::session() noexcept {
     return session_;
+}
+void TeX::installTextMacros(std::unique_ptr<TextMacrosData> data) {
+    if (!data || !data->textConf || !data->parseOptions)
+        throw std::invalid_argument("Text macros require a complete parser configuration");
+    textmacros_ = std::move(data);
+    parseOptions_->textmacros = textmacros_.get();
+    textmacros_->parseOptions->textmacros = textmacros_.get();
 }
 void TeX::setMmlFactory(mml::MmlFactory &factory) {
     AbstractInputJax::setMmlFactory(factory);

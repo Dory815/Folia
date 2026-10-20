@@ -10,6 +10,7 @@ class TeX : public core::AbstractInputJax<TexOptionValues, ParseOptions> {
     TexSessionState session_;
     std::unique_ptr<ParserConfiguration> configuration_;
     std::unique_ptr<ParseOptions> parseOptions_;
+    std::unique_ptr<TextMacrosData> textmacros_;
     std::u16string latex_;
     mml::MmlNode *mathNode_{}; // borrowed from the caller's current MmlDocument
   public:
@@ -25,6 +26,7 @@ class TeX : public core::AbstractInputJax<TexOptionValues, ParseOptions> {
     ParseOptions &parseOptions() const noexcept;
     ParserConfiguration &configuration() const noexcept;
     TexSessionState &session() noexcept;
+    void installTextMacros(std::unique_ptr<TextMacrosData>);
     void setMmlFactory(mml::MmlFactory &) override;
     void reset(std::int64_t offset = 0);
     mml::MmlNode &compile(core::MathItem &, mml::MmlDocument &) override;

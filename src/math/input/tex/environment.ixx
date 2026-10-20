@@ -25,7 +25,7 @@ struct TexEnvironment final {
     std::optional<std::u16string> cd_min_height;
     std::optional<std::u16string> vector_font;
     std::optional<std::u16string> math_variant;
-    std::optional<std::u16string> math_size;
+    std::optional<std::variant<double, std::u16string>> math_size;
     std::optional<std::u16string> math_color;
 
     friend bool operator==(TexEnvironment const&, TexEnvironment const&) = default;

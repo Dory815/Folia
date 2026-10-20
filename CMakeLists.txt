@@ -161,6 +161,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/base/base_items.ixx
     src/math/input/tex/stack.ixx
     src/math/input/tex/tex_parser.ixx
+    src/math/input/tex/text_parser.ixx
     src/math/input/tex/column_parser.ixx
     src/math/input/tex/parser_family.ixx
     src/math/input/tex/begingroup/stack.ixx
@@ -270,6 +271,7 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/base/base_items.cpp
     src/math/input/tex/stack.cpp
     src/math/input/tex/tex_parser.cpp
+    src/math/input/tex/text_parser.cpp
     src/math/input/tex/column_parser.cpp
     src/math/input/tex/tags.cpp
     src/math/input/tex/macro.cpp

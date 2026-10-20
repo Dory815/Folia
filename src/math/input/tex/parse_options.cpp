@@ -10,14 +10,19 @@ namespace folia::math::tex {
 ParseOptions::ParseOptions(ParserConfiguration &configuration, TexOptionValues &effective,
                            TexSessionState &session, mml::MmlFactory &factory,
                            MathStyleResolver captured)
-    : handlers(configuration.handlers), options(effective),
+    : ParseOptions(configuration, SharedTexOptions{effective}, session, factory, captured) {
+    options.mergeDefaults(configuration.options);
+}
+ParseOptions::ParseOptions(ParserConfiguration &configuration, SharedTexOptions effective,
+                           TexSessionState &session, mml::MmlFactory &factory,
+                           MathStyleResolver captured)
+    : handlers(configuration.handlers), options(effective.values),
       itemFactory(std::make_unique<StackItemFactory>(*this, configuration.items)),
       nodeFactory(factory, this), mathStyle(captured ? captured : getVariant(u"TeX")),
       columnParser(std::make_unique<ColumnParser>(session.columnDefinitions())),
       packageData(session), configuration_(configuration) {
     nodeFactory.setConfiguration(*this);
     nodeFactory.setCreators(configuration.nodes);
-    options.mergeDefaults(configuration.options);
 }
 ParseOptions::~ParseOptions() = default;
 MapHandler &ParseOptions::maps() const noexcept {
