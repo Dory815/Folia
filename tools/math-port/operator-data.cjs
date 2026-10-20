@@ -168,7 +168,7 @@ const dataLines = [
   ...records.MO.map(([name,definition],index) => `  {${cppString(name,true)},${operatorDef(definition)}}${index+1<records.MO.length?',':''}`),
   '}};',
   `const std::array<RangeDef,${records.RANGES.length}> range_data{{`,
-  ...records.RANGES.map((row,index) => `  {${codepoint(row[0])},${codepoint(row[1])},${texClass(row[2])},${cppString(row[3],true)}}${index+1<records.RANGES.length?',':''}`),
+  ...records.RANGES.map((row,index) => `  {${codepoint(row[0])},${codepoint(row[1])},${texClass(row[2])},${cppString(row[3],true)}${row[4]===undefined?'':`,std::u16string{${cppString(row[4],true)}}`}}${index+1<records.RANGES.length?',':''}`),
   '}};',
   `const std::array<std::array<double,2>,${records.MMLSPACING.length}> spacing_data{{`,
   ...records.MMLSPACING.map((row,index) => `  {{${number(row[0])},${number(row[1])}}}${index+1<records.MMLSPACING.length?',':''}`),

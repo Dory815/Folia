@@ -4,6 +4,10 @@ import folia.math.core.mml_tree.mml_nodes.mo;
 import std;
 
 namespace folia::math::tex {
+void NodeUtil::copyAttributes(mml::MmlNode const &source, mml::MmlNode &destination) {
+    destination.attributes() = source.attributes();
+    mml::mergeNodeProperties(source.properties(), destination.properties());
+}
 void NodeUtil::setChild(mml::MmlNode &parent, std::size_t index, mml::MmlNode *child) {
     parent.document().setChildSlot(parent, index, child);
 }

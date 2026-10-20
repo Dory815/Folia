@@ -16,6 +16,7 @@ struct RangeDef {
     char32_t last;
     TexClass texClass;
     std::u16string kind;
+    std::optional<std::u16string> variant;
 };
 using NamedOperatorDef = std::pair<std::u16string, OperatorDef>;
 struct OperatorEntry {

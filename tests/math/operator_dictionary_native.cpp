@@ -35,6 +35,11 @@ suite typed_operator_dictionary = [] {
         expect(ranges.front().last == U'\x7f');
         expect(ranges.front().texClass == TexClass::rel);
         expect(ranges.front().kind == u"mo");
+        expect(!ranges.front().variant.has_value());
+        expect(getRange(u"中").variant == u"normal");
+        expect(getRange(u"あ").variant == u"normal");
+        expect(getRange(u"𠀀").variant == u"normal");
+        expect(!getRange(u"a").variant.has_value());
         expect(spacing.size() == 8_u);
         expect(spacing[0] == std::array<double, 2>{0.0, 0.0});
         expect(spacing[1] == std::array<double, 2>{1.0, 2.0});

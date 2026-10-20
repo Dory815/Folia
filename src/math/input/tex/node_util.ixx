@@ -13,6 +13,7 @@ struct NodeDefinition {
 class NodeUtil final {
   public:
     static void setProperties(mml::MmlNode &, NodeDefinition);
+    static void copyAttributes(mml::MmlNode const &, mml::MmlNode &);
     static void setChild(mml::MmlNode &, std::size_t, mml::MmlNode *);
     static void setChild(mml::MmlNode &parent, std::size_t index, mml::MmlNode &child) {
         setChild(parent, index, &child);
