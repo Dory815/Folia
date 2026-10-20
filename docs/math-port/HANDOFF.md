@@ -11,7 +11,7 @@
 
 ### 恢复时先用这个短检查点
 
-- **最新实际代码：原Macro/TokenMap/MapHandler三家族已原位改写并进入构建**。
+- **最新实际代码：原Macro/TokenMap/MapHandler三家族已原位改写并进入构建**；提交`4c5a7e92`。
   parser_family当前导出:types/:macro/:token_map/:map_handler/:parse_options；新代码无
   Context/Property/原通用函数对象。Macro为owned token+typed方法+TeX实参数组。
   MacroCallbacks复制两个固定C++函数指针表，输入jax生命周期不可复制/赋值/重绑；
