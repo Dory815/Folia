@@ -84,6 +84,21 @@ for (const [name, tex, display, width, features] of [
   ['scene-padding-negative-dw-center', '\\makebox[.25em][c]{\\rule[.2em]{1em}{.4em}}', false, 1280, ['base']],
   ['scene-padding-negative-dw-right', '\\makebox[.25em][r]{\\rule[.2em]{1em}{.4em}}', false, 1280, ['base']],
 ]) cases.push({name, tex, display, width, features});
+// Table-focused inputs are appended after the original 102 records. The first
+// five reuse exact TeX inputs from the independent 14-case table witness;
+// additions pin dashed row/column lines, labels, nesting and percentage sizing.
+for (const item of [
+  {name: 'scene-table-array-basic', tex: String.raw`\begin{array}{cc}a&b\\c&d\end{array}`, display: true},
+  {name: 'scene-table-array-column-rules', tex: String.raw`\begin{array}{c|c||r}a&b&c\\d&e&f\end{array}`, display: true},
+  {name: 'scene-table-array-row-rules', tex: String.raw`\begin{array}{cc}\hline a&b\\\hline c&d\\\hline\end{array}`, display: true},
+  {name: 'scene-table-array-cell-padding', tex: String.raw`\begin{array}{c@{\quad}r}x&1\\longer&22\end{array}`, display: true},
+  {name: 'scene-table-array-paragraph-column', tex: String.raw`\begin{array}{p{3em}c}a+b+c&x\\d+e+f&y\end{array}`, display: true},
+  {name: 'scene-table-row-dashed', tex: String.raw`\begin{array}{cc}\hdashline a&b\\\hdashline c&d\\\hdashline\end{array}`, display: true},
+  {name: 'scene-table-column-dashed', tex: String.raw`\begin{array}{c:c}a&b\\c&d\end{array}`, display: true},
+  {name: 'scene-table-label-right', tex: String.raw`\begin{align}x&=1\tag{TableSceneRightA}\\y&=2\tag{TableSceneRightB}\end{align}`, display: true, tagSide: 'right'},
+  {name: 'scene-table-label-left-metric', tex: String.raw`\begin{align}x&=1\tag{TableSceneLeftA}\\y&=2\tag{TableSceneLeftB}\end{align}`, display: true, em: 20, ex: 7, tagSide: 'left'},
+  {name: 'scene-table-nested-label', tex: String.raw`\begin{align}\begin{aligned}x&=1\\y&=2\end{aligned}&=0\tag{TableSceneNestedA}\end{align}`, display: true, tagSide: 'right'},
+]) cases.push({...item, width: 1280, features: ['base', 'ams']});
 
 function cpp(value) {
   // MSVC rejects a single string literal token beyond 16K; keep each emitted
@@ -135,12 +150,16 @@ async function capture() {
   for (const item of cases) {
     let svg = '', error = null;
     try {
+      // The profile default is the Source's right-side tag placement. Specific
+      // left-label witnesses record their per-input TeX option explicitly.
+      ref.input.parseOptions.options.tagSide = item.tagSide ?? 'right';
       const node = ref.document.convert(item.tex, {
-        display: item.display, em: 16, ex: 8, containerWidth: item.width
+        display: item.display, em: item.em ?? 16, ex: item.ex ?? 8,
+        containerWidth: item.width
       });
       svg = ref.adaptor.serializeXML(node);
     } catch (e) { error = {name: e?.name || 'Error', message: String(e?.message || e)}; }
-    records.push({...item, em: 16, ex: 8, svg, error,
+    records.push({...item, tagSide: item.tagSide ?? '', em: item.em ?? 16, ex: item.ex ?? 8, svg, error,
       root: {width: attr(svg, 'width'), height: attr(svg, 'height'), viewBox: attr(svg, 'viewBox'),
         xmlns: attr(svg, 'xmlns')},
       geometry: [...svg.matchAll(/<(?:path|rect|line|polygon|g)\b[^>]*>/g)].map(m => m[0])});
@@ -174,6 +193,42 @@ async function capture() {
     assert.ok(record.svg.includes('transform="translate(0,200)"'),
       `${name} must retain its positive vertical offset`);
   }
+  const requireSourceMarkup = (name, fragments) => {
+    const record = byName.get(name);
+    assert.ok(record && !record.error, `${name} must convert in pinned Source`);
+    for (const fragment of fragments)
+      assert.ok(record.svg.includes(fragment), `${name} Source SVG must contain ${fragment}`);
+  };
+  for (const name of ['scene-table-array-basic', 'scene-table-array-cell-padding',
+                      'scene-table-array-paragraph-column'])
+    requireSourceMarkup(name, ['data-mml-node="mtable"']);
+  requireSourceMarkup('scene-table-array-row-rules', ['data-mml-node="mtable"', 'data-line="h"', 'mjx-solid']);
+  requireSourceMarkup('scene-table-array-column-rules', ['data-mml-node="mtable"', 'data-line="v"', 'mjx-solid']);
+  requireSourceMarkup('scene-table-row-dashed', ['data-mml-node="mtable"', 'data-frame-styles="dashed', 'data-line="h"', 'mjx-dashed', 'stroke-dasharray=']);
+  requireSourceMarkup('scene-table-column-dashed', ['data-mml-node="mtable"', 'data-line="v"', 'mjx-dashed']);
+  for (const [name, side] of [['scene-table-label-right', 'right'],
+                              ['scene-table-label-left-metric', 'left'],
+                              ['scene-table-nested-label', 'right']]) {
+    const record = byName.get(name);
+    assert.ok(record && !record.error, `${name} must convert in pinned Source`);
+    assert.ok(record.svg.includes('data-labels="true"'), `${name} must retain Source labels`);
+    assert.ok(record.svg.includes('data-mml-node="mlabeledtr"'), `${name} must retain labeled rows`);
+    assert.equal(record.tagSide, side, `${name} tag side must be explicit Source input metadata`);
+    assert.ok(record.svg.includes('width="100%"') && record.svg.includes('data-mjx-viewBox='),
+      `${name} must preserve the Source percentage viewport`);
+    assert.ok(record.svg.includes(`mjx-eqn:${name.includes('left') ? 'TableSceneLeftA' :
+      name.includes('nested') ? 'TableSceneNestedA' : 'TableSceneRightA'}`),
+      `${name} must retain its unique explicit Source tag identity`);
+  }
+  const nestedTable = byName.get('scene-table-nested-label');
+  assert.ok((nestedTable.svg.match(/data-mml-node="mtable"/g) || []).length >= 2,
+    'nested label witness must contain nested MathML table structures');
+  const metricTable = byName.get('scene-table-label-left-metric');
+  assert.equal(metricTable.em, 20);
+  assert.equal(metricTable.ex, 7);
+  assert.equal(metricTable.width, 1280);
+  assert.ok(metricTable.svg.includes('scale(63.14)'),
+    'nondefault metric label table must pin Source top-table scale precision=2');
   return {records};
 }
 
@@ -183,12 +238,12 @@ function generate({records}) {
     `// Source corpus: original 18 baseline + profile-cases.json (${profileCases.cases.length}); full 75/150 gates remain outstanding.\n`+
     `// scope=${sourceLock.scopeHash}; profile corpus=${sourceLock.corpusSha256}; font/Common dependency files=${sourceLock.dependencies.length}.\n`+
     `// Source is generated only by common-scene-source.cjs through reference-profile.cjs.\n`+
-    `struct CommonSceneCase { std::string_view name, tex; bool display; double em, ex; int width;\n`+
+    `struct CommonSceneCase { std::string_view name, tex; bool display; double em, ex; int width; std::string_view tag_side;\n`+
     `    std::string_view svg, root_width, root_height, root_view_box; std::string_view geometry;\n`+
     `    std::string_view error_name, error_message; };\n`+
     `constexpr std::array commonSceneCases{\n`;
   for (const r of records) {
-    body += `    CommonSceneCase{${cpp(r.name)}, ${cpp(r.tex)}, ${r.display}, 16, 8, ${r.width},\n`+
+    body += `    CommonSceneCase{${cpp(r.name)}, ${cpp(r.tex)}, ${r.display}, ${r.em}, ${r.ex}, ${r.width}, ${cpp(r.tagSide ?? '')},\n`+
       `        ${cpp(r.svg)}, ${cpp(r.root.width)}, ${cpp(r.root.height)}, ${cpp(r.root.viewBox)},\n`+
       `        ${cpp(JSON.stringify(r.geometry))}, ${cpp(r.error?.name ?? '')}, ${cpp(r.error?.message ?? '')}},\n`;
   }

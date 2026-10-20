@@ -48,6 +48,7 @@ import folia.math.input.tex.upgreek.configuration;
 import folia.math.input.tex.verb.configuration;
 import folia.math.output.common;
 import folia.math.output.scene;
+import folia.math.output.svg.menclose_notations;
 import folia.math.output.svg.writer;
 import folia.math.util.utf16;
 
@@ -156,7 +157,8 @@ common::CommonOutputJaxConfig commonConfig(CommonSceneCase const &item, InputOwn
 scene::Scene buildSceneFromDocument(mml::MmlDocument &document, CommonSceneCase const &item,
                                     InputOwner &owner, NoUnexpectedMeasurement &measurement) {
     common::LayoutJob job(document, commonConfig(item, owner), measurement,
-                          common::CommonWrapperFactory::standardNodes(), makeLinebreakVisitor);
+                          common::CommonWrapperFactory::standardNodes(svg::mencloseNotations()),
+                          makeLinebreakVisitor);
     return job.buildScene();
 }
 
@@ -191,13 +193,18 @@ class NativeOutput final : public folia::math::core::MathOutputJaxService {
         auto config = commonConfig(item_, owner_);
         return common::CommonOutputJax::getBBox(
             document, *math.root, std::move(config), measurement_,
-            common::CommonWrapperFactory::standardNodes(), makeLinebreakVisitor);
+            common::CommonWrapperFactory::standardNodes(svg::mencloseNotations()),
+            makeLinebreakVisitor);
     }
 };
 
 scene::Scene buildScene(CommonSceneCase const &item, InputOwner &owner,
                         NoUnexpectedMeasurement &measurement) {
     mml::MmlDocument document;
+    owner.texOptions.tagSide =
+        item.tag_side.empty()
+            ? std::optional<std::u16string>{u"right"}
+            : std::optional<std::u16string>{folia::math::utf16::decode(item.tag_side).text};
     tex::TeX input(owner.configurations, owner.maps, owner.callbacks, owner.warnings,
                    document.factory(), owner.texOptions);
     NativeOutput output(item, owner, measurement);
@@ -263,14 +270,101 @@ struct SceneStats {
     std::size_t phantom_groups{};
     std::size_t phantom_glyphs{};
     std::size_t phantom_entries{};
+    std::size_t table_nodes{};
+    std::size_t table_frame_roles{};
+    std::size_t table_vertical_roles{};
+    std::size_t table_horizontal_roles{};
+    std::size_t table_viewports{};
+    std::size_t table_unclipped_viewports{};
+    std::size_t table_invalid_viewports{};
+    std::size_t table_rules{};
+    std::size_t table_invalid_paints{};
+    std::size_t table_line_attributes{};
+    std::size_t table_frame_attributes{};
+    std::size_t table_label_attributes{};
+    std::size_t table_class_attributes{};
+    std::size_t table_background_rules{};
+    std::size_t table_invalid_backgrounds{};
     std::size_t vertical_extender_roles{};
     std::size_t vertical_extender_viewports{};
     std::size_t horizontal_extender_roles{};
     std::size_t horizontal_extender_viewports{};
 };
 
+bool isTableRole(scene::ElementRole role) {
+    return role == scene::ElementRole::table_frame ||
+           role == scene::ElementRole::table_vertical_line ||
+           role == scene::ElementRole::table_horizontal_line;
+}
+
+bool isTableViewportRole(scene::ElementRole role) {
+    return role == scene::ElementRole::table_content_viewport ||
+           role == scene::ElementRole::table_label_frame;
+}
+
+void inspectTableMetadata(scene::SemanticMetadata const &metadata, SceneStats &stats) {
+    for (const auto &attribute : metadata.ordered_attributes) {
+        if (attribute.name == "data-line")
+            ++stats.table_line_attributes;
+        else if (attribute.name == "data-frame")
+            ++stats.table_frame_attributes;
+        else if (attribute.name == "data-labels")
+            ++stats.table_label_attributes;
+        else if (attribute.name == "class")
+            ++stats.table_class_attributes;
+    }
+}
+
+void inspectTableRole(scene::ElementRole role, SceneStats &stats) {
+    if (!isTableRole(role))
+        return;
+    if (role == scene::ElementRole::table_frame)
+        ++stats.table_frame_roles;
+    else if (role == scene::ElementRole::table_vertical_line)
+        ++stats.table_vertical_roles;
+    else
+        ++stats.table_horizontal_roles;
+}
+
+void inspectTableRule(scene::ElementRole role, scene::Paint const &paint, SceneStats &stats) {
+    if (!isTableRole(role))
+        return;
+    ++stats.table_rules;
+    if (!std::holds_alternative<scene::NoPaint>(paint.fill) ||
+        !std::holds_alternative<scene::InheritedPaint>(paint.stroke) ||
+        !std::isfinite(paint.stroke_width) || std::abs(paint.stroke_width - 0.07) > 1e-9)
+        ++stats.table_invalid_paints;
+    if (paint.dash_array) {
+        const auto &dash = *paint.dash_array;
+        const bool dashed = dash.size() == 1 && std::abs(dash[0] - 0.14) <= 1e-9;
+        const bool dotted =
+            dash.size() == 2 && std::abs(dash[0]) <= 1e-9 && std::abs(dash[1] - 0.14) <= 1e-9;
+        if (!dashed && !dotted)
+            ++stats.table_invalid_paints;
+        if (dotted && paint.line_cap != scene::StrokeCap::round)
+            ++stats.table_invalid_paints;
+    }
+}
+
 void inspect(scene::Group const &group, SceneStats &stats, bool insidePhantom = false) {
     ++stats.groups;
+    if (group.metadata.source_tag == "mtable")
+        ++stats.table_nodes;
+    inspectTableMetadata(group.metadata, stats);
+    inspectTableRole(group.role, stats);
+    if (isTableViewportRole(group.role) && group.viewport) {
+        ++stats.table_viewports;
+        if (!group.viewport->clip_content)
+            ++stats.table_unclipped_viewports;
+        const auto &bounds = group.viewport->bounds;
+        const auto &viewBox = group.viewport->view_box;
+        if (!std::isfinite(bounds.x) || !std::isfinite(bounds.y) || !std::isfinite(bounds.width) ||
+            !std::isfinite(bounds.height) || !std::isfinite(viewBox.x) ||
+            !std::isfinite(viewBox.y) || !std::isfinite(viewBox.width) ||
+            !std::isfinite(viewBox.height) || bounds.width <= 0 || bounds.height <= 0 ||
+            viewBox.width <= 0 || viewBox.height <= 0)
+            ++stats.table_invalid_viewports;
+    }
     const bool isPhantom = insidePhantom || group.metadata.source_tag == "mphantom";
     if (group.metadata.source_tag == "mphantom")
         ++stats.phantom_groups;
@@ -304,9 +398,37 @@ void inspect(scene::Group const &group, SceneStats &stats, bool insidePhantom = 
                     }
                 } else if constexpr (std::same_as<T, scene::Path>) {
                     ++stats.paths;
+                    inspectTableMetadata(value.metadata, stats);
+                    inspectTableRole(value.role, stats);
+                    inspectTableRule(value.role, value.paint, stats);
                     ++stats.typed_paints;
                 } else if constexpr (std::same_as<T, scene::Rule>) {
                     ++stats.rules;
+                    inspectTableMetadata(value.metadata, stats);
+                    inspectTableRole(value.role, stats);
+                    inspectTableRule(value.role, value.paint, stats);
+                    const bool tableBackground =
+                        value.role == scene::ElementRole::background_box ||
+                        std::any_of(
+                            value.metadata.ordered_attributes.begin(),
+                            value.metadata.ordered_attributes.end(),
+                            [](const auto &attribute) { return attribute.name == "data-bgcolor"; });
+                    if (tableBackground) {
+                        ++stats.table_background_rules;
+                        const bool validBounds = std::isfinite(value.bounds.x) &&
+                                                 std::isfinite(value.bounds.y) &&
+                                                 std::isfinite(value.bounds.width) &&
+                                                 std::isfinite(value.bounds.height) &&
+                                                 value.bounds.width > 0 && value.bounds.height > 0;
+                        const bool colorFill =
+                            std::holds_alternative<scene::CssColor>(value.paint.fill) ||
+                            std::holds_alternative<scene::Color>(value.paint.fill);
+                        const bool noExplicitStroke =
+                            std::holds_alternative<scene::NoPaint>(value.paint.stroke) ||
+                            std::holds_alternative<scene::InheritedPaint>(value.paint.stroke);
+                        if (!validBounds || !colorFill || !noExplicitStroke)
+                            ++stats.table_invalid_backgrounds;
+                    }
                     ++stats.typed_paints;
                 } else if constexpr (std::same_as<T, scene::TextRun>) {
                     ++stats.text_runs;
@@ -340,6 +462,30 @@ std::size_t sourceMathSvgCount(std::string_view svg) {
         cursor = end + 1;
     }
     return count;
+}
+
+std::size_t sourceMmlTableCount(std::string_view svg) {
+    constexpr std::string_view needle = "data-mml-node=\"mtable\"";
+    std::size_t count = 0, cursor = 0;
+    while ((cursor = svg.find(needle, cursor)) != std::string_view::npos) {
+        ++count;
+        cursor += needle.size();
+    }
+    return count;
+}
+
+bool sourceHasNestedTableViewport(std::string_view svg) {
+    for (auto position = svg.find("<svg"); position != std::string_view::npos;
+         position = svg.find("<svg", position + 4)) {
+        const auto end = svg.find('>', position);
+        if (end == std::string_view::npos)
+            break;
+        const auto tag = svg.substr(position, end - position);
+        if (tag.find("data-table=\"true\"") != std::string_view::npos ||
+            tag.find("data-labels=\"true\"") != std::string_view::npos)
+            return true;
+    }
+    return false;
 }
 
 std::size_t sourceNestedAssemblyPieceCount(std::string_view svg, bool vertical) {
@@ -382,10 +528,10 @@ suite common_scene_source = [] {
         InputOwner owner;
         NoUnexpectedMeasurement measurement;
         // Stage coverage is deliberately limited to focused currently emitted
-        // Common families plus isolated script-family probes. Other pinned
-        // Source cases remain outstanding until their families emit Scene
-        // nodes. This is not the required 75 Common / 150 byte-exact full-profile gate.
-        constexpr std::array<std::string_view, 35> selected{"plain",
+        // Common families, table branches, and isolated script-family probes.
+        // Other pinned Source cases remain outstanding until their families
+        // emit Scene nodes. This is not the required 75/150 full-profile gate.
+        constexpr std::array<std::string_view, 48> selected{"plain",
                                                             "mathbb",
                                                             "fraction-inline",
                                                             "fraction-display",
@@ -419,7 +565,20 @@ suite common_scene_source = [] {
                                                             "base-phantom-sides",
                                                             "scene-simple-phantom",
                                                             "scene-padding-negative-dw-center",
-                                                            "scene-padding-negative-dw-right"};
+                                                            "scene-padding-negative-dw-right",
+                                                            "matrix",
+                                                            "colortbl-row-cell",
+                                                            "display-linebreak-table",
+                                                            "scene-table-array-basic",
+                                                            "scene-table-array-column-rules",
+                                                            "scene-table-array-row-rules",
+                                                            "scene-table-array-cell-padding",
+                                                            "scene-table-array-paragraph-column",
+                                                            "scene-table-row-dashed",
+                                                            "scene-table-column-dashed",
+                                                            "scene-table-label-right",
+                                                            "scene-table-label-left-metric",
+                                                            "scene-table-nested-label"};
         for (auto name : selected) {
             try {
                 const auto &source = sourceCase(name);
@@ -439,6 +598,51 @@ suite common_scene_source = [] {
                                               source.svg.find("<rect") != std::string_view::npos ||
                                               source.svg.find("<line") != std::string_view::npos ||
                                               source.svg.find("<polygon") != std::string_view::npos;
+                const bool sourceHasTable =
+                    source.svg.find("data-mml-node=\"mtable\"") != std::string_view::npos;
+                const bool sourceHasVerticalTableLine =
+                    source.svg.find("data-line=\"v\"") != std::string_view::npos;
+                const bool sourceHasHorizontalTableLine =
+                    source.svg.find("data-line=\"h\"") != std::string_view::npos;
+                const bool sourceHasDashedTableLine =
+                    source.svg.find("stroke-dasharray=") != std::string_view::npos;
+                bool sourceHasTableFrameMetadata = false;
+                for (auto attribute = source.svg.find("data-frame=\"true\"");
+                     attribute != std::string_view::npos;
+                     attribute = source.svg.find("data-frame=\"true\"", attribute + 18)) {
+                    const auto tagStart = source.svg.rfind('<', attribute);
+                    if (tagStart == std::string_view::npos ||
+                        source.svg.substr(tagStart, attribute - tagStart).starts_with("<rect"))
+                        continue;
+                    sourceHasTableFrameMetadata = true;
+                    break;
+                }
+                bool sourceHasTableFrameRect = false;
+                for (auto rect = source.svg.find("<rect"); rect != std::string_view::npos;
+                     rect = source.svg.find("<rect", rect + 5)) {
+                    const auto end = source.svg.find('>', rect);
+                    if (end == std::string_view::npos)
+                        break;
+                    if (source.svg.substr(rect, end - rect).find("data-frame=\"true\"") !=
+                        std::string_view::npos) {
+                        sourceHasTableFrameRect = true;
+                        break;
+                    }
+                }
+                const bool sourceHasTableFrame =
+                    sourceHasTableFrameRect || sourceHasTableFrameMetadata;
+                const bool sourceHasTableLabels =
+                    source.svg.find("data-labels=\"true\"") != std::string_view::npos;
+                const bool sourceHasTableLineMetadata =
+                    source.svg.find("data-line=\"") != std::string_view::npos;
+                const bool sourceHasTableClassMetadata =
+                    source.svg.find("class=\"mjx-") != std::string_view::npos;
+                const bool sourceHasTableBackground =
+                    source.svg.find("data-bgcolor=\"true\"") != std::string_view::npos;
+                const bool sourceHasPercentageTable =
+                    source.svg.find("width=\"100%\"") != std::string_view::npos &&
+                    source.svg.find("data-mjx-viewBox=") != std::string_view::npos;
+                const bool requiresTableViewport = sourceHasNestedTableViewport(source.svg);
                 const auto &metrics = completed.metrics();
                 const bool completedMetrics = std::isfinite(metrics.width) &&
                                               std::isfinite(metrics.height) &&
@@ -485,6 +689,41 @@ suite common_scene_source = [] {
                                         stats.phantom_glyphs == 0 && stats.phantom_entries == 0 &&
                                         metrics.width > 0 && metrics.height + metrics.depth > 0;
                 }
+                bool tableStructureOk = true;
+                if (sourceHasTable) {
+                    tableStructureOk = stats.table_nodes > 0;
+                    const auto sourceTableCount = sourceMmlTableCount(source.svg);
+                    if (sourceTableCount > 1)
+                        tableStructureOk =
+                            tableStructureOk && stats.table_nodes >= sourceTableCount;
+                    if (sourceHasVerticalTableLine)
+                        tableStructureOk = tableStructureOk && stats.table_vertical_roles > 0;
+                    if (sourceHasHorizontalTableLine)
+                        tableStructureOk = tableStructureOk && stats.table_horizontal_roles > 0;
+                    if (sourceHasDashedTableLine || sourceHasTableFrame)
+                        tableStructureOk = tableStructureOk && stats.table_rules > 0;
+                    if (sourceHasTableLabels)
+                        tableStructureOk = tableStructureOk && stats.table_label_attributes > 0;
+                    if (sourceHasTableLineMetadata)
+                        tableStructureOk = tableStructureOk && stats.table_line_attributes > 0;
+                    if (sourceHasTableFrameMetadata)
+                        tableStructureOk = tableStructureOk && stats.table_frame_attributes > 0;
+                    if (sourceHasTableClassMetadata)
+                        tableStructureOk = tableStructureOk && stats.table_class_attributes > 0;
+                    if (sourceHasTableBackground)
+                        tableStructureOk = tableStructureOk && stats.table_background_rules > 0 &&
+                                           stats.table_invalid_backgrounds == 0;
+                    if (sourceHasPercentageTable) {
+                        tableStructureOk = tableStructureOk && frame.percentage.has_value();
+                    }
+                    if (requiresTableViewport) {
+                        tableStructureOk =
+                            tableStructureOk && stats.table_viewports > 0 &&
+                            stats.table_unclipped_viewports == stats.table_viewports &&
+                            stats.table_invalid_viewports == 0;
+                    }
+                    tableStructureOk = tableStructureOk && stats.table_invalid_paints == 0;
+                }
                 expect(bool(stats.groups > 0)) << "no real Scene groups for " << name;
                 expect(bool(completedMetrics)) << "non-finite completed Scene metrics for " << name;
                 expect(bool(frameMetrics))
@@ -505,6 +744,21 @@ suite common_scene_source = [] {
                                                     << name << " (groups=" << stats.phantom_groups
                                                     << ", entries=" << stats.phantom_entries
                                                     << ", glyphs=" << stats.phantom_glyphs << ')';
+                expect(bool(tableStructureOk))
+                    << "Source table attrs/lines/labels differ from typed Scene table roles for "
+                    << name << " (nodes=" << stats.table_nodes
+                    << ", frame=" << stats.table_frame_roles
+                    << ", vertical=" << stats.table_vertical_roles
+                    << ", horizontal=" << stats.table_horizontal_roles
+                    << ", viewport=" << stats.table_viewports
+                    << ", unclipped=" << stats.table_unclipped_viewports
+                    << ", rules=" << stats.table_rules
+                    << ", invalid_paint=" << stats.table_invalid_paints
+                    << ", line_attrs=" << stats.table_line_attributes
+                    << ", frame_attrs=" << stats.table_frame_attributes
+                    << ", label_attrs=" << stats.table_label_attributes
+                    << ", backgrounds=" << stats.table_background_rules
+                    << ", invalid_backgrounds=" << stats.table_invalid_backgrounds << ')';
                 if (sourceHasGlyphs) {
                     expect(bool(stats.glyphs > 0))
                         << "Source has glyphs but Scene has none for " << name;
@@ -519,13 +773,21 @@ suite common_scene_source = [] {
                 const bool svgMatches = actual == source.svg;
                 expect(bool(svgMatches)) << "Source SVG bytes differ for " << name;
                 std::cerr << "Common-to-Scene case=" << name << " result="
-                          << (typedSceneOk && phantomEmissionOk && svgMatches ? "success"
-                                                                              : "mismatch")
+                          << (typedSceneOk && phantomEmissionOk && tableStructureOk && svgMatches
+                                  ? "success"
+                                  : "mismatch")
                           << " viewport_roles(vertical=" << stats.vertical_extender_roles
                           << ",horizontal=" << stats.horizontal_extender_roles << ')'
                           << " phantom(groups=" << stats.phantom_groups
                           << ",entries=" << stats.phantom_entries
-                          << ",glyphs=" << stats.phantom_glyphs << ')' << '\n';
+                          << ",glyphs=" << stats.phantom_glyphs << ')'
+                          << " table(nodes=" << stats.table_nodes
+                          << ",frame=" << stats.table_frame_roles
+                          << ",vertical=" << stats.table_vertical_roles
+                          << ",horizontal=" << stats.table_horizontal_roles
+                          << ",viewport=" << stats.table_viewports
+                          << ",class_attrs=" << stats.table_class_attributes
+                          << ",backgrounds=" << stats.table_background_rules << ')' << '\n';
             } catch (std::exception const &error) {
                 std::cerr << "Common-to-Scene case=" << name
                           << " result=exception: " << error.what() << '\n';
@@ -542,8 +804,13 @@ suite common_scene_source = [] {
     "frozen_Scene_serializes_after_job_and_document_retirement_and_repeat_request"_test = [] {
         InputOwner owner;
         NoUnexpectedMeasurement measurement;
-        constexpr std::array<std::string_view, 4> repeatedCases{
-            "fraction-inline", "plain", "scene-inline-break-before", "scene-inline-break-after"};
+        constexpr std::array<std::string_view, 7> repeatedCases{"fraction-inline",
+                                                                "plain",
+                                                                "scene-inline-break-before",
+                                                                "scene-inline-break-after",
+                                                                "scene-table-array-row-rules",
+                                                                "scene-table-label-right",
+                                                                "scene-table-label-left-metric"};
         for (auto name : repeatedCases) {
             const auto &source = sourceCase(name);
             auto first = buildScene(source, owner, measurement);
