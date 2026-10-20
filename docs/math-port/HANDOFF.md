@@ -9,7 +9,41 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 已验收包接通批次）
+### 恢复时先用这个短检查点（2026-10-20 begingroup/color批次，已验证提交）
+
+- **完整Math回归459项/136,082断言exit0**：`begingroup-color-full.log`，34098已终态。
+  当前无live测试、构建或代理。原13项无关修改继续保护，工作区其余本轮改动已提交。
+  85464因测试UTF-16输出编译失败已终态，比较改ranges::equal；53433/61952重建均exit0，
+  最终begingroup-color-final-build.log，并发4。begingroup聚焦9项/69断言、color7项/87断言、
+  newcommand10项/94断言（另匹配原begingroup一项4断言）均exit0。
+- **提交**：01803f6f（10文件）原begingroup包及实际scope service/newcommand测试接通；
+  958417dd（7文件）原color包方法/配置与实际TeX用例。旧生产实现原位替换，无平行模块。
+- **命名问题已处理，不重新调查**：本次最新消息再次提及native function list，已核对
+  2022cb1a/e6126948及当前文件：生产owner为util/function_list.ixx，测试function_list.cpp，
+  无native_function_list并行模块；旧bindings消费者未全退，仍须清理，不能宣称完成。
+- **已验收职责**：ParseOptions新增唯一 `unique_ptr<BegingroupStack> begingroup`，
+  配置真实装配service，借用现session.definitions；原Stack算法文件未改，未复制定义。
+  NewcommandUtil.checkGlobal使用该service，newcommand测试已移除测试scope命令，换正式包。
+  color沿原Methods/Configuration直接实现5方法与padding，config装配/重置同一session ColorModel；
+  两包不走旧MapContext/Property/FunctionRef；完整回归已过，不代表完整38包已接通。
+- **代理**：已有/root/base_methods（GPT-6.1 Sol）交付begingroup限定6文件（原4生产文件、
+  tests/math/begingroup.cpp、tex-begingroup-package-source.cjs），9组真实TeX用例，已冻结。
+  Root独立从C:\Windows重放Source 6members/35compile exit0，3TS+3CJS/fullprofile锁。
+  该代理已完成只读审查Root Color方法/config/padding，未发现具体差异，已结束；无live代理。
+- **Color Source已独立通过**：原tex-color-source.cjs保留68constants/26model cases/实际lifecycle，
+  扩展5方法实际包解析、10padding用例并补完整profile锁。Source纠正padding尾LF例预期：
+  原5px\n得到width +105px\n，正则无m不匹配整个输入，原unit字符串保留；不是生产特判。
+  Root负责color四文件、tests/math/color.cpp、上述Source扩展、共享service与CMake。
+- **首begingroup聚焦失败已解释**：配置通用构造补齐character/delimiter/macro/environment四类；
+  新测试误断言只有一类且front为macro。已按原Configuration语义分别验证4类及各自maps，
+  原Source补Object.keys及三个空类独立验证exit0，35compile不变；生产代码没有为测试修改。
+- **下一步**：按原职责继续configmacros/configuration，复用已验newcommand/token maps和
+  TexOptionValues配置定义，不复制JS对象/描述符/函数语义。已读该原文件仍为旧Context实现，
+  尚未修改；不要重新审计已完成的FunctionList、Stack和BaseMethods。Luna额度到10月25日，
+  无新信号不重试；必要Sol仅GPT-6.1 Sol。完整38包、共享布局→SVG对照及Folia切换仍未完成，
+  goal保持active。Mermaid暂停，无D2D像素门槛，不执行reset或改写历史。
+
+### 上一已验收包接通批次（历史；当前live状态以上节为准）
 
 - **原boldsymbol/newcommand包已接通，完整Math回归443项/135,926断言 exit0。**
   最终日志 `build/math-port/newcommand-full-final.log`，**83606已终态**。
