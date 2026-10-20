@@ -88,6 +88,7 @@ assert.equal(observed.some(row => row.kind === 'mi' && row.text === 'y' && !row.
 assert.equal(options.parser, undefined);
 factory.create('token', 'mtext', {}, 'text');
 assert.equal(factory.create('token', 'mtext', {}, null).childNodes.length, 0);
+assert.equal(factory.create('token', 'mtext', {}).childNodes.length, 1);
 assert.equal(factory.create('token', 'mtext', {}, '').childNodes.length, 1);
 events.length = 0;
 assert.throws(() => factory.create('token', 'mi', {}, 'outside'));

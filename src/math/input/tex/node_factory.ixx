@@ -70,7 +70,7 @@ class NodeFactory final {
     static mml::MmlNode &createError(NodeFactory &, std::u16string_view);
     mml::MmlNode &makeNode(mml::NodeKind kind, std::span<mml::MmlNode *const> children = {},
                            NodeDefinition definition = {}, mml::MmlNode *text = nullptr);
-    mml::MmlNode &makeToken(mml::NodeKind kind, std::optional<std::u16string_view> text = {},
+    mml::MmlNode &makeToken(mml::NodeKind kind, std::optional<std::u16string_view> text = std::u16string_view{},
                             NodeDefinition definition = {});
     mml::MmlNode *makeText(std::optional<std::u16string_view>);
     mml::MmlNode &makeError(std::u16string_view message);
