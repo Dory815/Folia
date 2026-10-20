@@ -12,6 +12,7 @@ struct Group {
     SemanticMetadata metadata;
     std::vector<std::variant<Primitive, std::shared_ptr<Group const>>> entries;
     ElementRole role{ElementRole::math_wrapper};
+    Paint paint{};
 };
 
 // A Scene is a completed immutable value. All content is owned by value;
@@ -20,10 +21,12 @@ class Scene {
     Group root_;
     Metrics metrics_;
     FontMetrics font_metrics_;
-public:
+    DisplayLayout display_layout_;
+
+  public:
     // Construction snapshots the full tree and glyph resources, so callers
     // may safely retain and mutate their source values after this returns.
-    Scene(Group root, Metrics metrics, FontMetrics font_metrics);
+    Scene(Group root, Metrics metrics, FontMetrics font_metrics, DisplayLayout display_layout = {});
     Scene(Scene const&) = default;
     Scene(Scene&&) noexcept = default;
     Scene& operator=(Scene const&) = default;
@@ -31,5 +34,6 @@ public:
     [[nodiscard]] Group const& root() const noexcept;
     [[nodiscard]] Metrics const& metrics() const noexcept;
     [[nodiscard]] FontMetrics const& font_metrics() const noexcept;
+    [[nodiscard]] DisplayLayout const &display_layout() const noexcept;
 };
 }

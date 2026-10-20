@@ -57,6 +57,8 @@ void append_color(std::string& out, std::string_view name,
             detail::append_attribute(out, name, "none");
         } else if constexpr (std::is_same_v<T, scene::CurrentColorPaint>) {
             detail::append_attribute(out, name, "currentColor");
+        } else if constexpr (std::is_same_v<T, scene::CssColor>) {
+            detail::append_attribute(out, name, value.value);
         } else {
             detail::append_attribute(out, name, color(value));
             if (value.alpha != 255)
@@ -151,6 +153,13 @@ std::string_view translation_separator(scene::ElementRole role) {
     case scene::ElementRole::table_label_frame:
     case scene::ElementRole::image_glyph:
     case scene::ElementRole::foreign_content_viewport:
+    case scene::ElementRole::anonymous_group:
+    case scene::ElementRole::glyph_composition:
+    case scene::ElementRole::background_box:
+    case scene::ElementRole::link_hitbox:
+    case scene::ElementRole::id_alignment_marker:
+    case scene::ElementRole::fraction_rule:
+    case scene::ElementRole::radical_rule:
         return " ";
     }
     throw std::invalid_argument("unknown Scene element role");
@@ -271,6 +280,20 @@ void validate_scene(scene::Group const& group) {
 }
 
 void open_group(std::string& out, scene::Group const& group, SvgWriteOptions const& options) {
+    auto const inherited_paint = [](scene::Paint const &paint) {
+        return std::holds_alternative<scene::InheritedPaint>(paint.fill) &&
+               std::holds_alternative<scene::InheritedPaint>(paint.stroke) &&
+               paint.stroke_width == 0 && paint.opacity == 1 &&
+               paint.fill_rule == scene::FillRule::nonzero && !paint.line_cap && !paint.line_join &&
+               !paint.dash_array;
+    };
+    bool const sentinel =
+        group.id == 0 && group.transform.operations().empty() && !group.clip && !group.link &&
+        !group.tooltip && group.role == scene::ElementRole::math_wrapper &&
+        group.metadata.source_tag.empty() && group.metadata.math_role.empty() &&
+        group.metadata.annotation_encoding.empty() && group.metadata.annotation.empty() &&
+        group.metadata.ordered_attributes.empty() && !group.metadata.initial_transform &&
+        inherited_paint(group.paint);
     if (group.link) {
         out += "<a";
         detail::append_attribute(out, "href", group.link->href);
@@ -278,14 +301,44 @@ void open_group(std::string& out, scene::Group const& group, SvgWriteOptions con
         if (!group.link->rel.empty()) detail::append_attribute(out, "rel", group.link->rel);
         out += '>';
     }
-    out += "<g";
-    static constexpr std::array<std::string_view, 1> reserved{"data-mml-node"};
-    if (!group.metadata.source_tag.empty()) detail::append_attribute(out, "data-mml-node", group.metadata.source_tag);
-    else detail::append_attribute(out, "data-mml-node", "mrow");
-    if (!group.transform.operations().empty()) append_transform(out, group.transform, group.role);
-    if (group.clip) detail::append_attribute(out, "clip-path", "url(#clip-" + std::to_string(group.id) + ")");
-    detail::append_metadata(out, group.metadata, reserved);
-    out += '>';
+    if (!sentinel)
+        out += "<g";
+    static constexpr std::array<std::string_view, 17> reserved{"data-mml-node",
+                                                               "transform",
+                                                               "clip-path",
+                                                               "fill",
+                                                               "stroke",
+                                                               "fill-rule",
+                                                               "fill-opacity",
+                                                               "stroke-opacity",
+                                                               "stroke-width",
+                                                               "opacity",
+                                                               "stroke-linecap",
+                                                               "stroke-linejoin",
+                                                               "stroke-dasharray",
+                                                               "href",
+                                                               "target",
+                                                               "rel",
+                                                               "style"};
+    if (!sentinel) {
+        if (!group.metadata.source_tag.empty())
+            detail::append_attribute(out, "data-mml-node", group.metadata.source_tag);
+        auto const style =
+            std::ranges::find(group.metadata.ordered_attributes, std::string_view{"style"},
+                              &scene::SemanticAttribute::name);
+        if (style != group.metadata.ordered_attributes.end())
+            detail::append_attribute(out, "style", style->value);
+        if (group.metadata.initial_transform && !group.transform.operations().empty())
+            append_transform(out, group.transform, group.role);
+        append_paint(out, group.paint);
+        if (group.clip)
+            detail::append_attribute(out, "clip-path",
+                                     "url(#clip-" + std::to_string(group.id) + ")");
+        detail::append_metadata(out, group.metadata, reserved);
+        if (!group.metadata.initial_transform && !group.transform.operations().empty())
+            append_transform(out, group.transform, group.role);
+        out += '>';
+    }
     if (group.tooltip) out += "<title>" + detail::escape_text(group.tooltip->text) + "</title>";
     if (group.clip) {
         out += "<defs><clipPath id=\"clip-" + std::to_string(group.id) + "\"><path d=\"";
@@ -321,17 +374,149 @@ void open_group(std::string& out, scene::Group const& group, SvgWriteOptions con
                         }
                     } else if constexpr (std::is_same_v<P, scene::Rule>) {
                         out += "<rect";
-                        detail::append_attribute(out, "x", number(primitive.bounds.x * 1000));
-                        detail::append_attribute(out, "y", number(-(primitive.bounds.y + primitive.bounds.height) * 1000));
-                        detail::append_attribute(out, "width", number(primitive.bounds.width * 1000));
-                        detail::append_attribute(out, "height", number(primitive.bounds.height * 1000));
-                        append_paint(out, primitive.paint); out += "/>";
+                        if (primitive.role == scene::ElementRole::link_hitbox) {
+                            detail::append_attribute(out, "data-hitbox", "true");
+                            detail::append_attribute(out, "pointer-events", "all");
+                        }
+                        if (primitive.role == scene::ElementRole::fraction_rule ||
+                            primitive.role == scene::ElementRole::radical_rule) {
+                            detail::append_attribute(out, "width",
+                                                     number(primitive.bounds.width * 1000));
+                            detail::append_attribute(out, "height",
+                                                     number(primitive.bounds.height * 1000));
+                            detail::append_attribute(out, "x", number(primitive.bounds.x * 1000));
+                            detail::append_attribute(out, "y", number(primitive.bounds.y * 1000));
+                        } else {
+                            detail::append_attribute(out, "x", number(primitive.bounds.x * 1000));
+                            detail::append_attribute(out, "y", number(primitive.bounds.y * 1000));
+                            detail::append_attribute(out, "width",
+                                                     number(primitive.bounds.width * 1000));
+                            detail::append_attribute(out, "height",
+                                                     number(primitive.bounds.height * 1000));
+                        }
+                        auto rule_paint = primitive.paint;
+                        if (primitive.role == scene::ElementRole::link_hitbox) {
+                            rule_paint.fill = scene::NoPaint{};
+                            rule_paint.stroke = scene::NoPaint{};
+                        }
+                        append_paint(out, rule_paint);
+                        static constexpr std::array<std::string_view, 14> reserved{
+                            "x",
+                            "y",
+                            "width",
+                            "height",
+                            "fill",
+                            "stroke",
+                            "fill-rule",
+                            "fill-opacity",
+                            "stroke-opacity",
+                            "stroke-width",
+                            "opacity",
+                            "stroke-linecap",
+                            "stroke-linejoin",
+                            "stroke-dasharray"};
+                        detail::append_metadata(out, primitive.metadata, reserved);
+                        out += "/>";
                     } else if constexpr (std::is_same_v<P, scene::Path>) {
-                        out += "<path d=\""; append_path(out, primitive.geometry); out += '"'; append_paint(out, primitive.paint); out += "/>";
+                        auto const tag = primitive.element == scene::PathElement::polygon
+                                             ? "polygon"
+                                         : primitive.element == scene::PathElement::line ? "line"
+                                                                                         : "path";
+                        out += '<';
+                        out += tag;
+                        std::string path_data_value;
+                        append_path(path_data_value, primitive.geometry);
+                        if (primitive.element == scene::PathElement::path)
+                            detail::append_attribute(out, "d", path_data_value);
+                        else {
+                            std::vector<scene::Point> points;
+                            for (auto const &segment : primitive.geometry.segments)
+                                std::visit(
+                                    [&](auto const &part) {
+                                        using S = std::decay_t<decltype(part)>;
+                                        if constexpr (std::is_same_v<S, scene::MoveTo> ||
+                                                      std::is_same_v<S, scene::LineTo>)
+                                            points.push_back(part.to);
+                                    },
+                                    segment);
+                            if (primitive.element == scene::PathElement::polygon) {
+                                std::string values;
+                                for (auto const &p : points) {
+                                    if (!values.empty())
+                                        values += ' ';
+                                    values += number(p.x * 1000) + "," + number(p.y * 1000);
+                                }
+                                detail::append_attribute(out, "points", values);
+                            } else if (points.size() >= 2) {
+                                detail::append_attribute(out, "x1", number(points[0].x * 1000));
+                                detail::append_attribute(out, "y1", number(points[0].y * 1000));
+                                detail::append_attribute(out, "x2", number(points[1].x * 1000));
+                                detail::append_attribute(out, "y2", number(points[1].y * 1000));
+                            }
+                        }
+                        append_paint(out, primitive.paint);
+                        static constexpr std::array<std::string_view, 16> reserved{
+                            "d",
+                            "points",
+                            "x1",
+                            "y1",
+                            "x2",
+                            "y2",
+                            "fill",
+                            "stroke",
+                            "fill-rule",
+                            "fill-opacity",
+                            "stroke-opacity",
+                            "stroke-width",
+                            "opacity",
+                            "stroke-dasharray",
+                            "stroke-linecap",
+                            "stroke-linejoin"};
+                        detail::append_metadata(out, primitive.metadata, reserved);
+                        out += "/>";
                     } else if constexpr (std::is_same_v<P, scene::TextRun>) {
                         out += "<text";
-                        if (primitive.origin.x || primitive.origin.y) detail::append_attribute(out, "transform", "translate(" + number(primitive.origin.x * 1000) + " " + number(primitive.origin.y * 1000) + ")");
-                        append_paint(out, primitive.paint); out += '>' + detail::escape_text(primitive.utf8) + "</text>";
+                        if (primitive.role == scene::ElementRole::id_alignment_marker)
+                            detail::append_attribute(out, "data-id-align", "true");
+                        std::string text_transform = "scale(1,-1)";
+                        if (primitive.origin.x || primitive.origin.y)
+                            text_transform = "translate(" + number(primitive.origin.x * 1000) +
+                                             " " + number(primitive.origin.y * 1000) + ") " +
+                                             text_transform;
+                        detail::append_attribute(out, "transform", text_transform);
+                        if (primitive.font) {
+                            detail::append_attribute(out, "font-family", primitive.font->family);
+                            detail::append_attribute(out, "font-size",
+                                                     number(primitive.font->size * 1000) + "px");
+                            if (primitive.font->italic)
+                                detail::append_attribute(out, "font-style", "italic");
+                            if (primitive.font->bold)
+                                detail::append_attribute(out, "font-weight", "bold");
+                            if (!primitive.font->variant.empty())
+                                detail::append_attribute(out, "data-variant",
+                                                         primitive.font->variant);
+                        }
+                        append_paint(out, primitive.paint);
+                        static constexpr std::array<std::string_view, 17> reserved{
+                            "transform",
+                            "font-family",
+                            "font-size",
+                            "font-style",
+                            "font-weight",
+                            "data-variant",
+                            "fill",
+                            "stroke",
+                            "fill-opacity",
+                            "stroke-opacity",
+                            "opacity",
+                            "stroke-width",
+                            "stroke-dasharray",
+                            "fill-rule",
+                            "stroke-linecap",
+                            "stroke-linejoin",
+                            "data-id-align"};
+                        detail::append_metadata(out, primitive.metadata, reserved);
+                        out += '>' + detail::escape_text(primitive.utf8) + "</text>";
                     } else {
                         throw UnsupportedError("foreign HTML markup requires a structured SVG/XHTML serializer");
                     }
@@ -339,7 +524,8 @@ void open_group(std::string& out, scene::Group const& group, SvgWriteOptions con
             }
         }, entry);
     }
-    out += "</g>";
+    if (!sentinel)
+        out += "</g>";
     if (group.link) out += "</a>";
 }
 }
@@ -350,6 +536,7 @@ std::string write(scene::Scene const& scene_value, SvgWriteOptions const& option
     auto const& font = scene_value.font_metrics();
     if (!std::isfinite(metrics.width) || !std::isfinite(metrics.height) || !std::isfinite(metrics.depth))
         throw std::invalid_argument("Scene metrics must be finite");
+    auto const &layout = scene_value.display_layout();
     const double width = std::max(metrics.width, 0.001);
     const double height = std::max(metrics.height + metrics.depth, 0.001);
     Cache cache;
@@ -362,12 +549,37 @@ std::string write(scene::Scene const& scene_value, SvgWriteOptions const& option
     std::string out;
     if (options.include_math_container) {
         out += "<mjx-container";
+        bool container_style = false;
         for (auto const& attribute : options.container_attributes)
-            detail::append_attribute(out, attribute.name, attribute.value);
+            if (attribute.name == "style" && layout.minimum_width > 0) {
+                detail::append_attribute(out, attribute.name,
+                                         attribute.value + "; min-width: " +
+                                             ex_value(layout.minimum_width, font.x_height) + ";");
+                container_style = true;
+            } else
+                detail::append_attribute(out, attribute.name, attribute.value);
+        if (layout.display)
+            detail::append_attribute(out, "display", "true");
+        if (layout.full_width)
+            detail::append_attribute(out, "width", "full");
+        if (layout.display && layout.alignment != "center")
+            detail::append_attribute(out, "justify", layout.alignment);
+        if (layout.minimum_width > 0 && !container_style)
+            detail::append_attribute(
+                out, "style", "min-width: " + ex_value(layout.minimum_width, font.x_height) + ";");
         out += '>';
     }
     out += "<svg";
-    detail::append_attribute(out, "style", "vertical-align: " + ex_value(-metrics.depth, font.x_height) + ";");
+    std::string style = "vertical-align: " + ex_value(-metrics.depth, font.x_height) + ";";
+    if (layout.minimum_width > 0)
+        style += " min-width: " + ex_value(layout.minimum_width, font.x_height) + ";";
+    if (layout.shift != 0) {
+        if (layout.alignment == "center" || layout.alignment == "left")
+            style += " margin-left: " + ex_value(layout.shift, font.x_height) + ";";
+        if (layout.alignment == "center" || layout.alignment == "right")
+            style += " margin-right: " + ex_value(-layout.shift, font.x_height) + ";";
+    }
+    detail::append_attribute(out, "style", style);
     detail::append_attribute(out, "xmlns", "http://www.w3.org/2000/svg");
     detail::append_attribute(out, "width", ex_value(width, font.x_height));
     detail::append_attribute(out, "height", ex_value(height, font.x_height));

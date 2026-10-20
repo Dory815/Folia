@@ -47,6 +47,11 @@ void validate(Paint const& paint) {
         !finite(paint.stroke_width) || paint.stroke_width < 0 || !valid(paint.fill_rule))
         throw std::invalid_argument("Scene paint values are invalid");
 }
+void validate(SemanticMetadata const &metadata) {
+    for (auto const &attribute : metadata.ordered_attributes)
+        if (attribute.name.empty())
+            throw std::invalid_argument("Scene metadata attribute name cannot be empty");
+}
 void validate(PathGeometry const& path) {
     for (auto const& segment : path.segments) std::visit([](auto const& part) {
         using S = std::remove_cvref_t<decltype(part)>;
@@ -94,16 +99,23 @@ Primitive clone_primitive(Primitive const& source) {
                 !finite(value.bounds.height) || value.bounds.width < 0 || value.bounds.height < 0)
                 throw std::invalid_argument("Scene rule bounds are invalid");
             validate(value.paint);
-        } else if constexpr (std::same_as<T, Path>) { validate(value.geometry); validate(value.paint); }
-        else if constexpr (std::same_as<T, TextRun>) {
+            validate(value.metadata);
+        } else if constexpr (std::same_as<T, Path>) {
+            validate(value.geometry);
+            validate(value.paint);
+            validate(value.metadata);
+        } else if constexpr (std::same_as<T, TextRun>) {
             copy.metrics = validate_metrics(value.metrics);
             validate(value.origin);
             validate(value.paint);
+            if (value.font && (!finite(value.font->size) || value.font->size <= 0))
+                throw std::invalid_argument("Scene text font size must be finite and positive");
+            validate(value.metadata);
             copy.measured_glyphs = validate_and_clone(value.measured_glyphs);
-        }
-        else if constexpr (std::same_as<T, ForeignContent>) {
+        } else if constexpr (std::same_as<T, ForeignContent>) {
             copy.metrics = validate_metrics(value.metrics);
             validate(value.origin);
+            validate(value.metadata);
             for (std::size_t i=0; i<copy.measured_runs.size(); ++i)
                 copy.measured_runs[i].run = std::get<TextRun>(clone_primitive(Primitive{value.measured_runs[i].run}));
         }
@@ -115,6 +127,8 @@ Group clone_group(Group const& source, std::unordered_set<Group const*>& active,
     if (!ids.insert(source.id).second)
         throw std::invalid_argument("Scene group ids must be unique");
     validate(source.transform);
+    validate(source.paint);
+    validate(source.metadata);
     if (source.clip) validate(*source.clip);
     Group copy;
     copy.id = source.id;
@@ -124,6 +138,7 @@ Group clone_group(Group const& source, std::unordered_set<Group const*>& active,
     copy.tooltip = source.tooltip;
     copy.metadata = source.metadata;
     copy.role = source.role;
+    copy.paint = source.paint;
     copy.entries.reserve(source.entries.size());
     for (auto const& entry : source.entries) {
         if (auto const* primitive = std::get_if<Primitive>(&entry))
@@ -147,9 +162,20 @@ Group snapshot_group(Group const& source) {
 }
 }
 
-Scene::Scene(Group root, Metrics metrics, FontMetrics font_metrics)
-    : root_(snapshot_group(root)), metrics_(validate(metrics)), font_metrics_(validate(font_metrics)) {}
+Scene::Scene(Group root, Metrics metrics, FontMetrics font_metrics, DisplayLayout display_layout)
+    : root_(snapshot_group(root)), metrics_(validate(metrics)),
+      font_metrics_(validate(font_metrics)), display_layout_(std::move(display_layout)) {
+    if (!finite(display_layout_.shift) || !finite(display_layout_.minimum_width) ||
+        display_layout_.minimum_width < 0)
+        throw std::invalid_argument("Scene display layout values are invalid");
+    if (display_layout_.alignment != "left" && display_layout_.alignment != "center" &&
+        display_layout_.alignment != "right")
+        throw std::invalid_argument("Scene display alignment is invalid");
+}
 Group const& Scene::root() const noexcept { return root_; }
 Metrics const& Scene::metrics() const noexcept { return metrics_; }
 FontMetrics const& Scene::font_metrics() const noexcept { return font_metrics_; }
+DisplayLayout const &Scene::display_layout() const noexcept {
+    return display_layout_;
+}
 }

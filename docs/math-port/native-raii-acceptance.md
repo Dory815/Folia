@@ -307,6 +307,21 @@ bytecheck by default and preserve unchanged fixture mtime on explicit writes.
 Run focused package/dependency tests then one full math run after final changes.
 Scene/SVG emission and Folia remain separate outstanding acceptance work.
 
+## Common-to-Scene component checkpoint (2026-10-21)
+
+Scene's owned paint/text/display values, finite Builder edits and SVG spelling
+changes passed 35 focused tests / 144 assertions in
+`build/math-port/scene-scripts-review/0.log` through `34.log`. The current
+`FoliaMathTests` build succeeded in `scene-foundation-scripts-tests-fixed-build.log`;
+retired-request Scene serialization passed 1 test / 2 assertions (`36.log`).
+This accepts the Scene foundation component only. The real 20-case Common
+SVG comparison has 11 byte-equal cases and 9 remaining mismatches/errors
+(`35.log`); old limits tests also expose assumptions from an incomplete
+Source mixin harness and require independent concrete-Source evidence.
+The current Source witness reproduces 93 records, preserving the original
+75 inputs; it is not the final two-mode 150 SVG gate. Common emission,
+all-profile rendering, request ownership and Folia integration remain open.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,

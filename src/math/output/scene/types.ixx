@@ -21,6 +21,13 @@ enum class ElementRole {
     image_glyph,
     unknown_text,
     foreign_content_viewport,
+    anonymous_group,
+    glyph_composition,
+    background_box,
+    link_hitbox,
+    id_alignment_marker,
+    fraction_rule,
+    radical_rule,
 };
 
 struct Point { Unit x{}, y{}; friend bool operator==(Point const&, Point const&) = default; };
@@ -98,7 +105,11 @@ enum class FillRule { nonzero, evenodd };
 struct InheritedPaint { friend bool operator==(InheritedPaint, InheritedPaint) = default; };
 struct NoPaint { friend bool operator==(NoPaint, NoPaint) = default; };
 struct CurrentColorPaint { friend bool operator==(CurrentColorPaint, CurrentColorPaint) = default; };
-using PaintColor = std::variant<InheritedPaint, NoPaint, CurrentColorPaint, Color>;
+struct CssColor {
+    std::string value;
+    friend bool operator==(CssColor const &, CssColor const &) = default;
+};
+using PaintColor = std::variant<InheritedPaint, NoPaint, CurrentColorPaint, Color, CssColor>;
 enum class StrokeCap { butt, round, square };
 enum class StrokeJoin { miter, round, bevel };
 struct Paint {
@@ -132,6 +143,20 @@ struct ArcTo {
 struct ClosePath { friend bool operator==(ClosePath const&, ClosePath const&) = default; };
 using PathSegment = std::variant<MoveTo, LineTo, QuadTo, CubicTo, ArcTo, ClosePath>;
 struct PathGeometry { std::vector<PathSegment> segments; };
+
+struct SemanticAttribute {
+    std::string name, value;
+};
+struct SemanticMetadata {
+    std::string source_tag;
+    std::string math_role;
+    std::string annotation_encoding;
+    std::string annotation;
+    std::vector<SemanticAttribute> ordered_attributes;
+    // Source handleStyles/handleScale has already installed the group's first
+    // transform before placing metadata; later placement transforms follow it.
+    bool initial_transform{};
+};
 
 struct GlyphOutline { PathGeometry outline; };
 struct GlyphKey {
@@ -167,27 +192,39 @@ struct Glyph {
     Paint paint{};
 };
 struct GlyphRun { std::vector<Glyph> glyphs; };
-struct Rule { Rect bounds; Paint paint{}; };
-struct Path { PathGeometry geometry; Paint paint{}; };
+enum class PathElement { path, polygon, line };
+struct Rule {
+    Rect bounds;
+    Paint paint{};
+    SemanticMetadata metadata{};
+    ElementRole role{ElementRole::math_wrapper};
+};
+struct Path {
+    PathGeometry geometry;
+    Paint paint{};
+    SemanticMetadata metadata{};
+    ElementRole role{ElementRole::math_wrapper};
+    PathElement element{PathElement::path};
+};
+struct TextFont {
+    std::string family;
+    Unit size{1};
+    bool italic{}, bold{};
+    std::string variant;
+};
 struct TextRun {
     std::string utf8;
     Point origin{};
     Metrics metrics{};
     GlyphRun measured_glyphs;
     Paint paint{};
+    std::optional<TextFont> font;
+    SemanticMetadata metadata{};
+    ElementRole role{ElementRole::math_wrapper};
 };
 struct Clip { PathGeometry geometry; FillRule fill_rule{FillRule::nonzero}; };
 struct Link { std::string href; std::string target; std::string rel; };
 struct Tooltip { std::string text; };
-struct SemanticAttribute { std::string name, value; };
-struct SemanticMetadata {
-    std::string source_tag;
-    std::string math_role;
-    std::string annotation_encoding;
-    std::string annotation;
-    // Ordered spelling needed by Source output and accessibility consumers.
-    std::vector<SemanticAttribute> ordered_attributes;
-};
 struct ForeignRun { TextRun run; };
 // HTML/foreign content stays owned and retains already measured runs. `content`
 // is foreign HTML payload, never an SVG/XML DOM or a layout instruction.
@@ -197,6 +234,12 @@ struct ForeignContent {
     std::vector<ForeignRun> measured_runs;
     Metrics metrics{};
     SemanticMetadata metadata{};
+};
+struct DisplayLayout {
+    bool display{};
+    std::string alignment{"center"};
+    Unit shift{}, minimum_width{};
+    bool full_width{};
 };
 using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, ForeignContent>;
 }

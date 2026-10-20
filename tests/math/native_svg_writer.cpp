@@ -36,7 +36,7 @@ suite native_svg_writer = [] {
         auto output = svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
         expect(output.find("aria-label=\"a&amp;&quot;&lt;b&gt;\"") != output.npos);
         expect(output.find("aria-label=") < output.find("data-origin=\"source\""));
-        expect(output.find("><text>&lt;&amp;&gt;</text>") != output.npos);
+        expect(output.find("><text transform=\"scale(1,-1)\">&lt;&amp;&gt;</text>") != output.npos);
     };
 
     "ordered groups retain SVG-space arc flags under reflection and metadata"_test = [] {
@@ -50,7 +50,9 @@ suite native_svg_writer = [] {
         scene::Transform ordered_transform{std::vector<scene::TransformOperation>{
             scene::Translation{0.719, 0.363}, scene::Scaling{0.707, 0.707}}};
         auto parent = builder.add_group(0, ordered_transform, clip, scene::Link{"https://example.test/?a&b", "_blank", "noopener"}, scene::Tooltip{"x<&"}, metadata);
-        builder.add_primitive(parent, scene::Rule{{0, 0, 0.25, 0.05}, scene::Paint{.fill = scene::Color{255, 0, 0, 255}}});
+        builder.add_primitive(
+            parent,
+            scene::Rule{{0, 0.2, 0.25, 0.05}, scene::Paint{.fill = scene::Color{255, 0, 0, 255}}});
         scene::Paint path_paint;
         path_paint.fill_rule = scene::FillRule::evenodd;
         builder.add_primitive(parent, scene::Path{scene::PathGeometry{{
@@ -58,7 +60,7 @@ suite native_svg_writer = [] {
         builder.add_group(parent, scene::Transform{scene::Affine{.e = 0.5, .f = 0.25}});
         auto output = svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
         auto anchor = output.find("<a href=\"https://example.test/?a&amp;b\" target=\"_blank\" rel=\"noopener\">");
-        auto rule = output.find("<rect x=\"0\" y=\"-50\" width=\"250\" height=\"50\"");
+        auto rule = output.find("<rect x=\"0\" y=\"200\" width=\"250\" height=\"50\"");
         auto child = output.find("transform=\"matrix(1 0 0 1 500 250)\"");
         expect(output.find("<title>x&lt;&amp;</title>") != output.npos);
         expect(output.find("clip-path=\"url(#clip-") != output.npos);
@@ -70,6 +72,145 @@ suite native_svg_writer = [] {
         expect(output.find("transform=\"scale(1,-1)\"") != output.npos);
         expect(anchor < rule && rule < child);
         expect(output.find("class=\"outer\"") != output.npos);
+    };
+
+    "empty source tags stay absent and typed primitive roles preserve Source SVG elements"_test =
+        [] {
+            scene::Builder builder;
+            builder.set_metrics({2, 1, 0});
+            builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+            scene::Paint group_paint;
+            group_paint.fill = scene::CssColor{"rebeccapurple"};
+            group_paint.opacity = 0.75;
+            auto group = builder.add_group(0, {}, {}, {}, {}, {},
+                                           scene::ElementRole::anonymous_group, group_paint);
+            scene::SemanticMetadata line_meta;
+            line_meta.ordered_attributes.push_back({"class", "rule"});
+            scene::Paint line_paint;
+            line_paint.fill = scene::NoPaint{};
+            line_paint.stroke = scene::CurrentColorPaint{};
+            builder.add_primitive(
+                group, scene::Path{scene::PathGeometry{
+                                       {scene::MoveTo{{0.1, 0.2}}, scene::LineTo{{0.8, 0.9}}}},
+                                   line_paint, line_meta, scene::ElementRole::fraction_rule,
+                                   scene::PathElement::line});
+            scene::SemanticMetadata polygon_meta;
+            polygon_meta.ordered_attributes.push_back({"data-kind", "piece"});
+            scene::Paint polygon_paint;
+            polygon_paint.fill = scene::NoPaint{};
+            polygon_paint.stroke = scene::CurrentColorPaint{};
+            builder.add_primitive(
+                group,
+                scene::Path{scene::PathGeometry{{scene::MoveTo{{0, 0}}, scene::LineTo{{1, 0}},
+                                                 scene::LineTo{{0.5, 1}}, scene::ClosePath{}}},
+                            polygon_paint, polygon_meta, scene::ElementRole::glyph_composition,
+                            scene::PathElement::polygon});
+            auto output =
+                svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+            expect(output.find("data-mml-node=\"mrow\"") == output.npos);
+            expect(output.find("fill=\"rebeccapurple\" opacity=\"0.75\"") != output.npos);
+            expect(output.find("<line x1=\"100\" y1=\"200\" x2=\"800\" y2=\"900\" fill=\"none\" "
+                               "stroke=\"currentColor\" class=\"rule\"") != output.npos);
+            expect(output.find("<polygon points=\"0,0 1000,0 500,1000\" fill=\"none\" "
+                               "stroke=\"currentColor\" data-kind=\"piece\"") != output.npos);
+        };
+
+    "typed text font serializes source font values and y reflection"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::TextRun run{"unknown", {0.2, 0.3}, {1, 0.5, 0.1}, {}, {}};
+        run.font = scene::TextFont{"MathJax_AMS", 0.75, true, true, "normal"};
+        run.metadata.math_role = "unknown";
+        run.role = scene::ElementRole::unknown_text;
+        builder.add_primitive(0, run);
+        auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        expect(output.find("transform=\"translate(200 300) scale(1,-1)\" "
+                           "font-family=\"MathJax_AMS\" font-size=\"750px\" font-style=\"italic\" "
+                           "font-weight=\"bold\" data-variant=\"normal\"") != output.npos);
+        expect(output.find("data-math-role=\"unknown\"") != output.npos);
+    };
+
+    "Source initial transforms bracket metadata at the recorded phase"_test = [] {
+        scene::Builder initial;
+        initial.set_metrics({1, 0.5, 0.1});
+        initial.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::SemanticMetadata metadata;
+        metadata.source_tag = "mstyle";
+        metadata.ordered_attributes = {{"style", "color: red;"}, {"data-latex", "x"}};
+        metadata.initial_transform = true;
+        scene::Paint paint;
+        paint.opacity = 0.5;
+        auto group = initial.add_group(
+            0, scene::Transform{std::vector<scene::TransformOperation>{scene::Scaling{0.75, 0.75}}},
+            {}, {}, {}, metadata, scene::ElementRole::math_wrapper, paint);
+        initial.add_primitive(group, scene::TextRun{"x", {}, {}, {}, {}});
+        auto output =
+            svg::write(std::move(initial).freeze(), {.font_cache = svg::FontCacheMode::none});
+        auto tag = output.find("data-mml-node=\"mstyle\"");
+        auto style = output.find("style=\"color: red;\"");
+        auto transform = output.find("transform=\"scale(0.75)\"");
+        auto opacity = output.find("opacity=\"0.5\"");
+        auto latex = output.find("data-latex=\"x\"");
+        expect(tag < style && style < transform && transform < opacity && opacity < latex);
+
+        scene::Builder placed;
+        placed.set_metrics({1, 0.5, 0.1});
+        placed.set_font_metrics({1, 0.5, 0.5, 0.7});
+        metadata.initial_transform = false;
+        auto placed_group = placed.add_group(
+            0,
+            scene::Transform{std::vector<scene::TransformOperation>{scene::Translation{0.2, 0.3}}},
+            {}, {}, {}, metadata);
+        placed.add_primitive(placed_group, scene::TextRun{"x", {}, {}, {}, {}});
+        auto placed_output =
+            svg::write(std::move(placed).freeze(), {.font_cache = svg::FontCacheMode::none});
+        auto placed_latex = placed_output.find("data-latex=\"x\"");
+        auto placed_transform = placed_output.find("transform=\"translate(200,300)\"");
+        expect(placed_latex < placed_transform);
+    };
+
+    "unannotated root sentinel writes entries without adding a group"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        builder.add_primitive(0, scene::TextRun{"direct", {}, {}, {}, {}});
+        auto child = builder.add_group(0, {}, {}, {}, {}, {}, scene::ElementRole::anonymous_group);
+        builder.add_primitive(child, scene::TextRun{"nested", {}, {}, {}, {}});
+        auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        auto first_text = output.find("<text");
+        auto child_group = output.find("<g", first_text);
+        expect(output.find("data-mml-node=\"mrow\"") == output.npos);
+        expect(first_text < child_group);
+        expect(output.find("<g", child_group + 2) == output.npos);
+    };
+
+    "display container values follow the default Source attribute order"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        builder.set_display_layout({true, "right", 0, 0, true});
+        auto output =
+            svg::write(std::move(builder).freeze(),
+                       {.font_cache = svg::FontCacheMode::none,
+                        .container_attributes = {
+                            {"class", "MathJax"}, {"jax", "SVG"}, {"overflow", "linebreak"}}});
+        expect(output.starts_with(
+            "<mjx-container class=\"MathJax\" jax=\"SVG\" overflow=\"linebreak\" display=\"true\" "
+            "width=\"full\" justify=\"right\"><svg"));
+    };
+
+    "fraction and radical rule rectangles retain Source width height x y order"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        builder.add_primitive(
+            0, scene::Rule{{0.25, 0.2, 0.8, 0.04}, {}, {}, scene::ElementRole::fraction_rule});
+        auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        expect(output.find("<rect width=\"800\" height=\"40\" x=\"250\" y=\"200\"") != output.npos);
     };
 
     "typed translation rotation scale and affine operations stay ordered"_test = [] {
