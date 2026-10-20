@@ -858,6 +858,9 @@ Only a nonzero X/y creates one anonymous child group under the first emitted
 node, placed through this wrapper's explicit-target placeScene; children go to
 that group. Otherwise children use the ordinary content parents. Return the
 wrapper's own optional output segments, not the shifted content group.
+The guard for unimplemented generic emission belongs to CommonWrapper's
+emitScene entry; addSceneChildren is the one shared Source horizontal helper
+used explicitly by specialized families. Do not duplicate its placement loop.
 
 Source mphantom has no Common-specific geometry owner: its specialized SVG
 wrapper only emits standard nodes, with no children. Move that responsibility

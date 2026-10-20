@@ -4,15 +4,14 @@
 
 ## 当前状态与下一步
 
-- 当前HEAD `722e7ae4`；已提交viewport `28c5c62e`、Mo/base `29f018a9`、OutputJax `c8d06944`、factory `17d66da8`、Source99 `81de27c0`与common_scene UT/CMake `722e7ae4`。目标未完成。
-- 无活动build/test/session。最后build `common-assembly-build.log`成功；full math `common-assembly-full-math.log` exit0，765tests/210969assert/150suites。额度已恢复。
-- 活动Luna：`common_radicals_emission`只改mpadded pair；`common_rows_emission`只新增mphantom pair；`common_scene_source_tests`扩充其独立验收（同原3files）。Root契约见架构Padded and phantom emission段；其他owner freeze。Source99/28native案例已验，不受本批未完成工作替代。
-- 下一步：Root将mphantom接入同一CMake/Common exports/standardcatalog；收3owner freeze后单stream parallel4 build并复测专用Source/相关UT，验收后小批提交。semantics/fenced/table/mglyph/foreign/menclose仍待后续。正常git diff只format变更行，勿core.autocrlf=false。
+- 最近代码提交`83ea50c6`（Source102/测试）；paintorder `aeec4a31`、mphantom `b8af994c`、mpadded `d83bcfc3`、helper guard `372ce351`均已提交。目标未完成；本记录的独立docs提交见git log。
+- 无活动build/test/session/agent；本批所有build成功，最后`common-padded-paint-tests-build.log`。full math `common-padded-full-math.log` exit0，766tests/211042assert/150suites。
+- 本批owner全部freeze；Root102Source bytecheck通过（padded-source-root.log）；35selected全byteequal/376assert（padded-final-source-focused.log），含simple phantom与negative-dw center/right；fixture SHA256 `1265a2ba8a9dda9d8a9811b8b7fff3df8e3551bf7743d6d049983ac644fbb943`。另padded2tests/29assert、lifetime8、paintorder2均通过。
+- 下一步：Root冻结table原mtable/mtr/mtd pair职责与call-local行/单元格输出协议，再派Luna。需处理背景矩形bounds调整、labels/percentage viewport和Source CSS对应的共享Paint值；未锁API前不让agent自行造框架。semantics/fenced/mglyph/foreign/menclose仍待后续。
 ## 现有验证边界
 
-- 最新full math765tests/210969assert/150suites，包含28Source cases与4个重复请求case；不是完整75/150渲染gate。
-- 当前Source witness99 records的Root bytecheck通过：`common-assembly-source-root.log`；fixture SHA-256 `b6571b2ce309a1f57b384acc76cec3c4042f6e1b8e38d4793c6fe54dfe896610`。99不是最终75/150 gate。
-- 当前45 Scene/Builder/writer tests /208assert通过：`optional-segments-review/0..44.log`；lifetime1test/8assert通过（46），limits6tests/34assert（47..52），scripts5tests/211assert（53..57）；重复请求与document销毁后的SVG稳定并匹配Source。
+- 最新full math766tests/211042assert/150suites，包含35Source cases与4个重复请求case；不是完整75/150渲染gate。
+- 当前Source witness102 records的Root bytecheck通过：`padded-source-root.log`；默认生成工具不读取native输出。102不是最终75/150 gate。
 - 最新viewport-review/report.json的59 Scene/writer/limits/scripts tests477assert全过；随后namespace/split补充改动复验viewport值9assert、writer13、split16，lifetime8均过，日志`assembly-*.log`。28Source全部匹配，不代表全profile。
 - 实际full38/Newcm limits witness已重建并提交`ac8270e1`，`common-limits-source-current-root.log`通过；3个concrete Source native tests17assert通过。旧手工叠mixin零offset不是验收标准。
 
@@ -20,7 +19,7 @@
 owner handles（未注明活动者均freeze，只有Root派followup）：
 - `scene_values_writer`：Scene 5 files、SVG writer、两份原 UT。
 - `common_base_emission`：Wrapper、TextNode、TeXAtom；`common_mo_emission`：Mo。
-- `common_rows_emission`：Mrow、Mtext、Math；`common_radicals_emission`：Mfrac、Msqrt、Mroot。
+- `common_rows_emission`：Mrow、Mtext、Math、Mphantom；`common_radicals_emission`：Mfrac、Msqrt、Mroot、Mpadded。
 - `common_scene_entry`：OutputJax、WrapperFactory；`common_scene_source_tests`：Source tool、fixture、UT。
 - `common_scripts_emission`：当前统一拥有scriptbase/msubsup/munderover/mmultiscripts后续；旧limits/multiscripts owner不要并行改同文件。
 - Root 拥有公共契约、CMake、build/tests、Git；不可假设上述 agent 仍在运行。
