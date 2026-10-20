@@ -151,7 +151,7 @@ struct TexOptionValues {
 // The service interface remains on the original owner. Constructor/factory,
 // Tags, ColumnParser and request-list implementations are still being ported;
 // no Context implementation is used behind this declaration.
-class ParseOptions : public NodeKindRegistration {
+class ParseOptions : public NodeFactoryConfiguration {
 public:
     using MathStyleResolver = std::u16string (*)(std::u16string_view, bool);
     static MathStyleResolver getVariant(std::u16string_view) noexcept;
@@ -179,8 +179,9 @@ public:
     void removeParser(TexParser&) noexcept;
     TexParser* parser() const noexcept;
     void clear();
+    TexEnvironment const& environment() const override;
     void addNode(mml::NodeKind, mml::MmlNode&) override;
-    void addNode(std::u16string_view, mml::MmlNode&);
+    void addNode(std::u16string_view, mml::MmlNode&) override;
     std::span<mml::MmlNode* const> getList(std::u16string_view);
     void removeFromList(std::u16string_view, std::span<mml::MmlNode* const>);
 private:

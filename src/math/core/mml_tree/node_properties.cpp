@@ -9,6 +9,7 @@ void copyNodeProperties(const NodeProperties& source, NodeProperties& destinatio
 void mergeNodeProperties(const NodeProperties& source, NodeProperties& destination) {
 #define FOLIA_MERGE_FIELD(group, field) if (source.group.field) destination.group.field = source.group.field
     FOLIA_MERGE_FIELD(tex,auto_operator); FOLIA_MERGE_FIELD(tex,fix_bold);
+    FOLIA_MERGE_FIELD(tex,function_operator);
     FOLIA_MERGE_FIELD(tex,fix_prescript); FOLIA_MERGE_FIELD(tex,fix_stretchy);
     FOLIA_MERGE_FIELD(tex,ignore_variant); FOLIA_MERGE_FIELD(tex,math_accent);
     FOLIA_MERGE_FIELD(tex,movable_limits); FOLIA_MERGE_FIELD(tex,move_sup_sub);

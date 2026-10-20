@@ -270,7 +270,7 @@ The foundation contracts are:
 - `tex::TexSessionState`: owns macros, labels and tag counters. Its phase-one
   module is `folia.math.input.tex.session`, independent of the parser facade.
 - `tex::ParseOptions`: references typed request/session services; owns no global
-  object registry. `NodeFactory` takes `MmlDocument&` and typed arguments.
+  object registry. `NodeFactory` borrows its document's `MmlFactory` and typed arguments.
 - Package handlers have named typed signatures such as
   `void(TexParser&, ControlSequence const&)`; configuration is typed native
   registration, including explicitly typed lifecycle callbacks where required.
@@ -329,6 +329,25 @@ Subhandler lookup/composition and map replacement are Source-checked; native
 callback execution through a real TexParser and CommandMap's currentCS wrapper
 remain incomplete. Do not replace CommandMap with MacroMap or use a dummy parser
 to claim that pipeline acceptance.
+
+Node construction retains the original four creator slots: node, token, text,
+error. `NodeCreators` contains optional typed C++ function pointers, and the
+factory merges only provided slots. Default createToken calls the configured
+text then node slots; createError does likewise. Only the public node route
+registers a completed result, after its creator returns. Null text differs from
+an empty text node. These rules stay in NodeFactory. `NodeDefinition` and the
+texClass/movablelimits/property application rules belong to the original
+NodeUtil, not to the factory or renderer.
+
+`NodeFactoryConfiguration` is the borrowed native ParseOptions protocol for the
+current mathematical environment and kind/named node registration. It contains
+no arbitrary keys, payloads or invocation service. The boldsymbol owner keeps
+its configured token creator and variant rewrite; the token creator delegates
+to the default token builder before marking/registering fixBold. Its mtext
+branch does not read the parser environment. The native span-based rewrite is
+tested, while its TexFilterData adapter, real node-list filtering, package
+initialization and Boldsymbol macro method remain incomplete. Unit factory
+hosts are not acceptance of an instantiated native TexParser or its pipeline.
 
 ## File responsibility map
 

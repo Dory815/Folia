@@ -29,13 +29,13 @@ struct RecordingRegistration final : NodeKindRegistration {
 };
 }
 
-suite native_tex_node_registration_tests = [] {
+suite node_factory_registration = [] {
     "successful Source node creation routes notify once in nested order"_test = [] {
         MmlDocument document;
         RecordingRegistration registrations;
         NodeFactory factory(document.factory(), &registrations);
 
-        auto& textOnly = factory.makeText(u"unregistered text");
+        auto& textOnly = *factory.makeText(u"unregistered text");
         expect(&textOnly.document() == &document);
         expect(registrations.events.empty());
 
@@ -64,7 +64,7 @@ suite native_tex_node_registration_tests = [] {
         expect(error.attributes().own(u"data-mjx-error") != nullptr);
         expect(error.children().size() == 1u);
 
-        auto& child = factory.makeText(u"row child");
+        auto& child = *factory.makeText(u"row child");
         MmlNode* inferredChildren[]{&child};
         auto& inferred = factory.makeNode(NodeKind::inferred_mrow, inferredChildren);
         expect(inferred.kind() == NodeKind::inferred_mrow);
@@ -100,7 +100,7 @@ suite native_tex_node_registration_tests = [] {
         MmlDocument document;
         RecordingRegistration registrations;
         NodeFactory factory(document.factory(), &registrations);
-        auto& existingChild = factory.makeText(u"existing");
+        auto& existingChild = *factory.makeText(u"existing");
         MmlNode* existingChildren[]{&existingChild};
         auto& existingRoot = factory.makeNode(NodeKind::mrow, existingChildren);
         document.setRoot(existingRoot);

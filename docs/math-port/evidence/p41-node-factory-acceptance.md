@@ -1,5 +1,12 @@
 # P41 TeX NodeFactory acceptance
 
+> Historical Object/FunctionRef implementation evidence, superseded on
+> 2026-10-20. Its generated interface-fixture test and runner have been retired.
+> Current code uses four typed creator slots, actual document-owned MML nodes,
+> and the original NodeUtil property role. See `tex-node-creators-source.cjs`
+> and the current node_factory/node_factory_registration/boldsymbol tests.
+> The claims below do not establish native parser or package integration.
+
 Root accepts the nine NodeFactory semantic methods within the typed package
 profile in p41-node-factory-contract.md. The module remains separate from the
 MML constructor registry and uses the existing MML graph, FunctionRef identities,

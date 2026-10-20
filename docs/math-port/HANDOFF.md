@@ -11,7 +11,39 @@
 
 ### 恢复时先用这个短检查点
 
-- **最新实际代码：原Macro/TokenMap/MapHandler三家族已原位改写并进入构建**；提交`4c5a7e92`。
+- **本批实现：原NodeFactory四槽configured creators及boldsymbol token/rewrite已落原文件**。
+  NodeCreators为node/token/text/error四个optional typed函数指针槽；setCreators逐槽合并。
+  make*先捕获对应函数再调用，默认createToken走configured text→node，createError同样走
+  configured text/node；只有makeNode成功返回creator后登记。text明确nullable指针（null和
+  空串不同），原setMmlFactory可重绑。NodeFactoryConfiguration仅借用typed env/登记服务，
+  ParseOptions继承它但environment/构造/列表实现仍未闭合，**没有完整native parser**。
+  **职责复核已归回原NodeUtil**：NodeDefinition在node_util.ixx；setProperties拥有attrs/
+  native属性及texClass/movablelimits规则；NodeFactory只构造、委托、登记。新MML
+  function_operator bool对应Source fnOP，merge/copy/clone已有聚焦验证；其他通用NodeUtil
+  JS属性访问API已撤下，其他数学helper与完整parser调用仍待按类型接通，不能声称全文件完成。
+  原boldsymbol/configuration.cpp已去Context：createBoldToken先默认token，非mtext时读
+  当前env.bold_symbol；为真则标fix_bold并登记fixBold。span版rewriteBoldTokens实现原八种
+  variant映射及其他值保留/true flag清除。**TexFilterData版filter、BoldsymbolMethods宏方法、
+  initializeModule仍只有声明**，需真实ParseOptions列表/三配置类/TexParser，包没有接通。
+  tests/math/native_tex_node_registration.cpp已归普通名node_factory_registration.cpp；
+  新node_factory.cpp/boldsymbol.cpp测试实际MML和typed工厂host，不伪造TexParser。
+  先前focused第一项因测试少写merror的inferred row层失败，已按原MML形状修正断言；
+  11项/132断言exit0（node-creators-final-focused.log），包含原四登记测试；
+  76165重建终态exit0。**完整349项/134,247断言exit0**（node-creators-full.log），
+  18724已终态；随后NodeUtil职责归位，71828重建exit0，node-creators-source-roles-build.log。
+  最终聚焦11项再次exit0，node-creators-source-roles-focused.log；最终完整
+  **349项/134,247断言exit0**，node-creators-source-roles-full.log，66222已终态。
+  当前没有live build/native/agent。原reference_node_factory生成的Property/FunctionRef/
+  interface-fixture测试及旧oracle/runner已删（其正常数学构造由真实MML测试/正式Source
+  比较覆盖）；P41证据已标historical，不能继续当当前TypedFactory/parser验收。
+  正式tex-node-creators-source.cjs锁3 TS+完整profile cbb0...；Root从C:\Windows重放exit0，
+  node-creators-source-replay.log。使用真实Source ParseOptions/NodeFactory/MmlFactory，含真实
+  TeX解析的boldsymbol标记、原getList+rewrite和10 variants；native仍只验工厂/重写primitive。
+  原13项无关改动继续保护。下一步完成此批验证/小提交，然后原三配置类可直接消费真实
+  NodeCreators，别再把工厂四槽当缺口重查；StackItemCatalog沿用原typed FactoryClassMap，
+  Tags creator签名按原Tags家族，不能用空profile facade替代实际配置合并。
+
+- **已完成前置：原Macro/TokenMap/MapHandler三家族已原位改写并进入构建**；提交`4c5a7e92`。
   parser_family当前导出:types/:macro/:token_map/:map_handler/:parse_options；新代码无
   Context/Property/原通用函数对象。Macro为owned token+typed方法+TeX实参数组。
   MacroCallbacks复制两个固定C++函数指针表，输入jax生命周期不可复制/赋值/重绑；
@@ -39,7 +71,7 @@
   tex-map-handler-source.cjs十TS/CJS锁从C:\Windows重放exit0，map-handler-source-replay.log。
   初测编译9591因Boost.UT不能打印vector<enum>而失败，已改ranges::equal；51887、48379
   重建终态exit0，map-handler-tests-rebuild.log、map-handler-final-build.log。
-  **最新完整342项/134,166断言exit0**，map-handler-full.log，句柄37356已终态。
+  **当时完整342项/134,166断言exit0**，map-handler-full.log，句柄37356已终态。
   随后职责复核把未被调用的command-prefix bool分支从MacroMap去掉，留给原CommandMap
   自己实现；MacroMap.parse保持原无前缀分发，没有另加helper角色。86784重建终态exit0，
   token-map-source-roles-build.log；最终focused13项/331断言再次exit0，
