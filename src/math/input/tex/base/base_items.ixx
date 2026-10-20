@@ -287,7 +287,7 @@ class ArrayItem : public BaseItem {
     bool isOpen() const noexcept override;
     bool copyEnv() const noexcept override;
     CheckResult checkItem(FrameHandle const &incoming) override;
-    mml::MmlNode &createMml();
+    virtual mml::MmlNode &createMml();
     void StartEntry();
     virtual void EndEntry();
     virtual void EndRow();
