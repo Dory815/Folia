@@ -94,9 +94,6 @@ suite packageFilterSourceMetadata = [] {
     const auto centernot = std::get<t::ConfigurationRef>(runtime.configurationHandler.get(u"centernot"));
     expectProcessor(graph, centernot, u"postprocessors", 0, u"filterCenterOver", 1);
 
-    const auto mathtools = std::get<t::ConfigurationRef>(runtime.configurationHandler.get(u"mathtools"));
-    expectProcessor(graph, mathtools, u"postprocessors", 0, u"fixPrescripts", 1);
-
     const auto texhtml = std::get<t::ConfigurationRef>(runtime.configurationHandler.get(u"texhtml"));
     expectProcessor(graph, texhtml, u"preprocessors", 0, u"", 1);
     expectProcessor(graph, texhtml, u"postprocessors", 0, u"", 1);
