@@ -9,7 +9,8 @@ function findRoot(start=__dirname) {
   return null;
 }
 const rootArg=process.argv.indexOf('--repo-root');
-assert.ok(rootArg<0 ? process.argv.length===2 : (process.argv[rootArg+1] && process.argv.length===rootArg+2),'usage: node common-limits-source-witness.cjs [--repo-root <repository>]');
+const positionalArgs=process.argv.slice(2).filter(x=>!['--capture-only','--write-fixture'].includes(x));
+assert.ok(rootArg<0 ? positionalArgs.length===0 : positionalArgs.length===2&&positionalArgs[0]==='--repo-root'&&positionalArgs[1],'usage: node common-limits-source-witness.cjs [--repo-root <repository>] [--capture-only|--write-fixture]');
 const root=rootArg<0?findRoot():path.resolve(process.argv[rootArg+1]);
 assert.ok(root,'pass --repo-root <repository> or run from within the repository');
 const pkg = path.join(root, 'tools/mathjax-bundle/node_modules/@mathjax/src/cjs');
@@ -22,6 +23,10 @@ for (const [relative, expected] of Object.entries(lock.sha256)) {
 for (const [relative, expected] of Object.entries(lock.sourceTsSha256)) {
   const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, relative))).digest('hex');
   assert.equal(actual, expected, `pinned TypeScript source changed: ${relative}`);
+}
+for (const [relative, expected] of Object.entries(lock.externalSha256 ?? {})) {
+  const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, relative))).digest('hex');
+  assert.equal(actual, expected, `pinned dependency source changed: ${relative}`);
 }
 const { MmlFactory } = require(path.join(pkg, 'core/MmlTree/MmlFactory.js'));
 const { BBox } = require(path.join(pkg, 'util/BBox.js'));
@@ -81,11 +86,85 @@ assert.equal(movableUnder.hasMovableLimits(),true);
 const movableOver=run('mover',[factory.create('mo',{movablelimits:true},[text('∫')]),mi('2')],{displaystyle:false});
 const movableOverResult=bboxOf(movableOver);
 assert.equal(movableOver.hasMovableLimits(),true);
-const report={version:lock.version,source:'executed pinned MathJax CJS MmlFactory and CommonMunder/CommonMover/CommonMunderover mixins with real util/BBox',cases:{under:{script:under.scriptChild.getText(),bbox:underResult},over:{script:over.scriptChild.getText(),bbox:overResult},both:{under:both.underChild.getText(),over:both.overChild.getText(),bbox:bothResult},accent:{accent:accented.node.attributes.get('accent'),bbox:accentResult},lineAccent:{under:lineUnderResult,over:lineOverResult},movable:{enabled:movable.hasMovableLimits(),bbox:movableResult},movableUnder:{enabled:movableUnder.hasMovableLimits(),offset:movableUnder.getOffset(),bbox:movableUnderResult},movableOver:{enabled:movableOver.hasMovableLimits(),offset:movableOver.getOffset(),bbox:movableOverResult}}};
+const {createReference}=require('./reference-profile.cjs');
+const ref=createReference();
+assert.equal(ref.provenance.compiled_source_sha256,
+  'cbb0d3b6a08fbde6614b070f111fb58cc3cfe9d00a9713163fd4cd6d0300355a');
+const {MathML}=require(path.join(pkg,'input/MathML.js'));
+const outputJax=ref.output;
+const document=ref.mathjax.document('',{InputJax:new MathML(),OutputJax:outputJax});
+function findWrapper(wrapper,kind) {
+  if(wrapper.node.kind===kind) return wrapper;
+  for(const child of wrapper.childNodes) {
+    const found=findWrapper(child,kind);
+    if(found) return found;
+  }
+  return null;
+}
+function captureSvg(kind,body) {
+  let rootWrapper;
+  const processMath=outputJax.processMath;
+  outputJax.processMath=function(wrapper,parent) {
+    const result=processMath.call(this,wrapper,parent);
+    rootWrapper=wrapper;
+    return result;
+  };
+  try {
+    document.convert(`<math xmlns="http://www.w3.org/1998/Math/MathML">${body}</math>`,
+      {display:false,em:16,ex:8,containerWidth:640});
+    assert.ok(rootWrapper,`SVG processMath reached for ${kind}`);
+    const wrapper=findWrapper(rootWrapper,kind);
+    assert.ok(wrapper,`SVG wrapper ${kind} found`);
+    const bbox=wrapper.getOuterBBox();
+    const childLabel=child=>child.node.getText?.()||child.node.kind;
+    return {
+      bbox:{w:bbox.w,h:bbox.h,d:bbox.d},
+      offset:wrapper.getOffset(),
+      childSlots:wrapper.childNodes.map(childLabel),
+      scriptSlot:wrapper.scriptChild?wrapper.childNodes.indexOf(wrapper.scriptChild):null,
+      underSlot:wrapper.underChild?wrapper.childNodes.indexOf(wrapper.underChild):null,
+      overSlot:wrapper.overChild?wrapper.childNodes.indexOf(wrapper.overChild):null,
+      baseKind:wrapper.baseChild?.node.kind??null,
+      baseMovablelimits:wrapper.baseChild?.node.attributes.get('movablelimits')??null,
+    };
+  } finally {
+    outputJax.processMath=processMath;
+  }
+}
+function captureSvgCases() {
+  return {
+    munder:captureSvg('munder','<munder><mo movablelimits="true">∫</mo><mi>i</mi></munder>'),
+    mover:captureSvg('mover','<mover><mo movablelimits="true">∫</mo><mi>2</mi></mover>'),
+    munderover:captureSvg('munderover',
+      '<munderover><mo movablelimits="true">∫</mo><mi>i</mi><mi>2</mi></munderover>'),
+  };
+}
+const isolatedMixins={
+  under:{script:under.scriptChild.getText(),bbox:underResult},
+  over:{script:over.scriptChild.getText(),bbox:overResult},
+  both:{under:both.underChild.getText(),over:both.overChild.getText(),bbox:bothResult},
+  accent:{accent:accented.node.attributes.get('accent'),bbox:accentResult},
+  lineAccent:{under:lineUnderResult,over:lineOverResult},
+  movable:{enabled:movable.hasMovableLimits(),bbox:movableResult},
+  movableUnder:{enabled:movableUnder.hasMovableLimits(),offset:movableUnder.getOffset(),bbox:movableUnderResult},
+  movableOver:{enabled:movableOver.hasMovableLimits(),offset:movableOver.getOffset(),bbox:movableOverResult},
+};
+const report={
+  version:lock.version,
+  source:'isolated Common mixin probes are algorithm-only; independent actual SVG wrappers captured after processMath from pinned MathJax 4.1.3 reference profile and NewCM using concrete MathML inputs',
+  cases:{svgActual:captureSvgCases(),isolatedMixins},
+};
 const output=path.join(root,'build/math-port/common-source/limits-source.json');
 fs.mkdirSync(path.dirname(output),{recursive:true});
 const contents=JSON.stringify(report,null,2)+'\n';
-const expected=fs.readFileSync(path.join(root,'tests/math/fixtures/common-source/limits-source-expected.json'),'utf8');
-assert.deepEqual(JSON.parse(contents),JSON.parse(expected),'pinned native limits comparison evidence changed');
 fs.writeFileSync(output,contents);
-process.stdout.write(`verified ${Object.keys(report.cases).length} limits cases; evidence ${path.relative(root,output)}\n`);
+const expectedFile=path.join(root,'tests/math/fixtures/common-source/limits-source-expected.json');
+if(process.argv.includes('--write-fixture')) {
+  const existing=fs.existsSync(expectedFile)?fs.readFileSync(expectedFile,'utf8'):null;
+  if(existing?.replaceAll('\r\n','\n')!==contents) fs.writeFileSync(expectedFile,contents);
+} else if(!process.argv.includes('--capture-only')) {
+  const expected=fs.readFileSync(expectedFile,'utf8');
+  assert.deepEqual(JSON.parse(contents),JSON.parse(expected),
+    'pinned limits evidence changed; inspect Source values before updating the fixture');
+}
+process.stdout.write(`captured ${Object.keys(report.cases.svgActual).length} actual SVG limits wrappers plus ${Object.keys(report.cases.isolatedMixins).length} isolated mixin probes; evidence ${path.relative(root,output)}\n`);

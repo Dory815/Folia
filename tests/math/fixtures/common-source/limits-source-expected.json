@@ -1,82 +1,147 @@
 {
   "version": "4.1.3",
-  "source": "executed pinned MathJax CJS MmlFactory and CommonMunder/CommonMover/CommonMunderover mixins with real util/BBox",
+  "source": "isolated Common mixin probes are algorithm-only; independent actual SVG wrappers captured after processMath from pinned MathJax 4.1.3 reference profile and NewCM using concrete MathML inputs",
   "cases": {
-    "under": {
-      "script": "i",
-      "bbox": {
-        "w": 0.5,
-        "h": 0.7,
-        "d": 0.8500000000000001
+    "svgActual": {
+      "munder": {
+        "bbox": {
+          "w": 0.871951839509359,
+          "h": 0.8055,
+          "d": 0.34863351365237943
+        },
+        "offset": [
+          0,
+          -0.3408553390593274
+        ],
+        "childSlots": [
+          "∫",
+          "i"
+        ],
+        "scriptSlot": 1,
+        "underSlot": null,
+        "overSlot": null,
+        "baseKind": "mo",
+        "baseMovablelimits": true
+      },
+      "mover": {
+        "bbox": {
+          "w": 1.1936158364337877,
+          "h": 1.0034898987322334,
+          "d": 0.30550000000000005
+        },
+        "offset": [
+          0.055999999999999994,
+          0.5325567824619927
+        ],
+        "childSlots": [
+          "∫",
+          "2"
+        ],
+        "scriptSlot": 1,
+        "underSlot": null,
+        "overSlot": null,
+        "baseKind": "mo",
+        "baseMovablelimits": true
+      },
+      "munderover": {
+        "bbox": {
+          "w": 1.1936158364337877,
+          "h": 1.0034898987322334,
+          "d": 0.34863351365237943
+        },
+        "offset": [
+          0,
+          0
+        ],
+        "childSlots": [
+          "∫",
+          "i",
+          "2"
+        ],
+        "scriptSlot": 2,
+        "underSlot": 1,
+        "overSlot": 2,
+        "baseKind": "mo",
+        "baseMovablelimits": true
       }
     },
-    "over": {
-      "script": "2",
-      "bbox": {
-        "w": 0.5,
-        "h": 1.3499999999999999,
-        "d": 0.2
-      }
-    },
-    "both": {
-      "under": "i",
-      "over": "2",
-      "bbox": {
-        "w": 0.5,
-        "h": 1.3499999999999999,
-        "d": 0.8500000000000001
-      }
-    },
-    "accent": {
-      "accent": true,
-      "bbox": {
-        "w": 0.5,
-        "h": 1.4499999999999997,
-        "d": 0.2
-      }
-    },
-    "lineAccent": {
+    "isolatedMixins": {
       "under": {
-        "w": 0.5,
-        "h": 0.7,
-        "d": 0.8500000000000001
+        "script": "i",
+        "bbox": {
+          "w": 0.5,
+          "h": 0.7,
+          "d": 0.8500000000000001
+        }
       },
       "over": {
-        "w": 0.5,
-        "h": 1.3499999999999999,
-        "d": 0.2
-      }
-    },
-    "movable": {
-      "enabled": true,
-      "bbox": {
-        "w": 0.75,
-        "h": 0.7,
-        "d": 0.2
-      }
-    },
-    "movableUnder": {
-      "enabled": true,
-      "offset": [
-        0,
-        0
-      ],
-      "bbox": {
-        "w": 0.75,
-        "h": 0.7,
-        "d": 0.2
-      }
-    },
-    "movableOver": {
-      "enabled": true,
-      "offset": [
-        0,
-        0
-      ],
-      "bbox": {
-        "w": 0.75,
-        "h": 0.7,
-        "d": 0.2
+        "script": "2",
+        "bbox": {
+          "w": 0.5,
+          "h": 1.3499999999999999,
+          "d": 0.2
+        }
+      },
+      "both": {
+        "under": "i",
+        "over": "2",
+        "bbox": {
+          "w": 0.5,
+          "h": 1.3499999999999999,
+          "d": 0.8500000000000001
+        }
+      },
+      "accent": {
+        "accent": true,
+        "bbox": {
+          "w": 0.5,
+          "h": 1.4499999999999997,
+          "d": 0.2
+        }
+      },
+      "lineAccent": {
+        "under": {
+          "w": 0.5,
+          "h": 0.7,
+          "d": 0.8500000000000001
+        },
+        "over": {
+          "w": 0.5,
+          "h": 1.3499999999999999,
+          "d": 0.2
+        }
+      },
+      "movable": {
+        "enabled": true,
+        "bbox": {
+          "w": 0.75,
+          "h": 0.7,
+          "d": 0.2
+        }
+      },
+      "movableUnder": {
+        "enabled": true,
+        "offset": [
+          0,
+          0
+        ],
+        "bbox": {
+          "w": 0.75,
+          "h": 0.7,
+          "d": 0.2
+        }
+      },
+      "movableOver": {
+        "enabled": true,
+        "offset": [
+          0,
+          0
+        ],
+        "bbox": {
+          "w": 0.75,
+          "h": 0.7,
+          "d": 0.2
+        }
       }
     }
   }

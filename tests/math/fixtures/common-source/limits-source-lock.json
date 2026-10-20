@@ -5,10 +5,25 @@
     "core/MmlTree/MmlNodes/munderover.js": "104a6ed2f1a8967726c4a0da6ffd0ffb917c23fe0b3847138161c975fa0785b9",
     "output/common/Wrappers/scriptbase.js": "3781ec869fc7c95bbc6d993a7b5cc82724f1592fe00e9b712cf82d4272c06289",
     "output/common/Wrappers/munderover.js": "6b746b059ad85131b28ca62c755b234e31f0aa4403956eafb8621d4ff0a81d4e",
-    "util/BBox.js": "792428ce9802696fe669aa8a13b1a92f5f2eaadd07e05fc28bd359acd8d2062d"
+    "util/BBox.js": "792428ce9802696fe669aa8a13b1a92f5f2eaadd07e05fc28bd359acd8d2062d",
+    "input/mathml.js": "8fc5382e4a81b8be02484c9f6de91618ce8a5c859af97b5175df6badf35035db",
+    "output/common/Wrapper.js": "9e21f886b91624d170ff89df0eecef31e789ffecda001abc3e5649a38419412b",
+    "output/svg.js": "1495e23a9da0bf6b0e8b44d71f54271fa12e902c11444e4f18cdd749ad3b800e",
+    "output/svg/Wrappers/munderover.js": "fea19d233928d7660dc695dd6e9e102596330de02f29a9ea956f7ba1811e07e0",
+    "output/svg/Wrappers/msubsup.js": "c780cb5eca2512b8714b386f982ae8f00bbdcf96121b0641e2303eb4974f7d2b"
+  },
+  "externalSha256": {
+    "tools/mathjax-bundle/node_modules/@mathjax/mathjax-newcm-font/cjs/svg.js": "709d6e85113ef44645ad802b8424508d5f836dd61e4d1f2797b5e011a9693734"
   },
   "sourceTsSha256": {
     ".reference/MathJax-src/ts/output/common/Wrappers/munderover.ts": "bd77fa0e9ff51e1e2771810198e987d4b3047f68aefde5ceb64de0266fb078eb",
-    ".reference/MathJax-src/ts/output/common/Wrappers/scriptbase.ts": "f63e12bd993ff76bd1717d73e3a9c9f57831bdcc8cbc80f2e01b7d4de0cbb02e"
+    ".reference/MathJax-src/ts/output/common/Wrappers/scriptbase.ts": "f63e12bd993ff76bd1717d73e3a9c9f57831bdcc8cbc80f2e01b7d4de0cbb02e",
+    ".reference/MathJax-src/ts/core/MmlTree/MmlFactory.ts": "5e7338cd3eed5a4002243b7371dc5098c6433ff4ba4345cb2d50cf0385b2abdb",
+    ".reference/MathJax-src/ts/core/MmlTree/MmlNodes/munderover.ts": "b9bf04f77922c50044c4d99b3093882cab9b35ec36203f20e1e999997f9adf82",
+    ".reference/MathJax-src/ts/input/mathml.ts": "e027607ae93b8dedf7b8312b1b814c50cf8cd0c6b332f56edba02d1d3bd7be1b",
+    ".reference/MathJax-src/ts/output/common/Wrapper.ts": "d1db6112db1cb3546658eb8868b5997a4f69e588632ecbe4e08a71949544a828",
+    ".reference/MathJax-src/ts/output/svg.ts": "557acc55adc39e849864c61a92ac9e253bce5c13fbfd16603f143cf9c85ee9e5",
+    ".reference/MathJax-src/ts/output/svg/Wrappers/munderover.ts": "071c9de4b528f7d2297d6f249c11d6ba94cef3c133ff827de6549c6fdeb3165b",
+    ".reference/MathJax-src/ts/output/svg/Wrappers/msubsup.ts": "e5522bee1f416c83c33e28d3f403242ef8a7261f86356a32e6bb1858bd7134d2"
   }
 }
