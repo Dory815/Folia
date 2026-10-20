@@ -8,6 +8,9 @@ class ProofTreeItem final : public BaseItem {
 
   public:
     std::optional<std::u16string> name;
+    std::u16string line, currentLine;
+    bool rootAtTop{};
+    mml::MmlNode *left{}, *right{}; // borrowed labels in the active MmlDocument
     explicit ProofTreeItem(StackItemFactory &);
     StackKind kind() const override;
     std::optional<std::u16string_view> getName() const noexcept override;
