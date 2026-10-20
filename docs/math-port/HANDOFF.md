@@ -9,7 +9,36 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 begingroup/color批次，已验证提交）
+### 恢复时先用这个短检查点（2026-10-20 configmacros/noundefined批次，已验证提交）
+
+- **完整Math回归471项/136,187断言exit0**：`configmacros-noundefined-full.log`，28086已终态，
+  无跳过/失败。构建18050/70852/84061均exit0，最终configmacros-noundefined-final-build.log，
+  并发4；configmacros聚焦7项/50断言、noundefined聚焦5项/55断言均exit0。无live测试/构建/代理。
+- **提交**：2f590193（5文件）原configmacros包；457aa14f（5文件）原noundefined包。
+  生产更改原位删去旧对象层实现，均无新增平行模块；仅保留原13项无关修改。
+- **已验收职责**：原configmacros/configuration两文件由现有GPT-6.1 Sol base_methods原位
+  替换，保留原init三map/local priority3、active→macros→environments配置、BeginEnvItem。
+  maps拥有Macro值，只使用现TexOptionValues定义和原展开/环境函数，不写session定义层。
+  该代理交付对应tests/math/configmacros.cpp与tex-configmacros-source.cjs后结束。
+- **Root负责**：原noundefined/configuration两文件原位替换及tests/math/noundefined.cpp、
+  tex-noundefined-source.cjs；唯一macro fallback priority3，先配置text creator再mtext node，
+  仅非空样式，无token creator。两包均已进入CMake；无平行模块或旧对象层依赖。
+- **独立Source已过**：Root从C:\Windows重放configmacros 3maps/22compile及noundefined
+  11compile，均exit0；TS+CJS和完整38profile锁齐全。日志configmacros-source.log、
+  noundefined-source-final.log。代理只读复核两包后未发现具体差异，无额外编辑/构建。
+- **测试修正依据**：首次noundefined构建97401因3_d的UT literal递归常量求值失败，已改3.0。
+  原生聚焦2断言误把缺少显式mathbackground/mathsize当有效值为空；诊断70852构建后证实
+  实际为transparent/normal，与Source一致。测试已分开验证显式缺席和有效默认值；Source也
+  加相同验证并通过。未更改生产算法迁就测试，未发生原生异常退出。
+- **准确下一步**：继续原verb/configuration两文件；本轮只读原VerbConfiguration.ts，尚未改。
+  原职责含Verb方法+CommandMap+Configuration，没有独立Methods模块，不另拆文件。
+  保留GetNext/UTF-16分隔扫描、普通空格转NBSP、monospace、MissingArgFor/NoClosingDelim及
+  当前控制序列错误消息；先做Source及真实TeX测试，再原位替换并接CMake。后续upgreek/gensymb。
+  完整38包、共享布局→SVG对照、Folia切换仍未完成，goal保持active。保留原13项无关修改。
+  Luna额度到10月25日，无新信号不重试；必要Sol仅GPT-6.1 Sol。Mermaid暂停，无D2D像素门槛。
+  不重复已处理FunctionList命名/Stack/BaseMethods审计，不执行reset或改写历史。
+
+### 上一已验证提交批次（历史；当前以顶部断点为准）
 
 - **完整Math回归459项/136,082断言exit0**：`begingroup-color-full.log`，34098已终态。
   当前无live测试、构建或代理。原13项无关修改继续保护，工作区其余本轮改动已提交。
