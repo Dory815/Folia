@@ -23,6 +23,10 @@ class CommonWrapperFactory
     CommonWrapper &adopt(std::unique_ptr<CommonWrapper>) override;
     CommonOutputJax &jax() const noexcept;
     static CommonWrapperCatalog defaultNodes();
+    // The concrete backend-neutral Common profile used by native rendering
+    // and tests. This is deliberately separate from Source's abstract empty
+    // CommonWrapperFactory.defaultNodes() contract.
+    static CommonWrapperCatalog standardNodes();
     std::vector<mml::NodeKind> getKinds() const;
     std::optional<tree::FactoryClass<CommonWrapper, WrapperBuildArguments>>
         getWrapperClass(mml::NodeKind) const;

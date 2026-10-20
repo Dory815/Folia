@@ -5,6 +5,32 @@ module folia.math.output.common;
 import :wrapper_factory;
 
 import :output_jax;
+import :math;
+import :mrow;
+import :inferred_mrow;
+import :mi;
+import :mn;
+import :mo;
+import :ms;
+import :mtext;
+import :mspace;
+import :mfrac;
+import :msqrt;
+import :mroot;
+import :mfenced;
+import :mpadded;
+import :msubsup;
+import :munderover;
+import :mmultiscripts;
+import :mtable;
+import :mtr;
+import :mtd;
+import :maction;
+import :menclose;
+import :semantics;
+import :mglyph;
+import :tex_atom;
+import :text_node;
 import std;
 
 namespace folia::math::output::common {
@@ -15,6 +41,88 @@ void requireRegistration(CommonWrapperRegistration const &value) {
         throw std::invalid_argument(
             "Common wrapper registration requires constructor and type predicate");
     }
+}
+
+template <class Wrapper> CommonWrapperRegistration registration(mml::NodeKind kind) {
+    using Args = WrapperBuildArguments;
+    tree::FactoryClass<CommonWrapper, Args> creator;
+    creator.construct = [](Args const &args) -> std::unique_ptr<CommonWrapper> {
+        return std::make_unique<Wrapper>(args.factory, args.node, args.parent);
+    };
+    creator.isInstance = [](CommonWrapper const &product) {
+        return dynamic_cast<Wrapper const *>(&product) != nullptr;
+    };
+    return {kind, std::move(creator), CommonWrapperClassData::commonDefaults()};
+}
+
+CommonWrapperRegistration generic(mml::NodeKind kind) {
+    return registration<CommonWrapper>(kind);
+}
+
+CommonWrapperRegistration unsupported(mml::NodeKind kind, std::string_view family) {
+    tree::FactoryClass<CommonWrapper, WrapperBuildArguments> creator;
+    const std::string message =
+        "Common standard catalog family is not constructible: " + std::string(family);
+    creator.construct = [message](WrapperBuildArguments const &) -> std::unique_ptr<CommonWrapper> {
+        throw std::runtime_error(message);
+    };
+    creator.isInstance = [](CommonWrapper const &) { return false; };
+    return {kind, std::move(creator), CommonWrapperClassData::commonDefaults()};
+}
+
+CommonWrapperCatalog makeStandardNodes() {
+    using K = mml::NodeKind;
+    CommonWrapperCatalog result;
+    result.reserve(mml::allNodeKinds.size());
+    result.push_back(registration<CommonMath>(K::math));
+    result.push_back(registration<CommonMi>(K::mi));
+    result.push_back(registration<CommonMn>(K::mn));
+    result.push_back(registration<CommonMo>(K::mo));
+    result.push_back(registration<CommonMtext>(K::mtext));
+    result.push_back(registration<CommonMspace>(K::mspace));
+    result.push_back(registration<CommonMs>(K::ms));
+    result.push_back(registration<CommonMrow>(K::mrow));
+    result.push_back(registration<CommonInferredMrow>(K::inferred_mrow));
+    result.push_back(registration<CommonMfrac>(K::mfrac));
+    result.push_back(registration<CommonMsqrt>(K::msqrt));
+    result.push_back(registration<CommonMroot>(K::mroot));
+    result.push_back(generic(K::mstyle));
+    result.push_back(generic(K::merror));
+    result.push_back(registration<CommonMpadded>(K::mpadded));
+    result.push_back(generic(K::mphantom));
+    result.push_back(registration<CommonMfenced>(K::mfenced));
+    // The exact 29-entry menclose profile is currently owned by the SVG
+    // module. Common must not import or duplicate that backend profile.
+    result.push_back(unsupported(K::menclose, "menclose notation profile"));
+    result.push_back(registration<CommonMaction>(K::maction));
+    result.push_back(registration<CommonMsub>(K::msub));
+    result.push_back(registration<CommonMsup>(K::msup));
+    result.push_back(registration<CommonMsubsup>(K::msubsup));
+    result.push_back(registration<CommonMunder>(K::munder));
+    result.push_back(registration<CommonMover>(K::mover));
+    result.push_back(registration<CommonMunderover>(K::munderover));
+    result.push_back(registration<CommonMmultiscripts>(K::mmultiscripts));
+    result.push_back(generic(K::mprescripts));
+    result.push_back(generic(K::none));
+    result.push_back(registration<CommonMtable>(K::mtable));
+    result.push_back(registration<CommonMlabeledtr>(K::mlabeledtr));
+    result.push_back(registration<CommonMtr>(K::mtr));
+    result.push_back(registration<CommonMtd>(K::mtd));
+    result.push_back(generic(K::maligngroup));
+    result.push_back(generic(K::malignmark));
+    result.push_back(registration<CommonMglyph>(K::mglyph));
+    result.push_back(registration<CommonSemantics>(K::semantics));
+    result.push_back(generic(K::annotation));
+    result.push_back(generic(K::annotation_xml));
+    result.push_back(registration<CommonTeXAtom>(K::tex_atom));
+    result.push_back(generic(K::math_choice));
+    result.push_back(registration<CommonTextNode>(K::text));
+    // CommonXmlNode is an abstract Common mixin: the missing addHDW
+    // implementation belongs to an output backend, so it cannot be silently
+    // represented by generic row behavior in a backend-neutral Scene.
+    result.push_back(unsupported(K::xml, "abstract CommonXmlNode"));
+    result.push_back(unsupported(K::html, "abstract CommonXmlNode"));
+    return result;
 }
 
 } // namespace
@@ -93,6 +201,10 @@ CommonWrapperCatalog CommonWrapperFactory::defaultNodes() {
     // MathJax CommonWrapperFactory intentionally has no default kind table;
     // concrete SVG/CHTML classes are supplied by their profile constructors.
     return {};
+}
+
+CommonWrapperCatalog CommonWrapperFactory::standardNodes() {
+    return makeStandardNodes();
 }
 
 std::vector<mml::NodeKind> CommonWrapperFactory::getKinds() const {
