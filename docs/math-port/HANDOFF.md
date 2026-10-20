@@ -9,7 +9,54 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 Braket/Units已验收提交）
+### 恢复时先用这个短检查点（2026-10-20 Textmacros/Textcomp已验收提交）
+
+- **当前无live构建/测试/代理**。最终完整Math回归587项/142,968断言，117套suite，无失败/
+  跳过，exit0，text-mappings-full.log；84690已终态。Root补全Textmacros两张表116项Source
+  独立fixture，实查名称/handler/typed参数；新增1项348断言通过，d6866698已提交3文件。
+  构建38727 exit0（并发4），text-mappings-build.log。此前生产构建95206 exit0，
+  textmacros-textcomp-build.log；完整586/142620 exit0，textmacros-textcomp-full.log，91558终态。
+  聚焦Textmacros原11/520、Textcomp5/2338均exit0，新增mapping用例后Textmacros共12/868。
+  提交73482d77（10文件，TeX拥有子配置/原TextParser与共享构造）、21e2e6f7（9文件，原
+  Textmacros Methods/Maps/Config与测试/Source）、ac28848f（10文件，Textcomp两组、删除
+  多拆出的Methods两文件，独立117条Sourcefixture和runner）。原13项无关修改保留。
+  Root独立重放Source均exit0：Textmacros91compile/12错误类+真实TextParser结构检查；
+  Textcomp358compile/全117映射，原4TS+4CJS、原2TS+2CJS各自/full38锁。
+  Source日志分别textmacros-source-final.log/textcomp-source-final.log；Node堆512MB。
+  Root已完整读原Textmacros四TS、当前Maps/Methods/Config全部CPP，
+  TextParser CPP数学主体及后半反射层；原Textcomp两TS/当前全部CPP与117条mapping_data.inc。
+  保留原TextParser分区和Methods/Mappings/Configuration三组（平铺原路径），不新造副本。
+  Root已冻结原头/共享：TextMacrosData在parse_options.ixx，unique_ptr持有textConf/parseOptions，
+  TexParser*仅internalMath作用域借用；TeX独占Data，主/文本ParseOptions借用Data，不塞进session。
+  TeX::installTextMacros接管；ParserConfiguration新增registry/warnings只读借用accessor。
+  TextParser原header改具体vector/envStack/optional<ScriptLevel>、DeferParsing构造，导出原分区。
+  environment.math_size改optional<variant<double,u16string>>，原SetSize数字不能转em字符串。
+- **代理已交付**：GPT-6.1 Sol /root/base_methods仅处理text_parser.cpp、textmacros_methods.cpp、
+  tests/math/textmacros.cpp、tex-textmacros-source.cjs四文件，未改共享/native构建测试/Git。
+  原18Methods/11Base别名/原TextParser实际算法及10组测试已交付冻结；Root接管格式化并新增
+  子配置options共享/样式捕获与全116映射两组（共12），已原生/Source验证。
+  Root负责Maps/Configuration、Textcomp、全部共享/CMake/独立Source/原生验收/Git。
+  固定38profile无autoload/require，保留CheckAutoload无动态加载分支，不造Promise/调度器。
+  Math的slash分支必须保留Sourcefallthrough，正确匹配\\(...\\)，旧CPP此处条件有差异。
+- **Root已验收实现**：原TextMacros Maps/Configuration（同session/options、独立子ParseOptions/
+  Tags；internalMath RAII恢复主parser borrow；preFilter绑定本次MML factory）。Textcomp回归
+  原Mappings内Insert callback与Configuration两组，删除原本额外拆出的methods.cpp/.ixx，
+  复用117条原数据，数学/文本模式均已验收。
+  Textcomp实际Source witness/独立117条Sourcefixture和5组原生runner已写并格式化。
+  Root另核对Source ParseOptions子构造先捕获自身config.mathStyle，再共享主options对象；
+  新SharedTexOptions构造重载复用同一初始化，避免对子配置重复mergeDefaults覆盖主选项。
+  Source/native测试主French/子ISO与options同地址；常规构造仍原merge语义。验收全18方法/
+  所有映射、文本group/字号/字体/quotes/comments/escape/Unicode、数学嵌套、Basealiases、
+  color/html转发、新宏与let、错误恢复与parser借用清空、creator定义和node lists迁移。
+- **下一具体行动**：BBM/Bboldx/Dsfont。Root已完整读原三个Configuration.ts；BBM与Dsfont
+  本来各单配置，Bboldx原Methods/Mappings/Configuration三组，后两原TS和当前全部CPP/IXx
+  尚未读，下一轮先读完再冻结接口/分工。BBM ChooseFont复用BaseMathFont，mathversion改
+  jax.options.bbm.bold跨式保留；Dsfont按sans选-ds-ss/-ds-rm。Bboldx priority3覆盖mathbb，
+  text-bboldx通过新Data子配置接入（同Textcomp），要验数学/文本字体、bfbb/light与覆盖次序。
+  已验收Textmacros/Textcomp与上一批包不重派、不重测；全profile/最终SVG gate仍待完成。
+  原13项无关修改仍保护。完整38包/Common→Scene/SVG对照/Folia切换未完成，goal active。
+
+### 上一批基线（2026-10-20 Braket/Units；历史证据，不重做）
 
 - **当前无live构建/测试/代理**。完整Math回归570项/139,762断言，115套suite，无失败/
   跳过，exit0，braket-units-full.log；96246已终态。构建98047 exit0（并发4），
