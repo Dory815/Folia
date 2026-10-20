@@ -631,7 +631,10 @@ MmlNode &AbstractMmlNode::copy(bool keepIds) const {
     if (childrenToCopy.size() == 1 && childrenToCopy.front()->isInferred())
         childrenToCopy = childrenToCopy.front()->children();
     for (MmlNode *child : childrenToCopy)
-        result.appendChild(child->copy(false));
+        if (child)
+            result.appendChild(child->copy(false));
+        else
+            document().setChildSlot(result, result.children().size(), nullptr);
     return result;
 }
 } // namespace folia::math::mml

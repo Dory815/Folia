@@ -25,10 +25,54 @@ mml::operator_dict::OperatorDef const *NodeUtil::getForm(mml::MmlNode &node) {
                 return def;
     return nullptr;
 }
+mml::AttributeValue const *NodeUtil::getMoAttribute(mml::MmlNode const &node,
+                                                    std::u16string_view name) {
+    if (!node.attributes().isSet(name))
+        for (auto form : {u"infix", u"postfix", u"prefix"})
+            if (auto op = getOp(node, form))
+                for (auto const &[key, value] : op->properties)
+                    if (key == name)
+                        return &value;
+    return node.attributes().lookup(name);
+}
 void NodeUtil::setProperties(mml::MmlNode &node, NodeDefinition definition) {
     auto &attributes = node.attributes();
-    for (auto const &[name, value] : definition.attributes.ownEntries())
-        attributes.set(name, value);
+    for (auto const &[name, value] : definition.attributes.ownEntries()) {
+        auto &tex = node.properties().tex;
+        if (name == u"texClass") {
+            tex.explicit_tex_class = static_cast<mml::TexClass>(std::get<double>(value));
+            node.setTexClass(tex.explicit_tex_class);
+        } else if (name == u"movablelimits") {
+            tex.movable_limits = std::get<bool>(value);
+            if (node.kind() == mml::NodeKind::mo || node.kind() == mml::NodeKind::mstyle)
+                attributes.set(name, value);
+        } else if (name == u"inferred") {
+            continue;
+        } else if (name == u"autoOP")
+            tex.auto_operator = std::get<bool>(value);
+        else if (name == u"fnOP")
+            tex.function_operator = std::get<bool>(value);
+        else if (name == u"movesupsub")
+            tex.move_sup_sub = std::get<bool>(value);
+        else if (name == u"subsupOK")
+            tex.sub_sup_allowed = std::get<bool>(value);
+        else if (name == u"texprimestyle")
+            tex.prime_style = std::get<bool>(value);
+        else if (name == u"variantForm")
+            tex.variant_form = std::get<bool>(value);
+        else if (name == u"withDelims")
+            tex.with_delimiters = std::get<bool>(value);
+        else if (name == u"mathaccent")
+            tex.math_accent = std::get<bool>(value);
+        else if (name == u"open")
+            tex.open = std::get<std::u16string>(value);
+        else if (name == u"close")
+            tex.close = std::get<std::u16string>(value);
+        else if (name == u"useHeight")
+            node.properties().table.use_height = std::get<bool>(value);
+        else
+            attributes.set(name, value);
+    }
     for (auto const &[name, value] : definition.attributes.inheritedEntries())
         attributes.setInherited(name, value);
     for (auto const &[name, value] : definition.attributes.defaultEntries())

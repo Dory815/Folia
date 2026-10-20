@@ -18,6 +18,20 @@ std::u16string substituteArgs(std::span<std::u16string const> arguments,
                               std::u16string_view replacement, std::size_t maxBuffer);
 
 void checkMaxMacros(ExpansionBudget &budget, bool isMacro = true);
+std::u16string addArgs(TexParser &, std::u16string_view, std::u16string_view);
+std::u16string substituteArgs(TexParser &, std::span<std::u16string const>, std::u16string_view);
+void checkMaxMacros(TexParser &, bool isMacro = true);
+void checkEqnEnv(TexParser &, bool nestable = true);
+std::vector<mml::MmlNode *> internalMath(TexParser &, std::u16string_view,
+                                         std::optional<ScriptLevel> level = std::nullopt,
+                                         std::optional<std::u16string_view> font = std::nullopt);
+mml::MmlNode &internalText(TexParser &, std::u16string_view, NodeDefinition);
+mml::MmlNode &underOver(TexParser &, mml::MmlNode &, mml::MmlNode &, std::u16string_view position,
+                        bool stack);
+void checkMovableLimits(mml::MmlNode &);
+ArrayItem &setArrayAlign(ArrayItem &, std::optional<std::u16string_view>, TexParser * = nullptr);
+mml::MmlNode &copyNode(mml::MmlNode const &, TexParser &);
+std::u16string mmlFilterAttribute(TexParser &, std::u16string_view, std::u16string_view);
 NodeDefinition getFontDef(TexParser &);
 bool isLatinOrGreekChar(std::u16string_view);
 void fixInitialMO(ParseOptions &, std::vector<mml::MmlNode *> &);

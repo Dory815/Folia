@@ -320,8 +320,10 @@ class MstyleItem : public BeginItem {
 class EquationItem : public BaseItem {
   public:
     bool numbered{};
+    std::optional<std::u16string> name;
     EquationItem(StackItemFactory &, bool numbered);
     StackKind kind() const override;
+    std::optional<std::u16string_view> getName() const noexcept override;
     bool isOpen() const noexcept override;
     CheckResult checkItem(FrameHandle const &incoming) override;
 };

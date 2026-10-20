@@ -21,5 +21,6 @@ class NodeUtil final {
     static mml::operator_dict::OperatorDef const *getForm(mml::MmlNode &);
     static mml::operator_dict::OperatorDef const *getOp(mml::MmlNode const &,
                                                         std::u16string_view form = u"infix");
+    static mml::AttributeValue const *getMoAttribute(mml::MmlNode const &, std::u16string_view);
 };
 } // namespace folia::math::tex

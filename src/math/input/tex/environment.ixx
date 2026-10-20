@@ -16,7 +16,7 @@ struct TexEnvironment final {
     std::optional<std::u16string> font;
     std::optional<std::u16string> italic_font;
     std::optional<std::u16string> style;
-    std::optional<std::u16string> size;
+    std::optional<double> size;
     std::optional<std::u16string> color;
     std::optional<std::u16string> horizontal_size;
     std::optional<std::u16string> closing_environment;

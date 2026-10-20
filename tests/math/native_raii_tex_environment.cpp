@@ -23,7 +23,7 @@ TexEnvironment fullEnvironment() {
     value.font = u"font";
     value.italic_font = u"italic";
     value.style = u"style";
-    value.size = u"size";
+    value.size = 2.5;
     value.color = u"color";
     value.horizontal_size = u"horizontal";
     value.closing_environment = u"closing";
@@ -75,7 +75,7 @@ suite math_native_raii_tex_environment = [] {
         source.font = u"";
         source.italic_font = u"";
         source.style = u"";
-        source.size = u"";
+        source.size = 0.0;
         source.color = u"";
         source.horizontal_size = u"";
         source.closing_environment = u"";

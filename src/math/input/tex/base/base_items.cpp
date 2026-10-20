@@ -218,6 +218,9 @@ bool ArrayItem::isOpen() const noexcept {
 bool EquationItem::isOpen() const noexcept {
     return true;
 }
+std::optional<std::u16string_view> EquationItem::getName() const noexcept {
+    return name ? std::optional<std::u16string_view>(*name) : std::nullopt;
+}
 bool StopItem::isClose() const noexcept {
     return true;
 }
