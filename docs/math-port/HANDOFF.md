@@ -9,7 +9,40 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 当前已接受基线：Common子树测量及compile输出借用（2026-10-20）
+### 当前已接受：Bussproofs整包（2026-10-20；本节优先于下列历史断点）
+
+- FunctionList命名已在2022cb1a/e6126948处理：唯一生产owner为原util/function_list.ixx，
+  测试为function_list.cpp。不要再次调查/改名；旧bindings消费者尚未全退，不能宣称清理完成。
+- Root已在原node_properties pair实现10个有限proof字段的强类型setter/getter及固定顺序数组，
+  迁移Items唯一写点、原mml_node_state/Items测试；未新增通用对象字典或第二套properties实现。
+- Root已在原bussproofs/util pair替换四filters和原规则/序列平衡算法；测量仅局部借用本次
+  output/document，未保留全局document。已有GPT-6.1 Sol base_methods完成原Methods/Mappings/
+  Configuration六文件、整包测试/fixture/Source脚本，Root已完整读审、独立Source复验及native验收。
+- Source暴露原Common ex单位错误：Wrapper须用lengths默认0.431em，与metrics.ex/em无关。
+  Root修原wrapper.cpp一行及原Common测试，新增ex-space/ex-padded inline/display四行Source
+  fixture；Root默认bytecheck exit0：36rows/38真实测量，common-bbox-ex-source-check.log。
+  Common focus exit0：5实际tests/20564asserts（suite11含6skip），bussproofs-common-focused.log。
+- Root独立最终Source默认复验exit0：144compile/128真实getBBox/63trees/29TexErrors/
+  2Source TypeErrors/15sequence steps/5direct semantics/33bindings；bussproofs-source-root.log。
+  保留全部31历史公式，并将旧expanded C++草稿的21公式完整移入Source脚本后删除旧C++。
+  TS/CJS/full38 hash锁不变；两TypeError只记录Source边界，native用logic_error并验证下一请求恢复。
+- build 83358 exit0，并发4；首次focus仅配置测试将4个固定handler误写为2失败，Source及原
+  Configuration构造器确认character/delimiter为空、macro/environment非空；Root改测试并补
+  Source精确handler断言，未改生产去迎合测试。重建45485 exit0、expanded重建57287 exit0。
+  最终focus exit0：20实际tests/3693asserts（3属性+10Items+7整包），bussproofs-package-focused.log。
+  最终full 98852 exit0：684tests/196361asserts/129suites，无失败/skip，
+  bussproofs-package-full-final.log。较前次full新增10tests；不把聚焦skip算执行。
+- 已分批提交：3785cd66 Common ex四文件；da6f81cb proof metadata五文件；9b51f961 原包
+  生产+CMake十文件（净减484行、无新生产文件）；b4e1bfbe 整包tests/fixture/Source/CMake四文件；
+  7a7c77c3 删除六个旧Context观察器/比较器/expanded草稿，共1000行。Source-only原oracle
+  保留，正式Source脚本仅读其31个公式，不执行旧反射capture；旧renderer-session测试留待真实
+  Scene/SVG集成时按职责处理。旧draft审查本地已标历史（ignored，不强行新增进Git）。
+- 当前无live build/native，base_methods已完成冻结。13项原修改继续保护。完整goal保持active，
+  Mermaid暂停，无D2D像素gate；Luna额度Oct25前不重试、必要Sol只6.1。下一真实断点是
+  剩余mhchem/physics/texhtml/unicode（含Entities）的原owner移植，先划职责/验收再实现。
+  之后仍需Common→Scene→SVG实际链路、旧对象层退出及Folia替换QuickJS；不能报完整移植完成。
+
+### 上一已接受基线：Common子树测量及compile输出借用（2026-10-20）
 
 - 上轮是实际progress，22efabce/74d070eb/84aab382已提交；665 tests/172266 asserts的
   ProofTreeItem基线不重做。本轮Root恢复先实际读本文件顶部及工作树；原13项修改继续保护。

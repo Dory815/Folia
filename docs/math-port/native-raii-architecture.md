@@ -416,12 +416,12 @@ It defaults to null for inputs that do not require an output service. There
 is no stored output/request pointer on TeX, ParseOptions or package state.
 Both pre/postfilters see the same current borrow, including error formatting;
 exceptions and nested compile calls cannot overwrite a persistent binding.
-The Bussproofs preprocessor will reject an absent measurement service using
+The Bussproofs preprocessor rejects an absent measurement service using
 the Source diagnostic. Full SVG service implementation still must provide
 typeset/escaped; a measurement-only test service throws on those unused paths
 and cannot stand in for a completed renderer.
 
-The next Bussproofs change keeps semantic-property insertion order in the
+Bussproofs keeps semantic-property insertion order in the
 existing ProofNodeProperties owner. The ten finite keys are axiom, proof,
 sequent, sequentProcessed, inference, inferenceRule, labelledRule, prooflabel,
 sequentAdjust_left and sequentAdjust_right. Store only their enum order (at
@@ -431,8 +431,23 @@ position; erase followed by set appends. Copy/merge and the existing three-key
 move operation must preserve the relevant Source order. Util serializes that
 order into semantics, retaining zero/false and leaving existing semantics
 untouched when there are no prefixed keys. proof-left/proof-right remain plain
-spacing values outside this order. This decision is not yet implemented and
-does not authorize a generic property dictionary or a competing node owner.
+spacing values outside this order. This bounded representation does not
+authorize a generic property dictionary or a competing node owner.
+
+For the Bussproofs package port, those ten optional values are private;
+their existing snake_case names are read-only optional-valued getters.
+setAxiom/setProof/setSequent/setSequentProcessed, setPremiseCount,
+setRuleDirection/setLabelledRule/setProofLabel and setSequentAdjustLeft/Right
+are the only writes. erase(ProofAttribute), orderedKeys() and mergeFrom()
+operate on that bounded schema. left_space/right_space remain unprefixed
+optional doubles. The original items owner holds the actual line/currentLine,
+rootAtTop and borrowed left/right label state used by Methods. Prooftree is
+an EnvironmentBodyHandler; all eight macros return NoParseResult on normal
+Source-void paths. The original mappings/configuration register the same
+commands, ProofTreeItem and four ordered filters. Util exports those four
+TexFilterData callbacks, borrows output only from that argument, and creates
+its measurement-only MathItem as a local object inside balanceRules. It stores
+no current document, runtime module, object wrapper or callback identity.
 
 ## Ownership
 

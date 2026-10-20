@@ -151,6 +151,21 @@ No full Bussproofs or SVG claim follows from these component tests: real Common
 subtree widths, sequent/rule adjustments, semantic attributes and package filter
 ordering still require end-to-end Source comparison after integration.
 
+Whole-package acceptance runs the actual TeX configuration with the original
+33 macro bindings, prooftree environment, configured node/item creators and
+ordered filters. Compare complete MML trees and attributes against independently
+captured Source results using real NewCM Common getBBox measurements; a fake
+width service cannot establish rule/sequent spacing. Preserve all 31 historical
+formulas and add label, direction, line-style, arity, empty-content, nested-proof,
+sequent and captured-alias cases. Exercise definitions across expressions/reset,
+missing output and measurement exceptions followed by successful requests.
+Record Source runtime shape errors separately from typed native logic errors.
+Verify all ten finite semantic fields preserve insertion, overwrite, deletion,
+reinsertion, zero/false values, copy/merge and the original three-key transfer
+order; unprefixed margins are excluded from semantics. Retire obsolete Context
+reflection observers only after their mathematical cases have this replacement.
+Passing this package boundary still does not establish SVG/Folia integration.
+
 For Common subtree measurement, compare real Source getBBox outputs for
 fixed-space, padded/styled, nested fraction/radical/table and token layouts
 using the same profile fonts. Verify root/physical parents/attributes/layout
