@@ -122,8 +122,8 @@ service and remain explicit pending owners; they are not replaced by fake DOM
 results or called through the withdrawn object layer.
 
 The token creator takes `optional<u16string_view>` through TexParser and
-NodeFactory. An absent token text creates no TextNode; an explicitly empty
-text creates an empty TextNode. This is the original creator collaboration,
+NodeFactory. Explicit null text creates no TextNode; an explicitly empty text
+and the omitted-text default create an empty TextNode. This is the original creator collaboration,
 including the configured boldsymbol token creator, rather than a second node
 construction path for hidden delimiters. Boldsymbol owns its command mapping,
 scoped argument parsing, token marking and priority-5 variant rewrite in its
@@ -360,9 +360,9 @@ the same regular expression; no general runtime object model is involved.
 The input jax must own one effective option record. Requests borrow it and the
 math-style function captured at input-jax construction. Later mathStyle option
 updates do not select a new resolver. `ParseOptions::getVariant` implements the
-four actual Source functions, including Unicode 16 NFD for French style; the
-constructor and its configured factory/Tags/ColumnParser collaboration remain
-incomplete. The actual parser primary exports the completed declaration/value
+four actual Source functions, including Unicode 16 NFD for French style. Its
+constructor and configured factory/Tags/ColumnParser collaboration are connected
+to the real TeX input jax. The actual parser primary exports the declaration/value
 and map families; it does not export or call the withdrawn Context runtime.
 
 `macro.*`, `token_map.*` and `map_handler.*` keep the original Macro, token-map,
@@ -381,10 +381,22 @@ Do not keep a vector of all past replacements. The ignored early declaration
 packet used that retention scheme and is superseded here. A lookup key remains
 separate from the stored token, as needed by let aliases. In-flight callback
 arguments use value snapshots so replacement does not leave dangling borrows.
-Subhandler lookup/composition and map replacement are Source-checked; native
-callback execution through a real TexParser and CommandMap's currentCS wrapper
-remain incomplete. Do not replace CommandMap with MacroMap or use a dummy parser
-to claim that pipeline acceptance.
+Subhandler lookup/composition, map replacement, real TexParser callback execution
+and CommandMap's currentCS wrapper are Source-checked. CommandMap retains its
+original wrapper responsibility rather than being replaced by MacroMap.
+
+Newcommand keeps its configuration, mappings, methods, utility and BeginEnvItem
+in the original five module owners. TexSessionState owns the sole command,
+delimiter and environment definitions; session-backed TokenMap instances borrow
+that data and are used only while their input jax is alive. Definition snapshots
+protect in-flight calls from redefinition. Plain parameter counts are doubles,
+without allocating a delimiter array for each declared argument; only a def
+template requires at most nine sequential parameters and matching delimiters.
+An explicit parameter declaration records whether substitution runs, including
+[0] with a default argument. Suppressed commands invoke the configured fallback;
+suppressed delimiters retain a null character and produce an empty mo. Global
+definitions use the existing BegingroupStack over the same owned definition
+layers. This does not claim that the begingroup package methods are connected.
 
 Node construction retains the original four creator slots: node, token, text,
 error. `NodeCreators` contains optional typed C++ function pointers, and the
@@ -400,10 +412,9 @@ current mathematical environment and kind/named node registration. It contains
 no arbitrary keys, payloads or invocation service. The boldsymbol owner keeps
 its configured token creator and variant rewrite; the token creator delegates
 to the default token builder before marking/registering fixBold. Its mtext
-branch does not read the parser environment. The native span-based rewrite is
-tested, while its TexFilterData adapter, real node-list filtering, package
-initialization and Boldsymbol macro method remain incomplete. Unit factory
-hosts are not acceptance of an instantiated native TexParser or its pipeline.
+branch does not read the parser environment. Its span-based rewrite, TexFilterData
+entry point, live-node filtering, package initialization and scoped macro parsing
+are connected and tested with the real TeX input jax, in addition to creator unit tests.
 
 ## File responsibility map
 

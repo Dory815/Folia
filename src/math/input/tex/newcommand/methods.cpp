@@ -1,460 +1,235 @@
+/*************************************************************
+ * Copyright (c) 2018-2026 The MathJax Consortium.
+ * MathJax 4.1.3 input/tex/newcommand/NewcommandMethods.ts; Apache-2.0.
+ *************************************************************/
 module folia.math.input.tex.newcommand.methods;
-import folia.math.input.tex.parser;
 import folia.math.input.tex.newcommand.util;
 import folia.math.input.tex.newcommand.items;
-import folia.math.input.tex.base_methods;
-import folia.math.input.tex.macro;
-import folia.math.input.tex.token_map;
-import folia.math.input.tex.handler_types;
-import folia.math.input.tex.stack_item_factory;
+import folia.math.input.tex.parse_util;
 import folia.math.input.tex.unit_util;
-import folia.math.input.tex.tex_error;
-import folia.math.util.property_host;
-import folia.math.util.js_numeric_input;
 import std;
 namespace folia::math::tex {
 namespace {
-using namespace options;
-TexParser &parserFrom(ParserContext &context) {
-  auto *p = dynamic_cast<TexParser *>(&context);
-  if (!p)
-    property_host::typeError("Newcommand method requires a TexParser");
-  return *p;
+using Arguments = std::span<TexArgument const>;
+std::u16string text(Arguments args, std::size_t i) {
+    if (i >= args.size() || std::holds_alternative<NullArgument>(args[i]))
+        return {};
+    return std::get<std::u16string>(args[i]);
 }
-ParserRuntime &runtimeFrom(TexParser &parser) {
-  const auto *po = std::get_if<ParseOptions *>(&parser.configuration);
-  if (!po || !*po)
-    property_host::typeError(
-        "Cannot read properties of null or undefined (reading 'runtime')");
-  return (**po).runtime();
+bool present(Arguments args, std::size_t i) {
+    return i < args.size() && !std::holds_alternative<NullArgument>(args[i]);
 }
-Property atom(const ParseAtom &value) {
-  if (const auto *p = std::get_if<Property>(&value))
-    return *p;
-  if (const auto *t = std::get_if<TokenRef>(&value); t && *t)
-    return (*t)->token();
-  property_host::typeError("Newcommand method requires a token");
+bool flag(Arguments args, std::size_t i) {
+    if (!present(args, i))
+        return false;
+    if (auto string = std::get_if<std::u16string>(&args[i]))
+        return !string->empty();
+    if (auto number = std::get_if<double>(&args[i]))
+        return *number != 0 && !std::isnan(*number);
+    return std::get<bool>(args[i]);
 }
-Property arg(const ParseRest &rest, std::size_t n) {
-  if (n >= rest.size())
-    return Missing{};
-  if (const auto *p = std::any_cast<Property>(&rest[n]))
-    return *p;
-  if (const auto *s = std::any_cast<std::u16string>(&rest[n]))
-    return property_host::debugText(*s);
-  if (const auto *d = std::any_cast<double>(&rest[n]))
-    return *d;
-  if (const auto *b = std::any_cast<bool>(&rest[n]))
-    return *b;
-  return Missing{};
+double number(std::u16string_view value) {
+    if (value.empty())
+        return 0;
+    std::string narrow(value.begin(), value.end());
+    char *end{};
+    auto result = std::strtod(narrow.c_str(), &end);
+    return end == narrow.c_str() ? std::numeric_limits<double>::quiet_NaN() : result;
 }
-void eraseProperty(const Property &receiver, std::string_view key) {
-  auto object = PropertyList::record(receiver);
-  if (!object)
-    property_host::typeError("Cannot convert undefined or null to object");
-  object->erase(key);
+double number(Arguments args, std::size_t i) {
+    if (!present(args, i))
+        return 0;
+    if (auto numeric = std::get_if<double>(&args[i]))
+        return *numeric;
+    return number(std::get<std::u16string>(args[i]));
 }
-std::u16string string(const Property &p) { return property_host::string(p); }
-std::size_t stringSliceStart(double index, std::size_t length) {
-  if (std::isnan(index) || index == 0)
-    return 0;
-  if (index == std::numeric_limits<double>::infinity())
-    return length;
-  if (index == -std::numeric_limits<double>::infinity())
-    return 0;
-  const double integer = std::trunc(index);
-  const double size = static_cast<double>(length);
-  const double start = integer < 0 ? std::max(size + integer, 0.0)
-                                   : std::min(integer, size);
-  return static_cast<std::size_t>(start);
+[[noreturn]] void error(std::string id, std::u16string format, std::u16string_view argument) {
+    const std::array<std::u16string, 1> args{std::u16string(argument)};
+    throw TexError(std::move(id), std::move(format), args);
 }
-std::size_t stringSubstringEnd(double index, std::size_t length) {
-  if (std::isnan(index) || index <= 0)
-    return 0;
-  if (index == std::numeric_limits<double>::infinity())
-    return length;
-  const double end = std::min(std::trunc(index), static_cast<double>(length));
-  return static_cast<std::size_t>(end);
-}
-ParseMethod method(ParserRuntime &runtime, std::u16string_view name) {
-  const Property p = NewcommandMethods::get(runtime, name);
-  if (const auto *f = std::get_if<FunctionRef>(&p.value); f && *f)
-    return *f;
-  throw Exception("Unimplemented",
-                  u"Newcommand canonical method is unavailable");
-}
-BaseItem *createItem(TexParser &parser, std::string_view kind,
-                     FunctionArgs args = {}) {
-  const auto shared = parser.itemFactory();
-  const auto *f = std::get_if<std::shared_ptr<StackItemFactory>>(&shared);
-  if (!f || !*f)
-    property_host::typeError(
-        "Cannot read properties of null or undefined (reading 'create')");
-  return (*f)->create(kind, tree::FactoryArgs(args));
-}
-void pushNull(TexParser &parser) {
-  const auto factory = parser.itemFactory();
-  const auto *owner = std::get_if<std::shared_ptr<StackItemFactory>>(&factory);
-  if (!owner || !*owner)
-    property_host::typeError(
-        "Cannot read properties of null or undefined (reading 'create')");
-  BaseItem *item = (*owner)->create("null");
-  parser.Push((*owner)->reference(item));
-}
-options::Value array(ParserRuntime &runtime, std::span<const Property> values) {
-  Context &cx = runtime.context();
-  const ObjectRef out = cx.array(static_cast<std::uint32_t>(values.size()));
-  for (std::size_t i = 0; i < values.size(); ++i) {
-    const std::string index = std::to_string(i);
-    cx.set(Value(out), Key(std::u16string(index.begin(), index.end())),
-           runtime.properties.to(values[i]));
-  }
-  return Value(out);
-}
-FunctionRef parseFn(ParseBody body) {
-  return makeParseCallable(std::move(body));
-}
-void bindDynamicMethod(ParserRuntime &runtime, FunctionRef body,
-                       std::u16string_view name, std::size_t length) {
-  const Value bound = BaseMethods::bind(runtime, body, std::u16string(name));
-  const auto *identity = std::get_if<ObjectRef>(&bound.data);
-  if (!identity)
-    throw Exception("TypeError",
-                    u"Dynamic Newcommand method has no Context identity");
-  runtime.context().define(
-      *identity, Key(u"length"),
-      Descriptor::data(Value(static_cast<double>(length)), false, false,
-                       true));
+DispatchOutcome pushNull(TexParser &p) {
+    p.Push(p.itemFactory().create(StackKind::null_item));
+    return NoParseResult{};
 }
 } // namespace
-Property NewcommandMethods::initializeModule(ParserRuntime &runtime) {
-  if (!runtime.newcommandMethods.missing())
-    return runtime.newcommandMethods;
-  PropertyList methods;
-  const auto add = [&](std::string name, FunctionRef body) {
-    const Value bound = BaseMethods::bind(
-        runtime, body, property_host::text(name));
-    const auto *identity = std::get_if<ObjectRef>(&bound.data);
-    if (!identity)
-      throw Exception("TypeError",
-                      u"Newcommand method has no Context identity");
-    std::size_t length = 2;
-    if (name == "MacroWithTemplate") length = 4;
-    else if (name == "BeginEnv") length = 6;
-    runtime.context().define(
-        *identity, Key(u"length"),
-        Descriptor::data(Value(static_cast<double>(length)), false, false,
-                         true));
-    methods.set(std::move(name), Property(std::move(body)));
-  };
-  add("NewCommand",
-      parseFn([&runtime](const FunctionReceiver &, ParserContext &context,
-                         const ParseAtom &nameAtom, ParseRest) -> ParseResult {
-        auto &parser = parserFrom(context);
-        const std::u16string name = string(atom(nameAtom));
-        const std::u16string cs =
-            NewcommandUtil::GetCsNameArgument(parser, name);
-        const Property n = NewcommandUtil::GetArgCount(parser, name);
-        const Property optional = parser.GetBrackets(name);
-        const Property definition = parser.GetArgument(name);
-        const Property args = Property(PropertyArray{definition, n, optional});
-        NewcommandUtil::addMacro(parser, cs, method(runtime, u"Macro"), args);
-        pushNull(parser);
-        return Property(Missing{});
-      }));
-  add("NewEnvironment",
-      parseFn([&runtime](const FunctionReceiver &, ParserContext &context,
-                         const ParseAtom &nameAtom, ParseRest) -> ParseResult {
-        auto &parser = parserFrom(context);
-        const std::u16string name = string(atom(nameAtom));
-        const std::u16string env = property_host::string(
-            UnitUtil::instance().trimSpaces(parser.GetArgument(name)));
-        const Property n = NewcommandUtil::GetArgCount(parser, name);
-        const Property optional = parser.GetBrackets(name);
-        const Property begin = parser.GetArgument(name),
-                       end = parser.GetArgument(name);
-        const Property args =
-            Property(PropertyArray{Property(true), begin, end, n, optional});
-        NewcommandUtil::addEnvironment(parser, env,
-                                       method(runtime, u"BeginEnv"), args);
-        pushNull(parser);
-        return Property(Missing{});
-      }));
-  add("MacroDef",
-      parseFn([&runtime](const FunctionReceiver &, ParserContext &context,
-                         const ParseAtom &nameAtom, ParseRest) -> ParseResult {
-        auto &parser = parserFrom(context);
-        const std::u16string name = string(atom(nameAtom));
-        const std::u16string cs = NewcommandUtil::GetCSname(parser, name);
-        auto params = NewcommandUtil::GetTemplate(parser, name, u"\\" + cs);
-        const Property definition = parser.GetArgument(name);
-        if (const auto *count = std::get_if<double>(&params)) {
-          const std::array<Property, 2> args{definition, *count};
-          NewcommandUtil::addMacro(
-              parser, cs, method(runtime, u"Macro"),
-              Property(PropertyArray{args[0], Property(*count)}));
-        } else {
-          const auto &templateArgs = std::get<PropertyArray>(params);
-          PropertyArray args;
-          args.push(definition);
-          for (std::size_t i = 0; i < templateArgs.size(); ++i) {
-            if (templateArgs.has(i))
-              args.push(templateArgs.get(i));
-            else
-              args.resize(args.size() + 1);
-          }
-          NewcommandUtil::addMacro(parser, cs,
-                                   method(runtime, u"MacroWithTemplate"),
-                                   Property(std::move(args)));
-        }
-        pushNull(parser);
-        return Property(Missing{});
-      }));
-  add("Let",
-      parseFn([&runtime](const FunctionReceiver &, ParserContext &context,
-                         const ParseAtom &nameAtom, ParseRest) -> ParseResult {
-        auto &parser = parserFrom(context);
-        const std::u16string command = string(atom(nameAtom));
-        const std::u16string cs = NewcommandUtil::GetCSname(parser, command);
-        std::u16string c = parser.GetNext();
-        if (c == u"=") {
-          ++parser.i;
-          c = parser.GetNext();
-        }
-        const auto *po = std::get_if<ParseOptions *>(&parser.configuration);
-        if (!po || !*po)
-          property_host::typeError("Cannot read properties of null or "
-                                   "undefined (reading 'handlers')");
-        auto *sub = std::get_if<std::shared_ptr<SubHandlers>>(&(**po).handlers);
-        if (!sub || !*sub)
-          property_host::typeError(
-              "Cannot read properties of null or undefined (reading 'get')");
-        pushNull(parser);
-        if (c == u"\\") {
-          const std::u16string other =
-              NewcommandUtil::GetCSname(parser, command);
-          if (cs == other)
-            return Property(Missing{});
-          const auto macros = (*sub)->get("macro");
-          if (!macros)
-            property_host::typeError(
-                "Cannot read properties of undefined (reading 'applicable')");
-          const auto macroMap =
-              macros->applicable(property_host::debugText(other));
-          if (dynamic_cast<MacroMap *>(macroMap.get())) {
-            const auto value =
-                macroMap->lookup(property_host::debugText(other));
-            if (const auto *macro = std::get_if<MacroRef>(&value);
-                macro && *macro) {
-              NewcommandUtil::addMacro(parser, cs, (*macro)->func(),
-                                       (*macro)->args(),
-                                       string((*macro)->token()));
-              return Property(Missing{});
-            }
-          }
-          if (dynamic_cast<CharacterMapIdentity *>(macroMap.get()) &&
-              !dynamic_cast<DelimiterMap *>(macroMap.get())) {
-            const auto value =
-                macroMap->lookup(property_host::debugText(other));
-            if (const auto *token = std::get_if<TokenRef>(&value);
-                token && *token) {
-              const ParseMethod mapParser = macroMap->parser();
-              const TokenRef captured = *token;
-              const FunctionRef body =
-                  parseFn([mapParser, captured](
-                              const FunctionReceiver &receiver,
-                              ParserContext &parserContext, const ParseAtom &,
-                              ParseRest) -> ParseResult {
-                    return invokeParseMethod(mapParser, receiver, parserContext,
-                                             ParseAtom{captured});
-                  });
-              bindDynamicMethod(runtimeFrom(parser), body, u"method", 1);
-              NewcommandUtil::addMacro(
-                  parser, cs, body,
-                  Property(PropertyArray{property_host::debugText(cs),
-                                         (*token)->character()}));
-              return Property(Missing{});
-            }
-          }
-          const auto delimiters = (*sub)->get("delimiter");
-          if (!delimiters)
-            property_host::typeError(
-                "Cannot read properties of undefined (reading 'lookup')");
-          const auto value =
-              delimiters->lookup(property_host::debugText(u"\\" + other));
-          if (const auto *token = std::get_if<TokenRef>(&value);
-              token && *token) {
-            NewcommandUtil::addDelimiter(parser, u"\\" + cs,
-                                         string((*token)->character()),
-                                         (*token)->attributes());
-            return Property(Missing{});
-          }
-          NewcommandUtil::checkProtectedMacros(parser, cs);
-          NewcommandUtil::undefineMacro(parser, cs);
-          NewcommandUtil::undefineDelimiter(parser, u"\\" + cs);
-          return Property(Missing{});
-        }
-        ++parser.i;
-        const auto delimiters = (*sub)->get("delimiter");
-        if (!delimiters)
-          property_host::typeError(
-              "Cannot read properties of undefined (reading 'lookup')");
-        const auto value = delimiters->lookup(property_host::debugText(c));
-        if (const auto *token = std::get_if<TokenRef>(&value);
-            token && *token) {
-          NewcommandUtil::addDelimiter(parser, u"\\" + cs,
-                                       string((*token)->character()),
-                                       (*token)->attributes());
-          return Property(Missing{});
-        }
-        NewcommandUtil::addMacro(
-            parser, cs, method(runtime, u"Macro"),
-            Property(PropertyArray{property_host::debugText(c)}));
-        return Property(Missing{});
-      }));
-  add("MacroWithTemplate",
-      parseFn([](const FunctionReceiver &, ParserContext &context,
-                 const ParseAtom &nameAtom, ParseRest rest) -> ParseResult {
-        auto &parser = parserFrom(context);
-        const std::u16string name = string(atom(nameAtom));
-        const std::u16string definition = string(arg(rest, 0));
-        const std::u16string countText = string(arg(rest, 1));
-        const double count =
-            js_input::parseInt(countText, js_input::IntegerRadix::Decimal);
-        if (rest.size() > 2) {
-          parser.GetNext();
-          const Property first = arg(rest, 2);
-          if (property_host::truthy(first) &&
-              !NewcommandUtil::MatchParam(parser, string(first)))
-            throw TexError(
-                u"MismatchUseDef", u"Use of %1 doesn't match its definition",
-                std::array<Property, 1>{property_host::debugText(name)});
-          if (count) {
-            std::vector<Property> values;
-            for (double i = 0; i < count; ++i)
-              values.push_back(
-                  property_host::debugText(NewcommandUtil::GetParameter(
-                      parser, name,
-                      arg(rest, static_cast<std::size_t>(i + 3)))));
-            const Value list = array(runtimeFrom(parser), values);
-            const std::u16string expanded =
-                ParseUtil::substituteArgs(parser, list, definition);
-            const std::u16string suffix =
-                parser.string().substr(static_cast<std::size_t>(
-                    std::clamp(parser.i, 0.0,
-                               static_cast<double>(parser.string().size()))));
-            parser.setString(ParseUtil::addArgs(parser, expanded, suffix));
-            parser.i = 0;
-            ParseUtil::checkMaxMacros(parser);
-            return Property(Missing{});
-          }
-        }
-        const std::u16string suffix =
-            parser.string().substr(static_cast<std::size_t>(std::clamp(
-                parser.i, 0.0, static_cast<double>(parser.string().size()))));
-        parser.setString(ParseUtil::addArgs(parser, definition, suffix));
-        parser.i = 0;
-        ParseUtil::checkMaxMacros(parser);
-        return Property(Missing{});
-      }));
-  add("BeginEnv",
-      parseFn([](const FunctionReceiver &, ParserContext &context,
-                 const ParseAtom &beginAtom, ParseRest rest) -> ParseResult {
-        auto &parser = parserFrom(context);
-        StackItemRef beginRef;
-        if (const auto *v = std::get_if<StackItemRef>(&beginAtom))
-          beginRef = *v;
-        auto *begin =
-            beginRef ? dynamic_cast<BaseItem *>(beginRef.get()) : nullptr;
-        if (!begin)
-          property_host::typeError("Cannot read properties of null or "
-                                   "undefined (reading 'getName')");
-        const std::u16string name = property_host::string(
-            stack_property_host::scalar(begin->getName()));
-        Stack &stack = *std::get<std::shared_ptr<Stack>>(parser.stack);
-        const Property closing = property_host::get(stack.env(), "closing");
-        if (closing == property_host::debugText(name)) {
-          eraseProperty(stack.env(), "closing");
-          const Property beginN = property_host::get(stack.global, "beginEnv");
-          if (property_host::truthy(beginN)) {
-            property_host::set(stack.global, "beginEnv",
-                               Property(property_host::number(beginN) - 1));
-            const std::u16string endDef = string(arg(rest, 1));
-            if (!endDef.empty()) {
-              const auto &source = parser.string();
-              const std::u16string saved = source.substr(
-                  stringSliceStart(parser.i, source.size()));
-              const std::size_t prefixEnd =
-                  stringSubstringEnd(parser.i, source.size());
-              parser.setString(ParseUtil::addArgs(
-                  parser, source.substr(0, prefixEnd), endDef));
-              parser.Parse();
-              parser.setString(saved);
-              parser.i = 0;
-            }
-          }
-          BaseItem *item = createItem(parser, "end");
-          item->setProperty("name", property_host::debugText(name));
-          const auto factory = parser.itemFactory();
-          return std::get<std::shared_ptr<StackItemFactory>>(factory)
-              ->reference(item);
-        }
-        const Property countValue = arg(rest, 2);
-        const double count = js_input::parseInt(
-            string(countValue), js_input::IntegerRadix::Decimal);
-        std::u16string beginDef = string(arg(rest, 0)),
-                       endDef = string(arg(rest, 1));
-        if (property_host::truthy(countValue)) {
-          std::vector<Property> values;
-          const Property def = arg(rest, 3);
-          if (!def.missing() &&
-              !std::holds_alternative<PropertyNull>(def.value)) {
-            const Property optional =
-                parser.GetBrackets(u"\\begin{" + name + u"}");
-            values.push_back(
-                optional.missing() ||
-                        std::holds_alternative<PropertyNull>(optional.value)
-                    ? def
-                    : optional);
-          }
-          for (double i = static_cast<double>(values.size()); i < count; i += 1)
-            values.push_back(parser.GetArgument(u"\\begin{" + name + u"}"));
-          const Value list = array(runtimeFrom(parser), values);
-          beginDef = ParseUtil::substituteArgs(parser, list, beginDef);
-          endDef = ParseUtil::substituteArgs(
-              parser, array(runtimeFrom(parser), std::span<const Property>{}),
-              endDef);
-        }
-        const std::u16string suffix =
-            parser.string().substr(static_cast<std::size_t>(std::clamp(
-                parser.i, 0.0, static_cast<double>(parser.string().size()))));
-        parser.setString(ParseUtil::addArgs(parser, beginDef, suffix));
-        parser.i = 0;
-        const Property old = property_host::get(stack.global, "beginEnv");
-        property_host::set(
-            stack.global, "beginEnv",
-            Property(
-                (property_host::truthy(old) ? property_host::number(old) : 0) +
-                1));
-        BaseItem *item = createItem(parser, "beginEnv");
-        item->setProperty("name", property_host::debugText(name));
-        const auto factory = parser.itemFactory();
-        return std::get<std::shared_ptr<StackItemFactory>>(factory)->reference(
-            item);
-      }));
-  const Property base = BaseMethods::get(runtime, u"Macro");
-  if (const auto *fn = std::get_if<FunctionRef>(&base.value); fn && *fn)
-    methods.set("Macro", Property(*fn));
-  else
-    throw Exception("Unimplemented", u"Newcommand requires BaseMethods.Macro");
-  runtime.newcommandMethods = Property(std::move(methods));
-  return runtime.newcommandMethods;
+DispatchOutcome NewcommandMethods::NewCommand(TexParser &p, MacroInvocation const &invocation) {
+    auto name = invocation.dispatch_token;
+    auto cs = NewcommandUtil::GetCsNameArgument(p, name);
+    auto count = NewcommandUtil::GetArgCount(p, name);
+    auto optional = p.GetBrackets(name);
+    MacroDefinition definition;
+    definition.replacement_source = p.GetArgument(name).value();
+    definition.arity = count ? number(*count) : 0;
+    definition.default_first_argument = optional;
+    definition.substitute_parameters = count && !count->empty();
+    NewcommandUtil::addMacro(p, cs, CommandDefinition{cs, std::move(definition)});
+    return pushNull(p);
 }
-Property NewcommandMethods::get(ParserRuntime &runtime,
-                                std::u16string_view name) {
-  if (runtime.newcommandMethods.missing())
-    initializeModule(runtime);
-  return property_host::get(runtime.newcommandMethods,
-                            property_host::debugText(name));
+DispatchOutcome NewcommandMethods::NewEnvironment(TexParser &p, MacroInvocation const &invocation) {
+    auto name = invocation.dispatch_token;
+    auto env = UnitUtil::instance().trimSpaces(p.GetArgument(name).value());
+    auto count = NewcommandUtil::GetArgCount(p, name);
+    auto optional = p.GetBrackets(name);
+    auto begin = p.GetArgument(name).value();
+    auto end = p.GetArgument(name).value();
+    NewcommandUtil::addEnvironment(
+        p, env,
+        EnvironmentDefinition{std::move(begin), std::move(end), count ? number(*count) : 0,
+                              std::move(optional), count && !count->empty()});
+    return pushNull(p);
+}
+DispatchOutcome NewcommandMethods::MacroDef(TexParser &p, MacroInvocation const &invocation) {
+    auto name = invocation.dispatch_token;
+    auto cs = NewcommandUtil::GetCSname(p, name);
+    auto definition = NewcommandUtil::GetTemplate(p, name, u"\\" + cs);
+    definition.replacement_source = p.GetArgument(name).value();
+    NewcommandUtil::addMacro(p, cs, CommandDefinition{cs, std::move(definition)});
+    return pushNull(p);
+}
+DispatchOutcome NewcommandMethods::Let(TexParser &p, MacroInvocation const &invocation) {
+    auto name = invocation.dispatch_token;
+    auto cs = NewcommandUtil::GetCSname(p, name);
+    auto c = p.GetNext();
+    if (c == u"=") {
+        p.setPosition(p.position() + 1);
+        c = p.GetNext();
+    }
+    auto &handlers = p.configuration.handlers;
+    p.Push(p.itemFactory().create(StackKind::null_item));
+    if (c == u"\\") {
+        auto target = NewcommandUtil::GetCSname(p, name);
+        if (cs == target)
+            return NoParseResult{};
+        auto map = handlers.get(HandlerKind::macro)->applicable(target);
+        if (dynamic_cast<MacroMap *>(map.get())) {
+            auto lookup = map->lookup(target);
+            if (auto command = std::get_if<CommandDefinition const *>(&lookup);
+                command && *command) {
+                auto definition = **command;
+                NewcommandUtil::addMacro(p, cs, std::move(definition));
+                return NoParseResult{};
+            }
+            auto const &macro = **std::get_if<tex::Macro const *>(&lookup);
+            auto method = std::get<MacroHandler>(macro.function);
+            auto binding = p.configuration.callbacks().macroBinding(method);
+            NewcommandUtil::addMacro(
+                p, cs, CommandDefinition{macro.token, NativeMacroAlias{binding, macro.arguments}});
+            return NoParseResult{};
+        }
+        if (auto characterMap = dynamic_cast<CharacterMap *>(map.get());
+            characterMap && !dynamic_cast<DelimiterMap *>(map.get())) {
+            auto lookup = characterMap->lookup(target);
+            auto captured = **std::get_if<Token const *>(&lookup);
+            auto method = std::get<TokenInputHandler>(*characterMap->parser());
+            auto binding = p.configuration.callbacks().tokenBinding(method);
+            NewcommandUtil::addMacro(
+                p, cs, CommandDefinition{cs, CharacterMacroAlias{binding, std::move(captured)}});
+            return NoParseResult{};
+        }
+        auto lookup = handlers.get(HandlerKind::delimiter)->lookup(u"\\" + target);
+        if (auto delimiter = std::get_if<Token const *>(&lookup); delimiter && *delimiter) {
+            Token captured = **delimiter;
+            NewcommandUtil::addDelimiter(p, u"\\" + cs, captured.character, captured.attributes);
+            return NoParseResult{};
+        }
+        NewcommandUtil::checkProtectedMacros(p, cs);
+        NewcommandUtil::undefineMacro(p, cs);
+        NewcommandUtil::undefineDelimiter(p, u"\\" + cs);
+        return NoParseResult{};
+    }
+    p.setPosition(p.position() + 1);
+    auto lookup = handlers.get(HandlerKind::delimiter)->lookup(c);
+    if (auto delimiter = std::get_if<Token const *>(&lookup); delimiter && *delimiter) {
+        Token captured = **delimiter;
+        NewcommandUtil::addDelimiter(p, u"\\" + cs, captured.character, captured.attributes);
+        return NoParseResult{};
+    }
+    MacroDefinition definition;
+    definition.replacement_source = c;
+    NewcommandUtil::addMacro(p, cs, CommandDefinition{cs, std::move(definition)});
+    return NoParseResult{};
+}
+DispatchOutcome NewcommandMethods::MacroWithTemplate(TexParser &p,
+                                                     MacroInvocation const &invocation) {
+    MacroDefinition definition;
+    if (auto owned =
+            std::get_if<std::reference_wrapper<CommandDefinition const>>(&invocation.arguments))
+        definition = std::get<MacroDefinition>(owned->get().body);
+    else {
+        auto args = std::get<Arguments>(invocation.arguments);
+        definition.replacement_source = text(args, 0);
+        definition.arity = std::trunc(number(args, 1));
+        definition.parameter_template = args.size() > 2;
+        if (definition.parameter_template) {
+            definition.parameter_prefix = text(args, 2);
+            for (std::size_t i = 0; static_cast<double>(i) < definition.arity; ++i)
+                definition.parameter_delimiters.push_back(text(args, i + 3));
+        }
+    }
+    auto replacement = definition.replacement_source;
+    if (definition.parameter_template) {
+        std::vector<std::u16string> args;
+        p.GetNext();
+        if (!definition.parameter_prefix.empty() &&
+            !NewcommandUtil::MatchParam(p, definition.parameter_prefix))
+            error("MismatchUseDef", u"Use of %1 doesn't match its definition",
+                  invocation.dispatch_token);
+        if (definition.arity != 0 && !std::isnan(definition.arity)) {
+            for (std::size_t i = 0; static_cast<double>(i) < definition.arity; ++i) {
+                auto delimiter = i < definition.parameter_delimiters.size()
+                                     ? std::u16string_view(definition.parameter_delimiters[i])
+                                     : std::u16string_view{};
+                args.push_back(NewcommandUtil::GetParameter(
+                    p, invocation.dispatch_token,
+                    delimiter.empty() ? std::nullopt
+                                      : std::optional<std::u16string_view>(delimiter)));
+            }
+            replacement = parse_util::substituteArgs(p, args, replacement);
+        }
+    }
+    p.setString(parse_util::addArgs(p, replacement, p.string().substr(p.position())));
+    p.setPosition(0);
+    parse_util::checkMaxMacros(p);
+    return NoParseResult{};
+}
+StackEntry NewcommandMethods::BeginEnv(TexParser &p, FrameHandle const &begin, Arguments args) {
+    auto name = std::u16string(begin->getName().value_or(u"undefined"));
+    auto bdef = text(args, 0), edef = text(args, 1);
+    auto count = number(args, 2);
+    if (p.stack.env().closing_environment == name) {
+        p.stack.env().closing_environment.reset();
+        auto &depth = p.stack.global().begin_env_depth;
+        if (depth.value_or(0)) {
+            --*depth;
+            if (!edef.empty()) {
+                auto rest = std::u16string(p.string().substr(p.position()));
+                p.setString(parse_util::addArgs(p, p.string().substr(0, p.position()), edef));
+                p.Parse();
+                p.setString(std::move(rest));
+                p.setPosition(0);
+            }
+        }
+        auto result = p.itemFactory().create(StackKind::end);
+        dynamic_cast<EndItem &>(*result).name = name;
+        return result;
+    }
+    if (flag(args, 2)) {
+        std::vector<std::u16string> arguments;
+        auto command = u"\\begin{" + name + u"}";
+        if (present(args, 3)) {
+            auto optional = p.GetBrackets(command);
+            arguments.push_back(optional ? *optional : text(args, 3));
+        }
+        for (double i = static_cast<double>(arguments.size()); i < count; ++i)
+            arguments.push_back(p.GetArgument(command).value());
+        bdef = parse_util::substituteArgs(p, arguments, bdef);
+        edef = parse_util::substituteArgs(p, {}, edef);
+    }
+    p.setString(parse_util::addArgs(p, bdef, p.string().substr(p.position())));
+    p.setPosition(0);
+    p.stack.global().begin_env_depth = p.stack.global().begin_env_depth.value_or(0) + 1;
+    auto result = p.itemFactory().create(StackKind::begin_env);
+    dynamic_cast<BeginEnvItem &>(*result).name = name;
+    return result;
 }
 } // namespace folia::math::tex

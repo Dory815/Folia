@@ -179,6 +179,11 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/node_factory.ixx
     src/math/input/tex/node_util.ixx
     src/math/input/tex/boldsymbol/configuration.ixx
+    src/math/input/tex/newcommand/configuration.ixx
+    src/math/input/tex/newcommand/items.ixx
+    src/math/input/tex/newcommand/mappings.ixx
+    src/math/input/tex/newcommand/methods.ixx
+    src/math/input/tex/newcommand/util.ixx
     src/math/input/tex/color/constants.ixx
     src/math/input/tex/color/util.ixx
     src/math/output/scene/types.ixx
@@ -255,6 +260,11 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/node_factory.cpp
     src/math/input/tex/node_util.cpp
     src/math/input/tex/boldsymbol/configuration.cpp
+    src/math/input/tex/newcommand/configuration.cpp
+    src/math/input/tex/newcommand/items.cpp
+    src/math/input/tex/newcommand/mappings.cpp
+    src/math/input/tex/newcommand/methods.cpp
+    src/math/input/tex/newcommand/util.cpp
     src/math/input/tex/color/constants.cpp
     src/math/input/tex/color/util.cpp
     src/math/output/scene/scene.cpp
@@ -449,6 +459,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/node_factory_registration.cpp
     tests/math/node_factory.cpp
     tests/math/boldsymbol.cpp
+    tests/math/newcommand.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
