@@ -489,6 +489,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/xml_dom_adaptor.ixx
     src/math/core/dom_node.ixx
     src/math/core/dom_adaptor.ixx
+    src/math/core/find_math.ixx
+    src/math/input/tex/find_tex.ixx
     src/math/adaptors/lite_adaptor.ixx
     src/math/adaptors/lite/element.ixx
     src/math/adaptors/lite/text.ixx
@@ -507,6 +509,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/cancellation.ixx)
 target_sources(folia_math PRIVATE
     src/math/core/dom_adaptor.cpp
+    src/math/core/find_math.cpp
+    src/math/input/tex/find_tex.cpp
     src/math/core/mml_tree/xml_dom_adaptor.cpp
     src/math/adaptors/lite_adaptor.cpp
     src/math/adaptors/lite/element.cpp
@@ -691,6 +695,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mhchem.cpp
     tests/math/lite.cpp
     tests/math/xml_dom_adaptor.cpp
+    tests/math/find_tex.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp

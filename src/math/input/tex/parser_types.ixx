@@ -8,6 +8,7 @@ export import folia.math.input.tex.node_factory;
 export import folia.math.input.tex.session;
 export import folia.math.input.tex.tex_error;
 export import folia.math.input.tex.tex_scanner;
+export import folia.math.input.tex.find_tex;
 export import folia.math.core.tree.factory;
 import std;
 
@@ -23,7 +24,6 @@ class ConfigurationHandler;
 class ParserConfiguration;
 class Tags;
 class ColumnParser;
-class FindTeX;
 using TexFilterData = core::InputJaxFilterData<ParseOptions>;
 class CharacterMap;
 class TokenMap;

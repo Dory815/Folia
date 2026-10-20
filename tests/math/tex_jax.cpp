@@ -130,7 +130,7 @@ void observeCompilePre(TexFilterData &data) {
         throw std::runtime_error("Compile prefilter failed");
     if (probe.nestedJax && &data.document != probe.nestedDocument) {
         folia::math::core::AbstractMathItem nested(u"y", probe.nestedJax);
-        nested.compile(*probe.nestedDocument, probe.nestedOutput);
+        nested.compile(*probe.nestedDocument, {probe.nestedOutput});
     }
 }
 void observeCompilePost(TexFilterData &data) {
@@ -153,7 +153,7 @@ suite tex_jax = [] {
         {
             CompileOutput output(&destroyed);
             folia::math::core::AbstractMathItem math(u"x", f.jax.get());
-            math.compile(f.document, &output);
+            math.compile(f.document, {&output});
             expect(probe.observations.size() == 2_u);
             for (auto const &observation : probe.observations) {
                 expect(observation.output == &output);
@@ -182,7 +182,7 @@ suite tex_jax = [] {
         CompileProbe probe;
         ObserveCompilation observer(probe);
         folia::math::core::AbstractMathItem invalid(u"\\notACommand", f.jax.get());
-        invalid.compile(f.document, &output);
+        invalid.compile(f.document, {&output});
         expect(findNodes(*invalid.root, NodeKind::merror).size() == 1_u);
         expect(probe.observations.size() == 2_u);
         for (auto const &observation : probe.observations)
@@ -192,7 +192,7 @@ suite tex_jax = [] {
             probe.failPre = failBeforeParsing;
             probe.failPost = !failBeforeParsing;
             folia::math::core::AbstractMathItem failed(u"x", f.jax.get());
-            expect(throws<std::runtime_error>([&] { failed.compile(f.document, &output); }));
+            expect(throws<std::runtime_error>([&] { failed.compile(f.document, {&output}); }));
             expect(failed.root == nullptr);
             expect(failed.state() == folia::math::core::STATE.UNPROCESSED);
             expect(probe.observations.size() == std::size_t(failBeforeParsing ? 1 : 2));
@@ -224,7 +224,7 @@ suite tex_jax = [] {
         probe.nestedOutput = &innerOutput;
         ObserveCompilation observer(probe);
         folia::math::core::AbstractMathItem math(u"x", outer.jax.get());
-        math.compile(outer.document, &outerOutput);
+        math.compile(outer.document, {&outerOutput});
         expect(probe.observations.size() == 4_u);
         const std::array expectedOutputs{&outerOutput, &innerOutput, &innerOutput, &outerOutput};
         const std::array expectedDocuments{&outer.document, &inner.document, &inner.document,

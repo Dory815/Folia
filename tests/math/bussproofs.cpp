@@ -141,7 +141,7 @@ struct ProofFixture {
         document = std::make_unique<MmlDocument>();
         core::AbstractMathItem math(std::move(source), jax.get());
         math.setMetrics(16, 8, 640, 1);
-        return jax->compile(math, *document, withOutput ? &output : nullptr);
+        return jax->compile(math, *document, {withOutput ? &output : nullptr});
     }
     MmlNode &ok(std::u16string source) {
         auto &root = compile(std::move(source));

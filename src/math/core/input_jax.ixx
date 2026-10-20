@@ -10,6 +10,7 @@ template <class Data> struct InputJaxFilterData {
     mml::MmlDocument &document;
     Data &data;
     MathOutputJaxService *output{}; // borrowed only for this compile/filter invocation
+    AbstractDOMAdaptor *adaptor{}; // caller-owned foreign HTML services for this invocation
 };
 template <class Options, class Data> class AbstractInputJax : public MathInputJaxService {
   protected:
@@ -23,8 +24,9 @@ template <class Options, class Data> class AbstractInputJax : public MathInputJa
     }
     Data &executeFilters(FunctionList<InputJaxFilterData<Data> &> &filters, MathItem &math,
                          mml::MmlDocument &document, Data &data,
-                         MathOutputJaxService *output = nullptr) {
-        InputJaxFilterData<Data> arguments{math, document, data, output};
+                         CompileServices services = {}) {
+        InputJaxFilterData<Data> arguments{math, document, data, services.output,
+                                          services.adaptor};
         (void)filters.execute(arguments);
         return arguments.data;
     }

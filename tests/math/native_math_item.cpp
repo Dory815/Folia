@@ -25,10 +25,10 @@ struct RecordingInput final : core::MathInputJaxService {
     std::vector<std::optional<core::MathRecompile>> recompiles;
 
     mml::MmlNode& compile(core::MathItem& item, mml::MmlDocument& document,
-                          core::MathOutputJaxService* output = nullptr) override {
+                          core::CompileServices services = {}) override {
         ++calls;
         lastDocument = &document;
-        lastOutput = output;
+        lastOutput = services.output;
         states.push_back(item.state());
         recompiles.push_back(item.inputData.recompile);
         if (captureCounter) item.inputData.recompile = core::MathRecompile{item.state(), *captureCounter};
@@ -189,16 +189,16 @@ suite native_math_item = [] {
         RecordingOutput first, second;
         core::AbstractMathItem item(u"x", &input);
         core::MathItem& expression = item;
-        expression.compile(document, &first);
+        expression.compile(document, {&first});
         expect(input.lastOutput == &first);
         expect(input.calls == 1_i);
-        expression.compile(document, &second);
+        expression.compile(document, {&second});
         expect(input.calls == 1_i) << "Completed compile is still state-gated";
         expect(input.lastOutput == &first);
 
         expression.state(static_cast<core::MathState>(19));
         input.fail = true;
-        expect(throws<std::runtime_error>([&] { expression.compile(document, &second); }));
+        expect(throws<std::runtime_error>([&] { expression.compile(document, {&second}); }));
         expect(input.lastOutput == &second);
         expect(expression.state() == static_cast<core::MathState>(19));
         input.fail = false;

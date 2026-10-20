@@ -1,6 +1,6 @@
 # MathJax 原生移植交接入口
 
-当前：Lite/Xml/HTMLDomStrings/texhtml/Finder 已通过组件验收；最新 build exit 0（texhtml-final-build.log），四组 *-accepted-focus.log 全 exit 0。完整 texhtml-full.log exit 0：741 tests / 210529 assertions / 149 suites，无失败/跳过。DOM/Lite 已提交 4c379ef7；其余正在按职责提交。无活动 build/test；全部 Luna 冻结。额度已恢复。
+当前：Lite/Xml/HTMLDomStrings/texhtml/Finder 已通过组件验收；最新 build exit 0（texhtml-final-build.log），四组 *-accepted-focus.log 全 exit 0。完整 texhtml-full.log exit 0：741 tests / 210529 assertions / 149 suites，无失败/跳过。DOM/Lite 已提交 4c379ef7，Xml bridge 已提交 c9d76a1f；其余正在按职责提交。无活动 build/test；全部 Luna 冻结。额度已恢复。
 
 下一步：按 DOM/Lite、Xml bridge、CompileServices/Finder、HTMLDomStrings/texhtml 分批提交验收结果，再冻结 Common→Scene 的原 family emission 接口并分 Luna。旧 texhtml methods/services 已由原 configuration pair 接管，可连同未注册旧 UT 删除；旧 Finder host 有 inactive parser_runtime/render_session 入边，清理须显式处理。node_store/source_text_content 受保护 dirty Lite consumers 仍需，暂不删。
 

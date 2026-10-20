@@ -57,6 +57,7 @@ TexEnvironment const &ParseOptions::environment() const {
 }
 void ParseOptions::clear() {
     parsers.clear();
+    texhtmlAdaptor = nullptr;
     root = nullptr;
     nodeLists.clear();
     error = false;

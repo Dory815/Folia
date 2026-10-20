@@ -612,6 +612,26 @@ full-tree/serialization/parser/operations fixtures, lifecycle release and error
 recovery; then one full native math run. Package success still does not establish
 Common emission, final SVG equality or Folia integration.
 
+The existing MathInputJaxService/MathItem/TeX compile chain receives one native
+CompileServices value containing borrowed output-jax and DOM-adaptor pointers.
+This replaces the output-only argument, without a parallel compile path.
+InputJaxFilterData carries both borrows; the texhtml prefilter copies the adaptor
+borrow to ParseOptions and its postfilter clears it. An exception scope clears
+that request borrow as well. The caller owns the adaptor for this invocation;
+neither TexSessionState nor a generic package-data map retains it.
+
+The real texhtml render tests also require original string delimiter discovery;
+the remaining old FindTeX/FindMath object interfaces are not native services.
+Port those original pairs, retaining the delimiter/brace/environment/escape/ref
+algorithms. core/MathItem owns ProtoItem and protoItem(), with top-level string
+index n, start.n/end.n UTF-16 offsets, open/close strings and MathDisplay's
+inline/display/escaped value. FindMath accepts span<const u16string> and returns
+vector<ProtoItem>; AbstractFindMath<Options> owns the derived typed option value.
+FindTeXOptions has inline/display delimiter-pair vectors and three named bools.
+FindTeX owns its compiled regexes and finite delimiter table, never input text
+or a process cache. No Context, DOM-query overload, arbitrary class override or
+alternate delimiter finder belongs in these native owners.
+
 ## Ownership
 
 ### CSS stylesheet dependency for Common (2026-10-20)

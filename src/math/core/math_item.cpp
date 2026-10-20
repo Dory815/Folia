@@ -3,6 +3,11 @@ module folia.math.core.math_item;
 import std;
 
 namespace folia::math::core {
+ProtoItem protoItem(std::u16string open, std::u16string math, std::u16string close,
+                   std::size_t n, std::size_t start, std::size_t end, MathDisplay display) {
+    return {std::move(math), {start}, {end}, std::move(open), std::move(close), n, display};
+}
+
 void AbstractMathItem::render(MathRenderActionsService& actions,
                               mml::MmlDocument& document) {
     actions.renderMath(*this, document);
@@ -21,12 +26,12 @@ void AbstractMathItem::convert(MathRenderActionsService& actions,
     actions.renderConvert(*this, document, end);
 }
 
-void AbstractMathItem::compile(mml::MmlDocument& document, MathOutputJaxService* output) {
+void AbstractMathItem::compile(mml::MmlDocument& document, CompileServices services) {
     if (this->state() < STATE.COMPILED) {
         if (!inputJax) {
             throw std::logic_error("MathItem compile requires an input jax");
         }
-        auto& compiled = inputJax->compile(*this, document, output);
+        auto& compiled = inputJax->compile(*this, document, services);
         if (&compiled.document() != &document) {
             throw std::invalid_argument("MathItem compile result belongs to another MML document");
         }

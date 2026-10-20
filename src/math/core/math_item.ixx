@@ -2,6 +2,7 @@
 // MathJax 4.1.3 core/MathItem.ts; Apache-2.0.
 export module folia.math.core.math_item;
 export import folia.math.core.mml_tree.mml_document;
+export import folia.math.core.dom_adaptor;
 export import folia.math.output.scene;
 export import folia.math.util.bbox;
 import std;
@@ -27,6 +28,20 @@ struct MathStates {
 inline constexpr MathStates STATE;
 
 enum class MathDisplay : std::uint8_t { inline_math, display_math, escaped };
+// Source protoItem() results before HTMLDocument maps string offsets to DOM nodes.
+struct ProtoItemLocation {
+    std::size_t n{};
+};
+struct ProtoItem {
+    std::u16string math;
+    ProtoItemLocation start, end;
+    std::u16string open, close;
+    std::size_t n{};
+    MathDisplay display{MathDisplay::escaped};
+};
+ProtoItem protoItem(std::u16string open, std::u16string math, std::u16string close,
+                   std::size_t n, std::size_t start, std::size_t end,
+                   MathDisplay display = MathDisplay::escaped);
 struct MathMetrics {
     double em;
     double ex;
@@ -48,13 +63,17 @@ struct MathOutputData {
 
 class MathItem;
 class MathOutputJaxService;
+struct CompileServices {
+    MathOutputJaxService* output{};
+    AbstractDOMAdaptor* adaptor{};
+};
 // Retained existing service roles, narrowed to the native expression pipeline.
 // No service owns a MathItem or a second MmlDocument.
 class MathInputJaxService {
 public:
     virtual ~MathInputJaxService() = default;
     virtual mml::MmlNode& compile(MathItem&, mml::MmlDocument&,
-                                 MathOutputJaxService* output = nullptr) = 0;
+                                 CompileServices = {}) = 0;
 };
 class MathOutputJaxService {
 public:
@@ -94,7 +113,7 @@ public:
                           MathState start = STATE.RERENDER) = 0;
     virtual void convert(MathRenderActionsService&, mml::MmlDocument&,
                          MathState end = STATE.LAST) = 0;
-    virtual void compile(mml::MmlDocument&, MathOutputJaxService* output = nullptr) = 0;
+    virtual void compile(mml::MmlDocument&, CompileServices = {}) = 0;
     virtual void typeset(MathOutputJaxService&, mml::MmlDocument&) = 0;
     // Core Source defaults only; no HTML insertion shell is implemented.
     virtual void updateDocument() = 0;
@@ -124,7 +143,7 @@ public:
                   MathState start = STATE.RERENDER) override;
     void convert(MathRenderActionsService&, mml::MmlDocument&,
                  MathState end = STATE.LAST) override;
-    void compile(mml::MmlDocument&, MathOutputJaxService* output = nullptr) override;
+    void compile(mml::MmlDocument&, CompileServices = {}) override;
     void typeset(MathOutputJaxService&, mml::MmlDocument&) override;
     void updateDocument() override;
     void removeFromDocument(bool restore = false) override;

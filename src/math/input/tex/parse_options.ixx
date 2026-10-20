@@ -194,6 +194,7 @@ public:
     TexEquationState equation;
     std::vector<TexParser*> parsers;
     core::MathItem* mathItem{};
+    AbstractDOMAdaptor* texhtmlAdaptor{}; // set/cleared by package filters; request borrow only
     mml::MmlNode* root{};
     std::unordered_map<std::u16string, std::vector<mml::MmlNode*>> nodeLists;
     bool error{};

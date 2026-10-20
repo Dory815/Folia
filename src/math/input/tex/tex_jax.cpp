@@ -34,6 +34,12 @@ TexOptionValues packageOptions(TexOptionValues supplied) {
 mml::MmlNode &formatDefaultError(TeX &jax, TexError const &error) {
     return jax.formatError(error);
 }
+struct CompileScope {
+    ParseOptions &options;
+    ~CompileScope() {
+        options.texhtmlAdaptor = nullptr;
+    }
+};
 } // namespace
 
 TexOptionValues TeX::defaults() {
@@ -106,12 +112,13 @@ void TeX::reset(std::int64_t offset) {
     parseOptions_->tags->reset(offset);
 }
 mml::MmlNode &TeX::compile(core::MathItem &math, mml::MmlDocument &document,
-                          core::MathOutputJaxService *output) {
+                          core::CompileServices services) {
     setMmlFactory(document.factory());
     auto &parsed = *parseOptions_;
     parsed.clear();
+    const CompileScope scope{parsed};
     parsed.mathItem = &math;
-    executeFilters(preFilters, math, document, parsed, output);
+    executeFilters(preFilters, math, document, parsed, services);
     latex_ = math.math;
     parsed.tags->startEquation(math);
     std::unique_ptr<TexParser> parser;
@@ -133,7 +140,7 @@ mml::MmlNode &TeX::compile(core::MathItem &math, mml::MmlDocument &document,
         root.attributes().set(u"display", u"block");
     parsed.tags->finishEquation(math);
     parsed.root = &root;
-    executeFilters(postFilters, math, document, parsed, output);
+    executeFilters(postFilters, math, document, parsed, services);
     if (parser) {
         auto const &width = parser->stack.env().horizontal_size;
         if (width && !width->empty()) {
