@@ -64,6 +64,18 @@ for (const [name, tex, display, width, features] of [
   ['scene-prescript-sub-slot', '\\prescript{}{b}{X}', false, 1280, ['mathtools']],
   ['scene-prescript-both-slots', '\\prescript{a}{b}{X}', false, 1280, ['mathtools']],
 ]) cases.push({name, tex, display, width, features});
+// Inline break coordination, text-space opportunities and an empty zero-style
+// frame are captured as complete Source output, including root geometry.
+for (const [name, tex, display, width, features] of [
+  ['scene-inline-break-before', 'x\\mmlToken{mo}[linebreak="newline" linebreakstyle="before"]{+}y', false, 1280, ['base']],
+  ['scene-inline-break-after', 'x\\mmlToken{mo}[linebreak="newline" linebreakstyle="after"]{+}y', false, 1280, ['base']],
+  ['scene-text-wordbreak', '\\text{one two three four}', true, 40, ['base']],
+  ['scene-zero-size-frame', '\\bbox[border:0px solid]{}', false, 1280, ['bbox']],
+]) cases.push({name, tex, display, width, features});
+for (const [name, tex, display, width] of [
+  ['scene-vertical-extender-assembly', '\\left(\\frac{a}{\\frac{b}{\\frac{c}{d}}}\\right)', true, 1280],
+  ['scene-horizontal-extender-assembly', '\\overbrace{abcdefghij}', true, 1280],
+]) cases.push({name, tex, display, width, features: ['base']});
 
 function cpp(value) {
   // MSVC rejects a single string literal token beyond 16K; keep each emitted
@@ -94,6 +106,20 @@ function attr(svg, name) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return rootTag.match(new RegExp('\\b' + escaped + '="([^"]*)"'))?.[1] ?? '';
 }
+function nestedAssemblyPieces(svg, axis) {
+  const openings = [...svg.matchAll(/<svg\b[^>]*>/g)];
+  const transform = axis === 'vertical'
+    ? /transform="scale\(1,[^)]+\)"/
+    : /transform="scale\([^,]+,1\)"/;
+  const pieces = [];
+  for (const opening of openings.slice(1)) {
+    const close = svg.indexOf('</svg>', opening.index);
+    if (close < 0) continue;
+    const piece = svg.slice(opening.index, close + '</svg>'.length);
+    if (piece.includes('<path data-c=') && transform.test(piece)) pieces.push(piece);
+  }
+  return pieces;
+}
 
 async function capture() {
   const ref = createReference(); // exactly once per process; profile/pins validated there
@@ -110,6 +136,14 @@ async function capture() {
       root: {width: attr(svg, 'width'), height: attr(svg, 'height'), viewBox: attr(svg, 'viewBox'),
         xmlns: attr(svg, 'xmlns')},
       geometry: [...svg.matchAll(/<(?:path|rect|line|polygon|g)\b[^>]*>/g)].map(m => m[0])});
+  }
+  const byName = new Map(records.map(record => [record.name, record]));
+  for (const [name, axis] of [['scene-vertical-extender-assembly', 'vertical'],
+                              ['scene-horizontal-extender-assembly', 'horizontal']]) {
+    const record = byName.get(name);
+    assert.ok(record && !record.error, `${name} must convert in pinned Source`);
+    const pieces = nestedAssemblyPieces(record.svg, axis);
+    assert.ok(pieces.length > 0, `${name} must contain Source nested SVG extender pieces`);
   }
   return {records};
 }
