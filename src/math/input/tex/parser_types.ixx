@@ -1,56 +1,134 @@
-// Same-owner forwards for the genuine cyclic MathJax TeX class graph.
+// Typed values and same-owner declarations for the MathJax TeX class graph.
 export module folia.math.input.tex.parser:types;
-export import folia.math.core.input_jax;
-export import folia.math.input.tex.find_tex;
-export import folia.math.input.tex.stack_item_factory;
-export import folia.math.input.tex.map_handler;
+export import folia.math.core.mml_tree.mml_document;
+export import folia.math.core.math_item;
+export import folia.math.input.tex.environment;
+export import folia.math.input.tex.node_factory;
+export import folia.math.input.tex.session;
 export import folia.math.input.tex.tex_error;
-export import folia.math.util.native_identities;
-export import folia.math.util.string_map;
-export import folia.math.util.unicode_normalization;
+export import folia.math.input.tex.tex_scanner;
+export import folia.math.core.tree.factory;
 import std;
+
 export namespace folia::math::tex {
-class ParserRuntime;
-class Configuration;
-class ParserConfiguration;
+class BaseItem;
+class Stack;
+class StackItemFactory;
 class ParseOptions;
 class TexParser;
-class Tags;
-class AbstractTags;
-class ColumnParser;
-class ArrayItem;
 class TeX;
-class Label;
-class TagInfo;
-struct TagsClassInfo;
-class KeyValueDef;
-template<class T>using ParserShared=std::variant<Missing,PropertyNull,std::shared_ptr<T>>;
-template<class T>using ParserBorrowed=std::variant<Missing,PropertyNull,T*>;
-using ConfigurationRef=std::shared_ptr<Configuration>;
-using ParserConfigurationRef=std::shared_ptr<ParserConfiguration>;
-using ParseOptionsRef=std::shared_ptr<ParseOptions>;
-using TexParserRef=std::shared_ptr<TexParser>;
-using TagsRef=std::shared_ptr<Tags>;
-using TeXRef=std::shared_ptr<TeX>;
-using KeyValueType=std::shared_ptr<KeyValueDef>;
-using TagsClassRef=std::shared_ptr<TagsClassInfo>;
-using LabelRef=std::shared_ptr<Label>;
-using TagInfoRef=std::shared_ptr<TagInfo>;
-// Source ordinary records/arrays/callback tuples retain Context handles.
-using ProcessorValue=options::Value;
-using ProcessorListValue=options::Value;
-using StackItemConfigValue=options::Value;
-using TagsConfigValue=options::Value;
-using TagFormat=options::Value; // string | string[]; clearTag also passes null.
-using ParserArray=std::shared_ptr<std::vector<TexParserRef>>;
-using TagInfoArray=std::shared_ptr<std::vector<TagInfoRef>>;
-using StackItemClassRef=tree::FactoryClassRef<BaseItem>;
-// Source Newcommand dispatches to packageData.begingroup.stack dynamically.
-// This native protocol exposes the actual stack method without making the
-// Newcommand module import the concrete Begingroup module in a cycle.
-class GlobalDefinitionScope:public NativeObject {
-public:
-    virtual std::vector<TokenMapRef> checkGlobal(PropertyArray tokens,PropertyArray maps)=0;
+class Configuration;
+class ConfigurationHandler;
+class ParserConfiguration;
+class Tags;
+class ColumnParser;
+class FindTeX;
+struct TexFilterData;
+class CharacterMap;
+class TokenMap;
+class MapHandler;
+class SubHandlers;
+struct TexOptionValues;
+struct Macro;
+
+enum class StackKind {
+    base, start, stop, open, close, null_item, prime, subsup, over, left, middle,
+    right, break_item, begin, end, style, position, cell, mml, fn, not_item,
+    nonscript, dots, array, eqnarray, equation, mstyle, cases_begin, multline,
+    flalign, multlined, proof_tree, braket, begin_env, auto_open, dummy
 };
-using GlobalDefinitionScopeRef=std::shared_ptr<GlobalDefinitionScope>;
+
+using FrameHandle = std::shared_ptr<BaseItem>;
+
+struct StackGlobal {
+    bool is_inner{true};
+    std::optional<bool> is_sandbox;
+    std::optional<std::u16string> empheq;
+    std::optional<std::size_t> begin_env_depth;
+    std::optional<std::u16string> left_root, up_root;
+    std::optional<std::u16string> indent_align;
+};
+
+using EnvironmentScope = std::shared_ptr<TexEnvironment>;
+using SourceSnapshot = std::shared_ptr<std::u16string const>;
+using StackEntry = std::variant<std::monostate, mml::MmlNode*, FrameHandle>;
+// A handler can receive a different parser from the one doing bookkeeping.
+// The small token value survives replacement of either scanner's source.
+struct ParseInput { TexParser& parser; std::u16string token; };
+
+// The selected TeX map callbacks consume mathematical definition data, not
+// erased language arguments. Token, TexArgument and CommandDefinition are
+// imported native values from the independent token/session modules above.
+struct TokenInput { std::variant<std::u16string_view, Token const*> value; };
+struct ContinueDispatch {};
+struct Handled {};
+struct ReturnedFrame { FrameHandle frame; };
+struct InvokeFallback {};
+struct NoParseResult {};
+using DispatchOutcome = std::variant<ContinueDispatch, Handled, ReturnedFrame,
+                                     InvokeFallback, NoParseResult>;
+using MacroArguments = std::variant<std::span<TexArgument const>,
+                                    std::reference_wrapper<CommandDefinition const>>;
+struct MacroInvocation {
+    std::u16string_view input_token;
+    std::u16string_view dispatch_token;
+    MacroArguments arguments;
+};
+using MacroHandler = DispatchOutcome (*)(TexParser&, MacroInvocation const&);
+using EnvironmentBodyHandler = StackEntry (*)(TexParser&, FrameHandle const&,
+                                               std::span<TexArgument const>);
+using MacroMethod = std::variant<MacroHandler, EnvironmentBodyHandler>;
+using EnvironmentHandler = DispatchOutcome (*)(TexParser&, std::u16string_view,
+    EnvironmentBodyHandler, std::span<TexArgument const>);
+using TokenInputHandler = DispatchOutcome (*)(TexParser&, TokenInput const&);
+using TokenMapParser = std::variant<TokenInputHandler, MacroHandler,
+                                    EnvironmentBodyHandler, EnvironmentHandler>;
+enum class HandlerKind { delimiter, macro, character, environment };
+using FallbackHandler = void (*)(TexParser&, std::u16string_view);
+
+struct ReuseTop {};
+struct ReuseIncoming {};
+using ReplayEntry = std::variant<FrameHandle, mml::MmlNode*, ReuseTop, ReuseIncoming>;
+enum class CheckAction { accept, drop, replay };
+
+// Define special members out of line after the complete BaseItem declaration.
+struct CheckResult {
+    CheckAction action{CheckAction::accept};
+    std::vector<ReplayEntry> replacements;
+    CheckResult(CheckAction);
+    CheckResult(std::vector<ReplayEntry>);
+    ~CheckResult();
+    CheckResult(CheckResult&&) noexcept;
+    CheckResult& operator=(CheckResult&&) noexcept;
+    CheckResult(CheckResult const&) = delete;
+    CheckResult& operator=(CheckResult const&) = delete;
+};
+
+// Actual Source constructor shapes. Post-create fields stay on their classes.
+struct NoItemInit {};
+struct StartItemInit { StackGlobal& global; };
+struct MmlItemInit { mml::MmlNode& node; };
+struct FnItemInit { mml::MmlNode& function; };
+struct SubsupItemInit { mml::MmlNode& base; };
+struct PrimeItemInit { mml::MmlNode& base; mml::MmlNode& prime; };
+struct LeftItemInit { std::u16string delimiter; };
+struct MiddleRightItemInit { std::u16string delimiter; std::optional<std::u16string> color; };
+struct BreakItemInit { std::u16string linebreak; bool insert; };
+struct EquationItemInit { bool numbered; };
+struct EqnArrayItemInit { std::u16string name; bool numbered; bool taggable; };
+struct MultlineItemInit { bool numbered; };
+struct FlalignItemInit { std::u16string name; bool numbered; bool padded; bool center; };
+struct MstyleItemInit { mml::AttributeSet attributes; std::u16string name; };
+// The configured MtMultlined call passes a parser object as defaultTags.
+// Actual Source getTag consumes only its truth value: this marker means true,
+// without retaining the parser/begin arguments that its constructor ignores.
+struct MultlinedItemInit {};
+using StackItemInit = std::variant<NoItemInit, StartItemInit, MmlItemInit,
+    FnItemInit, SubsupItemInit, PrimeItemInit, LeftItemInit, MiddleRightItemInit,
+    BreakItemInit, EquationItemInit, EqnArrayItemInit, MultlineItemInit,
+    FlalignItemInit, MstyleItemInit, MultlinedItemInit>;
+struct StackBuildArguments {
+    StackItemFactory& factory;
+    StackItemInit const& init;
+};
 }

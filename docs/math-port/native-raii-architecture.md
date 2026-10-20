@@ -285,6 +285,30 @@ and maps; it cannot contain functions, prototypes, object handles, arbitrary
 `std::any`, property traps, or a universal invocation API. Mathematical attribute
 maps and macro dictionaries are legitimate domain data, not JS objects.
 
+`parse_options.ixx` contains the finite `TexOptionValues` schema and the original
+ParseOptions service declaration. It covers the 42 option fields observed in
+the pinned profile through explicit scalar, callback and package-specific
+records. Each optional distinguishes absence from false, zero or an empty
+string. Source callback options are fixed C++ function pointers; macro and
+environment options reuse the existing owned definition values. The schema is
+not a parser, a package implementation or proof that these callbacks are bound.
+
+`mergeDefaults` follows Options.defaultOptions: later present fields replace
+earlier ones, package records and named dictionaries merge recursively, and
+arrays are copied/replaced. It does not mean "fill missing fields", and it does
+not implement userOptions warnings or the string-facing setoptions dispatcher.
+Permission records retain the distinction between a denied package and a
+per-option permission map. Real RegExp state remains shared where Source keeps
+the same regular expression; no general runtime object model is involved.
+
+The input jax must own one effective option record. Requests borrow it and the
+math-style function captured at input-jax construction. Later mathStyle option
+updates do not select a new resolver. `ParseOptions::getVariant` implements the
+four actual Source functions, including Unicode 16 NFD for French style; the
+constructor and its configured factory/Tags/ColumnParser collaboration remain
+incomplete. The actual parser primary currently exports `:types` and
+`:parse_options`; it does not export or call the withdrawn Context runtime.
+
 ## File responsibility map
 
 | Files | Responsibility |

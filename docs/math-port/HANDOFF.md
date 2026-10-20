@@ -11,9 +11,32 @@
 
 ### 恢复时先用这个短检查点
 
+- **最新实际代码：原ParseOptions已原位移除Context实现并纳入构建**。`parser_types.ixx`
+  已从审过的候选推广（增加core MathItem及FindTeX/TexFilterData前置声明）；parser_family
+  当前只导出真实已构建的:types、:parse_options，没有旧runtime/fallback/第二parser。
+  parse_options.ixx含42个观测top-level字段的TexOptionValues稀疏类型记录、14个包选项组及
+  原ParseOptions服务声明。cpp实现这些值的mergeDefaults和原四种getVariant；约138行，
+  不是另建helper或新的JS对象模型。**构造、factory/Tags/ColumnParser、临时列表方法仍只有
+  声明，不能实例化完整ParseOptions/渲染TeX。三个配置类本轮仍未改写。**
+  **新确认Source语义：defaultOptions是后层覆盖前层，不是仅补缺省**。原Options.ts/CJS
+  insert实际递归合并record，数组复制/替换；native optional区分缺席/false/0/空串，权限保留
+  bool整包规则与子选项map区别，macro定义复用session已验纯值。userOptions warnings、
+  setoptions字符串分发、包默认值绑定尚未实现。不要重新猜测合并方向或自动重选mathStyle。
+  tex-parse-options-source.cjs六TS/CJS锁、240个样式观察+实际Options合并观察通过；Source
+  只生成style fixture，tests/math/parse_options.cpp是手写表驱动。原generic receiver两个
+  clear Context测试已删（withdrawn JS API）；real_owner旧测试含root/list/clear数学状态需求，
+  保留待原位改写，不在构建图/不算通过。原ParseOptions.cpp旧约739行实现已被替代。
+  构建89232/51362均终态exit0；parse-options-build.log、parse-options-tests-build.log。
+  focused五项/266断言exit0；**最新完整329项/133,835断言exit0**，parse-options-full.log，
+  句柄41215已终态。没有live build/native/agent。原13项无关改动继续保护。
+  **下一步**：原configuration.ixx应导入此canonical :parse_options值schema，不再写另一份
+  ProfileTables/option schema；闭合原Configuration、ConfigurationHandler、ParserConfiguration
+  三职责，init/config使用已验FunctionList。需要SubHandlers时推广原map_handler家族职责，
+  不建新profile facade或接口空壳。随后完成ParseOptions真正构造及原服务方法，再接Parser。
+
 - **本轮配置前置已恢复原Unicode16Normalization到实际folia_math图**，复用原算法和
-  本轮代码/夹具提交`158d828e`，仅原13项受保护修改留在worktree。
   数据，未另写NFD实现。French样式需要这个依赖，但不是French resolver验收。
+  本轮代码/夹具提交`158d828e`；原13项受保护修改保留。
   原reference_unicode_normalization.cpp含20,077行/8.67MB生成C++测试数据，首次编译
   cl占5.2GB；Root核对进程命令后主动停止该次编译，句柄27161终态exit1，非测试崩溃。
   已改成原职责名tests/math/unicode_normalization.cpp（约85行）+fixtures/unicode/
@@ -48,7 +71,7 @@
 - 保留原MathJax文件/类职责和已验证C++算法，去掉通用JS对象语义模拟，使用领域类型/RAII。
   不重写另一套parser/layout，不堆释放补丁，不自行reset。Mermaid暂停；Folia只先接SVG，
   不加D2D像素门槛。优先Luna，必要时仅6.1 sol；一次构建、--parallel 4，正常本地测试用语。
-- **最新完整Math组件：316项/33,615断言，exit0**，
+- **历史完整Math组件基线：316项/33,615断言，exit0**，
   `build/math-port/native-definitions-begingroup-final-full.log`，句柄5272已终态。
   构建48807/3406均终态exit0，日志native-definition-values-build.log、native-begingroup-build.log。
   当前无live build/native；完整TeX→SVG、38包接通和Folia替换仍未完成。
