@@ -9,36 +9,48 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（当前未提交批次）
+### 恢复时先用这个短检查点（2026-10-20 已验收提交）
 
-- **用户最新反馈：反对 `native function list` 这类无职责意义的命名，以及保留旧文件后另建实现。**
-  本轮已核对实际文件与 Git：`2022cb1a` 已将测试 `native_function_list.cpp` 归名
-  `tests/math/function_list.cpp`；`e6126948` 已删除旧参数对象模拟测试和配置投影。
-  唯一当前 FunctionList 实现在原 `src/math/util/function_list.ixx`，CMake 引用该接口。
-  **不要在恢复后再次把这些已完成改动当成新的待办，也不要声称本轮又做了一遍。**
-  旧 `function_list_bindings.{ixx,cpp}` 仍被尚未改写的 handler_context_bindings、
-  parser_runtime、output_jax、common_bindings 引用；未进入当前构建不代表全图清理完成。
-  后续在各消费者原职责内改写并移除旧连接，不新增 native/new/typed 第二套实现。
-- **当前实现批次尚未闭合构建，最近通过的完整结果仍是下节409项。** Root 已把
-  `core/input_jax.ixx` 改为 `AbstractInputJax<Options,Data>`，删除纯模板不再需要的
-  `core/input_jax.cpp`；`parser_types.ixx` 使用真实 `InputJaxFilterData<ParseOptions>`，
-  `tex_jax.ixx` 声明真实 TeX owner 并由 parser_family 导出。
-  **tex_jax.cpp 仍是旧实现，CMake 尚未接入本批次，当前工作树不可宣称编译通过。**
-  架构文档记录了 options/session/configuration/ParseOptions 所有权；DOM 查找仍待实现。
-- RangeDef 已补 Source 第五个 optional variant 字段；operator-data.cjs 生成器已修改，
-  生成到忽略目录 `build/math-port/operator-variant-generator` 后只复制原字典实现。
-  原数据仅六行变化，新增区段字体断言；生成命令 exit0，C++测试尚未运行。
-- **代理已结束**：`/root/base_methods`（GPT-6.1 Sol）此轮负责原 FilterUtil 七个方法，
-  限定 `filter_util.{ixx,cpp}`、`tests/math/filter_util.cpp`、
-  `tools/math-port/tex-filter-util-source.cjs`。已交付7/7方法、9组原生测试。
-  代理报告正式 Source 检查覆盖7方法/24场景，从 C:\Windows 重放 exit0，TS/CJS及
-  完整profile锁通过；Root 尚未独立验收。文件已冻结，无 live agent/构建/测试句柄；
-  原生测试尚未编译/执行。
-- **精确下一步**：先审查该代理交付。NodeUtil 仍需原 copyAttributes：复制 attributes
-  值和已有 NodeProperties，**不复制 intrinsic texClass**，Source已由双方核实。
-  然后在原 BaseConfiguration/TeX/ParserConfiguration owner 中闭合实现及 CMake，
-  再做聚焦构建和测试。不要把旧 tex_jax.cpp 内嵌的 FilterUtil 保留为第二套实现。
-  原13项无关修改仍保护；本批次不涉及 destructive Git 操作，不改写提交历史。
+- **原 base 输入链已接通，完整 Math 回归430项/135,800断言 exit0。**
+  最终日志 `build/math-port/tex-jax-full-final.log`；句柄 **75033已终态**。
+  当前无 live agent、构建或测试。完整38包、TeX→SVG对照及Folia切换仍未完成，goal保持active。
+- **本轮提交**：`4d3567d3`（6文件）补 RangeDef 的 Source 第五个variant、原字典生成器
+  和 NodeUtil.copyAttributes；`6b1aeef5`（20文件）闭合原 TeX/BaseConfiguration/FilterUtil
+  及配置阶段、CMake、实际测试和Source检查。没有平行parser，也没有新增 native/new/typed
+  实现；core/input_jax纯模板无需.cpp，已删除旧.cpp。原tex_jax.cpp由878行旧对象调用
+  改为约140行真实编译生命周期，后处理全部归原FilterUtil职责，不保留内嵌旧副本。
+- **已验收职责**：core/input_jax使用 `AbstractInputJax<Options,Data>`，filter record借用
+  真实MathItem/MmlDocument/ParseOptions；TeX拥有session/configuration/ParseOptions，
+  每次compile绑定调用方document.factory、clear、pre、parser、tag、post和末尾hsize。
+  仅TexError转换为错误MML；其他异常传播；ParserScope在异常时RAII移除parser借用。
+  BaseConfiguration有Other/两回退错误/初始letter-digit优先级4/26items/BaseTags/nonscript。
+  七个FilterUtil按-7至-1注册，nonscript同-4先于moveLimits；配置config/add真实可用。
+  NodeUtil.copyAttributes复制完整attributes值和已有属性，**不复制intrinsic texClass**。
+  CJK normal来自原字典第五字段，不在Other硬编码区段。
+- **验收证据**：构建46824/97639/50986均终态exit0，最终`tex-jax-format-build.log`，并发4。
+  原生base configuration 6项/43断言、FilterUtil 9项/128断言、动态add 1项/6断言通过。
+  输入jax测试覆盖实际mathbb/分式/次数根式/脚本、用户与包filters顺序、错误格式器、hsize、
+  false停止和64个独立MmlDocument复用同一jax时产品数稳定/列表清理，全部已纳入完整430项。
+  首构建失败是测试打印optional值，改取.value；首聚焦失败是测试错误地从token.walkTree
+  读取TextNode，改用token.getText，生产算法未因此更改。只读审查找出formatError三行消息
+  差异，已按原`/\n.*/`无dotAll行为修正，并补LF/CR/U+2028/U+2029实际用例。
+- **Root独立重放Source**：`tex-filter-util-source.cjs`七方法/24场景；
+  `tex-base-configuration-source.cjs`8个真实TeX fixture；`tex-input-jax-source.cjs`6组
+  生命周期/配置fixture（含多行错误）；均从 C:\Windows 执行 exit0，TS/CJS及完整profile锁齐全。
+  `operator-data.cjs --check` exit0（27MO/50ranges/8spacing/1252operators/5patterns）。
+  Source因构造异常保留parser引用的行为不复制到C++：原生使用已确定ParserScope RAII。
+- **代理**：已有 `/root/base_methods`（GPT-6.1 Sol）完成限定FilterUtil、BaseConfiguration
+  及各自测试/Source文件后结束；最后只读审查Root输入jax/config阶段，除上述已修格式化差异
+  外未报告具体数学行为差异。Root负责实际编译、Source重放、聚焦及完整验收。
+  Luna额度已知到10月25日，无新信号不重试；必要Sol仅GPT-6.1 Sol。
+- **准确下一步**：继续原38包逐owner接到真实TeX配置，先处理已存在真实helper但配置/方法
+  尚待输入jax的 `boldsymbol/configuration`，再闭合其他原包；不要从头重写已通过的base链。
+  原Common→Scene输出、完整端到端SVG对照和应用切换仍需按完整目标完成。DOM查找/HTML适配
+  不属于本次字符串编译服务，仍是显式待完成职责；不能伪造实现或调用已撤去的对象层。
+- **命名与清理约束仍生效**：FunctionList早已归原名（2022cb1a/e6126948），不要重新调查。
+  旧function_list_bindings及handler_context_bindings/parser_runtime/output_jax/common_bindings
+  消费者尚未全清，退出当前CMake不代表删除完成。工作区只剩原13项无关修改，继续保护；
+  Mermaid暂停，不加D2D像素门槛；不做破坏性Git操作，不改写提交历史。
 
 ### 上一已验收批次（历史；以下不是当前 live 状态）
 
