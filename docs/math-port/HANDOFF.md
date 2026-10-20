@@ -11,39 +11,46 @@
 
 ### 恢复时先用这个短检查点
 
-- **2026-10-20：当前用户指正 `native function list` 命名及保留旧实现的问题。**
-  本轮只核对这一职责及交接状态，没有重新开展全局审计。`2022cb1a` 已将测试
-  `native_function_list.cpp` 归回 `tests/math/function_list.cpp`；生产实现唯一 owner
-  是 `src/math/util/function_list.ixx`。`e6126948` 已删除旧参数编解码测试及无调用的
-  配置投影。当前 Git 跟踪文件无 native_function_list/function_list_native 名称，
-  CMake 只登记正常 FunctionList 实现和职责测试。**旧 function_list_bindings 对象模拟
-  层仍有未改写的消费者，不能声称旧图已清完。** 架构文件补充明确命名规则：按原
-  MathJax 职责原位替换，不以 native/typed/new 前后缀保留第二套实现；退出构建不等于
-  已清理。此轮为文档更新，无新增代码验收。
-- **最近代码基线**：原 MML/TeX 请求、栈、编号服务组件已实现；完整输入管线未完成。
-  `0f5a9fb4` 为 MML 槽位/clone/NodeUtil；`daa66700` 为原 TeX 类实现，净减少约988行；
-  `8f4bb493` 为 Source/实际 C++ 类测试；`0ce7bf51` 为交接文档。最近构建75633已终态
-  exit0（parser-reviewed-build.log）；聚焦33项/452断言exit0；完整379项/134,895断言
-  exit0，56363已终态（parser-reviewed-full.log）。Source 两份正式检查也已通过。
-  不重复跑这些已验收内容，除非新改动影响它们。
-- **CommandMap 已组件验收**：在原 `token_map.{ixx,cpp}` 完成修改：
-  提取 MacroMap::invoke，补 CommandMap 构造与 parse，区分输入名/定义名并保留 Source
-  currentCS 成功恢复、异常保留失败命令行为。42122构建已终态exit0，
-  command-map-build.log；新增3项/20断言和原5项/38断言均exit0，分别见
-  command-map-focused.log、token-map-focused.log。正式tex-parser-source.cjs补实际
-  Source parser命令调用，九TS锁/完整compiled profile，从C:\Windows执行exit0，
-  command-map-source.log。会话宏/字符捕获/屏蔽使用既有定义存储，没有复制注册表。
-  当前没有 live agent、构建或测试；原13项无关修改继续保护，禁止混入提交。
-- **下一步**：处理原 ParseMethods 和 BaseMethods/映射。Source `ParseMethods.ts` 实际在
-  `input/tex` 根目录；现有 `base/base_parse_methods.{ixx,cpp}` 路径不对应，应在迁移时
-  归回 `input/tex/parse_methods.{ixx,cpp}` 并删除旧文件，不造第二个实现或兼容模块。
-  `base/base_methods`、`base/base_mappings`、`base/base_configuration` 保持各自职责。
-  后续才闭合 `tex_jax.{ixx,cpp}` 及 input-jax/filter 协作。已完成的工厂、配置、列表、
-  帧所有权不重审；不要推广只有声明的服务。完整38包、nested tag TeX、端到端 SVG
-  对照及 Folia 接入仍未完成。
-- **执行约束**：Mermaid 暂停；不加 D2D 像素验收门槛。单次构建并发4，不并行堆构建。
-  Luna 额度已知到10月25日，无新信号不重试；必要 Sol 仅 GPT-6.1 Sol。无 agent 正在运行。
-  控制台测试链接既有 runtime，异常退出停止广泛评估；只用本地软件测试术语。
+- **2026-10-20 当前断点：原 CommandMap 和 ParseMethods 已实现并完成组件验收。**
+  最新完整 Math 回归 **390项/135,024断言，exit0**，`parse-methods-full.log`，
+  **70422已终态**。构建86836已终态exit0，`parse-methods-build-3.log`。
+  当前没有live agent、构建或测试；完整TeX→SVG/Folia管线仍未完成，goal保持active。
+- **本轮提交**：`a9a0c80e` 原 CommandMap 调用及实际 TexParser/Source 对照；
+  `07cda36c` 原 ParseMethods 及直接依赖的类型接口，11文件净减少14行；
+  `cacd63f1` 真实解析器测试/Source对照及退休身份测试。生产实现只有
+  `input/tex/parse_methods.{ixx,cpp}`，对应 Source 根目录 ParseMethods.ts；旧
+  `base/base_parse_methods`两文件已删除。没有 native/new/typed 前缀的第二套实现。
+- **已定职责**：ParseMethods保留原十方法；原ParseUtil拥有getFontDef和NFD Latin/Greek
+  helper，复用Unicode16数据；TexParser的create/createToken传已有NodeDefinition，
+  autoOP在configured creator之前，mathchar0mo的fixStretchy及登记在creator之后。
+  TexEnvironment新增具体的multi-letter RegExp引用/noAutoOP字段及overlay，表达式
+  无parser/frame/document所有权；Token attrs仍是已定的独立值，区分缺席和显式空。
+  不为任意JS对象身份恢复通用模拟层，不重新审计已通过的所有权/配置/帧设计。
+- **本轮验收**：CommandMap新增3项/20断言，原TokenMap5项/38断言exit0，
+  `command-map-focused.log`、`token-map-focused.log`。实际Source parser命令调用、
+  嵌套/异常/currentCS在正式tex-parser-source.cjs九TS锁/完整compiled profile下exit0，
+  `command-map-source.log`。ParseMethods新增8项/109断言exit0，
+  `parse-methods-focused-2.log`；正式tex-parse-methods-source.cjs十方法/33配置/
+  TS+CJS锁+完整profile从C:\Windows执行exit0，`parse-methods-source.log`。
+  初构建5951终态exit1仅测试BoostUT不同常量类型不能放三元式；9133修后exit0。
+  Source先纠正测试对单token根的假设；初次native聚焦6断言失败因测试读默认attrs、
+  Source读显式attrs，统一own口径后通过，未改数学算法。
+- **清理边界**：原method_table_identity.cpp只验运行时FunctionRef身份/反射，已删除，
+  数学结果改由真实解析器协作测试承担。其他包的旧base_parse_methods imports/init
+  消费者仍未改写且不在编译图，后续由各owner改写，不能声称全图清完。
+  FunctionList原实现util/function_list.ixx、职责测试function_list.cpp；旧命名及参数
+  编解码测试此前已删除（2022cb1a/e6126948）；旧function_list_bindings仍有未改写
+  消费者。退出CMake不等于删除，不能靠换前后缀保留重复职责。
+- **准确下一步**：在原base/base_methods.{ixx,cpp}按BaseMethods.ts方法职责改成真实
+  编译函数，保留已移植数学规则、复用实际TexParser/Stack/ParseUtil/MML/Session。
+  然后原base_mappings绑定这些函数及已完成ParseMethods、原base_configuration配置
+  注册/filters，再闭合tex_jax.{ixx,cpp}及input-jax。不要新建并列parser或包装旧对象层。
+  完整38包、nested tag TeX、输入jax/postfilters、端到端SVG对照及Folia接入仍未完成。
+- **保留/执行约束**：原13项无关修改继续保护；本轮已提交的改动不混入它们。
+  原MML/TeX类基线0f5a9fb4/daa66700/8f4bb493的379项已纳入此次完整390项回归。
+  Mermaid暂停，不加D2D像素验收门槛；单次构建并发4，不并行堆构建。Luna额度已知
+  到10月25日，无新信号不重试；必要Sol仅GPT-6.1 Sol，本轮无代理。控制台测试链接
+  既有runtime，异常退出停止广泛评估；只用本地软件测试术语。
 
 ### 上轮已完成检查点（历史；本轮以顶部执行断点为准）
 

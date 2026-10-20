@@ -80,6 +80,19 @@ within the reviewed change. `util/function_list.ixx` owns FunctionList;
 `tests/math/function_list.cpp` owns its behavior tests. A source file left out
 of CMake is still unfinished cleanup when remaining consumers reference it.
 
+The original `input/tex/ParseMethods.ts` belongs at `input/tex/parse_methods`,
+not under `base/`. Its ten compiled methods handle variables, numbers, control
+sequences, mapped character tokens and the environment entry. BaseMethods,
+BaseMappings and BaseConfiguration retain their separate upstream duties.
+ParseUtil owns getFontDef and Unicode-normalized Latin/Greek classification;
+TexParser passes the existing NodeDefinition through its configured creators.
+Properties such as autoOP must reach that creator before construction, whereas
+mathchar0mo sets fixStretchy and registers the node after construction, as in
+Source. Token attributes remain owned values, with absent versus empty explicit.
+TexEnvironment additionally carries the specific multi-letter RegExp reference
+and noAutoOP flag. Shared expression state models the actual configured pattern;
+it contains no parser, frame or document owner and creates no object registry.
+
 C++ module boundaries follow owners and dependencies. A packet, individual
 function or test seam does not automatically need its own named module.
 Family implementation details and numerical intermediates remain private
@@ -520,7 +533,8 @@ the cleared fields. The distinct explicit `this.env = {}` in Left/middle
 installs a fresh record before replay; do not conflate those operations.
 Pop restores the remaining top's scope or a
 fresh empty scope; it does not erase the popped frame's record. This finite
-domain value contains only the declared bool/number/string optionals, with no
+domain value contains declared bool/number/string optionals and the specific
+multi-letter regular-expression reference, with no
 parser/frame/MML owner, callbacks or universal property lookup, so it cannot
 form an ownership cycle. Copy operations copy the values rather than sharing
 the new open scope. StackGlobal is a separate typed stack-owned record borrowed
