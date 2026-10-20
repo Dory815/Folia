@@ -21,12 +21,14 @@
   一次构建、--parallel 4；保留用户CPU；只用正常本地开发/测试用语。
 - 用户再次指出压缩后重复调查。AGENTS.md 的连续性规则已经存在，问题在执行；
   本次已实际重读本文件并核对 Git/代理状态。不能只在摘要中提到文件路径就算读过。
-- **最新完整Math组件基线：292项/33,343断言，exit0**，
-  `build/math-port/native-tex-color-math-item-full.log`，native句柄3528已终态。
+- **最新完整Math组件基线：307项/33,550断言，exit0**，
+  `build/math-port/native-unit-dash-final-full.log`，native句柄95029已终态。
+  最新构建native-scene-stroke-dash-build.log，86240已终态exit0；无live build/native。
   NodeFactory已提交64a06e78，ColorModel/session已提交febc2e4e，MathItem已提交a17e72e7。
   完整TeX→SVG与Folia替换尚未完成，不能把组件suite扩大为端到端验收。
 - Root四份TeX声明候选在 `tools/math-port/drafts/native-raii/tex-parser-declarations/`，
-  尚未推广/构建。架构和职责见 `typed-tex-parser-implementation.md`。
+  尚未推广/构建。Root已补ParseInput（explicit parser borrow + owned token）与TexOptionValues forward。
+  架构和职责见 `typed-tex-parser-implementation.md`。
 - ParseOptions提案已经Root审查并发现真实依赖，不再等待旧交付：
   tex-parse-options-contract/README.md当前SHA256
   `7198314240C5DCFE882E94572316B5161B5E74DF81DB691B22B8D8EF7D2CADAE`。
@@ -71,35 +73,68 @@
   共11项/65断言exit0，native-column-definitions-focused.log。正式tex-column-source.cjs已从
   C:\Windows重放exit0，native-column-definitions-formal-source.log，12个TS/CJS哈希锁。
   Source用真实TeX/ColumnParser/NewColumnType方法，argument scanner/ArrayItem是明示的有限桩；
-  此验收不是完整ColumnParser原生实现，也不是全TeX；最新完整组件suite仍是292项旧基线。
+  此验收不是完整ColumnParser原生实现，也不是全TeX；最新完整suite已包含这四个状态UT。
+- **UnitUtil已提交fdaecc6d**：保留原unit_util.{ixx,cpp}/UnitMap/UnitUtil职责，
+  有序单位表和已编译正则unique拥有，Dimension为optional<DimensionMatch>，无Property/Context。
+  复用原native regexp_host与lengths::format_decimal；单位regex保留Source raw names行为。
+  构建68445终态exit0，native-tex-unit-util-build.log；7项/184断言聚焦通过，
+  native-tex-unit-util-focused.log。正式tex-unit-util-source.cjs从C:\Windows通过9defaults/
+  29matches/23formats/37trims/16maps；两bundle文件+一个reference文件哈希锁。
+  native-tex-unit-util-source.log。reference与bundle TS只差换行，原始哈希分别锁定。
+  旧unit_util_host/unit_pattern/unit_util_bindings及reference_unit_util旧测试均不在native图，
+  其旧parser/package消费者仍待按typed接口改造；不把旧桥接代码当fallback。
+- **Scene dash已提交44b4b901**：Paint追加optional<vector<Unit>> dash_array，缺省继承、
+  空数组显式solid，已有writer只序列化完成的em长度，不计算数学布局/边框。
+  Source实际addBorderBroken 10观察由正式common-border-dash-source.cjs固定，Root从
+  C:\Windows重放exit0，native-border-dash-source.log。4项/8断言聚焦通过，
+  native-scene-stroke-dash-focused.log；Root修正了中断候选中未捕获的nonfinite测试异常后才运行。
+  Source handleBorder跳过零厚度，直接helper产生NaN的例子不属于finite Scene paint。
+  完整Common emission仍未实现，不能把Paint schema支持当作绘制接通。
 - **dispatch四header已交付/Root已读，代理已完成**：tex-dispatch-contract/headers/。
   MacroMap已明确借session和expansion_handler，覆盖contains/lookup/parserFor，借原MacroDefinition，
   不缓存另一份Macro；SessionMacroMapInit已明确。Root :types草案已加入封闭DispatchOutcome
   （Continue/Handled/ReturnedFrame/InvokeFallback/NoParseResult）、MacroInvocation等实际共享类型。
-  CONTRACT旧共享片段仍有NodeValue/EmptyStackEntry和跨module MacroDefinition forward，须改正；
-  以Root :types为准，不能复制旧片段。StackEntry精确为monostate/MmlNode*/FrameHandle。
+  Root已修正CONTRACT旧共享片段中的NodeValue/EmptyStackEntry、跨module MacroDefinition forward，
+  以及Macro.ts错误归属；以Root :types为准。StackEntry精确为monostate/MmlNode*/FrameHandle。
   NotItem.remap已改为借CharacterMap*，MapHandler持unique地图实例；这仍是未推广声明。
-- **仅raii_session仍在运行**：tex-session-definitions-contract/，补newenvironment/undefinition/
-  BegingroupStack的纯值持久层及Source作用域语义，尚未交付；不重派旧颜色/Tags任务。
-  mml_base_contract_review刚交付tex-parser-interface-contract/，待Root实际审阅，尚未推广/构建。
-  其Source报告3例/66 CJS+14 TS锁定，Root未重放，不当Root验收。TexParser应复用唯一scanner；
+- **当前所有Luna任务已停止**：本轮多个followup因usage limit终止，不是仍在跑。
+  不循环重试同一额度错误；Root已自行审查、补实现/测试并提交UnitUtil与dash。
+  tex-session-definitions-contract/已交付；Root已读并发现真实未闭合alias seam（下述），不能推广。
+  其整份session镜像还缺已提交Column状态，只能合入已审增量，不能覆盖canonical。
+  mml_base_contract_review交付tex-parser-interface-contract/已由Root审阅，声明尚未推广/构建。
+  **正式Source已提交abf3b72a**：tex-parser-interface-source.cjs，3例/66 CJS+14 TS锁定，
+  Root从C:\Windows重放exit0，native-tex-parser-interface-formal-source.log。TexParser复用唯一scanner；
   ParseInput持dispatch token值；实际TextParser需protected DeferParsing两阶段构造，ParserScope
-  必须先于owned Stack入场，保持Source回调次序。剩余服务闭合事项见该包README。
+  必须先于owned Stack入场，保持Source回调次序。精确removeParser(TexParser&) noexcept与
+  ParseOptions::createToken typed configured服务已写入正式架构文档，保持boldsymbol实际hook。
   raii_scene_foundation已完成common-scene-emission-contract/，Root读过，仍是声明提案。
   Common真实wrapper家族发Scene、LayoutJob一次build/getBBox/freeze，不建第二套wrapper树。
-  TextRun/ForeignContent/annotation/paint继承/href hitbox/dash等缺口尚待冻结，不能声称Scene已接通。
+  TextRun/ForeignContent/annotation/paint继承/href hitbox等缺口尚待冻结；dash schema已完成，
+  完整Scene仍未接通。Scene emission不能另起wrapper/factory家族。
   ColumnParser runtime在tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/ColumnParser.js，
   不在.reference（那里只有TS），没有已有accepted column witness可等待，不要重编译TS/复制依赖。
-- **下一步明确动作**：实际审TexParser新交付，等待session definitions增量；改dispatch旧片段，
-  合并ColumnParser/Tags/ParseOptions实际服务图并冻结，再让Luna按原文件实现Stack/BaseItems/dispatch。
-  已完成dispatch/column提案不重派、不再等待。Source priority已实际
+- **session Source已审并提交5a12ec7f**：正式tex-session-definitions-source.cjs，
+  Root从C:\Windows重放15组/12对TS+CJS锁exit0，native-session-definitions-formal-source.log。
+  Root发现原draft compile helper把正常返回当成功，但TeX会返回merror；现检查实际树并固定
+  成功展开输出，另证handled TexError前定义/未闭合group保留到下一表达式/endgroup。
+  新增真实let builtin及CharacterMap后重定义原名的快照观察：saved sqrt仍是msqrt，
+  saved alpha仍为alpha而新alpha为beta。不是重查已解决问题，是新session候选欠缺分支。
+  原NativeMacroAlias{string handler_id,scalar args}尚不能表达CharacterMap捕获Token/attributes/
+  map parser职责；不能用字符串函数解析、泛型closure/Context补齐。下一步须冻结明确native领域
+  alias值与profile/session服务寿命，并让MacroMap/Newcommand共用它；不能先推候选再补释放。
+- **下一步明确动作**：TexParser新交付已审，不再等；先闭合上述session alias类型与服务寿命，
+  再合ColumnParser/Tags/ParseOptions实际服务图并冻结，继续原文件Stack/BaseItems/dispatch实现。
+  本轮Luna额度停止时，tex-stack-native/、tex-dispatch-native/、tex-parse-options-native-contract/
+  尚无文件，不能当已交付；tex-column-parser-native/只有两份未验收body/header，仍导入旧
+  js_numeric_input/utf16，尚缺UT/服务编译，不能直接推广；UnitUtil真实接口现在已canonical。
+  已消费dispatch/column提案和UnitUtil/dash不可重派为待审旧包。Source priority已实际
   证明同priority按配置逆序；source-dispatch-observe.cjs已Root重放exit0（14hash），
   native-tex-dispatch-contract-source.log。不得回到“reverse后恢复原序”的旧错误解释。
   NodeFactory还要接configured boldsymbol.createBoldToken typed creator，不能把已验收标准
   creator登记当成全部profile hooks完成；该Source先正常建token，再按当前env标记/登记fixBold。
   完整parser/38包、Common→Scene与Folia切换仍是后续必做；不重做已验收Common家族。
 - Git原13项既有无关修改继续保护，见文末。当前无live build/native句柄，不运行reset。
-  Column提交后HEAD为98598241；本次交接记录另作独立小提交。
+  最新代码/Source提交分别fdaecc6d、abf3b72a、44b4b901、5a12ec7f；本交接另作独立小提交。
 
 ### 历史组件证据（当前状态以上方短检查点为准）
 
