@@ -3,32 +3,46 @@ import std;
 
 namespace folia::math::output::scene {
 namespace {
-bool finite(Unit value) noexcept { return std::isfinite(value); }
+bool finite(Unit value) noexcept {
+    return std::isfinite(value);
+}
 void validate(Point value) {
     if (!finite(value.x) || !finite(value.y))
         throw std::invalid_argument("Scene point coordinates must be finite");
 }
-bool valid(FillRule rule) noexcept { return rule == FillRule::nonzero || rule == FillRule::evenodd; }
-Affine validate_affine(Affine const& transform) {
+bool valid(FillRule rule) noexcept {
+    return rule == FillRule::nonzero || rule == FillRule::evenodd;
+}
+Affine validate_affine(Affine const &transform) {
     if (!(finite(transform.a) && finite(transform.b) && finite(transform.c) &&
           finite(transform.d) && finite(transform.e) && finite(transform.f)))
         throw std::invalid_argument("Scene transform must be finite");
     return transform;
 }
-void validate(Transform const& transform) {
-    for (auto const& operation : transform.operations()) std::visit([](auto const& value) {
-        using T = std::remove_cvref_t<decltype(value)>;
-        if constexpr (std::same_as<T, Translation>) {
-            if (!finite(value.x) || !finite(value.y))
-                throw std::invalid_argument("Scene translation must be finite");
-        } else if constexpr (std::same_as<T, Scaling>) {
-            if (!finite(value.x) || !finite(value.y))
-                throw std::invalid_argument("Scene scale must be finite");
-        } else if constexpr (std::same_as<T, Rotation>) {
-            if (!finite(value.degrees)) throw std::invalid_argument("Scene rotation angle must be finite");
-            validate(value.center);
-        } else validate_affine(value);
-    }, operation);
+void validate(Transform const &transform) {
+    for (auto const &operation : transform.operations())
+        std::visit(
+            [](auto const &value) {
+                using T = std::remove_cvref_t<decltype(value)>;
+                if constexpr (std::same_as<T, Translation>) {
+                    if (!finite(value.x) || !finite(value.y))
+                        throw std::invalid_argument("Scene translation must be finite");
+                    if (value.separator != TranslationSeparator::role_default &&
+                        value.separator != TranslationSeparator::comma &&
+                        value.separator != TranslationSeparator::space &&
+                        value.separator != TranslationSeparator::comma_space)
+                        throw std::invalid_argument("Scene translation separator is invalid");
+                } else if constexpr (std::same_as<T, Scaling>) {
+                    if (!finite(value.x) || !finite(value.y))
+                        throw std::invalid_argument("Scene scale must be finite");
+                } else if constexpr (std::same_as<T, Rotation>) {
+                    if (!finite(value.degrees))
+                        throw std::invalid_argument("Scene rotation angle must be finite");
+                    validate(value.center);
+                } else
+                    validate_affine(value);
+            },
+            operation);
     (void)validate_affine(transform.matrix());
 }
 Metrics validate(Metrics metrics) {
@@ -37,12 +51,13 @@ Metrics validate(Metrics metrics) {
     return metrics;
 }
 FontMetrics validate(FontMetrics metrics) {
-    if (!(finite(metrics.em) && finite(metrics.ex) && finite(metrics.x_height) && finite(metrics.cap_height)) ||
+    if (!(finite(metrics.em) && finite(metrics.ex) && finite(metrics.x_height) &&
+          finite(metrics.cap_height)) ||
         metrics.em <= 0 || metrics.ex < 0 || metrics.x_height < 0 || metrics.cap_height < 0)
         throw std::invalid_argument("Scene font metrics are invalid");
     return metrics;
 }
-void validate(Paint const& paint) {
+void validate(Paint const &paint) {
     if (!finite(paint.opacity) || paint.opacity < 0 || paint.opacity > 1 ||
         !finite(paint.stroke_width) || paint.stroke_width < 0 || !valid(paint.fill_rule))
         throw std::invalid_argument("Scene paint values are invalid");
@@ -52,84 +67,138 @@ void validate(SemanticMetadata const &metadata) {
         if (attribute.name.empty())
             throw std::invalid_argument("Scene metadata attribute name cannot be empty");
 }
-void validate(PathGeometry const& path) {
-    for (auto const& segment : path.segments) std::visit([](auto const& part) {
-        using S = std::remove_cvref_t<decltype(part)>;
-        if constexpr (std::same_as<S, MoveTo> || std::same_as<S, LineTo>) validate(part.to);
-        else if constexpr (std::same_as<S, QuadTo>) { validate(part.control); validate(part.to); }
-        else if constexpr (std::same_as<S, CubicTo>) { validate(part.control1); validate(part.control2); validate(part.to); }
-        else if constexpr (std::same_as<S, ArcTo>) {
-            validate(part.to);
-            if (!finite(part.radius_x) || !finite(part.radius_y) || !finite(part.rotation) ||
-                part.radius_x < 0 || part.radius_y < 0)
-                throw std::invalid_argument("Scene arc parameters are invalid");
+FrameLayout validate_frames(Group const &root, FrameLayout frames) {
+    if (!finite(frames.minimum_extent) || frames.minimum_extent <= 0)
+        throw std::invalid_argument("Scene frame minimum extent must be finite and positive");
+    std::vector<NodeId> direct_groups;
+    for (auto const &entry : root.entries) {
+        if (auto child = std::get_if<std::shared_ptr<Group const>>(&entry)) {
+            if (!*child)
+                throw std::invalid_argument("Scene root cannot contain a null group");
+            direct_groups.push_back((*child)->id);
+        } else if (!frames.inline_fragments.empty()) {
+            throw std::invalid_argument(
+                "Inline frames require root entries to be completed groups");
         }
-    }, segment);
+    }
+    if (!frames.inline_fragments.empty()) {
+        if (frames.inline_fragments.size() != direct_groups.size())
+            throw std::invalid_argument("Scene inline frame roots must match root child groups");
+        for (std::size_t i = 0; i < frames.inline_fragments.size(); ++i) {
+            auto const &fragment = frames.inline_fragments[i];
+            if (fragment.root == 0 || fragment.root != direct_groups[i])
+                throw std::invalid_argument(
+                    "Scene inline frame roots must be direct children in order");
+            validate(fragment.metrics);
+            if (fragment.before) {
+                if (fragment.before->kind != InlineBreakKind::opportunity &&
+                    fragment.before->kind != InlineBreakKind::forced)
+                    throw std::invalid_argument("Scene inline break kind is invalid");
+                if (!finite(fragment.before->spacing))
+                    throw std::invalid_argument("Scene inline break spacing must be finite");
+            }
+        }
+    }
+    return frames;
 }
-void validate(Clip const& clip) {
-    if (!valid(clip.fill_rule)) throw std::invalid_argument("Scene clip fill rule is invalid");
+void validate(PathGeometry const &path) {
+    for (auto const &segment : path.segments)
+        std::visit(
+            [](auto const &part) {
+                using S = std::remove_cvref_t<decltype(part)>;
+                if constexpr (std::same_as<S, MoveTo> || std::same_as<S, LineTo>)
+                    validate(part.to);
+                else if constexpr (std::same_as<S, QuadTo>) {
+                    validate(part.control);
+                    validate(part.to);
+                } else if constexpr (std::same_as<S, CubicTo>) {
+                    validate(part.control1);
+                    validate(part.control2);
+                    validate(part.to);
+                } else if constexpr (std::same_as<S, ArcTo>) {
+                    validate(part.to);
+                    if (!finite(part.radius_x) || !finite(part.radius_y) ||
+                        !finite(part.rotation) || part.radius_x < 0 || part.radius_y < 0)
+                        throw std::invalid_argument("Scene arc parameters are invalid");
+                }
+            },
+            segment);
+}
+void validate(Clip const &clip) {
+    if (!valid(clip.fill_rule))
+        throw std::invalid_argument("Scene clip fill rule is invalid");
     validate(clip.geometry);
 }
-Glyph clone_glyph(Glyph const& source) {
+Glyph clone_glyph(Glyph const &source) {
     // GlyphResource can only be created from an owned outline snapshot and has
     // no mutation surface, so retaining its shared const handle is safe.
     return source;
 }
-GlyphRun validate_and_clone(GlyphRun const& source) {
+GlyphRun validate_and_clone(GlyphRun const &source) {
     GlyphRun copy;
     copy.glyphs.reserve(source.glyphs.size());
-    for (auto const& glyph : source.glyphs) {
-        if (!glyph.resource) throw std::invalid_argument("Scene glyph needs an immutable outline resource");
+    for (auto const &glyph : source.glyphs) {
+        if (!glyph.resource)
+            throw std::invalid_argument("Scene glyph needs an immutable outline resource");
         validate(glyph.origin);
-        if (!finite(glyph.advance)) throw std::invalid_argument("Scene glyph advance must be finite");
+        if (!finite(glyph.advance))
+            throw std::invalid_argument("Scene glyph advance must be finite");
         validate(glyph.paint);
         validate(glyph.resource->outline().outline);
         copy.glyphs.push_back(clone_glyph(glyph));
     }
     return copy;
 }
-Metrics validate_metrics(Metrics value) { return validate(value); }
-Primitive clone_primitive(Primitive const& source) {
-    return std::visit([](auto const& value) -> Primitive {
-        using T = std::remove_cvref_t<decltype(value)>;
-        T copy = value;
-        if constexpr (std::same_as<T, GlyphRun>) copy = validate_and_clone(value);
-        else if constexpr (std::same_as<T, Rule>) {
-            if (!finite(value.bounds.x) || !finite(value.bounds.y) || !finite(value.bounds.width) ||
-                !finite(value.bounds.height) || value.bounds.width < 0 || value.bounds.height < 0)
-                throw std::invalid_argument("Scene rule bounds are invalid");
-            validate(value.paint);
-            validate(value.metadata);
-        } else if constexpr (std::same_as<T, Path>) {
-            validate(value.geometry);
-            validate(value.paint);
-            validate(value.metadata);
-        } else if constexpr (std::same_as<T, TextRun>) {
-            copy.metrics = validate_metrics(value.metrics);
-            validate(value.origin);
-            validate(value.paint);
-            if (value.font && (!finite(value.font->size) || value.font->size <= 0))
-                throw std::invalid_argument("Scene text font size must be finite and positive");
-            validate(value.metadata);
-            copy.measured_glyphs = validate_and_clone(value.measured_glyphs);
-        } else if constexpr (std::same_as<T, ForeignContent>) {
-            copy.metrics = validate_metrics(value.metrics);
-            validate(value.origin);
-            validate(value.metadata);
-            for (std::size_t i=0; i<copy.measured_runs.size(); ++i)
-                copy.measured_runs[i].run = std::get<TextRun>(clone_primitive(Primitive{value.measured_runs[i].run}));
-        }
-        return copy;
-    }, source);
+Metrics validate_metrics(Metrics value) {
+    return validate(value);
 }
-Group clone_group(Group const& source, std::unordered_set<Group const*>& active,
-    std::unordered_set<NodeId>& ids) {
+Primitive clone_primitive(Primitive const &source) {
+    return std::visit(
+        [](auto const &value) -> Primitive {
+            using T = std::remove_cvref_t<decltype(value)>;
+            T copy = value;
+            if constexpr (std::same_as<T, GlyphRun>)
+                copy = validate_and_clone(value);
+            else if constexpr (std::same_as<T, Rule>) {
+                if (!finite(value.bounds.x) || !finite(value.bounds.y) ||
+                    !finite(value.bounds.width) || !finite(value.bounds.height) ||
+                    value.bounds.width < 0 || value.bounds.height < 0)
+                    throw std::invalid_argument("Scene rule bounds are invalid");
+                validate(value.paint);
+                validate(value.metadata);
+            } else if constexpr (std::same_as<T, Path>) {
+                validate(value.geometry);
+                validate(value.paint);
+                validate(value.metadata);
+            } else if constexpr (std::same_as<T, TextRun>) {
+                copy.metrics = validate_metrics(value.metrics);
+                validate(value.origin);
+                validate(value.paint);
+                if (value.font && (!finite(value.font->size) || value.font->size <= 0))
+                    throw std::invalid_argument("Scene text font size must be finite and positive");
+                validate(value.metadata);
+                copy.measured_glyphs = validate_and_clone(value.measured_glyphs);
+            } else if constexpr (std::same_as<T, ForeignContent>) {
+                copy.metrics = validate_metrics(value.metrics);
+                validate(value.origin);
+                validate(value.metadata);
+                for (std::size_t i = 0; i < copy.measured_runs.size(); ++i)
+                    copy.measured_runs[i].run =
+                        std::get<TextRun>(clone_primitive(Primitive{value.measured_runs[i].run}));
+            }
+            return copy;
+        },
+        source);
+}
+Group clone_group(Group const &source, std::unordered_set<Group const *> &active,
+                  std::unordered_set<NodeId> &ids) {
     if (!ids.insert(source.id).second)
         throw std::invalid_argument("Scene group ids must be unique");
     validate(source.transform);
     validate(source.paint);
     validate(source.metadata);
-    if (source.clip) validate(*source.clip);
+    if (source.clip)
+        validate(*source.clip);
     Group copy;
     copy.id = source.id;
     copy.transform = source.transform;
@@ -140,12 +209,13 @@ Group clone_group(Group const& source, std::unordered_set<Group const*>& active,
     copy.role = source.role;
     copy.paint = source.paint;
     copy.entries.reserve(source.entries.size());
-    for (auto const& entry : source.entries) {
-        if (auto const* primitive = std::get_if<Primitive>(&entry))
+    for (auto const &entry : source.entries) {
+        if (auto const *primitive = std::get_if<Primitive>(&entry))
             copy.entries.emplace_back(clone_primitive(*primitive));
         else {
-            auto const& child = std::get<std::shared_ptr<Group const>>(entry);
-            if (!child) throw std::invalid_argument("Scene group entries cannot contain null groups");
+            auto const &child = std::get<std::shared_ptr<Group const>>(entry);
+            if (!child)
+                throw std::invalid_argument("Scene group entries cannot contain null groups");
             if (!active.insert(child.get()).second)
                 throw std::invalid_argument("Scene group hierarchy cannot contain cycles");
             auto cloned = clone_group(*child, active, ids);
@@ -155,16 +225,18 @@ Group clone_group(Group const& source, std::unordered_set<Group const*>& active,
     }
     return copy;
 }
-Group snapshot_group(Group const& source) {
-    std::unordered_set<Group const*> active;
+Group snapshot_group(Group const &source) {
+    std::unordered_set<Group const *> active;
     std::unordered_set<NodeId> ids;
     return clone_group(source, active, ids);
 }
-}
+} // namespace
 
-Scene::Scene(Group root, Metrics metrics, FontMetrics font_metrics, DisplayLayout display_layout)
+Scene::Scene(Group root, Metrics metrics, FontMetrics font_metrics, DisplayLayout display_layout,
+             FrameLayout frame_layout)
     : root_(snapshot_group(root)), metrics_(validate(metrics)),
-      font_metrics_(validate(font_metrics)), display_layout_(std::move(display_layout)) {
+      font_metrics_(validate(font_metrics)), display_layout_(std::move(display_layout)),
+      frame_layout_(validate_frames(root_, std::move(frame_layout))) {
     if (!finite(display_layout_.shift) || !finite(display_layout_.minimum_width) ||
         display_layout_.minimum_width < 0)
         throw std::invalid_argument("Scene display layout values are invalid");
@@ -172,10 +244,19 @@ Scene::Scene(Group root, Metrics metrics, FontMetrics font_metrics, DisplayLayou
         display_layout_.alignment != "right")
         throw std::invalid_argument("Scene display alignment is invalid");
 }
-Group const& Scene::root() const noexcept { return root_; }
-Metrics const& Scene::metrics() const noexcept { return metrics_; }
-FontMetrics const& Scene::font_metrics() const noexcept { return font_metrics_; }
+Group const &Scene::root() const noexcept {
+    return root_;
+}
+Metrics const &Scene::metrics() const noexcept {
+    return metrics_;
+}
+FontMetrics const &Scene::font_metrics() const noexcept {
+    return font_metrics_;
+}
 DisplayLayout const &Scene::display_layout() const noexcept {
     return display_layout_;
 }
+FrameLayout const &Scene::frame_layout() const noexcept {
+    return frame_layout_;
 }
+} // namespace folia::math::output::scene

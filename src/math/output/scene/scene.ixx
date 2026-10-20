@@ -22,18 +22,21 @@ class Scene {
     Metrics metrics_;
     FontMetrics font_metrics_;
     DisplayLayout display_layout_;
+    FrameLayout frame_layout_;
 
   public:
     // Construction snapshots the full tree and glyph resources, so callers
     // may safely retain and mutate their source values after this returns.
-    Scene(Group root, Metrics metrics, FontMetrics font_metrics, DisplayLayout display_layout = {});
-    Scene(Scene const&) = default;
-    Scene(Scene&&) noexcept = default;
-    Scene& operator=(Scene const&) = default;
-    Scene& operator=(Scene&&) noexcept = default;
-    [[nodiscard]] Group const& root() const noexcept;
-    [[nodiscard]] Metrics const& metrics() const noexcept;
-    [[nodiscard]] FontMetrics const& font_metrics() const noexcept;
+    Scene(Group root, Metrics metrics, FontMetrics font_metrics, DisplayLayout display_layout = {},
+          FrameLayout frame_layout = {});
+    Scene(Scene const &) = default;
+    Scene(Scene &&) noexcept = default;
+    Scene &operator=(Scene const &) = default;
+    Scene &operator=(Scene &&) noexcept = default;
+    [[nodiscard]] Group const &root() const noexcept;
+    [[nodiscard]] Metrics const &metrics() const noexcept;
+    [[nodiscard]] FontMetrics const &font_metrics() const noexcept;
     [[nodiscard]] DisplayLayout const &display_layout() const noexcept;
+    [[nodiscard]] FrameLayout const &frame_layout() const noexcept;
 };
-}
+} // namespace folia::math::output::scene

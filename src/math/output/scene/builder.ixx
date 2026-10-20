@@ -8,13 +8,14 @@ export namespace folia::math::output::scene {
 class Builder {
     struct State;
     std::unique_ptr<State> state_;
-public:
+
+  public:
     Builder();
     ~Builder();
-    Builder(Builder const&) = delete;
-    Builder& operator=(Builder const&) = delete;
-    Builder(Builder&&) noexcept;
-    Builder& operator=(Builder&&) noexcept;
+    Builder(Builder const &) = delete;
+    Builder &operator=(Builder const &) = delete;
+    Builder(Builder &&) noexcept;
+    Builder &operator=(Builder &&) noexcept;
 
     [[nodiscard]] NodeId add_group(NodeId parent = 0, Transform transform = {},
                                    std::optional<Clip> clip = {}, std::optional<Link> link = {},
@@ -22,6 +23,7 @@ public:
                                    SemanticMetadata metadata = {},
                                    ElementRole role = ElementRole::math_wrapper, Paint paint = {});
     void add_primitive(NodeId group, Primitive primitive);
+    void discard_group(NodeId group);
     [[nodiscard]] Transform transform(NodeId id) const;
     void set_transform(NodeId id, Transform value);
     [[nodiscard]] SemanticMetadata metadata(NodeId id) const;
@@ -29,14 +31,19 @@ public:
     [[nodiscard]] Paint paint(NodeId id) const;
     void set_paint(NodeId id, Paint value);
     [[nodiscard]] std::size_t entry_count(NodeId id) const;
+    [[nodiscard]] std::vector<NodeId> child_groups(NodeId id) const;
     void insert_primitive(NodeId id, std::size_t index, Primitive primitive);
     [[nodiscard]] NodeId wrap_contents(NodeId id, Transform transform = {},
                                        SemanticMetadata metadata = {},
                                        ElementRole role = ElementRole::anonymous_group);
+    [[nodiscard]] std::vector<NodeId> split_group_contents(NodeId shell,
+                                                           std::span<NodeId const> content_sources);
     void set_display_layout(DisplayLayout value);
     [[nodiscard]] DisplayLayout display_layout() const;
+    void set_frame_layout(FrameLayout value);
+    [[nodiscard]] FrameLayout frame_layout() const;
     void set_metrics(Metrics metrics);
     void set_font_metrics(FontMetrics metrics);
     [[nodiscard]] Scene freeze() &&;
 };
-}
+} // namespace folia::math::output::scene

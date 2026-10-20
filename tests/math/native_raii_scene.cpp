@@ -295,6 +295,79 @@ suite scene_freeze = [] {
         expect(moved.display_layout().alignment == "center");
     };
 
+    "discard group removes its subtree and releases owned values in place"_test = [] {
+        Builder builder;
+        auto left = builder.add_group();
+        builder.add_primitive(left, TextRun{"left", {}, {}, {}, {}});
+        auto discarded = builder.add_group();
+        auto child = builder.add_group(discarded);
+        auto grandchild = builder.add_group(child);
+        std::weak_ptr<GlyphResource const> discarded_resource;
+        {
+            auto resource = GlyphResource::make(
+                "temporary", GlyphOutline{PathGeometry{{MoveTo{{0, 0}}, LineTo{{1, 1}}}}});
+            discarded_resource = resource;
+            builder.add_primitive(
+                grandchild, GlyphRun{{Glyph{resource, {"normal", "temporary", 0x61}, {}, 1, {}}}});
+        }
+        auto right = builder.add_group();
+        builder.add_primitive(right, TextRun{"right", {}, {}, {}, {}});
+        auto const last_allocated = right;
+        expect(!discarded_resource.expired());
+        expect(builder.child_groups(0) == (std::vector<NodeId>{left, discarded, right}));
+
+        builder.discard_group(discarded);
+        expect(discarded_resource.expired());
+        expect(builder.child_groups(0) == (std::vector<NodeId>{left, right}));
+        expect(builder.entry_count(left) == 1_u && builder.entry_count(right) == 1_u);
+        for (auto removed : {discarded, child, grandchild}) {
+            bool missing = false;
+            try {
+                (void)builder.entry_count(removed);
+            } catch (std::out_of_range const &) {
+                missing = true;
+            }
+            expect(missing);
+        }
+
+        auto const next = builder.add_group();
+        expect(next > last_allocated);
+        builder.discard_group(next);
+        auto scene = std::move(builder).freeze();
+        expect(scene.root().entries.size() == 2_u);
+        auto const &left_group = *std::get<std::shared_ptr<Group const>>(scene.root().entries[0]);
+        auto const &right_group = *std::get<std::shared_ptr<Group const>>(scene.root().entries[1]);
+        expect(left_group.id == left && right_group.id == right);
+        expect(std::get<TextRun>(std::get<Primitive>(left_group.entries[0])).utf8 == "left");
+        expect(std::get<TextRun>(std::get<Primitive>(right_group.entries[0])).utf8 == "right");
+    };
+
+    "discard group rejects root and unknown ids without changing the builder"_test = [] {
+        Builder builder;
+        auto keep = builder.add_group();
+        auto drop = builder.add_group();
+        auto child = builder.add_group(drop);
+        bool root_rejected = false;
+        bool unknown_rejected = false;
+        try {
+            builder.discard_group(0);
+        } catch (std::invalid_argument const &) {
+            root_rejected = true;
+        }
+        try {
+            builder.discard_group(999);
+        } catch (std::out_of_range const &) {
+            unknown_rejected = true;
+        }
+        expect(root_rejected && unknown_rejected);
+        expect(builder.child_groups(0) == (std::vector<NodeId>{keep, drop}));
+        expect(builder.child_groups(drop) == std::vector<NodeId>{child});
+        builder.add_primitive(keep, TextRun{"kept", {}, {}, {}, {}});
+        builder.discard_group(drop);
+        expect(builder.child_groups(0) == std::vector<NodeId>{keep});
+        expect(builder.entry_count(keep) == 1_u);
+    };
+
     "display and text font values are frozen and validated"_test = [] {
         Builder builder;
         builder.set_display_layout({true, "left", 0.25, 4.0, true});
@@ -317,6 +390,102 @@ suite scene_freeze = [] {
             rejected = true;
         }
         expect(rejected);
+    };
+
+    "split group contents atomically extracts descendant drawing ids in order"_test = [] {
+        Builder builder;
+        auto shell =
+            builder.add_group(0, Transform{std::vector<TransformOperation>{Translation{0.1, 0.2}}});
+        auto row = builder.add_group(shell);
+        auto line_a = builder.add_group(row);
+        auto drawing_a = builder.add_group(line_a);
+        builder.add_primitive(drawing_a, TextRun{"A", {}, {0.4, 0.5, 0.1}, {}, {}});
+        auto line_b = builder.add_group(row);
+        auto drawing_b = builder.add_group(line_b);
+        builder.add_primitive(drawing_b, TextRun{"B", {}, {0.3, 0.4, 0.1}, {}, {}});
+        std::array<NodeId, 2> sources{line_a, line_b};
+        auto roots = builder.split_group_contents(shell, sources);
+        expect(roots.size() == 2_u);
+        expect(roots[0] == shell);
+        expect(roots[1] != shell);
+        expect(builder.child_groups(0) == roots);
+        expect(builder.child_groups(roots[0]) == std::vector<NodeId>{drawing_a});
+        expect(builder.child_groups(roots[1]) == std::vector<NodeId>{drawing_b});
+        builder.set_frame_layout(
+            {0.2,
+             {{roots[0], {0.4, 0.5, 0.1}, {}},
+              {roots[1], {0.3, 0.4, 0.1}, InlineBreak{InlineBreakKind::opportunity, 0}}}});
+        auto scene = std::move(builder).freeze();
+        expect(scene.frame_layout().inline_fragments.size() == 2_u);
+        expect(scene.frame_layout().inline_fragments[0].root == roots[0]);
+        expect(scene.frame_layout().inline_fragments[1].root == roots[1]);
+        auto const &first_shell = *std::get<std::shared_ptr<Group const>>(scene.root().entries[0]);
+        auto const &second_shell = *std::get<std::shared_ptr<Group const>>(scene.root().entries[1]);
+        expect(first_shell.id == shell && second_shell.id == roots[1]);
+        expect(first_shell.entries.size() == 1_u && second_shell.entries.size() == 1_u);
+        auto const &first_drawing = *std::get<std::shared_ptr<Group const>>(first_shell.entries[0]);
+        auto const &second_drawing =
+            *std::get<std::shared_ptr<Group const>>(second_shell.entries[0]);
+        expect(first_drawing.id == drawing_a && second_drawing.id == drawing_b);
+        expect(std::get<TextRun>(std::get<Primitive>(first_drawing.entries[0])).utf8 == "A");
+        expect(std::get<TextRun>(std::get<Primitive>(second_drawing.entries[0])).utf8 == "B");
+    };
+
+    "split group contents rejects invalid ancestry and overlaps without mutation"_test = [] {
+        Builder builder;
+        auto shell = builder.add_group(0);
+        auto line = builder.add_group(shell);
+        auto drawing = builder.add_group(line);
+        builder.add_primitive(drawing, TextRun{"kept", {}, {}, {}, {}});
+        auto outside = builder.add_group(0);
+        bool missing = false, wrong_ancestry = false, overlap = false;
+        std::array<NodeId, 1> bad_id{999};
+        try {
+            (void)builder.split_group_contents(shell, bad_id);
+        } catch (std::out_of_range const &) {
+            missing = true;
+        }
+        std::array<NodeId, 1> wrong{outside};
+        try {
+            (void)builder.split_group_contents(shell, wrong);
+        } catch (std::invalid_argument const &) {
+            wrong_ancestry = true;
+        }
+        std::array<NodeId, 2> overlapping{line, drawing};
+        try {
+            (void)builder.split_group_contents(shell, overlapping);
+        } catch (std::invalid_argument const &) {
+            overlap = true;
+        }
+        expect(missing && wrong_ancestry && overlap);
+        expect(builder.child_groups(0) == (std::vector<NodeId>{shell, outside}));
+        expect(builder.child_groups(shell) == std::vector<NodeId>{line});
+        expect(builder.child_groups(line) == std::vector<NodeId>{drawing});
+        expect(builder.entry_count(drawing) == 1_u);
+        builder.add_primitive(drawing, TextRun{"still usable", {}, {}, {}, {}});
+        expect(builder.entry_count(drawing) == 2_u);
+    };
+
+    "frame layout freeze rejects dangling roots and non-finite break spacing"_test = [] {
+        auto rejects = [](FrameLayout frames) {
+            Group root;
+            auto child = std::make_shared<Group>();
+            child->id = 1;
+            root.entries.emplace_back(std::shared_ptr<Group const>{child});
+            try {
+                Scene scene{root, {1, 0.5, 0.1}, {}, {}, std::move(frames)};
+            } catch (std::invalid_argument const &) {
+                return true;
+            }
+            return false;
+        };
+        expect(rejects(FrameLayout{0.1, {{2, {1, 0.5, 0.1}, {}}}}));
+        expect(rejects(FrameLayout{
+            0.1,
+            {{1,
+              {1, 0.5, 0.1},
+              InlineBreak{InlineBreakKind::forced, std::numeric_limits<Unit>::infinity()}}}}));
+        expect(rejects(FrameLayout{0, {}}));
     };
 
     "scene rejects a cyclic shared group before recursive copying"_test = [] {
