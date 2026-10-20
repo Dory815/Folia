@@ -16,6 +16,7 @@ struct Builder::State {
         std::vector<Entry> entries;
         ElementRole role{ElementRole::math_wrapper};
         Paint paint{};
+        std::optional<Viewport> viewport;
     };
     std::vector<MutableGroup> groups;
     Metrics metrics{};
@@ -51,6 +52,7 @@ struct Builder::State {
         out.metadata = std::move(source->metadata);
         out.role = source->role;
         out.paint = std::move(source->paint);
+        out.viewport = std::move(source->viewport);
         for (auto &entry : source->entries) {
             if (auto *primitive = std::get_if<Primitive>(&entry.value))
                 out.entries.emplace_back(std::move(*primitive));
@@ -71,7 +73,8 @@ Builder &Builder::operator=(Builder &&) noexcept = default;
 
 NodeId Builder::add_group(NodeId parent, Transform transform, std::optional<Clip> clip,
                           std::optional<Link> link, std::optional<Tooltip> tooltip,
-                          SemanticMetadata metadata, ElementRole role, Paint paint) {
+                          SemanticMetadata metadata, ElementRole role, Paint paint,
+                          std::optional<Viewport> viewport) {
     if (!state_)
         throw std::logic_error("Scene builder is moved from");
     auto *owner = state_->find(parent);
@@ -87,7 +90,8 @@ NodeId Builder::add_group(NodeId parent, Transform transform, std::optional<Clip
                                                  .tooltip = std::move(tooltip),
                                                  .metadata = std::move(metadata),
                                                  .role = role,
-                                                 .paint = std::move(paint)});
+                                                 .paint = std::move(paint),
+                                                 .viewport = std::move(viewport)});
     owner = state_->find(parent); // vector growth can invalidate the previous pointer
     owner->entries.push_back(State::Entry{NodeId{id}});
     return id;
@@ -314,7 +318,8 @@ std::vector<NodeId> Builder::split_group_contents(NodeId shell_id,
                                  .tooltip = shell->tooltip,
                                  .metadata = shell->metadata,
                                  .role = shell->role,
-                                 .paint = shell->paint};
+                                 .paint = shell->paint,
+                                 .viewport = shell->viewport};
         copy.entries.reserve(source.entries.size());
         prepared.push_back(std::move(copy));
         result.push_back(id);

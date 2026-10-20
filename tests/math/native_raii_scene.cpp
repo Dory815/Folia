@@ -238,6 +238,82 @@ suite scene_freeze = [] {
         expect(std::get<TextRun>(std::get<Primitive>(frozen->entries.front())).utf8 == "before");
     };
 
+    "viewport values are validated and deeply frozen with groups and glyphs"_test = [] {
+        Viewport viewport{{0.1, -0.2, 0.8, 0.7},
+                          {-0.3, -0.4, 1.2, 1.1},
+                          ViewportAspectRatio{ViewportAlignment::max, ViewportAlignment::min,
+                                              ViewportFit::slice}};
+        Group root;
+        auto child = std::make_shared<Group>();
+        child->id = 1;
+        child->viewport = viewport;
+        root.entries.emplace_back(std::shared_ptr<Group const>{child});
+        Scene scene{root, {1, 0.5, 0.1}, {}};
+        child->viewport->bounds.x = 99;
+        child->viewport->aspect_ratio->fit = ViewportFit::none;
+        auto const &frozen = *std::get<std::shared_ptr<Group const>>(scene.root().entries.front());
+        expect(frozen.viewport->bounds.x == 0.1_d);
+        expect(frozen.viewport->aspect_ratio->fit == ViewportFit::slice);
+
+        auto rejects_viewport = [](Viewport value) {
+            Group invalid_root;
+            auto invalid = std::make_shared<Group>();
+            invalid->id = 1;
+            invalid->viewport = std::move(value);
+            invalid_root.entries.emplace_back(std::shared_ptr<Group const>{invalid});
+            try {
+                Scene rejected{invalid_root, {}, {}};
+            } catch (std::invalid_argument const &) {
+                return true;
+            }
+            return false;
+        };
+        auto invalid = viewport;
+        invalid.bounds.width = -1;
+        auto invalid_view_box = viewport;
+        invalid_view_box.view_box.height = 0;
+        auto invalid_aspect = viewport;
+        invalid_aspect.aspect_ratio->x = static_cast<ViewportAlignment>(99);
+        expect(rejects_viewport(invalid));
+        expect(rejects_viewport(invalid_view_box));
+        expect(rejects_viewport(invalid_aspect));
+
+        auto resource = GlyphResource::make(
+            "font", GlyphOutline{PathGeometry{{MoveTo{{0, 0}}, LineTo{{1, 0}}, ClosePath{}}}});
+        Glyph glyph{resource, {"normal", "font", 65},
+                    {},       1,
+                    {},       Transform{std::vector<TransformOperation>{Scaling{2, 3}}}};
+        Group glyph_root;
+        glyph_root.entries.emplace_back(Primitive{GlyphRun{{glyph}}});
+        Scene glyph_scene{glyph_root, {}, {}};
+        glyph.transform = Transform{
+            std::vector<TransformOperation>{Translation{std::numeric_limits<Unit>::infinity(), 0}}};
+        auto const &saved_glyph =
+            std::get<GlyphRun>(std::get<Primitive>(glyph_scene.root().entries.front()))
+                .glyphs.front();
+        expect(saved_glyph.transform.matrix() ==
+               Transform{std::vector<TransformOperation>{Scaling{2, 3}}}.matrix());
+        auto invalid_glyph = glyph;
+        invalid_glyph.transform = Transform{
+            std::vector<TransformOperation>{Translation{std::numeric_limits<Unit>::infinity(), 0}}};
+        Group invalid_glyph_root;
+        invalid_glyph_root.entries.emplace_back(Primitive{GlyphRun{{invalid_glyph}}});
+        bool rejected_glyph = false;
+        try {
+            Scene rejected{invalid_glyph_root, {}, {}};
+        } catch (std::invalid_argument const &) {
+            rejected_glyph = true;
+        }
+        expect(rejected_glyph);
+
+        Builder builder;
+        auto id = builder.add_group(0, {}, {}, {}, {}, {}, ElementRole::math_wrapper, {}, viewport);
+        expect(builder.child_groups(0) == std::vector<NodeId>{id});
+        auto frozen_builder = std::move(builder).freeze();
+        expect(std::get<std::shared_ptr<Group const>>(frozen_builder.root().entries.front())
+                   ->viewport->view_box == viewport.view_box);
+    };
+
     "builder edits existing group values and wraps contents in place"_test = [] {
         Builder builder;
         auto id = builder.add_group();
@@ -394,8 +470,10 @@ suite scene_freeze = [] {
 
     "split group contents atomically extracts descendant drawing ids in order"_test = [] {
         Builder builder;
+        Viewport viewport{{0.1, -0.2, 1, 2}, {-0.3, -0.4, 2, 3}, {}};
         auto shell =
-            builder.add_group(0, Transform{std::vector<TransformOperation>{Translation{0.1, 0.2}}});
+            builder.add_group(0, Transform{std::vector<TransformOperation>{Translation{0.1, 0.2}}},
+                              {}, {}, {}, {}, ElementRole::math_wrapper, {}, viewport);
         auto row = builder.add_group(shell);
         auto line_a = builder.add_group(row);
         auto drawing_a = builder.add_group(line_a);
@@ -421,6 +499,8 @@ suite scene_freeze = [] {
         expect(scene.frame_layout().inline_fragments[1].root == roots[1]);
         auto const &first_shell = *std::get<std::shared_ptr<Group const>>(scene.root().entries[0]);
         auto const &second_shell = *std::get<std::shared_ptr<Group const>>(scene.root().entries[1]);
+        expect(first_shell.viewport && first_shell.viewport->bounds == viewport.bounds);
+        expect(second_shell.viewport && second_shell.viewport->view_box == viewport.view_box);
         expect(first_shell.id == shell && second_shell.id == roots[1]);
         expect(first_shell.entries.size() == 1_u && second_shell.entries.size() == 1_u);
         auto const &first_drawing = *std::get<std::shared_ptr<Group const>>(first_shell.entries[0]);

@@ -129,6 +129,27 @@ void validate(Clip const &clip) {
         throw std::invalid_argument("Scene clip fill rule is invalid");
     validate(clip.geometry);
 }
+void validate(Viewport const &viewport) {
+    auto const &bounds = viewport.bounds;
+    auto const &view_box = viewport.view_box;
+    if (!(finite(bounds.x) && finite(bounds.y) && finite(bounds.width) && finite(bounds.height)) ||
+        bounds.width < 0 || bounds.height < 0)
+        throw std::invalid_argument("Scene viewport bounds are invalid");
+    if (!(finite(view_box.x) && finite(view_box.y) && finite(view_box.width) &&
+          finite(view_box.height)) ||
+        view_box.width <= 0 || view_box.height <= 0)
+        throw std::invalid_argument("Scene viewport viewBox is invalid");
+    if (viewport.aspect_ratio) {
+        auto const &aspect = *viewport.aspect_ratio;
+        if ((aspect.x != ViewportAlignment::min && aspect.x != ViewportAlignment::mid &&
+             aspect.x != ViewportAlignment::max) ||
+            (aspect.y != ViewportAlignment::min && aspect.y != ViewportAlignment::mid &&
+             aspect.y != ViewportAlignment::max) ||
+            (aspect.fit != ViewportFit::meet && aspect.fit != ViewportFit::slice &&
+             aspect.fit != ViewportFit::none))
+            throw std::invalid_argument("Scene viewport aspect ratio is invalid");
+    }
+}
 Glyph clone_glyph(Glyph const &source) {
     // GlyphResource can only be created from an owned outline snapshot and has
     // no mutation surface, so retaining its shared const handle is safe.
@@ -144,6 +165,7 @@ GlyphRun validate_and_clone(GlyphRun const &source) {
         if (!finite(glyph.advance))
             throw std::invalid_argument("Scene glyph advance must be finite");
         validate(glyph.paint);
+        validate(glyph.transform);
         validate(glyph.resource->outline().outline);
         copy.glyphs.push_back(clone_glyph(glyph));
     }
@@ -199,6 +221,8 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
     validate(source.metadata);
     if (source.clip)
         validate(*source.clip);
+    if (source.viewport)
+        validate(*source.viewport);
     Group copy;
     copy.id = source.id;
     copy.transform = source.transform;
@@ -208,6 +232,7 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
     copy.metadata = source.metadata;
     copy.role = source.role;
     copy.paint = source.paint;
+    copy.viewport = source.viewport;
     copy.entries.reserve(source.entries.size());
     for (auto const &entry : source.entries) {
         if (auto const *primitive = std::get_if<Primitive>(&entry))

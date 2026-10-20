@@ -13,6 +13,7 @@ struct Group {
     std::vector<std::variant<Primitive, std::shared_ptr<Group const>>> entries;
     ElementRole role{ElementRole::math_wrapper};
     Paint paint{};
+    std::optional<Viewport> viewport;
 };
 
 // A Scene is a completed immutable value. All content is owned by value;

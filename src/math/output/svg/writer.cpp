@@ -200,6 +200,8 @@ std::string_view translation_separator(
     case scene::ElementRole::table_label_frame:
     case scene::ElementRole::image_glyph:
     case scene::ElementRole::foreign_content_viewport:
+    case scene::ElementRole::vertical_extender_viewport:
+    case scene::ElementRole::horizontal_extender_viewport:
     case scene::ElementRole::anonymous_group:
     case scene::ElementRole::glyph_composition:
     case scene::ElementRole::background_box:
@@ -225,7 +227,7 @@ std::string transform_operation(scene::TransformOperation const &operation,
                 result += ')';
                 return result;
             } else if constexpr (std::is_same_v<T, scene::Scaling>) {
-                if (value.x == value.y)
+                if (value.x == value.y && !value.explicit_axes)
                     return "scale(" + number(value.x, 3) + ")";
                 return "scale(" + number(value.x, 3) + "," + number(value.y, 3) + ")";
             } else if constexpr (std::is_same_v<T, scene::Rotation>) {
@@ -353,10 +355,17 @@ void append_glyphs(std::string &out, scene::GlyphRun const &run, SvgWriteOptions
         else
             detail::append_attribute(out, options.use_xlink ? "xlink:href" : "href",
                                      "#" + cache_id(glyph, options));
+        std::string transform;
         if (glyph.origin.x || glyph.origin.y)
-            detail::append_attribute(out, "transform",
-                                     "translate(" + number(glyph.origin.x * 1000) + "," +
-                                         number(glyph.origin.y * 1000) + ")");
+            transform = "translate(" + number(glyph.origin.x * 1000) + "," +
+                        number(glyph.origin.y * 1000) + ")";
+        for (auto const &operation : glyph.transform.operations()) {
+            if (!transform.empty())
+                transform.push_back(' ');
+            transform += transform_operation(operation, scene::ElementRole::math_wrapper);
+        }
+        if (!transform.empty())
+            detail::append_attribute(out, "transform", transform);
         append_paint(out, glyph.paint);
         out += "/>";
     }
@@ -547,8 +556,9 @@ void open_group(std::string &out, scene::Group const &group, SvgWriteOptions con
         group.metadata.source_tag.empty() && group.metadata.math_role.empty() &&
         group.metadata.annotation_encoding.empty() && group.metadata.annotation.empty() &&
         group.metadata.ordered_attributes.empty() && !group.metadata.initial_transform &&
-        inherited_paint(group.paint);
+        inherited_paint(group.paint) && !group.viewport;
     bool const self_closing = !sentinel && group.entries.empty() && !group.tooltip && !group.clip;
+    bool const is_viewport = group.viewport.has_value();
     if (group.link) {
         out += "<a";
         detail::append_attribute(out, "href", group.link->href);
@@ -559,8 +569,8 @@ void open_group(std::string &out, scene::Group const &group, SvgWriteOptions con
         out += '>';
     }
     if (!sentinel)
-        out += "<g";
-    static constexpr std::array<std::string_view, 17> reserved{"data-mml-node",
+        out += is_viewport ? "<svg" : "<g";
+    static constexpr std::array<std::string_view, 24> reserved{"data-mml-node",
                                                                "transform",
                                                                "clip-path",
                                                                "fill",
@@ -576,8 +586,69 @@ void open_group(std::string &out, scene::Group const &group, SvgWriteOptions con
                                                                "href",
                                                                "target",
                                                                "rel",
-                                                               "style"};
+                                                               "style",
+                                                               "x",
+                                                               "y",
+                                                               "width",
+                                                               "height",
+                                                               "viewBox",
+                                                               "preserveAspectRatio",
+                                                               "xmlns"};
     if (!sentinel) {
+        auto const is_extender = group.role == scene::ElementRole::vertical_extender_viewport ||
+                                 group.role == scene::ElementRole::horizontal_extender_viewport;
+        auto append_viewbox = [&] {
+            auto const &v = *group.viewport;
+            detail::append_attribute(
+                out, "viewBox",
+                number(v.view_box.x * 1000) + " " + number(v.view_box.y * 1000) + " " +
+                    number(v.view_box.width * 1000) + " " + number(v.view_box.height * 1000));
+        };
+        auto append_aspect = [&] {
+            if (!group.viewport->aspect_ratio)
+                return;
+            auto token = [](scene::ViewportAlignment a) -> std::string_view {
+                switch (a) {
+                case scene::ViewportAlignment::min:
+                    return "Min";
+                case scene::ViewportAlignment::mid:
+                    return "Mid";
+                case scene::ViewportAlignment::max:
+                    return "Max";
+                }
+                throw std::invalid_argument("unknown viewport alignment");
+            };
+            auto const &a = *group.viewport->aspect_ratio;
+            std::string value = "x" + std::string(token(a.x)) + "Y" + std::string(token(a.y));
+            switch (a.fit) {
+            case scene::ViewportFit::meet:
+                break;
+            case scene::ViewportFit::slice:
+                value += " slice";
+                break;
+            case scene::ViewportFit::none:
+                value = "none";
+                break;
+            default:
+                throw std::invalid_argument("unknown viewport fit");
+            }
+            detail::append_attribute(out, "preserveAspectRatio", value);
+        };
+        auto append_viewport_bounds = [&] {
+            auto const &b = group.viewport->bounds;
+            detail::append_attribute(out, "width", number(b.width * 1000));
+            detail::append_attribute(out, "height", number(b.height * 1000));
+            if (group.role == scene::ElementRole::vertical_extender_viewport) {
+                detail::append_attribute(out, "y", number(b.y * 1000));
+                detail::append_attribute(out, "x", number(b.x * 1000));
+            } else if (group.role == scene::ElementRole::horizontal_extender_viewport) {
+                detail::append_attribute(out, "x", number(b.x * 1000));
+                detail::append_attribute(out, "y", number(b.y * 1000));
+            } else {
+                detail::append_attribute(out, "x", number(b.x * 1000));
+                detail::append_attribute(out, "y", number(b.y * 1000));
+            }
+        };
         if (!group.metadata.source_tag.empty())
             detail::append_attribute(out, "data-mml-node", group.metadata.source_tag);
         auto const style =
@@ -587,11 +658,21 @@ void open_group(std::string &out, scene::Group const &group, SvgWriteOptions con
             detail::append_attribute(out, "style", style->value);
         if (group.metadata.initial_transform && !group.transform.operations().empty())
             append_transform(out, group.transform, group.role);
+        if (is_viewport && is_extender)
+            append_viewport_bounds();
         append_paint(out, group.paint);
         if (group.clip)
             detail::append_attribute(out, "clip-path",
                                      "url(#clip-" + std::to_string(group.id) + ")");
         detail::append_metadata(out, group.metadata, reserved);
+        if (is_viewport) {
+            append_aspect();
+            if (!is_extender && group.role != scene::ElementRole::table_content_viewport &&
+                group.role != scene::ElementRole::table_label_frame)
+                append_viewport_bounds();
+            append_viewbox();
+            detail::append_attribute(out, "xmlns", "http://www.w3.org/2000/svg");
+        }
         if (!group.metadata.initial_transform && !group.transform.operations().empty())
             append_transform(out, group.transform, group.role);
         out += self_closing ? "/>" : ">";
@@ -614,7 +695,7 @@ void open_group(std::string &out, scene::Group const &group, SvgWriteOptions con
         append_group_entries(out, group, options);
     }
     if (!sentinel && !self_closing)
-        out += "</g>";
+        out += is_viewport ? "</svg>" : "</g>";
     if (group.link)
         out += "</a>";
 }

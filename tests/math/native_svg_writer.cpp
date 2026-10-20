@@ -263,6 +263,91 @@ suite native_svg_writer = [] {
         expect(output.find("transform=\"scale(1,-1)\"") != output.npos);
     };
 
+    "typed viewport roles preserve Source attribute order and nesting"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::Viewport vertical{{0.1, 0.2, 0.6, 0.8},
+                                 {-0.5, -0.4, 1.2, 1.3},
+                                 scene::ViewportAspectRatio{scene::ViewportAlignment::max,
+                                                            scene::ViewportAlignment::min,
+                                                            scene::ViewportFit::slice}};
+        auto vertical_id = builder.add_group(
+            0, {}, {}, {}, {}, {}, scene::ElementRole::vertical_extender_viewport, {}, vertical);
+        builder.add_primitive(
+            vertical_id,
+            scene::Path{scene::PathGeometry{{scene::MoveTo{{0, 0}}, scene::LineTo{{0.2, 0.3}}}}});
+        scene::Viewport horizontal{{0.3, 0.4, 0.7, 0.9},
+                                   {-0.1, -0.2, 1.1, 1.2},
+                                   scene::ViewportAspectRatio{scene::ViewportAlignment::min,
+                                                              scene::ViewportAlignment::mid,
+                                                              scene::ViewportFit::meet}};
+        auto horizontal_id =
+            builder.add_group(0, {}, {}, {}, {}, {},
+                              scene::ElementRole::horizontal_extender_viewport, {}, horizontal);
+        builder.add_primitive(horizontal_id,
+                              scene::Path{scene::PathGeometry{{scene::MoveTo{{0, 0}}}}});
+        scene::SemanticMetadata table_metadata;
+        table_metadata.ordered_attributes.push_back({"data-table", "true"});
+        (void)builder.add_group(0, {}, {}, {}, {}, table_metadata,
+                                scene::ElementRole::table_content_viewport, {}, vertical);
+        auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        auto vertical_start = output.find("<svg width=\"600\" height=\"800\" y=\"200\" x=\"100\"");
+        expect(vertical_start != output.npos);
+        expect(output.find("preserveAspectRatio=\"xMaxYMin slice\"", vertical_start) !=
+               output.npos);
+        expect(output.find("viewBox=\"-500 -400 1200 1300\"", vertical_start) != output.npos);
+        expect(output.find("viewBox=\"-500 -400 1200 1300\" xmlns=\"http://www.w3.org/2000/svg\"",
+                           vertical_start) != output.npos);
+        expect(output.find("<svg", vertical_start) < output.find("<path", vertical_start));
+        expect(output.find("<g", vertical_start) == output.npos);
+        expect(output.find("<svg width=\"700\" height=\"900\" x=\"300\" y=\"400\"") != output.npos);
+        expect(output.find("preserveAspectRatio=\"xMinYMid\"") != output.npos);
+        expect(output.find("preserveAspectRatio=\"xMinYMid meet\"") == output.npos);
+        auto table_start = output.find("<svg data-table=\"true\"");
+        expect(table_start != output.npos);
+        auto table_end = output.find('>', table_start);
+        auto table_tag = output.substr(table_start, table_end - table_start);
+        expect(table_tag.find("width=") == table_tag.npos &&
+               table_tag.find("height=") == table_tag.npos &&
+               table_tag.find(" x=") == table_tag.npos && table_tag.find(" y=") == table_tag.npos);
+        expect(table_tag.find("preserveAspectRatio=\"xMaxYMin slice\"") != table_tag.npos);
+        expect(table_tag.find("viewBox=\"-500 -400 1200 1300\"") != table_tag.npos);
+    };
+
+    "glyph transforms merge after origin in one transform attribute"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        auto resource = scene::GlyphResource::make(
+            "font", scene::GlyphOutline{scene::PathGeometry{
+                        {scene::MoveTo{{0, 0}}, scene::LineTo{{1, 0}}, scene::ClosePath{}}}});
+        scene::Glyph glyph{resource,
+                           {"normal", "font", 65},
+                           {0.1, 0.2},
+                           0.5,
+                           {},
+                           scene::Transform{std::vector<scene::TransformOperation>{
+                               scene::Scaling{1, 1, true}, scene::Translation{0.3, 0.4}}}};
+        builder.add_primitive(0, scene::GlyphRun{{glyph}});
+        svg::SvgFontResourcesBuilder fonts;
+        fonts.add({"normal", 65}, {true, "M0 0L1000 0Z", {}});
+        auto resources = std::move(fonts).freeze();
+        auto output =
+            svg::write(std::move(builder).freeze(),
+                       {.font_cache = svg::FontCacheMode::none, .font_resources = &resources});
+        auto glyph_start = output.find("<path data-c=\"41\"");
+        auto transform = output.find(
+            "transform=\"translate(100,200) scale(1,1) translate(300,400)\"", glyph_start);
+        expect(glyph_start != output.npos && transform != output.npos);
+        expect(output.find("transform=", transform + 1) == output.npos);
+        expect(glyph.transform.matrix() ==
+               scene::Transform{std::vector<scene::TransformOperation>{
+                                    scene::Scaling{1, 1, false}, scene::Translation{0.3, 0.4}}}
+                   .matrix());
+    };
+
     "per-translation separators preserve spelling without changing composed geometry"_test = [] {
         auto spelled = scene::Transform{std::vector<scene::TransformOperation>{
             scene::Translation{0.1, 0.2, scene::TranslationSeparator::comma_space},

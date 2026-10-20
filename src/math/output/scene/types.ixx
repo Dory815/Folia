@@ -28,6 +28,8 @@ enum class ElementRole {
     id_alignment_marker,
     fraction_rule,
     radical_rule,
+    vertical_extender_viewport,
+    horizontal_extender_viewport,
 };
 
 struct Point {
@@ -64,6 +66,7 @@ struct Translation {
 };
 struct Scaling {
     Unit x{1}, y{1};
+    bool explicit_axes{};
     friend bool operator==(Scaling const &, Scaling const &) = default;
 };
 // Degrees are positive counterclockwise in Scene's y-up coordinate system;
@@ -254,6 +257,7 @@ struct Glyph {
     Point origin{};
     Unit advance{};
     Paint paint{};
+    Transform transform{};
 };
 struct GlyphRun {
     std::vector<Glyph> glyphs;
@@ -287,6 +291,17 @@ struct TextRun {
     std::optional<TextFont> font;
     SemanticMetadata metadata{};
     ElementRole role{ElementRole::math_wrapper};
+};
+enum class ViewportAlignment { min, mid, max };
+enum class ViewportFit { meet, slice, none };
+struct ViewportAspectRatio {
+    ViewportAlignment x{ViewportAlignment::mid}, y{ViewportAlignment::mid};
+    ViewportFit fit{ViewportFit::meet};
+};
+struct Viewport {
+    Rect bounds;
+    Rect view_box;
+    std::optional<ViewportAspectRatio> aspect_ratio;
 };
 struct Clip {
     PathGeometry geometry;

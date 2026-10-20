@@ -21,7 +21,8 @@ class Builder {
                                    std::optional<Clip> clip = {}, std::optional<Link> link = {},
                                    std::optional<Tooltip> tooltip = {},
                                    SemanticMetadata metadata = {},
-                                   ElementRole role = ElementRole::math_wrapper, Paint paint = {});
+                                   ElementRole role = ElementRole::math_wrapper, Paint paint = {},
+                                   std::optional<Viewport> viewport = {});
     void add_primitive(NodeId group, Primitive primitive);
     void discard_group(NodeId group);
     [[nodiscard]] Transform transform(NodeId id) const;
