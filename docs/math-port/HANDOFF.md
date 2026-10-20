@@ -1,8 +1,8 @@
 # MathJax 原生移植交接入口
 
-当前：Lite/Xml/HTMLDomStrings/texhtml/Finder 已通过组件验收；最新 build exit 0（texhtml-final-build.log），四组 *-accepted-focus.log 全 exit 0。完整 texhtml-full.log exit 0：741 tests / 210529 assertions / 149 suites，无失败/跳过。DOM/Lite 已提交 4c379ef7，Xml bridge 已提交 c9d76a1f；其余正在按职责提交。无活动 build/test；全部 Luna 冻结。额度已恢复。
+当前：Lite/Xml/HTMLDomStrings/texhtml/Finder 已通过组件验收；最新 build exit 0（texhtml-final-build.log），四组 *-accepted-focus.log 全 exit 0。完整 texhtml-full.log exit 0：741 tests / 210529 assertions / 149 suites，无失败/跳过。DOM/Lite 已提交 4c379ef7，Xml bridge 为 c9d76a1f，CompileServices/Finder 为 ef04091d；正在提交 texhtml/验收。无活动 build/test；全部 Luna 冻结。额度已恢复。
 
-下一步：按 DOM/Lite、Xml bridge、CompileServices/Finder、HTMLDomStrings/texhtml 分批提交验收结果，再冻结 Common→Scene 的原 family emission 接口并分 Luna。旧 texhtml methods/services 已由原 configuration pair 接管，可连同未注册旧 UT 删除；旧 Finder host 有 inactive parser_runtime/render_session 入边，清理须显式处理。node_store/source_text_content 受保护 dirty Lite consumers 仍需，暂不删。
+下一步：提交 HTMLDomStrings/texhtml/验收，再冻结 Common→Scene 的原 family emission 接口并分 Luna。旧 texhtml methods/services 四文件与未注册 html_methods_identity UT 已删除，职责只在原 configuration pair。旧 Finder host 有 inactive parser_runtime/render_session 入边，随旧对象层退出显式清理；node_store/source_text_content 受保护 dirty Lite consumers 仍需，暂不删。
 
 最近修正：LiteParser.checkDocument 的 replace(new,old) 参数顺序；测试 JSON/片段选择、parsed document 无 defaultView、有效 Element 不触发 span 包装、texhtml 空根、disabled TeX 的 U+2212。texhtml UT 空指针来自丢弃 compile 返回值再读 bad.root，已修并单例 exit 0；无未诊断异常退出。direct fixture 现从 pinned inputs 保存 initialAllowTexHTML，而非 jax.options 输出；22 direct + 1 recovery，Source JSON/期望未改。Source Ref/eqref 显式 display=false 已核对，无待修问题。
 

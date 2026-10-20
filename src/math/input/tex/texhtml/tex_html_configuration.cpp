@@ -1,138 +1,222 @@
 /*************************************************************
  * Native port of MathJax 4.1.3 input/tex/texhtml/TexHtmlConfiguration.ts.
- * Package data is scoped to each actual TeX compilation.
+ * TeX HTML parsing uses the active request's borrowed DOM adaptor.
  *************************************************************/
 module folia.math.input.tex.texhtml.tex_html_configuration;
-import folia.math.input.tex.handler_types;
-import folia.math.input.tex.token_map;
-import folia.math.input.tex.texhtml.tex_html_methods;
-import folia.math.input.tex.texhtml.tex_html_services;
-import folia.math.core.input_jax;
-import folia.math.handlers.html.html_dom_strings;
-import folia.math.input.tex.base_methods;
-import folia.math.util.runtime_modules;
-import folia.math.util.option_functions;
-import folia.math.util.property_host;
+import folia.math.core.dom_adaptor;
+import folia.math.core.mml_tree.mml_nodes.html_node;
+import folia.math.core.mml_tree.xml_dom_adaptor;
+import folia.math.input.tex.tex_error;
+import folia.math.input.tex.token;
 import std;
 
 namespace folia::math::tex {
 namespace {
-using namespace options;
-Key key(std::u16string_view name){return Key(std::u16string(name));}
-Value array(Context& cx,std::initializer_list<Value> values){
-    const ObjectRef result=cx.array(static_cast<std::uint32_t>(values.size()));
-    std::uint32_t index=0;
-    for(const auto& value:values){
-        const auto text=std::to_string(index++);
-        cx.set(Value(result),key(std::u16string(text.begin(),text.end())),value);
-    }
-    return Value(result);
+using handlers::html::HTMLDomStringsOptions;
+using handlers::html::IncludeHtmlHandler;
+using handlers::html::IncludedHtmlTag;
+using folia::math::DOMNodeRef;
+
+class TexHtmlMap final : public MacroMap {
+    std::shared_ptr<HTMLDomStringsOptions> options_;
+    std::shared_ptr<mml::XmlDomAdaptor> xml_;
+
+  public:
+    TexHtmlMap(MacroMapInit init, std::shared_ptr<HTMLDomStringsOptions> options)
+        : MacroMap(std::move(init)), options_(std::move(options)),
+          xml_(mml::XmlDomAdaptor::create()) {}
+
+    HTMLDomStringsOptions &options() const noexcept { return *options_; }
+    std::shared_ptr<mml::XmlDomAdaptor> const &xml() const noexcept { return xml_; }
+};
+
+TexHtmlMap const *configuredMap(TexParser &parser) {
+    auto *handler = parser.configuration.handlers.get(HandlerKind::character);
+    if (!handler)
+        return nullptr;
+    const auto selected = handler->retrieve(u"tex-html");
+    return dynamic_cast<TexHtmlMap const *>(selected.get());
 }
-Value record(Context& cx,std::initializer_list<std::pair<std::u16string_view,Value>> fields){
-    const ObjectRef result=cx.object();
-    for(const auto& [name,value]:fields)cx.set(Value(result),key(name),value);
-    return Value(result);
+
+bool jsSpace(char16_t c) {
+    return c == u' ' || c == u'\t' || c == u'\n' || c == u'\v' || c == u'\f' ||
+           c == u'\r' || c == 0x00a0 || c == 0x1680 || (c >= 0x2000 && c <= 0x200a) ||
+           c == 0x2028 || c == 0x2029 || c == 0x202f || c == 0x205f || c == 0x3000 ||
+           c == 0xfeff;
 }
-Value bindFilter(ParserRuntime& runtime,std::u16string name,
-    std::function<void(core::InputJaxFilterDataRef)> run){
-    auto body=std::make_shared<Function>();
-    body->sourceMetadata=FunctionSourceMetadata{u"",1};
-    body->call=[run=std::move(run)](const FunctionReceiver&,FunctionArgs arguments)->std::any{
-        if(arguments.empty())throw Exception("TypeError",u"TexHtml filter data is missing");
-        const auto* data=std::any_cast<core::InputJaxFilterDataRef>(&arguments[0]);
-        if(!data||!*data)throw Exception("TypeError",u"TexHtml filter data is invalid");
-        run(*data);
-        return std::monostate{};
-    };
-    OptionCallBinding binding;
-    binding.receiver=[](Context&,Value receiver){return FunctionReceiver(std::move(receiver));};
-    binding.arguments=[](Context& cx,std::span<const Value> arguments){
-        if(arguments.empty())throw Exception("TypeError",u"TexHtml filter data is missing");
-        const auto* object=std::get_if<ObjectRef>(&arguments[0].data);
-        if(!object)throw Exception("TypeError",u"TexHtml filter identity is invalid");
-        const auto* data=std::any_cast<core::InputJaxFilterDataRef>(&cx.payload(*object));
-        if(!data||!*data)throw Exception("TypeError",u"TexHtml filter identity is invalid");
-        return std::vector<std::any>{std::any(*data)};
-    };
-    binding.result=[](Context&,const std::any&){return Value(Undefined{});};
-    const Value result=runtime.functions().bind(std::move(body),std::move(binding),name);
-    if(const auto* function=std::get_if<ObjectRef>(&result.data))
-    {
-        runtime.context().define(*function,key(u"length"),Descriptor::data(Value(1.0),false,false,true));
-        runtime.context().define(*function,key(u"name"),Descriptor::data(Value(u""),false,false,true));
+
+std::u16string trimHtml(std::u16string_view text) {
+    std::size_t first = 0, last = text.size();
+    while (first < last && jsSpace(text[first]))
+        ++first;
+    while (last > first && jsSpace(text[last - 1]))
+        --last;
+    return std::u16string(text.substr(first, last - first));
+}
+
+struct StartTag {
+    std::u16string text;
+    std::u16string number;
+    std::size_t length{};
+};
+
+std::optional<StartTag> startTag(std::u16string_view input) {
+    constexpr std::u16string_view prefix = u"tex-html";
+    if (!input.starts_with(prefix))
+        return {};
+    std::size_t at = prefix.size();
+    std::u16string number;
+    if (at < input.size() && input[at] == u' ') {
+        constexpr std::u16string_view attribute = u" n=\"";
+        if (input.substr(at, attribute.size()) != attribute)
+            return {};
+        at += attribute.size();
+        const auto begin = at;
+        while (at < input.size() && input[at] >= u'0' && input[at] <= u'9')
+            ++at;
+        if (at == begin || at >= input.size() || input[at] != u'\"')
+            return {};
+        number = std::u16string(input.substr(begin, at - begin));
+        ++at;
     }
+    if (at >= input.size() || input[at] != u'>')
+        return {};
+    ++at;
+    return StartTag{std::u16string(input.substr(0, at)), std::move(number), at};
+}
+
+std::u16string includeTexHtml(DOMNodeRef const &node, AbstractDOMAdaptor &adaptor) {
+    const auto html = adaptor.innerHTML(node);
+    std::size_t count = 1;
+    constexpr std::u16string_view end = u"</tex-html>";
+    for (std::size_t at = 0; (at = html.find(end, at)) != std::u16string::npos;
+         at += end.size())
+        ++count;
+    std::u16string digits;
+    if (count > 1)
+        for (const auto digit : std::to_string(count))
+            digits.push_back(static_cast<char16_t>(digit));
+    const auto marker = count > 1 ? u" n=\"" + digits + u"\"" : std::u16string{};
+    auto result = u"<tex-html" + marker + u">" + html;
+    if (count > 1)
+        result += u"<!" + digits + u">";
+    result += u"</tex-html>";
     return result;
 }
-std::shared_ptr<SourceStringMap<Value>> packageData(ParseOptions& options){
-    if(const auto* value=std::get_if<std::shared_ptr<SourceStringMap<Value>>>(&options.packageData);
-       value&&*value)return *value;
-    property_host::typeError("Cannot read properties of null or undefined (reading 'set')");
-}
+
+void installIncludeHook(HTMLDomStringsOptions &options) {
+    auto found = std::find_if(options.includeHtmlTags.begin(), options.includeHtmlTags.end(),
+                              [](IncludedHtmlTag const &entry) {
+                                  return entry.name == u"tex-html";
+                              });
+    if (found == options.includeHtmlTags.end()) {
+        options.includeHtmlTags.push_back({u"tex-html", IncludeHtmlHandler{&includeTexHtml}});
+        return;
+    }
+    const bool configured = std::visit(
+        [](auto const &value) {
+            using T = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<T, std::u16string>)
+                return !value.empty();
+            else
+                return value != nullptr;
+        },
+        found->value);
+    if (!configured)
+        found->value = IncludeHtmlHandler{&includeTexHtml};
 }
 
-ConfigurationRef TexHtmlConfiguration::initializeModule(ParserRuntime& runtime,util::RuntimeModules& modules,
-    TexHtmlAdaptorResolver resolver){
-    const auto loaded=runtime.configurationHandler.get(u"texhtml");
-    if(const auto* prior=std::get_if<ConfigurationRef>(&loaded);prior&&*prior)return *prior;
-    const Property methods=TexHtmlMethods::initializeModule(runtime,resolver);
-    const Property texHtmlMethod=property_host::get(methods,"TexHTML");
-    const auto* texHtmlFunction=std::get_if<FunctionRef>(&texHtmlMethod.value);
-    if(!texHtmlFunction||!*texHtmlFunction)
-        throw Exception("TypeError",u"TexHtml source method is not callable");
-    const Value texHtmlIdentity=BaseMethods::bind(runtime,*texHtmlFunction,u"TexHTML");
-    if(const auto* identity=std::get_if<ObjectRef>(&texHtmlIdentity.data))
-        runtime.context().define(*identity,key(u"length"),Descriptor::data(Value(2.0),false,false,true));
-    else throw Exception("TypeError",u"TexHtml source method has no Context identity");
-    const auto domStrings=handlers::html::HTMLDomStringsModule::initializeModule(modules,runtime.properties,runtime.regexp());
-    auto configBody=std::make_shared<Function>();
-    configBody->sourceMetadata=FunctionSourceMetadata{u"",0};
-    configBody->call=[domStrings](const FunctionReceiver&,FunctionArgs)->std::any{
-        domStrings->installTexHtmlHook();
-        return std::monostate{};
-    };
-    OptionCallBinding configBinding;
-    configBinding.receiver=[](Context&,Value receiver){return FunctionReceiver(std::move(receiver));};
-    configBinding.arguments=[](Context&,std::span<const Value> arguments){
-        std::vector<std::any> result;result.reserve(arguments.size());
-        for(const auto& argument:arguments)result.emplace_back(argument);
-        return result;
-    };
-    configBinding.result=[](Context&,const std::any&){return Value(Undefined{});};
-    const Value configHook=runtime.functions().bind(std::move(configBody),
-        std::move(configBinding),u"TexHtmlConfiguration.CONFIG");
-    const Property macro=property_host::get(methods,"TexHTML");
-    (void)TokenMapHost::create<MacroMap>(runtime.mapHandler,Property("tex-html"),
-        Property(PropertyList{{"<",macro}}));
-
-    const Value preprocessor=bindFilter(runtime,u"texHtmlPreprocessor",
-        [&runtime](core::InputJaxFilterDataRef data){
-            const auto current=data->currentData();
-            const auto* options=std::any_cast<ParseOptionsRef>(&current);
-            if(!options||!*options)throw Exception("TypeError",u"TexHtml preprocessor requires ParseOptions");
-            const auto documentReference=data->documentReference();
-            const auto* document=std::get_if<core::MathDocumentService*>(&documentReference);
-            if(!document||!*document)property_host::typeError("Cannot read properties of undefined (reading 'adaptor')");
-
-            Context& context=runtime.context();
-            const auto identity=(*document)->sourceIdentity();
-            const Value adaptor=context.get(Value(identity),key(u"adaptor"));
-            const Value package=record(context,{{u"adaptor",adaptor}});
-            packageData(**options)->set(u"texhtml",package);
-        });
-    const Value postprocessor=bindFilter(runtime,u"texHtmlPostprocessor",
-        [&runtime](core::InputJaxFilterDataRef data){
-            const auto current=data->currentData();
-            const auto* options=std::any_cast<ParseOptionsRef>(&current);
-            if(!options||!*options)throw Exception("TypeError",u"TexHtml postprocessor requires ParseOptions");
-            Context& context=runtime.context();
-            packageData(**options)->set(u"texhtml",record(context,{{u"adaptor",Value(Null{})}}));
-        });
-    const Value handlers=record(runtime.context(),{{u"character",array(runtime.context(),{Value(u"tex-html")})}});
-    const Value options=record(runtime.context(),{{u"allowTexHTML",Value(false)}});
-    const Value preprocessors=array(runtime.context(),{preprocessor});
-    const Value postprocessors=array(runtime.context(),{postprocessor});
-    const Value configuration=record(runtime.context(),{{u"handler",handlers},{u"options",options},{u"config",Value(configHook)},
-        {u"preprocessors",preprocessors},{u"postprocessors",postprocessors}});
-    return Configuration::create(runtime,u"texhtml",configuration);
+void configureTexHtml(ParserConfiguration &configuration, TeX &) {
+    auto *handler = configuration.handlers.get(HandlerKind::character);
+    const auto selected = handler ? handler->retrieve(u"tex-html") : TokenMapRef{};
+    const auto *map = dynamic_cast<TexHtmlMap const *>(selected.get());
+    if (map)
+        installIncludeHook(map->options());
 }
+
+void texHtmlPreFilter(TexFilterData &data) {
+    data.data.texhtmlAdaptor = data.adaptor;
 }
+
+void texHtmlPostFilter(TexFilterData &data) {
+    data.data.texhtmlAdaptor = nullptr;
+}
+
+} // namespace
+
+DispatchOutcome HtmlNodeMethods::TexHTML(TexParser &parser, MacroInvocation const &) {
+    if (!parser.options().allowTexHTML.value_or(false))
+        return ContinueDispatch{};
+    const auto source = parser.string();
+    const auto offset = parser.position();
+    const auto tag = offset <= source.size()
+                         ? startTag(source.substr(offset))
+                         : std::optional<StartTag>{};
+    if (!tag)
+        return ContinueDispatch{};
+
+    std::u16string end;
+    if (!tag->number.empty())
+        end = u"<!" + tag->number + u">";
+    end += u"</tex-html>";
+    const auto bodyStart = offset + tag->length;
+    parser.setPosition(bodyStart);
+    const auto found = source.find(end, bodyStart);
+    if (found == std::u16string_view::npos) {
+        const auto sourceTag = u"<" + tag->text;
+        const std::array arguments{end, sourceTag};
+        throw TexError("TokenNotFoundForCommand", u"Could not find %1 for %2", arguments);
+    }
+    const auto htmlSource = trimHtml(source.substr(bodyStart, found - bodyStart));
+    parser.setPosition(found + end.size());
+
+    auto *adaptor = parser.configuration.texhtmlAdaptor;
+    const auto *map = configuredMap(parser);
+    if (!adaptor || !map)
+        throw std::logic_error("TexHTML requires its configured request DOM adaptor and map");
+
+    const auto document = adaptor->parse(htmlSource);
+    const auto body = adaptor->body(document);
+    const auto nodes = body ? adaptor->childNodes(body) : std::vector<DOMNodeRef>{};
+    if (nodes.empty())
+        return Handled{};
+    DOMNodeRef root;
+    if (nodes.size() == 1)
+        root = nodes.front();
+    else
+        root = adaptor->node(u"div", {}, nodes);
+
+    auto frozen = map->xml()->fromDOM(root);
+    auto &htmlNode = parser.create(mml::NodeKind::html);
+    auto *html = dynamic_cast<mml::HtmlNode *>(&htmlNode);
+    if (!html)
+        throw std::logic_error("NodeFactory did not create an HtmlNode");
+    html->setHTML(std::move(frozen), map->xml());
+    std::array<mml::MmlNode *, 1> children{html};
+    auto &text = parser.create(mml::NodeKind::mtext, children);
+    parser.Push(&text);
+    return Handled{};
+}
+
+ConfigurationRef TexHtmlConfiguration::initializeModule(
+    ConfigurationHandler &registry, MapHandler &maps,
+    std::shared_ptr<HTMLDomStringsOptions> options) {
+    if (auto prior = registry.get(u"texhtml"))
+        return prior;
+    if (!options)
+        throw std::invalid_argument("TexHtml requires HTMLDomStringsOptions");
+
+    std::vector<Macro> commands{Macro(u"<", MacroMethod{&HtmlNodeMethods::TexHTML})};
+    auto map = std::make_shared<TexHtmlMap>(
+        MacroMapInit{{u"tex-html", std::nullopt}, std::move(commands)}, std::move(options));
+    maps.registerMap(map);
+
+    ConfigurationDefinition definition;
+    definition.handler = {{HandlerKind::character, {u"tex-html"}}};
+    definition.options.allowTexHTML = false;
+    definition.config = ProcessorSpec<ConfigMethod>{&configureTexHtml};
+    definition.preprocessors.emplace_back(&texHtmlPreFilter);
+    definition.postprocessors.emplace_back(&texHtmlPostFilter);
+    return Configuration::create(registry, u"texhtml", std::move(definition));
+}
+} // namespace folia::math::tex

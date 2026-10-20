@@ -498,6 +498,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/adaptors/lite/window.ixx
     src/math/adaptors/lite/list.ixx
     src/math/adaptors/lite/parser.ixx
+    src/math/handlers/html/html_dom_strings.ixx
+    src/math/input/tex/texhtml/tex_html_configuration.ixx
     src/math/core/mml_tree/mo_types.ixx
     src/math/core/mml_tree/operator_class.ixx
     src/math/util/js_numeric_input.ixx
@@ -519,6 +521,8 @@ target_sources(folia_math PRIVATE
     src/math/adaptors/lite/window.cpp
     src/math/adaptors/lite/list.cpp
     src/math/adaptors/lite/parser.cpp
+    src/math/handlers/html/html_dom_strings.cpp
+    src/math/input/tex/texhtml/tex_html_configuration.cpp
     src/math/core/mml_tree/mml_branches.cpp
     src/math/core/mml_tree/mml_empty.cpp
     src/math/core/mml_tree/mml_nodes/maction_selection.cpp
@@ -696,6 +700,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/lite.cpp
     tests/math/xml_dom_adaptor.cpp
     tests/math/find_tex.cpp
+    tests/math/texhtml.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp

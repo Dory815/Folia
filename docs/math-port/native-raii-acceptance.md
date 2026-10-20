@@ -256,7 +256,28 @@ Full current target: `mhchem-full.log`, exit 0, 713 tests / 208874 assertions /
 assertions; row counts are not assertion counts. Logs are in `build/math-port/`.
 This accepts these package/dependency owners, not SVG or Folia integration.
 
-### Texhtml and Lite boundary (pending)
+### Texhtml, Lite and delimiter finding (accepted component boundary)
+
+The native original owners now pass their pinned Source comparisons. Lite has
+41 witness records with 30 parser inputs; its 11 native tests execute 95
+assertions across parsing/serialization, queries, mutation traces, metrics,
+entities and RAII lifetimes. XmlDomAdaptor has five tests / 48 assertions for
+immutable subtree isolation, HtmlNode behavior and final ownership release.
+FindTeX compares 22 inputs / 59 ProtoItems in three tests / 1330 assertions.
+Texhtml has nine tests / 182 assertions covering 22 direct cases, recovery and
+all five original HTML-to-compile pipelines. Source direct input options are
+captured from the initial input table, separately from later observed options.
+
+Root bytechecks from C:/Windows: `lite-source-current-root.log`,
+`find-tex-source-current-root.log`, `texhtml-source-current-root.log`, all exit 0.
+The five original Source MML snapshots remain exact; texhtml Source JSON SHA is
+`c13c8eb7ca5c9dea20e5a264a4b1437194949c01bd4f8c719dbf5a2959dfc4d5`.
+Build `texhtml-final-build.log` and four `*-accepted-focus.log` pass. Final full
+math `texhtml-full.log` exits 0: 741 tests / 210529 assertions / 149 suites,
+no skips. Logs are in `build/math-port/`. This accepts these components;
+Common-to-Scene emission, SVG equality and Folia integration remain open.
+
+The following requirements define the accepted coverage and remain applicable:
 
 Preserve all seven original TexHtml tests with their actual invocation paths:
 the five render2mml cases first traverse HTMLDomStrings and serialize the
