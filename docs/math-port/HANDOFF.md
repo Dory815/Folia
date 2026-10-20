@@ -9,7 +9,39 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 Textmacros/Textcomp已验收提交）
+### 恢复时先用这个短检查点（2026-10-20 BBM/Bboldx/Dsfont已验收提交）
+
+- **当前无live构建/测试/代理**。字体批次完整Math回归600项/149,349断言，120套suite，
+  无失败/跳过，exit0，bbm-bboldx-dsfont-full.log；29495已终态。构建5782 exit0（并发4），
+  bbm-bboldx-dsfont-build.log；首次83053编译因Root变量拼写错误退出1，已改后通过，未执行
+  异常进程。聚焦BBM4/234、Dsfont3/99、Bboldx6/6048均exit0。提交1ecdbdbc（BBM/Dsfont，
+  8文件）、694c38b3（Bboldx，10文件）；原13项无关修改保留。
+  Root独立重放原Source：BBM/Dsfont62compile exit0，bbm-dsfont-source.log，2TS+2CJS/full38锁；
+  Bboldx752compile exit0，bboldx-source-final.log，3TS+3CJS/full38锁；Node堆512MB。
+- **本批职责/验收已完成，不重派**：Root完整读原BBM/Dsfont配置及Bboldx三TS、当前全部对应
+  CPP/IXx，冻结原文件接口；未增生产文件。BBM/Dsfont各保持单Configuration，Bboldx保持
+  Methods/Mappings/Configuration三组，字体选择复用BaseMathFont/TextFont。
+  BBM mathversion为jax全局选项，跨式/group/错误后保留；Bboldx bfbb优先于light，原
+  bfbblambda=οBB、jmathbfbb拼写保留。Bboldx6方法+BaseMacro alias、8字符map168条和
+  2命令map12条，独立Sourcefixture四选项字体来自实际Sourcecompile；priority3覆盖Base
+  mathbb，Textmacros子配置添加text-bboldx/共享options，单次配置不重复加入。
+  GPT-6.1 Sol /root/base_methods交付Bboldx methods.cpp、mappings.cpp、tests/math/bboldx.cpp、
+  tex-bboldx-source.cjs、fixtures/bboldx.inc五文件后冻结；未改共享/构建/Git。Root审查、格式化、
+  全部其余实现、独立Source重放、原生验收、分包提交均完成。Luna额度恢复前不重复尝试。
+- **命名结论已落实，不重开调查**：2022cb1a已将native_function_list.cpp归回function_list.cpp，
+  生产owner为原util/function_list.ixx；旧bindings消费者尚未全退。禁止native_/typed_/new_
+  平行替代实现；保留原职责、原位替换、删除失去职责的旧实现与注册。不能以改名声称清理完成。
+  下一步继续剩余38包和Common→Scene→SVG；完整profile/最终SVG/Folia gate仍未完成，goal active。
+- **下一具体入口**：Tagformat/Setoptions。Root只完整读了原两个Configuration.ts与tags.ixx，
+  尚未读对应现CPP/IXx，未冻结接口/未实现/未分工。实际路径为
+  tagformat/tag_format_configuration.*、setoptions/set_options_configuration.*，不要猜configuration.*。
+  Tagformat原Source为每jax全局注册configTags-N并明确注释不释放；C++必须按现Tags/ParseOptions
+  所有权落实配置，不能照搬全局累积。先完整读取现实现和typed选项/Tags设计再划职责，不造平行
+  Tags布局/JSclass系统。Setoptions原单配置含SetOptionsUtil三filter、SetOptions、config；固定
+  38profile没有require/autoload，不额外扩大profile。其typed选项访问需要先冻结真实契约，
+  不用PropertyHost/std::any反射恢复JS对象层。剩余包/Common输出与完整对照不得宣称已完成。
+
+### 已接受基线（2026-10-20 Textmacros/Textcomp已验收提交）
 
 - **当前无live构建/测试/代理**。最终完整Math回归587项/142,968断言，117套suite，无失败/
   跳过，exit0，text-mappings-full.log；84690已终态。Root补全Textmacros两张表116项Source
