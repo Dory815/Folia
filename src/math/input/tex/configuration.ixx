@@ -93,8 +93,6 @@ public:
     void append(ConfigurationRef, std::optional<double> priority = {});
     void addPackage(PackageSelection const&);
     void init();
-    // Source input-jax phases require the real native TeX/ParseOptions services.
-    // These remain unimplemented until those owners are ready, with no fallback.
     void config(TeX&);
     void add(std::u16string_view name, TeX&, TexOptionValues const& = {});
 };

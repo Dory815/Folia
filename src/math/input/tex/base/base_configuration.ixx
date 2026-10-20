@@ -2,15 +2,17 @@
 export module folia.math.input.tex.base_configuration;
 export import folia.math.input.tex.base_mappings;
 import std;
+
 export namespace folia::math::tex {
-class BaseTags:public AbstractTags {
-public:
+void Other(TexParser &, std::u16string_view);
+class BaseTags : public AbstractTags {
+  public:
     using AbstractTags::AbstractTags;
 };
 struct BaseConfiguration {
-    static ConfigurationRef initializeModule(ParserRuntime&,const Property& methods,const Property& parseMethods);
+    static ConfigurationRef create(ConfigurationHandler &);
 };
 struct BasePackage {
-    static ConfigurationRef initializeModule(ParserRuntime&);
+    static ConfigurationRef initialize(ConfigurationHandler &, MapHandler &);
 };
-}
+} // namespace folia::math::tex

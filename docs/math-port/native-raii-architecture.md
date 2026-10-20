@@ -107,6 +107,20 @@ configuration and filters remain BaseConfiguration responsibilities. Review
 checks all original methods and real configured-parser trees/errors against
 the pinned source, with no success stubs for pending members.
 
+The input-jax compilation service uses the original core/input_jax owner with
+compile-time Options/Data parameters. Its filter record borrows MathItem,
+MmlDocument and the concrete ParseOptions; filters execute synchronously and
+retain no record identity. TeX owns its configuration, ParseOptions and session;
+the compiled registries/callbacks and current MML factory are borrowed services.
+The caller supplies the document owning each compilation's nodes and keeps its
+factory alive until rebinding or jax destruction. TeX never accumulates MML in
+a session arena. Its compilation executes the original package filters and seven
+FilterUtil passes before Common sees a tree. FilterUtil has its own original
+module, rather than continuing as free functions mixed into tex_jax.cpp.
+HTML delimiter discovery/DOM adaptor methods are outside this string compile
+service and remain explicit pending owners; they are not replaced by fake DOM
+results or called through the withdrawn object layer.
+
 C++ module boundaries follow owners and dependencies. A packet, individual
 function or test seam does not automatically need its own named module.
 Family implementation details and numerical intermediates remain private

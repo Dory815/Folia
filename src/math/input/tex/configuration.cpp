@@ -125,4 +125,30 @@ void ParserConfiguration::append(ConfigurationRef configuration, std::optional<d
     nodes.merge(configuration->nodes);
 }
 void ParserConfiguration::init() { (void)initMethods_.execute(*this); }
+void ParserConfiguration::addFilters(TeX& jax, Configuration const& configuration) {
+    for (auto const& processor : configuration.preprocessors)
+        jax.preFilters.add(processor.method, processor.priority);
+    for (auto const& processor : configuration.postprocessors)
+        jax.postFilters.add(processor.method, processor.priority);
+}
+void ParserConfiguration::config(TeX& jax) {
+    (void)configMethods_.execute(*this, jax);
+    for (auto const& entry : configurations_) addFilters(jax, *entry.item);
+}
+void ParserConfiguration::add(std::u16string_view name, TeX& jax,
+                              TexOptionValues const& supplied) {
+    auto configuration = getPackage(name);
+    append(configuration);
+    configurations_.add(configuration, configuration->priority);
+    init();
+    auto& parser = jax.parseOptions();
+    parser.nodeFactory.setCreators(configuration->nodes);
+    for (auto const& [kind, constructor] : configuration->items)
+        parser.itemFactory->setNodeClass(kind, constructor);
+    TagsFactory::addTags(*this, configuration->tags);
+    parser.options.mergeDefaults(configuration->options);
+    parser.options.mergeDefaults(supplied);
+    addFilters(jax, *configuration);
+    if (auto configure = configuration->config()) configure(*this, jax);
+}
 }

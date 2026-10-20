@@ -1,50 +1,33 @@
 // MathJax 4.1.3 input/tex.ts; Apache-2.0.
 export module folia.math.input.tex.parser:tex_jax;
-export import :types;
-import folia.math.util.native_identities;
+export import :configuration;
+export import :parse_options;
+export import :tex_parser;
 import std;
+
 export namespace folia::math::tex {
-class StackItemFactory;
-class TeX:public core::AbstractInputJax {
-    ParserRuntime& runtime_;
-protected:
-    ParserShared<ParseOptions> parseOptions_=Missing{};
-    StackItemFactory* requestStackItemFactory_=nullptr;
-    std::size_t requestStackItemMark_=0;
-    std::uint64_t requestStackItemGeneration_=0;
-    bool requestOwnerScopeActive_=false;
-    std::optional<RequestIdentityCapture> requestParserCapture_;
-    std::optional<RequestIdentityCapture> requestStackCapture_;
-    std::optional<RequestIdentityCapture> requestStackItemCapture_;
-    std::optional<RequestIdentityCapture> requestStackPropertyCapture_;
-    bool requestReferencesDetached_=false,requestParserIdentitiesRetired_=false,
-         requestStackIdentitiesRetired_=false,requestStackItemsRetired_=false,
-         requestStackPropertiesRetired_=false,requestStackProductsRetired_=false;
-    std::vector<options::ObjectRef> requestContextRecords_;
-    bool requestContextRecordsCaptured_=false;
-    bool requestTransientRecordsRetired_=false;
-public:
-    static void initializeModule(ParserRuntime&);
-    ParserShared<FindTeX> findTeX=Missing{};
-    ParserShared<ParserConfiguration> configuration=Missing{};
-    Property latex=Missing{};
-    mml::NodeValue mathNode=Missing{};
-    TeX(ParserRuntime&,OptionFunctionBindings&,options::ObjectRef); // allocation only
-    static TeXRef make(ParserRuntime&,options::Value options=options::Undefined{});
-    void initializeTeX(options::Value options=options::Undefined{});
-    // Static NAME/OPTIONS are actual constructor fields owned by ParserRuntime.
-    static ParserConfigurationRef configure(ParserRuntime&,options::Value packages);
-    static void tags(ParseOptions&,ParserConfiguration&);
-    ParserRuntime& runtime()const;
-    void setMmlFactory(core::InputMmlFactoryReference)override;
-    virtual ParserShared<ParseOptions> parseOptions()const;
-    void beginRequestOwnerScope();
-    // Private Renderer request teardown: unlink only the last compilation's
-    // references while preserving ParseOptions/package/tag/module state.
-    void releaseRequestReferences();
-    void reset(FunctionArgs args={})override;
-    mml::NodeValue compile(core::MathItem&,core::MathDocumentReference)override;
-    core::ProtoMathItems findMath(std::any strings={},options::Value ignored=options::Undefined{})override;
-    virtual mml::NodeValue formatError(const TexError&);
+class TeX : public core::AbstractInputJax<TexOptionValues, ParseOptions> {
+    TexSessionState session_;
+    std::unique_ptr<ParserConfiguration> configuration_;
+    std::unique_ptr<ParseOptions> parseOptions_;
+    std::u16string latex_;
+    mml::MmlNode *mathNode_{}; // borrowed from the caller's current MmlDocument
+  public:
+    // The compiled package registry, map registry, callback table and factory
+    // outlive this jax. Per-expression MML is always owned by the supplied document.
+    TeX(ConfigurationHandler &, MapHandler &, MacroCallbacks const &, WarningSink &,
+        mml::MmlFactory &, TexOptionValues supplied = {});
+    ~TeX() override;
+    TeX(TeX const &) = delete;
+    TeX &operator=(TeX const &) = delete;
+    static TexOptionValues defaults();
+    std::string_view name() const noexcept override;
+    ParseOptions &parseOptions() const noexcept;
+    ParserConfiguration &configuration() const noexcept;
+    TexSessionState &session() noexcept;
+    void setMmlFactory(mml::MmlFactory &) override;
+    void reset(std::int64_t offset = 0);
+    mml::MmlNode &compile(core::MathItem &, mml::MmlDocument &) override;
+    virtual mml::MmlNode &formatError(TexError const &);
 };
-}
+} // namespace folia::math::tex

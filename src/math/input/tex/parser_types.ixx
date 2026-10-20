@@ -2,6 +2,7 @@
 export module folia.math.input.tex.parser:types;
 export import folia.math.core.mml_tree.mml_document;
 export import folia.math.core.math_item;
+export import folia.math.core.input_jax;
 export import folia.math.input.tex.environment;
 export import folia.math.input.tex.node_factory;
 export import folia.math.input.tex.session;
@@ -23,7 +24,7 @@ class ParserConfiguration;
 class Tags;
 class ColumnParser;
 class FindTeX;
-struct TexFilterData;
+using TexFilterData = core::InputJaxFilterData<ParseOptions>;
 class CharacterMap;
 class TokenMap;
 class MapHandler;

@@ -172,6 +172,10 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/parse_methods.ixx
     src/math/input/tex/base/base_methods.ixx
     src/math/input/tex/base/base_mappings.ixx
+    src/math/input/tex/base/base_configuration.ixx
+    src/math/input/tex/tex_jax.ixx
+    src/math/input/tex/filter_util.ixx
+    src/math/core/input_jax.ixx
     src/math/input/tex/node_factory.ixx
     src/math/input/tex/node_util.ixx
     src/math/input/tex/boldsymbol/configuration.ixx
@@ -245,6 +249,9 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/parse_methods.cpp
     src/math/input/tex/base/base_methods.cpp
     src/math/input/tex/base/base_mappings.cpp
+    src/math/input/tex/base/base_configuration.cpp
+    src/math/input/tex/tex_jax.cpp
+    src/math/input/tex/filter_util.cpp
     src/math/input/tex/node_factory.cpp
     src/math/input/tex/node_util.cpp
     src/math/input/tex/boldsymbol/configuration.cpp
@@ -425,6 +432,9 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/parse_methods.cpp
     tests/math/base_methods.cpp
     tests/math/base_mappings.cpp
+    tests/math/base_configuration.cpp
+    tests/math/filter_util.cpp
+    tests/math/tex_jax.cpp
     tests/math/stack.cpp
     tests/math/tags.cpp
     tests/math/macro.cpp

@@ -13,3 +13,4 @@ export import :base_items;
 export import :stack;
 export import :tex_parser;
 export import :column_parser;
+export import :tex_jax;
