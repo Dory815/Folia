@@ -9,7 +9,35 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 enclose/cancel/html已验收）
+### 恢复时先用这个短检查点（2026-10-20 action/centernot/fontsizev3已验收提交）
+
+- **当前无live构建/测试/代理**。完整Math回归556项/139,304断言，113套suite，无失败/
+  跳过，exit0；action-centernot-fontsize-full.log，16303已终态。构建72843 exit0，
+  action-centernot-fontsize-build.log，并发4。聚焦新增Action7/180、Centernot4/114、
+  Fontsizev3 4/94均exit0；*action*还匹配既有fraction等名称，不把该重叠算作新增测试。
+- **本批提交**：a964f49c Action、160520e6 Centernot、3f5eb5f8 Fontsizev3，各5文件。
+  每包原configuration.ixx/.cpp原位替换、各原生测试/Source witness/CMake注册，无平行实现。
+  原13项无关修改保留。GPT-6.1 Sol /root/base_methods完成Action；Root处理其余两包与共享/
+  独立Source复放/全部原生验证/Git。Source均exit0：Action42次compile/11错误类，
+  Centernot19次，Fontsizev3 18次；各原TS+CJS与完整38profile锁；对应各source-final.log。
+- **冻结职责**：Action保留原2方法与BaseMethods::Macro constexpr别名、原3映射，
+  不另造Methods文件。Toggle逐个局部parser同环境解析，到精确endtoggle终止；零分支
+  creator请求为空，而MML继承后补空子节点。Mathtip两个ParseArg，texttip原二参数模板。
+  Centernot保留CenterOver原两次base解析和filterCenterOver，注册centerOver真实node list；
+  后处理复制子节点TeX类到六层物理parent外TeXAtom，用NodeUtil::setProperties保证working
+  texClass与属性同时更新；不另加overlay模块。Fontsizev3直接复用BaseMethods::SetSize
+  原10映射，保留tiny/Tiny和全部原版本比例，无新尺寸算法。Source实测连续tiny/large
+  的creator调用顺序为1.2em再0.5em（退出栈时内到外），不是树的外到内顺序；测试已更正。
+- **下一具体行动**：处理braket包前，先完整读取其原TS、当前CPP/IXx与已有实际调用，
+  冻结原文件职责/API及Source验收，再分工或实现；本批三个包不重派、不重测。
+  共享布局→Scene emission、完整38包、端到端SVG对照和Folia切换仍未完成，goal保持active。
+  现有Scene提案尚未采纳，不从头另造Common布局；Mermaid继续暂停。Luna额度到10月25日，
+  无新信号不重试；必要Sol只GPT-6.1 Sol。
+- **最新命名反馈已经核对**2022cb1a/e6126948：function_list测试与生产owner均原名，
+  旧bindings尚待退。不重做已完成命名清理，不宣称旧消费者已经清空。架构文件已有禁止
+  native_/typed_/new_替代版本命名、原位替换与清理旧注册的规则；不得仅改名隐藏遗留实现。
+
+### 上一批验收（enclose/cancel/html；保持其证据，不重做）
 
 - **当前无live构建/测试/代理**。最新完整Math回归541项/138,916断言exit0，无失败/跳过，
   `enclose-cancel-html-full.log`，76606已终态。构建60610 exit0，并发4，最终
