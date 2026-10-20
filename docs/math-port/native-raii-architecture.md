@@ -1450,3 +1450,15 @@ The width does not change path geometry. Validate it finite and nonnegative.
 This replaces the earlier assumption that table color sizing only reaches a rect.
 Solid border insertion also retains the original captured child anchor; broken
 borders independently insert before the current first child, as Source specifies.
+
+Direct MathML table acceptance uses the pinned package's MathML compiler only
+to reach equalrows/equalcolumns/dotted attributes absent from the TeX profile.
+The independent Source tool freezes the actual compiled MML tree, typed own
+attributes, table metrics and raw SVG. Native tests rebuild that exact tree via
+MmlDocument and consume the same Common LayoutJob and SVG writer; no native
+output is used as an expectation. The test fixture uses flat constexpr records
+to avoid MSVC heap exhaustion on recursive vector initializers. Its provenance
+locks the MathML compiler separately; it is not extra TeX package coverage.
+Source preserves mtr mathsize="150%" but keeps that row's rscale at 1 in the
+captured case. A separate mstyle scales cell content to 1.5. These observations
+do not establish nonunit row-scale coverage.

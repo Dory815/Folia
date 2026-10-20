@@ -4,11 +4,11 @@
 
 ## 当前状态与下一步
 
-- 最近代码提交 `0e91715c`；本批table/Scene/entry/menclose/Source验收已分7批提交（起点3d0f24f5）。最终build `common-table-final-build.log` exit0，parallel4；完整math `common-table-final-full-math.log` exit0：773tests/211281assert/150suites。无活动build/test。
-- 独立Source112已由Root bytecheck（`table-source-root-bytecheck.log`）；fixture SHA256 `bbb73b2a93b5069dc9e7b20b0ca77bdcc760941a4d7fab138e8144daadb6c018`。native 48/48 byteequal（`table-source-final-focused.log` exit0）。Source48聚焦567assert；7个retirement cases/14assert也包含在上述完整测试中。
-- 生产owner全部freeze。CommonMenclose沿用原pair/geometry，只开放line recipes与radical child；29notation SVG profile由composition传入standardNodes(span)，Common不import SVG，其余shape明确throw。Table首border path的Source width由Path.layout_width承载；solid用原anchor，broken用当前first-child，详见architecture末段。
-- Luna全部freeze；`common_radicals_emission`已完善ignored `tools/math-port/drafts/native-raii/table-direct-mml/` 8-case Source/原生测试候选。另Source owner已freeze的3-case enclosure候选在 `tools/math-port/drafts/native-raii/enclosure-scene-cases/`。用 `rg --no-ignore` 找；均未native验收，不可把candidate消息当pass。
-- 下一步：Root审查并提取direct-MML packet到现有table测试职责，比较完整SVG；再补menclose3条实际TeX对照。equalrows/columns/dotted未验收；Source mtr mathsize="150%" rscale仍1，mstyle仅content rscale1.5，不得混称row缩放。
+- 最近代码提交 `9294fc82`（enclosure Source51/retirement8）；direct-MML Source+test `bc2fe4d9`/`12815933`。此前table/Scene/entry/menclose/Source48已分7批提交，契约docs `15eedc89`。所有owner freeze，无活动build/test/候选待合并。
+- 最近完整math `common-table-final-full-math.log` exit0：773tests/211281assert/150suites（当时Source48+7retirement）。之后只增加测试/Source数据：direct-MML8全部byteequal/184assert（1test，`table-mathml-focused.log`）；TeX Source51 byteequal/603assert（`enclosure-source-focused.log`），retirement8/16assert（`enclosure-retirement-focused.log`）。未冒称新增后已跑完整774。
+- 最终build `enclosure-source-build.log` exit0，parallel4。独立TeX Source115 default/no-op mtime通过，原112记录逐字节未变；fixture SHA256 `6e8a1e3f83f0db671ced8f7de927721765baa92d408be79911821a13d1d40881`。独立MathML8同样通过default/no-op，fixture SHA256 `893e46e25dc8520157bb05c2918a4ad6b82a4c3ada71e169262955d5afb48e0f`，工具`common-table-mathml-source.cjs`。递归vector fixture曾C1060，已改constexpr flat节点/属性，不重试旧版。
+- 已验收：table rows/cells/labels/solid/dashed/dotted/equalrows/equalcolumns及menclose所有line recipes与radical child。MathML编译器是单独锁定的Source输入边界，不算TeX profile覆盖；mtr mathsize=150%仍rscale1，mstyle仅content1.5。ignored table-direct-mml与enclosure-scene-cases均被canonical替代，不再从旧candidate恢复。
+- 下一步：Root先划清menclose剩余rect/roundedbox/ellipse/path/arrow的typed Scene契约，再按原Notation/menclose/Scene/writer职责分Luna实现；复用已存在geometry算法，避免path近似冒充Source原元素。当前这些shape明确throw；mglyph/foreign/XML/HTML等families、75/150 gate、class CSS、最终C ABI和Folia切换均未完成。
 ## 现有验证边界（此前已完成）
 
 - 此前full math766tests/211042assert/150suites，包含35Source cases与4个重复请求case；不是完整75/150渲染gate。
@@ -34,7 +34,7 @@ Inline fragments已验收：移动line entries到shell副本仅留一棵树；fi
 
 新viewport契约见架构Completed viewports段：Group末尾optional<Viewport>，bounds/view_box均em/y-up，aspect可选；Glyph末尾Transform；Scaling.explicit_axes仅序列化。Builder split必须保留viewport值；writer直接nested svg与path/use transform，禁止额外g。Mo一个viewport对应一个Source svg，不重复clip/scale节点。
 
-仍待实现/验证：table完整属性覆盖；mglyph image、Xml/HTML foreignObject及其余专用families。`CommonXmlNode`仍是Property，不得导入active路径。完整75-case layout、150条SVG byte comparison、请求所有权、Folia集成、旧对象层退出均未完成。
+仍待实现/验证：table完整profile覆盖；mglyph image、Xml/HTML foreignObject及其余专用families。`CommonXmlNode`仍是Property，不得导入active路径。完整75-case layout、150条SVG byte comparison、请求所有权、Folia集成、旧对象层退出均未完成。
 
 ## 继续有效的既定边界
 
