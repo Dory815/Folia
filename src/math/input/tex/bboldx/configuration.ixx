@@ -2,4 +2,8 @@
 export module folia.math.input.tex.bboldx.configuration;
 export import folia.math.input.tex.parser;
 import std;
-export namespace folia::math::tex { struct BboldxConfiguration { static ConfigurationRef initializeModule(ParserRuntime&); }; }
+export namespace folia::math::tex {
+struct BboldxConfiguration {
+    static ConfigurationRef initializeModule(ConfigurationHandler &, MapHandler &);
+};
+} // namespace folia::math::tex

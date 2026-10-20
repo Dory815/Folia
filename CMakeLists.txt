@@ -224,6 +224,9 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/textcomp/configuration.ixx
     src/math/input/tex/bbm/configuration.ixx
     src/math/input/tex/dsfont/configuration.ixx
+    src/math/input/tex/bboldx/methods.ixx
+    src/math/input/tex/bboldx/mappings.ixx
+    src/math/input/tex/bboldx/configuration.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -343,6 +346,9 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/textcomp/configuration.cpp
     src/math/input/tex/bbm/configuration.cpp
     src/math/input/tex/dsfont/configuration.cpp
+    src/math/input/tex/bboldx/methods.cpp
+    src/math/input/tex/bboldx/mappings.cpp
+    src/math/input/tex/bboldx/configuration.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
@@ -561,6 +567,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/textcomp.cpp
     tests/math/bbm.cpp
     tests/math/dsfont.cpp
+    tests/math/bboldx.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
