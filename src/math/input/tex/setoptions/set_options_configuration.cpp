@@ -191,6 +191,14 @@ void assign(std::optional<T> &target, OptionInputValue const &value, std::u16str
         invalidValue(key);
     if constexpr (std::is_same_v<T, bool>)
         target = truthy(value);
+    else if constexpr (std::is_same_v<T, std::variant<bool, std::u16string>>) {
+        if (auto b = std::get_if<bool>(&value))
+            target = *b;
+        else if (auto s = std::get_if<std::u16string>(&value))
+            target = *s;
+        else
+            invalidValue(key);
+    }
     else if constexpr (std::is_same_v<T, std::u16string>) {
         if (auto s = std::get_if<std::u16string>(&value))
             target = *s;

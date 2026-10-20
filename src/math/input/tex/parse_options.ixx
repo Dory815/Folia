@@ -102,7 +102,9 @@ struct MathtoolsOptions {
     std::optional<std::u16string> shortvdotsAdjustAbove, shortvdotsAdjustBelow;
     std::optional<bool> centercolon;
     std::optional<std::u16string> centercolonOffset, thincolonDx, thincolonDw;
-    std::optional<bool> useUnicode, legacycolonsymbols;
+    std::optional<bool> useUnicode;
+    // mathtoolsset compares this parsed boolean/string value before switching maps.
+    std::optional<std::variant<bool, std::u16string>> legacycolonsymbols;
     std::optional<std::u16string> prescriptSubFormat, prescriptSupFormat, prescriptArgFormat;
     std::optional<bool> allowMathtoolsset;
     std::optional<std::unordered_map<std::u16string, PairedDelimiterOptions>> pairedDelimiters;

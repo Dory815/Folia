@@ -184,6 +184,8 @@ OptionCase optionCase(std::u16string_view package, std::u16string_view key, Opti
             using T = typename std::remove_reference_t<decltype(value)>::value_type;
             if constexpr (std::is_same_v<T, bool>)
                 return !*value;
+            else if constexpr (std::is_same_v<T, std::variant<bool, std::u16string>>)
+                return std::holds_alternative<bool>(*value) && !std::get<bool>(*value);
             else if constexpr (std::is_same_v<T, std::u16string>)
                 return std::ranges::equal(*value, u"set-value"sv);
             else if constexpr (std::is_same_v<T, double>)
