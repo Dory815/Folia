@@ -1,0 +1,24 @@
+{
+  "cases": [
+    {
+      "name": "derived-construction",
+      "events": [["enter", "", 0, "", 0], ["create", "start"], ["derived-Parse", true], ["create", "stop"], ["derived-Push", "stop", true], ["create", "mml"]],
+      "level": 7, "nodes": 0, "text": "", "envStack": 0,
+      "seedInnerDeleted": true, "envIsCopy": true,
+      "env": {"font": "normal"}, "isInner": false
+    },
+    {
+      "name": "parse-receiver-and-utf16",
+      "events": [["character", true, "𝛼", 0], ["macro", true, "x", 2], ["character", true, "&", 2]],
+      "outcomes": [false, false, false], "finalSaveI": 9, "prevCalls": 2
+    },
+    {
+      "name": "push-provenance-and-flattening",
+      "old": {"source": "𝛼x", "start": 0, "stop": 2},
+      "positionAfterReplacement": 2,
+      "current": {"source": "Z", "start": 0, "stop": 0},
+      "sameFrameTwice": true, "inferredChildrenInOrder": true,
+      "bulkDoesNotStamp": true, "total": 5
+    }
+  ]
+}

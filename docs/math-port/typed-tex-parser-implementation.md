@@ -159,6 +159,55 @@ requests it and the kind is not mtext. This still requires a typed package
 creator binding when ParserConfiguration/ParseOptions are implemented; the
 registration seam alone is not complete configured NodeFactory support.
 
+### Frozen TexParser initialization and configured token seam
+
+The native TexParser uses the already accepted TexScanner as its only current
+source/cursor/control-sequence owner. `ParseInput` is `{TexParser& parser;
+std::u16string token;}` in `:types`: textmacros actually dispatches through an
+outer parser with a TextParser receiver. Dispatch uses that explicit receiver;
+saveI and latex bookkeeping remain on the parser whose `parse()` was called.
+Own the small token value so an expansion replacing scanner source cannot
+invalidate the token before updateResult. The currentCS getter also returns a
+value for CommandMap's save/restore; ordinary source() remains a view and retained
+provenance uses the existing immutable snapshot.
+
+TexParser member initialization orders scanner, borrowed configuration,
+macroCount/saveI, entering ParserScope, then owned Stack. The nested guard
+enters before initial frame construction. There is no second namespace-level
+ParserScope. Its normal release checks that the active parser is this parser,
+then uses popParser at the Source mml() point. Unwind uses the narrow
+`ParseOptions::removeParser(TexParser&) noexcept` operation to remove that exact
+borrow; it does not clear another active parser or retain a registry of owners.
+
+The public TexParser constructor performs its semantic initialization normally.
+Actual TextParser uses a protected DeferParsing constructor, then invokes that
+same initialization after its derived members exist and before assigning level.
+Source dispatches its derived Parse/Push while level is still absent; a C++
+virtual call from a base constructor would select the wrong implementation.
+Keep this mechanism protected for the real derived class, without exposing
+public uninitialized parsers, runtime factories or alternative parse paths.
+
+ParseOptions exposes its real mutable SubHandlers&, plus a const overload;
+HandlerTableView and the older duplicate HandlerOutcome sketch are superseded.
+For the observed configured token override, the finite profile owns a typed
+`TokenCreator = mml::MmlNode& (*)(ParseOptions&, mml::NodeKind,
+std::u16string_view, mml::AttributeSet)`. `ParseOptions::createToken` has the same
+arguments minus the explicit service receiver, and invokes the selected creator.
+The standard creator calls its existing NodeFactory::makeToken. The boldsymbol
+creator first calls that standard maker, then reads the current parser's actual
+environment and marks/registers fixBold except for mtext. TexParser and MmlStack
+use this configured service; they must not bypass it with makeToken. This seam
+adds no primary-module dependency to the independent NodeFactory and no erased
+creator payload. The configuration/package bodies remain to be implemented.
+
+`tools/math-port/tex-parser-interface-source.cjs` fixes three bounded observations
+of real TexParser/TextParser/Stack/MML methods with 66 loaded runtime hashes and
+14 method-map hashes. Configuration recording/Tags/Prev boundaries are explicit
+stubs, so these observations prove the ordering and receiver rules above, not
+complete package dispatch or full expression parsing. Root replayed the formal
+tool from C:\\Windows successfully; evidence is
+`build/math-port/native-tex-parser-interface-formal-source.log`.
+
 core::MathItem now has a native declaration and implementation in the original
 core/math_item module, without the former generic object and DOM graph.
 Parser and Tags import this actual module, rather than a foreign-module forward

@@ -1,0 +1,16 @@
+{
+  "ts/input/tex/TexParser.ts": "75acc969b38757523955cd1a520156406ef7788de4b25cf501146ee6947d708c",
+  "ts/input/tex/Types.ts": "3e34a4e186156e23aa3f74acdbc41c0ebd7992b169e96313701e039aeebb14b5",
+  "ts/input/tex/TokenMap.ts": "49401dedf68a96f88e4fe27d87643a5117ed0509bd42bf958bbf89f87e730353",
+  "ts/input/tex/ParseMethods.ts": "5359cf3f069537dae541539c181820520d334954e03ffc9382f06778d07a4240",
+  "ts/input/tex/ParseUtil.ts": "15060cc72658c922cedc568391791cb928ca6aa12e9a41cd4382de6ff7416f43",
+  "ts/input/tex/ColumnParser.ts": "d427f20d47ffc5fabebab67010824eb67ea9b7cee40ea9a59af753f2d9a81065",
+  "ts/input/tex/Tags.ts": "55b527ce2f83bb793f4f207c27d0072561a424dbbd37b02be0316a5287bd54e4",
+  "ts/input/tex/base/BaseMethods.ts": "0c4a1c2c3ca19c583e11ee6af7ea0ec4975c03a0ebfad2a0b0266e9f96d3bdf4",
+  "ts/input/tex/base/BaseItems.ts": "7acbb526600980180d2bda12dc7d4c94953429d87579a9460f3ddcec33d4c9ee",
+  "ts/input/tex/newcommand/NewcommandMethods.ts": "8db96297b5921f0420db38a36c5ead0e4f165be46c4e9fc0a918a5ce1ce27937",
+  "ts/input/tex/ams/AmsMethods.ts": "afc713c62b1f53e9ebc8136eda3f5e7bcea2685b8c8de139b842d815851d2126",
+  "ts/input/tex/textmacros/TextParser.ts": "0d8717ce674eae333c4d1bdc98ae65c9a3be03137ddf49fe9f834795837a335e",
+  "ts/input/tex/textmacros/TextMacrosConfiguration.ts": "1d77d653cab5d72d7612bc2485bd880aa7edfce35b5b366d27e571f347afd64a",
+  "ts/input/tex/boldsymbol/BoldsymbolConfiguration.ts": "df7dd9bb98fd350f7fce9a71a8410781799cc783a1b6a1507f8012b2d0572e3b"
+}
