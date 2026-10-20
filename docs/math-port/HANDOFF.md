@@ -11,6 +11,21 @@
 
 ### 恢复时先用这个短检查点
 
+- **本轮配置前置已恢复原Unicode16Normalization到实际folia_math图**，复用原算法和
+  数据，未另写NFD实现。French样式需要这个依赖，但不是French resolver验收。
+  原reference_unicode_normalization.cpp含20,077行/8.67MB生成C++测试数据，首次编译
+  cl占5.2GB；Root核对进程命令后主动停止该次编译，句柄27161终态exit1，非测试崩溃。
+  已改成原职责名tests/math/unicode_normalization.cpp（约85行）+fixtures/unicode/
+  normalization-corpus.tsv（19,965行数据，约2.2MB）和normalization-source.inc。
+  原旧测试与旧runner已删，source oracle只生成数据，不再生成整份C++测试。
+  数据/source两--check通过；新构建74581终态exit0，unicode-normalization-fixture-build.log；
+  聚焦3项/99,928断言exit0，unicode-normalization-focused.log：官方五列99,825精确输出、
+  85组合序列、17平面摘要覆盖1,114,112码点，再加语料行数断言。没重跑完整324项。
+  **原Configuration/ConfigurationHandler/ParserConfiguration尚未改写，不把调查/前置说成接通。**
+  下一步仍是在原configuration及parse_options中闭合typed值声明和三类职责；已读取原TS/
+  canonical旧C++，无需重做包inventory、scanner/ParseUtil或NFD审查。
+  Luna额度错误仍显示到10月25日，无live agent。当前无live build/native。
+
 - **最新用户纠正：禁止用native/typed/新旧前缀掩盖重复职责或保留替代实现。**
   本轮清理已提交`2022cb1a`；Git仅剩原13项受保护修改，无live build/native/agent。
   本轮将新测试`native_function_list.cpp`归回`function_list.cpp`，priority测试归

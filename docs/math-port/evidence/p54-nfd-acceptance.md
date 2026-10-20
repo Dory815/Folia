@@ -1,5 +1,19 @@
 # P54 native Unicode NFD acceptance
 
+Current component check (2026-10-20): the existing implementation is restored
+to `folia_math`. `unicode_normalization.cpp` now loads the generated corpus TSV
+at runtime; only 85 sequence cases and 17 plane digests remain in a small include.
+The previous generated 20,077-line test translation unit and its obsolete test
+runner are removed. The mathematical implementation and Unicode data are unchanged.
+The source/data generators pass `--check`; the component build passes, and
+`FoliaMathTests.exe "*unicode normalization*"` passes 99,928 assertions in three
+tests (`build/math-port/unicode-normalization-focused.log`). The extra assertion
+checks the exact corpus row count. Coverage remains 99,825 exact corpus outputs,
+85 exact sequence outputs and 17 full-plane fingerprints. The historical test
+counts and runner references below apply to the previous test organization.
+This checks the NFD dependency; it does not accept French style dispatch,
+ParserConfiguration wiring, the complete TeX pipeline or Folia integration.
+
 The portable Unicode16Normalization body supplies the actual NFD operation
 required by Source ParseOptions French math style and ParseUtil character
 classification. It is stateless and consumes the hash-pinned Unicode 16 data;

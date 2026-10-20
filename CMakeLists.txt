@@ -186,6 +186,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/util/js_number.ixx
     src/math/util/styles.ixx
     src/math/util/style_json.ixx
+    src/math/util/unicode_normalization.ixx
+    src/math/util/unicode_normalization_data.ixx
     src/math/output/common/types.ixx
     src/math/util/regexp_host.ixx)
 target_sources(folia_math PRIVATE
@@ -235,7 +237,8 @@ target_sources(folia_math PRIVATE
     src/math/util/lengths.cpp
     src/math/util/styles.cpp
     src/math/util/style_json.cpp
-    src/math/util/regexp_host.cpp)
+    src/math/util/regexp_host.cpp
+    src/math/util/unicode_normalization.cpp)
 
 # Native Common classes retain their original family partitions; the concrete
 # LinebreakVisitor uses these same classes for recursive mathematical breaks.
@@ -410,6 +413,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/mml_exact_clone_row.cpp
     tests/math/native_mml_families.cpp
     tests/math/native_string_util.cpp
+    tests/math/unicode_normalization.cpp
     tests/math/native_raii_fonts.cpp
     tests/math/font_css_metadata.cpp
     tests/math/common_styles_source.cpp
