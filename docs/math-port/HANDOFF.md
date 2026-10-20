@@ -11,7 +11,7 @@
 
 ### 恢复时先用这个短检查点
 
-- **本批实现：原NodeFactory四槽configured creators及boldsymbol token/rewrite已落原文件**。
+- **本批实现：原NodeFactory四槽configured creators及boldsymbol token/rewrite已落原文件**；提交`0d7b188c`。
   NodeCreators为node/token/text/error四个optional typed函数指针槽；setCreators逐槽合并。
   make*先捕获对应函数再调用，默认createToken走configured text→node，createError同样走
   configured text/node；只有makeNode成功返回creator后登记。text明确nullable指针（null和
