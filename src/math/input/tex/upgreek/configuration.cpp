@@ -1,37 +1,49 @@
-// Native port of MathJax 4.1.3 input/tex/upgreek/UpgreekConfiguration.ts.
+// MathJax 4.1.3 input/tex/upgreek/UpgreekConfiguration.ts; Apache-2.0.
 module folia.math.input.tex.upgreek.configuration;
-import folia.math.input.tex.handler_types;
-import folia.math.input.tex.tex_constants;
-import folia.math.input.tex.token_map;
-import folia.math.util.property_host;
 import std;
+
 namespace folia::math::tex {
-namespace {
-using namespace options;
-Key key(std::u16string_view name){return Key(std::u16string(name));}
-TexParser& parser(ParserContext& source){auto* value=dynamic_cast<TexParser*>(&source);if(!value)property_host::typeError("Upgreek requires a TexParser");return *value;}
-Value array(Context& cx,std::initializer_list<Value> values){const ObjectRef out=cx.array(static_cast<std::uint32_t>(values.size()));std::uint32_t i=0;for(const auto& value:values){const std::string digits=std::to_string(i++);cx.set(Value(out),key(std::u16string(digits.begin(),digits.end())),value);}return Value(out);}
-Value record(Context& cx,std::initializer_list<std::pair<std::u16string_view,Value>> values){Value out(cx.object());for(const auto& [name,value]:values)cx.set(out,key(name),value);return out;}
-FunctionRef mathchar0miNormal(){
-    return makeParseCallable([](const FunctionReceiver&,ParserContext& source,const ParseAtom& atom,ParseRest)->ParseResult{
-        auto& p=parser(source);const auto* token=std::get_if<TokenRef>(&atom);if(!token||!*token)property_host::typeError("Cannot read properties of null or undefined (reading 'attributes')");
-        Property attributes=(*token)->attributes();
-        if(!property_host::truthy(attributes))attributes=Property(PropertyList{});
-        auto record=PropertyList::record(attributes);if(!record)property_host::typeError("Cannot create property 'mathvariant' on a primitive value");
-        const Property variant=property_host::get(property_host::get(TexConstant,"Variant"),"NORMAL");
-        record->setOwn("mathvariant",variant);
-        const std::array<std::any,3> args{std::any(Property("mi")),std::any(attributes),std::any((*token)->character())};
-        const auto node=p.create(u"token",FunctionArgs(args));p.Push(node);return Property(Missing{});
-    });
+DispatchOutcome mathchar0miNormal(TexParser &parser, TokenInput const &input) {
+    auto entry = std::get_if<Token const *>(&input.value);
+    if (!entry || !*entry)
+        throw std::invalid_argument("Upright Greek requires a character token");
+    auto const &token = **entry;
+    NodeDefinition definition;
+    if (token.attributes)
+        definition.attributes = *token.attributes;
+    definition.attributes.set(u"mathvariant", std::u16string(u"normal"));
+    const auto text =
+        token.character ? std::optional<std::u16string_view>(*token.character) : std::nullopt;
+    parser.Push(&parser.createToken(mml::NodeKind::mi, text, std::move(definition)));
+    return NoParseResult{};
 }
-Property mappings(){return Property(PropertyList{
-    {"upalpha",Property("α")},{"upbeta",Property("β")},{"upgamma",Property("γ")},{"updelta",Property("δ")},{"upepsilon",Property("ϵ")},{"upzeta",Property("ζ")},{"upeta",Property("η")},{"uptheta",Property("θ")},{"upiota",Property("ι")},{"upkappa",Property("κ")},{"uplambda",Property("λ")},{"upmu",Property("μ")},{"upnu",Property("ν")},{"upxi",Property("ξ")},{"upomicron",Property("ο")},{"uppi",Property("π")},{"uprho",Property("ρ")},{"upsigma",Property("σ")},{"uptau",Property("τ")},{"upupsilon",Property("υ")},{"upphi",Property("ϕ")},{"upchi",Property("χ")},{"uppsi",Property("ψ")},{"upomega",Property("ω")},
-    {"upvarepsilon",Property("ε")},{"upvartheta",Property("ϑ")},{"upvarpi",Property("ϖ")},{"upvarrho",Property("ϱ")},{"upvarsigma",Property("ς")},{"upvarphi",Property("φ")},{"Upgamma",Property("Γ")},{"Updelta",Property("Δ")},{"Uptheta",Property("Θ")},{"Uplambda",Property("Λ")},{"Upxi",Property("Ξ")},{"Uppi",Property("Π")},{"Upsigma",Property("Σ")},{"Upupsilon",Property("Υ")},{"Upphi",Property("Φ")},{"Uppsi",Property("Ψ")},{"Upomega",Property("Ω")}});}
+ConfigurationRef UpgreekConfiguration::initializeModule(ConfigurationHandler &registry,
+                                                        MapHandler &maps) {
+    maps.registerMap(std::make_shared<CharacterMap>(
+        CharacterMapInit{{u"upgreek", TokenMapParser{&mathchar0miNormal}},
+                         {Token(u"upalpha", u"\u03B1"),      Token(u"upbeta", u"\u03B2"),
+                          Token(u"upgamma", u"\u03B3"),      Token(u"updelta", u"\u03B4"),
+                          Token(u"upepsilon", u"\u03F5"),    Token(u"upzeta", u"\u03B6"),
+                          Token(u"upeta", u"\u03B7"),        Token(u"uptheta", u"\u03B8"),
+                          Token(u"upiota", u"\u03B9"),       Token(u"upkappa", u"\u03BA"),
+                          Token(u"uplambda", u"\u03BB"),     Token(u"upmu", u"\u03BC"),
+                          Token(u"upnu", u"\u03BD"),         Token(u"upxi", u"\u03BE"),
+                          Token(u"upomicron", u"\u03BF"),    Token(u"uppi", u"\u03C0"),
+                          Token(u"uprho", u"\u03C1"),        Token(u"upsigma", u"\u03C3"),
+                          Token(u"uptau", u"\u03C4"),        Token(u"upupsilon", u"\u03C5"),
+                          Token(u"upphi", u"\u03D5"),        Token(u"upchi", u"\u03C7"),
+                          Token(u"uppsi", u"\u03C8"),        Token(u"upomega", u"\u03C9"),
+                          Token(u"upvarepsilon", u"\u03B5"), Token(u"upvartheta", u"\u03D1"),
+                          Token(u"upvarpi", u"\u03D6"),      Token(u"upvarrho", u"\u03F1"),
+                          Token(u"upvarsigma", u"\u03C2"),   Token(u"upvarphi", u"\u03C6"),
+                          Token(u"Upgamma", u"\u0393"),      Token(u"Updelta", u"\u0394"),
+                          Token(u"Uptheta", u"\u0398"),      Token(u"Uplambda", u"\u039B"),
+                          Token(u"Upxi", u"\u039E"),         Token(u"Uppi", u"\u03A0"),
+                          Token(u"Upsigma", u"\u03A3"),      Token(u"Upupsilon", u"\u03A5"),
+                          Token(u"Upphi", u"\u03A6"),        Token(u"Uppsi", u"\u03A8"),
+                          Token(u"Upomega", u"\u03A9")}}));
+    ConfigurationDefinition definition;
+    definition.handler = {{HandlerKind::macro, {u"upgreek"}}};
+    return Configuration::create(registry, u"upgreek", std::move(definition));
 }
-ConfigurationRef UpgreekConfiguration::initializeModule(ParserRuntime& runtime){
-    const auto loaded=runtime.configurationHandler.get(u"upgreek");if(const auto* prior=std::get_if<ConfigurationRef>(&loaded);prior&&*prior)return *prior;
-    (void)TokenMapHost::create<CharacterMap>(runtime.mapHandler,Property("upgreek"),ParseMethod{mathchar0miNormal()},mappings());
-    auto& cx=runtime.context();const Value handlers=record(cx,{{u"macro",array(cx,{Value(u"upgreek")})}});
-    return Configuration::create(runtime,u"upgreek",record(cx,{{u"handler",handlers}}));
-}
-}
+} // namespace folia::math::tex
