@@ -634,6 +634,246 @@ alternate delimiter finder belongs in these native owners.
 
 ## Ownership
 
+### Common-to-Scene emission contract (2026-10-21 Root lock)
+
+Emission fills the existing Common owners. Old `scene/wrapper`, `scene/wrappers/*`,
+`glyph_paint` and SVG object-host files are not candidates for registration.
+Retain their Source provenance only when moving a verified numerical algorithm
+to its original Common family. Do not add another wrapper hierarchy or an
+emitter service/directory beside Common.
+
+`CommonWrapper` exports `SceneNode = optional<scene::NodeId>`,
+`SceneNodes = vector<SceneNode>` and the virtual
+`SceneNodes emitScene(scene::Builder&, span<const scene::NodeId> parents)`.
+Each call returns only the output segments made for that call; wrappers store
+no Builder pointer, output-node registry or output lifetime owner. Multiple
+parents/segments preserve the original line-break protocol. The original base
+owner provides `createSceneNodes`, `standardSceneNodes`, `addSceneChildren`,
+`toEmbellishedScene`, `placeScene`, `sceneDx`, and the style/scale/border/color/
+attribute/id helpers. `placeScene(builder, nodes, x, y, optional<NodeId> target)`
+preserves Source's default-first-segment versus explicit-element distinction;
+only the default applies dx and id compensation. `emitChar` and
+`emitUnknownText` remain base-owner helpers shared by TextNode and Mo, with an
+explicit local UTF-16 buffer, not a persistent generic object or font cache.
+`SceneContainers {SceneNodes nodes; SceneParents content;}` is the call-local return value
+of virtual `createSceneNodes` and `standardSceneNodes`: nodes are the wrapper's
+own output segments, content are valid parent ids for its children. Usually corresponding,
+they differ for a broken Mrow (one outer stack, several inner lineboxes).
+Style/paint/id apply to nodes; child emission and line placement use content;
+emitScene returns nodes to its caller. This preserves Source's distinction
+between `this.dom` and the nodes returned by `createSvgNodes`, without storing
+a DOM field or a second output registry on wrappers.
+
+Existing family pairs override this entry where Source overrides `toSVG`.
+TextNode owns remapping, composition/unknown-run emission collaboration; Mo
+owns fixed/assembled delimiter glyph origins, scales and clipping. Mrow owns
+line segments/positions; Mtext owns its word-break slices; Math owns display
+alignment values. Mfrac/Msqrt/Mroot consume their existing `layoutGeometry()`
+without repeating equations. Other specialized families remain explicitly
+unimplemented until ported, rather than silently taking generic row output.
+The base's standard horizontal algorithm is valid only for Source families
+that actually inherit it. No integration or full SVG acceptance precedes the
+remaining specialized-family work.
+
+Builder retains an ordinary, request-local value tree. Its finite operations
+are `transform/set_transform`, `metadata/set_metadata`, `paint/set_paint`,
+`entry_count`, `insert_primitive`, and `wrap_contents` in addition to existing
+add/freeze calls. Getters return values; insert checks its index; wrap moves
+the group's existing entries under one new group, preserving order and ids.
+There is no arbitrary DOM property API, object identity registry, reflective
+call dispatch or output pointer retained by Scene. `freeze() &&` closes the
+mutable phase; a completed Scene owns all content independently of the job.
+
+Scene adds group Paint, an owned CSS-color token alternative in PaintColor,
+and optional TextFont {family, size in ems, italic, bold, variant} on TextRun.
+CSS-color tokens are drawing paint values, not SVG nodes; a future D2D
+consumer resolves that same color syntax without reading SVG or computing
+mathematical layout. Primitive metadata/roles preserve Source element intent
+and non-geometric attributes; PathElement distinguishes path/polygon/line.
+Typed DisplayLayout {display, alignment, shift, minimum_width, full_width}
+belongs to Scene/Builder, not a borrowed output jax. Raw style/attribute
+spelling is serialization metadata and cannot replace these shared semantics.
+All geometry has one em, y-up convention, including Rule rectangles. The old
+writer's `-(y+height)` rectangle conversion contradicts its global y reflection
+and Source fraction `rect.y = axis - thickness/2`; correct that conversion,
+with independent Source evidence, rather than adding family-specific flips.
+
+`LayoutJob::buildScene()` builds the actual Common root, emits through it,
+sets root/font metrics and freezes the Builder. `CommonWrapperFactory::standardNodes()`
+supplies the single concrete native profile catalog; its existing abstract
+`defaultNodes()` contract remains empty. Renderer and tests use standardNodes,
+not independently copied registration tables. Source-only probes do not count
+as native callers. SVG writer consumes only completed Scene plus immutable
+font-path resources, performs spelling/escaping/cache/number formatting, and
+does not select glyphs, measure unknown text or place/stretch anything.
+
+Acceptance: independent pinned Source witnesses first; native real TeX input
+and standard catalog through LayoutJob::buildScene, inspect segment/geometry/
+paint/font ownership and compare SVG. Cover ordinary text/mathbb, compositions,
+unknown runs, fixed and assembled delimiters, fractions/roots, styles/id/link,
+and multiline rows/text. Existing 75 Common/150 byte-exact SVG/full-profile
+gates remain required. During implementation report unsupported families and
+writer gaps explicitly. After focused tests, one full math run; no D2D pixel
+gate and no Folia switch before the complete SVG gate passes.
+
+### Script-family Scene emission (2026-10-21 Root lock)
+
+The existing `common/wrappers/scriptbase` pair owns the shared one-script
+emitter; `msubsup` owns the two-script override, `munderover` owns limits and
+accent emission, and `mmultiscripts` owns pre/post pair alignment. Implement
+these original pairs only. Reuse getBaseWidth/getOffset/getUVQ/getCombinedUV,
+getDeltaW/getOverKU/getUnderKV and the existing stretch/BBox algorithms.
+Numerical placement still present in Source SVG moves into these Common
+owners; the SVG writer receives completed values and computes no script math.
+Do not create script dispatch services, a parallel wrapper family or a second
+layout result. All emission uses the existing SceneContainers contract and
+call-local NodeId vectors; no retained Builder/Scene/output ownership.
+
+New Source evidence from SVG's actual mixin bases also fixes the native limits
+hierarchy: Munder derives from Msub, Mover from Msup, Munderover from Msubsup.
+The latter maps sub/sup to under/over and inherits the two-script algorithm
+for movable limits. Constructors pass the explicit script index because the
+native MML under/over node is a distinct C++ type. Do not copy the sub/sup
+equations into under/over or retain the prior Scriptbase-only inheritance.
+
+Preserve Source child emission order, first/last segment selection, movable
+limits, embellished handling, empty multiscript slots and scriptalign. Source
+`child.place(x,y)` calls that child's default placeScene, including dx/id;
+only calls with an explicit element pass an explicit target. In multiscripts,
+the two anonymous script rows are explicit targets, their children are not.
+Acceptance uses independent Source witnesses and the real full38 pipeline,
+covering sub/sup/subsup, movable/display limits, accents, pre/post pairs,
+alignment, nested scripts and line segments. Existing unsupported families
+must remain visible; no source-string special cases or weakened byte gate.
+
+### Inline fragments and transform spelling (2026-10-21 Root lock)
+
+Source SVG's handleInlineBreaks consumes already completed Common line boxes.
+Its native coordinator belongs in CommonOutputJax::finishInlineScene, called
+once by LayoutJob::buildScene after ordinary root emission. Mrow keeps its
+existing line-layout/emission responsibility. No second wrapper hierarchy,
+SVG DOM, second layout calculation or retained output nodes are introduced.
+
+Scene types add InlineBreakKind {opportunity, forced}, InlineBreak {kind,
+spacing in em}, InlineFragment {root NodeId, completed Metrics, optional
+before}, and FrameLayout {minimum_extent, inline_fragments}. Scene owns that
+finite value and one tree. Fragment roots are its direct root groups in order;
+there is no retained stacked geometry beside them. Builder::child_groups
+returns immediate child ids by value. Its finite split_group_contents(shell,
+content_sources) replaces a direct root shell at the same position with shell
+copies containing the moved entries from the given descendant lineboxes.
+Only shell values are copied; geometry/ids are moved, not cloned. Validate
+all ids/ancestry/distinctness and prepare allocation before mutation. Getters
+and setters for FrameLayout close this operation without arbitrary properties.
+
+Common computes each fragment's h/d/w from lineBBox times the scale of mml
+returned by getBreakNode. Its break spacing uses originalL, mo/mml force_break,
+and the next sibling for linebreakstyle=after, exactly as Source. It sets the
+minimum frame extent to currentMetrics.em/1000. SVG only projects those values
+to frames, preserving one outer container, Source break-node spelling and
+ordered metadata. Forced-break SPACE lookup and blank-letter spacing are
+serialization; they cannot move or remeasure math. The future D2D consumer
+uses the same fragment metrics, groups and physical spacing values.
+
+A transform can contain both Source place's comma translation and an operator
+adjustment's space translation. One group role cannot encode that difference.
+Translation therefore gains a finite TranslationSeparator {role_default,
+comma, space, comma_space} spelling field; its affine matrix ignores spelling.
+CommonWrapper::placeScene records comma; Mo records Source's individual
+adjustment spelling. Preserve real ordered operations, omit accidental identity
+matrices, and never guess separators from operation position or node strings.
+
+Acceptance: Builder extraction preserves the number/order/ids of all drawing
+entries, rejects invalid inputs before changing the tree, and freeze owns all
+fragment values. Mixed translations retain the same composed matrix. Compare
+real plain/multiple-operator inline, narrow inline, forced before/after breaks,
+scripts and multiline text to independent Source; retained Scene serializes
+after its job/document die. No display/inline-policy changes to satisfy tests.
+
+### Optional emitted segments (2026-10-21 Root correction)
+
+Actual inline SVG comparison identifies a missing part of the emission
+contract: Source Mo removes the suppressed segment and leaves a null slot in
+its returned dom array. Skipping glyph creation but retaining an empty group
+is observably different. SceneNode is therefore optional<NodeId>, SceneNodes
+is vector<SceneNode>, and SceneContainers.content is SceneParents, the vector
+of valid parent NodeIds. Input parents remain span<const NodeId>.
+
+Only output/placement/style helpers consume optional segments. No numeric
+sentinel, output side table, stale removed id, reflective object state or
+second presence registry is introduced. Keep Source segment indices even
+when absent. Mrow skips absent output for box/placement work but preserves
+the unconditional line-reset/index rules. Default place returns for an absent
+first segment; explicit target remains a valid NodeId. Other families check
+and unwrap only where Source requires a present own container.
+
+Builder::discard_group removes a non-root group's parent entry and its entire
+subtree by ordinary RAII, after validating the request. Mo calls it for the
+Source-suppressed segment and resets the corresponding optional output slot;
+subsequent emission and Mrow placement skip that slot. A frozen Scene never
+contains the removed empty group or a dangling reference. Acceptance covers
+before/after/duplicate operators, embellished operators, narrow inline rows,
+unchanged completed geometry/order and job/document retirement.
+
+### Completed viewports and glyph transforms (2026-10-21 Root lock)
+
+The remaining overline comparison shows that a nested viewport differs from
+a clip-path group. Scene Group gains optional Viewport {bounds, view_box,
+optional aspect_ratio}; both rectangles use em/y-up coordinates. It maps the
+view-box onto bounds and clips content there. ViewportAlignment/ViewportFit
+are finite min/mid/max and meet/slice/none values; absence preserves SVG's
+default xMidYMid/meet. This is completed geometry shared with future D2D,
+not an SVG DOM or a layout callback.
+
+Mo reuses its Source addExtV/addExtH calculations, creates one viewport group
+and emits the glyph directly inside. ElementRole vertical_extender_viewport
+and horizontal_extender_viewport retain width,height,y,x versus width,height,x,y
+spelling. Existing table_content_viewport/table_label_frame roles can use the
+same geometry and explicit aspect alignment; SVG omits their bounds supplied
+by Source table CSS, while Scene records resolved bounds. Their actual table
+placement is still unimplemented and cannot be accepted by this declaration.
+
+Glyph gains an owned Transform for glyph-local operations; do not invent a
+group around a path to scale it. CommonWrapper::emitChar accepts a trailing
+default Transform and applies it to the glyph or composition group. Unknown
+transformed glyphs report unsupported output instead of dropping a transform.
+Scaling gains explicit_axes spelling metadata for Source scale(1,s), even when
+the axes happen to be equal; matrix composition ignores spelling metadata.
+
+Builder add_group accepts trailing optional Viewport. Snapshot/extraction copy
+only its finite values; freeze validates rectangles, nonnegative bounds,
+positive view-box extents, aspect enums and glyph transforms. SVG projects
+completed values with Source formatting, without delimiter/table/font layout.
+Acceptance covers ownership, invalid geometry, same-matrix transforms and
+real horizontal/vertical assembly; the independent overline case must become
+byte-equal. Synthetic primitive checks do not accept the full Common profile.
+
+### Padded and phantom emission (2026-10-21 Root lock)
+
+`common/wrappers/mpadded.ixx/.cpp` remain the sole padded owner. Its emitScene
+first uses the existing embellished protocol, then standardSceneNodes and the
+already verified getDimens(); it does not copy dimension/line-breaking formulas.
+Apply Source SVG's dW correction for negative dw and data-align, then X=x+dx-dW.
+Only a nonzero X/y creates one anonymous child group under the first emitted
+node, placed through this wrapper's explicit-target placeScene; children go to
+that group. Otherwise children use the ordinary content parents. Return the
+wrapper's own optional output segments, not the shifted content group.
+
+Source mphantom has no Common-specific geometry owner: its specialized SVG
+wrapper only emits standard nodes, with no children. Move that responsibility
+to exactly one `common/wrappers/mphantom.ixx/.cpp` pair with CommonMphantom;
+inherit existing Common measurement unchanged, override emitScene only, and
+register it in the same standard catalog. This is the mathematical node's
+owner, not a helper collection or parallel wrapper hierarchy. Keep hidden
+descendants available to measurement, but do not emit hidden drawing or retain
+a second output tree. Root alone edits CMake, common exports and the catalog.
+
+Acceptance uses independently captured full38/Newcm Source SVG for smash/raise,
+positive padding/border, phantom and horizontal/vertical phantom combinations;
+verify nonzero completed dimensions while hidden descendants have no Scene
+glyphs, exact SVG bytes and existing lifetime checks. No expected SVG is derived
+from native output. Semantics/fenced/table/actions remain separately scoped.
+
 ### CSS stylesheet dependency for Common (2026-10-20)
 
 Keep `StyleJsonSheet` in existing `util/style_json.ixx/.cpp`; no Common-local
