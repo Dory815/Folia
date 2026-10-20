@@ -13,6 +13,27 @@ void MacroDefinition::validate() const {
     if (default_first_argument && arity == 0)
         throw std::invalid_argument("A default argument requires at least one parameter");
 }
+void CommandDefinition::validate() const {
+    std::visit([](auto const& definition) {
+        using T = std::remove_cvref_t<decltype(definition)>;
+        if constexpr (std::same_as<T, MacroDefinition>) definition.validate();
+        else if constexpr (std::same_as<T, NativeMacroAlias>) {
+            if (!definition.handler.value)
+                throw std::invalid_argument("A native macro alias needs its compiled handler ID");
+        } else if constexpr (std::same_as<T, CharacterMacroAlias>) {
+            if (!definition.parser.value)
+                throw std::invalid_argument("A character alias needs its compiled token-parser ID");
+        }
+    }, body);
+}
+bool DefinitionLayer::erase(DefinitionKey const& key) {
+    switch (key.kind) {
+    case DefinitionKind::command: return commands.erase(key.name) != 0;
+    case DefinitionKind::delimiter: return delimiters.erase(key.name) != 0;
+    case DefinitionKind::environment: return environments.erase(key.name) != 0;
+    }
+    return false;
+}
 MacroColumnDefinition const* ColumnMacroDefinitions::find(char16_t specifier) const noexcept {
     auto const it = definitions_.find(specifier);
     return it == definitions_.end() ? nullptr : &it->second;
@@ -23,16 +44,68 @@ void ColumnMacroDefinitions::set(char16_t specifier, MacroColumnDefinition defin
 bool ColumnMacroDefinitions::erase(char16_t specifier) noexcept {
     return definitions_.erase(specifier) != 0;
 }
+namespace {
+template<class Member>
+auto findDefinition(TexDefinitionState const& state, Member member,
+                    std::u16string_view name) {
+    using Map = std::remove_cvref_t<decltype(state.global.*member)>;
+    using Value = typename Map::mapped_type;
+    const std::u16string key(name);
+    for (auto layer = state.groups.rbegin(); layer != state.groups.rend(); ++layer) {
+        auto const& map = (*layer).*member;
+        if (auto found = map.find(key); found != map.end())
+            return static_cast<Value const*>(&found->second);
+    }
+    auto const& map = state.global.*member;
+    auto found = map.find(key);
+    return found == map.end() ? static_cast<Value const*>(nullptr) : &found->second;
+}
+}
+DefinitionLayer& TexSessionState::currentDefinitionLayer() noexcept {
+    return definitions_.groups.empty() ? definitions_.global : definitions_.groups.back();
+}
+CommandDefinition const* TexSessionState::findCommand(std::u16string_view name) const {
+    return findDefinition(definitions_, &DefinitionLayer::commands, name);
+}
+void TexSessionState::defineCommand(std::u16string name, CommandDefinition definition) {
+    definition.validate();
+    currentDefinitionLayer().commands.insert_or_assign(std::move(name), std::move(definition));
+}
+bool TexSessionState::eraseCommand(std::u16string_view name) {
+    return currentDefinitionLayer().commands.erase(std::u16string(name)) != 0;
+}
 MacroDefinition const* TexSessionState::findMacro(std::u16string_view name) const {
-    auto const it = macros_.find(std::u16string(name));
-    return it == macros_.end() ? nullptr : &it->second;
+    auto const* command = findCommand(name);
+    return command ? std::get_if<MacroDefinition>(&command->body) : nullptr;
 }
 void TexSessionState::defineMacro(std::u16string name, MacroDefinition definition) {
-    definition.validate();
-    macros_.insert_or_assign(std::move(name), std::move(definition));
+    CommandDefinition command{name, std::move(definition)};
+    defineCommand(std::move(name), std::move(command));
 }
 bool TexSessionState::eraseMacro(std::u16string_view name) {
-    return macros_.erase(std::u16string(name)) != 0;
+    return eraseCommand(name);
+}
+void TexSessionState::clearMacros() noexcept {
+    definitions_.global.commands.clear();
+    for (auto& layer : definitions_.groups) layer.commands.clear();
+}
+DelimiterDefinition const* TexSessionState::findDelimiter(std::u16string_view name) const {
+    return findDefinition(definitions_, &DefinitionLayer::delimiters, name);
+}
+void TexSessionState::defineDelimiter(std::u16string name, DelimiterDefinition definition) {
+    currentDefinitionLayer().delimiters.insert_or_assign(std::move(name), std::move(definition));
+}
+bool TexSessionState::eraseDelimiter(std::u16string_view name) {
+    return currentDefinitionLayer().delimiters.erase(std::u16string(name)) != 0;
+}
+EnvironmentDefinition const* TexSessionState::findEnvironment(std::u16string_view name) const {
+    return findDefinition(definitions_, &DefinitionLayer::environments, name);
+}
+void TexSessionState::defineEnvironment(std::u16string name, EnvironmentDefinition definition) {
+    currentDefinitionLayer().environments.insert_or_assign(std::move(name), std::move(definition));
+}
+bool TexSessionState::eraseEnvironment(std::u16string_view name) {
+    return currentDefinitionLayer().environments.erase(std::u16string(name)) != 0;
 }
 ColorModel& TexSessionState::enableColor() {
     if (!color_) color_.emplace();

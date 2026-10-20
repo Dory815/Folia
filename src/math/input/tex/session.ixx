@@ -1,5 +1,6 @@
 export module folia.math.input.tex.session;
 export import folia.math.input.tex.color.util;
+export import folia.math.input.tex.token;
 import std;
 
 export namespace folia::math::tex {
@@ -11,8 +12,65 @@ struct MacroDefinition final {
     std::vector<std::u16string> parameter_delimiters;
     std::uint8_t arity{};
     std::optional<std::u16string> default_first_argument;
+    bool parameter_template{}; // Source MacroWithTemplate versus replacement Macro
     void validate() const;
     friend bool operator==(MacroDefinition const&, MacroDefinition const&) = default;
+};
+
+struct NullArgument final {
+    friend bool operator==(NullArgument, NullArgument) = default;
+};
+using TexArgument = std::variant<NullArgument, bool, double, std::u16string>;
+
+// Distinct indices into immutable compiled C++ function tables. Zero is absent.
+// No runtime allocation, function name lookup, receiver or parser lives here.
+struct MacroHandlerId final {
+    std::uint32_t value{};
+    friend bool operator==(MacroHandlerId, MacroHandlerId) = default;
+};
+struct TokenParserId final {
+    std::uint32_t value{};
+    friend bool operator==(TokenParserId, TokenParserId) = default;
+};
+struct NativeMacroAlias final {
+    MacroHandlerId handler;
+    std::vector<TexArgument> arguments;
+};
+struct CharacterMacroAlias final {
+    TokenParserId parser;
+    Token captured; // Source Let's captured CharacterMap token, including attributes
+};
+struct MacroSuppression final {};
+struct CommandDefinition final {
+    std::u16string source_token;
+    std::variant<MacroDefinition, NativeMacroAlias,
+                 CharacterMacroAlias, MacroSuppression> body;
+    void validate() const;
+};
+using DelimiterDefinition = Token;
+struct EnvironmentDefinition final {
+    std::u16string begin_source, end_source;
+    std::uint8_t arity{};
+    std::optional<std::u16string> default_first_argument;
+};
+enum class DefinitionKind { command, delimiter, environment };
+struct DefinitionKey final { DefinitionKind kind; std::u16string name; };
+struct DefinitionLayer final {
+    std::int32_t priority{};
+    std::unordered_map<std::u16string, CommandDefinition> commands;
+    std::unordered_map<std::u16string, DelimiterDefinition> delimiters;
+    std::unordered_map<std::u16string, EnvironmentDefinition> environments;
+    bool erase(DefinitionKey const&);
+};
+// Only owned values persist between expressions. The original BegingroupStack
+// service operates on these layers; lookup never creates another definition map.
+struct TexDefinitionState final {
+    static constexpr std::int32_t newcommand_priority = -100;
+    DefinitionLayer global{newcommand_priority};
+    std::vector<DefinitionLayer> groups; // outermost -> innermost
+    std::int32_t current_priority{newcommand_priority};
+    std::int32_t top_priority{newcommand_priority};
+    std::int32_t base_priority{newcommand_priority};
 };
 
 // NewColumnType definitions survive equations and tag resets. Their parser
@@ -80,10 +138,8 @@ struct EquationFinishResult final {
 // and the renderer's macro definitions. No equation/parser/request state lives
 // here. Equation scratch is passed explicitly to finishEquation.
 class TexSessionState final {
-public:
-    using MacroMap = std::unordered_map<std::u16string, MacroDefinition>;
 private:
-    MacroMap macros_;
+    TexDefinitionState definitions_;
     LabelMap all_labels_;
     IdSet all_ids_;
     TagCounterState all_counter_;
@@ -101,8 +157,20 @@ public:
     MacroDefinition const* findMacro(std::u16string_view name) const;
     void defineMacro(std::u16string name, MacroDefinition definition);
     bool eraseMacro(std::u16string_view name);
-    MacroMap const& macros() const noexcept { return macros_; }
-    void clearMacros() noexcept { macros_.clear(); }
+    void clearMacros() noexcept;
+
+    CommandDefinition const* findCommand(std::u16string_view name) const;
+    void defineCommand(std::u16string name, CommandDefinition);
+    bool eraseCommand(std::u16string_view name);
+    DelimiterDefinition const* findDelimiter(std::u16string_view name) const;
+    void defineDelimiter(std::u16string name, DelimiterDefinition);
+    bool eraseDelimiter(std::u16string_view name);
+    EnvironmentDefinition const* findEnvironment(std::u16string_view name) const;
+    void defineEnvironment(std::u16string name, EnvironmentDefinition);
+    bool eraseEnvironment(std::u16string_view name);
+    TexDefinitionState& definitions() noexcept { return definitions_; }
+    TexDefinitionState const& definitions() const noexcept { return definitions_; }
+    DefinitionLayer& currentDefinitionLayer() noexcept;
 
     ColorModel& enableColor();
     ColorModel* colorModel() noexcept;

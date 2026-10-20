@@ -13,9 +13,13 @@ Tags, configuration and dispatch declarations. Its existing family files
 become or remain partitions of that module; implementations use
 `module folia.math.input.tex.parser; import :<partition>;`. Do not forward
 declare a parser-owned class in a different named module and define it here.
-Token, Macro, TokenMap and MapHandler participate in that same cyclic graph:
-their original files become partitions too. Importing the old standalone
-TokenMap primary would reintroduce its Context/Property dependencies and is
+Macro, TokenMap and MapHandler participate in that same cyclic graph:
+their original files become partitions too. Token itself is an acyclic owned
+value; its original standalone `folia.math.input.tex.token` module is shared by
+session delimiter/character-alias data and the parser family. The observed
+CharacterMap let branch requires that same Token in persistent state without
+importing the parser into session or duplicating a token record.
+Importing the old standalone TokenMap primary would reintroduce its Context/Property dependencies and is
 not an acceptable declaration dependency. Pure environment, session and scanner
 utilities retain their existing independent modules.
 
@@ -235,12 +239,43 @@ alias contract. It must preserve both branches, translated-character attributes,
 and the observed snapshot behavior using native domain values and explicit
 profile/session service lifetime. Do not introduce a generic callback closure,
 JS object record, erased receiver or string-to-function runtime to bridge this
-gap. The exact typed catalog/map reference seam remains to be frozen before
-session/MacroMap/Newcommand bodies are promoted.
+gap. The earlier candidate is superseded by the native records described below;
+MacroMap/Newcommand still need their typed dispatch integration.
 
 The reviewed formal tool passes 15 state/expansion observations with 12 pinned
 TS/CJS source pairs. It uses real TeX compilation and MML, without the SVG/output
 pipeline. Root replay log: `build/math-port/native-session-definitions-formal-source.log`.
+
+#### Native definition records and alias binding
+
+The original MacroDefinition remains replacement/template data, preserving its
+tested fields. CommandDefinition adds the stored source token and a closed body
+choice: that replacement, a NativeMacroAlias, a CharacterMacroAlias, or explicit
+MacroSuppression. NativeMacroAlias stores MacroHandlerId and ordered TexArgument
+values. CharacterMacroAlias stores the distinct TokenParserId and an owned copy
+of the actual Token, including optional translated character and attributes.
+The immutable configured profile supplies the respective compiled C++ function
+tables; identifiers are stable entries in those tables, never request allocation
+counters, method-name strings or JS object identities. Configuration must bind
+and check these IDs. Session stores no function, parser, map, callback closure
+or document borrow. Actual alias invocation through these tables remains to be
+implemented with MacroMap/Newcommand; storage tests alone do not prove it.
+
+The configured CharacterMap parsers are fixed at configuration time in the
+supported Source profile. Source's parser reassignment is the EnvironmentMap
+constructor, not a CharacterMap callback replacement during an expression.
+The native character alias retains its selected typed parser ID and captured
+Token rather than retaining a mutable request map. Arbitrary programmatic
+mutations of Source's private object fields remain outside the native API.
+
+Each session owns one TexDefinitionState with the original three domains as
+separate typed maps in each layer: commands, delimiters, environments. The old
+independent macros_ store is removed. findCommand sees inner layers before the
+global layer, including explicit suppression; findMacro is only a replacement
+projection of that same selected entry and cannot fall through an alias or
+suppression to an older replacement. Parser dispatch must use findCommand.
+Existing defineMacro operations write that same store. Immutable ConfigMacros
+defaults remain in configuration, not copied into a second mutable store.
 
 core::MathItem now has a native declaration and implementation in the original
 core/math_item module, without the former generic object and DOM graph.

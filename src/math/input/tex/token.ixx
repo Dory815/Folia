@@ -1,22 +1,13 @@
-// Root declarations for MathJax 4.1.3 Token.ts::Token. Apache-2.0.
+// MathJax 4.1.3 Token.ts::Token. Apache-2.0.
 export module folia.math.input.tex.token;
-export import folia.math.core.tree.property;
+export import folia.math.core.mml_tree.attributes;
 import std;
 export namespace folia::math::tex {
-class Token {
-    Property token_, character_, attributes_;
-public:
-    Token(Property token,Property character,Property attributes=Missing{});
-    virtual ~Token()=default;
-    virtual Property token() const;
-    virtual Property character() const;
-    virtual Property attributes() const;
-    Property sourceTokenField()const{return token_;}
-    void sourceTokenField(Property value){token_=std::move(value);}
-    Property sourceCharField()const{return character_;}
-    void sourceCharField(Property value){character_=std::move(value);}
-    Property sourceAttributesField()const{return attributes_;}
-    void sourceAttributesField(Property value){attributes_=std::move(value);}
+struct Token final {
+    std::u16string token;
+    std::optional<std::u16string> character;
+    std::optional<mml::AttributeSet> attributes;
+    Token(std::u16string, std::optional<std::u16string>,
+          std::optional<mml::AttributeSet> = std::nullopt);
 };
-using TokenRef=std::shared_ptr<Token>;
 }

@@ -9,12 +9,9 @@ import std;
 
 namespace folia::math::tex {
 
-Token::Token(Property token, Property character, Property attributes)
-    : token_(std::move(token)), character_(std::move(character)),
-      attributes_(std::move(attributes)) {}
-
-Property Token::token() const { return token_; }
-Property Token::character() const { return character_; }
-Property Token::attributes() const { return attributes_; }
+Token::Token(std::u16string spelling, std::optional<std::u16string> translated,
+             std::optional<mml::AttributeSet> values)
+    : token(std::move(spelling)), character(std::move(translated)),
+      attributes(std::move(values)) {}
 
 } // namespace folia::math::tex
