@@ -160,7 +160,8 @@ class BeginItem : public BaseItem {
   public:
     std::optional<std::u16string> name;
     std::optional<std::u16string> spread; // Mathtools state on a begin frame
-    bool nestStart{};                     // Mathtools nested spread-lines environment marker
+    std::optional<std::u16string> left, right; // Empheq side material
+    bool nestStart{}; // Empheq/Mathtools allow their nested equation structure
     explicit BeginItem(StackItemFactory &);
     StackKind kind() const override;
     bool isOpen() const noexcept override;

@@ -229,6 +229,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/bboldx/configuration.ixx
     src/math/input/tex/tagformat/tag_format_configuration.ixx
     src/math/input/tex/setoptions/set_options_configuration.ixx
+    src/math/input/tex/empheq/util.ixx
+    src/math/input/tex/empheq/configuration.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -353,6 +355,8 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/bboldx/configuration.cpp
     src/math/input/tex/tagformat/tag_format_configuration.cpp
     src/math/input/tex/setoptions/set_options_configuration.cpp
+    src/math/input/tex/empheq/util.cpp
+    src/math/input/tex/empheq/configuration.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
@@ -574,6 +578,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/bboldx.cpp
     tests/math/tagformat.cpp
     tests/math/setoptions.cpp
+    tests/math/empheq.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp

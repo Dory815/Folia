@@ -1,18 +1,25 @@
-// MathJax 4.1.3 input/tex/empheq/EmpheqUtil.ts.
+// MathJax 4.1.3 input/tex/empheq/EmpheqUtil.ts; Apache-2.0.
 export module folia.math.input.tex.empheq.util;
-export import folia.math.input.tex.parser;
+export import folia.math.input.tex.parse_util;
 import std;
 export namespace folia::math::tex {
 struct EmpheqUtil {
-    static options::Value initializeModule(ParserRuntime&);
-    static options::Value call(ParserRuntime&,std::u16string_view,std::span<const options::Value>);
-    static mml::NodeValue cellBlock(std::u16string, mml::NodeValue, TexParser&, std::u16string);
-    static mml::NodeValue topRowTable(mml::NodeValue, TexParser&);
-    static void rowspanCell(mml::NodeValue, std::u16string, mml::NodeValue, TexParser&, std::u16string);
-    static void left(mml::NodeValue, mml::NodeValue, std::u16string, TexParser&, std::u16string={});
-    static void right(mml::NodeValue, mml::NodeValue, std::u16string, TexParser&, std::u16string={});
-    static void adjustTable(BaseItem&,TexParser&);
-    static Property splitOptions(ParserRuntime&,std::u16string,options::Value allowed=options::Null{});
-    static bool checkEnv(ParserRuntime&,std::u16string);
+    static mml::AttributeSet
+    splitOptions(std::u16string_view,
+                 std::optional<std::span<KeyValueOption const>> allowed = std::nullopt);
+    static std::size_t columnCount(mml::MmlNode const &);
+    static mml::MmlNode &cellBlock(std::u16string_view, mml::MmlNode &, TexParser &,
+                                   std::u16string_view env = {});
+    static mml::MmlNode &topRowTable(mml::MmlNode const &, TexParser &);
+    static void rowspanCell(mml::MmlNode &, std::u16string_view, mml::MmlNode const &, TexParser &,
+                            std::u16string_view env = {});
+    static void left(mml::MmlNode &, mml::MmlNode const &, std::u16string_view, TexParser &,
+                     std::u16string_view env = {});
+    static void right(mml::MmlNode &, mml::MmlNode const &, std::u16string_view, TexParser &,
+                      std::u16string_view env = {});
+    static void adjustTable(BeginItem &, TexParser &);
+    inline static constexpr std::array<std::u16string_view, 6> allowEnv{
+        u"equation", u"align", u"gather", u"flalign", u"alignat", u"multline"};
+    static bool checkEnv(std::u16string_view);
 };
-}
+} // namespace folia::math::tex
