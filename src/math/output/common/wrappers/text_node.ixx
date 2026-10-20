@@ -8,21 +8,18 @@ class CommonTextNode : public CommonWrapper {
   public:
     using CommonWrapper::CommonWrapper;
     std::vector<std::uint32_t> remappedText(std::u16string_view, std::string_view variant) const;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
 
   protected:
     void computeBBox(BBox &, bool recompute = false) override;
 
-    void getStyles() override {
-    }
+    void getStyles() override {}
 
-    void getVariant() override {
-    }
+    void getVariant() override {}
 
-    void getScale() override {
-    }
+    void getScale() override {}
 
-    void getSpace() override {
-    }
+    void getSpace() override {}
 
   private:
     static void addMeasuredText(BBox &, std::u16string_view, std::string_view, CommonOutputJax &);

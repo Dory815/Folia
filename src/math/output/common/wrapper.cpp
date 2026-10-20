@@ -11,6 +11,7 @@ import :mrow;
 import folia.math.core.mml_tree.mml_nodes.mo;
 import folia.math.util.js_numeric_input;
 import folia.math.util.js_number;
+import folia.math.util.string;
 import folia.math.util.utf16;
 import std;
 
@@ -97,6 +98,54 @@ bool isZeroIndent(std::u16string_view value) {
         return false;
     return std::all_of(value.begin() + 1, value.end(),
                        [](char16_t c) { return c >= u'a' && c <= u'z'; });
+}
+
+std::string attributeName(std::u16string_view value) {
+    return utf8(value);
+}
+
+scene::SemanticMetadata sceneMetadata(mml::MmlNode const &node) {
+    scene::SemanticMetadata result;
+    result.source_tag = std::string(node.document().kindName(node.kind()));
+    return result;
+}
+
+scene::PaintColor cssPaint(std::string value) {
+    if (value.empty())
+        return scene::InheritedPaint{};
+    if (value == "none")
+        return scene::NoPaint{};
+    if (value == "currentColor")
+        return scene::CurrentColorPaint{};
+    return scene::CssColor{std::move(value)};
+}
+
+scene::Transform translated(double x, double y) {
+    return scene::Transform(std::vector<scene::TransformOperation>{scene::Translation{x, y}});
+}
+
+std::string hexCodepoint(std::uint32_t value) {
+    constexpr char digits[] = "0123456789ABCDEF";
+    std::string result;
+    do {
+        result.push_back(digits[value & 0xF]);
+        value >>= 4;
+    } while (value);
+    std::reverse(result.begin(), result.end());
+    return result;
+}
+
+void addPolygon(scene::Builder &builder, scene::NodeId parent,
+                std::array<scene::Point, 4> const &points, scene::Paint paint,
+                scene::ElementRole role) {
+    scene::Path path;
+    path.element = scene::PathElement::polygon;
+    path.role = role;
+    path.paint = std::move(paint);
+    path.geometry.segments = {scene::MoveTo{points[0]}, scene::LineTo{points[1]},
+                              scene::LineTo{points[2]}, scene::LineTo{points[3]},
+                              scene::ClosePath{}};
+    builder.add_primitive(parent, std::move(path));
 }
 
 constexpr double smallMathSpace = 2.0 / 18.0;
@@ -789,6 +838,466 @@ double CommonWrapper::getWrapWidth(std::size_t index) {
 std::optional<ResolvedFontGlyph> CommonWrapper::getVariantChar(std::string_view selected,
                                                                std::uint32_t codepoint) {
     return jax().fonts().resolveGlyph(jax().face().name, selected, codepoint);
+}
+
+double CommonWrapper::sceneDx() const {
+    if (!styleData)
+        return 0;
+    return styleData->padding[3] + (styleData->border ? styleData->border->width[3] : 0);
+}
+
+SceneContainers CommonWrapper::createSceneNodes(scene::Builder &builder,
+                                                std::span<scene::NodeId const> parents) {
+    SceneContainers containers;
+    containers.nodes.reserve(parents.size());
+    auto metadata = sceneMetadata(*node);
+    std::optional<scene::Link> link;
+    if (const auto *href = node->attributes().lookup(u"href"); truthy(href))
+        link = scene::Link{valueString(href), {}, {}};
+    for (std::size_t i = 0; i < parents.size(); ++i) {
+        const auto id = builder.add_group(parents[i], {}, {}, link, {}, metadata,
+                                          scene::ElementRole::math_wrapper);
+        containers.nodes.push_back(id);
+        containers.content.push_back(id);
+        if (link) {
+            const bool embellished = node->isEmbellished() && node->kind() != mml::NodeKind::mo;
+            const auto box = embellished ? getOuterBBox() : getLineBBox(i)->copy();
+            scene::Paint invisible;
+            invisible.fill = scene::NoPaint{};
+            invisible.stroke = scene::NoPaint{};
+            builder.add_primitive(id, scene::Rule{{i == 0 || embellished ? -sceneDx() : 0, -box.d,
+                                                   box.w, box.h + box.d},
+                                                  invisible,
+                                                  {},
+                                                  scene::ElementRole::link_hitbox});
+        }
+    }
+    return containers;
+}
+
+SceneContainers CommonWrapper::standardSceneNodes(scene::Builder &builder,
+                                                  std::span<scene::NodeId const> parents) {
+    auto containers = createSceneNodes(builder, parents);
+    handleSceneStyles(builder, containers.nodes);
+    handleSceneScale(builder, containers.nodes);
+    handleSceneBorder(builder, containers.nodes);
+    handleSceneColor(builder, containers.nodes);
+    handleSceneAttributes(builder, containers.nodes);
+    return containers;
+}
+
+void CommonWrapper::handleSceneStyles(scene::Builder &builder, std::span<SceneNode const> nodes) {
+    if (!styles)
+        return;
+    for (auto slot : nodes) {
+        if (!slot)
+            continue;
+        const auto id = *slot;
+        auto metadata = builder.metadata(id);
+        const auto css = utf8(styles->cssText());
+        if (!css.empty())
+            metadata.ordered_attributes.push_back({"style", css});
+        const double margin = styleData ? styleData->margin[3] : 0;
+        if (margin != 0) {
+            builder.set_transform(id, translated(margin, 0));
+            metadata.initial_transform = true;
+        }
+        builder.set_metadata(id, std::move(metadata));
+    }
+}
+
+void CommonWrapper::handleSceneScale(scene::Builder &builder, std::span<SceneNode const> nodes) {
+    if (bbox.rscale == 1)
+        return;
+    for (auto slot : nodes) {
+        if (!slot)
+            continue;
+        const auto id = *slot;
+        builder.set_transform(id, scene::Transform(std::vector<scene::TransformOperation>{
+                                      scene::Scaling{bbox.rscale, bbox.rscale}}));
+        auto metadata = builder.metadata(id);
+        metadata.initial_transform = true;
+        builder.set_metadata(id, std::move(metadata));
+    }
+}
+
+void CommonWrapper::handleSceneBorder(scene::Builder &builder, std::span<SceneNode const> nodes) {
+    if (!styleData || !styleData->border || nodes.empty())
+        return;
+    constexpr double fuzz = 0.005;
+    const auto &border = *styleData->border;
+    const auto margin = styleData->margin;
+    const auto n = nodes.size() - 1;
+    const bool embellished = node->isEmbellished() && node->kind() != mml::NodeKind::mo;
+    for (std::size_t k = 0; k < nodes.size(); ++k) {
+        if (!nodes[k])
+            continue;
+        const double left = (!n || k == 0) ? 1 : 0;
+        const double right = (!n || k == n) ? 1 : 0;
+        const auto box = embellished ? getOuterBBox() : getLineBBox(k)->copy();
+        const double h = box.h - margin[0] + fuzz;
+        const double d = box.d - margin[2] + fuzz;
+        const double w = box.w - margin[1] - margin[3] + fuzz;
+        const scene::Point outerLT{-fuzz, h}, outerRT{w, h}, outerRB{w, -d}, outerLB{-fuzz, -d};
+        std::array<scene::Point, 4> insets[4] = {
+            std::array<scene::Point, 4>{outerLT,
+                                        outerRT,
+                                        {w - right * border.width[1], h - border.width[0]},
+                                        {-fuzz + left * border.width[3], h - border.width[0]}},
+            std::array<scene::Point, 4>{outerRB,
+                                        outerRT,
+                                        {w - right * border.width[1], h - border.width[0]},
+                                        {w - right * border.width[1], -d + border.width[2]}},
+            std::array<scene::Point, 4>{outerLB,
+                                        outerRB,
+                                        {w - right * border.width[1], -d + border.width[2]},
+                                        {-fuzz + left * border.width[3], -d + border.width[2]}},
+            std::array<scene::Point, 4>{outerLB,
+                                        outerLT,
+                                        {-fuzz + left * border.width[3], h - border.width[0]},
+                                        {-fuzz + left * border.width[3], -d + border.width[2]}}};
+        const double dx = left * sceneDx();
+        for (std::size_t side = 0; side < 4; ++side) {
+            if (!border.width[side] || (side == 3 && !left) || (side == 1 && !right))
+                continue;
+            auto points = insets[side];
+            for (auto &p : points)
+                p.x -= dx;
+            scene::Paint paint;
+            paint.fill = cssPaint(border.color[side]);
+            paint.stroke = scene::NoPaint{};
+            if (border.style[side] == "dashed" || border.style[side] == "dotted") {
+                // The SVG source uses a side-specific dash cadence; retain the
+                // completed path and stroke semantics as Scene data.
+                const auto &a = points[0];
+                const auto &b = points[1];
+                scene::Path line;
+                line.element = scene::PathElement::line;
+                line.role = scene::ElementRole::background_box;
+                line.paint.stroke = cssPaint(border.color[side]);
+                line.paint.stroke_width = border.width[side];
+                line.paint.line_cap = border.style[side] == "dotted" ? scene::StrokeCap::round
+                                                                     : scene::StrokeCap::square;
+                const double t = border.width[side];
+                const double half = t / 2;
+                constexpr std::array<std::array<double, 4>, 4> offsets{
+                    {{{1, -1, -1, -1}}, {{-1, 1, -1, -1}}, {{1, 1, -1, 1}}, {{1, 1, 1, -1}}}};
+                const double x1 = a.x + offsets[side][0] * half;
+                const double y1 = a.y + offsets[side][1] * half;
+                const double x2 = b.x + offsets[side][2] * half;
+                const double y2 = b.y + offsets[side][3] * half;
+                const double length = (side % 2) ? std::abs(y2 - y1) : std::abs(x2 - x1);
+                const double count = border.style[side] == "dotted"
+                                         ? std::ceil(length / (2 * t))
+                                         : std::ceil((length - t) / (4 * t));
+                const double m = length / (4 * count + 1);
+                line.paint.dash_array = border.style[side] == "dotted"
+                                            ? std::vector<double>{0.001, length / count - 0.002}
+                                            : std::vector<double>{m, 3 * m};
+                line.geometry.segments = {scene::MoveTo{{x1, y1}}, scene::LineTo{{x2, y2}}};
+                builder.add_primitive(*nodes[k], std::move(line));
+            } else {
+                addPolygon(builder, *nodes[k], points, std::move(paint),
+                           scene::ElementRole::background_box);
+            }
+        }
+    }
+}
+
+void CommonWrapper::handleSceneColor(scene::Builder &builder, std::span<SceneNode const> nodes) {
+    const auto *color = node->attributes().own(u"mathcolor");
+    if (!truthy(color))
+        color = node->attributes().own(u"color");
+    const auto *background = node->attributes().own(u"mathbackground");
+    if (!truthy(background))
+        background = node->attributes().own(u"background");
+    if (!truthy(background) && styles) {
+        const auto value = styles->get(u"background-color");
+        if (!value.empty()) {
+            for (std::size_t i = 0; i < nodes.size(); ++i) {
+                if (!nodes[i])
+                    continue;
+                const bool embellished = node->isEmbellished() && node->kind() != mml::NodeKind::mo;
+                const auto box = embellished ? getOuterBBox() : getLineBBox(i)->copy();
+                scene::Paint paint;
+                paint.fill = cssPaint(utf8(value));
+                scene::SemanticMetadata meta;
+                meta.ordered_attributes.push_back({"data-bgcolor", "true"});
+                builder.insert_primitive(*nodes[i], 0,
+                                         scene::Rule{{i == 0 || embellished ? -sceneDx() : 0,
+                                                      -box.d, box.w, box.h + box.d},
+                                                     std::move(paint),
+                                                     std::move(meta),
+                                                     scene::ElementRole::background_box});
+            }
+        }
+    }
+    for (auto slot : nodes) {
+        if (!slot)
+            continue;
+        const auto id = *slot;
+        if (truthy(color)) {
+            auto paint = builder.paint(id);
+            paint.fill = cssPaint(valueString(color));
+            paint.stroke = cssPaint(valueString(color));
+            builder.set_paint(id, std::move(paint));
+        }
+    }
+    if (truthy(background)) {
+        for (std::size_t i = 0; i < nodes.size(); ++i) {
+            if (!nodes[i])
+                continue;
+            const bool embellished = node->isEmbellished() && node->kind() != mml::NodeKind::mo;
+            const auto box = embellished ? getOuterBBox() : getLineBBox(i)->copy();
+            scene::Paint paint;
+            paint.fill = cssPaint(valueString(background));
+            scene::SemanticMetadata meta;
+            meta.ordered_attributes.push_back({"data-bgcolor", "true"});
+            builder.insert_primitive(
+                *nodes[i], 0,
+                scene::Rule{{i == 0 || embellished ? -sceneDx() : 0, -box.d, box.w, box.h + box.d},
+                            std::move(paint),
+                            std::move(meta),
+                            scene::ElementRole::background_box});
+        }
+    }
+}
+
+void CommonWrapper::handleSceneAttributes(scene::Builder &builder,
+                                          std::span<SceneNode const> nodes) {
+    const auto &skip = factory().classData(node->kind()).skipAttributes;
+    for (const auto &[name, value] : node->attributes().ownEntries()) {
+        const auto key = attributeName(name);
+        if (key == "class" || std::holds_alternative<AttributeNull>(value))
+            continue;
+        const auto skipIt = skip.find(key);
+        const bool forced = skipIt != skip.end() && !skipIt->second;
+        if (skipIt != skip.end() && skipIt->second)
+            continue;
+        bool exists = false;
+        if (!nodes.empty() && nodes.front()) {
+            if (key == "data-mml-node" && !builder.metadata(*nodes.front()).source_tag.empty())
+                exists = true;
+            for (const auto &attribute : builder.metadata(*nodes.front()).ordered_attributes)
+                if (attribute.name == key) {
+                    exists = true;
+                    break;
+                }
+        }
+        if (!forced && (node->attributes().hasDefault(name) || exists))
+            continue;
+        for (auto slot : nodes) {
+            if (!slot)
+                continue;
+            const auto id = *slot;
+            auto metadata = builder.metadata(id);
+            metadata.ordered_attributes.push_back({key, valueString(&value)});
+            builder.set_metadata(id, std::move(metadata));
+        }
+    }
+    const auto *classValue = node->attributes().lookup(u"class");
+    if (!truthy(classValue))
+        return;
+    std::vector<std::string> classes;
+    auto addClasses = [&](std::string_view source) {
+        std::size_t i = 0;
+        while (i < source.size()) {
+            while (i < source.size() && std::isspace(static_cast<unsigned char>(source[i])))
+                ++i;
+            const auto begin = i;
+            while (i < source.size() && !std::isspace(static_cast<unsigned char>(source[i])))
+                ++i;
+            if (begin == i)
+                continue;
+            std::string value(source.substr(begin, i - begin));
+            if (std::find(classes.begin(), classes.end(), value) == classes.end())
+                classes.push_back(std::move(value));
+        }
+    };
+    for (auto slot : nodes) {
+        if (!slot)
+            continue;
+        const auto id = *slot;
+        auto metadata = builder.metadata(id);
+        classes.clear();
+        for (const auto &attribute : metadata.ordered_attributes)
+            if (attribute.name == "class")
+                addClasses(attribute.value);
+        addClasses(valueString(classValue));
+        std::erase_if(metadata.ordered_attributes,
+                      [](auto const &attribute) { return attribute.name == "class"; });
+        std::string combined;
+        for (const auto &name : classes) {
+            if (!combined.empty())
+                combined.push_back(' ');
+            combined += name;
+        }
+        metadata.ordered_attributes.push_back({"class", std::move(combined)});
+        builder.set_metadata(id, std::move(metadata));
+    }
+}
+
+double CommonWrapper::handleSceneId(scene::Builder &builder, std::span<SceneNode const> nodes,
+                                    double y) {
+    if (nodes.empty() || !nodes.front() || !truthy(node->attributes().lookup(u"id")))
+        return y;
+    const auto h = getBBox().h;
+    const auto scale = getBBox().rscale;
+    scene::TextRun alignment;
+    alignment.role = scene::ElementRole::id_alignment_marker;
+    builder.wrap_contents(*nodes.front(), translated(0, -h), {},
+                          scene::ElementRole::id_alignment_box);
+    builder.insert_primitive(*nodes.front(), 0, std::move(alignment));
+    return y + h * scale;
+}
+
+void CommonWrapper::placeScene(scene::Builder &builder, std::span<SceneNode const> nodes, double x,
+                               double y, std::optional<scene::NodeId> target) {
+    scene::NodeId id;
+    if (target) {
+        id = *target;
+    } else {
+        if (nodes.empty() || !nodes.front())
+            return;
+        id = *nodes.front();
+    }
+    if (!target) {
+        x += sceneDx() * bbox.rscale;
+        if (x == 0 && y == 0)
+            return;
+        y = handleSceneId(builder, nodes, y);
+    } else if (x == 0 && y == 0)
+        return;
+    auto operations = std::vector<scene::TransformOperation>{
+        scene::Translation{x, y, scene::TranslationSeparator::comma}};
+    auto existing = builder.transform(id);
+    operations.insert(operations.end(), existing.operations().begin(), existing.operations().end());
+    builder.set_transform(id, scene::Transform(std::move(operations)));
+}
+
+void CommonWrapper::addSceneChildren(scene::Builder &builder,
+                                     std::span<scene::NodeId const> parents) {
+    switch (node->kind()) {
+    case mml::NodeKind::mi:
+    case mml::NodeKind::mn:
+    case mml::NodeKind::ms:
+    case mml::NodeKind::mspace:
+    case mml::NodeKind::mstyle:
+    case mml::NodeKind::math:
+    case mml::NodeKind::mtext:
+    case mml::NodeKind::mo:
+    case mml::NodeKind::tex_atom:
+    case mml::NodeKind::none:
+        break;
+    default:
+        throw std::logic_error("CommonWrapper scene emission for MathML kind '" +
+                               std::string(node->document().kindName(node->kind())) +
+                               "' requires a specialized wrapper");
+    }
+    double x = 0;
+    for (auto *child : childNodes) {
+        if (!child)
+            throw std::logic_error("CommonWrapper contains a null child wrapper");
+        auto emitted = child->emitScene(builder, parents);
+        const auto box = child->getOuterBBox();
+        if (!emitted.empty())
+            child->placeScene(builder, emitted, x + box.L * box.rscale, 0);
+        x += (box.L + box.w + box.R) * box.rscale;
+    }
+}
+
+std::optional<SceneNodes>
+CommonWrapper::toEmbellishedScene(scene::Builder &builder, std::span<scene::NodeId const> parents) {
+    if (parents.size() <= 1 || !node->isEmbellished() || !node->parent() ||
+        node->parent()->isEmbellished())
+        return {};
+    auto *mo = dynamic_cast<CommonMo *>(coreMO());
+    if (!mo)
+        throw std::logic_error("embellished scene requires CommonMo core");
+    const auto style = mo->embellishedBreakStyle();
+    SceneNodes result;
+    result.reserve(2);
+    for (std::size_t i = 0; i < 2; ++i) {
+        if ((i == 0 && style != "before") || (i == 1 && style != "after")) {
+            std::array<scene::NodeId, 1> one{parents[i]};
+            auto emitted = emitScene(builder, one);
+            result.push_back(emitted.at(0));
+            placeScene(builder, emitted, 0, 0);
+        } else {
+            std::array<scene::NodeId, 1> one{parents[i]};
+            auto emitted = createSceneNodes(builder, one).nodes;
+            result.push_back(emitted.at(0));
+        }
+    }
+    return result;
+}
+
+SceneNodes CommonWrapper::emitScene(scene::Builder &builder,
+                                    std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+    auto containers = standardSceneNodes(builder, parents);
+    addSceneChildren(builder, containers.content);
+    return containers.nodes;
+}
+
+double CommonWrapper::emitUnknownText(scene::Builder &builder, scene::NodeId parent, double x,
+                                      double y, std::u16string &unknown, std::string_view selected,
+                                      CssFontData font) {
+    if (unknown.empty())
+        return 0;
+    if (font.family.empty() && selected != "-explicitFont")
+        font = jax().face().getCssFont(selected);
+    const auto measured = selected == "-explicitFont" ? jax().measureText(unknown, selected, font)
+                                                      : jax().measureText(unknown, selected);
+    scene::TextRun run;
+    run.utf8 = utf8(unknown);
+    run.origin = {x, y};
+    run.metrics = {measured.w, measured.h, measured.d};
+    run.paint.fill = scene::InheritedPaint{};
+    const auto size = jax().face().parameters.required("x_height") / metrics().ex * metrics().em;
+    const auto points = utf16::codePoints(unknown);
+    if (points.size() == 1 && points.front() >= 0x1D400 && points.front() <= 0x1D7FF)
+        font = CssFontData{};
+    run.font = scene::TextFont{font.family, size, font.italic, font.bold, std::string(selected)};
+    run.role = scene::ElementRole::unknown_text;
+    builder.add_primitive(parent, std::move(run));
+    unknown.clear();
+    return measured.w;
+}
+
+double CommonWrapper::emitChar(scene::Builder &builder, scene::NodeId parent,
+                               std::uint32_t codepoint, double x, double y,
+                               std::string_view selected, std::u16string &unknown, bool buffer) {
+    auto resolved = getVariantChar(selected, codepoint);
+    if (!resolved) {
+        const std::array<double, 1> point{static_cast<double>(codepoint)};
+        unknown += string_util::unicodeString(point);
+        return buffer ? 0
+                      : emitUnknownText(builder, parent, x, y, unknown, selected,
+                                        jax().face().getCssFont(selected));
+    }
+    const auto font = jax().face().getCssFont(selected);
+    const auto dx = emitUnknownText(builder, parent, x, y, unknown, selected, font);
+    const auto &glyph = *resolved->data;
+    if (!glyph.composition.empty()) {
+        scene::SemanticMetadata metadata;
+        metadata.ordered_attributes.push_back({"data-c", hexCodepoint(codepoint)});
+        const auto group =
+            builder.add_group(parent, translated(x + dx, y), {}, {}, {}, std::move(metadata),
+                              scene::ElementRole::glyph_composition);
+        double advance = 0;
+        for (auto cp : glyph.composition)
+            advance += emitChar(builder, group, cp, advance, 0, selected, unknown, false);
+        return advance + dx;
+    }
+    if (glyph.resource) {
+        scene::Glyph item{glyph.resource, resolved->key, {x + dx, y}, glyph.metrics.w, {}};
+        scene::GlyphRun run;
+        run.glyphs.push_back(std::move(item));
+        builder.add_primitive(parent, std::move(run));
+    }
+    return glyph.metrics.w + dx;
 }
 
 bool CommonWrapper::canStretch(StretchDirection direction) {

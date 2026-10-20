@@ -9,11 +9,19 @@ export import folia.math.util.constants;
 export import folia.math.util.lengths;
 export import folia.math.output.common.font_data;
 export import folia.math.output.common.line_bbox;
+export import folia.math.output.scene.builder;
 import std;
 
 export namespace folia::math::output::common {
 using StringMap = std::map<std::string, std::string, std::less<>>;
 using LengthInput = std::variant<double, std::u16string>;
+using SceneNode = std::optional<scene::NodeId>;
+using SceneNodes = std::vector<SceneNode>;
+using SceneParents = std::vector<scene::NodeId>;
+struct SceneContainers {
+    SceneNodes nodes;
+    SceneParents content;
+};
 
 struct StyleData {
     std::array<double, 4> margin{};
@@ -148,5 +156,30 @@ class CommonWrapper : public tree::AbstractWrapper<CommonWrapper, mml::MmlNode> 
                                   std::vector<mml::MmlNode *> children = {});
     virtual std::optional<ResolvedFontGlyph> getVariantChar(std::string_view variant,
                                                             std::uint32_t codepoint);
+
+    virtual SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents);
+    void placeScene(scene::Builder &, std::span<SceneNode const> nodes, double x, double y,
+                    std::optional<scene::NodeId> target = {});
+    double sceneDx() const;
+
+  protected:
+    virtual SceneContainers createSceneNodes(scene::Builder &,
+                                             std::span<scene::NodeId const> parents);
+    SceneContainers standardSceneNodes(scene::Builder &, std::span<scene::NodeId const> parents);
+    virtual void addSceneChildren(scene::Builder &, std::span<scene::NodeId const> parents);
+    std::optional<SceneNodes> toEmbellishedScene(scene::Builder &,
+                                                 std::span<scene::NodeId const> parents);
+    void handleSceneStyles(scene::Builder &, std::span<SceneNode const>);
+    void handleSceneScale(scene::Builder &, std::span<SceneNode const>);
+    void handleSceneBorder(scene::Builder &, std::span<SceneNode const>);
+    void handleSceneColor(scene::Builder &, std::span<SceneNode const>);
+    void handleSceneAttributes(scene::Builder &, std::span<SceneNode const>);
+    double handleSceneId(scene::Builder &, std::span<SceneNode const>, double y);
+    double emitChar(scene::Builder &, scene::NodeId parent, std::uint32_t codepoint, double x,
+                    double y, std::string_view variant, std::u16string &unknown,
+                    bool buffer = false);
+    double emitUnknownText(scene::Builder &, scene::NodeId parent, double x, double y,
+                           std::u16string &unknown, std::string_view variant,
+                           CssFontData font = {});
 };
 } // namespace folia::math::output::common

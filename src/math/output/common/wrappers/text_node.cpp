@@ -42,6 +42,46 @@ std::vector<std::uint32_t> CommonTextNode::remappedText(std::u16string_view text
     return parent->remapChars(parent->unicodeChars(text, variantName));
 }
 
+SceneNodes CommonTextNode::emitScene(scene::Builder &builder,
+                                     std::span<scene::NodeId const> parents) {
+    if (!parent)
+        throw std::logic_error("CommonTextNode requires its borrowed parent wrapper");
+    const auto *textNode = dynamic_cast<mml::TextNode *>(node);
+    if (!textNode)
+        throw std::logic_error("CommonTextNode requires an MML TextNode");
+    auto text = textNode->getText();
+    if (text.empty() || parents.empty())
+        return {};
+
+    SceneNodes output;
+    output.reserve(parents.size());
+    const bool textGroup = parent->childNodes.size() > 1;
+    for (auto parentId : parents) {
+        const auto target = textGroup
+                                ? builder.add_group(parentId, {}, {}, {}, {},
+                                                    scene::SemanticMetadata{.source_tag = "text"},
+                                                    scene::ElementRole::math_wrapper)
+                                : parentId;
+        output.push_back(target);
+        if (parent->variant == "-explicitFont") {
+            if (!parent->styles)
+                throw std::logic_error("explicit-font text requires parent Styles");
+            const auto font = jax().getFontData(*parent->styles);
+            auto explicitText = text;
+            (void)emitUnknownText(builder, target, 0, 0, explicitText, parent->variant, font);
+            continue;
+        }
+        auto characters = remappedText(text, parent->variant);
+        std::u16string unknown;
+        double x = 0;
+        for (const auto cp : characters)
+            x += emitChar(builder, target, cp, x, 0, parent->variant, unknown, true);
+        (void)emitUnknownText(builder, target, x, 0, unknown, parent->variant,
+                              jax().face().getCssFont(parent->variant));
+    }
+    return output;
+}
+
 void CommonTextNode::addMeasuredText(BBox &box, std::u16string_view text,
                                      std::string_view variantName, CommonOutputJax &output) {
     if (text.empty())
