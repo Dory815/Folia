@@ -44,11 +44,10 @@ double parameter(CommonWrapper const &wrapper, std::string_view name) {
 } // namespace
 
 CommonMunder::CommonMunder(CommonWrapperFactory &factory, mml::MmlNode &node, CommonWrapper *parent)
-    : CommonScriptbase(factory, node, parent, true, limitsNode(node).under()) {
-}
+    : CommonMsub(factory, node, parent, limitsNode(node).under()) {}
 
 void CommonMunder::initializeSource() {
-    CommonScriptbase::initializeSource();
+    CommonMsub::initializeSource();
     stretchChildren();
 }
 
@@ -58,7 +57,7 @@ CommonWrapper *CommonMunder::scriptChild() const {
 
 void CommonMunder::computeBBox(BBox &box, bool recompute) {
     if (hasMovableLimits()) {
-        CommonScriptbase::computeBBox(box, recompute);
+        CommonMsub::computeBBox(box, recompute);
         return;
     }
     box.empty();
@@ -74,12 +73,34 @@ void CommonMunder::computeBBox(BBox &box, bool recompute) {
     setChildPWidths(recompute);
 }
 
-CommonMover::CommonMover(CommonWrapperFactory &factory, mml::MmlNode &node, CommonWrapper *parent)
-    : CommonScriptbase(factory, node, parent, true, limitsNode(node).over()) {
+SceneNodes CommonMunder::emitScene(scene::Builder &builder,
+                                   std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+    if (hasMovableLimits())
+        return CommonMsub::emitScene(builder, parents);
+    auto containers = standardSceneNodes(builder, parents);
+    auto *baseChildValue = baseChild();
+    auto *underChildValue = scriptChild();
+    if (!baseChildValue || !underChildValue)
+        throw std::logic_error("under wrapper requires base and under children");
+    const BBox base = baseChildValue->getOuterBBox();
+    const BBox under = underChildValue->getOuterBBox();
+    const double delta = isLineBelow ? 0 : getDelta(*underChildValue, true);
+    const double v = getUnderKV(base, under)[1];
+    const auto widths = getDeltaW({base, under}, {0, -delta, 0});
+    auto emittedBase = baseChildValue->emitScene(builder, containers.content);
+    auto emittedUnder = underChildValue->emitScene(builder, containers.content);
+    baseChildValue->placeScene(builder, emittedBase, widths[0], 0);
+    underChildValue->placeScene(builder, emittedUnder, widths[1], v);
+    return containers.nodes;
 }
 
+CommonMover::CommonMover(CommonWrapperFactory &factory, mml::MmlNode &node, CommonWrapper *parent)
+    : CommonMsup(factory, node, parent, limitsNode(node).over()) {}
+
 void CommonMover::initializeSource() {
-    CommonScriptbase::initializeSource();
+    CommonMsup::initializeSource();
     stretchChildren();
 }
 
@@ -89,7 +110,7 @@ CommonWrapper *CommonMover::scriptChild() const {
 
 void CommonMover::computeBBox(BBox &box, bool) {
     if (hasMovableLimits()) {
-        CommonScriptbase::computeBBox(box);
+        CommonMsup::computeBBox(box);
         return;
     }
     box.empty();
@@ -106,13 +127,34 @@ void CommonMover::computeBBox(BBox &box, bool) {
     box.clean();
 }
 
-CommonMunderover::CommonMunderover(CommonWrapperFactory &factory, mml::MmlNode &node,
-                                   CommonWrapper *parent)
-    : CommonScriptbase(factory, node, parent, true, limitsNode(node).under()) {
+SceneNodes CommonMover::emitScene(scene::Builder &builder, std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+    if (hasMovableLimits())
+        return CommonMsup::emitScene(builder, parents);
+    auto containers = standardSceneNodes(builder, parents);
+    auto *baseChildValue = baseChild();
+    auto *overChildValue = scriptChild();
+    if (!baseChildValue || !overChildValue)
+        throw std::logic_error("over wrapper requires base and over children");
+    const BBox base = baseChildValue->getOuterBBox();
+    const BBox over = overChildValue->getOuterBBox();
+    const double delta = isLineAbove ? 0 : getDelta(*overChildValue);
+    const double u = getOverKU(base, over)[1];
+    const auto widths = getDeltaW({base, over}, {0, delta, 0});
+    auto emittedBase = baseChildValue->emitScene(builder, containers.content);
+    auto emittedOver = overChildValue->emitScene(builder, containers.content);
+    baseChildValue->placeScene(builder, emittedBase, widths[0], 0);
+    overChildValue->placeScene(builder, emittedOver, widths[1], u);
+    return containers.nodes;
 }
 
+CommonMunderover::CommonMunderover(CommonWrapperFactory &factory, mml::MmlNode &node,
+                                   CommonWrapper *parent)
+    : CommonMsubsup(factory, node, parent, limitsNode(node).over()) {}
+
 void CommonMunderover::initializeSource() {
-    CommonScriptbase::initializeSource();
+    CommonMsubsup::initializeSource();
     stretchChildren();
 }
 
@@ -124,13 +166,21 @@ CommonWrapper *CommonMunderover::overChild() const {
     return childAt(*this, limitsNode(*node).over());
 }
 
-CommonWrapper *CommonMunderover::scriptChild() const {
+CommonWrapper *CommonMunderover::subChild() const {
     return underChild();
+}
+
+CommonWrapper *CommonMunderover::supChild() const {
+    return overChild();
+}
+
+CommonWrapper *CommonMunderover::scriptChild() const {
+    return overChild();
 }
 
 void CommonMunderover::computeBBox(BBox &box, bool) {
     if (hasMovableLimits()) {
-        CommonScriptbase::computeBBox(box);
+        CommonMsubsup::computeBBox(box);
         return;
     }
     box.empty();
@@ -152,5 +202,35 @@ void CommonMunderover::computeBBox(BBox &box, bool) {
     box.h += spacing;
     box.d += spacing;
     box.clean();
+}
+
+SceneNodes CommonMunderover::emitScene(scene::Builder &builder,
+                                       std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+    if (hasMovableLimits())
+        return CommonMsubsup::emitScene(builder, parents);
+    auto containers = standardSceneNodes(builder, parents);
+    auto *baseChildValue = baseChild();
+    auto *underChildValue = underChild();
+    auto *overChildValue = overChild();
+    if (!baseChildValue || !underChildValue || !overChildValue)
+        throw std::logic_error("munderover wrapper requires base, under and over children");
+    const BBox over = overChildValue->getOuterBBox();
+    const BBox base = baseChildValue->getOuterBBox();
+    const BBox under = underChildValue->getOuterBBox();
+    const double overDelta = getDelta(*overChildValue);
+    const double underDelta = getDelta(*underChildValue, true);
+    const double u = getOverKU(base, over)[1];
+    const double v = getUnderKV(base, under)[1];
+    const auto widths = getDeltaW({base, under, over},
+                                  {0, isLineBelow ? 0 : -underDelta, isLineAbove ? 0 : overDelta});
+    auto emittedBase = baseChildValue->emitScene(builder, containers.content);
+    auto emittedUnder = underChildValue->emitScene(builder, containers.content);
+    auto emittedOver = overChildValue->emitScene(builder, containers.content);
+    baseChildValue->placeScene(builder, emittedBase, widths[0], 0);
+    underChildValue->placeScene(builder, emittedUnder, widths[1], v);
+    overChildValue->placeScene(builder, emittedOver, widths[2], u);
+    return containers.nodes;
 }
 } // namespace folia::math::output::common

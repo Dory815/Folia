@@ -12,9 +12,11 @@ namespace mml = folia::math::mml;
 static_assert(std::is_base_of_v<CommonScriptbase, CommonMunder>);
 static_assert(std::is_base_of_v<CommonScriptbase, CommonMover>);
 static_assert(std::is_base_of_v<CommonScriptbase, CommonMunderover>);
-static_assert(!std::is_base_of_v<CommonMsub, CommonMunder>);
-static_assert(!std::is_base_of_v<CommonMsup, CommonMover>);
-static_assert(!std::is_base_of_v<CommonMsubsup, CommonMunderover>);
+// Source SVG's limits mixins extend the matching script family, which also
+// supplies the movable-limits offsets and the two-script BBox algorithm.
+static_assert(std::is_base_of_v<CommonMsub, CommonMunder>);
+static_assert(std::is_base_of_v<CommonMsup, CommonMover>);
+static_assert(std::is_base_of_v<CommonMsubsup, CommonMunderover>);
 
 struct Target final : MeasurementTarget {
     ExtendedMetrics measureMetrics(MetricRequest const &request) override {
@@ -209,7 +211,7 @@ suite native_common_limits_factory = [] {
         expect(eq(b[1], 1.4499999999999997));
         expect(eq(b[2], .2_d));
     };
-    "common_munderover_places_both_limits_and_matches_pinned_source"_test = [] {
+    "common_munderover_nonmovable_matches_isolated_common_mixin_probe"_test = [] {
         Target target;
         mml::MmlDocument d;
         auto jax = makeJax(d, target, fixtureFonts(), true);
@@ -223,13 +225,14 @@ suite native_common_limits_factory = [] {
         const auto b = box(w);
         expect(w.underChild() == w.childNodes[1]);
         expect(w.overChild() == w.childNodes[2]);
-        expect(w.scriptChild() == w.underChild());
+        // Source's CommonMunderover maps scriptChild to the over slot.
+        expect(w.scriptChild() == w.overChild());
         expect(dynamic_cast<CommonScriptbase *>(&w) != nullptr);
         expect(eq(b[0], .5_d));
         expect(eq(b[1], 1.3499999999999999));
         expect(eq(b[2], .8500000000000001));
     };
-    "common_munderover_movable_limits_use_source_scriptbase_flow"_test = [] {
+    "common_munderover_movable_limits_match_concrete_Source_two_script_flow"_test = [] {
         const auto bundle = folia::math::fonts::makeNewcmFontData();
         Target target;
         mml::MmlDocument d;
@@ -245,18 +248,15 @@ suite native_common_limits_factory = [] {
         d.setRoot(node);
         auto &w = dynamic_cast<CommonMunderover &>(wrapInMath(jax, node));
         expect(w.hasMovableLimits());
+        expect(w.scriptChild() == w.overChild());
         const auto result = box(w);
-        const auto base = w.baseChild()->getOuterBBox();
-        const auto script = w.scriptChild()->getOuterBBox();
-        const double expectedW =
-            std::max(base.rscale * (base.w + base.L + base.R),
-                     w.getBaseWidth() + script.rscale * (script.w + script.L + script.R)) +
-            jax.face().parameters.required("scriptspace");
-        expect(eq(result[0], expectedW));
-        expect(eq(result[1], std::max(base.rscale * base.h, script.rscale * script.h)));
-        expect(eq(result[2], std::max(base.rscale * base.d, script.rscale * script.d)));
+        // Pinned SVG actual-wrapper Source witness: movable munderover with
+        // <mo movablelimits="true">∫</mo><mi>i</mi><mi>2</mi>, display=false.
+        expect(eq(result[0], 1.1936158364337877));
+        expect(eq(result[1], 1.0034898987322334));
+        expect(eq(result[2], .34863351365237943));
     };
-    "common_munder_movable_limits_keep_scriptbase_zero_offset"_test = [] {
+    "common_munder_movable_limits_match_concrete_Source_subscript_offsets"_test = [] {
         const auto bundle = folia::math::fonts::makeNewcmFontData();
         Target target;
         mml::MmlDocument d;
@@ -271,17 +271,16 @@ suite native_common_limits_factory = [] {
         d.setRoot(node);
         auto &w = dynamic_cast<CommonMunder &>(wrapInMath(jax, node));
         expect(w.hasMovableLimits());
-        expect(w.getOffset()[0] == 0.0_d);
-        expect(w.getOffset()[1] == 0.0_d);
+        // Pinned SVG actual-wrapper Source witness, same input as the Source
+        // `munder` record in limits-source-expected.json.
+        expect(eq(w.getOffset()[0], 0.0));
+        expect(eq(w.getOffset()[1], -.3408553390593274));
         const auto result = box(w);
-        const auto base = w.baseChild()->getOuterBBox();
-        const auto script = w.scriptChild()->getOuterBBox();
-        expect(eq(result[0],
-                  std::max(base.rscale * (base.w + base.L + base.R),
-                           w.getBaseWidth() + script.rscale * (script.w + script.L + script.R)) +
-                      jax.face().parameters.required("scriptspace")));
+        expect(eq(result[0], .871951839509359));
+        expect(eq(result[1], .8055));
+        expect(eq(result[2], .34863351365237943));
     };
-    "common_mover_movable_limits_keep_scriptbase_zero_offset"_test = [] {
+    "common_mover_movable_limits_match_concrete_Source_superscript_offsets"_test = [] {
         const auto bundle = folia::math::fonts::makeNewcmFontData();
         Target target;
         mml::MmlDocument d;
@@ -296,14 +295,13 @@ suite native_common_limits_factory = [] {
         d.setRoot(node);
         auto &w = dynamic_cast<CommonMover &>(wrapInMath(jax, node));
         expect(w.hasMovableLimits());
-        expect(w.getOffset()[0] == 0.0_d);
-        expect(w.getOffset()[1] == 0.0_d);
+        // Pinned SVG actual-wrapper Source witness, same input as the Source
+        // `mover` record in limits-source-expected.json.
+        expect(eq(w.getOffset()[0], .055999999999999994));
+        expect(eq(w.getOffset()[1], .5325567824619927));
         const auto result = box(w);
-        const auto base = w.baseChild()->getOuterBBox();
-        const auto script = w.scriptChild()->getOuterBBox();
-        expect(eq(result[0],
-                  std::max(base.rscale * (base.w + base.L + base.R),
-                           w.getBaseWidth() + script.rscale * (script.w + script.L + script.R)) +
-                      jax.face().parameters.required("scriptspace")));
+        expect(eq(result[0], 1.1936158364337877));
+        expect(eq(result[1], 1.0034898987322334));
+        expect(eq(result[2], .30550000000000005));
     };
 };
