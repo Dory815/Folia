@@ -14,7 +14,7 @@
 - **2026-10-20 当前断点：用户再次指出 `native function list` 命名及旧文件残留。**
   先前提交 `2022cb1a` 已把 `native_function_list.cpp` 归回 `function_list.cpp`，
   生产实现一直在原 `util/function_list.ixx`，没有第二个 native FunctionList 模块。
-  本轮读完旧 `function_list_native_argument_values.cpp`：只验 Context/ObjectRef/any
+  本轮清理提交 **`e6126948`**。读完旧 `function_list_native_argument_values.cpp`：只验 Context/ObjectRef/any
   参数编解码与旧身份注册，未参与当前构建，已删除，不把它换名继续保留。
   正常 FunctionList 的优先级、void/bool 回调、执行中增删、异常传播测试仍在原职责测试内。
   旧 utility bindings 的未改写消费者仍存在；不能声称旧对象语义图已全部清完。
@@ -23,7 +23,7 @@
   旧 Context 测试；其 replaceable array/descriptor/record 身份规则不属于数学配置职责。
   正常包顺序、合并、init 动态追加及真实共享引用生命周期由原配置类聚焦测试承担；
   仍未完成的 config/add 并不因删除旧反射测试而算通过。
-- **本轮未提交配置实现**：原 `configuration.{ixx,cpp}` 已原位改为真实
+- **本轮配置实现已提交 `cc845a34`**：原 `configuration.{ixx,cpp}` 已原位改为真实
   Configuration/ConfigurationHandler/ParserConfiguration；借用现有 MapHandler/session/
   callbacks，使用已验 typed options、NodeCreators、FunctionList，不另造配置门面。
   已实现记录规范化、具名替换、反向包选择/优先级合并、handlers/items/tags/options/nodes
@@ -35,9 +35,14 @@
   构建 **18290 已终态 exit0**，日志 `configuration-final-build.log`，并发4；
   原79549已终态失败且句柄失效。八项配置+五项 FunctionList/PrioritizedList 聚焦
   **13项/326断言 exit0**（`configuration-lists-focused.log`）；Source 从 C:\Windows
-  重放 exit0（`configuration-source-replay.log`）。当前唯一 live 完整 Math 测试句柄
-  **37764**，日志 `configuration-full.log`；下一步复用句柄到终态，不能重启并行测试。
-  成功后显式小提交。旧13项无关修改继续保护。
+  重放 exit0（`configuration-source-replay.log`）；FunctionList 正式 Source 十观察/四锁
+  也重放 exit0（`function-list-cleanup-source-replay.log`）。完整 Math 测试 **357项/
+  134,547断言 exit0**，句柄 **37764 已终态**，日志 `configuration-full.log`。
+  当前无 live 构建/测试/agent，工作区仅原13项无关修改，继续保护。
+  **下一步**：在原 Tags/ParseOptions/TexParser/input-jax 职责内接通构造、列表/工厂和
+  config/add/filter 阶段；原 `tags.cpp` 尚是未进入构建的旧实现，须保留数学规则并原位
+  改写其 Context 依赖，不另外创建 native_tags 或第二条 parser 路径。38包绑定、完整
+  TeX→共享布局→Scene→SVG 与 Folia 集成仍未验收，不可重复宣称已完成。
 
 ### 以下为已完成组件的历史证据，当前操作以上述短检查点为准
 
