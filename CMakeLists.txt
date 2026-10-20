@@ -164,6 +164,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/column_parser.ixx
     src/math/input/tex/parser_family.ixx
     src/math/input/tex/begingroup/stack.ixx
+    src/math/input/tex/begingroup/methods.ixx
+    src/math/input/tex/begingroup/configuration.ixx
     src/math/input/tex/environment.ixx
     src/math/input/tex/tex_error.ixx
     src/math/input/tex/tex_scanner.ixx
@@ -246,6 +248,8 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/token_map.cpp
     src/math/input/tex/map_handler.cpp
     src/math/input/tex/begingroup/stack.cpp
+    src/math/input/tex/begingroup/methods.cpp
+    src/math/input/tex/begingroup/configuration.cpp
     src/math/input/tex/environment.cpp
     src/math/input/tex/tex_error.cpp
     src/math/input/tex/tex_scanner.cpp
@@ -460,6 +464,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/node_factory.cpp
     tests/math/boldsymbol.cpp
     tests/math/newcommand.cpp
+    tests/math/begingroup.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp

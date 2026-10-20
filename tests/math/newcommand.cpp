@@ -1,7 +1,7 @@
 #include "math/support/tex_fixture.hpp"
 import folia.math.input.tex.newcommand.configuration;
 import folia.math.input.tex.newcommand.util;
-import folia.math.input.tex.begingroup.stack;
+import folia.math.input.tex.begingroup.configuration;
 import folia.math.input.tex.parse_methods;
 
 namespace {
@@ -21,24 +21,6 @@ MmlNode &recordError(TeX &jax, TexError const &error) {
         *errorTarget = error.id();
     return jax.formatError(error);
 }
-DispatchOutcome beginScope(TexParser &p, MacroInvocation const &) {
-    BegingroupStack(p.configuration.packageData.definitions()).push();
-    return NoParseResult{};
-}
-DispatchOutcome endScope(TexParser &p, MacroInvocation const &) {
-    BegingroupStack(p.configuration.packageData.definitions()).pop();
-    return NoParseResult{};
-}
-DispatchOutcome globalDefinition(TexParser &p, MacroInvocation const &) {
-    p.stack.env().is_global = true;
-    return NoParseResult{};
-}
-void removeScopes(TexFilterData &arg) {
-    BegingroupStack(arg.data.packageData.definitions()).remove();
-}
-void finishScopes(TexFilterData &arg) {
-    BegingroupStack(arg.data.packageData.definitions()).finish();
-}
 struct NewcommandFixture {
     ConfigurationHandler registry;
     MapHandler maps;
@@ -54,16 +36,8 @@ struct NewcommandFixture {
         options.maxMacros = maxMacros;
         options.formatError = &recordError;
         if (scopes) {
-            maps.registerMap(std::make_shared<CommandMap>(CommandMapInit{
-                MacroMapInit{{u"newcommand-scope-tests", std::nullopt},
-                             {Macro(u"begingroup", &beginScope), Macro(u"endgroup", &endScope),
-                              Macro(u"global", &globalDefinition)}}}));
-            ConfigurationDefinition definition;
-            definition.handler = {{HandlerKind::macro, {u"newcommand-scope-tests"}}};
-            definition.preprocessors.emplace_back(FilterList::Callback{&removeScopes});
-            definition.postprocessors.emplace_back(FilterList::Callback{&finishScopes});
-            Configuration::create(registry, u"newcommand-scope-tests", std::move(definition));
-            options.packages->push_back({u"newcommand-scope-tests", {}});
+            BegingroupConfiguration::initializeModule(registry, maps);
+            options.packages->insert(options.packages->begin() + 1, {u"begingroup", {}});
         }
         jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(),
                                     std::move(options));

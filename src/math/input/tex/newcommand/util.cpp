@@ -149,8 +149,11 @@ bool NewcommandUtil::MatchParam(TexParser &p, std::u16string_view param) {
 }
 DefinitionLayer &NewcommandUtil::checkGlobal(TexParser &p, std::span<DefinitionKey const> keys) {
     auto &session = p.configuration.packageData;
-    if (p.stack.env().is_global.value_or(false))
-        return BegingroupStack(session.definitions()).checkGlobal(keys);
+    if (p.stack.env().is_global.value_or(false)) {
+        if (!p.configuration.begingroup)
+            throw std::logic_error("Global definitions require the configured begingroup service");
+        return p.configuration.begingroup->checkGlobal(keys);
+    }
     return session.currentDefinitionLayer();
 }
 void NewcommandUtil::checkProtectedMacros(TexParser &p, std::u16string_view cs) {

@@ -4,6 +4,7 @@ export module folia.math.input.tex.parser:parse_options;
 export import :types;
 export import folia.math.util.function_list;
 export import folia.math.util.regexp_host;
+export import folia.math.input.tex.begingroup.stack;
 import std;
 
 export namespace folia::math::tex {
@@ -167,6 +168,7 @@ public:
     std::unique_ptr<StackItemFactory> itemFactory;
     NodeFactory nodeFactory;
     std::unique_ptr<Tags> tags;
+    std::unique_ptr<BegingroupStack> begingroup;
     MathStyleResolver mathStyle; // captured by input-jax construction, independent of later options
     std::unique_ptr<ColumnParser> columnParser;
     TexSessionState& packageData;
