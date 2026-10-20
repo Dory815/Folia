@@ -356,6 +356,34 @@ does not satisfy wrapper architecture acceptance. Reusable equations may become
 private implementation details of their owning family during that port; their
 current exported input/result/function surface is not the final wrapper API.
 
+### Bussproofs responsibilities and proof frame (2026-10-20)
+
+Retain the five upstream owners: configuration registers maps/items/filters;
+items owns ProofTreeItem and its inner Stack; methods builds proof/sequent MML;
+mappings owns the command/environment tables; util owns rule balancing and
+semantic annotation. Replace these pairs in place; do not add helper owners.
+
+The first component is only items. ProofTreeItem derives from BaseItem, owns
+its inner Stack directly, stores its optional environment name, and borrows MML
+through the existing document-owned node stack. Its checkItem takes the actual
+FrameHandle, forwards that same handle to the inner Stack before returning
+Drop, and on matching end replays a new MmlItem plus ReuseIncoming. Stop throws
+EnvMissingEnd. toMml deliberately ignores its inherited optional flags, as the
+Source override does, and combines the inner prefix with the proof content.
+The proof marker writes the existing ProofNodeProperties::proof field. No
+Context, arbitrary property service or exported inner-stack mutation survives.
+Source's unused leftLabel/rigthLabel fields have no native consumer; do not
+reproduce them. Add the methods' actual line/label/direction fields when that
+owner is converted, rather than speculative state now.
+
+This component is not package acceptance. Source util measures live subtrees
+through CommonOutputJax.getBBox between MML edits. The current compile filter
+data has no output service and LayoutJob::build is a root typesetting operation,
+so neither a constant width nor skipping balanceRules is acceptable. Freeze a
+real subtree measurement/compile-output borrow in the original owners before
+activating the complete configuration. The inactive methods/configuration/util
+pairs and their old consumers remain explicitly pending.
+
 ## Ownership
 
 ### CSS stylesheet dependency for Common (2026-10-20)

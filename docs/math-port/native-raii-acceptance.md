@@ -136,6 +136,19 @@ green corpora establish reference data, not acceptance for rewritten code.
 - Missing package/node/primitive support is a failing/incomplete gate, never
   silent omission, reduced scope, hardcoded formula output or legacy fallback.
 
+### Bussproofs component boundary (2026-10-20)
+
+The proof-frame component compares pinned Source trees, proof markers, replay
+order and TeX errors for empty/direct/multiple contents, ignored toMml flags,
+ordinary/grouped prefixes, matching/mismatched end, stop and unfinished groups.
+Verify the actual same frame transfers into the inner Stack, remains alive
+after the outer Drop, and is destroyed after close or owning proof destruction;
+test completion through the real outer begin/proof/end/stop replay. Repeat mixed
+successful and failing frame scopes and confirm all tracked frames are released.
+No full Bussproofs or SVG claim follows from these component tests: real Common
+subtree widths, sequent/rule adjustments, semantic attributes and package filter
+ordering still require end-to-end Source comparison after integration.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,

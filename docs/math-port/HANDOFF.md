@@ -9,7 +9,43 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 当前已接受基线：Mathtools整包（2026-10-20）
+### 当前已接受组件：Bussproofs ProofTreeItem（2026-10-20）
+
+- **22efabce**：原bussproofs/items.ixx/.cpp直接替换及CMake生产条目三文件，净减163行。
+  **74d070eb**：测试、Source oracle/fixture及CMake测试条目四文件。无新生产文件。
+  上一轮Mathtools整包已通过，不重做；本轮只接受ProofTreeItem，不代表Bussproofs整包。
+- Root先读原五TS和当前实现，冻结architecture/acceptance里的Bussproofs职责后，交已有
+  GPT-6.1 Sol base_methods实现原items pair和测试；Root独立写/重放Source脚本、审查全部实现
+  及测试、管理构建和分批提交。三文件现均冻结，无live agent/build/native进程。
+- ProofTreeItem直接持有Stack innerStack_；只有optional name，无Context/Value/any或可写
+  innerStack投影；Source unused leftLabel/rigthLabel未复制。checkItem把同一FrameHandle先传
+  innerStack再Drop；matching literal prooftree end产生MmlItem+ReuseIncoming；stop报错。
+  toMml忽略继承flags，与Source零参override一致；proof标记写已有ProofNodeProperties。
+- Source默认复验exit0：**11 trees/6 errors/1实际same-frame transfer**；完整五TS/CJS hash和
+  full38 cbb0d3b6…保留。脚本tex-bussproofs-items-source.cjs，fixture bussproofs_items.inc，
+  build/math-port/bussproofs-items-source.log。Source未命名stop message是Missing \\end{}，
+  不是undefined；已据实际Source修正原生参数，无改fixture/共享TexError。
+- build **83025 exit0**，bussproofs-items-build.log，并发4；focus **10 tests/229 asserts
+  exit0**，bussproofs-items-focused.log；full **78803 exit0，665 tests/172266 asserts/
+  128 suites**，bussproofs-items-full.log，Root独立计数，无失败/跳过。父链/creator实参身份、
+  outer begin/proof/end/stop replay、weak_ptr析构及12轮成功/两类错误混合栈作用域均实测。
+- **下一真实断点：Bussproofs其余四owner及Common子树测量依赖**。五TS均已读，不从头调查
+  items或命名。Source util.saveDocument优先1、balanceRules后置1、makeBsprAttributes后置2、
+  clearDocument后置3；balance在MML修改之间用实时subtree bbox，不能跳过/给常数宽度。
+  当前TexFilterData.document是MmlDocument，无输出服务；MathOutputJaxService已有getBBox
+  声明，但active CommonOutputJax未接通。Source output/common.ts:488先setTeXclass、fresh
+  nodeMap、factory.wrap(subtree).getOuterBBox、清map。当前LayoutJob::build读document.root
+  且修改overflow/linebreak，不可冒充subtree measurement，也不可临时改文档根或父链。
+- 后续先在原Common/输入编译边界冻结真实measurement/输出借用，再接整包configuration，
+  不把items独立测试宣称整包通过。旧methods/mappings/configuration/util四pairs未改、未激活；
+  旧reflection probes/render_session消费者仍待退，不能宣称旧对象语义已全清。
+  util必须用物理parent()而非逻辑Parent()；现node_properties.cpp moveProofProperties已精确
+  移动inference/proof/labelledRule三字段。makeBsprAttributes还需核对有限bspr_字段插入序，
+  proof-left/right无bspr_前缀且不进入semantics；不要为顺序重造通用属性字典。
+- 原13项无关修改仍保护，无reset/amend。完整38包/Common→Scene→SVG/Folia尚未完成，
+  goal保持active；Mermaid暂停，无D2D像素gate。Luna额度Oct25前不重试，必要Sol只6.1。
+
+### 上一已接受基线：Mathtools整包（2026-10-20）
 
 - 上轮标签组件是真实进展，不重做；本轮其余五对原owner已接通。**1dd22d29**保留legacy
   setting bool|string三文件；**2a841aed**原config/items/methods/mappings/util、runtime旧字段
