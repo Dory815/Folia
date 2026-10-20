@@ -413,6 +413,11 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/prioritized_list.cpp
     tests/math/parse_options.cpp
     tests/math/configuration.cpp
+    tests/math/base_items.cpp
+    tests/math/column_parser.cpp
+    tests/math/tex_parser.cpp
+    tests/math/stack.cpp
+    tests/math/tags.cpp
     tests/math/macro.cpp
     tests/math/token_map.cpp
     tests/math/map_handler.cpp
