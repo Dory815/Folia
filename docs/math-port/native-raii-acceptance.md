@@ -256,6 +256,36 @@ Full current target: `mhchem-full.log`, exit 0, 713 tests / 208874 assertions /
 assertions; row counts are not assertion counts. Logs are in `build/math-port/`.
 This accepts these package/dependency owners, not SVG or Folia integration.
 
+### Texhtml and Lite boundary (pending)
+
+Preserve all seven original TexHtml tests with their actual invocation paths:
+the five render2mml cases first traverse HTMLDomStrings and serialize the
+numbered nested markers, while the direct error/disabled cases use TeX input.
+Additional raw TexParser examples do not substitute for those render cases.
+Capture actual full physical MML trees, foreign HTML trees with ordered
+attributes, raw and convenience comment values, serialization and textContent,
+creator requests, map binding, default/changed allowTexHTML, numbered nested
+markers, trim/empty/multiple roots, remaining input and errors/recovery.
+Verify actual package pre/postfilter timing and clearing the adaptor borrow.
+
+Lite witnesses must compare the original parser/repair/serializer, ordered
+queries and tree mutations, attributes/classes/lazy Styles, entity loader
+completed retries and numeric errors, UTF-16 split edge cases, clone identity
+and parent behavior. Preserve known Source quirks, including clone text/comment
+parent handling and parentless split's mutation before failure. Record invalid
+JS-domain API errors separately from the native typed API; do not recreate
+arbitrary property values or descriptor/class mutations. This is equivalence
+with Source Lite, not browser HTML conformance.
+
+Native lifecycle checks retain weak observers through nested parsing, errors,
+detached/list-held nodes and independent adaptors, then verify final release.
+Freeze must isolate XmlRef from subsequent mutations of the original Lite tree.
+No mutable DOM, MML or adaptor owner may escape inside the immutable Scene.
+Witness tools must validate fixed input hashes, reproduce from C:/Windows,
+bytecheck by default and preserve unchanged fixture mtime on explicit writes.
+Run focused package/dependency tests then one full math run after final changes.
+Scene/SVG emission and Folia remain separate outstanding acceptance work.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,

@@ -1,10 +1,10 @@
 # MathJax 原生移植交接入口
 
-当前：mhchem 原 configuration pair 与已有纯 C++ parser 依赖已在当前图验证并分批提交。完整 math 测试 exit 0：713 tests、208874 assertions、138 suites，无失败/跳过（`build/math-port/mhchem-full.log`）。无活动 agent/build/test；已结束 full session `73574`。
+当前：mhchem 已验收提交（`83e82d7e`、`4bbfac62`，记录 `47fbc3a4`）。完整 math exit 0：713 tests、208874 assertions、138 suites，无失败/跳过（`build/math-port/mhchem-full.log`）。无活动 build/test；已结束 full session `73574`。texhtml/Lite 正在准备，尚未验收。
 
-下一步：冻结 texhtml 原 configuration pair 的职责与验收，再分工。mhchem 依赖已提交 `83e82d7e`（保留原算法，仅修正 regex cursor API，新增独立全量 Source 验证）；包与 MathChoice 修正为 `4bbfac62`。不要重写已通过的 parser 算法。mhchem 实际 9 commands（ce/pu + 7 arrows）、14 chars。
+下一步：核对 `/root/lite_native_contract` 的 canonical core/节点声明，Root freeze 后再分派 parser/adaptor/Xml bridge 实现。Root 已在 architecture/acceptance 加入 texhtml/Lite 的原文件职责、shared子节点/weak父引用、不可变XmlRef边界与验收。不可把旧 Property/Context Lite 接回 native 图；不在 Common→Scene→SVG 间放 DOM。
 
-三个 mhchem Luna 均已完成并冻结。Root 独占 CMake/build/Git。两个 canonical Source 工具已自包含，Root 从 C:/Windows 以 Node heap 512 重跑 bytecheck 通过：`mhchem-source-root-final.log`、`mhchem-parser-source-root-final.log`。不依赖 ignored 草稿 oracle/corpus。replacement helper 取两个原 TokenMap 引用；不得用当前 registry map 代替 Source lexical maps。
+活动 Luna：`lite_native_contract` 独占 core/dom_node、core/dom_adaptor、Lite element/text/document/window/list 原 pairs 与 lite_adaptor/parser 两份声明，Root 待核对。`mhchem_package_cases` 只改 ignored `build/math-port/texhtml-source-candidate/`，补真实原测试 render2mml 流程（不能用 direct parser 替代）、pins/default bytecheck/mtime/raw comments。`mhchem_dependency` 只改 ignored `build/math-port/lite-source-candidate/`，补 entities真实retry与split/clone边界，不得丢掉 unknown entity 场景。上述 source 候选尚未被 Root 接受。Root 独占 CMake/build/Git。
 
 恢复时先读本文件，再检查相关当前改动。架构见 [native-raii-architecture.md](native-raii-architecture.md)，验收见 [native-raii-acceptance.md](native-raii-acceptance.md)。只更新这一个当前 checkpoint；历史交给 Git、测试和 Source witness，不追加阶段流水账。
 
@@ -27,6 +27,7 @@
 - Unicode 字体缓存由私有 CommandMap / MapHandler registry 拥有；同 registry 跨 TeX/reset 保留，不同 registry 隔离，析构释放。fixture 保留 NUL/孤立 surrogate；捕获别名依赖编译回调表。
 - mhchem：220 package inputs（含全部 113 原用例）、63×6 replacement stages、14 Source mutations，其中 8 个是原生 typed 场景，6 个仅记录已撤销的 JS API 行为。依赖完整比较 7960 records（1679 parse、6279 pattern、14 FSM / 62 regex 的两个全表记录）。最终 build `mhchem-physical-parent-build.log`；包 focus `mhchem-package-focused-fixed.log`。parser UT 聚合检查全部 rows，当前为 9 assertions，不把 row 数当断言数。
 - Mhchem 原 maps 单向 RAII 持有，无 JS module 对象；重复初始化保留状态。MathChoice 按 Source 用物理 `parent()` 替换节点；`Parent()` 跳过 inferred row 会留下未替换节点。此处已有真实包级 MML 对照覆盖。
+- 两个 mhchem canonical Source 工具已自包含，Root 最终 bytechecks `mhchem-source-root-final.log`、`mhchem-parser-source-root-final.log` 通过，不依赖 ignored 草稿 oracle/corpus。replacement helper 使用原 lexical TokenMap 引用，不取当前 registry replacements。
 
 顺序：mhchem 包与依赖 → texhtml → 实际 Common→Scene 发射 → SVG 全量对照 → Folia 集成 → 旧对象层退出。不可把包级测试当成完整 SVG/Folia 验收。
 

@@ -522,7 +522,7 @@ case-sensitive table lookup and numeric range errors remain explicit behavior.
 Use existing string_util.unicodeString for numeric conversion, including NUL,
 supplementary characters and isolated UTF-16 surrogates; never duplicate it.
 
-### Mhchem responsibilities (next package, 2026-10-21)
+### Mhchem responsibilities (accepted package, 2026-10-21)
 
 Keep the original `input/tex/mhchem/configuration` pair as the package owner:
 MhchemMethods.Machine, compiled BaseMethods.Macro/AmsMethods.xArrow aliases,
@@ -549,6 +549,68 @@ their representation. Prove regex-cache keys are bounded by source patterns;
 request text must not accumulate in a process cache. Root owns CMake and the one
 native build/test stream. Accept independent parser-to-TeX evidence, complete
 package MML/errors/recovery, maps and replacements before advancing to texhtml.
+
+### Texhtml and its Lite dependency (2026-10-21)
+
+The old Lite interfaces still carry Property/Context projection and are absent
+from the active native target. They cannot be reused as a native dependency.
+Retain their original algorithms in the original owners while replacing that
+representation. Lite is used only to parse foreign HTML content; it never sits
+between Common layout, Scene and SVG. Do not introduce another HTML DOM,
+generic JS value type, reflective callbacks or a second HTML snapshot library.
+
+| Owner | Responsibility |
+|---|---|
+| core/dom_node | Native DOM node/document/window base references; no store, identity registry or property binding |
+| core/dom_adaptor | Typed string/node/ordered-string-attribute interface and original default algorithms |
+| adaptors/lite/element | Element tag, ordered string attributes, child vector, lazy Styles cache and original construction |
+| adaptors/lite/text | Text and comment values and their different kind/value behavior |
+| adaptors/lite/document | html/head/body aliases, doctype and weak defaultView |
+| adaptors/lite/window, list | Window/document ownership and ordinary shallow node-reference list; no JS constructor slots/iterator objects |
+| adaptors/lite/parser | Existing regex/token/Entities/open/close/repair/serialize/escape algorithms and immutable Source tables |
+| adaptors/lite_adaptor | Existing tree/query/attribute/class/style algorithms and finite NodeMixin measurement options |
+| core/mml_tree/xml_dom_adaptor | Freeze/clone foreign Lite subtrees into the existing opaque XmlRef domain and const HtmlAdaptor operations |
+| input/tex/texhtml/tex_html_configuration | All of TexHtmlConfiguration.ts: macro, map, option, config hook and pre/postfilters |
+| handlers/html/html_dom_strings | Original DOM-string traversal and includeHtmlTags hook; no package-local duplicate |
+| output/scene/html_snapshot | Existing conversion of accepted foreign content to HtmlNodePrimitive, when actual Scene emission is connected |
+
+DOMNodeRef is shared_ptr<DOMNode>, DOMDocumentRef is shared_ptr<DOMDocument>.
+DOMNode has a virtual kind() and a weak parent, without generic fields.
+LiteElement owns its children strongly; attributes are an ordered vector of
+name/value UTF-16 strings, and Styles is the existing typed util owner.
+LiteText owns its UTF-16 value; LiteComment retains raw comment spelling.
+Factories in those original classes initialize parent links after shared
+construction. LiteDocument owns root/head/body aliases into one tree.
+LiteWindow owns its document, whose defaultView is weak. A separately retained
+document does not keep an otherwise unused window alive; JS constructor-field
+reflection and tracing-GC reachability are explicitly withdrawn APIs.
+List and childNodes results are ordinary shallow vectors, with no array holes,
+property descriptors or JS array identity. No process/global node arena exists.
+
+AbstractDOMAdaptor returns typed document/node refs, optional string attributes,
+ordered attributes and node vectors. Mutations consume node refs and strings;
+numeric attribute input may use a separate double overload with existing
+numeric formatting. Missing nodes are null refs. Preserve original traversal,
+reparent, clone, UTF-16 split, selector subset, parser and serialization behavior;
+record Source runtime errors separately from native invalid-domain exceptions.
+Reuse current pure algorithm bodies rather than replacing Lite with a browser
+or another HTML parser. NodeMixin options are named bool/double/string fields;
+worker construction and arbitrary getProperty/setProperty are outside this API.
+
+XmlDomAdaptor::fromDOM freezes a clone, using the same Lite node classes, inside
+private const XmlObject payloads. It exposes no mutable DOM handle, identity
+cache or nodeProperty. HtmlNode retains its existing shared const adaptor.
+Real foreign-content queries remain on HtmlAdaptor; Scene copies values once
+through html_snapshot and retains neither Lite nodes nor the adaptor. External
+mutable aliases cannot change the accepted XmlRef payload after freezing.
+
+Root freezes declarations before parallel implementation. Node/core headers,
+Lite parser, Lite adaptor, XML bridge, package/DOM-string algorithms and independent
+Source witnesses have disjoint owners. Root alone changes CMake and shared TeX
+compile/filter plumbing, builds, verifies and commits. Accept Source-generated
+full-tree/serialization/parser/operations fixtures, lifecycle release and error
+recovery; then one full native math run. Package success still does not establish
+Common emission, final SVG equality or Folia integration.
 
 ## Ownership
 
