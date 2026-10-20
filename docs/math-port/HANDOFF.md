@@ -9,7 +9,72 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 amscd/extpfeil批次，进行中）
+### 恢复时先用这个短检查点（2026-10-20 bbox/keyval已验收，下一步enclose/cancel）
+
+- **无live构建/测试/代理**。最新完整Math回归524项/138,374断言exit0，无失败/跳过，
+  `bbox-keyval-full.log`，92898已终态。构建92056 exit0（并发4）。BBox6/209，keyval8/215
+  聚焦exit0。Source Root独立重放BBox50compile/keyval33parse+5validators均exit0，
+  原TS/CJS+完整38profile锁；对应bbox-source-final.log/keyval-options-source-final.log。
+- **分批提交已完成**：d28a6e4b原ParseUtil共享keyval实现/8测试组；76ca3958原BBox单组
+  配置方法/6测试组。既有ParseUtil数学算法未改，只在同owner加原helper和验证器；BBox
+  仍原配置单组，未拆平行methods/maps模块。两个提交各5文件；原13项无关修改保护。
+- **下一具体行动**：Root已完整读原EncloseConfiguration.ts/CancelConfiguration.ts及旧CPP。
+  先冻结两包原configuration.ixx（当前仍旧ParserRuntime接口），再派已有GPT-6.1 Sol
+  /root/base_methods：只限原enclose/cancel各configuration二文件、tests/math/enclose.cpp、
+  tests/math/cancel.cpp、tools/math-port/tex-enclose-cancel-source.cjs（共7文件）。Root掌握
+  头接口/所有共享/CMake/独立Source复放/构建与提交；代理不原生build/test、不再派工。
+  不重派已完成AMS/AMScd/extpfeil/BBox/keyval，不重查已解决FunctionList命名。
+- **冻结职责**：Enclose原单owner导出ENCLOSE_OPTIONS七项（data-arrowhead,color,mathcolor,
+  background,mathbackground,data-padding,data-thickness），用KeyValueOption固定表，type均
+  nullopt，返回typed AttributeSet；EncloseMethods::Enclose仍读notation→brackets→ParseArg→
+  原parse_util::keyvalOptions→覆盖notation→menclose。Cancel原单owner有Cancel/CancelTo，
+  复用同ENCLOSE_OPTIONS和公共parser，原4命令表，固定notation字符串是原MathML属性数据。
+  初始化接口均initializeModule(ConfigurationHandler&,MapHandler&)，Cancel装配原Enclose依赖。
+- **验收**：Source+native实际TeX覆盖4cancel命令、cancelto参数顺序、notational逗号替换、
+  七允许属性/忽略其它属性/嵌套braces与转义值、两包独立选择/组合嵌套、上标padding、
+  configured node creator原请求和错误恢复；不复制keyval解析。Source验证Node堆512MB，
+  MML身份用bool比较，不直接assert.equal两个循环图对象；逻辑Parent会跳过部分mstyle。
+  Luna额度到10月25日，无新信号不重试，必要Sol只GPT-6.1 Sol。Mermaid暂停，并发4。
+  全38包/共享布局→SVG对照/Folia切换仍未完成，goal保持active。
+
+### bbox/keyval批次详细证据（历史，已完成；不是待办）
+
+- **上一批已验收**：amscd/extpfeil完整510项/137,950断言exit0，23528已终态，
+  `amscd-extpfeil-full.log`；最终构建17337 exit0（并发4），聚焦amscd7/302、extpfeil6/234。
+  Source Root独立复放amscd39compile、extpfeil60compile均exit0，原TS/CJS+完整38profile锁。
+  已分批提交523805c4（原AMScd三组文件/Base尺寸字段/测试）、3a73fc54（原extpfeil单组）。
+- **重要新细节**：generic array中的@没有CD尺寸，但Source仍写显式无值minsize，isSet=true；
+  CommonMo.getSize经length2em(undefined,1,1)得1，不能省略成mo默认0em。原AmsCdMethods现
+  用已有AttributeNull表达显式无尺寸，Common长度转换同为1，无新JS对象/类型。空水平标签
+  在generic array仍原样形成缺尺寸kern并报MissingDimOrUnits，不能改成正常CD默认宽度。
+- **完整回归已结束exit0**：92898（bbox-keyval-full.log），524项/138,374断言，
+  最终构建92056 exit0（bbox-keyval-build.log，并发4）。BBox新6组/209断言通过，
+  聚焦*bbox*另外匹配了既有Common BBox用例；keyval8组/215断言exit0。
+  Root完整读了原BBox/Cancel/Enclose TS及旧CPP，
+  ParseUtil readKeyval/removeBraces/readValue、keyvalOptions、KeyValueDef/KeyValueTypes原算法。
+  Root负责bbox原configuration二文件、tests/math/bbox.cpp、tex-bbox-source.cjs及所有共享
+  接口/CMake/验证/提交；bbox原pair+6组测试已写，Source50compile从C:\Windows独立重放
+  exit0，`bbox-source-final.log`。已统一构建/聚焦和完整回归验证。
+  BboxMethods::BBox和initializeModule(registry,maps)头接口已落地。
+- **共享选项职责冻结在原ParseUtil**：KeyValueDef持原name和编译Verify/Convert函数指针，
+  oneof仅拥有允许字符串vector；KeyValueTypes保留boolean/number/integer/string/dimen。
+  KeyValueOption是key+optional<KeyValueDef>，keyvalOptions返回原MML AttributeSet，
+  optional<span> allowed区分不筛选与空允许集，error/l3keys保持Source。Root已写原.ixx声明。
+  已派已有GPT-6.1 Sol /root/base_methods限定原parse_util.cpp、tests/math/keyval_options.cpp、
+  tex-keyval-options-source.cjs；代理不改头/共享/CMake/docs/Git，不原生构建/测试/再派工。
+  不新增generic对象字典、registry或另一套选项解析器。enclose/cancel尚未派工，先共用层。
+  代理已确认API足够，公开number.convert需保留parseFloat数值前缀行为，允许在原CPP
+  匹配数值前缀再交js_input::number，不加共享数值API或模块。Source验证建议Node堆512MB。
+  Root bbox初次验证逻辑Parent断言错误导致Node格式化巨大循环MML图，已只终止70852
+  （43008终态-1），修正为物理parent.parent和bool身份比较后Source50compile exit0。
+  Mstyle逻辑Parent可能跳过单子节点，不能用于此包装次序断言；不再直接assert.equal两个MML对象。
+  代理已交付并冻结：原CPP新增helpers/类型，既有算法未改；8组native测试；Source33parse/
+  5标准validator及public convert/oneof/custom用例，Root从C:\Windows独立重放exit0，
+  keyval-options-source-final.log（堆512MB，TS/CJS+完整profile锁）。Root逐段复核后构建，
+  代理额外只读复核BBox未发现具体差异，现无live代理。原CPP现约680行，保留原owner。
+  原13项无关修改继续保护；全38包/共享布局→SVG/Folia仍未完成，goal保持active。
+
+### amscd/extpfeil批次（历史，已完成；不是待办）
 
 - **最新命名反馈的既有结论**：`native_function_list.cpp` 已在2022cb1a归回
   `tests/math/function_list.cpp`；生产唯一实现是原 `util/function_list.ixx`。
