@@ -50,6 +50,43 @@ CommonWrapper &content(CommonMpadded &wrapper) {
 }
 } // namespace
 
+SceneNodes CommonMpadded::emitScene(scene::Builder &builder,
+                                    std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+
+    auto containers = standardSceneNodes(builder, parents);
+    const auto [H, D, W, dh, dd, dw, x, y, dx] = getDimens();
+    (void)H;
+    (void)D;
+    (void)W;
+    (void)dh;
+    (void)dd;
+    const auto *alignValue = attribute(*node, u"data-align");
+    const auto align = truthy(alignValue) ? stringValue(alignValue) : std::u16string(u"left");
+    const double dW = dw < 0 && align != u"left" ? (align == u"center" ? dw / 2 : dw) : 0;
+    const double X = x + dx - dW;
+    const auto hasShift = [](double value) { return value != 0.0 && !std::isnan(value); };
+
+    SceneParents childParents;
+    if (hasShift(X) || hasShift(y)) {
+        if (containers.nodes.empty() || !containers.nodes.front())
+            throw std::logic_error(
+                "shifted mpadded Scene emission requires its first output segment");
+        const auto group =
+            builder.add_group(*containers.nodes.front(), {}, {}, {}, {}, scene::SemanticMetadata{},
+                              scene::ElementRole::anonymous_group);
+        const std::array<SceneNode, 1> emittedGroup{SceneNode{group}};
+        this->placeScene(builder, emittedGroup, X, y, group);
+        childParents.push_back(group);
+    } else {
+        childParents = std::move(containers.content);
+    }
+
+    addSceneChildren(builder, childParents);
+    return std::move(containers.nodes);
+}
+
 double CommonMpadded::containerWidth() const {
     const auto width = stringValue(attribute(*node, u"width"));
     const auto overflow = stringValue(attribute(*node, u"data-overflow"));

@@ -12,6 +12,7 @@ class CommonMpadded : public CommonWrapper {
   public:
     using CommonWrapper::CommonWrapper;
 
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     double containerWidth() const override;
     std::array<double, 9> getDimens();
     double dimen(std::u16string_view length, BBox const &, std::string_view direction = {},
