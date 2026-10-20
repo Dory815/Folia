@@ -179,6 +179,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/fonts/newcm_font_data.ixx
     src/math/fonts/newcm_font_module_provider.ixx
     src/math/util/constants.ixx
+    src/math/util/prioritized_list.ixx
+    src/math/util/function_list.ixx
     src/math/util/bbox.ixx
     src/math/util/lengths.ixx
     src/math/util/js_number.ixx
@@ -375,6 +377,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_session.cpp
     tests/math/native_tex_definitions.cpp
     tests/math/native_tex_begingroup.cpp
+    tests/math/native_function_list.cpp
     tests/math/native_raii_tex_environment.cpp
     tests/math/native_svg_writer.cpp
     tests/math/native_tex_error_source.cpp
