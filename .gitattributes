@@ -11,3 +11,5 @@ tests/math/fixtures/fraction_source_pairs.txt text eol=lf
 tests/math/fixtures/radical_source_pairs.txt text eol=lf
 tests/math/fixtures/common_scene.inc text eol=lf
 tools/math-port/common-scene-source.cjs text eol=lf
+tools/math-port/table-mathml-cases.json text eol=lf
+tests/math/fixtures/common-source/table-mathml-scene.inc text eol=lf

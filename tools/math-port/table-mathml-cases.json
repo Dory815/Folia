@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "source": {
+    "upstream": "MathJax 4.1.3",
+    "commit": "fb987178c2d279a99b0db5ea02e751691703955e",
+    "font": "NewCM 4.1.3",
+    "inputJax": "MathML",
+    "outputJax": "SVG",
+    "profileBoundary": "MathMLCompile is not among docs/math-port/scope.json files; this is pinned package MathML->Shared SVG Source evidence, not a TeX-package/full38 input-profile render."
+  },
+  "metrics": {
+    "em": 16,
+    "ex": 8,
+    "containerWidth": 640,
+    "display": true
+  },
+  "cases": [
+    {
+      "name": "equalrows-natural-control",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtable columnalign=\"center\" columnspacing=\"0em\" rowspacing=\"0em\" framespacing=\"0em 0em\"><mtr><mtd><mspace width=\"1em\" height=\"0.2em\" depth=\"0.1em\"/></mtd></mtr><mtr><mtd><mspace width=\"1em\" height=\"1.2em\" depth=\"0.4em\"/></mtd></mtr></mtable></math>"
+    },
+    {
+      "name": "equalrows-true",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtable equalrows=\"true\" columnalign=\"center\" columnspacing=\"0em\" rowspacing=\"0em\" framespacing=\"0em 0em\"><mtr><mtd><mspace width=\"1em\" height=\"0.2em\" depth=\"0.1em\"/></mtd></mtr><mtr><mtd><mspace width=\"1em\" height=\"1.2em\" depth=\"0.4em\"/></mtd></mtr></mtable></math>"
+    },
+    {
+      "name": "equalcolumns-natural-control",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtable columnwidth=\"auto auto\" columnalign=\"center center\" columnspacing=\"0em\" rowspacing=\"0em\" framespacing=\"0em 0em\"><mtr><mtd><mspace width=\"0.4em\" height=\"0.4em\" depth=\"0.1em\"/></mtd><mtd><mspace width=\"1.3em\" height=\"0.4em\" depth=\"0.1em\"/></mtd></mtr></mtable></math>"
+    },
+    {
+      "name": "equalcolumns-true",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtable equalcolumns=\"true\" columnwidth=\"auto auto\" columnalign=\"center center\" columnspacing=\"0em\" rowspacing=\"0em\" framespacing=\"0em 0em\"><mtr><mtd><mspace width=\"0.4em\" height=\"0.4em\" depth=\"0.1em\"/></mtd><mtd><mspace width=\"1.3em\" height=\"0.4em\" depth=\"0.1em\"/></mtd></mtr></mtable></math>"
+    },
+    {
+      "name": "dotted-rowline-frame-scaled-row",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtable rowlines=\"dotted\" frame=\"dotted\" columnalign=\"center\" columnspacing=\"0em\" rowspacing=\"0em\" framespacing=\"0em 0em\"><mtr><mtd><mstyle mathsize=\"150%\"><mspace width=\"1em\" height=\"0.4em\" depth=\"0.1em\"/></mstyle></mtd></mtr><mtr><mtd><mspace width=\"1em\" height=\"0.6em\" depth=\"0.2em\"/></mtd></mtr></mtable></math>"
+    },
+    {
+      "name": "dotted-columnline-frame",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtable columnlines=\"dotted\" frame=\"dotted\" columnalign=\"center center\" columnspacing=\"0em\" rowspacing=\"0em\" framespacing=\"0em 0em\"><mtr><mtd><mspace width=\"0.4em\" height=\"0.4em\" depth=\"0.1em\"/></mtd><mtd><mspace width=\"1.3em\" height=\"0.4em\" depth=\"0.1em\"/></mtd></mtr></mtable></math>"
+    },
+    {
+      "name": "all-three-combined",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtable equalrows=\"true\" equalcolumns=\"true\" rowlines=\"dotted\" columnlines=\"dotted\" frame=\"dotted\" columnwidth=\"auto auto\" columnalign=\"center center\" columnspacing=\"0em\" rowspacing=\"0em\" framespacing=\"0em 0em\"><mtr><mtd><mstyle mathsize=\"150%\"><mspace width=\"0.4em\" height=\"0.2em\" depth=\"0.1em\"/></mstyle></mtd><mtd><mspace width=\"1.3em\" height=\"0.4em\" depth=\"0.1em\"/></mtd></mtr><mtr><mtd><mspace width=\"1em\" height=\"1.2em\" depth=\"0.4em\"/></mtd><mtd><mspace width=\"0.7em\" height=\"0.3em\" depth=\"0.1em\"/></mtd></mtr></mtable></math>"
+    },
+    {
+      "name": "mtr-mathsize-accepted-no-row-scale",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><mtable columnalign=\"center\" columnspacing=\"0em\" rowspacing=\"0em\" framespacing=\"0em 0em\"><mtr mathsize=\"150%\"><mtd><mspace width=\"1em\" height=\"0.4em\" depth=\"0.1em\"/></mtd></mtr><mtr><mtd><mspace width=\"1em\" height=\"0.6em\" depth=\"0.2em\"/></mtd></mtr></mtable></math>"
+    }
+  ]
+}
