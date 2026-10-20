@@ -277,6 +277,8 @@ class ArrayItem : public BaseItem {
     bool nestable{};
     std::optional<std::size_t> flushspaceabove;
     std::optional<std::u16string> shove;
+    // CD captures the environment's arrow dimensions when this array opens.
+    std::optional<std::u16string> cd_min_width, cd_min_height;
 
     explicit ArrayItem(StackItemFactory &);
     StackKind kind() const override;
