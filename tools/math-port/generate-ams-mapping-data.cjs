@@ -1,80 +1,105 @@
 'use strict';
-
-// Generate immutable AMS map literals from the locked CJS observations.
-// The generated native code consumes literals only; it does not load JavaScript.
-const fs = require('node:fs');
-const path = require('node:path');
-const crypto = require('node:crypto');
+// Generate the original AMS maps with direct compiled callbacks and owned values.
+const fs = require('node:fs'), path = require('node:path');
+const crypto = require('node:crypto'), assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../..');
-const input = path.join(root, 'tools/math-port/ams-newcommand-reference/ams-newcommand-source.json');
-const snapshot = JSON.parse(fs.readFileSync(input, 'utf8'));
-if (snapshot.upstream?.version !== '4.1.3' || snapshot.upstream?.commit !== 'fb987178c2d279a99b0db5ea02e751691703955e') throw new Error('Unexpected pinned AMS snapshot');
-const args = process.argv.slice(2);
-let checkLock = false, outputDir = path.join(root, 'build/math-port/ams');
-for (let i=0;i<args.length;i++) {
-  if (args[i] === '--check-lock') checkLock = true;
-  else if (args[i] === '--output-dir' && args[i+1]) outputDir = path.resolve(root,args[++i]);
-  else throw new Error(`Unknown argument ${args[i]}`);
+const args = new Map();
+for (let i = 2; i < process.argv.length; ++i) {
+  const name = process.argv[i];
+  if (name === '--check') { args.set(name, true); continue; }
+  assert.ok(name === '--output' && process.argv[i + 1], 'Expected --check or --output PATH');
+  args.set(name, process.argv[++i]);
 }
-if (checkLock) for (const file of snapshot.sources) {
-  const ts = path.join(root, 'tools/mathjax-bundle/node_modules/@mathjax/src', file.source);
-  const cjs = path.join(root, 'tools/mathjax-bundle/node_modules/@mathjax/src/cjs', file.cjs);
-  const hash = filePath => crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
-  if (hash(ts) !== file.sha256 || hash(cjs) !== file.cjs_sha256) throw new Error(`Pinned source lock changed: ${file.source}`);
+const output = path.resolve(args.get('--output') || path.join(root, 'build/math-port/ams-generated/mappings.cpp'));
+const digest = file => crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
+assert.equal(digest('.reference/MathJax-src/ts/input/tex/ams/AmsMappings.ts'), '1ff357a98ebf72b9fd0a4cc06401cc4b469dce6e76fec3dec4bbd7362f04f06e');
+assert.equal(digest('tools/mathjax-bundle/node_modules/@mathjax/src/cjs/input/tex/ams/AmsMappings.js'), '83337b1aafc4e7431050696abc27a3392c26e5626d70d22595d0b250bc5f2af9');
+const load = file => require(path.join(root, 'tools/mathjax-bundle/node_modules/@mathjax/src/cjs', file));
+load('input/tex/ams/AmsConfiguration.js');
+const {MapHandler} = load('input/tex/MapHandler.js');
+const {AmsMethods} = load('input/tex/ams/AmsMethods.js');
+const {default: ParseMethods} = load('input/tex/ParseMethods.js');
+const names = ['AMSmath-mathchar0mo', 'AMSmath-operatorLetter', 'AMSmath-macros',
+  'AMSmath-environment', 'AMSmath-delimiter', 'AMSsymbols-mathchar0mi',
+  'AMSsymbols-mathchar0mo', 'AMSsymbols-delimiter', 'AMSsymbols-macros'];
+function method(fn, methods) {
+  const name = Object.keys(methods).find(name => methods[name] === fn);
+  assert.ok(name, 'Every map callback belongs to its original methods object');
+  return name;
 }
-const mappings = snapshot.sourceMapRegistrations;
-const names = ['AMSmath-mathchar0mo', 'AMSmath-macros', 'AMSmath-environment', 'AMSmath-delimiter',
-  'AMSsymbols-mathchar0mi', 'AMSsymbols-mathchar0mo', 'AMSsymbols-delimiter', 'AMSsymbols-macros'];
-for (const name of names) if (!mappings[name]) throw new Error(`Missing source mapping ${name}`);
-
-function quote16(value) {
+// Capture pristine registration values before constructing a profile or parsing.
+const mappings = names.map(name => {
+  const map = MapHandler.getMap(name);
+  assert.ok(map, name);
+  const type = map.constructor.name;
+  const parser = map.parser ? method(map.parser, type === 'RegExpMap' ? AmsMethods : ParseMethods) : null;
+  if (type === 'RegExpMap')
+    return {name, type, parser, pattern: map._regExp.source, flags: map._regExp.flags};
+  const entries = [...map.map].map(([key, entry]) => {
+    assert.equal(entry.token, key, 'Pristine map tokens retain their registration keys');
+    if (type === 'CommandMap' || type === 'EnvironmentMap')
+      return [key, {token: entry.token, method: method(entry.func, AmsMethods), args: entry.args}];
+    return [key, {token: entry.token, text: entry.char, attributes: entry.attributes}];
+  });
+  return JSON.parse(JSON.stringify({name, type, parser, entries}));
+});
+const reference = require('./reference-profile.cjs').createReference();
+assert.equal(reference.provenance.compiled_source_sha256, 'cbb0d3b6a08fbde6614b070f111fb58cc3cfe9d00a9713163fd4cd6d0300355a');
+const snapshotHash = crypto.createHash('sha256').update(JSON.stringify(mappings)).digest('hex');
+assert.equal(snapshotHash, 'ffad7e5d055ba41cec9827a7327c7dc886781aedad4172c94d73bbef07fe5aaf');
+function quote(value) {
+  assert.equal(typeof value, 'string');
   let out = 'u"';
-  for (const char of value) {
-    const cp = char.codePointAt(0);
-    if (char === '\\') out += '\\\\';
-    else if (char === '"') out += '\\"';
-    else if (char === '\n') out += '\\n';
-    else if (char === '\r') out += '\\r';
-    else if (char === '\t') out += '\\t';
-    else if (cp < 0x20 || cp === 0x7f) out += `\\u${cp.toString(16).padStart(4, '0')}`;
-    else if (cp <= 0xffff) out += char;
-    else { const n=cp-0x10000; out += `\\u${(0xd800+(n>>10)).toString(16)}\\u${(0xdc00+(n&0x3ff)).toString(16)}`; }
+  for (const c of value) {
+    const code = c.codePointAt(0);
+    if (c === '\\') out += '\\\\';
+    else if (c === '"') out += '\\"';
+    else if (c === '\n') out += '\\n';
+    else if (c === '\r') out += '\\r';
+    else if (c === '\t') out += '\\t';
+    else if (code < 32 || code === 127) out += '\\u' + code.toString(16).padStart(4, '0');
+    else if (code > 65535) out += '\\U' + code.toString(16).padStart(8, '0');
+    else out += c;
   }
   return out + '"';
 }
-function property(value) {
-  if (value === null) return 'Property(PropertyNull{})';
-  if (typeof value === 'string') return `Property(property_host::debugText(${quote16(value)}))`;
-  if (typeof value === 'boolean') return `Property(${value ? 'true' : 'false'})`;
-  if (typeof value === 'number') return `Property(${Number.isInteger(value) ? `${value}.0` : value})`;
-  if (value && value.$ === 'undefined') return 'Property(Missing{})';
-  if (value && value.$ === 'NaN') return 'Property(std::numeric_limits<double>::quiet_NaN())';
-  if (value && typeof value === 'object' && !Array.isArray(value) && !value.$) {
-    const fields = Object.entries(value).map(([key, child]) =>
-      `{property_host::debugText(${quote16(key)}), ${property(child)}}`).join(', ');
-    return `Property(object({${fields}}))`;
-  }
-  throw new Error(`Unsupported literal ${JSON.stringify(value)}`);
+function argument(value) {
+  if (value === null) return 'NullArgument{}';
+  if (typeof value === 'string') return 'std::u16string(' + quote(value) + ')';
+  if (typeof value === 'boolean') return String(value);
+  if (typeof value === 'number' && Number.isFinite(value))
+    return Number.isInteger(value) ? value + '.0' : String(value);
+  throw Error('Unexpected mathematical argument ' + JSON.stringify(value));
 }
-function array(values) { return `Property(PropertyArray{${values.map(property).join(', ')}})`; }
-function value(mapName, raw) {
-  if (mapName.includes('macros') || mapName.includes('environment')) {
-    const args = raw._args.items;
-    return array([raw._func.name, ...args]);
-  }
-  const attrs = raw._attributes;
-  return attrs === null ? property(raw._char) : array([raw._char, attrs]);
+function token(key, value) {
+  const text = value.text === null ? 'std::nullopt' : 'std::u16string(' + quote(value.text) + ')';
+  const attrs = value.attributes === null ? '' : ', attributes({' +
+    Object.entries(value.attributes).map(([key, value]) => '{' + quote(key) + ',' +
+      (value === null ? 'mml::AttributeNull{}' : argument(value)) + '}').join(',') + '})';
+  return 'Token(' + quote(key) + ',' + text + attrs + ')';
 }
-const tables = names.map(name => {
-  const mapping = mappings[name];
-  const entries = mapping.entries.entries.map(([key, raw]) =>
-    `    {property_host::debugText(${quote16(key)}), ${value(name, raw)}}`).join(',\n');
-  return `  tables.emplace(${JSON.stringify(name)}, object({\n${entries}\n  }));`;
-}).join('\n');
-const source = `// Generated by tools/math-port/generate-ams-mapping-data.cjs from pinned CJS observations.\n`+
-  `// Upstream MathJax 4.1.3, commit fb987178c2d279a99b0db5ea02e751691703955e; Apache-2.0.\n`+
-  `void appendPinnedAmsMappingTables(std::map<std::string, Property>& tables) {\n${tables}\n}\n`;
-fs.mkdirSync(outputDir, {recursive:true});
-const output = path.join(outputDir, 'ams_mapping_data.inc');
-fs.writeFileSync(output, source, 'utf8');
-console.log(path.relative(root, output));
+function emitMap(map) {
+  const name = quote(map.name);
+  if (map.type === 'RegExpMap')
+    return `    registry.registerMap(std::make_shared<RegExpMap>(RegExpMapInit{{${name},TokenMapParser{&AmsMethods::${map.parser}}},std::make_shared<regexp_host::RegExp>(${quote(map.pattern)},${quote(map.flags)})}));`;
+  let init;
+  if (map.type === 'CommandMap' || map.type === 'EnvironmentMap') {
+    const entries = map.entries.map(([key, value]) => '        Macro(' + quote(key) +
+      ',MacroMethod{AmsMethods::' + value.method + '},{' + value.args.map(argument).join(',') + '})').join(',\n');
+    init = `MacroMapInit{{${name},std::nullopt},{\n${entries}\n    }}`;
+    init = map.type === 'CommandMap' ? `CommandMapInit{${init}}` : `EnvironmentMapInit{${init},&ParseMethods::environment}`;
+  } else {
+    const entries = map.entries.map(([key, value]) => '        ' + token(key, value)).join(',\n');
+    init = `CharacterMapInit{{${name},TokenMapParser{&ParseMethods::${map.parser}}},{\n${entries}\n    }}`;
+  }
+  return `    registry.registerMap(std::make_shared<${map.type}>(${init}));`;
+}
+const source = '// MathJax 4.1.3 input/tex/ams/AmsMappings.ts; Apache-2.0.\n' +
+  '// Generated by tools/math-port/generate-ams-mapping-data.cjs; immutable table data.\n' +
+  '// Pristine registration SHA256 ' + snapshotHash + '.\n' +
+  'module folia.math.input.tex.ams.mappings;\nimport folia.math.input.tex.parse_methods;\nimport std;\n\nnamespace folia::math::tex {\nnamespace {\nmml::AttributeSet attributes(std::initializer_list<mml::AttributeSet::Entry> entries) {\n    mml::AttributeSet result;\n    for (auto const &[key,value] : entries) result.set(key,value);\n    return result;\n}\n}\nvoid AmsMappings::initialize(MapHandler &registry) {\n' +
+  mappings.map(emitMap).join('\n') + '\n}\n}\n';
+if (args.has('--check')) assert.equal(fs.readFileSync(output, 'utf8').replaceAll('\r\n', '\n'), source);
+else { fs.mkdirSync(path.dirname(output), {recursive: true}); fs.writeFileSync(output, source); }
+console.log(JSON.stringify({maps: mappings.length, entries: mappings.reduce((count, map) => count + (map.entries?.length || 0), 0),
+  snapshot_sha256: snapshotHash, output, checked: args.has('--check')}));
