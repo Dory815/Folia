@@ -274,6 +274,57 @@ suite native_svg_writer = [] {
                output.npos);
     };
 
+    "dashed border lines preserve empty Source stroke and attribute order"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::Path border;
+        border.element = scene::PathElement::line;
+        border.role = scene::ElementRole::background_box;
+        border.geometry.segments = {scene::MoveTo{{0.1, 0.2}}, scene::LineTo{{0.7, 0.2}}};
+        border.paint.stroke = scene::CssColor{""};
+        border.paint.stroke_width = 0.07;
+        border.paint.line_cap = scene::StrokeCap::square;
+        border.paint.dash_array = std::vector<double>{0.2, 0.6};
+        border.metadata.ordered_attributes = {{"data-border", "row"}, {"width", "stale"}};
+        border.layout_width = 3.049;
+        builder.add_primitive(0, std::move(border));
+        auto output = svg::write(std::move(builder).freeze(),
+                                 {.font_cache = svg::FontCacheMode::none});
+        expect(output.find("<line x1=\"100\" y1=\"200\" x2=\"700\" y2=\"200\" "
+                           "stroke-width=\"70\" stroke=\"\" stroke-linecap=\"square\" "
+                           "stroke-dasharray=\"200 600\" data-border=\"row\" "
+                           "width=\"3049\"/>") != output.npos);
+    };
+
+    "enclosure line marks serialize geometry and width while inheriting paint"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::Path mark;
+        mark.element = scene::PathElement::line;
+        mark.role = scene::ElementRole::enclosure_mark;
+        mark.geometry.segments = {scene::MoveTo{{0.25, -0.1}}, scene::LineTo{{0.75, 0.3}}};
+        mark.paint.stroke_width = 0.08;
+        builder.add_primitive(0, std::move(mark));
+        scene::Path explicitly_painted_mark;
+        explicitly_painted_mark.element = scene::PathElement::line;
+        explicitly_painted_mark.role = scene::ElementRole::enclosure_mark;
+        explicitly_painted_mark.geometry.segments = {
+            scene::MoveTo{{0.1, 0.4}}, scene::LineTo{{0.9, 0.4}}};
+        explicitly_painted_mark.paint.fill = scene::CssColor{"red"};
+        explicitly_painted_mark.paint.stroke = scene::CssColor{"blue"};
+        explicitly_painted_mark.paint.stroke_width = 0.08;
+        builder.add_primitive(0, std::move(explicitly_painted_mark));
+        auto output = svg::write(std::move(builder).freeze(),
+                                 {.font_cache = svg::FontCacheMode::none});
+        expect(output.find("<line x1=\"250\" y1=\"-100\" x2=\"750\" y2=\"300\" "
+                           "stroke-width=\"80\"/>") != output.npos);
+        expect(output.find("<line x1=\"100\" y1=\"400\" x2=\"900\" y2=\"400\" "
+                           "stroke-width=\"80\" fill=\"red\" stroke=\"blue\"/>") !=
+               output.npos);
+    };
+
     "typed translation rotation scale and affine operations stay ordered"_test = [] {
         scene::Builder builder;
         builder.set_metrics({1, 0.5, 0.1});
@@ -372,6 +423,96 @@ suite native_svg_writer = [] {
                scene::Transform{std::vector<scene::TransformOperation>{
                                     scene::Scaling{1, 1, false}, scene::Translation{0.3, 0.4}}}
                    .matrix());
+    };
+
+    "table frame and line attributes precede geometry without duplicating CSS paint"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::SemanticMetadata frame_metadata;
+        frame_metadata.ordered_attributes = {{"data-frame", "true"}, {"class", "MJX-TB-frame"}};
+        scene::Paint css_paint;
+        css_paint.fill = scene::NoPaint{};
+        css_paint.stroke = scene::CurrentColorPaint{};
+        css_paint.stroke_width = 0.09;
+        builder.add_primitive(0, scene::Rule{{0.1, -0.2, 1.3, 0.7},
+                                             css_paint,
+                                             frame_metadata,
+                                             scene::ElementRole::table_frame});
+        scene::SemanticMetadata line_metadata;
+        line_metadata.ordered_attributes = {{"data-line", "v"}, {"class", "MJX-TB-dotted"}};
+        scene::Paint dotted_paint;
+        dotted_paint.fill = scene::NoPaint{};
+        dotted_paint.stroke = scene::CurrentColorPaint{};
+        dotted_paint.stroke_width = 0.07;
+        dotted_paint.dash_array = std::vector<double>{0, 0.14};
+        builder.add_primitive(
+            0, scene::Path{
+                   scene::PathGeometry{{scene::MoveTo{{0.3, -0.1}}, scene::LineTo{{0.3, 0.6}}}},
+                   dotted_paint, line_metadata, scene::ElementRole::table_vertical_line,
+                   scene::PathElement::line});
+        scene::SemanticMetadata custom_line_metadata;
+        custom_line_metadata.ordered_attributes = {{"data-line", "h"},
+                                                   {"class", "MJX-TB-dotted"}};
+        auto custom_line_paint = dotted_paint;
+        custom_line_paint.stroke_width = 0.09;
+        builder.add_primitive(
+            0, scene::Path{
+                   scene::PathGeometry{{scene::MoveTo{{0, 0.4}}, scene::LineTo{{1, 0.4}}}},
+                   custom_line_paint, custom_line_metadata,
+                   scene::ElementRole::table_horizontal_line, scene::PathElement::line});
+        auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        expect(output.find("<rect data-frame=\"true\" class=\"MJX-TB-frame\" width=\"1300\" "
+                           "height=\"700\" x=\"100\" y=\"-200\" stroke-thickness=\"90\"/>") !=
+               output.npos);
+        expect(output.find("<line data-line=\"v\" class=\"MJX-TB-dotted\" x1=\"300\" "
+                           "y1=\"-100\" x2=\"300\" y2=\"600\"/>") != output.npos);
+        expect(output.find("<line data-line=\"h\" class=\"MJX-TB-dotted\" x1=\"0\" "
+                           "y1=\"400\" x2=\"1000\" y2=\"400\" stroke-thickness=\"90\" "
+                           "stroke-dasharray=\"0,140\"/>") != output.npos);
+        auto frame = output.find("<rect data-frame=");
+        auto line = output.find("<line data-line=");
+        expect(frame != output.npos && line != output.npos && frame < line);
+        auto frame_end = output.find("/>", frame);
+        auto line_end = output.find("/>", line);
+        expect(output.substr(frame, frame_end - frame).find("fill=") == std::string::npos);
+        expect(output.substr(line, line_end - line).find("stroke=") == std::string::npos);
+        expect(output.substr(line, line_end - line).find("stroke-dasharray=") ==
+               std::string::npos);
+    };
+
+    "empty id alignment marker matches Source without a text reflection transform"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::TextRun marker;
+        marker.role = scene::ElementRole::id_alignment_marker;
+        builder.add_primitive(0, marker);
+        auto output = svg::write(std::move(builder).freeze(),
+                                 {.font_cache = svg::FontCacheMode::none});
+        expect(output.find("<text data-id-align=\"true\"/>") != output.npos);
+        expect(output.find("<text data-id-align=\"true\" transform=") == output.npos);
+    };
+
+    "percentage frames keep Source SVG attributes and scaled root transform"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({2, 0.8, 0.2});
+        builder.set_font_metrics({1, 0.5, 0.45, 0.7});
+        builder.set_frame_layout(
+            {0.001, {}, scene::PercentageFrame{80, "80%", {4.5, 0, 2.2, 0.8}, 0.000226}});
+        auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        expect(output.find(
+                   "<svg style=\"vertical-align: -0.444ex;\" "
+                   "xmlns=\"http://www.w3.org/2000/svg\" width=\"80%\" height=\"2.222ex\" "
+                   "role=\"img\" focusable=\"false\" data-mjx-viewBox=\"0 -800 2000 1000\">") !=
+               output.npos);
+        expect(output.find(" viewBox=", output.find("<svg")) == output.npos);
+        expect(output.find("min-width:") == output.npos);
+        expect(output.find("<g stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" "
+                           "transform=\"scale(0.000226,-0.000226) translate(0, -800)\">") !=
+               output.npos);
     };
 
     "per-translation separators preserve spelling without changing composed geometry"_test = [] {

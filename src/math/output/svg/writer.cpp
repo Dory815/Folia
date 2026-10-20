@@ -19,14 +19,14 @@ namespace {
 std::string number(double value, int precision = 1) {
     if (!std::isfinite(value))
         throw std::invalid_argument("non-finite SVG coordinate");
-    if (std::abs(value) < 0.0006)
-        return "0";
     std::string result =
         folia::math::lengths::format_decimal(value, static_cast<unsigned>(precision));
     while (result.find('.') != std::string::npos && result.back() == '0')
         result.pop_back();
     if (!result.empty() && result.back() == '.')
         result.pop_back();
+    if (result == "-0")
+        result = "0";
     return result;
 }
 
@@ -205,6 +205,9 @@ std::string_view translation_separator(
     case scene::ElementRole::foreign_content_viewport:
     case scene::ElementRole::vertical_extender_viewport:
     case scene::ElementRole::horizontal_extender_viewport:
+    case scene::ElementRole::table_frame:
+    case scene::ElementRole::table_vertical_line:
+    case scene::ElementRole::table_horizontal_line:
     case scene::ElementRole::anonymous_group:
     case scene::ElementRole::glyph_composition:
     case scene::ElementRole::background_box:
@@ -231,8 +234,9 @@ std::string transform_operation(scene::TransformOperation const &operation,
                 return result;
             } else if constexpr (std::is_same_v<T, scene::Scaling>) {
                 if (value.x == value.y && !value.explicit_axes)
-                    return "scale(" + number(value.x, 3) + ")";
-                return "scale(" + number(value.x, 3) + "," + number(value.y, 3) + ")";
+                    return "scale(" + number(value.x, static_cast<int>(value.precision)) + ")";
+                return "scale(" + number(value.x, static_cast<int>(value.precision)) + "," +
+                       number(value.y, static_cast<int>(value.precision)) + ")";
             } else if constexpr (std::is_same_v<T, scene::Rotation>) {
                 return "rotate(" + number(value.degrees, 3) + " " + number(value.center.x * 1000) +
                        " " + number(value.center.y * 1000) + ")";
@@ -374,8 +378,42 @@ void append_glyphs(std::string &out, scene::GlyphRun const &run, SvgWriteOptions
     }
 }
 
+void append_table_markers(std::string &out, scene::SemanticMetadata const &metadata) {
+    for (auto const &attribute : metadata.ordered_attributes) {
+        if (attribute.name == "data-frame" || attribute.name == "data-line" ||
+            attribute.name == "class")
+            detail::append_attribute(out, attribute.name, attribute.value);
+    }
+}
+void append_table_stroke(std::string &out, scene::Paint const &paint) {
+    if (paint.stroke_width != 0.07) {
+        detail::append_attribute(out, "stroke-thickness", number(paint.stroke_width * 1000, 1));
+        if (paint.dash_array) {
+            std::string values;
+            for (auto const length : *paint.dash_array) {
+                if (!values.empty())
+                    values.push_back(',');
+                values += number(length * 1000, 1);
+            }
+            if (paint.dash_array->empty())
+                values = "none";
+            detail::append_attribute(out, "stroke-dasharray", values);
+        }
+    }
+}
+
 void append_rule(std::string &out, scene::Rule const &rule) {
     out += "<rect";
+    if (rule.role == scene::ElementRole::table_frame) {
+        append_table_markers(out, rule.metadata);
+        detail::append_attribute(out, "width", number(rule.bounds.width * 1000));
+        detail::append_attribute(out, "height", number(rule.bounds.height * 1000));
+        detail::append_attribute(out, "x", number(rule.bounds.x * 1000));
+        detail::append_attribute(out, "y", number(rule.bounds.y * 1000));
+        append_table_stroke(out, rule.paint);
+        out += "/>";
+        return;
+    }
     const bool background = rule.role == scene::ElementRole::background_box;
     if (background)
         append_paint(out, rule.paint);
@@ -436,11 +474,15 @@ std::vector<scene::Point> path_vertices(scene::PathGeometry const &geometry) {
 }
 
 void append_path_element(std::string &out, scene::Path const &path) {
+    bool const table_line = path.role == scene::ElementRole::table_vertical_line ||
+                            path.role == scene::ElementRole::table_horizontal_line;
     auto const tag = path.element == scene::PathElement::polygon ? "polygon"
                      : path.element == scene::PathElement::line  ? "line"
                                                                  : "path";
     out += '<';
     out += tag;
+    if (table_line)
+        append_table_markers(out, path.metadata);
     if (path.element == scene::PathElement::path) {
         std::string data;
         append_path(data, path.geometry);
@@ -462,7 +504,43 @@ void append_path_element(std::string &out, scene::Path const &path) {
             detail::append_attribute(out, "y2", number(points[1].y * 1000));
         }
     }
-    append_paint(out, path.paint, path.role == scene::ElementRole::background_box);
+    const bool dashed_border_line = path.element == scene::PathElement::line &&
+                                    path.role == scene::ElementRole::background_box;
+    const bool enclosure_line = path.element == scene::PathElement::line &&
+                                path.role == scene::ElementRole::enclosure_mark;
+    if (dashed_border_line) {
+        // Source Wrapper.addBorderBroken writes line-specific attributes in this order.
+        detail::append_attribute(out, "stroke-width", number(path.paint.stroke_width * 1000));
+        if (auto const *css = std::get_if<scene::CssColor>(&path.paint.stroke))
+            detail::append_attribute(out, "stroke", css->value);
+        else
+            append_color(out, "stroke", "stroke-opacity", path.paint.stroke);
+        if (path.paint.line_cap)
+            detail::append_attribute(out, "stroke-linecap", stroke_cap_name(*path.paint.line_cap));
+        if (path.paint.dash_array) {
+            std::string values;
+            for (auto const length : *path.paint.dash_array) {
+                if (!values.empty())
+                    values.push_back(' ');
+                values += number(length * 1000);
+            }
+            if (path.paint.dash_array->empty())
+                values = "none";
+            detail::append_attribute(out, "stroke-dasharray", values);
+        }
+    } else if (enclosure_line) {
+        // Menclose line primitives inherit both fill and stroke from the group.
+        detail::append_attribute(out, "stroke-width", number(path.paint.stroke_width * 1000));
+        auto paint = path.paint;
+        paint.stroke_width = 0;
+        append_paint(out, paint);
+    } else if (!table_line)
+        append_paint(out, path.paint, path.role == scene::ElementRole::background_box);
+    else {
+        append_table_stroke(out, path.paint);
+        out += "/>";
+        return;
+    }
     static constexpr std::array<std::string_view, 16> reserved{"d",
                                                                "points",
                                                                "x1",
@@ -479,7 +557,18 @@ void append_path_element(std::string &out, scene::Path const &path) {
                                                                "stroke-dasharray",
                                                                "stroke-linecap",
                                                                "stroke-linejoin"};
-    detail::append_metadata(out, path.metadata, reserved);
+    if (path.layout_width) {
+        static constexpr std::array<std::string_view, 17> reserved_with_width{
+            "d",          "points",       "x1",         "y1",          "x2",      "y2",
+            "width",      "fill",         "stroke",     "fill-rule",   "fill-opacity",
+            "stroke-opacity", "stroke-width", "opacity", "stroke-dasharray", "stroke-linecap",
+            "stroke-linejoin"};
+        detail::append_metadata(out, path.metadata, reserved_with_width);
+    } else {
+        detail::append_metadata(out, path.metadata, reserved);
+    }
+    if (path.layout_width)
+        detail::append_attribute(out, "width", number(*path.layout_width * 1000));
     out += "/>";
 }
 
@@ -487,11 +576,15 @@ void append_text_run(std::string &out, scene::TextRun const &run) {
     out += "<text";
     if (run.role == scene::ElementRole::id_alignment_marker)
         detail::append_attribute(out, "data-id-align", "true");
-    std::string transform = "scale(1,-1)";
-    if (run.origin.x || run.origin.y)
-        transform = "translate(" + number(run.origin.x * 1000) + " " + number(run.origin.y * 1000) +
-                    ") " + transform;
-    detail::append_attribute(out, "transform", transform);
+    bool const empty_alignment_marker =
+        run.role == scene::ElementRole::id_alignment_marker && run.utf8.empty();
+    if (!empty_alignment_marker) {
+        std::string transform = "scale(1,-1)";
+        if (run.origin.x || run.origin.y)
+            transform = "translate(" + number(run.origin.x * 1000) + " " +
+                        number(run.origin.y * 1000) + ") " + transform;
+        detail::append_attribute(out, "transform", transform);
+    }
     if (run.font) {
         detail::append_attribute(out, "font-family", run.font->family);
         detail::append_attribute(out, "font-size", number(run.font->size * 1000) + "px");
@@ -724,10 +817,45 @@ void append_svg_start(std::string &out, scene::Metrics const &metrics,
                       scene::FontMetrics const &font, SvgWriteOptions const &options,
                       scene::DisplayLayout const &layout, double minimum_extent,
                       bool apply_inline_layout, Cache const *cache = nullptr,
-                      bool cache_before_group = false) {
+                      bool cache_before_group = false,
+                      scene::PercentageFrame const *percentage = nullptr) {
     const double width = std::max(metrics.width, minimum_extent);
     const double height = std::max(metrics.height + metrics.depth, minimum_extent);
     out += "<svg";
+    if (percentage) {
+        std::string style = "vertical-align: " + ex_value(-metrics.depth, font.x_height) + ";";
+        if (layout.minimum_width > 0)
+            style += " min-width: " + ex_value(layout.minimum_width, font.x_height) + ";";
+        if (apply_inline_layout && layout.shift != 0) {
+            if (layout.alignment == "center" || layout.alignment == "left")
+                style += " margin-left: " + ex_value(layout.shift, font.x_height) + ";";
+            if (layout.alignment == "center" || layout.alignment == "right")
+                style += " margin-right: " + ex_value(-layout.shift, font.x_height) + ";";
+        }
+        detail::append_attribute(out, "style", style);
+        detail::append_attribute(out, "xmlns", "http://www.w3.org/2000/svg");
+        detail::append_attribute(out, "width", percentage->width_text);
+        detail::append_attribute(out, "height", ex_value(height, font.x_height));
+        detail::append_attribute(out, "role", "img");
+        detail::append_attribute(out, "focusable", "false");
+        if (options.font_cache != FontCacheMode::none && options.use_xlink)
+            detail::append_attribute(out, "xmlns:xlink", "http://www.w3.org/1999/xlink");
+        detail::append_attribute(out, "data-mjx-viewBox",
+                                 "0 " + number(-metrics.height * 1000) + " " +
+                                     number(width * 1000) + " " + number(height * 1000));
+        out += ">";
+        if (cache_before_group && cache)
+            append_font_cache(out, *cache);
+        out += "<g stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" "
+               "transform=\"scale(";
+        out += number(percentage->scale, 6);
+        out += ",-";
+        out += number(percentage->scale, 6);
+        out += ") translate(0, ";
+        out += number(-metrics.height * 1000, 1);
+        out += ")\">";
+        return;
+    }
     std::string style = "vertical-align: " + ex_value(-metrics.depth, font.x_height) + ";";
     if (apply_inline_layout) {
         if (layout.minimum_width > 0)
@@ -847,7 +975,7 @@ std::string write(scene::Scene const &scene_value, SvgWriteOptions const &option
     if (frames.inline_fragments.empty()) {
         auto const *local_cache = options.font_cache == FontCacheMode::local ? &cache : nullptr;
         append_svg_start(out, metrics, font, options, layout, frames.minimum_extent, true,
-                         local_cache, true);
+                         local_cache, true, frames.percentage ? &*frames.percentage : nullptr);
         open_group(out, scene_value.root(), options);
         append_svg_end(out);
     } else {
