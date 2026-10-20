@@ -71,7 +71,7 @@ std::optional<Match> regexMatch(std::u16string_view input, std::u16string_view p
 std::u16string replaceRegex(std::u16string input, std::u16string_view pattern,
                            std::u16string_view replacement, bool global) {
     auto& expression = expressionFor(pattern, global ? u"g" : u"");
-    expression.lastIndex = 0;
+    expression.last_index = 0;
     std::u16string result;
     std::size_t offset = 0;
     while (const auto found = expression.exec(input)) {
@@ -102,7 +102,7 @@ std::u16string replaceRegex(std::u16string input, std::u16string_view pattern,
         if (!global) break;
         if (whole.empty()) {
             if (offset == input.size()) break;
-            expression.lastIndex = static_cast<double>(offset + 1);
+            expression.last_index = offset + 1;
         }
     }
     result += input.substr(offset);
