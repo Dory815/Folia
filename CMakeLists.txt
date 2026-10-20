@@ -281,6 +281,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/physics/methods.ixx
     src/math/input/tex/physics/mappings.ixx
     src/math/input/tex/physics/configuration.ixx
+    src/math/input/tex/unicode/configuration.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -424,6 +425,7 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/physics/methods.cpp
     src/math/input/tex/physics/mappings.cpp
     src/math/input/tex/physics/configuration.cpp
+    src/math/input/tex/unicode/configuration.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
@@ -658,6 +660,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/bussproofs.cpp
     tests/math/physics.cpp
     tests/math/entities.cpp
+    tests/math/unicode.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
