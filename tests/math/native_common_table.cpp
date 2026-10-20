@@ -1,10 +1,13 @@
 #include "support/folia_test.hpp"
 import folia.math.fonts.newcm_font_module_provider;
 import folia.math.output.common;
+import folia.math.output.svg.writer;
 
 using namespace boost::ut;
 namespace mml = folia::math::mml;
 namespace common = folia::math::output::common;
+namespace scene = folia::math::output::scene;
+namespace svg = folia::math::output::svg;
 
 namespace {
 class RejectMeasurement final : public common::MeasurementTarget {
@@ -84,6 +87,246 @@ mml::MmlNode &mathTableRoot(mml::MmlDocument &doc, mml::MmlNode &table,
     auto &inferred = inferredCellContent(doc, table);
     mml::MmlNode *children[]{&inferred};
     return doc.factory().make(mml::NodeKind::math, std::move(attrs), children);
+}
+
+enum class MathmlAttributeKind { text, boolean, number };
+struct MathmlSceneAttribute {
+    std::u16string_view name;
+    MathmlAttributeKind kind{};
+    std::u16string_view text;
+    double number{};
+    bool boolean{};
+};
+struct MathmlSceneNode {
+    std::string_view kind;
+    bool is_inferred{};
+    std::size_t parent{};
+    std::size_t attribute_first{};
+    std::size_t attribute_count{};
+};
+struct MathmlSceneMetrics {
+    double em{}, ex{}, container_width{};
+    bool display{};
+};
+struct MathmlSceneBBox {
+    double w{}, h{}, d{}, L{}, R{};
+};
+struct MathmlTableSceneCase {
+    std::string_view name;
+    MathmlSceneMetrics metrics;
+    std::span<MathmlSceneNode const> nodes;
+    std::span<MathmlSceneAttribute const> attributes;
+    std::span<double const> H, D, W;
+    double L{};
+    std::span<double const> row_rscales;
+    std::size_t dotted_lines{};
+    std::size_t dotted_frames{};
+    MathmlSceneBBox bbox;
+    std::string_view source_svg;
+};
+#include "fixtures/common-source/table-mathml-scene.inc"
+
+mml::NodeKind sourceMathmlKind(std::string_view kind, bool inferred) {
+    if (kind == "math")
+        return mml::NodeKind::math;
+    if (kind == "inferredMrow") {
+        if (!inferred)
+            throw std::logic_error("Source inferred MML node lost its inferred marker");
+        return mml::NodeKind::inferred_mrow;
+    }
+    if (inferred)
+        throw std::logic_error("Source ordinary MML node marked inferred");
+    if (kind == "mtable")
+        return mml::NodeKind::mtable;
+    if (kind == "mtr")
+        return mml::NodeKind::mtr;
+    if (kind == "mtd")
+        return mml::NodeKind::mtd;
+    if (kind == "mspace")
+        return mml::NodeKind::mspace;
+    if (kind == "mstyle")
+        return mml::NodeKind::mstyle;
+    if (kind == "text")
+        throw std::logic_error("text nodes are deliberately outside this fixture");
+    throw std::logic_error("unmapped pinned Source MML kind");
+}
+
+mml::MmlNode &constructSourceMathml(mml::MmlDocument &doc, MathmlTableSceneCase const &source,
+                                    mml::MmlNode **tableOut) {
+    constexpr auto noParent = static_cast<std::size_t>(-1);
+    if (source.nodes.empty())
+        throw std::logic_error("Source fixture has no MML nodes");
+    std::vector<mml::MmlNode *> built(source.nodes.size());
+    std::size_t rootIndex = noParent;
+    for (std::size_t i = source.nodes.size(); i-- > 0;) {
+        const auto &sourceNode = source.nodes[i];
+        if (sourceNode.parent == noParent) {
+            if (rootIndex != noParent)
+                throw std::logic_error("Source fixture has multiple MML roots");
+            rootIndex = i;
+        } else if (sourceNode.parent >= i) {
+            throw std::logic_error("Source fixture nodes must be in parent-before-child order");
+        }
+        if (sourceNode.attribute_first > source.attributes.size() ||
+            sourceNode.attribute_count > source.attributes.size() - sourceNode.attribute_first)
+            throw std::logic_error("Source fixture attribute range is invalid");
+
+        mml::AttributeSet attrs;
+        const auto ownAttributes =
+            source.attributes.subspan(sourceNode.attribute_first, sourceNode.attribute_count);
+        for (const auto &attribute : ownAttributes) {
+            const std::u16string name(attribute.name);
+            switch (attribute.kind) {
+            case MathmlAttributeKind::text:
+                attrs.set(name, std::u16string(attribute.text));
+                break;
+            case MathmlAttributeKind::boolean:
+                attrs.set(name, attribute.boolean);
+                break;
+            case MathmlAttributeKind::number:
+                attrs.set(name, attribute.number);
+                break;
+            }
+        }
+
+        std::vector<mml::MmlNode *> children;
+        for (std::size_t childIndex = i + 1; childIndex < source.nodes.size(); ++childIndex) {
+            if (source.nodes[childIndex].parent == i) {
+                if (!built[childIndex])
+                    throw std::logic_error("Source fixture child was not constructed");
+                children.push_back(built[childIndex]);
+            }
+        }
+        auto &node = doc.factory().make(sourceMathmlKind(sourceNode.kind, sourceNode.is_inferred),
+                                        std::move(attrs), children);
+        built[i] = &node;
+        if (sourceNode.kind == "mtable") {
+            if (*tableOut)
+                throw std::logic_error("Source fixture must contain one mtable");
+            *tableOut = &node;
+        }
+    }
+    if (rootIndex == noParent)
+        throw std::logic_error("Source fixture has no MML root");
+    return *built[rootIndex];
+}
+
+std::vector<scene::Primitive const *> tableScenePrimitives(scene::Scene const &value) {
+    std::vector<scene::Primitive const *> result;
+    const auto visit = [&](auto &&self, scene::Group const &group) -> void {
+        for (const auto &entry : group.entries)
+            if (const auto *primitive = std::get_if<scene::Primitive>(&entry))
+                result.push_back(primitive);
+            else if (const auto *child = std::get_if<std::shared_ptr<scene::Group const>>(&entry))
+                self(self, **child);
+    };
+    visit(visit, value.root());
+    return result;
+}
+
+void compareTableValues(std::span<double const> actual, std::span<double const> expected,
+                        std::string_view caseName, std::string_view field) {
+    expect(actual.size() == expected.size()) << "case " << caseName << ": " << field << " size";
+    for (std::size_t i = 0; i < std::min(actual.size(), expected.size()); ++i)
+        expect(eq(actual[i], expected[i]))
+            << "case " << caseName << ": " << field << '[' << i << ']';
+}
+
+void reportTableSvgDifference(std::string_view name, std::string_view expected,
+                              std::string_view actual) {
+    std::size_t offset = 0;
+    while (offset < expected.size() && offset < actual.size() && expected[offset] == actual[offset])
+        ++offset;
+    constexpr std::size_t radius = 48;
+    const auto snippet = [&](std::string_view value) {
+        const auto begin = std::min(value.size(), offset > radius ? offset - radius : 0);
+        return value.substr(begin, std::min(value.size() - begin, 2 * radius));
+    };
+    std::cerr << "table MathML SVG mismatch for " << name << " at byte " << offset
+              << " (expected size " << expected.size() << ", actual size " << actual.size() << ")\n"
+              << "expected: " << snippet(expected) << "\nactual:   " << snippet(actual) << '\n';
+}
+
+void verifySourceMathmlTable(MathmlTableSceneCase const &expected,
+                             folia::math::fonts::NewcmFontDataBundle const &bundle) {
+    const auto check = [&](bool value, std::string_view field) {
+        expect(value) << "case " << expected.name << ": " << field;
+    };
+    RejectMeasurement measurement;
+    mml::MmlDocument doc;
+    mml::MmlNode *tableNode = nullptr;
+    auto &mathNode = constructSourceMathml(doc, expected, &tableNode);
+    check(tableNode != nullptr, "fixture contains one mtable");
+    if (!tableNode)
+        return;
+    doc.setRoot(mathNode);
+    mathNode.setInheritedAttributes();
+
+    common::CommonOutputJaxConfig config{{expected.metrics.em, expected.metrics.ex,
+                                          expected.metrics.container_width, 1, "MathJaxNewcm",
+                                          expected.metrics.display},
+                                         sourceOptions(),
+                                         bundle.fonts,
+                                         "MathJaxNewcm"};
+    common::LayoutJob job(doc, config, measurement, common::CommonWrapperFactory::standardNodes(),
+                          makeLinebreakVisitor);
+    const auto built = job.buildScene();
+    auto *table = dynamic_cast<common::CommonMtable *>(job.jax().wrapperFor(*tableNode));
+    check(table != nullptr, "table wrapper exists");
+    if (!table)
+        return;
+
+    const auto &data = table->getTableData();
+    compareTableValues(data.H, expected.H, expected.name, "H");
+    compareTableValues(data.D, expected.D, expected.name, "D");
+    compareTableValues(data.W, expected.W, expected.name, "W");
+    check(eq(data.L, expected.L), "TableData.L");
+    const auto &bbox = table->getBBox();
+    check(eq(bbox.w, expected.bbox.w), "bbox.w");
+    check(eq(bbox.h, expected.bbox.h), "bbox.h");
+    check(eq(bbox.d, expected.bbox.d), "bbox.d");
+    check(eq(bbox.L, expected.bbox.L), "bbox.L");
+    check(eq(bbox.R, expected.bbox.R), "bbox.R");
+
+    const auto rows = table->tableRows();
+    check(rows.size() == expected.row_rscales.size(), "row count for rscale");
+    for (std::size_t i = 0; i < std::min(rows.size(), expected.row_rscales.size()); ++i)
+        check(eq(rows[i]->getBBox().rscale, expected.row_rscales[i]), "row bbox rscale");
+
+    const auto nativeSvg = svg::write(built, {.font_cache = svg::FontCacheMode::none});
+    if (nativeSvg != expected.source_svg) {
+        reportTableSvgDifference(expected.name, expected.source_svg, nativeSvg);
+        check(false, "SVG bytes match pinned Source");
+    }
+
+    std::size_t dottedLines = 0;
+    std::size_t dottedFrames = 0;
+    for (const auto *primitive : tableScenePrimitives(built))
+        std::visit(
+            [&](auto const &shape) {
+                using T = std::remove_cvref_t<decltype(shape)>;
+                if constexpr (std::same_as<T, scene::Path>) {
+                    if (shape.role == scene::ElementRole::table_vertical_line ||
+                        shape.role == scene::ElementRole::table_horizontal_line) {
+                        ++dottedLines;
+                        check(shape.paint.stroke_width == .07, "dotted line width");
+                        check(shape.paint.dash_array == std::vector<double>{0, .14},
+                              "dotted line dash");
+                        check(shape.paint.line_cap == scene::StrokeCap::round, "dotted line cap");
+                    }
+                } else if constexpr (std::same_as<T, scene::Rule>) {
+                    if (shape.role == scene::ElementRole::table_frame) {
+                        ++dottedFrames;
+                        check(shape.paint.stroke_width == .07, "dotted frame width");
+                        check(shape.paint.dash_array == std::vector<double>{0, .14},
+                              "dotted frame dash");
+                        check(shape.paint.line_cap == scene::StrokeCap::round, "dotted frame cap");
+                    }
+                }
+            },
+            *primitive);
+    check(dottedLines == expected.dotted_lines, "Source dotted line count");
+    check(dottedFrames == expected.dotted_frames, "Source dotted frame count");
 }
 } // namespace
 
@@ -550,5 +793,16 @@ suite common_table_native = [] {
         expect(eq(table->getBBox().w, 7.018222222222222));
         expect(eq(table->getBBox().h, 1.475));
         expect(eq(table->getBBox().d, .9750000000000001));
+    };
+
+    "direct_MathML_table_attributes_match_pinned_Source_SVG"_test = [] {
+        auto bundle = folia::math::fonts::makeNewcmFontData();
+        for (const auto &test : sourceTableCases) {
+            try {
+                verifySourceMathmlTable(test, bundle);
+            } catch (const std::exception &error) {
+                expect(false) << "case " << test.name << " threw: " << error.what();
+            }
+        }
     };
 };
