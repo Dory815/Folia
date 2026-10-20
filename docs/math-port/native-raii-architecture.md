@@ -97,6 +97,31 @@ TagFormatOptions on each call; it never borrows a temporary optional payload.
 The same original default algorithms supply both ordinary Tags and the package
 defaults. No second tag builder, numbering algorithm or MML owner is introduced.
 
+### Setoptions and typed option access (2026-10-20)
+
+`setoptions/set_options_configuration.*` retains the original package's three
+filters, macro and configuration callback. Its private field dispatch maps
+Source names to the existing finite C++ option members. It owns no mirrored
+option dictionary and exposes no arbitrary property access. ParseOptions only
+adds a const borrow of its ConfigurationHandler for the package-name check.
+
+The TeX input domain is boolean/string/RegExp. Boolean fields use the incoming
+primitive's truth value; regular-expression fields require an actual RegExp;
+`digits` retains its existing string/RegExp union. Resource limits are numeric
+comparison thresholds stored as native doubles, including fractions, negative
+values, NaN and infinities. Counters and allocation sizes remain unsigned
+integers. The setter only converts the numeric input; ParseUtil and the array
+parser perform their original comparisons. It must not duplicate those
+comparisons by projecting thresholds to integer capacities in the setter. Strings
+remain strings, with `noundefined`'s false styling projected to an empty string
+to preserve its disabled-style output. Arrays, maps and function callbacks are
+configured through their existing typed C++ fields, not synthesized from TeX
+strings. The nullable reference formatter may be cleared by false/empty input,
+retaining its native callback type. Incompatible writes produce InvalidValue
+rather than reviving arbitrary JS type mutation. Permission and field-presence
+checks still precede conversion,
+and successful earlier writes remain when a later key fails, as in Source.
+
 The original `input/tex/ParseMethods.ts` belongs at `input/tex/parse_methods`,
 not under `base/`. Its ten compiled methods handle variables, numbers, control
 sequences, mapped character tokens and the environment entry. BaseMethods,

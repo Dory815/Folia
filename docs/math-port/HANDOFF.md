@@ -9,7 +9,55 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 Tagformat已验收提交）
+### 恢复时先用这个短检查点（2026-10-20 Setoptions已验收提交）
+
+- **当前已验收提交**：7cadd1ee为原共享数值阈值及测试（6文件），b1fb02c9为原Setoptions
+  配置职责、注册借用、FindTeX默认及独立测试/Source对照（9文件）；无新增生产文件。
+  最终构建99841 exit0，setoptions-build-reviewed.log，并发4；57788阈值构建也exit0。
+  完整Math回归84843 exit0，setoptions-full.log：**619项/150,370断言/122套suite，
+  无失败/跳过**。Setoptions聚焦10项/759断言，ParseUtil新增阈值1项/9、args5项/53、
+  counter1项/9断言均exit0。无live构建/测试/代理；原13项无关修改保持，不stage夹带。
+- **命名反馈已经处理，不能压缩后重做**：2022cb1a把native_function_list.cpp归回
+  tests/math/function_list.cpp；生产唯一owner仍为原util/function_list.ixx。e6126948删除
+  旧投影测试。旧bindings仍有未退消费者，不能把改名当清理完成；验收规则现在明确禁止
+  用native/new/typed前后缀保留平行实现。按职责和MathJax原owner命名、原位替换。
+- **Source验收已完成**：Root独立重放默认校验exit0，148真实compile/96字段presence/
+  59标量逐项write/37presence及native类型边界（nullable ref清除另2例）。原TS+CJS/full38
+  哈希锁、heap512/createReference一次，setoptions-source-final.log。独立fixture为
+  tests/math/fixtures/setoptions.inc，由实际Source全38 options生成，默认比对，显式--write-fixture。
+  Root另实跑schema probe、宏限数/缓存mathStyle probe和负buffer空宏probe，均已并入正式脚本。
+- **代理分工已终态**：GPT-6.1 Sol /root/base_methods交付原setoptions/set_options_configuration.cpp、
+  tests/math/setoptions.cpp、tex-setoptions-source.cjs、fixtures/setoptions.inc四文件；未改共享/
+  CMake、未native构建测试/Git/派工。Root完整审查所有主体/runner/数据，接管格式化/新增测试。
+  原单Configuration职责保留，没有新生产文件；所有有限字段直接访问原options，无镜像字典/
+  PropertyHost/std::any/ObjectRef。原3filter、SetOptions、setoptionsConfig均在原文件。
+  API冻结：initializeModule(ConfigurationHandler&)，free SetOptions(TexParser&,MacroInvocation const&)、
+  setoptionsConfig(ParserConfiguration&,TeX&)，filterValue(...,OptionInputValue const&)->OptionInputValue。
+  ParseOptions新增const registry()借用；原tex_jax.cpp defaults补FindTeX engaged-null，对应Source
+  FindTeX:null；默认禁止通过SetOptions写它。Config processor继承包priority3（早期误判5已纠正），
+  actual macro.add rank4。保留已有require宏包装分支，但没有加载机制/没有扩大38profile。
+- **最终资源限制架构，勿退回早期投影**：maxBuffer/maxTemplateSubtitutions/maxMacros原schema
+  已改optional<double>阈值；ParseUtil::ExpansionBudget两限值、addArgs/substituteArgs参数，
+  原BaseItems/ColumnParser传递阈值均为double。Counter/分配size仍size_t，长度相加先检查溢出。
+  Source maxMacros用<=，buffer/template用>；保留小数/负数/NaN/∞并让原consumer比较，不在
+  setter里把它们按key投影成size_t或加特殊释放补丁。Root发现负buffer连空宏都拒，投影0
+  不等价，已删除投影分支。强类型string/bool/regex边界如架构文档；noundefined false样式
+  为空串；nullable tagformat.ref可由false/空串清除为null callback。复杂容器/函数不由TeX
+  标量任意改型，InvalidValue不伪称所有JS突变等价。
+- **本轮已终态，不重复编译/回归**：实际macro小数/NaN/∞限数、负buffer空宏、Gamma
+  constructor capture、nullableRef清除、所有96字段及59标量写入均验收。Root最后再次
+  从C:/Windows重放Source默认fixture校验exit0，仍为148compile。复杂容器/函数写入拒绝
+  属于原生类型边界，37项presence不能宣称其所有Source对象突变或包渲染已完成。
+- 后续顺序：Root完整读原CasesConfiguration.ts（Source该包只有1文件）与原Empheq两TS。
+  Cases依赖EmpheqUtil.left，故先Empheq再Cases。Empheq当前CPP/IXx未读全、未改/未冻结；
+  StackGlobal.empheq和TexEnvironment.closing_environment已有，BeginItem尚无left/right字符串。
+  Cases现items/methods/tags/config四组是之前额外拆分，下一次先审查是否归回原单配置职责，
+  不因旧CPP拆分便照搬。两包尚未实现，不算完成。Luna额度恢复前不反复试，必要Sol只6.1。
+  完整38包/Common→Scene→SVG/Folia未完成，goal active；Mermaid暂停，无D2D像素gate。
+
+## 历史阶段记录（保留证据；以下“下一步”和“未完成”只描述当时状态）
+
+### 已接受基线（2026-10-20 Tagformat已验收提交）
 
 - **上一goal轮为实际进展**：字体包已验收提交，详见紧随的已接受基线，不重做。
   本轮Root已完整读Tagformat/Setoptions原TS、两组现CPP/IXx、Tags所有接口/实现与TeX构造、

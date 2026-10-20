@@ -8,6 +8,10 @@ green corpora establish reference data, not acceptance for rewritten code.
 
 - Every math implementation file has a keep/rewrite/remove/regenerate decision,
   a native responsibility, Source provenance and a named owner.
+- Name files and modules by their responsibility, retaining the upstream owner
+  where it still applies. Do not use native/new/typed suffixes or prefixes to
+  keep competing implementations beside the canonical owner. Retire obsolete
+  files after accounting for their remaining consumers; renaming is not removal.
 - Start from the pinned upstream file and family responsibility. Each proposed
   new file/module must explain why an existing owner cannot contain the work,
   identify actual consumers, and identify the implementation it replaces.
@@ -53,6 +57,16 @@ green corpora establish reference data, not acceptance for rewritten code.
   cleanup and the Source-defined state of the next request.
 
 ## C. Source fidelity
+
+- Setoptions must verify every Source option name against the finite native
+  schema, distinguish absent fields from false/empty values, preserve the exact
+  default permissions and error order, and exercise actual following formulas.
+  Cover regex conversion, captured construction-time patterns, numeric limits,
+  skipped/custom filters, partial writes, groups, persistence, macro priority,
+  immutable aliases and independent input-jax state. A field-access check for a
+  package not yet migrated does not establish that package's rendering fidelity.
+  Report native type-domain rejections separately from Source-compatible cases;
+  accepting arbitrary JS object/array/function mutation is not this native API.
 
 - Tagformat must compare real TeX/MML output for none/all/ams, explicit and
   automatic tags, references, all five format callbacks, ref fallback, string
