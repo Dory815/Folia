@@ -100,7 +100,7 @@ public:
     // Packages share these refs; reinitializing a table changes Source identity.
     Property baseMethods=Missing{},parseMethods=Missing{},textMacrosMethods=Missing{};
     Property bboldxMethods=Missing{};
-    Property newcommandMethods=Missing{},amsMethods=Missing{},mathtoolsMethods=Missing{};
+    Property newcommandMethods=Missing{},amsMethods=Missing{};
     // Source module method tables keep their identity across direct imports.
     Property htmlMethods=Missing{},texHtmlMethods=Missing{};
     Property textcompInsert=Missing{};

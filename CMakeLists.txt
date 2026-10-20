@@ -234,6 +234,11 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/cases/configuration.ixx
     src/math/input/tex/colortbl/configuration.ixx
     src/math/input/tex/mathtools/tags.ixx
+    src/math/input/tex/mathtools/items.ixx
+    src/math/input/tex/mathtools/methods.ixx
+    src/math/input/tex/mathtools/util.ixx
+    src/math/input/tex/mathtools/mappings.ixx
+    src/math/input/tex/mathtools/configuration.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -363,6 +368,11 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/cases/configuration.cpp
     src/math/input/tex/colortbl/configuration.cpp
     src/math/input/tex/mathtools/tags.cpp
+    src/math/input/tex/mathtools/items.cpp
+    src/math/input/tex/mathtools/methods.cpp
+    src/math/input/tex/mathtools/util.cpp
+    src/math/input/tex/mathtools/mappings.cpp
+    src/math/input/tex/mathtools/configuration.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
@@ -419,6 +429,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/core/mml_tree/mo_types.ixx
     src/math/core/mml_tree/operator_class.ixx
     src/math/util/js_numeric_input.ixx
+    src/math/util/js_case.ixx
     src/math/util/utf16_types.ixx
     src/math/util/utf16.ixx
     src/math/util/string.ixx
@@ -434,6 +445,7 @@ target_sources(folia_math PRIVATE
     src/math/core/mml_tree/operator_class.cpp
     src/math/cancellation.cpp)
 target_sources(folia_math PRIVATE src/math/util/string.cpp)
+target_sources(folia_math PRIVATE src/math/util/js_case.cpp src/math/util/js_case_data.cpp)
 
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
