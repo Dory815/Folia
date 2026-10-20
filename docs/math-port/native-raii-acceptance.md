@@ -58,6 +58,13 @@ green corpora establish reference data, not acceptance for rewritten code.
 
 ## C. Source fidelity
 
+- Empheq must compare actual Source trees for all allowed environments and
+  starred forms, side material and labels, all fixed/delimiter commands, and
+  direct table transformations. Check creator dispatch, copied-node isolation,
+  parent links and complete inferred-child transfer. Preserve false/empty side
+  disabling and distinguish Source type failures from successful fixtures;
+  neither arbitrary object mutation nor a successful SVG pipeline is implied.
+
 - Setoptions must verify every Source option name against the finite native
   schema, distinguish absent fields from false/empty values, preserve the exact
   default permissions and error order, and exercise actual following formulas.

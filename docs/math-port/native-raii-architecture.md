@@ -122,6 +122,39 @@ rather than reviving arbitrary JS type mutation. Permission and field-presence
 checks still precede conversion,
 and successful earlier writes remain when a later key fails, as in Source.
 
+### Empheq table transformations (2026-10-20)
+
+The original `EmpheqUtil.ts` remains `empheq/util.*`: option parsing, allowed
+environments, column counting, copied table/first-row phantoms, side cells and
+table adjustment. `EmpheqConfiguration.ts` remains `empheq/configuration.*`:
+Empheq environment entry/exit, token commands, delimiter commands and maps.
+There is no separate Empheq item class, method module or table-layout service.
+
+Utilities receive MmlNode references and TexParser references; the existing MML
+document owns every node. Nested TeX parsers are automatic local objects that
+borrow the current ParseOptions and copy the current environment. Snapshot an
+inferred row's child pointers before reparenting them. Table copies use the
+original ParseUtil::copyNode, preserving node-list registration. The outer
+phantom in topRowTable uses the MML factory as in Source, while other new nodes
+use the configured parser creators. BeginItem owns only its optional left/right
+TeX strings and existing nestStart flag. StackGlobal.empheq and the environment
+closing marker retain their existing owners; tags use the existing equation
+state. No universal property store or parser/node identity registry is added.
+
+False and empty side values disable that side; false is represented by the
+empty native TeX string. Source bare true sides fail in TexParser.trim, and
+equation* with only a right side fails on missing columnspacing. Native calls
+reject these inputs with invalid_argument, without emulating JS exception
+objects. Record them separately from successful MML comparisons and verify
+the following numbered equation and label state recover.
+
+Acceptance must compare actual Source MML for all six permitted environments
+and their starred forms, left/right/both sides, labeled/ragged/empty tables,
+all 32 fixed symbols and four delimiter commands, labels/tags, option parsing,
+environment argument splitting, nesting/errors and the next parse. Direct
+utility tests also check copied-node independence, parent links and all moved
+inferred children. These package checks do not prove final Scene/SVG integration.
+
 The original `input/tex/ParseMethods.ts` belongs at `input/tex/parse_methods`,
 not under `base/`. Its ten compiled methods handle variables, numbers, control
 sequences, mapped character tokens and the environment entry. BaseMethods,

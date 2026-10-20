@@ -9,7 +9,40 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 Setoptions已验收提交）
+### 当前唯一断点：Empheq已验收提交，下一包Cases（2026-10-20）
+
+- 上轮Setoptions、本轮Empheq都是真实进展，不重复。**2a4ea611**为Empheq原职责实现及
+  对照测试9文件，**f731dd88**删除旧动态字段和对象语义测试2文件。Root完整读原2TS和
+  原4文件，原位替换empheq/util.*、configuration.*，没有新增生产文件/独立EmpheqItems。
+  BeginItem只增加optional left/right字符串，StackGlobal/closing/Tags equation所有权不变。
+- 最终测试构建**72649 exit0**，empheq-test-build.log，并发4；完整Math回归**39573
+  exit0**，empheq-full.log：**626项/156,775断言/123套suite，无失败/跳过**。Empheq聚焦
+  7项/6,405断言exit0，empheq-focused.log。早期生产构建59014也exit0（在false修复前）。
+  **无live构建/测试/代理，当前批次代码已提交，原13项无关修改保护**。
+- GPT-6.1 Sol /root/base_methods只交付tests/math/empheq.cpp、Source脚本、fixtures/empheq.inc；
+  Root完整审查三文件、格式化、独立从C:/Windows重放默认校验exit0并执行所有native验收。
+  Source129真实compile，6环境×star×4side矩阵48（47成功+1TypeError），68成功公式/
+  32符号/8utility独立MML快照，9TexError/3TypeError；4TS/CJS哈希+full38锁，heap512，
+  createReference一次。日志empheq-source-final.log，fixture显式--write-fixture才重生成。
+- 真实Source例外：裸left/right true在TexParser.trim抛TypeError；equation*只带right因缺
+  columnspacing在split抛TypeError。native对应invalid_argument；false侧和空串须成功禁用，
+  left的缺属性拼接保留undefined字样。不要伪造这些路径为成功MML。cellBlock转移inferred
+  children须先snapshot，topRowTable外phantom走原MML factory，其他节点走parser creator。
+- Root完整读并删除旧empheq_canonical_owner测试（前4组仅动态对象替换/identity），以及
+  parser_runtime两个专属动态字段；第5组boldsymbol真实行为已迁入新测试并匹配实际Source。
+  36command callback/args、环境body/parser、跨式ref、label列排除、复制/creator/父链皆已验。
+  三类Source类型异常对应C++invalid_argument，并已对照后续equation编号和label恢复为1。
+  Cases旧methods和旧render_session仍有inactive API消费者，留作各自原位迁移，不算清完。
+- Root在等待期间完整读Cases原单Configuration.ts和现items/tags/methods/config四组，
+  后续应归回原configuration.*单组并删多余6文件；尚未冻结/修改，不重读/重审Empheq。
+  CasesBeginItem继承BeginItem，CasesTags继承AmsTags，CasesMethods与注册仍归原单文件。
+  先核对原EqnArray对begin重复Push/closing marker和第二列扫描职责，再冻结API/分工。
+  Luna额度恢复前不反复调用，必要Sol只6.1。完整38包/Common→Scene→SVG/Folia仍未完成，
+  goal active；Mermaid暂停，无D2D像素gate。
+
+## 历史阶段记录（保留证据；以下“下一步”和“未完成”只描述当时状态）
+
+### 最近已接受基线（2026-10-20 Setoptions已验收提交）
 
 - **当前已验收提交**：7cadd1ee为原共享数值阈值及测试（6文件），b1fb02c9为原Setoptions
   配置职责、注册借用、FindTeX默认及独立测试/Source对照（9文件）；无新增生产文件。
@@ -54,8 +87,6 @@
   Cases现items/methods/tags/config四组是之前额外拆分，下一次先审查是否归回原单配置职责，
   不因旧CPP拆分便照搬。两包尚未实现，不算完成。Luna额度恢复前不反复试，必要Sol只6.1。
   完整38包/Common→Scene→SVG/Folia未完成，goal active；Mermaid暂停，无D2D像素gate。
-
-## 历史阶段记录（保留证据；以下“下一步”和“未完成”只描述当时状态）
 
 ### 已接受基线（2026-10-20 Tagformat已验收提交）
 
