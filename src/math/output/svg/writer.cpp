@@ -101,11 +101,14 @@ std::string_view stroke_join_name(scene::StrokeJoin join) {
     throw std::invalid_argument("unknown Scene stroke join");
 }
 
-void append_paint(std::string &out, scene::Paint const &paint) {
+void append_paint(std::string &out, scene::Paint const &paint, bool stroke_first = false) {
+    if (stroke_first)
+        append_color(out, "stroke", "stroke-opacity", paint.stroke);
     append_color(out, "fill", "fill-opacity", paint.fill);
     if (paint.fill_rule == scene::FillRule::evenodd)
         detail::append_attribute(out, "fill-rule", "evenodd");
-    append_color(out, "stroke", "stroke-opacity", paint.stroke);
+    if (!stroke_first)
+        append_color(out, "stroke", "stroke-opacity", paint.stroke);
     if (paint.stroke_width != 0)
         detail::append_attribute(out, "stroke-width", number(paint.stroke_width * 1000));
     if (paint.opacity != 1)
@@ -373,6 +376,9 @@ void append_glyphs(std::string &out, scene::GlyphRun const &run, SvgWriteOptions
 
 void append_rule(std::string &out, scene::Rule const &rule) {
     out += "<rect";
+    const bool background = rule.role == scene::ElementRole::background_box;
+    if (background)
+        append_paint(out, rule.paint);
     if (rule.role == scene::ElementRole::link_hitbox) {
         detail::append_attribute(out, "data-hitbox", "true");
         detail::append_attribute(out, "pointer-events", "all");
@@ -394,7 +400,8 @@ void append_rule(std::string &out, scene::Rule const &rule) {
         paint.fill = scene::NoPaint{};
         paint.stroke = scene::NoPaint{};
     }
-    append_paint(out, paint);
+    if (!background)
+        append_paint(out, paint);
     static constexpr std::array<std::string_view, 16> reserved{"x",
                                                                "y",
                                                                "width",
@@ -455,7 +462,7 @@ void append_path_element(std::string &out, scene::Path const &path) {
             detail::append_attribute(out, "y2", number(points[1].y * 1000));
         }
     }
-    append_paint(out, path.paint);
+    append_paint(out, path.paint, path.role == scene::ElementRole::background_box);
     static constexpr std::array<std::string_view, 16> reserved{"d",
                                                                "points",
                                                                "x1",

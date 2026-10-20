@@ -248,6 +248,32 @@ suite native_svg_writer = [] {
         expect(output.find("<rect width=\"800\" height=\"40\" x=\"250\" y=\"200\"") != output.npos);
     };
 
+    "background rectangle and border polygon preserve Source paint order"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::Paint background;
+        background.fill = scene::CssColor{"black"};
+        builder.add_primitive(
+            0, scene::Rule{{0, 0, 1, 0.4}, background, {}, scene::ElementRole::background_box});
+        scene::Path border;
+        border.element = scene::PathElement::polygon;
+        border.role = scene::ElementRole::background_box;
+        border.geometry.segments = {scene::MoveTo{{0, 0}}, scene::LineTo{{1, 0}},
+                                    scene::LineTo{{1, 1}}, scene::ClosePath{}};
+        border.paint.stroke = scene::NoPaint{};
+        border.paint.fill = scene::CssColor{"blue"};
+        builder.add_primitive(0, std::move(border));
+        const auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        expect(
+            output.find("<rect fill=\"black\" x=\"0\" y=\"0\" width=\"1000\" height=\"400\"/>") !=
+            output.npos);
+        expect(output.find(
+                   "<polygon points=\"0,0 1000,0 1000,1000\" stroke=\"none\" fill=\"blue\"/>") !=
+               output.npos);
+    };
+
     "typed translation rotation scale and affine operations stay ordered"_test = [] {
         scene::Builder builder;
         builder.set_metrics({1, 0.5, 0.1});
