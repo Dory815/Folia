@@ -73,6 +73,13 @@ is complete. MML/font/child/stretch orchestration and actual callers must be
 reviewed too. Existing inactive consumers require explicit rewrite/removal
 decisions; absence from CMake alone is not source cleanup.
 
+File names describe their MathJax responsibility. Do not add `native_`, `typed_`,
+`new_` or equivalent suffixes to distinguish a replacement from its original
+owner. Rewrite the owning module and remove superseded code and registrations
+within the reviewed change. `util/function_list.ixx` owns FunctionList;
+`tests/math/function_list.cpp` owns its behavior tests. A source file left out
+of CMake is still unfinished cleanup when remaining consumers reference it.
+
 C++ module boundaries follow owners and dependencies. A packet, individual
 function or test seam does not automatically need its own named module.
 Family implementation details and numerical intermediates remain private
