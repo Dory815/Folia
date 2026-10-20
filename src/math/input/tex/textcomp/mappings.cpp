@@ -1,32 +1,46 @@
-// Native mapping table for MathJax 4.1.3 TextcompMappings.ts.
+// MathJax 4.1.3 input/tex/textcomp/TextcompMappings.ts; Apache-2.0.
 module folia.math.input.tex.textcomp.mappings;
-import folia.math.input.tex.parser;
-import folia.math.input.tex.textcomp.methods;
-import folia.math.input.tex.token_map;
-import folia.math.util.property_host;
+import folia.math.input.tex.textmacros.methods;
+import folia.math.input.tex.parse_util;
 import std;
 namespace folia::math::tex {
 namespace {
-struct Entry { const char* name; std::u16string_view character; const char* variant; };
+struct Entry {
+    const char *name;
+    std::u16string_view character;
+    const char *variant;
+};
 #include "mapping_data.inc"
-using namespace options;
-}
-void TextcompMappings::initializeModule(ParserRuntime& runtime){
-    if(runtime.textcompMappingsInitialized)return;
-    const auto method=TextcompMethods::initializeModule(runtime);
-    const auto* function=std::get_if<FunctionRef>(&method.value);
-    if(!function||!*function)throw Exception("TypeError",u"Textcomp Insert method is unavailable");
-    PropertyList commands;
-    for(const auto& entry:entries){
-        const std::u16string glyph(entry.character);
-        Property mapping(PropertyArray{Property(*function),Property(property_host::debugText(glyph))});
-        if(entry.variant&&*entry.variant){
-            const auto variant=std::string_view(entry.variant)=="oldstyle"?u"-tex-oldstyle":u"-tex-bold-oldstyle";
-            mapping=Property(PropertyArray{Property(*function),Property(property_host::debugText(glyph)),Property(property_host::debugText(std::u16string_view(variant)))});
-        }
-        commands.set(entry.name,std::move(mapping));
+} // namespace
+DispatchOutcome TextcompMappings::Insert(TexParser &parser, MacroInvocation const &invocation) {
+    const auto arguments = std::get<std::span<TexArgument const>>(invocation.arguments);
+    const auto &character = std::get<std::u16string>(arguments[0]);
+    const auto font =
+        arguments.size() > 1 ? std::get<std::u16string>(arguments[1]) : std::u16string{};
+    if (auto text = dynamic_cast<TextParser *>(&parser)) {
+        if (font.empty())
+            return TextMacrosMethods::Insert(parser, invocation);
+        text->saveText();
     }
-    (void)TokenMapHost::create<CommandMap>(runtime.mapHandler,Property("textcomp-macros"),Property(std::move(commands)));
-    runtime.textcompMappingsInitialized=true;
+    NodeDefinition definition;
+    if (!font.empty())
+        definition.attributes.set(u"mathvariant", font);
+    parser.Push(&parse_util::internalText(parser, character, std::move(definition)));
+    return NoParseResult{};
 }
+void TextcompMappings::initializeModule(MapHandler &maps) {
+    std::vector<Macro> commands;
+    for (auto const &entry : entries) {
+        const std::string_view name(entry.name);
+        std::vector<TexArgument> arguments{std::u16string(entry.character)};
+        if (entry.variant && *entry.variant)
+            arguments.emplace_back(std::u16string(std::string_view(entry.variant) == "oldstyle"
+                                                      ? u"-tex-oldstyle"
+                                                      : u"-tex-bold-oldstyle"));
+        commands.emplace_back(std::u16string(name.begin(), name.end()), &Insert,
+                              std::move(arguments));
+    }
+    maps.registerMap(std::make_shared<CommandMap>(
+        CommandMapInit{MacroMapInit{{u"textcomp-macros", std::nullopt}, std::move(commands)}}));
 }
+} // namespace folia::math::tex

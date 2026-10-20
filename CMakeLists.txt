@@ -220,6 +220,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/textmacros_methods.ixx
     src/math/input/tex/textmacros_mappings.ixx
     src/math/input/tex/textmacros_configuration.ixx
+    src/math/input/tex/textcomp/mappings.ixx
+    src/math/input/tex/textcomp/configuration.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -335,6 +337,8 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/textmacros_methods.cpp
     src/math/input/tex/textmacros_mappings.cpp
     src/math/input/tex/textmacros_configuration.cpp
+    src/math/input/tex/textcomp/mappings.cpp
+    src/math/input/tex/textcomp/configuration.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
@@ -550,6 +554,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/braket.cpp
     tests/math/units.cpp
     tests/math/textmacros.cpp
+    tests/math/textcomp.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
