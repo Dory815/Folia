@@ -169,6 +169,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/tex_scanner.ixx
     src/math/input/tex/unit_util.ixx
     src/math/input/tex/parse_util.ixx
+    src/math/input/tex/parse_methods.ixx
     src/math/input/tex/node_factory.ixx
     src/math/input/tex/node_util.ixx
     src/math/input/tex/boldsymbol/configuration.ixx
@@ -239,6 +240,7 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/tex_scanner.cpp
     src/math/input/tex/unit_util.cpp
     src/math/input/tex/parse_util.cpp
+    src/math/input/tex/parse_methods.cpp
     src/math/input/tex/node_factory.cpp
     src/math/input/tex/node_util.cpp
     src/math/input/tex/boldsymbol/configuration.cpp

@@ -3,8 +3,23 @@
 module folia.math.input.tex.parse_util;
 import std;
 import folia.math.input.tex.tex_error;
+import folia.math.util.unicode_normalization;
 
 namespace folia::math::tex::parse_util {
+NodeDefinition getFontDef(TexParser &parser) {
+    NodeDefinition result;
+    auto const &font = parser.stack.env().font;
+    if (font && !font->empty())
+        result.attributes.set(u"mathvariant", *font);
+    return result;
+}
+bool isLatinOrGreekChar(std::u16string_view text) {
+    Unicode16Normalization unicode;
+    return std::ranges::any_of(unicode.nfd(text), [](char16_t c) {
+        return (c >= u'a' && c <= u'z') || (c >= u'A' && c <= u'Z') ||
+               (c >= u'\u0370' && c <= u'\u03F0');
+    });
+}
 void fixInitialMO(ParseOptions &options, std::vector<mml::MmlNode *> &nodes) {
     for (auto child : nodes)
         if (child && child->kind() != mml::NodeKind::mspace &&

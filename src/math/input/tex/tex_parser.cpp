@@ -264,12 +264,12 @@ mml::MmlNode &TexParser::finishCreatedNode(mml::MmlNode &node) {
     return node;
 }
 mml::MmlNode &TexParser::create(mml::NodeKind kind, std::span<mml::MmlNode *const> children,
-                                mml::AttributeSet attributes) {
+                                NodeDefinition attributes) {
     return finishCreatedNode(
         configuration.nodeFactory.makeNode(kind, children, std::move(attributes)));
 }
 mml::MmlNode &TexParser::createToken(mml::NodeKind kind, std::u16string_view text,
-                                     mml::AttributeSet attributes) {
+                                     NodeDefinition attributes) {
     return finishCreatedNode(
         configuration.nodeFactory.makeToken(kind, text, std::move(attributes)));
 }

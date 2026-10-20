@@ -1,4 +1,5 @@
 export module folia.math.input.tex.environment;
+export import folia.math.util.regexp_host;
 import std;
 
 export namespace folia::math::tex {
@@ -6,6 +7,8 @@ struct TexEnvironment final {
     std::optional<bool> display;
     std::optional<bool> in_root;
     std::optional<bool> operator_letters;
+    std::optional<regexp_host::RegExpRef> multi_letter_identifiers;
+    std::optional<bool> no_auto_op;
     std::optional<bool> is_global;
     std::optional<bool> bold_symbol;
     std::optional<bool> vector_star;

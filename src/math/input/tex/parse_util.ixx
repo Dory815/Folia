@@ -18,6 +18,8 @@ std::u16string substituteArgs(std::span<std::u16string const> arguments,
                               std::u16string_view replacement, std::size_t maxBuffer);
 
 void checkMaxMacros(ExpansionBudget &budget, bool isMacro = true);
+NodeDefinition getFontDef(TexParser &);
+bool isLatinOrGreekChar(std::u16string_view);
 void fixInitialMO(ParseOptions &, std::vector<mml::MmlNode *> &);
 mml::MmlNode &fenced(ParseOptions &, std::u16string_view open, mml::MmlNode &,
                      std::u16string_view close, std::u16string_view big = {},

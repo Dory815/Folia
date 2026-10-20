@@ -9,6 +9,8 @@ void overlayEnvironment(TexEnvironment& destination,
     FOLIA_COPY_PRESENT(display);
     FOLIA_COPY_PRESENT(in_root);
     FOLIA_COPY_PRESENT(operator_letters);
+    FOLIA_COPY_PRESENT(multi_letter_identifiers);
+    FOLIA_COPY_PRESENT(no_auto_op);
     FOLIA_COPY_PRESENT(is_global);
     FOLIA_COPY_PRESENT(bold_symbol);
     FOLIA_COPY_PRESENT(vector_star);
