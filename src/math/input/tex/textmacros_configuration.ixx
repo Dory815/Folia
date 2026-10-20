@@ -3,5 +3,7 @@ export module folia.math.input.tex.textmacros.configuration;
 export import folia.math.input.tex.textmacros.mappings;
 import std;
 export namespace folia::math::tex {
-struct TextMacrosConfiguration { static void initializeModule(ParserRuntime&); };
-}
+struct TextMacrosConfiguration {
+    static ConfigurationRef initializeModule(ConfigurationHandler &, MapHandler &);
+};
+} // namespace folia::math::tex
