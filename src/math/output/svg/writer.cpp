@@ -95,6 +95,18 @@ void append_paint(std::string& out, scene::Paint const& paint) {
         detail::append_attribute(out, "stroke-linecap", stroke_cap_name(*paint.line_cap));
     if (paint.line_join)
         detail::append_attribute(out, "stroke-linejoin", stroke_join_name(*paint.line_join));
+    if (paint.dash_array) {
+        if (paint.dash_array->empty()) {
+            detail::append_attribute(out, "stroke-dasharray", "none");
+        } else {
+            std::string values;
+            for (auto const length : *paint.dash_array) {
+                if (!values.empty()) values.push_back(' ');
+                values += number(length * 1000);
+            }
+            detail::append_attribute(out, "stroke-dasharray", values);
+        }
+    }
 }
 
 void append_path(std::string& out, scene::PathGeometry const& path) {

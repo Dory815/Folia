@@ -378,6 +378,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
+    tests/math/native_scene_stroke_dash.cpp
     tests/math/native_math_item.cpp
     tests/math/parse_util_native.cpp
     tests/math/mml_native_factory.cpp

@@ -113,6 +113,9 @@ struct Paint {
     // value remains distinguishable, including the SVG initial defaults.
     std::optional<StrokeCap> line_cap;
     std::optional<StrokeJoin> line_join;
+    // Absence inherits; an empty list explicitly selects a solid stroke.
+    // Values are completed em lengths and are serialized without layout math.
+    std::optional<std::vector<Unit>> dash_array;
     friend bool operator==(Paint const&, Paint const&) = default;
 };
 
