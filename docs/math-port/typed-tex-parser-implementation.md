@@ -31,7 +31,7 @@ utilities retain their existing independent modules.
 | `stack_item_factory.ixx`, `stack_item_factory.cpp` | actual generic Tree Factory specialization constructing unique products and returning shared frame handles, typed registrations, configuration borrow |
 | `base/base_items.ixx`, `base_items.cpp` and existing family implementation units | the original concrete BaseItems and their named fields/checkItem methods |
 | `parse_options.ixx`, `parse_options.cpp` | request services, options, parser scopes, node lists and root/error lifecycle |
-| `configuration.*`, `map_handler.*`, `token_map.*`, `token.*`, `macro.*` | Source configuration composition, handler priority/lookup and typed token/command definitions |
+| `configuration.*`, `map_handler.*`, `token_map.*`, `token.*`, `macro.*` | Preserve Configuration/ConfigurationHandler/ParserConfiguration, handler priority/lookup, and typed token/command definitions |
 | `tex_parser.*` | semantic character loop/dispatch, Push provenance, argument parsing and nested parser lifetimes |
 | `tex_scanner.*` | existing UTF-16 lexical primitives and the sole current immutable source buffer |
 | `tags.*`, `session.*` | tag algorithms/request state and the already native persistent macros/labels/counters, respectively |
@@ -278,6 +278,23 @@ projection of that same selected entry and cannot fall through an alias or
 suppression to an older replacement. Parser dispatch must use findCommand.
 Existing defineMacro operations write that same store. Immutable ConfigMacros
 defaults remain in configuration, not copied into a second mutable store.
+
+ParserConfiguration must expose distinct typed macroHandler(MacroHandlerId)
+and tokenParser(TokenParserId) lookups and their inverse binding operations for
+let. These refer only to finite immutable compiled native callbacks, preserving
+the two invocation signatures. Resolve/check IDs at configuration/alias creation
+and dispatch; do not use text method names or a generic callable/argument list.
+The parser's MacroArguments borrows the whole CommandDefinition. A session-backed
+MacroMap must see aliases and suppression as well as replacement definitions.
+
+The old ParseOptions proposal's single ParserConfiguration/ProfileTables sketch
+is not a complete Configuration.ts class contract. Keep the original
+Configuration (per-package records and init/config/filter priority pairs),
+ConfigurationHandler (named registration/replacement/order), and
+ParserConfiguration (selected package composition, methods and handler/factory/
+option collation) in their original configuration files. This remains a real
+service-closure task before those bodies are promoted. Do not silently collapse
+the three responsibilities into a new profile facade.
 
 The original independent `begingroup/stack.{ixx,cpp}` module now contains the
 actual BegingroupStack algorithms over a borrowed TexDefinitionState. It has no
