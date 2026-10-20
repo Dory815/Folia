@@ -21,6 +21,7 @@ class CommonMtext : public CommonWrapper {
     CommonMtext(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr);
     double textWidth(std::u16string_view);
     std::size_t breakCount() override;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     void setBreakAt(IndexData);
     void clearBreakPoints();
     double getBreakWidth(std::size_t);

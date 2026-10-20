@@ -10,6 +10,7 @@ class CommonMath : public CommonWrapper {
     double getWrapWidth(std::size_t) override;
     bool setChildPWidths(bool recompute, std::optional<double> width = std::nullopt,
                          bool clear = true) override;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
 
   protected:
     void computeBBox(BBox &, bool recompute = false) override;

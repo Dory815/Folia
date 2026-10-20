@@ -6,6 +6,7 @@ module folia.math.output.common;
 import :mrow;
 import :wrapper_factory;
 import :output_jax;
+import folia.math.output.scene.types;
 import folia.math.util.utf16;
 import std;
 
@@ -244,5 +245,112 @@ bool CommonMrow::setChildPWidths(bool recompute, std::optional<double> width, bo
 
 void CommonMrow::breakToWidth(double width) {
     linebreaks().breakToWidth(*this, width);
+}
+
+SceneNodes CommonMrow::emitScene(scene::Builder &builder, std::span<scene::NodeId const> parents) {
+    (void)getBBox();
+    const auto lines = isStack ? std::size_t{0} : breakCount();
+    SceneContainers containers;
+    if (lines || !node->isInferred()) {
+        containers = standardSceneNodes(builder, parents);
+    } else {
+        containers.nodes.assign(parents.begin(), parents.end());
+        if (dh != 0) {
+            scene::SemanticMetadata metadata;
+            const scene::Transform transform(
+                std::vector<scene::TransformOperation>{scene::Translation{0, dh}});
+            containers.content.reserve(containers.nodes.size());
+            for (auto &parentId : containers.nodes) {
+                if (!parentId)
+                    throw std::logic_error("inferred mrow parent segment is absent");
+                parentId = builder.add_group(*parentId, transform, {}, {}, {}, metadata,
+                                             scene::ElementRole::inferred_row_adjustment);
+                containers.content.push_back(*parentId);
+            }
+        } else {
+            containers.content.assign(parents.begin(), parents.end());
+        }
+    }
+    addSceneChildren(builder, containers.content);
+    if (lines) {
+        double y = dh;
+        if (containers.content.size() != lines + 1)
+            throw std::logic_error("mrow scene linebox count does not match break count");
+        for (std::size_t index = 0; index < containers.content.size(); ++index) {
+            if (index >= lineBBox.size())
+                throw std::logic_error("mrow scene has more line parents than line boxes");
+            const auto &line = *lineBBox[index];
+            const SceneNode target = containers.content[index];
+            placeScene(builder, std::span<SceneNode const>(&target, 1), line.L, y, *target);
+            y -= std::max(.25, line.d) + (metrics().display ? line.lineLeading.value_or(0) : 0) +
+                 std::max(.75, index + 1 < lineBBox.size() ? lineBBox[index + 1]->h : 0);
+        }
+    }
+    return containers.nodes;
+}
+
+SceneContainers CommonMrow::createSceneNodes(scene::Builder &builder,
+                                             std::span<scene::NodeId const> parents) {
+    const auto lines = isStack ? std::size_t{0} : breakCount();
+    if (lines && parents.empty())
+        throw std::logic_error("linebreaking mrow requires an outer parent");
+    const auto outerParents = lines ? parents.first(1) : parents;
+    auto result = CommonWrapper::createSceneNodes(builder, outerParents);
+    if (!lines)
+        return result;
+    if (result.nodes.size() != 1)
+        throw std::logic_error("linebreaking mrow requires a single outer parent");
+    if (!result.nodes.front())
+        throw std::logic_error("linebreaking mrow outer segment is absent");
+    const auto outer = *result.nodes.front();
+    auto metadata = builder.metadata(outer);
+    if (node->isInferred()) {
+        metadata.source_tag.clear();
+        metadata.ordered_attributes.push_back({"data-mjx-linestack", "true"});
+    }
+    builder.set_metadata(outer, std::move(metadata));
+    result.content.clear();
+    result.content.reserve(lines + 1);
+    for (std::size_t index = 0; index <= lines; ++index) {
+        scene::SemanticMetadata lineMetadata;
+        lineMetadata.ordered_attributes.push_back({"data-mjx-linebox", "true"});
+        lineMetadata.ordered_attributes.push_back({"data-mjx-lineno", std::to_string(index)});
+        result.content.push_back(builder.add_group(outer, {}, {}, {}, {}, std::move(lineMetadata),
+                                                   scene::ElementRole::anonymous_group));
+    }
+    return result;
+}
+
+void CommonMrow::addSceneChildren(scene::Builder &builder, std::span<scene::NodeId const> parents) {
+    double x = 0;
+    std::size_t line = 0;
+    const bool embellished = node->isEmbellished();
+    for (auto *child : childNodes) {
+        if (!child)
+            throw std::logic_error("CommonMrow has a null child wrapper");
+        const auto breaks = embellished ? std::size_t{0} : child->breakCount();
+        const auto count = breaks + 1;
+        if (line + count > parents.size())
+            throw std::logic_error("mrow child break segments exceed parent line boxes");
+        const auto childParents = parents.subspan(line, count);
+        auto emitted = child->emitScene(builder, childParents);
+        for (std::size_t segment = 0; segment < emitted.size(); ++segment) {
+            if (emitted[segment]) {
+                const auto &box = *child->getLineBBox(segment);
+                const double dx = segment == 0 ? child->sceneDx() : 0;
+                x += (box.L + dx) * box.rscale;
+                child->placeScene(builder, std::span<SceneNode const>(&emitted[segment], 1), x, 0,
+                                  *emitted[segment]);
+                x += (box.w + box.R - dx) * box.rscale;
+            }
+            if (breaks)
+                x = 0;
+        }
+        if (breaks && emitted.size() > breaks) {
+            const auto &box = *child->getLineBBox(breaks);
+            x += (box.w + box.R) * box.rscale;
+        }
+        line += breaks;
+    }
 }
 } // namespace folia::math::output::common

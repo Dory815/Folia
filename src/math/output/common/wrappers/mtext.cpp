@@ -2,6 +2,7 @@ module folia.math.output.common;
 import :mtext;
 import :output_jax;
 import :text_node;
+import folia.math.output.scene.types;
 import folia.math.util.utf16;
 import std;
 
@@ -172,5 +173,88 @@ double CommonMtext::getBreakWidth(std::size_t index) {
         width += textWidth(joinWords(std::span<std::u16string const>(words).first(last)));
     }
     return width;
+}
+
+SceneNodes CommonMtext::emitScene(scene::Builder &builder, std::span<scene::NodeId const> parents) {
+    if (breakPoints.empty())
+        return CommonWrapper::emitScene(builder, parents);
+    (void)getBBox();
+    auto containers = standardSceneNodes(builder, parents);
+    auto output = std::move(containers.nodes);
+    auto content = std::move(containers.content);
+    if (childNodes.empty())
+        throw std::logic_error("CommonMtext has no child wrappers");
+    if (!textNode_)
+        (void)textWidth({});
+    auto &scratch = requireText(*textNode_);
+    const auto original = scratch.getText();
+    const auto restore = [&] {
+        scratch.setText(original);
+        textNode_->invalidateBBox(false);
+    };
+    try {
+        for (std::size_t line = 0; line < output.size(); ++line) {
+            if (line >= content.size())
+                throw std::logic_error("CommonMtext line parents do not match output lines");
+            const auto start =
+                line && line - 1 < breakPoints.size()
+                    ? breakPoints[line - 1].value_or(std::array<std::size_t, 2>{0, 0})
+                    : std::array<std::size_t, 2>{0, 0};
+            const auto end =
+                line < breakPoints.size()
+                    ? breakPoints[line].value_or(std::array<std::size_t, 2>{childNodes.size(), 0})
+                    : std::array<std::size_t, 2>{childNodes.size(), 0};
+            if (start[0] >= childNodes.size())
+                throw std::out_of_range("CommonMtext start child index");
+            const auto readWords = [&](std::size_t child) {
+                return splitText(requireText(*childNodes.at(child)).getText());
+            };
+            auto words = readWords(start[0]);
+            if (start[0] == end[0]) {
+                const auto first = std::min(start[1], words.size());
+                const auto last = std::max(first, std::min(end[1], words.size()));
+                scratch.setText(
+                    joinWords(std::span<std::u16string const>(words).subspan(first, last - first)));
+                textNode_->invalidateBBox(false);
+                (void)textNode_->emitScene(builder,
+                                           std::span<scene::NodeId const>(&content[line], 1));
+                continue;
+            }
+            auto first = std::min(start[1], words.size());
+            scratch.setText(joinWords(std::span<std::u16string const>(words).subspan(first)));
+            textNode_->invalidateBBox(false);
+            (void)textNode_->emitScene(builder, std::span<scene::NodeId const>(&content[line], 1));
+            double x = textNode_->getBBox().w;
+            auto child = start[0];
+            while (++child < end[0] && child < childNodes.size()) {
+                auto *full = childNodes[child];
+                auto fullNodes =
+                    full->emitScene(builder, std::span<scene::NodeId const>(&content[line], 1));
+                for (auto const &id : fullNodes) {
+                    if (id)
+                        full->placeScene(builder, std::span<SceneNode const>(&id, 1), x, 0, *id);
+                }
+                x += full->getBBox().w;
+            }
+            if (child < childNodes.size()) {
+                words = readWords(child);
+                const auto last = std::min(end[1], words.size());
+                scratch.setText(joinWords(std::span<std::u16string const>(words).first(last)));
+                textNode_->invalidateBBox(false);
+                auto emitted = textNode_->emitScene(
+                    builder, std::span<scene::NodeId const>(&content[line], 1));
+                for (auto const &id : emitted) {
+                    if (id)
+                        textNode_->placeScene(builder, std::span<SceneNode const>(&id, 1), x, 0,
+                                              *id);
+                }
+            }
+        }
+    } catch (...) {
+        restore();
+        throw;
+    }
+    restore();
+    return output;
 }
 } // namespace folia::math::output::common

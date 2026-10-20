@@ -22,9 +22,12 @@ class CommonMrow : public CommonWrapper {
     std::shared_ptr<LineBBox> getLineBBox(std::size_t) override;
     bool setChildPWidths(bool, std::optional<double> width = {}, bool clear = true) override;
     void breakToWidth(double) override;
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
 
   protected:
+    SceneContainers createSceneNodes(scene::Builder &, std::span<scene::NodeId const>) override;
     void computeBBox(BBox &, bool recompute = false) override;
+    void addSceneChildren(scene::Builder &, std::span<scene::NodeId const>) override;
 
   private:
     void computeChildLineBBox(CommonWrapper &, std::size_t);
