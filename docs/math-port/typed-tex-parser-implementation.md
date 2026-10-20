@@ -244,7 +244,9 @@ MacroMap/Newcommand still need their typed dispatch integration.
 
 The reviewed formal tool passes 15 state/expansion observations with 12 pinned
 TS/CJS source pairs. It uses real TeX compilation and MML, without the SVG/output
-pipeline. Root replay log: `build/math-port/native-session-definitions-formal-source.log`.
+pipeline. It now additionally fixes the global marker's terminal deletion in all
+three domains (16 observations). Root replay log for that extension:
+`build/math-port/native-begingroup-formal-source.log`.
 
 #### Native definition records and alias binding
 
@@ -276,6 +278,25 @@ projection of that same selected entry and cannot fall through an alias or
 suppression to an older replacement. Parser dispatch must use findCommand.
 Existing defineMacro operations write that same store. Immutable ConfigMacros
 defaults remain in configuration, not copied into a second mutable store.
+
+The original independent `begingroup/stack.{ixx,cpp}` module now contains the
+actual BegingroupStack algorithms over a borrowed TexDefinitionState. It has no
+parser dependency, handlers, marker Symbol, registry or shared_from_this. Source
+explicitly reserves priorities below -100 for these scopes; native lookup visits
+their owned layers in that same order. push/pop still change that precedence,
+finish/remove retain their exact checkpoint order, and sandbox still restores
+normal base before dropping/opening the protected base. Recreating the service
+does not reset its persistent state. Parser pre/postfilters and Newcommand
+integration remain required; direct scope tests do not establish those callers.
+
+checkGlobal processes the typed (domain, name) pairs in order. It removes each
+key from inner layers through and including the current global target. Source
+first overwrites that target with MARKER and removes MARKER too; leaving the
+old target value untouched would change the observable state before the next
+write. In sandbox mode the protected base is the target, so the original normal
+global values remain underneath it and reappear in a later sandbox. The older
+ignored declaration's "excluding target" description is superseded by the
+actual Source observation and native implementation.
 
 core::MathItem now has a native declaration and implementation in the original
 core/math_item module, without the former generic object and DOM graph.

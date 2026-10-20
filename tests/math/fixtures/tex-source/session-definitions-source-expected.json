@@ -22,6 +22,11 @@
     "letMacroCompiles": true,
     "letDelimiterCompiles": true,
     "handledErrorRetainsGroupUntilNextEndgroup": true,
+    "globalSelectionErasesExistingTargetEntries": [
+      true,
+      true,
+      true
+    ],
     "outputs": {
       "optionalMacro": "math([mi(d),mo(/),mi(x)])",
       "delimitedMacro": "math([mi(b),mo(/),mi(a)])",
@@ -57,6 +62,7 @@
     "let-character-map-token-snapshot",
     "let-to-undefined-suppresses-delimiter",
     "handled-error-definition-and-group-persistence",
+    "global-marker-erases-terminal-target-in-all-three-domains",
     "finish-remove-checkpoint",
     "reset-to-base",
     "sandbox-base-reset"

@@ -37,6 +37,7 @@ const { NewcommandConfiguration } = load('input/tex/newcommand/NewcommandConfigu
 const { BegingroupConfiguration } = load('input/tex/begingroup/BegingroupConfiguration.js');
 const { BegingroupStack } = load('input/tex/begingroup/BegingroupStack.js');
 const { MapHandler } = load('input/tex/MapHandler.js');
+const { NewcommandTables } = load('input/tex/newcommand/NewcommandUtil.js');
 
 const configuredPackages = ['base', 'begingroup', 'newcommand'];
 function makeJax() {
@@ -121,6 +122,20 @@ assert.equal(compile(jax, String.raw`\raiiBeforeError`).ok, true,
 assert.equal(compile(jax, String.raw`\endgroup`).ok, true);
 assert.equal(lookup(jax, HandlerType.MACRO, 'raiiBeforeError'), null);
 
+const globalErase = compile(jax, String.raw`\def\raiiTarget{x}\let\raiiTargetDelimiter=(\newenvironment{raiiTargetEnv}{a}{b}\begingroup\def\raiiTarget{y}\let\raiiTargetDelimiter=[\newenvironment{raiiTargetEnv}{c}{d}`);
+assert.equal(globalErase.ok, true);
+const clearedTargets = stack.checkGlobal(
+  ['raiiTarget', '\\raiiTargetDelimiter', 'raiiTargetEnv'],
+  [NewcommandTables.NEW_COMMAND, NewcommandTables.NEW_DELIMITER, NewcommandTables.NEW_ENVIRONMENT]);
+const globalEraseObserved = clearedTargets.map((map, i) =>
+  map.lookup(['raiiTarget', '\\raiiTargetDelimiter', 'raiiTargetEnv'][i]) == null);
+assert.deepEqual(globalEraseObserved, [true, true, true],
+  'Source marker removes the terminal target entry as well as all inner definitions');
+assert.equal(lookup(jax, HandlerType.MACRO, 'raiiTarget'), null);
+assert.equal(lookup(jax, HandlerType.DELIMITER, '\\raiiTargetDelimiter'), null);
+assert.equal(lookup(jax, HandlerType.ENVIRONMENT, 'raiiTargetEnv'), null);
+assert.equal(compile(jax, String.raw`\endgroup`).ok, true);
+
 stack.push();
 const afterPush = stack.i;
 stack.finish();
@@ -157,6 +172,7 @@ const witness = {
     letMacroCompiles: letMacro.ok,
     letDelimiterCompiles: letDelimiter.ok,
     handledErrorRetainsGroupUntilNextEndgroup: !handledError.ok,
+    globalSelectionErasesExistingTargetEntries: globalEraseObserved,
     outputs: {
       optionalMacro: optionalMacro.result.toString(),
       delimitedMacro: delimitedMacro.result.toString(),
@@ -177,6 +193,7 @@ const witness = {
     'let-builtin-method-snapshot', 'let-character-map-token-snapshot',
     'let-to-undefined-suppresses-delimiter',
     'handled-error-definition-and-group-persistence',
+    'global-marker-erases-terminal-target-in-all-three-domains',
     'finish-remove-checkpoint', 'reset-to-base', 'sandbox-base-reset'],
 };
 assert.deepEqual(witness, JSON.parse(fs.readFileSync(path.join(root, 'tests/math/fixtures/tex-source/session-definitions-source-expected.json'), 'utf8')));

@@ -1,37 +1,29 @@
-// MathJax 4.1.3 input/tex/begingroup/BegingroupStack.ts.
+// MathJax 4.1.3 input/tex/begingroup/BegingroupStack.ts; Apache-2.0.
 export module folia.math.input.tex.begingroup.stack;
-export import folia.math.input.tex.parser;
+export import folia.math.input.tex.session;
+export import folia.math.input.tex.tex_error;
 import std;
+
 export namespace folia::math::tex {
-class BegingroupStack final:public GlobalDefinitionScope,
-                            public std::enable_shared_from_this<BegingroupStack> {
-    ParserRuntime& runtime_;
-    options::Value i_=-100.0,top_=-100.0,base_=-100.0;
-    options::Value marker_=options::Undefined{};
-    std::shared_ptr<SubHandlers> handlers_;
-    std::array<TokenMapRef,3> global_{}; // delimiter, environment, command
-    void getGlobal();
+class BegingroupStack final {
+    TexDefinitionState& state_;
+    DefinitionLayer& globalTarget();
 public:
-    static constexpr double newcommandPriority=-100;
-    static void initializeModule(ParserRuntime&);
-    BegingroupStack(ParserRuntime&,ParseOptions&);
-    void initializeStack(ParseOptions&);
-    double index()const;
-    double top()const;
-    double base()const;
-    options::Value marker()const{return marker_;}
-    void bindSourceFields(options::ObjectRef);
-    std::shared_ptr<SubHandlers> handlers()const{return handlers_;}
-    TokenMapRef global(std::u16string_view)const;
-    std::vector<TokenMapRef> checkGlobal(PropertyArray tokens,PropertyArray maps)override;
-    virtual void push();
-    virtual void pop();
-    virtual void finish();
-    virtual void remove();
-    virtual void reset();
-    virtual void sandbox();
+    static constexpr std::int32_t newcommandPriority = TexDefinitionState::newcommand_priority;
+    explicit BegingroupStack(TexDefinitionState& state) noexcept : state_(state) {}
+    BegingroupStack(BegingroupStack const&) = delete;
+    BegingroupStack& operator=(BegingroupStack const&) = delete;
+    std::int32_t index() const noexcept;
+    std::int32_t top() const noexcept;
+    std::int32_t base() const noexcept;
+    DefinitionLayer& currentLayer() noexcept;
+    // Source's terminal marker removes the old target entry as well as shadows.
+    DefinitionLayer& checkGlobal(std::span<DefinitionKey const>);
+    void push();
+    void pop();
+    void finish() noexcept;
+    void remove();
+    void reset();
+    void sandbox();
 };
-using BegingroupStackRef=std::shared_ptr<BegingroupStack>;
-BegingroupStackRef begingroupStack(ParseOptions&);
-BegingroupStackRef begingroupStack(TexParser&);
 }
