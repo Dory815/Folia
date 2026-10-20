@@ -38,7 +38,7 @@ struct TexNodeProperties {
     std::optional<bool> auto_operator, function_operator, fix_bold, fix_prescript, fix_stretchy,
         ignore_variant, math_accent, movable_limits, move_sup_sub, no_dictionary_definition,
         pseudo_script, relations_combined, small_matrix, sub_sup_allowed, prime_style, variant_form,
-        with_delimiters;
+        with_delimiters, unicode;
     std::optional<std::u16string> open, close, left_delimiter, right_delimiter, primes,
         keep_attributes, vertical_box;
     std::optional<HorizontalAlignment> script_alignment;

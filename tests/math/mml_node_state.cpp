@@ -160,6 +160,7 @@ suite native_mml_node_properties = [] {
     "all_typed_fields_copy_merge_and_absence_semantics_are_preserved"_test = [] {
         mml::NodeProperties source, destination;
         source.tex.auto_operator = false;
+        source.tex.unicode = false;
         source.tex.fix_bold = true;
         source.tex.fix_prescript = false;
         source.tex.fix_stretchy = true;
@@ -213,6 +214,7 @@ suite native_mml_node_properties = [] {
         mml::mergeNodeProperties(source, destination);
         expect(destination == source);
         expect(destination.tex.auto_operator == false);
+        expect(destination.tex.unicode == false);
         expect(destination.tex.open == u"");
         expect(destination.tex.vertical_box == u"parbox:baseline");
         expect(destination.tex.thickness == source.tex.thickness);

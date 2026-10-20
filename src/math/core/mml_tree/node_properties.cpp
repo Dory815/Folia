@@ -188,6 +188,7 @@ void mergeNodeProperties(const NodeProperties &source, NodeProperties &destinati
     FOLIA_MERGE_FIELD(tex, prime_style);
     FOLIA_MERGE_FIELD(tex, variant_form);
     FOLIA_MERGE_FIELD(tex, with_delimiters);
+    FOLIA_MERGE_FIELD(tex, unicode);
     FOLIA_MERGE_FIELD(tex, open);
     FOLIA_MERGE_FIELD(tex, close);
     FOLIA_MERGE_FIELD(tex, left_delimiter);
