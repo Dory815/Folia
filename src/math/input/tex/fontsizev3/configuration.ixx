@@ -3,5 +3,7 @@ export module folia.math.input.tex.fontsizev3.configuration;
 export import folia.math.input.tex.parser;
 import std;
 export namespace folia::math::tex {
-struct FontSizeV3Configuration { static ConfigurationRef initializeModule(ParserRuntime&); };
-}
+struct FontSizeV3Configuration {
+    static ConfigurationRef initializeModule(ConfigurationHandler &, MapHandler &);
+};
+} // namespace folia::math::tex
