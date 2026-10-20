@@ -208,6 +208,40 @@ complete package dispatch or full expression parsing. Root replayed the formal
 tool from C:\\Windows successfully; evidence is
 `build/math-port/native-tex-parser-interface-formal-source.log`.
 
+### User definition state: reviewed evidence and remaining alias contract
+
+The `tex-session-definitions-contract` ignored packet proposes one pure-value
+definition store, with the original BegingroupStack algorithms left in their
+package service. It is not accepted for promotion yet. In particular its full
+session mirror predates the accepted ColumnMacroDefinitions field: apply only
+reviewed deltas and retain the canonical color/column/tag ownership.
+
+Root's review found that the draft Source helper equated a normal compile return
+with success. Actual TeX catches TexError and returns MML containing merror.
+The formal `tex-session-definitions-source.cjs` now inspects the real MML tree,
+compares fixed successful expansion outputs, and separately verifies a handled
+error: a definition made before the error and its unclosed group remain usable
+in the next expression until endgroup. This is Source's state effect, not a
+reason to add generic rollback on any parse error.
+
+The formal tool also fixes two actual let cases after redefining the original
+name. A saved sqrt still emits `msqrt([mi(a)])`, and a saved CharacterMap alpha
+still emits alpha while the redefined alpha emits beta. Source
+NewcommandMethods.Let has distinct MacroMap and CharacterMap branches: the
+first copies the original method/token/arguments; the second retains its map
+and captured Token and calls that map's parser. Consequently a record containing
+only a macro-handler string plus scalar arguments is not yet a complete native
+alias contract. It must preserve both branches, translated-character attributes,
+and the observed snapshot behavior using native domain values and explicit
+profile/session service lifetime. Do not introduce a generic callback closure,
+JS object record, erased receiver or string-to-function runtime to bridge this
+gap. The exact typed catalog/map reference seam remains to be frozen before
+session/MacroMap/Newcommand bodies are promoted.
+
+The reviewed formal tool passes 15 state/expansion observations with 12 pinned
+TS/CJS source pairs. It uses real TeX compilation and MML, without the SVG/output
+pipeline. Root replay log: `build/math-port/native-session-definitions-formal-source.log`.
+
 core::MathItem now has a native declaration and implementation in the original
 core/math_item module, without the former generic object and DOM graph.
 Parser and Tags import this actual module, rather than a foreign-module forward

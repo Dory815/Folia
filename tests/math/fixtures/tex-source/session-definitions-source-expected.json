@@ -1,0 +1,64 @@
+{
+  "upstream": {
+    "package": "@mathjax/src",
+    "version": "4.1.3",
+    "commit": "fb987178c2d279a99b0db5ea02e751691703955e"
+  },
+  "configuredPackages": [
+    "base",
+    "begingroup",
+    "newcommand"
+  ],
+  "packageConfigurations": [
+    "newcommand",
+    "begingroup"
+  ],
+  "observed": {
+    "localDefinitionAfterEndgroup": null,
+    "globalDefinitionAfterLaterExpression": true,
+    "environmentRecordPresent": true,
+    "optionalMacroCompiles": true,
+    "delimitedMacroCompiles": true,
+    "letMacroCompiles": true,
+    "letDelimiterCompiles": true,
+    "handledErrorRetainsGroupUntilNextEndgroup": true,
+    "outputs": {
+      "optionalMacro": "math([mi(d),mo(/),mi(x)])",
+      "delimitedMacro": "math([mi(b),mo(/),mi(a)])",
+      "letMacro": "math([mi(x)])",
+      "letDelimiter": "math([mo(()])",
+      "environment": "math([mo((),mi(d),mo()),mi(q),mo(!)])",
+      "builtinAliasAfterRedefinition": "math([msqrt([mi(a)])])",
+      "characterAliasAfterRedefinition": "math([mi(α),mi(β)])"
+    },
+    "undefinedPackageMacroMap": "new-Command",
+    "undefinedDelimiterBlocker": {
+      "map": "new-Delimiter",
+      "char": null
+    },
+    "priorities": {
+      "afterPush": -101,
+      "afterSecondPush": -102,
+      "afterRemove": -101,
+      "normalBase": -100,
+      "sandboxBase": -101
+    }
+  },
+  "cases": [
+    "balanced-local-definition",
+    "global-definition-survives-expression",
+    "newcommand-optional-default",
+    "def-delimited-template",
+    "let-user-macro-alias",
+    "let-delimiter-alias",
+    "newenvironment-optional-default",
+    "let-to-undefined-suppresses-package-macro",
+    "let-builtin-method-snapshot",
+    "let-character-map-token-snapshot",
+    "let-to-undefined-suppresses-delimiter",
+    "handled-error-definition-and-group-persistence",
+    "finish-remove-checkpoint",
+    "reset-to-base",
+    "sandbox-base-reset"
+  ]
+}

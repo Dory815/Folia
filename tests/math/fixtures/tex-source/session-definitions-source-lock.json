@@ -1,0 +1,21 @@
+{
+  "upstream": {
+    "package": "@mathjax/src",
+    "version": "4.1.3",
+    "commit": "fb987178c2d279a99b0db5ea02e751691703955e"
+  },
+  "sources": [
+    { "path": "ts/input/tex/newcommand/NewcommandUtil.ts", "cjs": "input/tex/newcommand/NewcommandUtil.js", "tsSha256": "9dd994444bd3c0b49c83ab070dfb82f022a69364109e775b535d7281d9b33002", "cjsSha256": "496a1c7154521e6870c5469b47070323766182150740f2e846cd005460b7e4bf" },
+    { "path": "ts/input/tex/newcommand/NewcommandMethods.ts", "cjs": "input/tex/newcommand/NewcommandMethods.js", "tsSha256": "2d3a5422123d9afb36e9277f506d5a24a7a1d3295163a34371c8fb7400b41cfa", "cjsSha256": "7aa2e76b2263b2f12961958c86e2325acba83083334ca54f6949f86a25bd80cb" },
+    { "path": "ts/input/tex/newcommand/NewcommandItems.ts", "cjs": "input/tex/newcommand/NewcommandItems.js", "tsSha256": "500dc1df6fe295938744b0e399bcf0e16a140f91f4da0b22e5afe9b1d76c55ff", "cjsSha256": "8772e5089015efc52fedce9e5e9b3968a89d5732a0f480c0c906e424baa73b01" },
+    { "path": "ts/input/tex/newcommand/NewcommandConfiguration.ts", "cjs": "input/tex/newcommand/NewcommandConfiguration.js", "tsSha256": "ba8a493e2f2154c868600ccecbe8a28ad9337267c8a3d1460cf130098ad01b4d", "cjsSha256": "8c4de6d6933fd485916114d588400f2e4b5fb1763e5720db74af9b9b5bc24ab2" },
+    { "path": "ts/input/tex/begingroup/BegingroupStack.ts", "cjs": "input/tex/begingroup/BegingroupStack.js", "tsSha256": "39150fade01fc10e021541380770a782f5735d4ddad0fb093ec4bd635a66f30d", "cjsSha256": "f4b5408d18a22da1289d9be4ff310b751de0e4703ddd0dbea4d60d6a07294725" },
+    { "path": "ts/input/tex/begingroup/BegingroupMethods.ts", "cjs": "input/tex/begingroup/BegingroupMethods.js", "tsSha256": "e3abda9266a0100cfef4abd346180096ca6768b0b402770575d6490798719202", "cjsSha256": "c13631818b600ab46e28f399731cc8695a0d26472b34271a15106c2fe918e993" },
+    { "path": "ts/input/tex/begingroup/BegingroupConfiguration.ts", "cjs": "input/tex/begingroup/BegingroupConfiguration.js", "tsSha256": "5109804cf89666cf43b215ef62867fd6c5c57ba112ffa147c8bf33cd7dc601c0", "cjsSha256": "4e25653273ff39a916deb4aa8879292fa88f75a49d37af1189d88d02f7cf0789" },
+    { "path": "ts/input/tex/configmacros/ConfigMacrosConfiguration.ts", "cjs": "input/tex/configmacros/ConfigMacrosConfiguration.js", "tsSha256": "1578e2cec78cd03e83dff7439c0b2eedbb4564cef2002dbd2dba528c25197c7a", "cjsSha256": "050cfb81fdc2914459e6c4128ab2ba8a3162207f72db921351cc1fb3320914a0" },
+    { "path": "ts/input/tex/MapHandler.ts", "cjs": "input/tex/MapHandler.js", "tsSha256": "7cacdaef3ed1df90b4f05cc0b3183a2956ae8f848f20ae8833932faa4efcb2a2", "cjsSha256": "d82e3034776d2392689aad86500b5e60dbe0aa5540853b48f308841879f3cf67" },
+    { "path": "ts/input/tex/TokenMap.ts", "cjs": "input/tex/TokenMap.js", "tsSha256": "0209895b13569008b2129b61c88050e7c70e70ce9477d234b9a6e303a86a738e", "cjsSha256": "9e3f086080a6ab052b68b22a5d9ee3dbc5e17d7b0c03a31e789664b01df36cf7" },
+    { "path": "ts/util/PrioritizedList.ts", "cjs": "util/PrioritizedList.js", "tsSha256": "a700459f984ba1a5f18bf0e7dc183c242961b94c33587a9aa81bbaacf97180c8", "cjsSha256": "787bd21f3634312af666917d8f140145864f98d09ede1bdde3c957d28ec2bc25" },
+    { "path": "ts/input/tex.ts", "cjs": "input/tex.js", "tsSha256": "151d3c73697bfbf874001549f6e0c80dbebeabba2b36ab50501a4ffd7753bf06", "cjsSha256": "ef2852b197173f373e62326016e980aef01ffc838f5f766ab6076262f944eada" }
+  ]
+}
