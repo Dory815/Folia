@@ -193,6 +193,37 @@ number/subnumber formatting including explicit zero, environment argument
 forwarding and real native factory products. These remain package checks,
 separate from the final Common-to-Scene/SVG gate.
 
+### Colortbl array extension (2026-10-20)
+
+The one upstream `ColortblConfiguration.ts` remains `colortbl/configuration.*`.
+ColorData, ColorArrayItem, TableColor and the priority-10 configuration belong
+there. Remove the earlier extra items/methods pairs without forwarding modules.
+ColorArrayItem derives from ArrayItem, reuses its EndEntry/EndRow/createMml,
+and overrides the existing array factory entry. Make ArrayItem::createMml
+virtual so the original array assembly dispatches to the extension normally.
+Do not introduce a second table assembler or alter EqnArray's family.
+
+ColorData owns cell/row strings and a vector of optional column strings; an
+unset column must remain distinct from a defined empty color in the later-row
+comparison. hasColor is local to the activation. Cell beats row, which beats
+column; cell color clears after a colored entry, row color after EndRow, and
+column settings persist for that array. New MML remains document-owned.
+
+TableColor is a MacroHandler with immutable cell/row/col string arguments.
+Resolve the existing session ColorModel and parse model/definition before
+checking the active array, preserving original error ordering and partial
+state updates. The configuration callback receives ParserConfiguration& and
+TeX&; if the session has no model, invoke the already registered color package's
+actual config callback. Do not activate its command map, add loaders or replace
+an existing model. initializeModule takes ConfigurationHandler& and MapHandler&.
+
+Acceptance compares real Source MML for precedence/reset, sparse columns,
+preambles, later-row restrictions, ignored overlap arguments, all existing
+color models, nested/fenced/styled/framed arrays, errors and next requests.
+Verify the actual factory product/virtual createMml path, priority 10, callback
+identity and registered-color config behavior with and without selected color.
+These package checks do not establish final Scene/SVG integration.
+
 The original `input/tex/ParseMethods.ts` belongs at `input/tex/parse_methods`,
 not under `base/`. Its ten compiled methods handle variables, numbers, control
 sequences, mapped character tokens and the environment entry. BaseMethods,

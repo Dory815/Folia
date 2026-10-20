@@ -58,6 +58,14 @@ green corpora establish reference data, not acceptance for rewritten code.
 
 ## C. Source fidelity
 
+- Colortbl must compare actual Source trees for cell/row/column precedence,
+  clearing, sparse columns, preambles, overlap arguments and each array wrapper.
+  Preserve unset versus defined-empty column values, color-argument errors before
+  placement errors, and row-color writes before RowColorNotFirst. Exercise virtual
+  createMml through ArrayItem, not only direct derived calls. Check that the real
+  registered color config callback creates a missing model without enabling its
+  commands, preserves an existing model, and keeps independent sessions isolated.
+
 - Cases must compare actual Source MML, text-column scanning, ordinary-array
   fallback, tags/labels/references, tag modes/sides and configured formatters.
   The first matching end must pop one activation through an empty replay;

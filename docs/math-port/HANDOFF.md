@@ -9,7 +9,37 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 当前唯一断点：Cases已验收提交，下一包Colortbl（2026-10-20）
+### 当前已接受基线：Colortbl（2026-10-20）
+
+- **c40f69e4**原configuration.*归回ColorData/ColorArrayItem/TableColor/colortblConfig/注册，
+  删除额外items/methods四生产文件，8文件净减305行；唯一共享改动ArrayItem::createMml标virtual。
+  **a8b23433**提交8组原生测试、独立Source脚本/fixture及CMake测试条目4文件，无新生产文件。
+  生产构建35115、测试构建25990均exit0、并发4，colortbl-build.log/colortbl-test-build.log。
+  Root原生focus **8 tests/721 asserts** exit0，colortbl-focused.log；完整**640 tests/161884
+  asserts/125 suites** exit0，colortbl-full.log，74830已终态。无失败/跳过，无live进程/代理。
+- 冻结API在原configuration.ixx：ColorData有cell/row strings、col vector<optional<string>>；
+  ColorArrayItem继承ArrayItem ctor/array kind，public color/hasColor，override EndEntry/EndRow/
+  createMml。free TableColor为MacroHandler，三args cell/row/col；colortblConfig(ParserConfiguration&,
+  TeX&)；initializeModule(ConfigurationHandler&,MapHandler&)。ColorData必须区分unset/empty。
+- 配置priority10/configrank10，只在session.colorModel()==nullptr时调用已注册color package
+  真实config callback；不直接新建替代模型、不选入color命令。当前ColorModel接口位于
+  color/util.ixx，session为colorModel()/enableColor()（旧记录color()是错名）。Root已完整读
+  Color configure、ColorModel接口；TableColor颜色解析在array位置检查前，row写入在位置错误前。
+- GPT-6.1 Sol /root/base_methods已冻结交付；Root完整读测试/脚本并格式化测试，独立Source
+  最终重放exit0：59compile/27formula snapshots/14错误恢复/4颜色序列/9direct snapshots，
+  colortbl-source-final.log。TS/CJS及full38编译源hash锁保留；仅显式--write-fixture生成，
+  不用native结果修fixture。未选color有model无color命令；已有model不替换；真实注册callback
+  计数、ArrayItem&虚调用、空/未设列区别、partial row error写入、overlap条件均原生已通过。
+  Luna额度恢复前不重试。Root负责生产/CMake/全部native/Git，原13项修改保护。
+- Root等待期间只读Mathtools原Configuration.ts主体和Items.ts主体，目录恰6TS（config/items/
+  methods/mappings/tags/util）对应现6CPP/IXx组。其余Source/现CPP未完整读，未改/未冻结；
+  下包须保留此原职责拆分，不能像Cases/Colortbl反而合成单大文件。当前先验收Colortbl。
+  MathtoolsTags.ts主体也已读：mtFormats/current需保留选中旧triple语义、父Tags格式优先级；
+  现AbstractTags final formatTag及Tagformat真实父product机制需先设计，不能移植全局累加类名。
+  下一步完整读其余Source和现6对native文件，冻结架构/文件职责/验收后才派实现，不能从头重写。
+  完整38包/Common→Scene→SVG/Folia未完成，goal active；Mermaid暂停，无D2D像素gate。
+
+### 最近已接受基线：Cases（2026-10-20）
 
 - 上轮Empheq、本轮Cases都是真实进展，不重做。**c0c48d90**归回Cases原单配置职责9文件
   （含删除旧items/methods/tags六生产文件），**19ea8aaf**为对照测试及旧导出清理6文件。
