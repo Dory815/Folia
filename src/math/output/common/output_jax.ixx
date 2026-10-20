@@ -41,6 +41,9 @@ class CommonOutputJax {
     CommonOutputJax(CommonOutputJax const &) = delete;
     CommonOutputJax &operator=(CommonOutputJax const &) = delete;
 
+    static BBox getBBox(mml::MmlDocument &, mml::MmlNode &subtree, CommonOutputJaxConfig,
+                        MeasurementTarget &, CommonWrapperCatalog, LinebreakFactory);
+
     CommonWrapperFactory &factory() noexcept;
     mml::MmlDocument &document() const noexcept;
     double pxPerEm() const;

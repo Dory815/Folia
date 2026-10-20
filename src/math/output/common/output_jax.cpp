@@ -41,6 +41,17 @@ CommonWrapperFactory &CommonOutputJax::factory() noexcept {
     return *factory_;
 }
 
+BBox CommonOutputJax::getBBox(mml::MmlDocument &document, mml::MmlNode &subtree,
+                              CommonOutputJaxConfig config, MeasurementTarget &measurement,
+                              CommonWrapperCatalog catalog, LinebreakFactory linebreakFactory) {
+    if (&subtree.document() != &document)
+        throw std::invalid_argument("Common measurement subtree belongs to another MML document");
+    CommonOutputJax local(document, std::move(config), measurement, std::move(catalog),
+                          linebreakFactory);
+    subtree.setTeXclass(nullptr);
+    return local.factory().wrap(subtree).getOuterBBox();
+}
+
 mml::MmlDocument &CommonOutputJax::document() const noexcept {
     return document_;
 }
@@ -125,8 +136,7 @@ void CommonOutputJax::setTable(CommonWrapper &table) {
 LayoutJob::LayoutJob(mml::MmlDocument &document, CommonOutputJaxConfig config,
                      MeasurementTarget &measurement, CommonWrapperCatalog wrapperCatalog,
                      LinebreakFactory linebreakFactory)
-    : jax_(document, std::move(config), measurement, std::move(wrapperCatalog), linebreakFactory) {
-}
+    : jax_(document, std::move(config), measurement, std::move(wrapperCatalog), linebreakFactory) {}
 
 mml::MmlDocument &LayoutJob::document() const noexcept {
     return jax_.document();

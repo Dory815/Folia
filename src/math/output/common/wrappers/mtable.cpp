@@ -90,8 +90,7 @@ LengthInput lengthInput(std::string_view text) {
 
 CommonMtable::CommonMtable(CommonWrapperFactory &factory, mml::MmlNode &source,
                            CommonWrapper *parentValue)
-    : CommonWrapper(factory, source, parentValue) {
-}
+    : CommonWrapper(factory, source, parentValue) {}
 
 std::vector<CommonMtr *> CommonMtable::tableRows() const {
     std::vector<CommonMtr *> rows;
@@ -113,10 +112,7 @@ CommonWrapper *CommonMtable::findContainer() {
         outer = outer->parent;
     }
     container = outer;
-    const auto position = current->node->childPosition();
-    if (!position)
-        throw std::logic_error("table container is not linked into its MML parent");
-    containerI = *position;
+    containerI = current->node->childPosition();
     if (!container || (container->node->kind() == mml::NodeKind::math && !container->parent))
         jax().setTable(*this);
     return container;
@@ -550,7 +546,7 @@ void CommonMtable::getStyles() {
 }
 
 std::string CommonMtable::getChildAlign(std::size_t) const {
-    return container ? container->getChildAlign(containerI) : "center";
+    return container ? container->getChildAlign(containerI.value()) : "center";
 }
 
 double CommonMtable::getWrapWidth(std::size_t) {
@@ -588,7 +584,8 @@ bool CommonMtable::setChildPWidths(bool, std::optional<double> cwidth, bool) {
 
 std::pair<std::string, double> CommonMtable::getAlignShift() {
     return isTop ? CommonWrapper::getAlignShift()
-                 : std::pair{container ? container->getChildAlign(containerI) : "center", 0.0};
+                 : std::pair{container ? container->getChildAlign(containerI.value()) : "center",
+                             0.0};
 }
 
 ColumnWidths CommonMtable::getColumnWidths() {

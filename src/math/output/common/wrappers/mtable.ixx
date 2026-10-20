@@ -22,7 +22,7 @@ class CommonMtable : public CommonWrapper {
     std::size_t numCols = 0, numRows = 0;
     bool hasLabels = false, isTop = false, frame = false, fframe = false;
     CommonWrapper *container = nullptr;
-    std::size_t containerI = 0;
+    std::optional<std::size_t> containerI;
     double fLine = 0, pWidth = 0;
     std::array<double, 4> fSpace{};
     std::vector<double> cSpace, rSpace, cLines, rLines;
