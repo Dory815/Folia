@@ -188,6 +188,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/newcommand/util.ixx
     src/math/input/tex/color/constants.ixx
     src/math/input/tex/color/util.ixx
+    src/math/input/tex/color/methods.ixx
+    src/math/input/tex/color/configuration.ixx
     src/math/output/scene/types.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
@@ -271,6 +273,8 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/newcommand/util.cpp
     src/math/input/tex/color/constants.cpp
     src/math/input/tex/color/util.cpp
+    src/math/input/tex/color/methods.cpp
+    src/math/input/tex/color/configuration.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
@@ -465,6 +469,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/boldsymbol.cpp
     tests/math/newcommand.cpp
     tests/math/begingroup.cpp
+    tests/math/color.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp

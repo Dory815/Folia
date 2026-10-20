@@ -1,105 +1,151 @@
-// Native port of MathJax 4.1.3 input/tex/color/ColorMethods.ts.
+// MathJax 4.1.3 input/tex/color/ColorMethods.ts; Apache-2.0.
 module folia.math.input.tex.color.methods;
-import folia.math.input.tex.base_methods;
-import folia.math.input.tex.color.util;
-import folia.math.input.tex.parser;
-import folia.math.input.tex.node_util;
-import folia.math.input.tex.token_map;
-import folia.math.util.property_host;
+import folia.math.input.tex.parse_util;
 import folia.math.util.js_number;
 import std;
-namespace folia::math::tex {
-using namespace options;
-namespace {
-Key key(std::u16string_view name){return Key(std::u16string(name));}
-TexParser& parser(ParserContext& value){auto* p=dynamic_cast<TexParser*>(&value);if(!p)property_host::typeError("Color method requires a TexParser");return *p;}
-ParseOptions& parseOptions(TexParser& p){const auto* v=std::get_if<ParseOptions*>(&p.configuration);if(!v||!*v)property_host::typeError("Cannot read properties of null or undefined (reading 'packageData')");return **v;}
-Stack& stack(TexParser& p){const auto v=p.stack;const auto* s=std::get_if<std::shared_ptr<Stack>>(&v);if(!s||!*s)property_host::typeError("Cannot read properties of null or undefined (reading 'env')");return **s;}
-StackItemFactory& items(TexParser& p){const auto v=p.itemFactory();const auto* f=std::get_if<std::shared_ptr<StackItemFactory>>(&v);if(!f||!*f)property_host::typeError("Cannot read properties of null or undefined (reading 'create')");return **f;}
-std::u16string text(const Property& value){return property_host::string(value);}
-ObjectRef modelObject(TexParser& p){
-    auto& config=parseOptions(p);const auto* data=std::get_if<std::shared_ptr<SourceStringMap<Value>>>(&config.packageData);
-    if(!data||!*data)property_host::typeError("Cannot read properties of null or undefined (reading 'get')");
-    const auto color=(*data)->get(u"color");if(!color)property_host::typeError("Cannot read properties of undefined (reading 'model')");
-    const auto* package=std::get_if<ObjectRef>(&color->data);if(!package)property_host::typeError("Cannot read properties of null or undefined (reading 'model')");
-    const auto modelValue=config.runtime().context().get(Value(*package),key(u"model"));
-    const auto* identity=std::get_if<ObjectRef>(&modelValue.data);if(!identity)property_host::typeError("Color model is not an object");
-    const auto* actual=std::any_cast<std::shared_ptr<ColorModel>>(&config.runtime().context().payload(*identity));
-    if(!actual||!*actual)throw Exception("TypeError",u"Color model identity is not registered");return *identity;
-}
-std::u16string getColor(TexParser& p,std::u16string_view colorModel,std::u16string_view definition){
-    auto& cx=parseOptions(p).runtime().context();const auto identity=modelObject(p);const auto modelValue=Value(identity);const auto method=cx.get(modelValue,key(u"getColor"));
-    const auto* fn=std::get_if<ObjectRef>(&method.data);if(!fn||cx.kind(*fn)!=ObjectKind::function)throw Exception("TypeError",u"colorModel.getColor is not a function");
-    const std::array<Value,2> args{Value(std::u16string(colorModel)),Value(std::u16string(definition))};
-    const auto result=cx.call(*fn,Value(identity),args);if(const auto* value=std::get_if<std::u16string>(&result.data))return *value;
-    throw Exception("TypeError",u"ColorModel.getColor did not return a string");
-}
-FunctionRef colorMethod(){return makeParseCallable([](const FunctionReceiver&,ParserContext& context,const ParseAtom& atom,ParseRest)->ParseResult{
-    auto& p=parser(context);const auto name=text(std::get<Property>(atom));const auto modelName=p.GetBrackets(name,Property(""));const auto definition=p.GetArgument(name);
-    const auto color=property_host::debugText(getColor(p,text(modelName),text(definition)));
-    auto* style=items(p).itemFactory().create("style",{});if(!style)property_host::typeError("Cannot read properties of null (reading 'setProperties')");
-    style->setProperties(StackProperty(Property(PropertyList{{"styles",Property(PropertyList{{"mathcolor",color}})}})));
-    auto env=PropertyList::record(stack(p).env());if(!env)property_host::typeError("Cannot set properties of null or undefined");env->setOwn("color",color);
-    p.Push(items(p).reference(style));return Property(Missing{});
-});}
-FunctionRef textColorMethod(){return makeParseCallable([](const FunctionReceiver&,ParserContext& context,const ParseAtom& atom,ParseRest)->ParseResult{
-    auto& p=parser(context);const auto name=text(std::get<Property>(atom));const auto modelName=p.GetBrackets(name,Property(""));const auto definition=p.GetArgument(name);
-    const auto color=property_host::debugText(getColor(p,text(modelName),text(definition)));
-    auto env=PropertyList::record(stack(p).env());if(!env)property_host::typeError("Cannot set properties of null or undefined");const auto old=env->get("color");env->setOwn("color",color);
-    const auto math=p.ParseArg(name);
-    if(property_host::truthy(old))env->setOwn("color",old);else env->erase("color");
-    auto children=std::make_shared<tree::ChildArray<mml::MmlNode>>();children->push_back(math);
-    const std::array<std::any,3> args{std::any(Property("mstyle")),std::any(children),std::any(Property(PropertyList{{"mathcolor",color}}))};
-    p.Push(p.create(u"node",FunctionArgs(args)));return Property(Missing{});
-});}
-FunctionRef defineColorMethod(){return makeParseCallable([](const FunctionReceiver&,ParserContext& context,const ParseAtom& atom,ParseRest)->ParseResult{
-    auto& p=parser(context);const auto name=text(std::get<Property>(atom));const auto cname=text(p.GetArgument(name)),modelName=text(p.GetArgument(name)),definition=text(p.GetArgument(name));
-    auto& cx=parseOptions(p).runtime().context();const auto identity=modelObject(p);const auto method=cx.get(Value(identity),key(u"defineColor"));const auto* fn=std::get_if<ObjectRef>(&method.data);
-    if(!fn||cx.kind(*fn)!=ObjectKind::function)throw Exception("TypeError",u"colorModel.defineColor is not a function");
-    const std::array<Value,3> args{Value(modelName),Value(cname),Value(definition)};(void)cx.call(*fn,Value(identity),args);
-    auto* nullItem=items(p).itemFactory().create("null",{});if(!nullItem)property_host::typeError("Cannot read properties of null (reading 'isKind')");p.Push(items(p).reference(nullItem));return Property(Missing{});
-});}
-Property padding(const Property& colorPadding){
-    const auto pad=u"+"+text(colorPadding);const auto utf=property_host::debugText(text(colorPadding));
-    const auto unit=std::regex_replace(utf,std::regex(R"(^.*?([a-z]*)$)"),"$1");
-    const auto numberString=property_host::debugText(text(colorPadding));const double n=std::stod(numberString.substr(0,numberString.find_first_not_of("0123456789.+-")));
-    const auto twice=js_number::toString(2*n);const auto suffix=property_host::text(unit);
-    return Property(PropertyList{{"width",property_host::debugText(u"+"+property_host::text(twice)+suffix)},
-        {"height",property_host::debugText(pad)},{"depth",property_host::debugText(pad)},{"lspace",colorPadding}});
-}
-Property option(TexParser& p,std::u16string_view keyName){const auto value=parseOptions(p).options;if(std::holds_alternative<ObjectRef>(value.data)){auto& runtime=parseOptions(p).runtime();const auto color=runtime.context().get(value,key(u"color"));return runtime.properties.from(runtime.context().get(color,key(keyName)));}return Missing{};}
-mml::NodeValue padded(TexParser& p,mml::Children math,Property attrs,const Property& colorPadding){
-    const std::array<std::any,3> args{std::any(Property("mpadded")),std::any(std::move(math)),std::any(std::move(attrs))};
-    auto result=p.create(u"node",FunctionArgs(args));NodeUtil::instance().setProperties(result,Property(PropertyList::record(padding(colorPadding)).value()));return result;
-}
-FunctionRef colorBox(){return makeParseCallable([](const FunctionReceiver&,ParserContext& context,const ParseAtom& atom,ParseRest)->ParseResult{
-    auto& p=parser(context);const auto name=text(std::get<Property>(atom));const auto modelName=text(p.GetBrackets(name,Property("")));const auto colorDef=p.GetArgument(name);const auto mathSource=text(p.GetArgument(name));
-    auto math=ParseUtil::internalMath(p,mathSource);const auto color=property_host::debugText(getColor(p,modelName,text(colorDef)));
-    const auto bg=Property(PropertyList{{"mathbackground",color}});p.Push(padded(p,math,bg,option(p,u"padding")));return Property(Missing{});
-});}
-FunctionRef fColorBox(){return makeParseCallable([](const FunctionReceiver&,ParserContext& context,const ParseAtom& atom,ParseRest)->ParseResult{
-    auto& p=parser(context);const auto name=text(std::get<Property>(atom));const auto frameModel=p.GetBrackets(name,Property(""));const auto frameDef=p.GetArgument(name);const auto colorModel=p.GetBrackets(name,frameModel);const auto colorDef=p.GetArgument(name);const auto math=ParseUtil::internalMath(p,text(p.GetArgument(name)));
-    const auto background=getColor(p,text(colorModel),text(colorDef));const auto frame=getColor(p,text(frameModel),text(frameDef));
-    const auto border=property_host::string(option(p,u"borderWidth"));const auto attrs=Property(PropertyList{{"mathbackground",property_host::debugText(background)},{"style",property_host::debugText(u"border: "+border+u" solid "+frame)}});
-    p.Push(padded(p,math,attrs,option(p,u"padding")));return Property(Missing{});
-});}
 
+namespace folia::math::tex {
+namespace {
+ColorModel &model(TexParser &parser) {
+    auto current = parser.configuration.packageData.colorModel();
+    if (!current)
+        throw std::logic_error("Color package has not been configured");
+    return *current;
 }
-Property ColorMethods::initializeModule(ParserRuntime& runtime){
-    const std::array methods{
-        std::pair{colorMethod(),std::u16string_view(u"Color")},
-        std::pair{textColorMethod(),std::u16string_view(u"TextColor")},
-        std::pair{defineColorMethod(),std::u16string_view(u"DefineColor")},
-        std::pair{colorBox(),std::u16string_view(u"ColorBox")},
-        std::pair{fColorBox(),std::u16string_view(u"FColorBox")}};
-    PropertyList commands;
-    for(const auto& [method,name]:methods){
-        const auto bound=BaseMethods::bind(runtime,method,std::u16string(name));
-        const auto* identity=std::get_if<ObjectRef>(&bound.data);
-        if(!identity)throw Exception("TypeError",u"Color method has no Context identity");
-        runtime.context().define(*identity,Key(u"length"),Descriptor::data(Value(2.0),false,false,true));
-        commands.setOwn(property_host::debugText(name),Property(method));
+std::u16string required(TexParser &parser, std::u16string_view name) {
+    return parser.GetArgument(name).value();
+}
+std::u16string numberText(double value) {
+    auto text = js_number::toString(value);
+    return {text.begin(), text.end()};
+}
+double paddingNumber(std::u16string_view source) {
+    // Only the numeric prefix of the Source padding helper, with decimal
+    // grammar and locale-independent conversion. No hexadecimal conversion.
+    auto match = regexp_host::RegExp(
+                     u"^[+]?(?:Infinity|(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?)")
+                     .exec(std::u16string(source));
+    if (!match)
+        return std::numeric_limits<double>::quiet_NaN();
+    auto value = match->at(0).value();
+    if (value.starts_with(u"+"))
+        value.erase(0, 1);
+    if (value == u"Infinity")
+        return std::numeric_limits<double>::infinity();
+    std::string ascii(value.begin(), value.end());
+    double result{};
+    auto [end, error] = std::from_chars(ascii.data(), ascii.data() + ascii.size(), result);
+    if (error == std::errc{} && end == ascii.data() + ascii.size())
+        return result;
+    if (error != std::errc::result_out_of_range)
+        throw std::logic_error("Validated padding number failed conversion");
+    auto exponentAt = ascii.find_first_of("eE");
+    auto mantissa = std::string_view(ascii).substr(0, exponentAt);
+    long long exponent{};
+    if (exponentAt != ascii.npos) {
+        auto digits = std::string_view(ascii).substr(exponentAt + 1);
+        bool negative = digits.starts_with('-');
+        if (digits.starts_with('-') || digits.starts_with('+'))
+            digits.remove_prefix(1);
+        for (auto digit : digits)
+            exponent = std::min(1000000ll, exponent * 10 + digit - '0');
+        if (negative)
+            exponent = -exponent;
     }
-    return Property(std::move(commands));
+    auto dot = mantissa.find('.');
+    long long before = static_cast<long long>(dot == mantissa.npos ? mantissa.size() : dot);
+    long long position{};
+    for (auto digit : mantissa) {
+        if (digit == '.')
+            continue;
+        if (digit != '0')
+            return before - position - 1 + exponent < 0 ? 0
+                                                        : std::numeric_limits<double>::infinity();
+        ++position;
+    }
+    return 0;
 }
+} // namespace
+NodeDefinition padding(std::u16string_view colorPadding) {
+    auto pad = u"+" + std::u16string(colorPadding);
+    auto unitMatch = regexp_host::RegExp(u"^.*?([a-z]*)$").exec(std::u16string(colorPadding));
+    auto unit = std::u16string(colorPadding);
+    if (unitMatch) {
+        unit.replace(unitMatch->index, unitMatch->at(0)->size(), unitMatch->at(1).value());
+    }
+    NodeDefinition definition;
+    definition.attributes.set(u"width", u"+" + numberText(2 * paddingNumber(pad)) + unit);
+    definition.attributes.set(u"height", pad);
+    definition.attributes.set(u"depth", pad);
+    definition.attributes.set(u"lspace", std::u16string(colorPadding));
+    return definition;
 }
+DispatchOutcome ColorMethods::Color(TexParser &parser, MacroInvocation const &invocation) {
+    auto colorModel = parser.GetBrackets(invocation.dispatch_token, u"").value();
+    auto definition = required(parser, invocation.dispatch_token);
+    auto color = model(parser).getColor(colorModel, definition);
+    auto style = parser.itemFactory().create(StackKind::style);
+    dynamic_cast<StyleItem &>(*style).styles.set(u"mathcolor", color);
+    parser.stack.env().color = color;
+    parser.Push(std::move(style));
+    return NoParseResult{};
+}
+DispatchOutcome ColorMethods::TextColor(TexParser &parser, MacroInvocation const &invocation) {
+    auto colorModel = parser.GetBrackets(invocation.dispatch_token, u"").value();
+    auto definition = required(parser, invocation.dispatch_token);
+    auto color = model(parser).getColor(colorModel, definition);
+    mml::MmlNode *math{};
+    {
+        auto &environment = parser.stack.env();
+        struct Restore {
+            TexEnvironment &environment;
+            std::optional<std::u16string> old;
+            ~Restore() {
+                environment.color = old && !old->empty() ? old : std::nullopt;
+            }
+        } restore{environment, environment.color};
+        environment.color = color;
+        math = parser.ParseArg(invocation.dispatch_token);
+    }
+    NodeDefinition attributes;
+    attributes.attributes.set(u"mathcolor", color);
+    const std::array children{math};
+    parser.Push(&parser.create(mml::NodeKind::mstyle, children, std::move(attributes)));
+    return NoParseResult{};
+}
+DispatchOutcome ColorMethods::DefineColor(TexParser &parser, MacroInvocation const &invocation) {
+    auto name = required(parser, invocation.dispatch_token);
+    auto colorModel = required(parser, invocation.dispatch_token);
+    auto definition = required(parser, invocation.dispatch_token);
+    model(parser).defineColor(colorModel, name, definition);
+    parser.Push(parser.itemFactory().create(StackKind::null_item));
+    return NoParseResult{};
+}
+DispatchOutcome ColorMethods::ColorBox(TexParser &parser, MacroInvocation const &invocation) {
+    auto colorModel = parser.GetBrackets(invocation.dispatch_token, u"").value();
+    auto definition = required(parser, invocation.dispatch_token);
+    auto math = parse_util::internalMath(parser, required(parser, invocation.dispatch_token));
+    NodeDefinition attributes;
+    attributes.attributes.set(u"mathbackground", model(parser).getColor(colorModel, definition));
+    auto &node = parser.create(mml::NodeKind::mpadded, math, std::move(attributes));
+    NodeUtil::setProperties(node, padding(parser.options().color->padding.value()));
+    parser.Push(&node);
+    return NoParseResult{};
+}
+DispatchOutcome ColorMethods::FColorBox(TexParser &parser, MacroInvocation const &invocation) {
+    auto frameModel = parser.GetBrackets(invocation.dispatch_token, u"").value();
+    auto frameName = required(parser, invocation.dispatch_token);
+    auto colorModel = parser.GetBrackets(invocation.dispatch_token, frameModel).value();
+    auto colorName = required(parser, invocation.dispatch_token);
+    auto math = parse_util::internalMath(parser, required(parser, invocation.dispatch_token));
+    auto const &options = parser.options().color.value();
+    NodeDefinition attributes;
+    attributes.attributes.set(u"mathbackground", model(parser).getColor(colorModel, colorName));
+    attributes.attributes.set(u"style", u"border: " + options.borderWidth.value() + u" solid " +
+                                            model(parser).getColor(frameModel, frameName));
+    auto &node = parser.create(mml::NodeKind::mpadded, math, std::move(attributes));
+    NodeUtil::setProperties(node, padding(options.padding.value()));
+    parser.Push(&node);
+    return NoParseResult{};
+}
+} // namespace folia::math::tex

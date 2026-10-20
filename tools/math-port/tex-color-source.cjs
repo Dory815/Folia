@@ -131,3 +131,46 @@ const expectedPath = path.join(root,'tests/math/fixtures/tex-source/color-source
 const expected=JSON.parse(fs.readFileSync(expectedPath,'utf8'));
 assert.deepEqual(actual,expected);
 process.stdout.write(`pinned Source color witness matched ${actual.constants.length} constants, ${values.length} behavior cases and the real TeX lifecycle\n`);
+
+// The original package methods through the actual TeX lifecycle, in addition
+// to the existing ColorModel witness above.
+const colorReference = require('./reference-profile.cjs').createReference();
+assert.equal(colorReference.provenance.compiled_source_sha256, 'cbb0d3b6a08fbde6614b070f111fb58cc3cfe9d00a9713163fd4cd6d0300355a');
+const {AbstractMathItem} = require(path.join(bundle,'src/cjs/core/MathItem.js'));
+const {MmlFactory} = require(path.join(bundle,'src/cjs/core/MmlTree/MmlFactory.js'));
+const colorModule = require(path.join(bundle,'src/cjs/input/tex/color/ColorMethods.js'));
+assert.deepEqual(Object.keys(colorModule.ColorMethods).sort(), ['Color','TextColor','DefineColor','ColorBox','FColorBox'].sort());
+function colorFixture(options={}) {
+  let error='';
+  const jax=new TeX({packages:['base','color'],...options,formatError:(j,e)=>{error=e.id;return j.formatError(e);}});
+  jax.setMmlFactory(new MmlFactory());
+  return {jax,compile(source){error='';return jax.compile(new AbstractMathItem(source,jax,false),colorReference.document);},get error(){return error;}};
+}
+function colorTokens(root){const nodes=[];root.walkTree(n=>{if(n.isToken)nodes.push(n);});return nodes;}
+function colorBoxes(root){const nodes=[];root.walkTree(n=>{if(n.kind==='mpadded')nodes.push(n);});return nodes;}
+{
+  const f=colorFixture();assert.equal(f.jax.parseOptions.options.color.padding,'5px');assert.equal(f.jax.parseOptions.options.color.borderWidth,'2px');
+  const nodes=colorTokens(f.compile('\\color{red}a\\textcolor{blue}{b+\\color{green}c}d'));
+  assert.deepEqual(nodes.map(n=>n.attributes.get('mathcolor')),['red','blue','blue','green','red']);assert.equal(f.error,'');
+  f.compile('\\definecolor{Stored}{rgb}{0,0.5,1}');const model=f.jax.parseOptions.packageData.get('color').model;
+  assert.equal(colorTokens(f.compile('\\color{Stored}x'))[0].attributes.get('mathcolor'),'#007fff');f.jax.reset(9);
+  assert.equal(colorTokens(f.compile('\\textcolor{Stored}{y}'))[0].attributes.get('mathcolor'),'#007fff');assert.equal(f.jax.parseOptions.packageData.get('color').model===model,true);
+  assert.equal(colorFixture().jax.parseOptions.packageData.get('color').model.getColor('named','Stored'),'Stored');assert.equal(model.getColor('named','Stored'),'#007fff');
+}
+{
+  const f=colorFixture(),boxes=colorBoxes(f.compile('\\colorbox{red}{hi}\\colorbox{blue}{$x^2$}'));
+  assert.equal(boxes.length,2);assert.equal(boxes[0].attributes.get('mathbackground'),'red');assert.equal(boxes[1].attributes.get('mathbackground'),'blue');
+  for(const box of boxes)for(const [key,value]of Object.entries({width:'+10px',height:'+5px',depth:'+5px',lspace:'5px'}))assert.equal(box.attributes.get(key),value);
+  assert.deepEqual(colorTokens(boxes[0]).map(n=>[n.kind,n.getText()]),[['mtext','hi']]);let script=false;boxes[1].walkTree(n=>{if(n.kind==='msup')script=true;});assert.equal(script,true);
+}
+{
+  const f=colorFixture({color:{padding:'0.25em',borderWidth:'0.1em'}}),boxes=colorBoxes(f.compile('\\fcolorbox[rgb]{1,0,0}{0,0,1}{hi}'));
+  assert.equal(boxes.length,1);for(const [key,value]of Object.entries({mathbackground:'#0000ff',style:'border: 0.1em solid #ff0000',width:'+0.5em',lspace:'0.25em'}))assert.equal(boxes[0].attributes.get(key),value);
+}
+for(const [input,expected]of [['5px','+10px'],['.25em','+0.5em'],['2e2pt','+400pt'],['0x10em','+0em'],['-2px','+NaNpx'],['2EM','+4'],['1e-400px','+0px'],['1e400px','+Infinitypx'],['5px\n','+105px\n'],['','+NaN']]) {
+  const p=colorModule.padding(input);assert.equal(p.width,expected);assert.equal(p.lspace,input);assert.equal(p.height,'+'+input);
+}
+for(const [source,id]of [['\\color[cmyk]{0,0,0,0}x','UndefinedColorModel'],['\\textcolor[rgb]{2,0,0}{x}','ModelArg2'],['\\definecolor{bad}{RGB}{1,2}','ModelArg1'],['\\color{red;blue}x','BadColorValue']]) {
+  const f=colorFixture();f.compile(source);assert.equal(f.error,id);assert.equal(colorTokens(f.compile('\\color{green}x'))[0].attributes.get('mathcolor'),'green');assert.equal(f.error,'');
+}
+console.log(JSON.stringify({packageMethods:5,paddingCases:10,compiled_source_sha256:colorReference.provenance.compiled_source_sha256}));
