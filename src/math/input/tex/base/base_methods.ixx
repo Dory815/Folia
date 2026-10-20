@@ -1,18 +1,85 @@
 // MathJax 4.1.3 input/tex/base/BaseMethods.ts; Apache-2.0.
-// Source-method callback table, kept separate from package configuration and
-// the token/environment maps that retain these same FunctionRef values.
 export module folia.math.input.tex.base_methods;
 export import folia.math.input.tex.parser;
 import std;
 export namespace folia::math::tex {
 struct BaseMethods {
-    // A fresh source-owned record is populated once per ParserRuntime. Each
-    // property is the canonical native ParseMethod FunctionRef used by maps.
-    static Property initializeModule(ParserRuntime&);
-    static Property get(const Property& table,std::u16string_view name);
-    static Property get(ParserRuntime&,std::u16string_view name);
-    static options::Value bind(ParserRuntime&,FunctionRef,std::u16string label);
+    static DispatchOutcome Open(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Close(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Bar(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Tilde(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Space(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Superscript(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Subscript(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Prime(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Comment(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Hash(TexParser &, MacroInvocation const &);
+    static DispatchOutcome MathFont(TexParser &, MacroInvocation const &);
+    static DispatchOutcome SetFont(TexParser &, MacroInvocation const &);
+    static DispatchOutcome SetStyle(TexParser &, MacroInvocation const &);
+    static DispatchOutcome SetSize(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Spacer(TexParser &, MacroInvocation const &);
+    static DispatchOutcome DiscretionaryTimes(TexParser &, MacroInvocation const &);
+    static DispatchOutcome AllowBreak(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Break(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Linebreak(TexParser &, MacroInvocation const &);
+    static DispatchOutcome LeftRight(TexParser &, MacroInvocation const &);
+    static DispatchOutcome NamedFn(TexParser &, MacroInvocation const &);
+    static DispatchOutcome NamedOp(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Limits(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Over(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Frac(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Sqrt(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Root(TexParser &, MacroInvocation const &);
+    static DispatchOutcome MoveRoot(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Accent(TexParser &, MacroInvocation const &);
+    static DispatchOutcome UnderOver(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Overset(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Underset(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Overunderset(TexParser &, MacroInvocation const &);
+    static DispatchOutcome TeXAtom(TexParser &, MacroInvocation const &);
+    static DispatchOutcome VBox(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Hsize(TexParser &, MacroInvocation const &);
+    static DispatchOutcome ParBox(TexParser &, MacroInvocation const &);
+    static DispatchOutcome BreakAlign(TexParser &, MacroInvocation const &);
+    static DispatchOutcome MmlToken(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Strut(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Phantom(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Smash(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Lap(TexParser &, MacroInvocation const &);
+    static DispatchOutcome RaiseLower(TexParser &, MacroInvocation const &);
+    static DispatchOutcome MoveLeftRight(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Hskip(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Nonscript(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Rule(TexParser &, MacroInvocation const &);
+    static DispatchOutcome rule(TexParser &, MacroInvocation const &);
+    static DispatchOutcome MakeBig(TexParser &, MacroInvocation const &);
+    static DispatchOutcome BuildRel(TexParser &, MacroInvocation const &);
+    static DispatchOutcome HBox(TexParser &, MacroInvocation const &);
+    static DispatchOutcome FBox(TexParser &, MacroInvocation const &);
+    static DispatchOutcome FrameBox(TexParser &, MacroInvocation const &);
+    static DispatchOutcome MakeBox(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Not(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Dots(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Matrix(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Entry(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Cr(TexParser &, MacroInvocation const &);
+    static DispatchOutcome CrLaTeX(TexParser &, MacroInvocation const &);
+    static DispatchOutcome HLine(TexParser &, MacroInvocation const &);
+    static DispatchOutcome HFill(TexParser &, MacroInvocation const &);
+    static DispatchOutcome NewColumnType(TexParser &, MacroInvocation const &);
+    static DispatchOutcome BeginEnd(TexParser &, MacroInvocation const &);
+    static DispatchOutcome HandleNoTag(TexParser &, MacroInvocation const &);
+    static DispatchOutcome HandleLabel(TexParser &, MacroInvocation const &);
+    static DispatchOutcome HandleRef(TexParser &, MacroInvocation const &);
+    static DispatchOutcome Macro(TexParser &, MacroInvocation const &);
+    static DispatchOutcome MathChoice(TexParser &, MacroInvocation const &);
+    static StackEntry Array(TexParser &, FrameHandle const &, std::span<TexArgument const>);
+    static StackEntry AlignedArray(TexParser &, FrameHandle const &, std::span<TexArgument const>);
+    static StackEntry IndentAlign(TexParser &, FrameHandle const &, std::span<TexArgument const>);
+    static StackEntry Equation(TexParser &, FrameHandle const &, std::span<TexArgument const>);
+    static StackEntry EqnArray(TexParser &, FrameHandle const &, std::span<TexArgument const>);
 };
-// Source-exported BaseMethods helper shared by AMS package methods.
-options::Value splitAlignArray(std::u16string_view align,double count=std::numeric_limits<double>::infinity());
-}
+std::u16string splitAlignArray(std::u16string_view,
+                               double count = std::numeric_limits<double>::infinity());
+} // namespace folia::math::tex
