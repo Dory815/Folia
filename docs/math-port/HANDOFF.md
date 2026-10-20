@@ -9,7 +9,40 @@
 本节是唯一当前状态。下文旧阶段仅保留结论/证据，不是待办。压缩后实际读取正文，
 不能根据旧消息重派已完成包或重新调查已解决问题；后续用户明确指令优先。
 
-### 恢复时先用这个短检查点（2026-10-20 bbox/keyval已验收，下一步enclose/cancel）
+### 恢复时先用这个短检查点（2026-10-20 enclose/cancel/html已验收）
+
+- **当前无live构建/测试/代理**。最新完整Math回归541项/138,916断言exit0，无失败/跳过，
+  `enclose-cancel-html-full.log`，76606已终态。构建60610 exit0，并发4，最终
+  enclose-cancel-html-build-final.log；96930因UT两个u16string_view的==重载歧义exit1，
+  Root改ranges::equal后重建通过。新聚焦enclose5/76、cancel5/89、html7/377全通过；
+  *cancel*同时匹配两组enclose用例，不把该重叠额外计入新测试总数。
+- **提交**：fa692c96（8文件）enclose/cancel原配置两组+测试/Source；3d5c31e5（7文件）
+  HTML原Methods/Configuration两组+测试/Source。Root独立重放enclose/cancel36实际compile，
+  html113实际compile/76非法属性名均exit0，原TS/CJS+完整38profile锁。源日志分别为
+  enclose-cancel-source-final.log/html-source-final.log，Node堆512MB。
+- **已验收职责**：Enclose/Cancel共用原ParseUtil keyval和原七项ENCLOSE_OPTIONS静态表；
+  各保留原Configuration单owner。HTML原两组文件（本无Mappings）含原五方法、真实mrow
+  构造/children迁移/NodeUtil.copyAttributes；属性留同一MML树，不加输出旁路。Source的
+  oldStyle.charAt(新style.length-1)索引必须保留。MmlToken class=true会形成'true outer'；
+  style真值非text原抛TypeError，nativeinvalid_argument测试已捕获并验证parser借用清空。
+- **下一具体行动**：Root已完整读ActionConfiguration.ts及原旧CPP，原Action单组保留
+  Toggle/Mathtip及constexpr BaseMethods::Macro别名；先写冻结configuration.ixx，再派已有
+  GPT-6.1 Sol /root/base_methods限定原action/configuration.cpp、tests/math/action.cpp、
+  tools/math-port/tex-action-source.cjs。Toggle逐个GetArgument到\\endtoggle，在同环境/
+  configuration下局部TexParser解析；Mathtip两个ParseArg；原3map（texttip原2参数模板）。
+  验收实际TeX child顺序/空参数/嵌套/环境继承/终结符与缺参恢复/creator/固定let callbacks。
+  Root可并行处理已完整读TS的centernot、fontsizev3原单组；开始前还须读各自现CPP/IXx。
+  不重派已完成包或重新查已解决命名；保留原13项无关修改。
+- **后续核心断点已确认但未改代码**：CommonWrapper/LayoutJob仍没有Scene emission API；
+  已完整读旧draft common-scene-emission-contract/contract.md及两header提案（不是已采纳）。
+  当前Common算术/字体类在原文件内，须复用；SVG/Scene纯consumer已有，但全TeX→Scene仍缺。
+  Scene Paint.dash_array已存在，旧提案该缺口已过时；FontMetrics.cap_height仍是无Source依据
+  的未消费字段，需在正式emission接口冻结时处理，不能随意填x-height。未新增Scene接口/布局类。
+  Unicode/Entities也未改，原UnicodeCache实际状态归属和纯Entities依赖尚待冻结；
+  noerrors不在38包profile，不增加。全38包/共享布局→SVG对照/Folia切换仍未完成，goal保持active。
+  Luna额度到10月25日，无新信号不重试，必要Sol只GPT-6.1 Sol；Mermaid暂停，编译并发4。
+
+### enclose/cancel/html批次详细证据（历史，已完成；不是待办）
 
 - **无live构建/测试/代理**。最新完整Math回归524项/138,374断言exit0，无失败/跳过，
   `bbox-keyval-full.log`，92898已终态。构建92056 exit0（并发4）。BBox6/209，keyval8/215
@@ -18,8 +51,8 @@
 - **分批提交已完成**：d28a6e4b原ParseUtil共享keyval实现/8测试组；76ca3958原BBox单组
   配置方法/6测试组。既有ParseUtil数学算法未改，只在同owner加原helper和验证器；BBox
   仍原配置单组，未拆平行methods/maps模块。两个提交各5文件；原13项无关修改保护。
-- **下一具体行动**：Root已完整读原EncloseConfiguration.ts/CancelConfiguration.ts及旧CPP。
-  先冻结两包原configuration.ixx（当前仍旧ParserRuntime接口），再派已有GPT-6.1 Sol
+- **当前行动**：Root已完整读原EncloseConfiguration.ts/CancelConfiguration.ts及旧CPP。
+  两包原configuration.ixx已冻结并写入typed接口；已派已有GPT-6.1 Sol
   /root/base_methods：只限原enclose/cancel各configuration二文件、tests/math/enclose.cpp、
   tests/math/cancel.cpp、tools/math-port/tex-enclose-cancel-source.cjs（共7文件）。Root掌握
   头接口/所有共享/CMake/独立Source复放/构建与提交；代理不原生build/test、不再派工。
@@ -30,6 +63,15 @@
   原parse_util::keyvalOptions→覆盖notation→menclose。Cancel原单owner有Cancel/CancelTo，
   复用同ENCLOSE_OPTIONS和公共parser，原4命令表，固定notation字符串是原MathML属性数据。
   初始化接口均initializeModule(ConfigurationHandler&,MapHandler&)，Cancel装配原Enclose依赖。
+  Enclose导出extern const array<KeyValueOption,7> ENCLOSE_OPTIONS，Methods为struct静态方法，
+  两方法均MacroHandler签名；Cancel同样struct含两静态MacroHandler，不改头接口。
+- **Root并行HTML包**：完整读原HtmlMethods/HtmlConfiguration TS及原四CPP/IXx；保持原两组
+  文件（本来无Mappings文件，不新增）。已写5typed方法+GetArgumentMML/属性名检查helper，
+  配置原5命令Map，复用keyvalOptions和NodeUtil.copyAttributes，正在写测试/Source。
+  Style保留原oldStyle.charAt(新style.length-1)索引；MmlToken class=true真实可达，Class
+  拼接须处理已有typed scalar；Style真值非字符串原Source抛TypeError，C++用invalid_argument。
+  Unicode暂未改：原UnicodeCache global实际状态归属待定，原Entities旧模块仍带Property/
+  Promise，不能直接导入新图；noerrors不在38包profile，不增加该包。没有上述包新文件/修改。
 - **验收**：Source+native实际TeX覆盖4cancel命令、cancelto参数顺序、notational逗号替换、
   七允许属性/忽略其它属性/嵌套braces与转义值、两包独立选择/组合嵌套、上标padding、
   configured node creator原请求和错误恢复；不复制keyval解析。Source验证Node堆512MB，
