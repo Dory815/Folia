@@ -154,6 +154,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/token_map.ixx
     src/math/input/tex/map_handler.ixx
     src/math/input/tex/parse_options.ixx
+    src/math/input/tex/tags.ixx
+    src/math/input/tex/configuration.ixx
     src/math/input/tex/parser_family.ixx
     src/math/input/tex/begingroup/stack.ixx
     src/math/input/tex/environment.ixx
@@ -214,6 +216,7 @@ target_sources(folia_math PRIVATE
     src/math/input/tex/session.cpp
     src/math/input/tex/token.cpp
     src/math/input/tex/parse_options.cpp
+    src/math/input/tex/configuration.cpp
     src/math/input/tex/macro.cpp
     src/math/input/tex/token_map.cpp
     src/math/input/tex/map_handler.cpp
@@ -396,6 +399,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_begingroup.cpp
     tests/math/prioritized_list.cpp
     tests/math/parse_options.cpp
+    tests/math/configuration.cpp
     tests/math/macro.cpp
     tests/math/token_map.cpp
     tests/math/map_handler.cpp

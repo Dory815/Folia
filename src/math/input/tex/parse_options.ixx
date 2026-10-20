@@ -169,6 +169,7 @@ public:
     MathStyleResolver mathStyle; // captured by input-jax construction, independent of later options
     std::unique_ptr<ColumnParser> columnParser;
     TexSessionState& packageData;
+    TexEquationState equation;
     std::vector<TexParser*> parsers;
     core::MathItem* mathItem{};
     mml::MmlNode* root{};

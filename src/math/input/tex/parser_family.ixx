@@ -5,3 +5,5 @@ export import :macro;
 export import :token_map;
 export import :map_handler;
 export import :parse_options;
+export import :tags;
+export import :configuration;

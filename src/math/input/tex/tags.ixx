@@ -1,132 +1,114 @@
-// MathJax 4.1.3 input/tex/Tags.ts; Apache-2.0. Declarations only.
+// MathJax 4.1.3 Tags.ts class interfaces and typed creator catalog. Apache-2.0.
 export module folia.math.input.tex.parser:tags;
-export import :types;
+export import :parse_options;
 import std;
+import folia.math.core.math_item;
+import folia.math.input.tex.environment;
+
 export namespace folia::math::tex {
-class Label:public NativeObject {
-    options::Context* context_=nullptr;
-    options::ObjectRef identity_{};
+
+using TagLabel = LabelRecord;
+
+class Tags {
 public:
-    Label(options::Context&,options::ObjectRef);
-    static void initialize(options::Context&,options::ObjectRef,std::span<const options::Value>);
-    options::ObjectRef sourceIdentity()const{return identity_;}
-    options::Value field(std::u16string_view)const;
-    void setField(std::u16string_view,options::Value);
+    virtual ~Tags() = default;
+    virtual std::string_view env() const noexcept = 0;
+    virtual std::u16string_view label() const noexcept = 0;
+    virtual void setLabel(std::u16string value) = 0;
+    virtual TagFormatValue formatTag(std::u16string_view tag) = 0;
+    virtual TagFormatValue formatRef(std::u16string_view tag) = 0;
+    virtual std::u16string formatUrl(std::u16string_view id,
+                                     std::u16string_view base) = 0;
+    virtual void autoTag() = 0;
+    virtual mml::MmlNode* getTag(bool force = false) = 0; // borrowed node or null
+    virtual void clearTag() = 0;
+    virtual void resetTag() = 0;
+    virtual void reset(std::int64_t offset = 0) = 0;
+    virtual void startEquation(core::MathItem const&) = 0;
+    virtual void finishEquation(core::MathItem&) = 0;
+    virtual mml::MmlNode& finalize(mml::MmlNode&, TexEnvironment const&) = 0;
+    virtual void start(std::string_view environment, bool taggable,
+                       bool default_tags) = 0;
+    virtual void end() = 0;
+    virtual void tag(std::u16string_view value, bool no_format) = 0;
+    virtual void notag() = 0;
+    virtual mml::MmlNode& enTag(mml::MmlNode&, mml::MmlNode&) = 0;
 };
-class TagInfo:public NativeObject {
-    options::Context* context_=nullptr;
-    options::ObjectRef identity_{};
+
+class AbstractTags : public Tags {
 public:
-    TagInfo(options::Context&,options::ObjectRef);
-    static void initialize(options::Context&,options::ObjectRef,std::span<const options::Value>);
-    options::ObjectRef sourceIdentity()const{return identity_;}
-    options::Value field(std::u16string_view)const;
-    void setField(std::u16string_view,options::Value);
-};
-class Tags:public NativeObject,public std::enable_shared_from_this<Tags> {
+    explicit AbstractTags(ParseOptions&) noexcept;
+    AbstractTags(AbstractTags const&) = delete;
+    AbstractTags& operator=(AbstractTags const&) = delete;
+    ~AbstractTags() override;
+
+    TagFormatValue formatTag(std::u16string_view) override;
+    TagFormatValue formatRef(std::u16string_view) override;
+    std::u16string formatUrl(std::u16string_view, std::u16string_view) override;
+    void autoTag() override;
+    mml::MmlNode* getTag(bool force = false) override;
+    void clearTag() override;
+    void resetTag() override;
+    void reset(std::int64_t offset = 0) override;
+    void startEquation(core::MathItem const&) override;
+    void finishEquation(core::MathItem&) override;
+    mml::MmlNode& finalize(mml::MmlNode&, TexEnvironment const&) override;
+    void start(std::string_view environment, bool taggable,
+               bool default_tags) override;
+    void end() override;
+    void tag(std::u16string_view value, bool no_format) override;
+    void notag() override;
+    mml::MmlNode& enTag(mml::MmlNode&, mml::MmlNode&) override;
+    std::string_view env() const noexcept override;
+    std::u16string_view label() const noexcept override;
+    void setLabel(std::u16string value) override;
+
 protected:
-    options::ObjectRef identity_{};
-    friend class AbstractTags;
-public:
-    options::ObjectRef sourceIdentity()const{return identity_;}
-    virtual options::Value env()const=0;
-    virtual options::Value label()const=0;
-    virtual void setLabel(options::Value)=0;
-    virtual TagFormat formatTag(options::Value)=0;
-    virtual TagFormat formatRef(options::Value)=0;
-    virtual options::Value formatUrl(options::Value,options::Value)=0;
-    virtual void autoTag()=0;
-    virtual mml::NodeValue getTag(options::Value force=options::Undefined{})=0;
-    virtual void clearTag()=0;
-    virtual void resetTag()=0;
-    virtual void reset(options::Value offset=0)=0;
-    virtual void startEquation(core::MathItem&)=0;
-    virtual void finishEquation(core::MathItem&)=0;
-    virtual mml::NodeValue finalize(mml::NodeValue,Property env)=0;
-    virtual void start(options::Value,options::Value,options::Value)=0;
-    virtual void end()=0;
-    virtual void tag(options::Value,options::Value)=0;
-    virtual void notag()=0;
-};
-class AbstractTags:public Tags {
-    ParserRuntime& runtime_;
+    bool noTag() const noexcept;
+    virtual std::u16string formatId(std::u16string_view id);
+    virtual std::u16string formatNumber(
+        std::int64_t number,
+        std::optional<std::int64_t> subnumber = std::nullopt);
+    ParseOptions& configuration() const noexcept;
+
+private:
     void makeId();
-    mml::NodeValue makeTag();
-protected:
-    options::ObjectRef identity()const{return identity_;}
-    virtual bool noTag()const;
-    virtual options::Value formatId(options::Value);
-    virtual options::Value formatNumber(options::Value);
-public:
-    explicit AbstractTags(ParserRuntime&); // allocation only
-    void initializeAbstractTags();
-    static void initializeModule(ParserRuntime&);
-    ParserRuntime& runtime()const;
-    options::Value field(std::u16string_view)const;
-    void setField(std::u16string_view,options::Value);
-    options::Value env()const override;
-    options::Value label()const override;
-    void setLabel(options::Value)override;
-    TagFormat formatTag(options::Value)override;
-    TagFormat formatRef(options::Value)override;
-    options::Value formatUrl(options::Value,options::Value)override;
-    void autoTag()override;
-    mml::NodeValue getTag(options::Value force=options::Undefined{})override;
-    void clearTag()override;
-    void resetTag()override;
-    void reset(options::Value offset=0)override;
-    void startEquation(core::MathItem&)override;
-    void finishEquation(core::MathItem&)override;
-    mml::NodeValue finalize(mml::NodeValue,Property env)override;
-    void start(options::Value,options::Value,options::Value)override;
-    void end()override;
-    void tag(options::Value,options::Value)override;
-    void notag()override;
+    mml::MmlNode& makeTag();
+    ParseOptions& configuration_; // sole borrowed access to document/session/request state
 };
-class NoTags:public AbstractTags {
+
+class NoTags : public AbstractTags {
 public:
     using AbstractTags::AbstractTags;
-    void autoTag()override;
-    mml::NodeValue getTag(options::Value force=options::Undefined{})override;
+    void autoTag() override;
+    mml::MmlNode* getTag(bool force = false) override;
 };
-class AllTags:public AbstractTags {
+
+class AllTags : public AbstractTags {
 public:
     using AbstractTags::AbstractTags;
-    mml::NodeValue finalize(mml::NodeValue,Property env)override;
+    mml::MmlNode& finalize(mml::MmlNode&, TexEnvironment const&) override;
 };
-struct TagsClassInfo:NativeObject {
-    options::ObjectRef constructor;
-    std::function<TagsRef()> allocate;
-    std::function<void(Tags&)> initialize;
+
+using TagsCreator = std::unique_ptr<Tags> (*)(ParseOptions&);
+struct TagsCreatorEntry final {
+    std::u16string name;
+    TagsCreator create;
 };
-class TagsFactory {
-    ParserRuntime& runtime_;
-    SourceStringMap<TagsClassRef> tagsMapping_;
-    std::u16string defaultTags_=u"none";
+
+class TagsFactory final {
 public:
-    options::Value OPTIONS=options::Undefined{};
-    // Created only as ParserRuntime's one loaded-module factory object.
-    explicit TagsFactory(ParserRuntime&); // module registration only
-    // One real native class descriptor and constructor for Source subclasses.
-    // The allocator returns the actual derived object; common initialization
-    // runs after its identity is bound, before optional derived Source fields.
-    static TagsClassRef registerSubclass(ParserRuntime&,std::u16string className,
-        std::function<TagsRef()> allocate,
-        std::optional<options::ObjectRef> parentConstructor=std::nullopt,
-        std::function<void(Tags&)> initializeDerived={});
-    static TagsClassRef registerSourceSubclass(ParserRuntime&,std::u16string className,
-        options::ObjectRef parentConstructor,
-        std::function<void(Tags&)> initializeDerived,
-        std::function<void(options::ObjectRef prototype)> installPrototypeMethods);
-    TagsFactory(const TagsFactory&)=delete;
-    TagsFactory&operator=(const TagsFactory&)=delete;
-    // One Source module load registers the real built-in class constructors.
-    // Runtime calls this only after both descriptors and identity bindings exist.
-    void initializeModule(TagsClassRef noneClass,TagsClassRef allClass);
-    void add(std::u16string,TagsClassRef);
-    void addTags(TagsConfigValue);
-    TagsRef create(std::u16string_view);
-    void setDefault(std::u16string);
-    TagsRef getDefault();
+    static void add(ParserConfiguration&, TagsCreatorEntry);
+    static void addTags(ParserConfiguration&,
+                        std::span<TagsCreatorEntry const> entries);
+    static void setDefault(ParserConfiguration&, std::u16string_view name);
+    static std::unique_ptr<Tags> getDefault(
+        ParseOptions&, std::u16string_view default_name,
+        std::span<TagsCreatorEntry const> creators);
+    static std::unique_ptr<Tags> create(
+        ParseOptions&, std::u16string_view requested_name,
+        std::u16string_view default_name,
+        std::span<TagsCreatorEntry const> creators);
 };
-}
+
+} // namespace folia::math::tex

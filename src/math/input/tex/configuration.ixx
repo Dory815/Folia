@@ -1,63 +1,100 @@
-// MathJax 4.1.3 input/tex/Configuration.ts; Apache-2.0. Declarations only.
+// MathJax 4.1.3 input/tex/Configuration.ts; Apache-2.0.
 export module folia.math.input.tex.parser:configuration;
-export import :types;
+export import :map_handler;
+export import :tags;
 import std;
+
 export namespace folia::math::tex {
-options::ObjectRef bindConfigurationPriorityList(ParserRuntime&,
-    const std::shared_ptr<PrioritizedList<ConfigurationRef>>&);
-class Configuration:public NativeObject {
-    friend class ParserRuntime;
-    ParserRuntime& runtime_;
-    options::ObjectRef identity_;
-    static ProcessorValue makeProcessor(ParserRuntime&,options::Value,options::Value);
-    static ConfigurationRef _create(ParserRuntime&,options::Value receiver,options::Value name,options::Value config);
-    explicit Configuration(ParserRuntime&);
-    void initializeConfiguration(options::ObjectRef,options::Value name,options::Value handler,options::Value fallback,
-        StackItemConfigValue,TagsConfigValue,options::Value options,options::Value nodes,
-        ProcessorListValue preprocessors,ProcessorListValue postprocessors,
-        ProcessorValue initMethod,ProcessorValue configMethod,options::Value priority,options::Value parser);
-public:
-    ParserRuntime& runtime()const;
-    options::Value field(std::u16string_view)const;
-    std::u16string name()const;
-    static ConfigurationRef construct(ParserRuntime&,std::span<const options::Value>);
-    static ConfigurationRef create(ParserRuntime&,std::u16string name,options::Value config=options::Undefined{});
-    static ConfigurationRef local(ParserRuntime&,options::Value config=options::Undefined{});
-    virtual options::Value init()const;
-    virtual options::Value config()const;
+using InitMethod = void (*)(ParserConfiguration&);
+using ConfigMethod = void (*)(ParserConfiguration&, TeX&);
+using StackItemConfig = tree::FactoryClassMap<BaseItem, StackKind, StackBuildArguments>;
+using TagsConfig = std::vector<TagsCreatorEntry>;
+struct HandlerMaps { HandlerKind kind; std::vector<std::u16string> maps; };
+using HandlerConfig = std::vector<HandlerMaps>;
+using FallbackConfig = std::vector<std::pair<HandlerKind, FallbackHandler>>;
+
+template<class Method> struct ProcessorSpec {
+    Method method;
+    std::optional<double> priority;
+    ProcessorSpec(Method value, std::optional<double> rank = {}) : method(value), priority(rank) {}
 };
-class ConfigurationHandler {
-    SourceStringMap<ConfigurationRef> maps_;
-public:
-    void initializeModule(ParserRuntime&);
-    options::ObjectRef createContextObject(options::Context&,NativeIdentityBindings<ConfigurationRef>&);
-    void set(std::u16string,ConfigurationRef);
-    ParserShared<Configuration> get(std::u16string_view)const;
-    SourceStringMap<ConfigurationRef>::KeyIterator keys()const;
+template<class Method> struct Processor { Method method; double priority; };
+struct ConfigurationDefinition {
+    HandlerConfig handler;
+    FallbackConfig fallback;
+    StackItemConfig items;
+    TagsConfig tags;
+    TexOptionValues options;
+    NodeCreators nodes;
+    std::vector<ProcessorSpec<FilterList::Callback>> preprocessors, postprocessors;
+    std::optional<ProcessorSpec<InitMethod>> init;
+    std::optional<ProcessorSpec<ConfigMethod>> config;
+    std::optional<double> priority;
+    std::u16string parser{u"tex"};
 };
-class ParserConfiguration:public NativeObject,public std::enable_shared_from_this<ParserConfiguration> {
-    friend class ParserRuntime;
-    ParserRuntime& runtime_;
-    options::ObjectRef identity_;
-    options::Value field(std::u16string_view)const;
-    std::shared_ptr<FunctionList> functionList(std::u16string_view)const;
-    std::shared_ptr<PrioritizedList<ConfigurationRef>> configurationList()const;
-    std::shared_ptr<SubHandlers> handlerList()const;
-    void setNativeField(std::u16string_view,std::any);
-protected:
-    virtual ParserShared<Configuration> getPackage(std::u16string_view);
-private:
-    void addFilters(TeX&,ConfigurationRef);
-    void warn(std::u16string);
+using ConfigurationRef = std::shared_ptr<Configuration const>;
+
+class Configuration {
+    Configuration(std::u16string, ConfigurationDefinition);
 public:
-    explicit ParserConfiguration(ParserRuntime&); // allocation only
-    virtual void append(ConfigurationRef,options::Value priority=options::Undefined{});
-    void initializeParserConfiguration(options::Value packages,options::Value parsers=options::Undefined{});
-    ParserRuntime& runtime()const;
-    options::Value sourceField(std::u16string_view name)const{return field(name);}
-    virtual void init();
-    virtual void config(TeX&);
-    virtual void addPackage(options::Value);
-    virtual void add(std::u16string name,TeX&,options::Value options=options::Undefined{});
+    std::u16string name;
+    HandlerConfig handler;
+    FallbackConfig fallback;
+    StackItemConfig items;
+    TagsConfig tags;
+    TexOptionValues options;
+    NodeCreators nodes;
+    std::vector<Processor<FilterList::Callback>> preprocessors, postprocessors;
+    std::optional<Processor<InitMethod>> initMethod;
+    std::optional<Processor<ConfigMethod>> configMethod;
+    double priority;
+    std::u16string parser;
+    static ConfigurationRef create(ConfigurationHandler&, std::u16string name, ConfigurationDefinition = {});
+    static ConfigurationRef local(ConfigurationDefinition = {});
+    InitMethod init() const noexcept;
+    ConfigMethod config() const noexcept;
+};
+
+class ConfigurationHandler final {
+    std::vector<std::pair<std::u16string, ConfigurationRef>> maps_;
+public:
+    void set(std::u16string, ConfigurationRef);
+    ConfigurationRef get(std::u16string_view) const;
+    std::vector<std::u16string> keys() const;
+};
+
+class ParserConfiguration {
+    ConfigurationHandler& registry_;
+    MapHandler& maps_;
+    TexSessionState& session_;
+    MacroCallbacks const& callbacks_;
+    WarningSink& warnings_;
+    std::vector<std::u16string> parsers_;
+    FunctionList<ParserConfiguration&> initMethods_;
+    FunctionList<ParserConfiguration&, TeX&> configMethods_;
+    PrioritizedList<ConfigurationRef> configurations_;
+    ConfigurationRef getPackage(std::u16string_view);
+    void addFilters(TeX&, Configuration const&);
+public:
+    ParserConfiguration(ConfigurationHandler&, MapHandler&, TexSessionState&,
+        MacroCallbacks const&, WarningSink&, std::span<PackageSelection const>,
+        std::vector<std::u16string> parsers = {u"tex"});
+    ParserConfiguration(ParserConfiguration const&) = delete;
+    ParserConfiguration& operator=(ParserConfiguration const&) = delete;
+    SubHandlers handlers;
+    StackItemConfig items;
+    TagsConfig tags;
+    TexOptionValues options;
+    NodeCreators nodes;
+    MapHandler& maps() const noexcept { return maps_; }
+    TexSessionState& session() const noexcept { return session_; }
+    MacroCallbacks const& callbacks() const noexcept { return callbacks_; }
+    void append(ConfigurationRef, std::optional<double> priority = {});
+    void addPackage(PackageSelection const&);
+    void init();
+    // Source input-jax phases require the real native TeX/ParseOptions services.
+    // These remain unimplemented until those owners are ready, with no fallback.
+    void config(TeX&);
+    void add(std::u16string_view name, TeX&, TexOptionValues const& = {});
 };
 }
