@@ -423,6 +423,8 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/column_parser.cpp
     tests/math/tex_parser.cpp
     tests/math/parse_methods.cpp
+    tests/math/base_methods.cpp
+    tests/math/base_mappings.cpp
     tests/math/stack.cpp
     tests/math/tags.cpp
     tests/math/macro.cpp
@@ -442,7 +444,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_unit_util.cpp
     tests/math/native_scene_stroke_dash.cpp
     tests/math/native_math_item.cpp
-    tests/math/parse_util_native.cpp
+    tests/math/parse_util.cpp
     tests/math/mml_native_factory.cpp
     tests/math/mml_defaults.cpp
     tests/math/mml_node_state.cpp
