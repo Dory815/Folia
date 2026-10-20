@@ -107,8 +107,6 @@ public:
     bool textcompMappingsInitialized=false;
     // AmsCdMethods is one default-export object in the Source module instance.
     Property amsCdMethods=Missing{};
-    // CasesConfiguration.ts exports one CasesMethods object per module instance.
-    Property casesMethods=Missing{};
     // UnitsConfiguration.ts exports this actual methods record; its command
     // map retains the exact same FunctionRefs for this runtime.
     Property unitsMethods=Missing{};

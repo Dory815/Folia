@@ -581,6 +581,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/tagformat.cpp
     tests/math/setoptions.cpp
     tests/math/empheq.cpp
+    tests/math/cases.cpp
     tests/math/native_tex_color.cpp
     tests/math/native_tex_column_definitions.cpp
     tests/math/native_tex_unit_util.cpp
