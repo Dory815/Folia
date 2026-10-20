@@ -68,6 +68,10 @@ green corpora establish reference data, not acceptance for rewritten code.
   Repeated input-jax construction must release forms and local creators without
   growing a shared registry. Closed typed option shapes replace arbitrary JS
   object/array mutation; report that boundary separately from rendered fidelity.
+  Preserve GetArgCount's absent/undefined default separately from explicit empty
+  brackets, the truthy string "0", and an explicitly supplied null argument.
+  Retain all 42 historical formulas and verify actual extpfeil/Mathtools override
+  order; obsolete reflection-dump comparisons are not mathematical acceptance.
 
 - Colortbl must compare actual Source trees for cell/row/column precedence,
   clearing, sparse columns, preambles, overlap arguments and each array wrapper.

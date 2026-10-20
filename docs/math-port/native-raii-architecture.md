@@ -229,6 +229,35 @@ The full package is not accepted until its original mappings, methods, options,
 factory, postfilter and tag composition run together through real TeX compilation
 against pinned Source. A tag strategy test alone is component evidence only.
 
+The whole-package port retains all 122 registrations in five original maps;
+the reproducible mapping generator reads the pinned pristine Source tables and
+checks their fixed fingerprint. Five environment handlers return StackEntry,
+27 macro handlers use MacroInvocation/DispatchOutcome, and the six inherited
+aliases name their original Base/AMS/Newcommand callbacks. Normal macro returns
+are NoParseResult; explicit null-frame pushes stay at their Source call sites.
+
+Paired delimiter definitions retain finite TexArgument values and immutable
+callback IDs. GetArgCount without brackets represents Source undefined, which
+activates PairedDelimiters' default count 1. An explicit empty bracket stays an
+empty string; the string "0" remains truthy for substitution with zero arguments.
+Do not confuse any of these with an explicit NullArgument. MakeAboxedCommand
+writes the current definition layer directly; paired-delimiter declarations use
+NewcommandUtil::addMacro and its original scope/protection/delimiter handling.
+
+Mathtools' 20 fields comprise 14 strings, four flags and two typed maps. The
+legacycolonsymbols field alone needs an owned bool-or-string value: Source
+compares its previous value strictly, then selects add/remove by the old value's
+truthiness. The other two settable flags have truthiness-only consumers. Field
+presence, complete key validation and assignment order remain distinct. Source's
+misspelled pariedDelimiters exclusion is preserved when recognizing keys; scalar
+replacement of the real typed pairedDelimiters map, or bool replacement of a
+string field, is rejected at the native boundary. No second option store exists.
+
+The existing Unicode lowercase primitive and fixed Unicode 16 data are reused
+for MathMakeBox's position comparison. They operate only on UTF-16 values and
+do not restore runtime object or callable services. Source token construction
+without text remains nullopt, distinct from an explicitly empty text node.
+
 ### Colortbl array extension (2026-10-20)
 
 The one upstream `ColortblConfiguration.ts` remains `colortbl/configuration.*`.
