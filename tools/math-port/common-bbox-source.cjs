@@ -19,6 +19,8 @@ const space=(width='1.25em',height='.8em',depth='.2em')=>node('mspace',[],{width
 function table(frame=false){const rows=[[space(),space('.7em','.3em','.1em')],[space('.7em','.3em','.1em'),space()]].map(cells=>node('mtr',cells.map(c=>node('mtd',[c]))));return node('mtable',rows,{columnspacing:'.5em',rowspacing:'.2em',framespacing:frame?'.5em .125em':'0 0',...(frame?{frame:'solid',rowlines:'dashed'}:{})});}
 const cases=[
  ['space',()=>space()],['negative-space',()=>space('-.25em','.3em','.1em')],['px-space',()=>space('8px','16px','4px')],
+ ['ex-space',()=>space('1.5ex','1ex','.5ex')],
+ ['ex-padded',()=>node('mpadded',[space('1ex','.5ex','.25ex')],{width:'+.5ex',lspace:'.25ex'})],
  ['padded',()=>node('mpadded',[space('1em','.4em','.2em')],{width:'+.5em',lspace:'.2em',height:'+.1em',depth:'+.1em',voffset:'.05em'})],
  ['styled',()=>node('mrow',[space()],{style:'margin-left: .2em; margin-right: .3em; padding: .1em; border: .05em solid red'})],
  ['fraction',()=>node('mfrac',[space(),space('.7em','.3em','.1em')])],

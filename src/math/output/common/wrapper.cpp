@@ -416,7 +416,6 @@ double CommonWrapper::length2em(LengthInput const &value, double size,
     context.size_em = size;
     context.scale = scale.value_or(bbox.scale);
     context.em_pixels = jax().pxPerEm();
-    context.ex_em = metrics().em ? metrics().ex / metrics().em : .5;
     context.mu_em = 1.0 / 18.0;
     if (const auto *number = std::get_if<double>(&value))
         return lengths::length2em(*number, context);

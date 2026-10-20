@@ -164,6 +164,12 @@ mml::MmlNode &bboxSourceNode(mml::MmlDocument &doc, std::string_view name) {
         return bboxSpace(doc, u"-.25em", u".3em", u".1em");
     if (name == "px-space")
         return bboxSpace(doc, u"8px", u"16px", u"4px");
+    if (name == "ex-space")
+        return bboxSpace(doc, u"1.5ex", u"1ex", u".5ex");
+    if (name == "ex-padded")
+        return bboxNode(doc, K::mpadded, {&bboxSpace(doc, u"1ex", u".5ex", u".25ex")},
+                        bboxAttrs({{u"width", std::u16string(u"+.5ex")},
+                                   {u"lspace", std::u16string(u".25ex")}}));
     if (name == "padded")
         return bboxNode(doc, K::mpadded, {&bboxSpace(doc, u"1em", u".4em", u".2em")},
                         bboxAttrs({{u"width", std::u16string(u"+.5em")},
@@ -473,14 +479,14 @@ suite math_native_common_jax_methods = [] {
             {bboxRegistration<common::CommonMspace>(mml::NodeKind::mspace)},
             &makeUnexpectedLinebreaks);
         expect(first.w == .5);
-        expect(first.h == .5);
+        expect(first.h == .431);
         input.metrics.ex = 16;
         auto second = common::CommonOutputJax::getBBox(
             document, space, input, target,
             {bboxRegistration<common::CommonMspace>(mml::NodeKind::mspace)},
             &makeUnexpectedLinebreaks);
         expect(second.w == .25);
-        expect(second.h == 1.0);
+        expect(second.h == .431);
         auto &text = bboxToken(document, mml::NodeKind::mtext, u"host text");
         text.attributes().set(u"style",
                               u"font-family: serif; font-weight: bold; font-style: italic;");
