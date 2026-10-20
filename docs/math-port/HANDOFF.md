@@ -21,6 +21,21 @@
   `build/math-port/native-definitions-begingroup-final-full.log`，句柄5272已终态。
   构建48807/3406均终态exit0，日志native-definition-values-build.log、native-begingroup-build.log。
   当前无live build/native；完整TeX→SVG、38包接通和Folia替换仍未完成。
+- **随后新增原native PrioritizedList/FunctionList已提交6c9cc6bb**：原模块保留类/继承职责，
+  value vector + compile-time typed void/bool函数指针，无Context/记录身份/泛型实参/receiver。
+  原function_list.cpp旧实现已删除（现在是模板header），旧bindings仍是inactive待退消费者，
+  不可进入native配置图。构建73996终态exit0，native-function-list-build.log；五UT/26断言
+  聚焦通过，native-function-list-focused.log；正式util-function-list-source.cjs十观察/四TS+CJS
+  锁Root从C:\Windows重放exit0，native-function-list-source.log。没有重跑完整suite，
+  不能声称当前完整321项已跑；上述316完整基线与新五项focused须区分。
+- **配置新Source证据已提交80fb9771**：tex-options-lifetime-source.cjs五观察/完整profile锁，
+  Root从C:\Windows重放exit0，native-options-lifetime-source.log。旧未推广sketch误把
+  allowOptions.tex.maxBuffer=false当成允许false值：实际命令报TeXOptionNotSettable、5120不变。
+  Root已去掉候选FalseOption/BufferLimit，Column候选maxBuffer直读size_t。
+  实际effective options跨compile/reset保留；request ParseOptions应借input-jax lifetime唯一
+  mutable typed选项值，不能每表达式恢复defaults。mathStyle resolver构造时捕获，后来setOptions
+  改mathStyle=ISO并不替换resolver（A仍按初始TeX模式）；这是实际Source行为，不要动态重算。
+  这些是新发现的候选契约错误，不重查已验收scanner/ParseUtil/MML/Common。
 - 本轮已提交：**caff2e5d** 原Token+session纯值别名/单一定义存储；**3f056eef** 原
   BegingroupStack原生层算法+Source对照；**44fc49ef** 原Configuration三职责/typed dispatch约束。
   定义值四新UT+原七session+四column共15项/92断言；native-definition-values-focused.log。
@@ -54,6 +69,16 @@
   旧tex-parse-options-contract的“单ParserConfiguration+ProfileTables”只是早期sketch，
   不足以表达原三个职责，不可直接当完整类契约推广。要保留package记录、named registry、
   init/config/filter优先级和handler/factory/options composition，不另造profile facade。
+  PrioritizedList/FunctionList前置已完成，不再重写：configuration列表用
+  PrioritizedList<Configuration const*>；init/config列表分别是FunctionList<ParserConfiguration&>
+  和FunctionList<ParserConfiguration&,TeX&>，filters保持其专门typed数据签名。
+  **先完成具体typed选项/配置声明**，按新的persistent option borrow/captured style约束闭合
+  ParseOptions，无需再做全38包inventory。Root已从实际profile观察所有42个top-level字段/38配置：
+  ignored build/math-port/configuration-options-observed.json；复现probe在
+  tools/math-port/drafts/native-raii/configuration-options-observe.cjs。
+  该JSON是需求证据，不是native schema/验收，不是可运行的函数名解析表。
+  候选tex-parse-options-contract/README.md已加Root correction并修size_t/borrow签名，
+  仍是完整性不足的历史sketch，不当已冻结可构建header。
 - 原解析循环服务契约已审并提交abf3b72a，正式tex-parser-interface-source.cjs三例/
   66 CJS+14 TS锁Root重放通过，native-tex-parser-interface-formal-source.log。
   TexParser只用canonical scanner；ParseInput显式receiver+owned token；currentCS按值保存；
@@ -91,8 +116,8 @@
 - Common→Scene提案在 `common-scene-emission-contract/`，Root读过未冻结body。真实Common家族
   发Scene、LayoutJob一次build/getBBox/freeze，不建Scene wrapper/factory树。TextRun、foreign、
   annotation、paint继承、href hitbox等仍缺；dash schema已补。完整输出和Folia尚未验收。
-- Git原13项无关修改继续保护（见文末），只显式stage自己的文件，不reset。最新代码HEAD
-  3f056eef后接44fc49ef文档提交；本记录另作独立小提交。压缩前更新实际进程/下一步。
+- Git原13项无关修改继续保护（见文末），只显式stage自己的文件，不reset。最新代码6c9cc6bb，
+  随后80fb9771文档/Source提交；本记录另作独立小提交。当前没有live build/native/agent。
 
 ### 历史组件证据（当前状态以上方短检查点为准）
 
