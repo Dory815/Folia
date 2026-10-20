@@ -115,6 +115,12 @@ struct TextRequest {
     MmlNode *node;
     bool levelPresent;
 };
+struct TextMappingCase {
+    std::u16string_view map, name;
+    MacroHandler method;
+    std::vector<TexArgument> arguments;
+};
+#include "math/fixtures/textmacros-mappings.inc"
 thread_local std::vector<TextRequest> *textRequests{};
 MmlNode &observeTextNode(NodeFactory &factory, NodeKind kind, std::span<MmlNode *const> children,
                          NodeDefinition definition, MmlNode *text) {
@@ -130,6 +136,19 @@ MmlNode &observeTextNode(NodeFactory &factory, NodeKind kind, std::span<MmlNode 
 } // namespace
 
 suite textmacros = [] {
+    "textmacros every original character and command mapping keeps its compiled callback and typed arguments"_test =
+        [] {
+            TextFixture f;
+            for (auto const &entry : textMappingCases) {
+                auto lookup = f.maps.getMap(entry.map)->lookup(entry.name);
+                auto macro = std::get_if<Macro const *>(&lookup);
+                expect(macro && *macro);
+                if (macro && *macro) {
+                    expect(std::get<MacroHandler>((*macro)->function) == entry.method);
+                    expect(std::ranges::equal((*macro)->arguments, entry.arguments));
+                }
+            }
+        };
     "textmacros child configuration captures its own style while sharing the configured main options"_test =
         [] {
             TextFixture f(false, false, true);
