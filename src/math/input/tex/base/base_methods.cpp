@@ -1074,8 +1074,10 @@ DispatchOutcome BaseMethods::BeginEnd(TexParser &p, MacroInvocation const &i) {
         error("InvalidEnv", u"Invalid environment name '%1'", {env});
     auto mapped = p.configuration.handlers.get(HandlerKind::environment)->lookup(env);
     auto *macro = std::get_if<tex::Macro const *>(&mapped);
-    if (macro && *macro && i.dispatch_token == u"\\end") {
-        if (!flag((*macro)->arguments, 0)) {
+    auto *definition = std::get_if<EnvironmentDefinition const *>(&mapped);
+    const bool sessionEnvironment = definition && *definition;
+    if (((macro && *macro) || sessionEnvironment) && i.dispatch_token == u"\\end") {
+        if (!sessionEnvironment && !flag((*macro)->arguments, 0)) {
             auto item = p.itemFactory().create(StackKind::end);
             dynamic_cast<EndItem &>(*item).name = env;
             return push(p, std::move(item));
@@ -1257,10 +1259,12 @@ DispatchOutcome BaseMethods::HandleRef(TexParser &p, MacroInvocation const &i) {
 DispatchOutcome BaseMethods::Macro(TexParser &p, MacroInvocation const &i) {
     std::u16string replacement;
     double count{};
+    bool substitute{};
     std::optional<std::u16string> defaultFirst;
     if (auto *args = std::get_if<Arguments>(&i.arguments)) {
         replacement = text(*args, 0);
         count = number(*args, 1);
+        substitute = flag(*args, 1);
         if (present(*args, 2))
             defaultFirst = text(*args, 2);
     } else {
@@ -1268,9 +1272,10 @@ DispatchOutcome BaseMethods::Macro(TexParser &p, MacroInvocation const &i) {
             std::get<std::reference_wrapper<CommandDefinition const>>(i.arguments).get().body);
         replacement = definition.replacement_source;
         count = definition.arity;
+        substitute = count != 0 || definition.substitute_parameters;
         defaultFirst = definition.default_first_argument;
     }
-    if (count) {
+    if (substitute) {
         std::vector<std::u16string> values;
         if (defaultFirst) {
             auto optional = p.GetBrackets(i.dispatch_token);

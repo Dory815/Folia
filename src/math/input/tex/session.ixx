@@ -10,11 +10,12 @@ struct MacroDefinition final {
     std::u16string replacement_source;
     std::u16string parameter_prefix;
     std::vector<std::u16string> parameter_delimiters;
-    std::uint8_t arity{};
+    double arity{};
     std::optional<std::u16string> default_first_argument;
-    bool parameter_template{}; // Source MacroWithTemplate versus replacement Macro
+    bool parameter_template{};    // Source MacroWithTemplate versus replacement Macro
+    bool substitute_parameters{}; // An explicit [0] still processes defaults and # parameters.
     void validate() const;
-    friend bool operator==(MacroDefinition const&, MacroDefinition const&) = default;
+    friend bool operator==(MacroDefinition const &, MacroDefinition const &) = default;
 };
 
 struct NullArgument final {
@@ -43,24 +44,27 @@ struct CharacterMacroAlias final {
 struct MacroSuppression final {};
 struct CommandDefinition final {
     std::u16string source_token;
-    std::variant<MacroDefinition, NativeMacroAlias,
-                 CharacterMacroAlias, MacroSuppression> body;
+    std::variant<MacroDefinition, NativeMacroAlias, CharacterMacroAlias, MacroSuppression> body;
     void validate() const;
 };
 using DelimiterDefinition = Token;
 struct EnvironmentDefinition final {
     std::u16string begin_source, end_source;
-    std::uint8_t arity{};
+    double arity{};
     std::optional<std::u16string> default_first_argument;
+    bool substitute_parameters{};
 };
 enum class DefinitionKind { command, delimiter, environment };
-struct DefinitionKey final { DefinitionKind kind; std::u16string name; };
+struct DefinitionKey final {
+    DefinitionKind kind;
+    std::u16string name;
+};
 struct DefinitionLayer final {
     std::int32_t priority{};
     std::unordered_map<std::u16string, CommandDefinition> commands;
     std::unordered_map<std::u16string, DelimiterDefinition> delimiters;
     std::unordered_map<std::u16string, EnvironmentDefinition> environments;
-    bool erase(DefinitionKey const&);
+    bool erase(DefinitionKey const &);
 };
 // Only owned values persist between expressions. The original BegingroupStack
 // service operates on these layers; lookup never creates another definition map.
@@ -78,30 +82,36 @@ struct TexDefinitionState final {
 struct MacroColumnDefinition final {
     std::u16string replacement;
     double argument_count{};
-    friend bool operator==(MacroColumnDefinition const&, MacroColumnDefinition const&) = default;
+    friend bool operator==(MacroColumnDefinition const &, MacroColumnDefinition const &) = default;
 };
 
 class ColumnMacroDefinitions final {
     std::unordered_map<char16_t, MacroColumnDefinition> definitions_;
-public:
-    MacroColumnDefinition const* find(char16_t specifier) const noexcept;
+
+  public:
+    MacroColumnDefinition const *find(char16_t specifier) const noexcept;
     void set(char16_t specifier, MacroColumnDefinition definition);
     bool erase(char16_t specifier) noexcept;
-    std::size_t size() const noexcept { return definitions_.size(); }
-    bool empty() const noexcept { return definitions_.empty(); }
-    friend bool operator==(ColumnMacroDefinitions const&, ColumnMacroDefinitions const&) = default;
+    std::size_t size() const noexcept {
+        return definitions_.size();
+    }
+    bool empty() const noexcept {
+        return definitions_.empty();
+    }
+    friend bool operator==(ColumnMacroDefinitions const &,
+                           ColumnMacroDefinitions const &) = default;
 };
 
 struct LabelRecord final {
     std::u16string tag;
     std::u16string id;
-    friend bool operator==(LabelRecord const&, LabelRecord const&) = default;
+    friend bool operator==(LabelRecord const &, LabelRecord const &) = default;
 };
 using LabelMap = std::unordered_map<std::u16string, LabelRecord>;
 using IdSet = std::unordered_set<std::u16string>;
 struct TagCounterState final {
     std::int64_t equation{};
-    friend bool operator==(TagCounterState const&, TagCounterState const&) = default;
+    friend bool operator==(TagCounterState const &, TagCounterState const &) = default;
 };
 
 struct TagInfoState final {
@@ -138,7 +148,7 @@ struct EquationFinishResult final {
 // and the renderer's macro definitions. No equation/parser/request state lives
 // here. Equation scratch is passed explicitly to finishEquation.
 class TexSessionState final {
-private:
+  private:
     TexDefinitionState definitions_;
     LabelMap all_labels_;
     IdSet all_ids_;
@@ -147,48 +157,63 @@ private:
     // It survives individual equations and tag resets without retaining nodes.
     std::optional<ColorModel> color_;
     ColumnMacroDefinitions column_definitions_;
-public:
-    TexSessionState() = default;
-    TexSessionState(TexSessionState const&) = default;
-    TexSessionState& operator=(TexSessionState const&) = default;
-    TexSessionState(TexSessionState&&) noexcept = default;
-    TexSessionState& operator=(TexSessionState&&) noexcept = default;
 
-    MacroDefinition const* findMacro(std::u16string_view name) const;
+  public:
+    TexSessionState() = default;
+    TexSessionState(TexSessionState const &) = default;
+    TexSessionState &operator=(TexSessionState const &) = default;
+    TexSessionState(TexSessionState &&) noexcept = default;
+    TexSessionState &operator=(TexSessionState &&) noexcept = default;
+
+    MacroDefinition const *findMacro(std::u16string_view name) const;
     void defineMacro(std::u16string name, MacroDefinition definition);
     bool eraseMacro(std::u16string_view name);
     void clearMacros() noexcept;
 
-    CommandDefinition const* findCommand(std::u16string_view name) const;
+    CommandDefinition const *findCommand(std::u16string_view name) const;
     void defineCommand(std::u16string name, CommandDefinition);
     bool eraseCommand(std::u16string_view name);
-    DelimiterDefinition const* findDelimiter(std::u16string_view name) const;
+    DelimiterDefinition const *findDelimiter(std::u16string_view name) const;
     void defineDelimiter(std::u16string name, DelimiterDefinition);
     bool eraseDelimiter(std::u16string_view name);
-    EnvironmentDefinition const* findEnvironment(std::u16string_view name) const;
+    EnvironmentDefinition const *findEnvironment(std::u16string_view name) const;
     void defineEnvironment(std::u16string name, EnvironmentDefinition);
     bool eraseEnvironment(std::u16string_view name);
-    TexDefinitionState& definitions() noexcept { return definitions_; }
-    TexDefinitionState const& definitions() const noexcept { return definitions_; }
-    DefinitionLayer& currentDefinitionLayer() noexcept;
+    TexDefinitionState &definitions() noexcept {
+        return definitions_;
+    }
+    TexDefinitionState const &definitions() const noexcept {
+        return definitions_;
+    }
+    DefinitionLayer &currentDefinitionLayer() noexcept;
 
-    ColorModel& enableColor();
-    ColorModel* colorModel() noexcept;
-    ColorModel const* colorModel() const noexcept;
+    ColorModel &enableColor();
+    ColorModel *colorModel() noexcept;
+    ColorModel const *colorModel() const noexcept;
 
-    ColumnMacroDefinitions& columnDefinitions() noexcept { return column_definitions_; }
-    ColumnMacroDefinitions const& columnDefinitions() const noexcept { return column_definitions_; }
+    ColumnMacroDefinitions &columnDefinitions() noexcept {
+        return column_definitions_;
+    }
+    ColumnMacroDefinitions const &columnDefinitions() const noexcept {
+        return column_definitions_;
+    }
 
-    LabelRecord const* findLabel(std::u16string_view name) const;
-    LabelMap const& labels() const noexcept { return all_labels_; }
+    LabelRecord const *findLabel(std::u16string_view name) const;
+    LabelMap const &labels() const noexcept {
+        return all_labels_;
+    }
     bool containsId(std::u16string_view id) const;
-    IdSet const& ids() const noexcept { return all_ids_; }
-    TagCounterState counters() const noexcept { return all_counter_; }
+    IdSet const &ids() const noexcept {
+        return all_ids_;
+    }
+    TagCounterState counters() const noexcept {
+        return all_counter_;
+    }
 
-    TexEquationState beginEquation(
-        bool ref_update = false,
-        std::optional<std::int64_t> recompile_counter = std::nullopt) const;
-    EquationFinishResult finishEquation(TexEquationState const& equation);
+    TexEquationState
+    beginEquation(bool ref_update = false,
+                  std::optional<std::int64_t> recompile_counter = std::nullopt) const;
+    EquationFinishResult finishEquation(TexEquationState const &equation);
     void resetTags(std::int64_t offset = 0) noexcept;
 };
-}
+} // namespace folia::math::tex

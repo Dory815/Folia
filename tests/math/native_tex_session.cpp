@@ -10,7 +10,7 @@ suite native_tex_session_tests = [] {
     "tex_color_session_lifetime_follows_jax_not_equation_or_tag_reset"_test = [] {
         TexSessionState session;
         expect(session.colorModel() == nullptr);
-        auto& colors = session.enableColor();
+        auto &colors = session.enableColor();
         colors.defineColor(u"rgb", u"Stored", u"0,0.5,1");
         auto first = session.beginEquation();
         session.finishEquation(first);
@@ -31,7 +31,8 @@ suite native_tex_session_tests = [] {
     };
 
     "macro_definition_owns_utf16_replacement_prefix_delimiters_and_default"_test = [] {
-        MacroDefinition macro{u"\\frac{#1}{#2}", u"\\foo", {u"", u"+"}, 2, std::u16string{u"x\U0001F600"}};
+        MacroDefinition macro{
+            u"\\frac{#1}{#2}", u"\\foo", {u"", u"+"}, 2, std::u16string{u"x\U0001F600"}};
         macro.validate();
         expect(macro.replacement_source == u"\\frac{#1}{#2}");
         expect(macro.parameter_prefix == u"\\foo");
@@ -40,11 +41,17 @@ suite native_tex_session_tests = [] {
         expect(macro.default_first_argument.value() == u"x\U0001F600");
     };
 
-    "macro_definition_rejects_inconsistent_arity"_test = [] {
+    "macro_definition_checks_templates_and_preserves_explicit_parameter_declarations"_test = [] {
         MacroDefinition bad{u"#2", {}, {}, 1, std::nullopt};
+        bad.parameter_template = true;
         expect(throws<std::invalid_argument>([&] { bad.validate(); }));
         MacroDefinition no_parameter{u"x", {}, {}, 0, std::u16string{u"default"}};
-        expect(throws<std::invalid_argument>([&] { no_parameter.validate(); }));
+        no_parameter.substitute_parameters = true;
+        expect(nothrow([&] { no_parameter.validate(); }));
+        MacroDefinition many{.arity = 10};
+        expect(nothrow([&] { many.validate(); }));
+        many.parameter_template = true;
+        expect(throws<std::invalid_argument>([&] { many.validate(); }));
     };
 
     "equation_state_is_owned_and_source_finish_commits_labels_ids_and_counter"_test = [] {

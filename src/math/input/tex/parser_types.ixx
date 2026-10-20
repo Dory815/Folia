@@ -28,6 +28,7 @@ using TexFilterData = core::InputJaxFilterData<ParseOptions>;
 class CharacterMap;
 class TokenMap;
 class MapHandler;
+class MacroCallbacks;
 class SubHandlers;
 struct TexOptionValues;
 struct Macro;

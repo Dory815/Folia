@@ -23,6 +23,9 @@ ParseOptions::~ParseOptions() = default;
 MapHandler &ParseOptions::maps() const noexcept {
     return configuration_.maps();
 }
+MacroCallbacks const &ParseOptions::callbacks() const noexcept {
+    return configuration_.callbacks();
+}
 void ParseOptions::pushParser(TexParser &parser) {
     parsers.insert(parsers.begin(), &parser);
 }

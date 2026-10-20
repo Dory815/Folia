@@ -116,7 +116,7 @@ suite token_map = [] {
         map.parse(parser,u"expand");
         expect(std::ranges::equal(trace.observations,std::array<std::u16string,3>{u"\\expand",u"\\expand",u"replacement"}));
         fixture.session.defineCommand(u"expand",CommandDefinition{u"expand",MacroSuppression{}});
-        expect(std::holds_alternative<ContinueDispatch>(map.parse(parser,u"expand")));
+        expect(std::holds_alternative<InvokeFallback>(map.parse(parser,u"expand")));
         expect(parser.currentCS().empty());
     };
     "token map lookup keeps the lookup key separate from the captured token"_test = [] {
