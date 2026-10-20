@@ -377,7 +377,8 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_tex_session.cpp
     tests/math/native_tex_definitions.cpp
     tests/math/native_tex_begingroup.cpp
-    tests/math/native_function_list.cpp
+    tests/math/prioritized_list.cpp
+    tests/math/function_list.cpp
     tests/math/native_raii_tex_environment.cpp
     tests/math/native_svg_writer.cpp
     tests/math/native_tex_error_source.cpp

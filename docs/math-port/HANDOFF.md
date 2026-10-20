@@ -11,6 +11,20 @@
 
 ### 恢复时先用这个短检查点
 
+- **最新用户纠正：禁止用native/typed/新旧前缀掩盖重复职责或保留替代实现。**
+  本轮将新测试`native_function_list.cpp`归回`function_list.cpp`，priority测试归
+  `prioritized_list.cpp`，各对应同名类；没有另建生产模块，生产代码仍在原两个ixx内。
+  删除旧reference_function_list/function_list_array_owner/function_list_void_result/
+  prioritized_list_source_operations四测试和function-list旧generator/inc/ledger/check工具。
+  历史P19a证据已标superseded，不再作为当前完整FunctionList验收。
+  **旧utility bindings还没有删除**：其直接消费者是core/output_jax、input/tex/
+  handler_context_bindings、parser_runtime、configuration_prioritized_list_projection、
+  output/common/common_bindings（均不在当前组件构建图）。这些消费者尚未完成原职责
+  的类型改写，不能把测试清理说成整个旧绑定图已清完。后续在相应owner改写时一起
+  删除其绑定依赖，不另建native_*生产文件或兼容分支。
+  本轮构建句柄13785已终态exit0，function-list-cleanup-build.log；五项/26断言聚焦通过，
+  function-list-cleanup-focused.log；正式Source十观察/四锁重放exit0。没有重跑完整321项。
+
 - **先读本节正文，再核对Git/进程/代理，随后从“下一步”继续。** AGENTS已有该规则，
   不能只在摘要里提到路径。重开已解决问题必须指出使原结论失效的新代码或新证据。
   重要决定/验收/提交后、压缩或结束前更新同一本；下文历史不是当前待办。

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "typescript": "5.9.3",
-  "status": "locally_accepted_complete_function_list_not_tex_or_renderer",
+  "status": "historical_superseded_by_typed_synchronous_function_list",
   "files": [
     {
       "source": "ts/util/FunctionList.ts",

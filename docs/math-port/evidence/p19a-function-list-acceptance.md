@@ -1,5 +1,11 @@
 # P19a root local acceptance — complete FunctionList
 
+> Historical evidence, superseded on 2026-10-20. The object/Promise-based
+> FunctionList implementation and its test generator are retired. Current
+> synchronous utility behavior is checked by `util-function-list-source.cjs`,
+> `tests/math/function_list.cpp`, and `tests/math/prioritized_list.cpp`.
+> The claims below do not describe the current implementation or parser wiring.
+
 Root accepts all four members of pinned MathJax 4.1.3 FunctionList.ts, SHA256
 d4106c42268e0d7cb3549f8ffdbeb5bab87eae6daffae7314d5e724045a6918f.
 Actual CJS SHA256 is
