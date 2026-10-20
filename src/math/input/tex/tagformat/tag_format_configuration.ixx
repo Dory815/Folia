@@ -3,6 +3,8 @@ export module folia.math.input.tex.tagformat.tag_format_configuration;
 export import folia.math.input.tex.parser;
 import std;
 export namespace folia::math::tex {
-void tagformatConfig(ParserRuntime&,ParserConfiguration&,TeX&);
-struct TagFormatConfiguration { static ConfigurationRef initializeModule(ParserRuntime&); };
-}
+void tagformatConfig(ParserConfiguration &, TeX &);
+struct TagFormatConfiguration {
+    static ConfigurationRef initializeModule(ConfigurationHandler &);
+};
+} // namespace folia::math::tex

@@ -18,13 +18,11 @@ std::u16string_view AbstractTags::label() const noexcept {
 void AbstractTags::setLabel(std::u16string label) {
     configuration_.equation.current_tag.label_id = std::move(label);
 }
-TagFormatValue AbstractTags::formatTag(std::u16string_view value) {
+namespace {
+TagFormatValue defaultTag(std::u16string_view value) {
     return std::vector<std::u16string>{u"(", std::u16string(value), u")"};
 }
-TagFormatValue AbstractTags::formatRef(std::u16string_view value) {
-    return formatTag(value);
-}
-std::u16string AbstractTags::formatUrl(std::u16string_view id, std::u16string_view base) {
+std::u16string defaultUrl(std::u16string_view id, std::u16string_view base) {
     for (std::size_t i = 0; i < id.size(); ++i) {
         if (id[i] >= 0xD800 && id[i] <= 0xDBFF) {
             if (i + 1 >= id.size() || id[i + 1] < 0xDC00 || id[i + 1] > 0xDFFF)
@@ -49,16 +47,81 @@ std::u16string AbstractTags::formatUrl(std::u16string_view id, std::u16string_vi
     }
     return result;
 }
-std::u16string AbstractTags::formatId(std::u16string_view value) {
+std::u16string defaultId(std::u16string_view value) {
     std::u16string text(value);
     regexp_host::RegExp whitespace(u"\\s", u"g");
     while (auto match = whitespace.exec(text))
         text[match->index] = u'_';
     return u"mjx-eqn:" + text;
 }
-std::u16string AbstractTags::formatNumber(std::int64_t number, std::optional<std::int64_t>) {
+std::u16string defaultNumber(std::int64_t number) {
     auto text = std::to_string(number);
     return {text.begin(), text.end()};
+}
+} // namespace
+void AbstractTags::setFormatters(TexOptionValues const &options) {
+    if (!options.tagformat)
+        throw std::invalid_argument("Tag format options are absent");
+    formatterOptions_ = &options;
+}
+TagFormatOptions const &AbstractTags::formatters() const {
+    if (!formatterOptions_->tagformat)
+        throw std::logic_error("Tag format options were removed from the input jax");
+    return *formatterOptions_->tagformat;
+}
+TagFormatValue AbstractTags::formatTag(std::u16string_view value) {
+    if (!formatterOptions_)
+        return formatTagDefault(value);
+    auto callback = formatters().tag.value_or(nullptr);
+    if (!callback)
+        throw std::logic_error("Tag formatter is absent");
+    return callback(value);
+}
+TagFormatValue AbstractTags::formatRef(std::u16string_view value) {
+    if (!formatterOptions_)
+        return formatRefDefault(value);
+    auto callback = formatters().ref.value_or(nullptr);
+    return callback ? callback(value) : formatTag(value);
+}
+std::u16string AbstractTags::formatUrl(std::u16string_view id, std::u16string_view base) {
+    if (!formatterOptions_)
+        return formatUrlDefault(id, base);
+    auto callback = formatters().url.value_or(nullptr);
+    if (!callback)
+        throw std::logic_error("Tag URL formatter is absent");
+    return callback(id, base);
+}
+std::u16string AbstractTags::formatId(std::u16string_view value) {
+    if (!formatterOptions_)
+        return formatIdDefault(value);
+    auto callback = formatters().id.value_or(nullptr);
+    if (!callback)
+        throw std::logic_error("Tag ID formatter is absent");
+    return callback(value);
+}
+std::u16string AbstractTags::formatNumber(std::int64_t number,
+                                          std::optional<std::int64_t> subnumber) {
+    if (!formatterOptions_)
+        return formatNumberDefault(number, subnumber);
+    auto callback = formatters().number.value_or(nullptr);
+    if (!callback)
+        throw std::logic_error("Tag number formatter is absent");
+    return callback(number);
+}
+TagFormatValue AbstractTags::formatTagDefault(std::u16string_view value) {
+    return defaultTag(value);
+}
+TagFormatValue AbstractTags::formatRefDefault(std::u16string_view value) {
+    return formatTag(value);
+}
+std::u16string AbstractTags::formatUrlDefault(std::u16string_view id, std::u16string_view base) {
+    return defaultUrl(id, base);
+}
+std::u16string AbstractTags::formatIdDefault(std::u16string_view value) {
+    return defaultId(value);
+}
+std::u16string AbstractTags::formatNumberDefault(std::int64_t number, std::optional<std::int64_t>) {
+    return defaultNumber(number);
 }
 void AbstractTags::start(std::string_view environment, bool taggable, bool defaultTags) {
     auto &equation = configuration_.equation;
@@ -228,6 +291,13 @@ TexOptionValues TagsFactory::defaults() {
     values.tagAlign = u"baseline";
     return values;
 }
+TagFormatOptions TagsFactory::formatters() {
+    return TagFormatOptions{.number = &defaultNumber,
+                            .tag = &defaultTag,
+                            .ref = nullptr,
+                            .id = &defaultId,
+                            .url = &defaultUrl};
+}
 void TagsFactory::add(ParserConfiguration &configuration, TagsCreatorEntry entry) {
     if (!entry.create)
         throw std::invalid_argument("Tags creator cannot be null");
@@ -252,6 +322,14 @@ std::unique_ptr<Tags> TagsFactory::getDefault(ParseOptions &owner, std::u16strin
 std::unique_ptr<Tags> TagsFactory::create(ParseOptions &owner, std::u16string_view requested,
                                           std::u16string_view fallback,
                                           std::span<TagsCreatorEntry const> creators) {
+    auto make = creator(requested, fallback, creators);
+    auto tags = make(owner);
+    if (!tags)
+        throw std::runtime_error("Tags creator returned no product");
+    return tags;
+}
+TagsCreator TagsFactory::creator(std::u16string_view requested, std::u16string_view fallback,
+                                 std::span<TagsCreatorEntry const> creators) {
     auto resolve = [&](std::u16string_view name) -> TagsCreator {
         for (auto const &creator : creators)
             if (creator.name == name)
@@ -264,16 +342,13 @@ std::unique_ptr<Tags> TagsFactory::create(ParseOptions &owner, std::u16string_vi
             return [](ParseOptions &config) -> std::unique_ptr<Tags> {
                 return std::make_unique<AllTags>(config);
             };
-        return nullptr;
+        return {};
     };
     auto creator = resolve(requested);
     if (!creator)
         creator = resolve(fallback);
     if (!creator)
         throw std::runtime_error("Unknown tags class");
-    auto tags = creator(owner);
-    if (!tags)
-        throw std::runtime_error("Tags creator returned no product");
-    return tags;
+    return creator;
 }
 } // namespace folia::math::tex
