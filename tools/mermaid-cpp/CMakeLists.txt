@@ -88,7 +88,8 @@ add_test(NAME FoliaMermaidTests COMMAND FoliaMermaidTests)
 if(WIN32 AND MSVC)
     add_library(folia_mermaid_measurement STATIC)
     set_target_properties(folia_mermaid_measurement PROPERTIES CXX_MODULE_STD ON)
-    target_sources(folia_mermaid_measurement PUBLIC FILE_SET CXX_MODULES FILES
+    target_sources(folia_mermaid_measurement PUBLIC FILE_SET CXX_MODULES
+        BASE_DIRS "${FOLIA_MERMAID_REPO_ROOT}/src/platform/text" FILES
         "${FOLIA_MERMAID_REPO_ROOT}/src/platform/text/mermaid_measurer.ixx")
     target_link_libraries(folia_mermaid_measurement PRIVATE dwrite)
     add_executable(FoliaMermaidTextProbe native-text-probe.cpp)
