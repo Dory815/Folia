@@ -2412,3 +2412,28 @@ its PowerShell runner. It invokes the supported build_app.ps1, reuses actual
 MSBuild worker/parser/module/PCH objects and the deployed DLL, and includes the
 console failure runtime. It adds no alternate application implementation or
 build project; generated compiler/linker files and logs stay under ignored build.
+
+### Retire the old SVG Context graph (2026-10-21)
+
+The native_document/render_session pair assembled the discarded Context service
+graph. math.cpp now owns the application request orchestration using the real
+TeXRequest/MathItem/LayoutJob owners. The old output_jax pair mixed mutable SVG
+DOM construction with mathematical placement; Common output_jax now owns the
+shared frame/line placement and the SVG writer owns serialization. The old
+menclose_surface callbacks delegate to, or duplicate, the retained CommonMenclose
+and notation algorithms. Keep those mathematical owners and Source witnesses.
+
+scene_context_nodes and output_jax_bindings are mutable object projection only.
+wrapper_classes, wrapper_constructors and wrapper_source_methods construct JS
+identities and reflective dispatch; the typed CommonWrapperFactory/catalog and
+original Common family classes own the actual products and algorithms. Remove
+these nine module pairs together after their source consumers are accounted.
+
+Legacy native observers that require this graph are not a second supported
+pipeline. Retire their C++ harnesses and paired native-result drivers/comparers;
+keep independent Source oracles, inputs, locks and fixtures. Their whole-object
+field/call/descriptor traces do not become C++ API contracts. Retained mathematical
+coverage remains in the typed family Source tests, full canonical SVG/metrics,
+75-case Scene-route geometry, package corpora and actual lifetime tests. Do not
+describe that as a replay of every old reflective trace field. Tracked draft
+copies are also source consumers; directory names do not make them ignored.
