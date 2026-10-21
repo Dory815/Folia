@@ -1293,7 +1293,15 @@ provider or algorithm is removed. Evidence:
 mfenced-identity-retirement-before.json / mfenced-identity-retirement-final-check.json.
 The class-state and registry oracles still compare only their C++ fixtures;
 neither has independent SourceJSON, so those consumers/tools remain pending a
-deliberate expectation-preservation decision. No new broad runtime gate is claimed.
+deliberate expectation-preservation decision. The original class-state Source
+check passes (29 raw values, 1,682 spacing rows and 2,523 level rows; the raw
+inputs omit numeric classes 4/5/6, so this is not a full 8×8 enumeration).
+The registry's original whole-fixture check fails on its manually adapted C++
+Key/creator-slot wrapper. A bounded Source-only diagnostic then proves that
+all 387 serialized Source values and 175 generated cases remain byte-identical
+to the frozen expectation tail (137,776 bytes); no golden or old wrapper was
+rewritten. Evidence: class-state-original-frozen-check.log and
+registry-original-check-diagnosis.json. No new broad runtime gate is claimed.
 
 ## Evidence and failure handling
 
