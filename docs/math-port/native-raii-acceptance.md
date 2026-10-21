@@ -1419,6 +1419,27 @@ source lists remain byte-equal. Class-binding cpp/ixx consumers decrease
 html-retirement-before.json and html-retirement-final-check.json. No production
 algorithm or repeated broad runtime gate is involved.
 
+### Mfenced captured-length protocol consumer (2026-10-21)
+
+The original four-row class-length fixture/profile check passes, then the
+same frozen profile passes after its existing oracle becomes Source-only.
+These cases register a custom callback which grows, shrinks, rebinds or nulls
+the containing JS childNodes array during classification. The accepted finite
+production families do not perform that operation. The protocol fixture is
+therefore withdrawn without changing the typed Mfenced algorithm or adding
+mutable JS-array behavior. Existing fake-operator ownership and pinned Source
+Scene coverage remain unchanged. The legacy fenced gate drops only this 4/1
+fixture and its dedicated loop-length edit, leaving 988 assertions/226 tests;
+it was not run.
+
+Removal build28779 passes with parallel4. All 478 active sources, six protected
+paths, nine verified input/binary paths, seven retained paths and seventeen
+target source lists remain byte-equal. Class-binding cpp/ixx test consumers
+decrease 46 to 45. Evidence: mfenced-length-before.json,
+mfenced-length-original-source.log, mfenced-length-source-only.log,
+mfenced-length-promoted.json and mfenced-length-final-check.json. No production
+algorithm changed and no broad runtime gate was repeated.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

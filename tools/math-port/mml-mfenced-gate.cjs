@@ -8,7 +8,7 @@ const classes=method('NodeValue MmlMfenced::setTeXclass(');
 classes('fenced-previous-class-omitted','getPrevClass(previous);','');
 classes('fenced-open-class-omitted','if (open) previous = open->setTeXclass(previous);','');
 classes('fenced-close-class-omitted','if (close) previous = close->setTeXclass(previous);','');
-classes('fenced-loop-length-reread','i < count','i < (childNodes ? childNodes->size() : 0)');
+
 classes('fenced-separator-class-omitted','if (separator.isNode()) previous = separator.requireNode("setTeXclass")->setTeXclass(previous);','');
 classes('fenced-fallback-update-omitted','updateTeXclass(updateTarget);','');
 const inherit=method('void MmlMfenced::setChildInheritedAttributes(');
@@ -28,4 +28,4 @@ fake('fake-explicit-null-props-defaulted','if (properties.missing()) properties 
 fake('fake-class-write-omitted','NodeValue(node).requireNodeForWrite("texClass")->setTexClass(texClass);','');
 fake('fake-text-setter-result-discarded','children->push_back(NodeValue(text));','children->push_back(this->factory.create("text",{}));');
 method('std::u16string nativeStringReplaceTarget(')('fenced-undefined-replace-error-flattened','if (value.missing()) host::typeError("Cannot read properties of undefined (reading \'replace\')");','');
-require('./native-mutation-runner.cjs')({name:'math-port-mfenced-consumers',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_mfenced.cpp',additionalFixtures:['reference_mml_mfenced_entries.inc','reference_mml_mfenced_class_length.cpp'],pattern:'*math_port*',assertions:992,tests:227,suiteSummaries:[{assertions:984,tests:225},{assertions:4,tests:1},{assertions:4,tests:1}],mutants});
+require('./native-mutation-runner.cjs')({name:'math-port-mfenced-consumers',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_mfenced.cpp',additionalFixtures:['reference_mml_mfenced_entries.inc'],pattern:'*math_port*',assertions:988,tests:226,suiteSummaries:[{assertions:984,tests:225},{assertions:4,tests:1}],mutants});
