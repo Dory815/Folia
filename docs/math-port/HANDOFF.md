@@ -4,12 +4,12 @@
 
 ## 当前状态与下一步
 
-- 记录提交 **402a7fab**。旧 Scene 50 源已分五批退出，只剩 builder/scene/types/html_types/html_snapshot 共8源；真实算法留在原 Common owner。8fe4445b 修正 CommonMrow inferred fast path；cad58dcd 保留两条 border 数学断言。现再退出旧 SvgMath/TimerHost 四源：前者宽度算法原已在CommonMath，后者只服务撤销的Context回调；无tracked外部API/imports或任何target成员，before-removal证据scene-svgFinal-before-removal.json。parallel4 FoliaMathTests/FoliaNativeMath build exit0，未改活跃代码。
-- 最新完整 math **96710 exit0：870 tests/217144 assertions/176 suites/0 skips**；支持的 WinUI Debug+真实 worker **64450 exit0**，stop join4599ms/total9.07s/empty stderr。日志：`build/math-port/retire-scene-{full-math,worker-verify}.log`、`retire-scene-full-results.json`。删除后 parallel4 native build exit0/no work。未验 Release/GUI 视觉。
-- canonical 清单已刷新至 **57a153f3**、File API **index-2026-10-21T08-13-34-0100.json**：678文件/674代码；560配置源（含83生成字体cpp）、247接口与module map相等、active imports未解析0。清单仅配置事实，Source注释仅索引，不按文件名/空membership判删。工具b38c7627/a074b59f的55项自测与隔离cwd复验已接受。
-- **下一动作**：四源已提交 **176a81f9**；现再退出3个纯protocol消费者（common_factory_live_fields、mml_factory_context_methods_bad_kind_order、mml-node-context-methods-native-tests）。Root完整读体，node probe的kind/text已对照native_mml_families/row_tokens；独立Source记录保留。provider仍有旧消费者，不一并删。证据scene-factoryProtocol-before-removal.json。剩余189个未配置cpp/ixx，canonical尚是678快照；提交三消费者后刷新清单，再读Luna小包报告。
-- 只读材料在 `build/math-port/remaining-{object-graph,mml-owners,tex-owners,tree-util-owners,font-common-owners,lite-html-owners}.md`（graph另有json）。Root已读六报告；graph仅事实。树/util报告的active归类、TeX旧ledger缺口及MML保护名单有错误，正在精确纠正，未接受为删除依据。旧Scene报告仅历史before-removal证据。
-- 当前无build/native运行。Luna在读小包：remaining_font_common_owners（Common factory逐方法消费者）、remaining_mml_owners（旧MML/classBinding及mixed leaf数学断言）、remaining_lite_html_owners（Lite消费者）；只写ignored报告/候选。Root已读queue及修订报告；TeX最初两版误认未配置runtime/test为active，修订后仍须按canonical成员/实际代码核实。新旧index的478个src/math target/path pairs相同。MML bindings仍有旧MML()/classBinding直接消费者，不能仅按implementation无import退源。
+- 记录提交402a7fab；旧Scene50源分五批已退，只保留8源，真实算法留原Common。8fe4445b修正Mrow inferred fast path，cad58dcd保留两条border断言。**176a81f9**又退SvgMath/TimerHost4源；**f30168ca**退3纯Context协议测试/探针。详细职责/验收在acceptance，不恢复重复层。
+- 现再退出Common/SVG factory binding六源+最后的getBBox协议探针（及其ignore例外）。Root读Luna方法图并核对实际声明/回调/typed owner/全部tracked直接API；7路径闭包无external imports/target成员。证据 `scene-commonFactory-before-removal.json`；typed factory/catalog/Common测量/linebreak/styles均保留。
+- 最新完整math **96710 exit0：870 tests/217144 assertions/176 suites/0 skips**；真实WinUI Debug worker **64450 exit0**，stop join4599ms/total9.07s/empty stderr。日志 `retire-scene-{full-math,worker-verify}.log`、`retire-scene-full-results.json`。未验Release/GUI视觉。最新小批后parallel4 build **69747 exit0**：两个unconfigured tests退出触发CMake再生成，MathTests.exe/DLL前后hash相同、保护11字节不变，`factory-retirement-build{.log,-results.json}`。未重复full/worker。
+- **下一动作**：提交factory binding小批，然后显式刷新canonical清单并提交记录；预期当前src/math 668文件/664代码，183未配置cpp/ixx（MML64、TeX36、Core+tree/util58、font/common/svg15、Lite/html10）。canonical尚是57a153f3的678快照；需要新File API index（69747刚重新配置），560配置源/247map必须再核实。mapping_data.inc/license不计余项且保留。
+- 剩余图/owner报告均在ignored `build/math-port/remaining-*.{md,json}`。Root已读六初稿、修订稿、consumer queue和新Common factory/Lite小包。TeX两版误认未配置runtime/test为active，已纠正；不直接接受旧ledger为当前gap，不按空membership或agent结论判删。旧图有被上述提交移除的路径，仅作历史依赖证据。
+- 当前无build/native运行。仅Luna **remaining_mml_owners**在做 `build/math-port/mml-leaf-retirement-review.md`：旧MML/classBinding消费者及reference_leaf混合数学断言；完成后Root读报告/候选再定。Common factory/Lite agents已完成。Lite node_store/source_text_content仍有保护旧LiteModule/g259消费者，暂不退provider；HTMLMathItem的一般网页范围替换不在当前TeX→SVG worker操作内，实际DOM算法不能因inactive直接删。MML bindings仍有旧MML()/classBinding调用者，不能只按implementation无import退。
 
 ## 已接受决策
 

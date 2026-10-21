@@ -840,6 +840,27 @@ no external module consumers for these three files
 other old-consumer and protected-diff accounting. Independent factory/node
 Source observers, locks and records remain; this is not reflective-trace parity.
 
+The Common factory binding chain retires after its last protocol-only getBBox
+probe: common_bindings.{ixx,cpp}, factory_context_fields.ixx,
+wrapper_class_bindings.ixx, svg/wrapper_factory_bindings.{ixx,cpp}, and
+drafts/common-getbbox-lifetime-native-candidate.cpp. Root cross-checked Luna's
+method/consumer map against declarations, Context callback implementations,
+typed factory catalog/measurement and tracked direct API searches. Dynamic
+constructors, live property/Map hooks, prototype walking and callback leases
+have no remaining caller outside this batch; all-target membership is empty
+(scene-commonFactory-before-removal.json). Original factory, CommonOutputJax
+getBBox, linebreak, style and family algorithms stay with their active owners.
+The discarded probe asserts only an expired Context getBBox callback, with no
+geometry output. Its obsolete ignore exception also retires. Independent Source
+factory/layout witnesses remain; broader tree/Map bindings are outside this batch.
+
+The final parallel4 math/DLL build exits0 (session69747,
+factory-retirement-build.log/results.json). CMake regenerates for the two
+removed unconfigured test paths. Before/after SHA-256 values of FoliaMathTests.exe
+and FoliaNativeMath.dll are identical, and all eleven protected paths remain
+byte-identical. This verification checks retirement/build membership; it does
+not claim a newly repeated full mathematical or worker run.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

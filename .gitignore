@@ -51,7 +51,6 @@ compile_commands.json
 !/tools/math-port/drafts/attributes-bindings-native-probe.cpp
 !/tools/math-port/drafts/attributes-bindings-native-tests.cpp
 !/tools/math-port/drafts/bussproofs-expanded-native-candidate.cpp
-!/tools/math-port/drafts/common-getbbox-lifetime-native-candidate.cpp
 !/tools/math-port/drafts/handler-context-defaults-native-candidate.cpp
 !/tools/math-port/drafts/math-native-session-retirement-next/
 !/tools/math-port/drafts/math-native-session-retirement-next/renderer-owner-counts.cpp
