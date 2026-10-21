@@ -1,5 +1,6 @@
 // Ported from Mermaid 12.2.0, commit 1fb7869866dd619168d840291c9c54b4f129758b.
-// Source: packages/mermaid/src/diagram-api/{regexes,comments}.ts.
+// Source: packages/mermaid/src/diagram-api/{regexes,comments}.ts,
+// packages/mermaid/src/preprocess.ts (cleanupText), utils.ts (removeDirectives).
 // Copyright (c) 2014-2022 Knut Sveidqvist. MIT licensed; see ../LICENSE.
 
 module folia.mermaid.source_text;

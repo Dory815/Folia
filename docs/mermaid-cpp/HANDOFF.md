@@ -5,9 +5,13 @@
 - Stage 4a in progress on codex/mermaid-cpp-shared-config: common text
   normalization and directive removal, before YAML/config interpretation.
   Official preprocess.ts, utils.ts and directiveRegex inspected; 1,221 pinned
-  runtime observations generated from the original function bodies. Native
-  implementation and CI still pending. Next: implement the UTF-16 scanners,
-  verify native Debug/Release and existing renderer regressions, then stage PR.
+  runtime observations generated from the original function bodies. Oracle batch
+  4ca455de and native implementation 34b22240 are committed and pushed. PR #4:
+  https://github.com/zhao0349/Folia/pull/4. CI 39553752307 is in progress for
+  the implementation head. Self-review found no functional issue; source
+  attribution and README boundaries are clarified in the final docs batch.
+  Next: verify final-head Windows Debug/Release and existing renderer
+  regressions, review any failures, then merge PR #4 preserving commits.
 - Boundary decision: full config is not a simple shallow merge: official
   diagram-scoped appearance precedence and YAML JSON_SCHEMA need separate
   implementation. This batch must not expose a pretend complete preprocess API
