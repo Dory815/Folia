@@ -5,6 +5,8 @@
 #define NOMINMAX
 #endif
 #include <Windows.h>
+#include <Psapi.h>
+#pragma comment(lib, "Psapi.lib")
 #include <objbase.h>
 #include <winrt/base.h>
 
@@ -733,6 +735,7 @@ void testDocumentSvgEviction() {
     std::string firstFormula;
     std::vector<std::string> firstSvgs;
     std::vector<std::uint64_t> firstRenderIds;
+    std::vector<std::uint64_t> allRenderIds;
     std::size_t cumulativeSvgBytes = 0;
     auto stageStart = steady_clock::now();
     for (std::size_t index = 1; index <= formulaLimit && cumulativeSvgBytes <= targetBytes; ++index) {
@@ -753,6 +756,7 @@ void testDocumentSvgEviction() {
             require(prepared->fragments[fragment].renderId == geometry->fragments[fragment].renderId,
                     "document geometry IDs match prepared SVG data");
             cumulativeSvgBytes += prepared->fragments[fragment].svg->size();
+            allRenderIds.push_back(prepared->fragments[fragment].renderId);
         }
         if (index == 1) {
             firstFormula = std::move(formula);
@@ -770,8 +774,23 @@ void testDocumentSvgEviction() {
     require(pressureStats.fileWrites > 0 && !pressureStats.backingPath.empty()
                 && FileExists(pressureStats.backingPath),
             "document SVG pressure is persisted in the owned temporary SVG store");
-    require(pressureStats.residentSvgBytes <= targetBytes,
-            "document cache evicts ready SVG bytes while preserving geometry");
+    require(pressureStats.residentSvgBytes == 0,
+            "offscreen document SVG bytes are released after the explicit consumer returns");
+    auto privateBytes = [] {
+        PROCESS_MEMORY_COUNTERS_EX counters{};
+        counters.cb = sizeof(counters);
+        require(GetProcessMemoryInfo(GetCurrentProcess(),
+                    reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters), sizeof(counters)) != FALSE,
+                "read process private memory");
+        return counters.PrivateUsage;
+    };
+    const auto beforeRelease = privateBytes();
+    renderer.FinishPreparation();
+    const auto afterRelease = privateBytes();
+    require(!renderer.Snapshot().nativeSessionActive,
+            "opening preparation releases the native engine and its font data on its owner thread");
+    std::cout << "opening-engine-private-before=" << beforeRelease
+              << " after=" << afterRelease << " native-session=released\n";
 
     auto geometry = renderer.Render(firstFormula, false, 16.0f, 640.0f, "#000000", {},
                                     MathRenderPurpose::Document);
@@ -780,6 +799,9 @@ void testDocumentSvgEviction() {
                 && geometry->fragments.front().renderId == firstRenderIds.front()
                 && !geometry->fragments.front().svg,
             "SVG eviction retains the formula geometry and stable render id");
+    require(renderer.Snapshot().pending == 0 && renderer.Snapshot().fileReads == pressureStats.fileReads,
+            "layout cache hits do not queue offscreen SVG reads");
+    renderer.SetVisibleSvgIds(firstRenderIds);
     const auto readStart = steady_clock::now();
     std::vector<std::shared_ptr<std::string const>> svgs(geometry->fragments.size());
     bool queuedRead = false;
@@ -797,6 +819,8 @@ void testDocumentSvgEviction() {
                 "worker SVG reload preserves exact complete formula bytes");
     }
     auto afterReadStats = renderer.Snapshot();
+    require(!afterReadStats.nativeSessionActive,
+            "reading cached SVG does not recreate the native engine");
     require(afterReadStats.lastIoThread != std::this_thread::get_id()
                 && afterReadStats.lastIoThread != std::thread::id{},
             "SVG file operations run on the cache worker, not the calling scroll thread");
@@ -811,6 +835,81 @@ void testDocumentSvgEviction() {
               << " GetSvg-call-us=" << readCall
               << " prep-elapsed-ms=" << duration_cast<milliseconds>(steady_clock::now() - stageStart).count()
               << " exact-reload=success\n";
+    svgs.clear();
+    renderer.SetVisibleSvgIds({});
+    require(renderer.Snapshot().residentSvgBytes == 0,
+            "leaving the viewport releases the last document SVG bytes");
+
+    // Hold the real worker at its normal completion callback so viewport
+    // changes deterministically happen before it can consume queued reads.
+    struct Gate {
+        std::mutex mutex;
+        std::condition_variable changed;
+        bool entered = false;
+        bool released = false;
+        void Release() {
+            std::scoped_lock lock(mutex);
+            released = true;
+            changed.notify_all();
+        }
+    };
+    auto gate = std::make_shared<Gate>();
+    auto releaseGate = [gate](void*) { gate->Release(); };
+    std::unique_ptr<void, decltype(releaseGate)> gateGuard(gate.get(), releaseGate);
+    renderer.SetCompletionCallback([gate] {
+        std::unique_lock lock(gate->mutex);
+        gate->entered = true;
+        gate->changed.notify_all();
+        gate->changed.wait_for(lock, seconds(10), [&] { return gate->released; });
+    });
+    (void)renderer.Render("x+917", false, 16.0f, 640.0f, "#000000", {}, MathRenderPurpose::Preview);
+    {
+        std::unique_lock lock(gate->mutex);
+        require(gate->changed.wait_for(lock, seconds(10), [&] { return gate->entered; }),
+                "worker reaches the bounded viewport test gate");
+    }
+    const auto beforeScroll = renderer.Snapshot();
+    // A new width/edit can also produce native jobs while scrolling. Cancel
+    // obsolete owned jobs without discarding completed document geometry.
+    renderer.BeginBlock(11001);
+    (void)renderer.Render("x+11001", false, 16.0f, 640.0f, "#000000");
+    renderer.EndBlock();
+    renderer.BeginBlock(11002);
+    (void)renderer.Render("x+11002", false, 16.0f, 640.0f, "#000000");
+    renderer.EndBlock();
+    const std::array<std::uint64_t, 1> visibleOwners{11002};
+    renderer.CancelOffscreenRenders(visibleOwners);
+    renderer.SetVisibleSvgIds(allRenderIds);
+    require(renderer.Snapshot().queuedReads == allRenderIds.size(),
+            "only current viewport requests are queued");
+    const auto newestId = allRenderIds.back();
+    for (int pass = 0; pass < 100; ++pass) {
+        const auto id = allRenderIds[static_cast<std::size_t>(pass) % allRenderIds.size()];
+        renderer.SetVisibleSvgIds(std::span{&id, std::size_t{1}});
+        require(renderer.Snapshot().queuedReads == 1,
+                "rapid viewport replacement never accumulates obsolete reads");
+    }
+    renderer.SetVisibleSvgIds(std::span{&newestId, std::size_t{1}});
+    const auto queuedScroll = renderer.Snapshot();
+    require(queuedScroll.canceledReads > beforeScroll.canceledReads,
+            "old viewport reads are removed before worker I/O");
+    renderer.SetCompletionCallback({});
+    gate->Release();
+    WaitForIdleBounded(renderer);
+    const auto afterScroll = renderer.Snapshot();
+    require(afterScroll.nativeRenders == beforeScroll.nativeRenders + 1,
+            "obsolete viewport native jobs are canceled before rendering");
+    require(afterScroll.fileReads == beforeScroll.fileReads + 1
+                && renderer.GetSvg(newestId) && !renderer.GetSvg(firstRenderIds.front()),
+            "only the latest viewport is read and retained after rapid scrolling");
+    renderer.SetVisibleSvgIds({});
+    require(renderer.Snapshot().residentSvgBytes == 0 && renderer.Snapshot().queuedReads == 0,
+            "empty viewport has no resident document SVG or queued reads");
+    std::cout << "viewport-replacements=100 queued-latest=1 canceled-reads="
+              << queuedScroll.canceledReads - beforeScroll.canceledReads
+              << " actual-reads=" << afterScroll.fileReads - beforeScroll.fileReads
+              << " actual-native-renders=" << afterScroll.nativeRenders - beforeScroll.nativeRenders
+              << " offscreen-resident-bytes=0\n";
     auto previousPath = afterReadStats.backingPath;
     renderer.Clear();
     auto closeDeadline = GetTickCount64() + 5000;
@@ -872,6 +971,7 @@ void testCrossThreadRendererMove() {
             "UI-side cache lookup reuses the transferred prepared SVG without native work");
     auto cachedSvg = transferred->GetSvg(expectedRenderId);
     if (!cachedSvg) {
+        transferred->SetVisibleSvgIds(std::span{&expectedRenderId, std::size_t{1}});
         WaitForIdleBounded(*transferred);
         cachedSvg = transferred->GetSvg(expectedRenderId);
     }

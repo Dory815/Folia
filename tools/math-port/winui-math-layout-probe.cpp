@@ -412,6 +412,9 @@ namespace
         stageStart = std::chrono::steady_clock::now();
         auto narrow = EditorSurfaceRenderer::PrepareMath(frame, narrowContext, {}, {});
         Require(narrow->formulaCount > 0, "narrow math scan finds formulas across rich block types");
+        Require(!narrow->math.Snapshot().nativeSessionActive
+                && narrow->math.Snapshot().residentSvgBytes == 0,
+            "opening retains geometry and file ranges, not its native engine or offscreen SVG bytes");
         WaitForIdleBounded(narrow->math);
         ReportStage("rich-narrow-math", std::chrono::steady_clock::now() - stageStart);
         Require(session.TextUtf8() == originalText && Stamp(frame) == originalStamps,
