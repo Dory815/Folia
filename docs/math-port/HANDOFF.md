@@ -7,8 +7,8 @@
 - 最近代码提交 **6f7cc0e7**：退旧 reference_leaf/native driver，Source oracle 输出改 ignored；其数学断言先保留到两个原测试文件（**5cf687cb**），无生产算法改动。Source display 探针6观察通过，聚焦 **6 tests/78 assertions**通过。最后 parallel4 build **85509 exit0**，相对聚焦后 test/DLL hash不变、保护11字节不变；日志 `build/math-port/mml-leaf-retirement-build*`。
 - 上述新测试前的完整math **96710 exit0：870 tests/217144 assertions/176 suites/0 skips**；WinUI Debug真实worker **64450 exit0/PASS**。之后未重复full/worker；未验Release/GUI视觉。证据在acceptance及 `retire-scene-{full-math,worker-verify}.log`。
 - canonical已刷新至 **6f7cc0e7**、**index-2026-10-21T08-41-46-0351.json**：668源/664代码、183未配置cpp/ixx、560配置源、247接口与map exact、保护11字节不变；Root断言在 `latest-retirement-inventory-check.json`。未配置不等于死代码。旧Scene/SVG重复布局与Common factory对象链均已分批退出；真实数学留原owner。
-- **下一步**：Root已核对修订 `build/math-port/font-bbox-retirement-review.md` 及实际active字体接口；逐体审其中 **10旧工具+tests/math/font_data_source.cpp**，保留实际字体数据/算法/Source证据后决定小批退消费者，再退provider。当前immutable FontRepository/FontGlyph/generated NewCM没有旧charOptions/tuple/ListPatch mutator合同，不能为旧observer恢复它们。该11消费者尚未删。
-- 当前无live agent/build/native。Lite/MML旧provider仍有保护消费者及MML()/classBinding直接调用者，不能按无显式import先删。旧remaining-object-graph已有被提交移除的路径，仅作历史关系线索；找ignored交付候选先 `rg --no-ignore`。后续逐内容核实报告，不泛信旧ledger或agent判断。
+- **下一步**：Root完整读font_data_source及active字体合同，读三个Luna实读分包报告与CJS companion。首批已退该旧test+3旧JSON observer+2比较器，证据font-fontDataConsumers-before-removal.json，未改active代码/UT；继续退lifecycle、provider消费者小批，再退font绑定。immutable FontRepository没有旧charOptions/tuple/ListPatch mutator合同，不为旧observer恢复它们；Source/data/typed font gate保留。
+- 当前无live agent/build/native。Direction职责窄审通过：保留原direction.ixx，接着将现有StretchDirection enum从font_data放回该owner并export-import/CMake登记，不删除或恢复旧字符串别名。Lite/MML旧provider仍有保护消费者及MML()/classBinding调用者，不能按无显式import先删。找ignored交付先rg --no-ignore；旧graph仅历史线索。
 
 ## 已接受架构与执行约束
 

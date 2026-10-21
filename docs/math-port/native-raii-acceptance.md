@@ -900,6 +900,26 @@ The final parallel4 build exits0 (session85509,
 mml-leaf-retirement-build.log/results.json), with unchanged test/DLL hashes
 relative to the focused-test build and all eleven protected paths byte-identical.
 
+### Retire the mutable font observers
+
+Root read the complete font_data_source.cpp body and the actual configured
+font repository contract. Three Luna packets read the ten old standalone
+font tools, their outputs, direct consumers and companion CJS scripts; Root
+cross-checked their findings against the typed NewCM provider/data path.
+Final glyph/variant/cache/remap/metric/delimiter data remains covered by the
+accepted complete font-data gate and current native_raii_fonts/package tests.
+Mutable FontDataClass receivers, charOptions tuple identity/Missing/null slots,
+ListPatch array deltas and reflected fields are retired representation contracts,
+not missing methods to add back to the immutable FontRepository interface.
+
+The first batch removes font_data_source.cpp and three old JSON observers
+(font-data-native-candidate, font-methods-native-candidate,
+font-tuple-presence-native-candidate), plus their two native-format comparators.
+The current typed font-data-dump.cpp / font-data-compare-native.cjs gate stays,
+as do independent Source oracles, locks, data and licenses. All six paths have
+zero configured membership (font-fontDataConsumers-before-removal.json).
+No active implementation or configured test changes in this consumer batch.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
