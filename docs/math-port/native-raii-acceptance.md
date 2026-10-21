@@ -716,6 +716,17 @@ Map and instance-extension Source oracles/records remain. No font tables,
 provider inputs, generated glyphs, licenses or Source locks are removed here;
 retirement does not claim a newly rerun full font-data comparison.
 
+The old common-layout native dump/observer and its native-result runner/comparer
+retire as well. They required mutable wrapper/Property/Context identities and
+Source callback/paint traces. The independent common-layout-original-oracle,
+profile inputs/locks and Source records are retained. This retirement does not
+claim that all old reflective per-wrapper record fields match the new C++ model.
+The retained mathematical gates are the typed family BBox/placement Source
+witnesses, 75 canonical input pairs, 150 full SVGs, Scene geometry across both
+public routes, and request ownership. Experimental tracked C++ copies that
+still imported the same old graph have also been reviewed and retired in
+separate batches; directory names were never used as evidence of inactivity.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
