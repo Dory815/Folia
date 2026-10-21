@@ -1542,8 +1542,13 @@ A stale reference_leaf.cpp entry was discovered in the consumer group:
 that fixture already retired in 6f7cc0e7. Only that missing fixture and its
 669/27 counts are removed, leaving 4,640/135. These legacy native tools were
 not run. Evidence: script-source-bridge-v2.log, script-source-promoted.json
-and script-consumer-before.json. The script C++ consumer awaits its separate
-removal/build batch; no production algorithm changed.
+and script-consumer-before.json. The script C++ consumer retires separately:
+build92516 passes with parallel4. script-consumer-final-check.json confirms
+478 active sources, six protected paths, nine verified input/binary paths,
+seven retained paths and seventeen target lists unchanged; class-binding
+cpp/ixx test consumers decrease 40 to 39, interfaces remain 248 and unresolved
+imports remain zero. No production algorithm changed or broad runtime gate
+was repeated.
 
 ## Evidence and failure handling
 
