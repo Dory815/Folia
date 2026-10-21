@@ -209,6 +209,7 @@ suite mathjax_full_profile_package_bootstrap = [] {
             return;
 
         std::size_t utf8Metrics = 0, utf8Svg = 0, utf16Metrics = 0, utf16Svg = 0;
+        std::size_t pairedSceneGeometry = 0;
         for (const auto &source : sourceCanonicalSceneCases) {
             expect(source.tag_side.empty()) << source.name << ": tag-side is default profile";
             expect(source.em == 16.0 && source.ex == 8.0)
@@ -225,6 +226,7 @@ suite mathjax_full_profile_package_bootstrap = [] {
 
         {
             Renderer renderer;
+            Renderer sceneRenderer;
             for (const auto &source : sourceCanonicalSceneCases) {
                 const auto &expected = source.modes[0];
                 try {
@@ -235,6 +237,11 @@ suite mathjax_full_profile_package_bootstrap = [] {
                         reportDifference(source.name, expected.svg, result.svg);
                     expect(result.svg == expected.svg) << source.name << ": UTF-8 full SVG";
                     ++utf8Svg;
+                    const auto sceneOnly = sceneRenderer.renderScene(source.tex, optionsFor(source));
+                    compareMetrics(sceneOnly.metrics(), expected.metrics, source.name);
+                    expect(geometrySignature(sceneOnly) == geometrySignature(result.scene))
+                        << source.name << ": scene-only and SVG routes retain the same geometry";
+                    ++pairedSceneGeometry;
                 } catch (std::exception const &error) {
                     expect(false) << source.name << ": UTF-8 Renderer threw: " << error.what();
                 }
@@ -262,6 +269,8 @@ suite mathjax_full_profile_package_bootstrap = [] {
             << "UTF-8 Renderer completed all profile metrics and SVGs";
         expect(utf16Metrics == 75u && utf16Svg == 75u)
             << "UTF-16 Renderer completed all profile metrics and SVGs";
+        expect(pairedSceneGeometry == 75u)
+            << "all ordered profile cases compare geometry across the two public output routes";
     };
 
     "renderer_unicode_malformed_recovery_and_scene_result_survive_owner_teardown"_test = [] {

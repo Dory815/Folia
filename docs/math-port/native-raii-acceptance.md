@@ -688,6 +688,25 @@ rule is not a missing immutable Scene requirement. The active Common
 finishInlineFrames performs inline split/placement, with complete canonical
 Source SVG coverage including inline-linebreak-narrow.
 
+Legacy tool review additionally preserves the 75-case Scene-only/SVG numerical
+geometry comparison in the existing public profile test: two independent but
+identically ordered Renderer sessions feed renderScene and render. All 75
+Scene metrics match the pinned Source, and glyph origins/advances, transforms,
+rule bounds and path segments agree between routes. The original 75 UTF-8
+and 75 UTF-16 complete Source SVG comparisons remain. Focused profile passes
+1/1354 (`retire-svg-profile-geometry.log`); the explicit XML metrics-family case
+passes 1/6 (`retire-svg-xml-family.log`). Nested HTMLDomStrings placeholders and
+callback ownership were already asserted by active texhtml.cpp; empty-family
+Times fallback was already compared to complete Source SVG. JS false family
+values are outside the typed string field's domain, rather than a missing case.
+`retire-svg-tools-coverage-build-fixed.log` exits0; no production code changed.
+
+The first full run was stopped by its runner's 180-second limit while normal
+Source cases were progressing, not accepted as a passing run. Its output and
+terminal ETIMEDOUT/SIGTERM result are retained as retire-svg-full-timeout180.*.
+The existing accepted full-run harness uses 600 seconds; a new full run with
+that bound and cleared diagnostic environment is pending, not yet acceptance.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
