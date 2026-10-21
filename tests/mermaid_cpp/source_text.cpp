@@ -23,7 +23,9 @@ std::u16string decode(std::string_view value) {
 
 suite source_text = [] {
     "mermaid_source_text_matches_official_typescript"_test = [] {
-        std::ifstream input{std::filesystem::path{FOLIA_MERMAID_FIXTURE_DIR} / "source-text.tsv"};
+        const auto fixture_override = std::getenv("FOLIA_MERMAID_FIXTURES");
+        std::ifstream input{std::filesystem::path{
+            fixture_override ? fixture_override : FOLIA_MERMAID_FIXTURE_DIR} / "source-text.tsv"};
         expect(fatal(input.is_open()));
         std::string line;
         std::size_t count{};

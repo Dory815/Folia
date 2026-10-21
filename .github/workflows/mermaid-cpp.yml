@@ -113,8 +113,10 @@ jobs:
       - name: Configure the standalone C++ module project
         run: |
           $ErrorActionPreference = 'Stop'
-          $version = (cmake --version | Select-Object -First 1)
-          if ($LASTEXITCODE -ne 0 -or $version -ne 'cmake version 4.3.5') {
+          $versionOutput = @(cmake --version)
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $version = $versionOutput[0]
+          if ($version -ne 'cmake version 4.3.5') {
             throw "The pinned CMake was not selected: $version"
           }
           ninja --version
@@ -135,6 +137,13 @@ jobs:
           ctest --test-dir build/mermaid-cpp --output-on-failure 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload the native test executable
+        if: always() && hashFiles('build/mermaid-cpp/FoliaMermaidTests.exe') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: mermaid-cpp-${{ matrix.configuration }}-tests
+          path: build/mermaid-cpp/FoliaMermaidTests.exe
 
       - name: Upload failure diagnostics
         if: failure()
