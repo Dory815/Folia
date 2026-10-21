@@ -627,6 +627,35 @@ manufactured or merged by the test. `retirement-combine-build.log` exits0
 filtered/skipped by these focused runs. The obsolete Context/document harness
 file is removed after this replacement passes; no production algorithm changed.
 
+### SVG object-layer retirement coverage (2026-10-21)
+
+Before retiring the old SVG graph, preserve the mathematical assertions at
+their existing typed test owners. `parse_util.cpp` adds four real fixInitialMO
+cases (null/space skipping, first eligible node, embellished operator and
+REL TeXAtom), checked against pinned ParseUtil.ts. `native_common_maction.cpp`
+adds a real two-line selected row and verifies delegated break count/line BBoxes.
+`native_common_wrapper.cpp` preserves numeric/keyword/px/scale length conversion.
+`tex_jax.cpp` additionally checks all eight default filter priorities.
+
+Parallel4 `retire-svg-coverage-build-fixed2.log` exits0. The focused runner
+`retire-svg-coverage-results.json` records fixInitialMO 4/26, Maction lines
+1/15, wrapper length 1/12 and TeX Jax 5/559, all exit0. Initial compile failure
+was two Boost.UT literal additions in test code, corrected to native unsigned
+arithmetic. The initial Maction test used a dimensioned mspace that Source
+explicitly disallows as a newline; the corrected fixture uses a real newline
+without explicit height/depth. No production algorithm changed.
+
+Six inactive files now retire eleven reflected-metadata/record cases:
+package_filter_source_metadata, tex_default_filter_source_metadata,
+tex_stack_item_symbol_keys, textmacros_source_fields,
+jax_filter_record_owner_scope_g262 and math_document_request_record_lifetime.
+Their JS callable name/arity, dynamic descriptors, Symbol operations, projected
+record identities and registry retirement protocols are withdrawn contracts.
+The retained default priorities are checked directly above; real request
+allocation/Scene lifetime remains in request_lifetime.cpp, and actual package
+behavior stays in the active package suites. No Source fixtures/oracles or
+protected dirty files are removed by this batch.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

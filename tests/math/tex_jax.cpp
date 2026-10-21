@@ -256,6 +256,10 @@ suite tex_jax = [] {
         expect(f.jax->options.maxBuffer.value() == 5120_u);
         expect(f.jax->options.maxTemplateSubtitutions.value() == 10000_u);
         expect(f.jax->postFilters.entries().size() == 8_u);
+        const std::array<double, 8> priorities{-7, -6, -5, -4, -4, -3, -2, -1};
+        const auto filters = f.jax->postFilters.entries();
+        for (std::size_t i = 0; i < std::min(filters.size(), priorities.size()); ++i)
+            expect(filters[i].priority == priorities[i]);
         auto &root = f.compile(u"\\mathbb{R}+\\frac{1}{\\sqrt[3]{x}}+x^2");
         expect(root.kind() == NodeKind::math);
         expect(attr(root, u"display") == u"block");

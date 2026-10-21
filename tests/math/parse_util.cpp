@@ -301,4 +301,114 @@ suite parse_util_tests = [] {
                        u"environment?");
         expect(environment.macroCount == 1);
     };
+
+    "fix_initial_mo_skips_null_and_mspace_then_stops_at_first_eligible_node"_test = [] {
+        Fixture fixture;
+        helperSetup(fixture);
+        auto &space = fixture.node(NodeKind::mspace);
+        auto &ordinary = fixture.token(NodeKind::mi, u"x");
+        auto &laterOperator = fixture.token(NodeKind::mo, u"=");
+        std::vector<MmlNode *> nodes{nullptr, &space, &ordinary, &laterOperator};
+        const auto documentSize = fixture.document.size();
+
+        parse_util::fixInitialMO(*fixture.options, nodes);
+
+        expect(fixture.document.size() == documentSize);
+        expect(nodes.size() == 4_u);
+        if (nodes.size() != 4_u)
+            return;
+        expect(nodes[0] == nullptr);
+        expect(nodes[1] == &space);
+        expect(nodes[2] == &ordinary);
+        expect(nodes[3] == &laterOperator);
+    };
+
+    "fix_initial_mo_inserts_an_empty_mi_before_an_embellished_operator"_test = [] {
+        Fixture fixture;
+        helperSetup(fixture);
+        auto &space = fixture.node(NodeKind::mspace);
+        auto &operatorNode = fixture.token(NodeKind::mo, u"=");
+        auto &script = fixture.token(NodeKind::mn, u"2");
+        const std::array<MmlNode *, 2> scriptedChildren{&operatorNode, &script};
+        auto &embellished = fixture.node(NodeKind::msup, scriptedChildren);
+        expect(embellished.isEmbellished());
+        std::vector<MmlNode *> nodes{&space, &embellished};
+        const auto documentSize = fixture.document.size();
+
+        parse_util::fixInitialMO(*fixture.options, nodes);
+
+        expect(fixture.document.size() == documentSize + 1u);
+        expect(nodes.size() == 3_u);
+        if (nodes.size() != 3_u)
+            return;
+        expect(nodes[1] == &space);
+        expect(nodes[2] == &embellished);
+        expect(nodes[0] != nullptr && nodes[0] != &space && nodes[0] != &embellished);
+        if (!nodes[0])
+            return;
+        expect(nodes[0]->kind() == NodeKind::mi);
+        expect(nodes[0]->children().empty());
+        expect(&nodes[0]->document() == &fixture.document);
+    };
+
+    "fix_initial_mo_skips_empty_tex_atoms_and_inserts_for_a_nonempty_rel_tex_atom"_test = [] {
+        Fixture fixture;
+        helperSetup(fixture);
+        auto &emptyChild = fixture.node(NodeKind::mspace);
+        const std::array<MmlNode *, 1> emptyAtomChildren{&emptyChild};
+        auto &emptyRelAtom = fixture.node(NodeKind::tex_atom, emptyAtomChildren);
+        emptyRelAtom.setTexClass(TexClass::rel);
+
+        auto &relationContent = fixture.token(NodeKind::mi, u"r");
+        const std::array<MmlNode *, 1> relationRowChildren{&relationContent};
+        auto &relationRow = fixture.node(NodeKind::mrow, relationRowChildren);
+        const std::array<MmlNode *, 1> relationAtomChildren{&relationRow};
+        auto &relationAtom = fixture.node(NodeKind::tex_atom, relationAtomChildren);
+        relationAtom.setTexClass(TexClass::rel);
+        std::vector<MmlNode *> nodes{&emptyRelAtom, &relationAtom};
+        const auto documentSize = fixture.document.size();
+
+        parse_util::fixInitialMO(*fixture.options, nodes);
+
+        expect(fixture.document.size() == documentSize + 1u);
+        expect(nodes.size() == 3_u);
+        if (nodes.size() != 3_u)
+            return;
+        expect(nodes[1] == &emptyRelAtom);
+        expect(nodes[2] == &relationAtom);
+        expect(nodes[0] != nullptr && nodes[0]->kind() == NodeKind::mi);
+        if (!nodes[0])
+            return;
+        expect(nodes[0]->children().empty());
+        expect(&nodes[0]->document() == &fixture.document);
+    };
+
+    "fix_initial_mo_stops_at_a_non_rel_tex_atom_before_a_later_relation"_test = [] {
+        Fixture fixture;
+        helperSetup(fixture);
+        auto &ordinaryContent = fixture.token(NodeKind::mi, u"a");
+        const std::array<MmlNode *, 1> ordinaryRowChildren{&ordinaryContent};
+        auto &ordinaryRow = fixture.node(NodeKind::mrow, ordinaryRowChildren);
+        const std::array<MmlNode *, 1> ordinaryAtomChildren{&ordinaryRow};
+        auto &ordinaryAtom = fixture.node(NodeKind::tex_atom, ordinaryAtomChildren);
+        ordinaryAtom.setTexClass(TexClass::ord);
+
+        auto &relationContent = fixture.token(NodeKind::mi, u"r");
+        const std::array<MmlNode *, 1> relationRowChildren{&relationContent};
+        auto &relationRow = fixture.node(NodeKind::mrow, relationRowChildren);
+        const std::array<MmlNode *, 1> relationAtomChildren{&relationRow};
+        auto &relationAtom = fixture.node(NodeKind::tex_atom, relationAtomChildren);
+        relationAtom.setTexClass(TexClass::rel);
+        std::vector<MmlNode *> nodes{&ordinaryAtom, &relationAtom};
+        const auto documentSize = fixture.document.size();
+
+        parse_util::fixInitialMO(*fixture.options, nodes);
+
+        expect(fixture.document.size() == documentSize);
+        expect(nodes.size() == 2_u);
+        if (nodes.size() != 2_u)
+            return;
+        expect(nodes[0] == &ordinaryAtom);
+        expect(nodes[1] == &relationAtom);
+    };
 };
