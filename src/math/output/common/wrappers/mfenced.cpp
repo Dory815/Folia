@@ -22,6 +22,35 @@ void CommonMfenced::initializeSource() {
     addMrowChildren();
 }
 
+SceneNodes CommonMfenced::emitScene(scene::Builder &builder,
+                                    std::span<scene::NodeId const> parents) {
+    auto containers = standardSceneNodes(builder, parents);
+    if (!mrow)
+        throw std::logic_error("CommonMfenced has no inferred mrow for scene emission");
+
+    struct ParentRestore {
+        std::vector<std::pair<CommonWrapper *, CommonWrapper *>> original;
+        ~ParentRestore() {
+            for (const auto &[child, parentValue] : original)
+                child->parent = parentValue;
+        }
+    } restore;
+
+    // Capture every exact parent before changing any direct child. Generated
+    // fences and separators already have their inferred-row parent.
+    restore.original.reserve(childNodes.size());
+    for (auto *child : childNodes)
+        if (!child)
+            throw std::logic_error("CommonMfenced has a null direct child wrapper");
+        else
+            restore.original.emplace_back(child, child->parent);
+    for (auto *child : childNodes)
+        child->parent = mrow;
+
+    (void)mrow->emitScene(builder, containers.content);
+    return containers.nodes;
+}
+
 void CommonMfenced::createMrow() {
     auto &rowNode = node->document().factory().make(mml::NodeKind::inferred_mrow);
     rowNode.inheritAttributesFrom(*node);

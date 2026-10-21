@@ -11,7 +11,9 @@ class CommonSemantics : public CommonWrapper {
 public:
     using CommonWrapper::CommonWrapper;
     std::size_t breakCount() override;
-protected:
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
+
+  protected:
     void computeBBox(BBox&, bool recompute=false) override;
 };
 }

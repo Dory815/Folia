@@ -15,6 +15,7 @@ class CommonMfenced : public CommonWrapper {
     CommonMrow *mrow{};
 
     CommonMfenced(CommonWrapperFactory &, mml::MmlNode &, CommonWrapper *parent = nullptr);
+    SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
     void initializeSource() override;
     void createMrow();
     void addMrowChildren();

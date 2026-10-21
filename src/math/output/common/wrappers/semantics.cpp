@@ -31,4 +31,18 @@ std::size_t CommonSemantics::breakCount() {
         throw std::out_of_range("semantics has no presentation wrapper for breakCount");
     return childNodes.front()->breakCount();
 }
+
+SceneNodes CommonSemantics::emitScene(scene::Builder &builder,
+                                      std::span<scene::NodeId const> parents) {
+    if (auto embellished = toEmbellishedScene(builder, parents))
+        return *embellished;
+
+    auto containers = standardSceneNodes(builder, parents);
+    if (!childNodes.empty()) {
+        if (!childNodes.front())
+            throw std::logic_error("semantics has a null presentation wrapper");
+        (void)childNodes.front()->emitScene(builder, containers.content);
+    }
+    return containers.nodes;
+}
 } // namespace folia::math::output::common
