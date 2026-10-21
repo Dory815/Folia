@@ -1,126 +1,198 @@
+#include <array>
+#include <chrono>
+#include <cstddef>
+#include <memory>
+#include <optional>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <thread>
+#include <utility>
+#include <vector>
 #include "support/folia_test.hpp"
+#include "support/tex_scene.hpp"
+
 import folia.math;
 import folia.math.cancellation;
 import folia.math.output.common;
-import folia.math.output.svg.native_document;
+import folia.math.output.scene;
+
+using namespace boost::ut;
+using folia::math::Renderer;
+using folia::math::RenderError;
+using folia::math::RenderOptions;
+namespace cancellation = folia::math::cancellation;
+namespace common = folia::math::output::common;
+namespace scene = folia::math::output::scene;
+namespace tex_scene = tex_scene_test;
 
 namespace {
-using namespace boost::ut;
-using folia::math::RenderError;
-using folia::math::Renderer;
-using folia::math::RenderOptions;
-namespace cancellation=folia::math::cancellation;
-namespace common=folia::math::output::common;
-namespace svg=folia::math::output::svg;
-namespace opts=folia::math::options;
-namespace lite=folia::math::adaptors::lite;
-
-std::string errorKind(auto&& action) {
-    try { action(); }
-    catch(const RenderError& error) { return error.name; }
+std::string errorKind(auto &&action) {
+    try {
+        action();
+    } catch (RenderError const &error) {
+        return error.name;
+    }
     throw std::runtime_error("Expected RenderError");
 }
-bool cancelled(auto&& action) {
-    try { action(); }
-    catch(const cancellation::Cancelled&) { return true; }
-    return false;
-}
-common::FontLoadHost fontHost() {
-    common::FontLoadHost host;
-    host.asyncIsSynchronous=[] { return true; };
-    host.warn=[](const std::any&) {};
-    return host;
-}
+
+struct StopAfterUnknownText final : common::MeasurementTarget {
+    tex_scene::LiteUnknownTextMeasurement delegate_;
+    std::stop_source &stop_;
+    std::size_t calls{};
+
+    StopAfterUnknownText(tex_scene::InputOwner &owner, std::stop_source &stop) noexcept
+        : delegate_(owner.adaptor), stop_(stop) {}
+
+    common::ExtendedMetrics measureMetrics(common::MetricRequest const &request) override {
+        return delegate_.measureMetrics(request);
+    }
+
+    common::UnknownBBox measureUnknownText(common::UnknownTextRequest const &request) override {
+        auto result = delegate_.measureUnknownText(request);
+        ++calls;
+        stop_.request_stop();
+        return result;
+    }
+};
+} // namespace
 
 suite math_cancellation_g147 = [] {
-    "brace_initialized_existing_options_calls_remain_unambiguous"_test = [] {
+    "public_renderer_overloads_and_precancelled_sessions_remain_usable"_test = [] {
         Renderer renderer;
-        const auto rendered=renderer.render(u"x",{});
+        const auto rendered = renderer.render(std::u16string_view(u"x"), {});
         expect(!rendered.svg.empty());
-        expect(!renderer.toSvg(u"x",{}).empty());
-        expect(!renderer.render(std::string_view("x"),{}).svg.empty());
-        expect(!renderer.toSvg(std::string_view("x"),{}).empty());
-        expect(!renderer.renderScene(u"x",{}).roots().empty());
-        expect(!renderer.renderScene(std::string_view("x"),{}).roots().empty());
-    };
-    "pre_cancel_and_expired_deadline_leave_session_reusable"_test = [] {
-        Renderer renderer;
-        std::stop_source source; source.request_stop();
-        expect(eq(errorKind([&]{(void)renderer.render(std::string_view("x"),source.get_token(),{});}),std::string("Cancelled")));
-        RenderOptions expired; expired.deadline=std::chrono::steady_clock::now()-std::chrono::milliseconds(1);
-        expect(eq(errorKind([&]{(void)renderer.render(std::string_view("x"),{},expired);}),std::string("Cancelled")));
-        expect(eq(errorKind([&]{(void)renderer.renderScene(std::u16string_view(u"x"),source.get_token(),{});}),std::string("Cancelled")));
-        expect(!renderer.render(std::string_view("x")).svg.empty());
-    };
-    "public_renderer_observes_deadline_during_large_input"_test = [] {
-        Renderer renderer;
-        std::u16string tex(1'000'000,u'x');
-        RenderOptions options;
-        options.deadline=std::chrono::steady_clock::now()+std::chrono::milliseconds(5);
-        expect(eq(errorKind([&]{(void)renderer.render(std::u16string_view(tex),{},options);}),std::string("Cancelled")));
-        expect(eq(errorKind([&]{(void)renderer.render(std::string_view("x"));}),std::string("SessionUnusable")));
-    };
-    "actual_source_text_content_getter_can_request_native_session_cancellation"_test = [] {
-        svg::NativeRenderSession session(fontHost(),{
-            svg::NewcmFontExtension::bboldx,
-            svg::NewcmFontExtension::bbm,
-            svg::NewcmFontExtension::dsfont});
-        auto document=svg::createNativeSvgDocument(session);
-        auto jax=session.outputJax();
-        auto adaptor=session.adaptor();
-        expect(jax!=nullptr&&adaptor!=nullptr);
-        if(!jax||!adaptor)return;
+        expect(!renderer.toSvg(std::u16string_view(u"x"), {}).empty());
+        expect(!renderer.render(std::string_view("x"), {}).svg.empty());
+        expect(!renderer.toSvg(std::string_view("x"), {}).empty());
+        expect(!renderer.renderScene(std::u16string_view(u"x"), {}).root().entries.empty());
+        expect(!renderer.renderScene(std::string_view("x"), {}).root().entries.empty());
 
-        auto original=adaptor->exchangeSourceTextContent({});
-        expect(static_cast<bool>(original));
-        if(!original)return;
+        std::stop_source source;
+        source.request_stop();
+        expect(eq(errorKind([&] {
+                      (void)renderer.render(std::string_view("x"), source.get_token(), {});
+                  }),
+                  std::string("Cancelled")));
+        RenderOptions expired;
+        expired.deadline = std::chrono::steady_clock::now() - std::chrono::milliseconds(1);
+        expect(eq(errorKind([&] { (void)renderer.render(std::string_view("x"), {}, expired); }),
+                  std::string("Cancelled")));
+        expect(eq(errorKind([&] {
+                      (void)renderer.renderScene(std::u16string_view(u"x"), source.get_token(), {});
+                  }),
+                  std::string("Cancelled")));
+        expect(!renderer.render(std::string_view("x")).svg.empty())
+            << "pre-cancellation leaves Renderer session usable";
+    };
+
+    "public_deadline_cancels_inflight_bounded_input_and_invalidates_session"_test = [] {
+        Renderer renderer;
+        const std::u16string input(4000, u'x');
+        RenderOptions options;
+        options.deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(5);
+        expect(
+            eq(errorKind([&] { (void)renderer.render(std::u16string_view(input), {}, options); }),
+               std::string("Cancelled")));
+        expect(eq(errorKind([&] { (void)renderer.render(std::string_view("x")); }),
+                  std::string("SessionUnusable")));
+    };
+
+    "typed_lite_measurement_cancellation_unwinds_request_then_next_scene_succeeds"_test = [] {
+        tex_scene::InputOwner owner;
         std::stop_source source;
         cancellation::Request request(source.get_token());
-        cancellation::Scope scope(request);
-        bool getterCalled=false;
-        adaptor->exchangeSourceTextContent(
-            [&,sourceGetter=original](lite::LiteNodeRef node) {
-                auto value=sourceGetter(node);
-                if(!getterCalled){getterCalled=true;source.request_stop();}
-                return value;
-            });
-        struct RestoreGetter {
-            std::shared_ptr<lite::LiteAdaptor> adaptor;
-            std::function<folia::math::Property(lite::LiteNodeRef)> previous;
-            ~RestoreGetter(){(void)adaptor->exchangeSourceTextContent(std::move(previous));}
-        } restore{adaptor,std::move(original)};
-
-        auto& context=session.context();
-        const auto settings=context.object();
-        context.set(settings,opts::Key(u"em"),opts::Value(16));
-        context.set(settings,opts::Key(u"ex"),opts::Value(8));
-        context.set(settings,opts::Key(u"containerWidth"),opts::Value(1280));
-        bool observed=false;
-        try {
-            (void)document->convert(opts::Value(u"\\text{漢字😀 é}"),opts::Value(settings));
-        } catch(const cancellation::Cancelled&) { observed=true; }
-        expect(getterCalled&&observed);
+        bool observed = false;
+        std::size_t measurementCalls = 0;
+        {
+            cancellation::Scope scope(request);
+            StopAfterUnknownText measurement(owner, source);
+            try {
+                (void)tex_scene::buildScene({R"(\text{漢字😀 é})", false, 16, 8, 1280, {}}, owner,
+                                            measurement, true);
+            } catch (cancellation::Cancelled const &) {
+                observed = true;
+            }
+            measurementCalls = measurement.calls;
+        }
+        expect(observed && measurementCalls > 0)
+            << "actual Lite unknown-text measurement triggers an existing pipeline checkpoint";
+        tex_scene::LiteUnknownTextMeasurement normal(owner.adaptor);
+        auto recovered = tex_scene::buildScene({R"(\text{漢字😀 é})", false, 16, 8, 1280, {}},
+                                               owner, normal, true);
+        expect(recovered.root().entries.size() > 0)
+            << "request unwinding permits a subsequent scene build";
     };
+
     "nested_request_scopes_restore_prior_context_and_are_thread_local"_test = [] {
         std::stop_source outerSource;
         cancellation::Request activeOuter(outerSource.get_token());
-        { cancellation::Scope outerScope(activeOuter);
-          std::stop_source innerSource; innerSource.request_stop();
-          cancellation::Request inner(innerSource.get_token());
-          { cancellation::Scope innerScope(inner); expect(cancelled([]{cancellation::checkpoint();})); }
-          expect(!cancelled([]{cancellation::checkpoint();}));
-          bool otherThreadCancelled=false;
-          std::jthread worker([&]{try{cancellation::checkpoint();}catch(const cancellation::Cancelled&){otherThreadCancelled=true;}}); worker.join();
-          expect(!otherThreadCancelled);
-          outerSource.request_stop(); expect(cancelled([]{cancellation::checkpoint();}));
+        {
+            cancellation::Scope outerScope(activeOuter);
+            std::stop_source innerSource;
+            innerSource.request_stop();
+            cancellation::Request inner(innerSource.get_token());
+            {
+                cancellation::Scope innerScope(inner);
+                bool wasCancelled = false;
+                try {
+                    cancellation::checkpoint();
+                } catch (cancellation::Cancelled const &) {
+                    wasCancelled = true;
+                }
+                expect(wasCancelled);
+            }
+            bool restored = false;
+            try {
+                cancellation::checkpoint();
+            } catch (cancellation::Cancelled const &) {
+                restored = true;
+            }
+            expect(!restored) << "inner scope restores the non-cancelled outer request";
+            bool otherThreadCancelled = false;
+            std::jthread worker([&] {
+                try {
+                    cancellation::checkpoint();
+                } catch (cancellation::Cancelled const &) {
+                    otherThreadCancelled = true;
+                }
+            });
+            worker.join();
+            expect(!otherThreadCancelled) << "cancellation request is thread-local";
+            outerSource.request_stop();
+            bool outerCancelled = false;
+            try {
+                cancellation::checkpoint();
+            } catch (cancellation::Cancelled const &) {
+                outerCancelled = true;
+            }
+            expect(outerCancelled);
         }
     };
-    "successful_native_results_remain_complete_and_to_svg_matches_render"_test = [] {
+
+    "renderer_wrong_thread_is_rejected_without_poisoning_owner_thread"_test = [] {
         Renderer renderer;
-        const auto result=renderer.render(std::u16string_view(u"\\frac{a}{b}"));
-        expect(!result.svg.empty()); expect(!result.scene.roots().empty());
-        expect(eq(renderer.toSvg(std::u16string_view(u"\\frac{a}{b}")),result.svg));
-        expect(!renderer.renderScene(std::string_view("x+1")).roots().empty());
+        std::string workerError;
+        std::jthread worker([&] {
+            try {
+                (void)renderer.render(std::string_view("x"));
+            } catch (RenderError const &error) {
+                workerError = error.name;
+            }
+        });
+        worker.join();
+        expect(eq(workerError, std::string("WrongThread")));
+        expect(!renderer.render(std::string_view("x")).svg.empty())
+            << "wrong-thread rejection leaves owning thread usable";
+    };
+
+    "successful_results_keep_complete_scene_and_svg_contract"_test = [] {
+        Renderer renderer;
+        const auto result = renderer.render(std::u16string_view(u"\\frac{a}{b}"));
+        expect(!result.svg.empty());
+        expect(!result.scene.root().entries.empty());
+        expect(eq(renderer.toSvg(std::u16string_view(u"\\frac{a}{b}")), result.svg));
+        expect(!renderer.renderScene(std::string_view("x+1")).root().entries.empty());
     };
 };
-}

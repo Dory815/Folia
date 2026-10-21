@@ -85,8 +85,8 @@ target_sources(folia_core PUBLIC
 target_sources(folia_core PRIVATE ${FOLIA_CORE_SOURCE})
 
 # Native math reconstruction: only reviewed typed C++ owners are active.
-# Parser, package families, common placement and Renderer are incomplete.
-# No withdrawn Context runtime, app bridge, or fallback is linked here.
+# Parser/packages and shared Common placement use the accepted typed owners.
+# The application-facing Renderer composes them without a Context runtime.
 add_library(folia_math STATIC)
 target_compile_features(folia_math PUBLIC cxx_std_23)
 set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
@@ -161,6 +161,7 @@ target_include_directories(folia_math PRIVATE ${FOLIA_ENTITIES_GENERATED_DIR})
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS folia_math_compile=2)
 set_property(TARGET folia_math PROPERTY JOB_POOL_COMPILE folia_math_compile)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+    src/math/math.ixx
     src/math/core/tree/factory_types.ixx
     src/math/core/tree/factory.ixx
     src/math/core/tree/wrapper_types.ixx
@@ -327,6 +328,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/common/types.ixx
     src/math/util/regexp_host.ixx)
 target_sources(folia_math PRIVATE
+    src/math/math.cpp
     src/math/core/math_item.cpp
     src/math/core/math_item_state.cpp
     src/math/core/mml_tree/attributes.cpp
@@ -554,6 +556,32 @@ target_sources(folia_math PRIVATE src/math/util/string.cpp)
 target_sources(folia_math PRIVATE src/math/util/entities.cpp)
 target_sources(folia_math PRIVATE src/math/util/js_case.cpp src/math/util/js_case_data.cpp)
 
+# Opaque application boundary. Only the C functions cross the DLL boundary;
+# the implementation and its C++ module dependencies remain private.
+add_library(FoliaNativeMath SHARED src/math/native_renderer_bridge.cpp)
+target_compile_features(FoliaNativeMath PRIVATE cxx_std_23)
+set_target_properties(FoliaNativeMath PROPERTIES CXX_MODULE_STD ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+target_link_libraries(FoliaNativeMath PRIVATE folia_math)
+if(WIN32)
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/FoliaNativeMath.def" CONTENT
+"LIBRARY FoliaNativeMath
+EXPORTS
+FoliaNativeMathRendererCreate
+FoliaNativeMathRendererDestroy
+FoliaNativeMathCancellationCreate
+FoliaNativeMathCancellationRequestStop
+FoliaNativeMathCancellationDestroy
+FoliaNativeMathRenderSvg
+FoliaNativeMathResultSvg
+FoliaNativeMathResultError
+FoliaNativeMathResultDestroy
+")
+    target_sources(FoliaNativeMath PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/FoliaNativeMath.def")
+endif()
+
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
 # ---------------------------------------------------------------------------
@@ -641,6 +669,9 @@ add_test(NAME FoliaTests COMMAND FoliaTests)
 # tracked for typed migration; they are not reported as passing this rewrite.
 add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/main.cpp
+    tests/math/mathjax_full_profile_package_bootstrap.cpp
+    tests/math/math_cancellation_g147.cpp
+    tests/math/native_renderer_bridge.cpp
     tests/math/mml_native_raii_foundation.cpp
     tests/math/native_raii_scene.cpp
     tests/math/lengths_native.cpp
@@ -800,7 +831,7 @@ set_target_properties(FoliaMathTests PROPERTIES CXX_MODULE_STD ON CXX_SCAN_FOR_M
 target_include_directories(FoliaMathTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 target_compile_definitions(FoliaMathTests PRIVATE
     FOLIA_MATH_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/math/fixtures")
-target_link_libraries(FoliaMathTests PRIVATE folia_math Boost::ut_module)
+target_link_libraries(FoliaMathTests PRIVATE folia_math FoliaNativeMath Boost::ut_module)
 add_test(NAME FoliaMathTests COMMAND FoliaMathTests)
 add_executable(FoliaMathFontDump EXCLUDE_FROM_ALL
     tools/math-port/font-data-dump.cpp)
@@ -810,6 +841,7 @@ target_link_libraries(FoliaMathFontDump PRIVATE folia_math)
 if(MSVC)
     target_link_options(FoliaTests PRIVATE /DEBUG:NONE /INCREMENTAL:NO)
     target_link_options(FoliaMathTests PRIVATE /DEBUG:NONE /INCREMENTAL:NO)
+    target_link_options(FoliaMathTests PRIVATE /STACK:16777216)
     target_link_options(FoliaMathFontDump PRIVATE /DEBUG:NONE /INCREMENTAL:NO)
 endif()
 

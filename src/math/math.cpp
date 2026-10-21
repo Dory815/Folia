@@ -1,431 +1,385 @@
 module folia.math;
-import folia.math.output.svg.native_document;
-import folia.math.core.mml_tree.mml_context_bindings;
+import folia.math.adaptors.lite_adaptor;
 import folia.math.cancellation;
-import folia.math.util.native_identities;
-import folia.math.util.property_host;
+import folia.math.core.math_item;
+import folia.math.fonts.newcm_font_module_provider;
+import folia.math.handlers.html.html_dom_strings;
+import folia.math.input.tex.parser;
+import folia.math.input.tex.action.configuration;
+import folia.math.input.tex.ams.configuration;
+import folia.math.input.tex.amscd.configuration;
+import folia.math.input.tex.base_configuration;
+import folia.math.input.tex.bbm.configuration;
+import folia.math.input.tex.bboldx.configuration;
+import folia.math.input.tex.bbox.configuration;
+import folia.math.input.tex.begingroup.configuration;
+import folia.math.input.tex.boldsymbol.configuration;
+import folia.math.input.tex.braket.configuration;
+import folia.math.input.tex.bussproofs.configuration;
+import folia.math.input.tex.cancel.configuration;
+import folia.math.input.tex.cases.configuration;
+import folia.math.input.tex.centernot.configuration;
+import folia.math.input.tex.color.configuration;
+import folia.math.input.tex.colortbl.configuration;
+import folia.math.input.tex.configmacros.configuration;
+import folia.math.input.tex.dsfont.configuration;
+import folia.math.input.tex.empheq.configuration;
+import folia.math.input.tex.enclose.configuration;
+import folia.math.input.tex.extpfeil.configuration;
+import folia.math.input.tex.fontsizev3.configuration;
+import folia.math.input.tex.gensymb.configuration;
+import folia.math.input.tex.html.configuration;
+import folia.math.input.tex.mathtools.configuration;
+import folia.math.input.tex.mhchem.configuration;
+import folia.math.input.tex.newcommand.configuration;
+import folia.math.input.tex.noundefined.configuration;
+import folia.math.input.tex.physics.configuration;
+import folia.math.input.tex.setoptions.set_options_configuration;
+import folia.math.input.tex.tagformat.tag_format_configuration;
+import folia.math.input.tex.texhtml.tex_html_configuration;
+import folia.math.input.tex.textcomp.configuration;
+import folia.math.input.tex.textmacros.configuration;
+import folia.math.input.tex.unicode.configuration;
+import folia.math.input.tex.units.configuration;
+import folia.math.input.tex.upgreek.configuration;
+import folia.math.input.tex.verb.configuration;
+import folia.math.output.common;
+import folia.math.output.scene;
+import folia.math.output.svg.wrapper_factory;
+import folia.math.output.svg.writer;
+import folia.math.util.utf16;
 import std;
 
 namespace folia::math {
+namespace common = output::common;
+namespace scene = output::scene;
+namespace svg = output::svg;
+
 namespace {
-namespace svg=output::svg;
-namespace common=output::common;
-namespace opts=options;
-
-// The package and output profile is the one used by Folia's MathJax entry.
-constexpr std::array<std::u16string_view,38> packages={
-    u"base",u"action",u"ams",u"amscd",u"bbm",u"bboldx",u"bbox",u"begingroup",
-    u"boldsymbol",u"braket",u"bussproofs",u"cancel",u"cases",u"centernot",
-    u"color",u"colortbl",u"configmacros",u"dsfont",u"empheq",u"enclose",
-    u"extpfeil",u"fontsizev3",u"gensymb",u"html",u"mathtools",u"mhchem",
-    u"newcommand",u"noundefined",u"physics",u"setoptions",u"tagformat",u"texhtml",
-    u"textcomp",u"textmacros",u"unicode",u"units",u"upgreek",u"verb"};
-
-void fontWarning(const std::any& reason) {
-    if(const auto* error=std::any_cast<opts::Exception>(&reason)) {
-        std::cerr<<error->name<<": "<<property_host::debugText(error->message)<<'\n';
-    } else if(const auto* text=std::any_cast<std::string>(&reason)) {
-        std::cerr<<*text<<'\n';
-    } else if(const auto* text=std::any_cast<std::u16string>(&reason)) {
-        std::cerr<<property_host::debugText(*text)<<'\n';
-    } else if(const auto* error=std::any_cast<std::exception_ptr>(&reason)) {
-        if(!*error)throw std::invalid_argument("Empty native font exception");
-        try {std::rethrow_exception(*error);}
-        catch(const opts::Exception& value) {
-            std::cerr<<value.name<<": "<<property_host::debugText(value.message)<<'\n';
-        }
-        catch(const std::exception& value) {std::cerr<<value.what()<<'\n';}
-    } else {
-        throw std::runtime_error("Native font warning has no text representation");
-    }
-}
-
-common::FontLoadHost fontHost() {
-    common::FontLoadHost host;
-    host.asyncIsSynchronous=[] {return true;};
-    host.warn=fontWarning;
-    host.consoleWarn=[](const std::vector<std::any>& arguments) {
-        for(const auto& argument:arguments)fontWarning(argument);
-    };
-    return host;
-}
-}
-
-struct Renderer::State {
-    svg::NativeRenderSession session;
-    std::shared_ptr<mml::MmlContextBindings> mmlBindings;
-    std::optional<mml::MmlContextBindings::SourceAllocationDomain> requestSourceDomain;
-    std::shared_ptr<handlers::html::HTMLMathDocument> document;
-    std::shared_ptr<common::LayoutJob> pendingLayoutRetirement;
-    bool unusable=false;
-    bool requestCallActive=false;
-    std::optional<mml::MmlFactory::ProductMark> requestMmlMark;
-    std::optional<RequestIdentityCapture> requestMmlCapture;
-    std::optional<RequestIdentityCapture> requestNodeArrayCapture;
-    std::optional<RequestIdentityCapture> requestProjectionCapture;
-    std::optional<adaptors::lite::LiteModule::RequestMark> requestLiteMark;
-    std::optional<svg::SceneContextNodes::RequestMark> requestSceneMark;
-    bool requestOwnersActive=false;
-    bool requestItemRetired=false,requestMmlIdentitiesRetired=false,
-         requestNodeArraysRetired=false,requestProjectionsRetired=false,
-         requestSceneRetired=false,requestProductsRetired=false,
-         requestLiteRetired=false,requestSourceDomainRetired=false;
-
-    std::array<std::size_t,3> sceneOwnerDiagnostics()const {
-        const auto counts=session.services().sceneContextNodes().requestOwnerCountsForDiagnostics();
-        return {counts.handles,counts.sourceIdentities,counts.sourceViews};
-    }
-
-    Renderer::OwnerCounts diagnostics()const {
-        const auto contextCounts=session.context().allocationCountsForDiagnostics();
-        auto& services=session.services();
-        const auto wrapperCounts=services.commonFactories().ownerCountsForDiagnostics();
-        return {contextCounts.objectSlots,contextCounts.symbolSlots,
-            services.mmlFactory().productCountForDiagnostics(),
-            services.parser().canonicalIdentityHandleCountForDiagnostics(),
-            wrapperCounts.wrapperIdentities,wrapperCounts.retainedLayoutJobs,
-            services.sceneContextNodes().handleCountForDiagnostics(),
-            services.lite().store()->recordCountForDiagnostics(),
-            services.lite().nodeIdentityCountForDiagnostics()};
-    }
-
-    State():session(fontHost(),{svg::NewcmFontExtension::bboldx,
-            svg::NewcmFontExtension::bbm,svg::NewcmFontExtension::dsfont}) {
-        mmlBindings=session.services().modules().find<mml::MmlContextBindings>(
-            u"core/MmlTree/ContextBindings");
-        if(!mmlBindings)
-            throw opts::Exception("TypeError",u"Renderer has no canonical MML Context bindings");
-        auto& context=session.context();
-        const auto outputOptions=context.object();
-        context.set(outputOptions,opts::Key(u"fontCache"),opts::Value(u"none"));
-        context.set(outputOptions,opts::Key(u"exFactor"),opts::Value(.5));
-        context.set(outputOptions,opts::Key(u"displayOverflow"),opts::Value(u"linebreak"));
-        const auto linebreaks=context.object();
-        context.set(linebreaks,opts::Key(u"inline"),opts::Value(true));
-        context.set(outputOptions,opts::Key(u"linebreaks"),opts::Value(linebreaks));
-        (void)session.construct(opts::Value(outputOptions));
-        const auto inputOptions=context.object();
-        const auto selected=context.array(static_cast<std::uint32_t>(packages.size()));
-        for(std::size_t index=0;index<packages.size();++index) {
-            const auto key=std::to_string(index);
-            context.set(selected,opts::Key(std::u16string(key.begin(),key.end())),
-                opts::Value(std::u16string(packages[index])));
-        }
-        context.set(inputOptions,opts::Key(u"packages"),opts::Value(selected));
-        document=svg::createNativeSvgDocument(session,opts::Undefined{},opts::Value(inputOptions));
-    }
-
-    void retireCurrentLayoutJob(){
-        if(!pendingLayoutRetirement){
-            auto jax=session.outputJax();
-            pendingLayoutRetirement=jax
-                ?jax->takeCurrentLayoutJobForPrivateRendererRetirement()
-                :std::shared_ptr<common::LayoutJob>{};
-        }
-        if(pendingLayoutRetirement){
-            (void)session.services().commonFactories().retireRendererLayoutJob(pendingLayoutRetirement);
-            pendingLayoutRetirement.reset();
-        }
-    }
-
-    void beginRequestOwners(){
-        retireCurrentRequestOwners();
-        auto& services=session.services();auto& runtime=services.parser();
-        requestSceneMark=services.sceneContextNodes().beginRequestScope();
-        try{
-            requestMmlMark=services.mmlFactory().productMark();
-            requestLiteMark=services.lite().requestMark();
-        }catch(...){
-            services.sceneContextNodes().retireRequestScope(*requestSceneMark);
-            requestSceneMark.reset();requestMmlMark.reset();requestLiteMark.reset();
-            throw;
-        }
-        requestItemRetired=requestMmlIdentitiesRetired=requestNodeArraysRetired=
-            requestProjectionsRetired=requestSceneRetired=requestProductsRetired=
-            requestLiteRetired=requestSourceDomainRetired=false;
-        // Set the owner-scope progress before starting captures. If any later
-        // begin operation throws, the same retirement path can retry any token
-        // whose cleanup itself fails instead of losing it in local rollback.
-        requestOwnersActive=true;
-        try{
-            requestMmlCapture=runtime.mmlNodeIdentities.beginRequestCapture();
-            requestNodeArrayCapture=runtime.nodeArrayIdentities.beginRequestCapture();
-            requestProjectionCapture=mmlBindings->beginPrivateRendererProjectionCapture();
-            document->beginRequestOwnerScope();
-        }catch(...){
-            try{retireCurrentRequestOwners();}catch(...){}
-            throw;
-        }
-        try{
-            requestSourceDomain.emplace(mmlBindings->makePrivateSourceAllocationDomain());
-            mmlBindings->bindSourceAllocationDomain(*requestSourceDomain);
-        }
-        catch(...){retireCurrentRequestOwners();throw;}
-    }
-
-    void retireCurrentRequestOwners(){
-        if(!requestOwnersActive)return;
-        auto& services=session.services();auto& runtime=services.parser();
-        if(!requestItemRetired){document->retireCompletedRequestItem();requestItemRetired=true;}
-        if(!requestMmlIdentitiesRetired){
-            if(requestMmlCapture)runtime.mmlNodeIdentities.retireCapturedRequestBindings(*requestMmlCapture);
-            requestMmlCapture.reset();requestMmlIdentitiesRetired=true;
-        }
-        if(!requestNodeArraysRetired){
-            if(requestNodeArrayCapture)runtime.nodeArrayIdentities.retireCapturedRequestBindings(*requestNodeArrayCapture);
-            requestNodeArrayCapture.reset();requestNodeArraysRetired=true;
-        }
-        if(!requestProjectionsRetired){
-            if(requestProjectionCapture)
-                mmlBindings->retirePrivateRendererProjectionCapture(*requestProjectionCapture);
-            requestProjectionCapture.reset();requestProjectionsRetired=true;
-        }
-        if(!requestSceneRetired){services.sceneContextNodes().retireRequestScope(*requestSceneMark);requestSceneMark.reset();requestSceneRetired=true;}
-        if(!requestProductsRetired){services.mmlFactory().retireProductsFrom(*requestMmlMark);requestProductsRetired=true;}
-        if(!requestLiteRetired){services.lite().retireRequestNodesSince(*requestLiteMark);requestLiteRetired=true;}
-        (void)runtime.retireTagInfoOwnersOutsidePrivateRendererRoots();
-        (void)runtime.retireLabelOwnersOutsidePrivateRendererRoots();
-        if(requestSourceDomain&&!requestSourceDomainRetired){
-            mmlBindings->retireSourceAllocationDomain(*requestSourceDomain);
-            requestSourceDomainRetired=true;
-        }
-        requestSourceDomain.reset();
-        requestMmlMark.reset();requestLiteMark.reset();requestSceneMark.reset();requestOwnersActive=false;
-    }
-
-    struct RequestLayoutScope {
-        State& state;
-        bool closed=false;
-        explicit RequestLayoutScope(State& value):state(value){
-            if(state.requestCallActive)
-                throw opts::Exception("TypeError",u"Renderer request is already active");
-            state.requestCallActive=true;
-            try{state.retireCurrentLayoutJob();state.retireCurrentRequestOwners();state.beginRequestOwners();}
-            catch(...){state.requestCallActive=false;throw;}
-        }
-        void close(){state.retireCurrentLayoutJob();state.retireCurrentRequestOwners();closed=true;state.requestCallActive=false;}
-        ~RequestLayoutScope(){
-            if(!closed){
-                bool layoutRetired=false;
-                try{state.retireCurrentLayoutJob();layoutRetired=true;}catch(...){}
-                // Do not destroy MML products while a failed job retirement
-                // may leave wrappers pointing into the request product suffix.
-                if(layoutRetired)try{state.retireCurrentRequestOwners();}catch(...){}
-            }
-            state.requestCallActive=false;
-        }
-    };
-
-    DOMNodeRef convertMath(std::u16string_view tex,RenderOptions options) {
-        if(!requestSourceDomain)
-            throw opts::Exception("TypeError",u"Renderer request has no Source allocation domain");
-        auto activeSourceAllocation=mmlBindings->activateSourceAllocation(*requestSourceDomain);
-        auto& context=session.context();
-        const auto settings=context.object();
-        const double em=options.em&&!std::isnan(options.em)?options.em:16;
-        const double width=options.containerWidth&&!std::isnan(options.containerWidth)
-            ?options.containerWidth:1280;
-        context.set(settings,opts::Key(u"display"),opts::Value(options.display));
-        context.set(settings,opts::Key(u"em"),opts::Value(em));
-        context.set(settings,opts::Key(u"ex"),opts::Value(em*.5));
-        context.set(settings,opts::Key(u"containerWidth"),opts::Value(width));
-        const auto result=document->convert(opts::Value(std::u16string(tex)),opts::Value(settings));
-        const auto nodeValue=propertyNode(document->propertyBindings().from(result));
-        const auto* node=std::get_if<DOMNodeRef>(&nodeValue);
-        if(!node||!*node)
-            throw opts::Exception("TypeError",u"Native math conversion did not return a DOM node");
-        return *node;
-    }
-
-    RenderResult render(std::u16string_view tex,RenderOptions options) {
-        RequestLayoutScope requestScope(*this);
-        const auto node=convertMath(tex,options);
-        const auto* completed=session.outputJax()->completedScene();
-        if(!completed)
-            throw opts::Exception("TypeError",u"Native math conversion did not complete a Scene");
-        RenderResult result{property_host::debugText(document->domAdaptor().serializeXML(node)),*completed};
-        requestScope.close();
-        return result;
-    }
-
-    output::scene::Scene renderScene(std::u16string_view tex,RenderOptions options) {
-        RequestLayoutScope requestScope(*this);
-        std::shared_ptr<const output::scene::Scene> captured;
-        auto jax=session.outputJax();
-        if(!jax)throw opts::Exception("TypeError",u"Render session has no SVG output Jax");
-        auto previous=jax->exchangeSceneOutputConsumer(
-            [&captured](std::shared_ptr<const output::scene::Scene> value,DOMNodeRef){
-                captured=std::move(value);
-            });
-        struct ConsumerScope {
-            svg::SvgOutputJax& jax;
-            svg::SvgOutputJax::SceneOutputConsumer previous;
-            ~ConsumerScope(){(void)jax.exchangeSceneOutputConsumer(std::move(previous));}
-        } scope{*jax,std::move(previous)};
-        (void)convertMath(tex,options);
-        if(!captured)
-            throw opts::Exception("TypeError",u"Native math conversion did not produce a Scene");
-        auto result=*captured;
-        requestScope.close();
-        return result;
+struct Warnings final : tex::WarningSink {
+    void warn(std::u16string_view text) override {
+        std::cerr << utf16::encode(text) << '\n';
     }
 };
 
-Renderer::OwnerCounts Renderer::diagnosticsForTest()const{return state_->diagnostics();}
-std::array<std::size_t,24> RendererDiagnosticsProbe::parserIdentitySnapshot(const Renderer& renderer){
-    return renderer.state_->session.services().parser().identityRegistryBreakdownForDiagnostics();
-}
-std::array<std::size_t,3> RendererDiagnosticsProbe::sceneOwnerSnapshot(const Renderer& renderer){
-    return renderer.state_->sceneOwnerDiagnostics();
-}
-std::vector<std::pair<std::uint64_t,int>> RendererDiagnosticsProbe::liteNodeIdentitySnapshot(const Renderer& renderer){
-    std::vector<std::pair<std::uint64_t,int>> result;
-    for(const auto& [id,kind]:renderer.state_->session.services().lite().nodeIdentitySnapshotForDiagnostics())
-        result.emplace_back(id,static_cast<int>(kind));
-    return result;
-}
-std::vector<std::tuple<std::uint64_t,int,std::string>> RendererDiagnosticsProbe::liteNodeIdentityNamedSnapshot(const Renderer& renderer){
-    std::vector<std::tuple<std::uint64_t,int,std::string>> result;
-    for(const auto& [id,kind,name]:renderer.state_->session.services().lite().nodeIdentityNamedSnapshotForDiagnostics())
-        result.emplace_back(id,static_cast<int>(kind),name);
-    return result;
-}
-std::array<std::size_t,4> RendererDiagnosticsProbe::contextRecordCounts(const Renderer& renderer){
-    const auto counts=renderer.state_->session.context().recordCountsForDiagnostics();
-    return {counts.slots,counts.live,counts.retired,counts.ownerBearing};
-}
-std::array<std::size_t,5> RendererDiagnosticsProbe::nativeBindingCounts(const Renderer& renderer){
-    const auto mml=renderer.state_->mmlBindings->nativeOwnerCountsForDiagnostics();
-    const auto& parser=renderer.state_->session.services().parser();
-    return {mml[0],mml[1],mml[2],
-            parser.maps.canonicalStorageCountForDiagnostics(),
-            parser.functions().canonicalBindingCountForDiagnostics()};
-}
-std::array<std::size_t,9> RendererDiagnosticsProbe::snapshot(const Renderer& renderer){
-    const auto c=renderer.diagnosticsForTest();
-    return {c.contextObjectSlots,c.contextSymbolSlots,c.mmlFactoryProducts,
-        c.parserRegistryEntries,c.wrapperHandles,c.wrapperRetainedJobs,
-        c.sceneHandles,c.liteRecords,c.liteNodeIdentities};
-}
-void RendererDiagnosticsProbe::print(const Renderer& renderer,std::string_view stage){
-    const auto c=renderer.diagnosticsForTest();
-    const auto records=contextRecordCounts(renderer);
-    const auto nativeBindings=nativeBindingCounts(renderer);
-    std::cout<<stage
-        <<" context_object_slots="<<c.contextObjectSlots
-        <<" context_record_slots="<<records[0]
-        <<" context_live_records="<<records[1]
-        <<" context_retired_records="<<records[2]
-        <<" context_owner_bearing_records="<<records[3]
-        <<" mml_attributes_canonical_handles="<<nativeBindings[0]
-        <<" mml_property_projection_records="<<nativeBindings[1]
-        <<" mml_property_projection_live="<<nativeBindings[2]
-        <<" parser_map_canonical_storages="<<nativeBindings[3]
-        <<" parser_function_canonical_bindings="<<nativeBindings[4]
-        <<" context_symbol_slots="<<c.contextSymbolSlots
-        <<" mml_factory_products="<<c.mmlFactoryProducts
-        <<" parser_registry_entries="<<c.parserRegistryEntries
-        <<" wrapper_handles="<<c.wrapperHandles
-        <<" wrapper_retained_jobs="<<c.wrapperRetainedJobs
-        <<" scene_handles="<<c.sceneHandles
-        <<" lite_records="<<c.liteRecords
-        <<" lite_node_identities="<<c.liteNodeIdentities
-        <<'\n';
+std::unique_ptr<common::Linebreaks> makeLinebreakVisitor(common::CommonWrapperFactory &factory) {
+    return std::make_unique<common::LinebreakVisitor>(factory);
 }
 
-Renderer::Renderer() try :state_(std::make_unique<State>()){}
-catch(const opts::Exception& error) {
-    throw RenderError(error.name,property_host::debugText(error.message));
+std::vector<tex::PackageSelection> rendererPackages() {
+    return {{u"base", {}},         {u"action", {}},     {u"ams", {}},        {u"amscd", {}},
+            {u"bbm", {}},          {u"bboldx", {}},     {u"bbox", {}},       {u"begingroup", {}},
+            {u"boldsymbol", {}},   {u"braket", {}},     {u"bussproofs", {}}, {u"cancel", {}},
+            {u"cases", {}},        {u"centernot", {}},  {u"color", {}},      {u"colortbl", {}},
+            {u"configmacros", {}}, {u"dsfont", {}},     {u"empheq", {}},     {u"enclose", {}},
+            {u"extpfeil", {}},     {u"fontsizev3", {}}, {u"gensymb", {}},    {u"html", {}},
+            {u"mathtools", {}},    {u"mhchem", {}},     {u"newcommand", {}}, {u"noundefined", {}},
+            {u"physics", {}},      {u"setoptions", {}}, {u"tagformat", {}},  {u"texhtml", {}},
+            {u"textcomp", {}},     {u"textmacros", {}}, {u"unicode", {}},    {u"units", {}},
+            {u"upgreek", {}},      {u"verb", {}}};
 }
-Renderer::~Renderer()=default;
-RenderResult Renderer::render(std::u16string_view tex,RenderOptions options) {
-    return render(tex,std::stop_token{},options);
-}
-RenderResult Renderer::render(std::u16string_view tex,std::stop_token stop,RenderOptions options) {
-    cancellation::Request request(stop,options.deadline);
-    if(state_->unusable)
-        throw RenderError("SessionUnusable","Native math renderer session is unusable after in-flight cancellation");
-    try { request.checkpoint(); }
-    catch(const cancellation::Cancelled&) { throw RenderError("Cancelled","Math rendering cancelled"); }
-    cancellation::Scope scope(request);
-    try {
-        auto completed=state_->render(tex,options);
-        request.checkpoint();
-        return completed;
-    } catch(const cancellation::Cancelled&) {
-        state_->unusable=true;
-        throw RenderError("Cancelled","Math rendering cancelled; native session is unusable");
+
+class LiteMeasurement final : public common::MeasurementTarget {
+    adaptors::lite::LiteAdaptor &adaptor_;
+
+  public:
+    explicit LiteMeasurement(adaptors::lite::LiteAdaptor &adaptor) noexcept : adaptor_(adaptor) {}
+
+    common::ExtendedMetrics measureMetrics(common::MetricRequest const &) override {
+        throw std::logic_error("pinned NewCM requests must use the supplied font metrics");
     }
 
-    catch(const opts::Exception& error) {
-        throw RenderError(error.name,property_host::debugText(error.message));
+    common::UnknownBBox measureUnknownText(common::UnknownTextRequest const &request) override {
+        const std::array<DOMNodeRef, 1> children{adaptor_.text(request.text)};
+        const auto text = adaptor_.node(u"text", {}, children, u"http://www.w3.org/2000/svg");
+        const auto [width, height] = adaptor_.nodeSize(text, 1000, true);
+        (void)height;
+        return {width, .75, .2};
     }
+};
+
+class SceneOutput final : public core::MathOutputJaxService {
+    common::FontRepository const &fonts_;
+    RenderOptions options_;
+    LiteMeasurement measurement_;
+    DOMDocumentRef htmlDocument_;
+    common::HtmlMeasurement htmlMeasurement_;
+
+    common::CommonOutputJaxConfig config() const;
+
+  public:
+    SceneOutput(common::FontRepository const &, adaptors::lite::LiteAdaptor &, RenderOptions);
+    scene::Scene typeset(core::MathItem &, mml::MmlDocument &) override;
+    scene::Scene escaped(core::MathItem &, mml::MmlDocument &) override;
+    BBox getBBox(core::MathItem &, mml::MmlDocument &) override;
+};
+} // namespace
+
+struct Renderer::State {
+    std::thread::id owner = std::this_thread::get_id();
+    bool unusable = false;
+    fonts::NewcmFontDataBundle fontData = fonts::makeNewcmFontData();
+    adaptors::lite::LiteAdaptor adaptor;
+    tex::ConfigurationHandler configurations;
+    tex::MapHandler maps;
+    tex::MacroCallbacks callbacks{{}, {}};
+    tex::TexOptionValues texOptions;
+    std::shared_ptr<handlers::html::HTMLDomStringsOptions> htmlOptions =
+        std::make_shared<handlers::html::HTMLDomStringsOptions>();
+    Warnings warnings;
+    std::unique_ptr<tex::TeX> input;
+
+    RenderResult render(std::u16string_view, std::stop_token, RenderOptions);
+    scene::Scene renderScene(std::u16string_view, std::stop_token, RenderOptions);
+    std::u16string decode(std::string_view, std::stop_token, RenderOptions) const;
+    void validateOptions(RenderOptions const &) const;
+
+    State() {
+        tex::BasePackage::initialize(configurations, maps);
+        tex::ActionConfiguration::initializeModule(configurations, maps);
+        tex::AmsConfiguration::initializeModule(configurations, maps);
+        tex::AmsCdConfiguration::initializeModule(configurations, maps);
+        tex::BbmConfiguration::initializeModule(configurations, maps);
+        tex::BboldxConfiguration::initializeModule(configurations, maps);
+        tex::BboxConfiguration::initializeModule(configurations, maps);
+        tex::BegingroupConfiguration::initializeModule(configurations, maps);
+        tex::BoldsymbolConfiguration::initializeModule(configurations, maps);
+        tex::BraketConfiguration::initializeModule(configurations, maps);
+        tex::BussproofsConfiguration::initializeModule(configurations, maps);
+        tex::CancelConfiguration::initializeModule(configurations, maps);
+        tex::CasesConfiguration::initializeModule(configurations, maps);
+        tex::CenternotConfiguration::initializeModule(configurations, maps);
+        tex::ColorConfiguration::initializeModule(configurations, maps);
+        tex::ColortblConfiguration::initializeModule(configurations, maps);
+        tex::ConfigMacrosConfiguration::initializeModule(configurations, maps);
+        tex::DsfontConfiguration::initializeModule(configurations, maps);
+        tex::EmpheqConfiguration::initializeModule(configurations, maps);
+        tex::EncloseConfiguration::initializeModule(configurations, maps);
+        tex::ExtpfeilConfiguration::initializeModule(configurations, maps);
+        tex::FontSizeV3Configuration::initializeModule(configurations, maps);
+        tex::GensymbConfiguration::initializeModule(configurations, maps);
+        tex::HtmlConfiguration::initializeModule(configurations, maps);
+        tex::MathtoolsConfiguration::initializeModule(configurations, maps);
+        tex::MhchemConfiguration::initializeModule(configurations, maps);
+        tex::NewcommandConfiguration::initializeModule(configurations, maps);
+        tex::NoUndefinedConfiguration::initializeModule(configurations);
+        tex::PhysicsConfiguration::initializeModule(configurations, maps);
+        tex::SetOptionsConfiguration::initializeModule(configurations);
+        tex::TagFormatConfiguration::initializeModule(configurations);
+        tex::TexHtmlConfiguration::initializeModule(configurations, maps, htmlOptions);
+        tex::TextcompConfiguration::initializeModule(configurations, maps);
+        tex::TextMacrosConfiguration::initializeModule(configurations, maps);
+        tex::UnicodeConfiguration::initializeModule(configurations, maps);
+        tex::UnitsConfiguration::initializeModule(configurations, maps);
+        tex::UpgreekConfiguration::initializeModule(configurations, maps);
+        tex::VerbConfiguration::initializeModule(configurations, maps);
+
+        texOptions.packages = rendererPackages();
+        texOptions.tagSide = u"right";
+        input = std::make_unique<tex::TeX>(configurations, maps, callbacks, warnings, texOptions);
+    }
+
+    void checkThread() const {
+        if (owner != std::this_thread::get_id())
+            throw RenderError("WrongThread", "Renderer used from a non-owning thread");
+    }
+
+    output::scene::Scene buildScene(std::u16string_view source, RenderOptions options) {
+        cancellation::checkpoint(cancellation::CheckpointStage::TeX);
+        mml::MmlDocument document;
+        tex::TeXRequest request(*input, document.factory());
+        SceneOutput output(fontData.fonts, adaptor, options);
+        core::AbstractMathItem expression(std::u16string(source), input.get(),
+                                          options.display ? core::MathDisplay::display_math
+                                                          : core::MathDisplay::inline_math);
+        expression.setMetrics(options.em, options.em * .5, options.containerWidth, 1);
+        expression.compile(document, {&output, &adaptor});
+        if (!expression.root)
+            throw std::logic_error("TeX input produced no MathItem root");
+        document.setRoot(*expression.root);
+        cancellation::checkpoint(cancellation::CheckpointStage::TeX);
+        expression.typeset(output, document);
+        cancellation::checkpoint(cancellation::CheckpointStage::Scene);
+        if (!expression.typesetRoot)
+            throw std::logic_error("Common output did not produce an owned Scene");
+        return std::move(*expression.typesetRoot);
+    }
+};
+
+namespace {
+SceneOutput::SceneOutput(common::FontRepository const &fonts, adaptors::lite::LiteAdaptor &adaptor,
+                         RenderOptions options)
+    : fonts_(fonts), options_(options), measurement_(adaptor),
+      htmlDocument_(adaptor.parse(u"", u"text/html")),
+      htmlMeasurement_{
+          adaptor, adaptor.parent(adaptor.body(htmlDocument_)),
+          adaptor.node(u"mjx-container",
+                       std::array<AttributeData, 2>{{{u"class", u"MathJax"}, {u"jax", u"SVG"}}})} {}
+
+common::CommonOutputJaxConfig SceneOutput::config() const {
+    common::CommonOptions commonOptions;
+    commonOptions.displayOverflow = "linebreak";
+    commonOptions.linebreaks.inlineBreaks = true;
+    common::ExtendedMetrics metrics{options_.em, options_.em * .5, options_.containerWidth, 1,
+                                    {},          options_.display};
+    common::CommonOutputJaxConfig result{metrics, std::move(commonOptions), fonts_, "MathJaxNewcm"};
+    result.inlineBreakPolicy = common::InlineBreakPolicy::forced;
+    result.htmlMeasurement.emplace(htmlMeasurement_);
+    return result;
 }
-RenderResult Renderer::render(std::string_view tex,RenderOptions options) {
-    return render(tex,std::stop_token{},options);
+
+scene::Scene SceneOutput::typeset(core::MathItem &math, mml::MmlDocument &document) {
+    if (!math.root)
+        throw std::logic_error("Common-to-Scene typeset requires a compiled MathItem root");
+    if (document.root() != math.root)
+        document.setRoot(*math.root);
+    cancellation::checkpoint(cancellation::CheckpointStage::Layout);
+    common::LayoutJob job(document, config(), measurement_, svg::SvgWrapperFactory::defaultNodes(),
+                          makeLinebreakVisitor);
+    auto result = job.buildScene();
+    cancellation::checkpoint(cancellation::CheckpointStage::Scene);
+    return result;
 }
-RenderResult Renderer::render(std::string_view tex,std::stop_token stop,RenderOptions options) {
-    cancellation::Request request(stop,options.deadline);
-    if(state_->unusable)
-        throw RenderError("SessionUnusable","Native math renderer session is unusable after in-flight cancellation");
+
+scene::Scene SceneOutput::escaped(core::MathItem &, mml::MmlDocument &) {
+    throw svg::UnsupportedError("escaped math output is outside the TeX renderer contract");
+}
+
+BBox SceneOutput::getBBox(core::MathItem &math, mml::MmlDocument &document) {
+    if (!math.root)
+        throw std::logic_error("Common BBox requires a compiled MathItem root");
+    return common::CommonOutputJax::getBBox(document, *math.root, config(), measurement_,
+                                            svg::SvgWrapperFactory::defaultNodes(),
+                                            makeLinebreakVisitor);
+}
+
+} // namespace
+
+RenderResult Renderer::State::render(std::u16string_view source, std::stop_token stop,
+                                     RenderOptions options) {
+    cancellation::Request request(stop, options.deadline);
+    checkThread();
+    if (unusable)
+        throw RenderError("SessionUnusable", "Renderer session is unusable after cancellation");
     try {
         request.checkpoint();
-        cancellation::Scope scope(request);
-        auto converted=property_host::text(tex);
-        request.checkpoint();
-        return render(std::u16string_view(converted),stop,options);
-    } catch(const cancellation::Cancelled&) {
-        throw RenderError("Cancelled","Math rendering cancelled");
+    } catch (cancellation::Cancelled const &) {
+        throw RenderError("Cancelled", "Math rendering cancelled before the request started");
     }
-}
-output::scene::Scene Renderer::renderScene(std::u16string_view tex,RenderOptions options) {
-    return renderScene(tex,std::stop_token{},options);
-}
-output::scene::Scene Renderer::renderScene(std::u16string_view tex,std::stop_token stop,RenderOptions options) {
-    cancellation::Request request(stop,options.deadline);
-    if(state_->unusable)
-        throw RenderError("SessionUnusable","Native math renderer session is unusable after in-flight cancellation");
-    try { request.checkpoint(); }
-    catch(const cancellation::Cancelled&) { throw RenderError("Cancelled","Math rendering cancelled"); }
+    validateOptions(options);
     cancellation::Scope scope(request);
     try {
-        auto completed=state_->renderScene(tex,options);
+        auto completedScene = buildScene(source, options);
+        cancellation::checkpoint(cancellation::CheckpointStage::Serialization);
+        svg::SvgWriteOptions writeOptions;
+        writeOptions.font_cache = svg::FontCacheMode::none;
+        writeOptions.font_resources = &fontData.svg_resources;
+        auto svgText = svg::write(completedScene, writeOptions);
         request.checkpoint();
-        return completed;
-    } catch(const cancellation::Cancelled&) {
-        state_->unusable=true;
-        throw RenderError("Cancelled","Math rendering cancelled; native session is unusable");
-    } catch(const opts::Exception& error) {
-        throw RenderError(error.name,property_host::debugText(error.message));
+        return {std::move(svgText), std::move(completedScene)};
+    } catch (cancellation::Cancelled const &) {
+        unusable = true;
+        throw RenderError("Cancelled", "Math rendering cancelled; renderer session is unusable");
     }
 }
-output::scene::Scene Renderer::renderScene(std::string_view tex,RenderOptions options) {
-    return renderScene(tex,std::stop_token{},options);
-}
-output::scene::Scene Renderer::renderScene(std::string_view tex,std::stop_token stop,RenderOptions options) {
-    cancellation::Request request(stop,options.deadline);
-    if(state_->unusable)
-        throw RenderError("SessionUnusable","Native math renderer session is unusable after in-flight cancellation");
+
+scene::Scene Renderer::State::renderScene(std::u16string_view source, std::stop_token stop,
+                                          RenderOptions options) {
+    cancellation::Request request(stop, options.deadline);
+    checkThread();
+    if (unusable)
+        throw RenderError("SessionUnusable", "Renderer session is unusable after cancellation");
     try {
         request.checkpoint();
-        cancellation::Scope scope(request);
-        auto converted=property_host::text(tex);
+    } catch (cancellation::Cancelled const &) {
+        throw RenderError("Cancelled", "Math rendering cancelled before the request started");
+    }
+    validateOptions(options);
+    cancellation::Scope scope(request);
+    try {
+        auto result = buildScene(source, options);
         request.checkpoint();
-        return renderScene(std::u16string_view(converted),stop,options);
-    } catch(const cancellation::Cancelled&) {
-        throw RenderError("Cancelled","Math rendering cancelled");
+        return result;
+    } catch (cancellation::Cancelled const &) {
+        unusable = true;
+        throw RenderError("Cancelled", "Math rendering cancelled; renderer session is unusable");
     }
 }
-std::string Renderer::toSvg(std::u16string_view tex,RenderOptions options) {
-    return render(tex,options).svg;
+
+void Renderer::State::validateOptions(RenderOptions const &options) const {
+    if (!std::isfinite(options.em) || options.em <= 0)
+        throw RenderError("InvalidArgument", "Renderer em must be finite and positive");
+    if (!std::isfinite(options.containerWidth) || options.containerWidth <= 0)
+        throw RenderError("InvalidArgument",
+                          "Renderer container width must be finite and positive");
 }
-std::string Renderer::toSvg(std::string_view tex,RenderOptions options) {
-    return render(tex,options).svg;
+
+std::u16string Renderer::State::decode(std::string_view text, std::stop_token stop,
+                                       RenderOptions options) const {
+    cancellation::Request request(stop, options.deadline);
+    checkThread();
+    if (unusable)
+        throw RenderError("SessionUnusable", "Renderer session is unusable after cancellation");
+    try {
+        request.checkpoint();
+    } catch (cancellation::Cancelled const &) {
+        throw RenderError("Cancelled", "Math rendering cancelled before the request started");
+    }
+    validateOptions(options);
+    cancellation::Scope scope(request);
+    try {
+        return utf16::decode(text).text;
+    } catch (cancellation::Cancelled const &) {
+        throw RenderError("Cancelled", "Math rendering cancelled before the request started");
+    }
 }
-std::string Renderer::toSvg(std::u16string_view tex,std::stop_token stop,RenderOptions options) {
-    return render(tex,stop,options).svg;
+
+Renderer::Renderer() : state_(std::make_unique<State>()) {}
+Renderer::~Renderer() = default;
+
+RenderResult Renderer::render(std::u16string_view source, RenderOptions options) {
+    return render(source, std::stop_token{}, options);
 }
-std::string Renderer::toSvg(std::string_view tex,std::stop_token stop,RenderOptions options) {
-    return render(tex,stop,options).svg;
+RenderResult Renderer::render(std::string_view source, RenderOptions options) {
+    return render(source, std::stop_token{}, options);
 }
+RenderResult Renderer::render(std::u16string_view source, std::stop_token stop,
+                              RenderOptions options) {
+    return state_->render(source, stop, options);
 }
+RenderResult Renderer::render(std::string_view source, std::stop_token stop,
+                              RenderOptions options) {
+    auto decoded = state_->decode(source, stop, options);
+    return render(decoded, stop, options);
+}
+
+scene::Scene Renderer::renderScene(std::u16string_view source, RenderOptions options) {
+    return renderScene(source, std::stop_token{}, options);
+}
+scene::Scene Renderer::renderScene(std::string_view source, RenderOptions options) {
+    return renderScene(source, std::stop_token{}, options);
+}
+scene::Scene Renderer::renderScene(std::u16string_view source, std::stop_token stop,
+                                   RenderOptions options) {
+    return state_->renderScene(source, stop, options);
+}
+scene::Scene Renderer::renderScene(std::string_view source, std::stop_token stop,
+                                   RenderOptions options) {
+    auto decoded = state_->decode(source, stop, options);
+    return renderScene(decoded, stop, options);
+}
+
+std::string Renderer::toSvg(std::u16string_view source, RenderOptions options) {
+    return render(source, options).svg;
+}
+std::string Renderer::toSvg(std::string_view source, RenderOptions options) {
+    return render(source, options).svg;
+}
+std::string Renderer::toSvg(std::u16string_view source, std::stop_token stop,
+                            RenderOptions options) {
+    return render(source, stop, options).svg;
+}
+std::string Renderer::toSvg(std::string_view source, std::stop_token stop, RenderOptions options) {
+    return render(source, stop, options).svg;
+}
+} // namespace folia::math
