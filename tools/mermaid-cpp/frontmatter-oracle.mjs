@@ -51,7 +51,8 @@ const scalars = ['', 'null', 'Null', 'NULL', '~', 'true', 'True', 'TRUE', 'false
   '0o400000000000000001', '-00', '-0.0', '2.2250738585072014e-308', '5e-324', '1e-324',
   '1.7976931348623157e308', '1.7976931348623159e308', '"\\0"', '"\\u0001"',
   '"\\uD800"', '"\\uDC00"', '"\\uD83D\\uDE00"', '"\\U00110000"',
-  '"\\N\\_\\L\\P"', '"\\a\\b\\v\\f\\e"', '"bad\\q"', '"bad\\\'"'];
+  '"\\N\\_\\L\\P"', '"\\a\\b\\v\\f\\e"', '"bad\\q"', '"bad\\\'"',
+  '!!seq ""', '!!map ""', '!!seq null', '!!map null'];
 for (const [i, value] of scalars.entries()) {
   bodyCase(`scalar-${i}`, `config: {value: ${value}}`);
   bodyCase(`title-${i}`, `title: ${value}\ndisplayMode: ${value}`);

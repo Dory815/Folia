@@ -87,7 +87,7 @@ suite frontmatter = [] {
             }
             ++count;
         }
-        expect(count == 409_u);
+        expect(count == 421_u);
     };
     "mermaid_yaml_resource_limits_cycles_and_unicode_errors"_test = [] {
         expect(!parse_config_yaml(u"&self [*self]"));

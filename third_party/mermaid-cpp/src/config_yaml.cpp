@@ -160,10 +160,6 @@ ConfigValue scalar_value(std::string_view text, std::string_view tag) {
     ConfigValue value;
     const bool implicit = tag == "?";
     const auto is_tag = [&](std::string_view suffix) { return tag == std::string("tag:yaml.org,2002:") + std::string(suffix); };
-    if (text.empty() && (is_tag("seq") || is_tag("map"))) {
-        value.kind = is_tag("seq") ? ConfigKind::sequence : ConfigKind::mapping;
-        return value;
-    }
     if ((implicit || is_tag("null")) && (text.empty() || text == "~" || text == "null" || text == "Null" || text == "NULL")) return value;
     if (implicit || is_tag("bool")) {
         if (text == "true" || text == "True" || text == "TRUE" || text == "false" || text == "False" || text == "FALSE") {

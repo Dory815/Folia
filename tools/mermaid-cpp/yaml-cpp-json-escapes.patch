@@ -20,3 +20,19 @@ diff --git a/src/exp.cpp b/src/exp.cpp
      case 'L':
        return "\xE2\x80\xA8";  // LS (#x2028)
      case 'P':
+diff --git a/src/singledocparser.cpp b/src/singledocparser.cpp
+--- a/src/singledocparser.cpp
++++ b/src/singledocparser.cpp
+@@ -150,6 +150,12 @@ void SingleDocParser::HandleNode(EventHandler& eventHandler) {
+   if (tag == "?")
+     eventHandler.OnNull(mark, anchor);
++  else if (tag == "tag:yaml.org,2002:seq") {
++    eventHandler.OnSequenceStart(mark, tag, anchor, EmitterStyle::Default);
++    eventHandler.OnSequenceEnd();
++  } else if (tag == "tag:yaml.org,2002:map") {
++    eventHandler.OnMapStart(mark, tag, anchor, EmitterStyle::Default);
++    eventHandler.OnMapEnd();
++  }
+   else
+     eventHandler.OnScalar(mark, tag, anchor, "");
+ }
