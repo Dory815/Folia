@@ -1588,3 +1588,32 @@ owners handle semantics+its tests, mfenced+its tests, the shared test helper/tab
 reuse, and Source tools/cases/fixture. Freeze interfaces before builds. Acceptance
 requires new Source reproducibility, unchanged table fixture, successful focused
 Source/ownership tests and one complete math run after final production changes.
+
+### Canonical profile discovery (2026-10-21 Root lock)
+
+Use the first 75 records of the existing Common Scene witness: the fixed 18
+baseline inputs followed by the locked 57 profile inputs. Preserve their order,
+input metrics, expected Source errors and actual initial TeX options. Additional
+focused and direct-MathML cases do not replace this corpus.
+
+The existing Common Scene test may select this corpus with a test-only
+FOLIA_MATH_SCENE_PROFILE=canonical environment variable. Default focused86
+behavior stays unchanged. This is an evaluation selector, not a production
+renderer option. Execute the real TeX/MathItem/Common/Scene/SVG path for every
+case and report actual success, first SVG difference or native exception. Source
+errors must be reported separately with their expected name/message and the
+observed native outcome; do not count any two exceptions as equivalent. Keep
+failed/unverified cases visible and do not change expectations to make them pass.
+
+The Source owner records input flags before conversion (including
+initialAllowTexHTML), final flags and reference errors in ignored evidence,
+using the existing pinned reference once per process. Existing SVG fixture
+bytes remain unchanged unless an independently established input mismatch
+requires a separately reviewed correction. Use prior TexHTML observations as
+the settled input boundary. Native measurements stay on the actual existing
+typed MeasurementTarget; do not supply per-case invented bounding boxes.
+
+Root runs one build with parallel4, then the bounded 75-case evaluation. Only
+after examining its actual results will Root freeze the next original-owner
+implementation tasks. Abnormal native process exit stops broader execution.
+Passing focused86 or compiling the probe does not establish the 75/150 gate.

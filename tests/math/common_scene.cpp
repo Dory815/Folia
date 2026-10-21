@@ -2,6 +2,9 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <string>
+#include <typeinfo>
 #include "support/folia_test.hpp"
 #include "fixtures/common_scene.inc"
 import folia.math.core.math_item;
@@ -635,18 +638,57 @@ suite common_scene_source = [] {
             "scene-enclose-boundary-uparrow-left",
             "scene-enclose-boundary-rightarrow-top",
             "scene-enclose-boundary-arrow-custom-parameters"};
-        for (auto name : selected) {
+        const char *profileEnvironment = std::getenv("FOLIA_MATH_SCENE_PROFILE");
+        bool canonicalProfile = false;
+        if (profileEnvironment)
+            canonicalProfile = std::string_view(profileEnvironment) == "canonical";
+        if (profileEnvironment && !canonicalProfile) {
+            std::cerr << "Common-to-Scene profile=unsupported category=unsupported_profile value="
+                      << std::quoted(profileEnvironment) << '\n';
+            expect(false) << "unsupported FOLIA_MATH_SCENE_PROFILE value";
+            return;
+        }
+        std::vector<CommonSceneCase const *> executionCases;
+        if (canonicalProfile) {
+            if (commonSceneCases.size() < 75) {
+                std::cerr << "Common-to-Scene profile=canonical category=fixture_too_short count="
+                          << commonSceneCases.size() << '\n';
+                expect(false) << "canonical Source fixture must contain the original 75 cases";
+                return;
+            }
+            for (std::size_t index = 0; index < 75; ++index)
+                executionCases.push_back(&commonSceneCases[index]);
+        } else {
+            for (auto name : selected)
+                executionCases.push_back(&sourceCase(name));
+        }
+        for (auto const *sourceCaseValue : executionCases) {
+            const auto &source = *sourceCaseValue;
+            const auto name = source.name;
             try {
-                const auto &source = sourceCase(name);
                 const bool sourceOk = source.error_name.empty();
-                expect(bool(sourceOk)) << "Source conversion failed for selected case " << name;
                 if (!sourceOk) {
-                    std::cerr << "Common-to-Scene case=" << name
-                              << " result=mismatch source-error=" << source.error_name << ": "
-                              << source.error_message << '\n';
-                    continue;
+                    expect(false) << "Source conversion failed for case " << name << ": "
+                                  << source.error_name << ": " << source.error_message;
+                    if (!canonicalProfile) {
+                        std::cerr << "Common-to-Scene case=" << name
+                                  << " result=mismatch source-error=" << source.error_name << ": "
+                                  << source.error_message << '\n';
+                        continue;
+                    }
                 }
                 auto completed = buildScene(source, owner, measurement);
+                if (!sourceOk) {
+                    const auto actual = serialize(completed, owner);
+                    (void)actual;
+                    std::cerr
+                        << "Common-to-Scene profile=canonical case=" << name
+                        << " category=source_error_native_success result=failed source_error_name="
+                        << std::quoted(std::string{source.error_name}) << " source_error_message="
+                        << std::quoted(std::string{source.error_message})
+                        << " native_outcome=scene_returned_without_source_svg\n";
+                    continue;
+                }
                 SceneStats stats;
                 inspect(completed.root(), stats);
                 const bool sourceHasGlyphs = source.svg.find("data-c=") != std::string_view::npos;
@@ -833,11 +875,18 @@ suite common_scene_source = [] {
                 reportFirstDifference(name, source.svg, actual);
                 const bool svgMatches = actual == source.svg;
                 expect(bool(svgMatches)) << "Source SVG bytes differ for " << name;
-                std::cerr << "Common-to-Scene case=" << name << " result="
-                          << (typedSceneOk && phantomEmissionOk && tableStructureOk && svgMatches
-                                  ? "success"
-                                  : "mismatch")
-                          << " viewport_roles(vertical=" << stats.vertical_extender_roles
+                const bool casePassed =
+                    typedSceneOk && phantomEmissionOk && tableStructureOk && svgMatches;
+                if (canonicalProfile)
+                    std::cerr << "Common-to-Scene profile=canonical case=" << name << " category="
+                              << (casePassed   ? "source_success_svg_equal"
+                                  : svgMatches ? "scene_validation_mismatch"
+                                               : "source_success_svg_mismatch")
+                              << " result=" << (casePassed ? "success" : "failed");
+                else
+                    std::cerr << "Common-to-Scene case=" << name
+                              << " result=" << (casePassed ? "success" : "mismatch");
+                std::cerr << " viewport_roles(vertical=" << stats.vertical_extender_roles
                           << ",horizontal=" << stats.horizontal_extender_roles << ')'
                           << " phantom(groups=" << stats.phantom_groups
                           << ",entries=" << stats.phantom_entries
@@ -850,12 +899,36 @@ suite common_scene_source = [] {
                           << ",class_attrs=" << stats.table_class_attributes
                           << ",backgrounds=" << stats.table_background_rules << ')' << '\n';
             } catch (std::exception const &error) {
-                std::cerr << "Common-to-Scene case=" << name
-                          << " result=exception: " << error.what() << '\n';
+                if (canonicalProfile) {
+                    std::cerr << "Common-to-Scene profile=canonical case=" << name << " category="
+                              << (source.error_name.empty() ? "source_success_native_exception"
+                                                            : "source_error_native_exception")
+                              << " result=failed source_error_name="
+                              << std::quoted(std::string{source.error_name})
+                              << " source_error_message="
+                              << std::quoted(std::string{source.error_message})
+                              << " native_exception_type=" << std::quoted(typeid(error).name())
+                              << " native_exception_message=" << std::quoted(error.what()) << '\n';
+                } else {
+                    std::cerr << "Common-to-Scene case=" << name
+                              << " result=exception: " << error.what() << '\n';
+                }
                 expect(false) << "Common-to-Scene case " << name << " threw: " << error.what();
             } catch (...) {
-                std::cerr << "Common-to-Scene case=" << name
-                          << " result=exception: non-standard exception\n";
+                if (canonicalProfile) {
+                    std::cerr << "Common-to-Scene profile=canonical case=" << name << " category="
+                              << (source.error_name.empty() ? "source_success_native_exception"
+                                                            : "source_error_native_exception")
+                              << " result=failed source_error_name="
+                              << std::quoted(std::string{source.error_name})
+                              << " source_error_message="
+                              << std::quoted(std::string{source.error_message})
+                              << " native_exception_type=non-standard "
+                                 "native_exception_message=unavailable\n";
+                } else {
+                    std::cerr << "Common-to-Scene case=" << name
+                              << " result=exception: non-standard exception\n";
+                }
                 expect(false) << "Common-to-Scene case " << name
                               << " threw a non-standard exception";
             }

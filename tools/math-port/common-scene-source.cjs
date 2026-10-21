@@ -183,8 +183,13 @@ function nestedAssemblyPieces(svg, axis) {
 async function capture() {
   const ref = createReference(); // exactly once per process; profile/pins validated there
   const records = [];
+  const configuredParseAllowTexHTML = ref.input.parseOptions.options.allowTexHTML;
   for (const item of cases) {
     let svg = '', error = null;
+    const inputOptionsAllowTexHTML = ref.input.options.allowTexHTML ?? null;
+    const initialAllowTexHTML = inputOptionsAllowTexHTML ??
+      configuredParseAllowTexHTML ?? false;
+    const parseOptionsBeforeConvert = ref.input.parseOptions.options.allowTexHTML ?? null;
     try {
       // The profile default is the Source's right-side tag placement. Specific
       // left-label witnesses record their per-input TeX option explicitly.
@@ -195,11 +200,36 @@ async function capture() {
       });
       svg = ref.adaptor.serializeXML(node);
     } catch (e) { error = {name: e?.name || 'Error', message: String(e?.message || e)}; }
+    const finalAllowTexHTML = ref.input.parseOptions.options.allowTexHTML ?? null;
+    const finalInputOptionsAllowTexHTML = ref.input.options.allowTexHTML ?? null;
     records.push({...item, tagSide: item.tagSide ?? '', em: item.em ?? 16, ex: item.ex ?? 8, svg, error,
+      initialAllowTexHTML, inputOptionsAllowTexHTML, parseOptionsBeforeConvert,
+      finalAllowTexHTML, finalInputOptionsAllowTexHTML,
       root: {width: attr(svg, 'width'), height: attr(svg, 'height'), viewBox: attr(svg, 'viewBox'),
         xmlns: attr(svg, 'xmlns')},
       geometry: [...svg.matchAll(/<(?:path|rect|line|polygon|g)\b[^>]*>/g)].map(m => m[0])});
   }
+  const nonDefaultAllowTexHTML = records.slice(0, 75)
+    .filter(record => record.initialAllowTexHTML !== false)
+    .map(({name, initialAllowTexHTML, inputOptionsAllowTexHTML, parseOptionsBeforeConvert}) =>
+      ({name, initialAllowTexHTML, inputOptionsAllowTexHTML, parseOptionsBeforeConvert}));
+  const evidencePath = path.join(root, 'build/math-port/common-source/common-scene-inputs.json');
+  fs.mkdirSync(path.dirname(evidencePath), {recursive: true});
+  fs.writeFileSync(evidencePath, JSON.stringify({
+    reference: ref.provenance,
+    records: records.map(({name, tex, display, em, ex, width, tagSide, features,
+      initialAllowTexHTML, inputOptionsAllowTexHTML, parseOptionsBeforeConvert,
+      finalAllowTexHTML, finalInputOptionsAllowTexHTML, error, svg}) => ({
+      name, input: {tex, display, em, ex, width, tagSide, features},
+      initialAllowTexHTML, inputOptionsAllowTexHTML, parseOptionsBeforeConvert,
+      finalAllowTexHTML, finalInputOptionsAllowTexHTML,
+      sourceError: error, outputContainsMmlError: svg.includes('data-mjx-error=') ||
+        svg.includes('data-mml-node="merror"')
+    })),
+    canonicalNonDefaultInitialAllowTexHTML: nonDefaultAllowTexHTML
+  }, null, 2) + '\n');
+  assert.deepEqual(nonDefaultAllowTexHTML, [],
+    'Canonical Source inputs contain nondefault initial allowTexHTML; Root review required before fixture changes');
   const byName = new Map(records.map(record => [record.name, record]));
   for (const [name, axis] of [['scene-vertical-extender-assembly', 'vertical'],
                               ['scene-horizontal-extender-assembly', 'horizontal']]) {
