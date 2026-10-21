@@ -97,6 +97,31 @@ suite typed_mml_script_inheritance = [] {
         expect(eq(inheritedScriptLevel(over), 4.0));
     };
 
+    "multiscripts_assigns_paired_post_and_prescripts_by_alternating_slot"_test = [] {
+        MmlDocument document;
+        auto &factory = document.factory();
+        auto &base = factory.make(NodeKind::none);
+        auto &postSub = factory.make(NodeKind::none);
+        auto &postSup = factory.make(NodeKind::none);
+        auto &marker = factory.make(NodeKind::mprescripts);
+        auto &preSub = factory.make(NodeKind::none);
+        auto &preSup = factory.make(NodeKind::none);
+        std::array<MmlNode *, 6> children{&base, &postSub, &postSup, &marker, &preSub, &preSup};
+        auto &node = factory.make(NodeKind::mmultiscripts, {}, children);
+
+        node.setInheritedAttributes({}, false, 0, false);
+        expect(node.children().size() == 6_u);
+        expect(inheritedScriptLevel(base) == 0.0);
+        expect(inheritedScriptLevel(postSub) == 1.0);
+        expect(inheritedScriptLevel(postSup) == 1.0);
+        expect(inheritedScriptLevel(preSub) == 1.0);
+        expect(inheritedScriptLevel(preSup) == 1.0);
+        expect(postSub.properties().tex.prime_style.value_or(false));
+        expect(!postSup.properties().tex.prime_style.value_or(false));
+        expect(preSub.properties().tex.prime_style.value_or(false));
+        expect(!preSup.properties().tex.prime_style.value_or(false));
+    };
+
     "multiscripts_adds_owned_none_for_unpaired_postscript"_test = [] {
         MmlDocument document;
         auto &base = document.factory().make(NodeKind::none);
