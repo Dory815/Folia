@@ -656,6 +656,24 @@ allocation/Scene lifetime remains in request_lifetime.cpp, and actual package
 behavior stays in the active package suites. No Source fixtures/oracles or
 protected dirty files are removed by this batch.
 
+The real public behavior from bussproofs_renderer_session is preserved at the
+existing public Renderer test owner, mathjax_full_profile_package_bootstrap.cpp:
+separate Renderers produce the same complete proof SVG and Scene geometry;
+proof/formula/proof calls retain distinct valid outputs; renderScene/render
+agree on typed glyph/rule/path geometry and BBoxes. Public build session27959
+exits0 (`retire-svg-public-build.log`); the subsequent actual focused run passes
+1 test / 23 assertions. An earlier zero-match invocation against the old binary
+before linking finished is invalid evidence and was replaced by that run.
+
+The inactive bussproofs_renderer_session, common_factory_context_methods,
+tex_format_error_context_identity and tex_stack_item_raw_source_fields files
+now retire after per-test review. Retained proof sequences/Source trees/errors
+stay in bussproofs.cpp and bussproofs_items.cpp; configured TexError formatting
+stays in tex_jax.cpp and native_tex_error_source/utf8. The old fixInitialMO
+mathematical assertion is covered by the four typed tests above. Dynamic
+Source factory replacement, callbacks, property arrays and weak projection
+leases are withdrawn, with no replacement object-semantic mechanism introduced.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

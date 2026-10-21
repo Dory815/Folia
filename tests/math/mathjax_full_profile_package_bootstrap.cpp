@@ -1,12 +1,18 @@
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <variant>
+#include <vector>
 #include "fixtures/canonical_scene_modes_source.hpp"
 #include "support/folia_test.hpp"
 
@@ -40,6 +46,101 @@ void compareMetrics(scene::Metrics const &actual, CanonicalSceneMetrics const &e
     expect(close(actual.depth, expected.depth)) << name << ": depth matches Source";
 }
 
+struct GeometrySignature {
+    scene::Metrics metrics;
+    scene::FontMetrics fontMetrics;
+    std::vector<scene::Transform> groupTransforms;
+    std::vector<std::size_t> entryKinds;
+    std::vector<scene::GlyphKey> glyphKeys;
+    std::vector<scene::Point> glyphOrigins;
+    std::vector<double> glyphAdvances;
+    std::vector<scene::Rect> ruleBounds;
+    std::vector<std::vector<scene::PathSegment>> paths;
+    std::vector<scene::Transform> pathTransforms;
+
+    friend bool operator==(GeometrySignature const &, GeometrySignature const &) = default;
+};
+
+void appendGlyphRun(GeometrySignature &signature, scene::GlyphRun const &run) {
+    for (auto const &glyph : run.glyphs) {
+        signature.glyphKeys.push_back(glyph.key);
+        signature.glyphOrigins.push_back(glyph.origin);
+        signature.glyphAdvances.push_back(glyph.advance);
+    }
+}
+
+void appendGroupGeometry(GeometrySignature &signature, scene::Group const &group) {
+    signature.groupTransforms.push_back(group.transform);
+    for (auto const &entry : group.entries) {
+        if (auto const *primitive = std::get_if<scene::Primitive>(&entry)) {
+            signature.entryKinds.push_back(primitive->index());
+            if (auto const *run = std::get_if<scene::GlyphRun>(primitive))
+                appendGlyphRun(signature, *run);
+            else if (auto const *rule = std::get_if<scene::Rule>(primitive))
+                signature.ruleBounds.push_back(rule->bounds);
+            else if (auto const *path = std::get_if<scene::Path>(primitive)) {
+                signature.paths.push_back(path->geometry.segments);
+                signature.pathTransforms.push_back(path->transform);
+            } else if (auto const *text = std::get_if<scene::TextRun>(primitive)) {
+                appendGlyphRun(signature, text->measured_glyphs);
+            }
+        } else if (auto const *child =
+                       std::get_if<std::shared_ptr<scene::Group const>>(&entry)) {
+            signature.entryKinds.push_back(std::numeric_limits<std::size_t>::max());
+            if (*child)
+                appendGroupGeometry(signature, **child);
+        } else {
+            signature.entryKinds.push_back(std::numeric_limits<std::size_t>::max() - 1u);
+            auto const &action = std::get<scene::ActionRegion>(entry);
+            signature.ruleBounds.push_back(action.hitbox.bounds);
+            if (action.tooltip)
+                appendGroupGeometry(signature, action.tooltip->root());
+        }
+    }
+}
+
+GeometrySignature geometrySignature(scene::Scene const &value) {
+    GeometrySignature result;
+    result.metrics = value.metrics();
+    result.fontMetrics = value.font_metrics();
+    appendGroupGeometry(result, value.root());
+    return result;
+}
+
+bool hasGlyph(scene::Group const &group, std::uint32_t codepoint) {
+    for (auto const &entry : group.entries) {
+        if (auto const *primitive = std::get_if<scene::Primitive>(&entry)) {
+            const auto contains = [codepoint](scene::GlyphRun const &run) {
+                return std::ranges::any_of(run.glyphs, [codepoint](scene::Glyph const &glyph) {
+                    return glyph.key.codepoint == codepoint;
+                });
+            };
+            if (auto const *run = std::get_if<scene::GlyphRun>(primitive); run && contains(*run))
+                return true;
+            if (auto const *text = std::get_if<scene::TextRun>(primitive);
+                text && contains(text->measured_glyphs))
+                return true;
+        } else if (auto const *child =
+                       std::get_if<std::shared_ptr<scene::Group const>>(&entry)) {
+            if (*child && hasGlyph(**child, codepoint))
+                return true;
+        } else if (auto const &tooltip = std::get<scene::ActionRegion>(entry).tooltip;
+                   tooltip && hasGlyph(tooltip->root(), codepoint)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool completeSvg(RenderResult const &result) {
+    return result.svg.find("<svg") != std::string::npos &&
+           result.svg.find("</svg>") != std::string::npos;
+}
+
+bool hasMathError(RenderResult const &result) {
+    return result.svg.find("data-mml-node=\"merror\"") != std::string::npos;
+}
+
 void reportDifference(std::string_view name, std::string_view expected, std::string_view actual) {
     if (expected == actual)
         return;
@@ -55,6 +156,53 @@ void reportDifference(std::string_view name, std::string_view expected, std::str
 } // namespace
 
 suite mathjax_full_profile_package_bootstrap = [] {
+    "renderer_public_sessions_keep_proofs_formula_sequence_and_scene_geometry"_test = [] {
+        constexpr std::string_view proofA =
+            R"(\begin{prooftree}\AxiomC{L}\UnaryInfC{R}\end{prooftree})";
+        constexpr std::string_view proofB =
+            R"(\begin{prooftree}\AxiomC{P}\AxiomC{Q}\BinaryInfC{$P\land Q$}\end{prooftree})";
+
+        Renderer first;
+        const auto firstProof = first.render(proofA);
+        const auto ordinary = first.render("x+1");
+        const auto secondProof = first.render(proofB);
+        Renderer independent;
+        const auto independentProof = independent.render(proofA);
+
+        for (const auto *result : {&firstProof, &independentProof}) {
+            expect(!result->scene.root().entries.empty());
+            expect(!hasMathError(*result));
+            expect(completeSvg(*result));
+            expect(hasGlyph(result->scene.root(), static_cast<std::uint32_t>('L')));
+            expect(hasGlyph(result->scene.root(), static_cast<std::uint32_t>('R')));
+        }
+        expect(firstProof.svg == independentProof.svg)
+            << "separate real Renderer instances produce the same complete proof SVG";
+        expect(firstProof.scene.metrics() == independentProof.scene.metrics());
+        expect(geometrySignature(firstProof.scene) == geometrySignature(independentProof.scene));
+
+        expect(!ordinary.scene.root().entries.empty() && !hasMathError(ordinary) &&
+               completeSvg(ordinary));
+        expect(hasGlyph(ordinary.scene.root(), 0x1D465u));
+        expect(hasGlyph(ordinary.scene.root(), static_cast<std::uint32_t>('1')));
+        expect(!secondProof.scene.root().entries.empty() && !hasMathError(secondProof) &&
+               completeSvg(secondProof));
+        expect(hasGlyph(secondProof.scene.root(), static_cast<std::uint32_t>('P')));
+        expect(hasGlyph(secondProof.scene.root(), static_cast<std::uint32_t>('Q')));
+        expect(firstProof.svg != ordinary.svg && ordinary.svg != secondProof.svg &&
+               firstProof.svg != secondProof.svg)
+            << "each result in the same Renderer sequence reflects its TeX input";
+
+        constexpr std::string_view formula = R"(\frac{a}{b})";
+        const auto sceneOnly = first.renderScene(formula);
+        const auto rendered = first.render(formula);
+        expect(!sceneOnly.root().entries.empty() && !rendered.scene.root().entries.empty());
+        expect(sceneOnly.metrics() == rendered.scene.metrics())
+            << "renderScene and render retain equal completed bounding-box metrics";
+        expect(geometrySignature(sceneOnly) == geometrySignature(rendered.scene))
+            << "renderScene and render retain the same typed geometry";
+    };
+
     "renderer_public_options_match_all_75_none_profile_cases_in_both_encodings"_test = [] {
         expect(std::size(sourceCanonicalSceneCases) == 75u);
         if (std::size(sourceCanonicalSceneCases) != 75u)
