@@ -1550,6 +1550,24 @@ cpp/ixx test consumers decrease 40 to 39, interfaces remain 248 and unresolved
 imports remain zero. No production algorithm changed or broad runtime gate
 was repeated.
 
+### Multiscript independent Source profile (2026-10-21)
+
+The original oracle and observer reproduce the full 319,433-byte fixture.
+All 226 Source cases, 1,304 ordered expectations and 480 raw inheritance rows
+match the clean check-only owner. Its 825 static expect sites expand to 1,304
+at runtime; 1,170 recursive materialization records are a separate count.
+The bridge checks all 2,631 legacy p/list operands against their own case's
+lossless input/expected ledger, and every matrix row's fields and expectation
+in order. Native multiscript and Common script coverage remains unchanged.
+
+Root corrected candidate result-envelope/matrix decoding issues, used lossless
+encoding to distinguish NaN from null, and replaced a timed-out recursive
+lookup with a case-local index. The final bridge completes within its original
+60-second bound; no native program ran. Evidence: multiscript-source-bridge-v4.log
+and multiscript-source-promoted.json. The existing multiscript-oracle.cjs is
+now Source-only and exact-checks the compact independent profile. Its legacy
+C++ consumer and dedicated tools await a separate removal batch.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

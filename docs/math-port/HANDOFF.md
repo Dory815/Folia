@@ -4,15 +4,16 @@
 
 ## 当前 checkpoint（2026-10-21）
 
-- 本提交完成 script 旧 C++ consumer 删除；Source 批为 `6a289ec5`。simple Source 迁移 `094324b0` 与旧 C++ consumer 删除 `5e5c123c` 已通过。
+- HEAD `6fdaf9f0` 完成 script 旧 C++ consumer 删除；Source 批为 `6a289ec5`。simple Source 迁移 `094324b0` 与旧 C++ consumer 删除 `5e5c123c` 已通过。
 - Root 已执行 inventory 与 `verify-consumer-removal script-consumer 39 92516`；全通过：478 活动源、保护6路径、已验证9输入/二进制、保留7文件、17 targets、248接口/map一致、active unresolved imports 0。build session 92516 exit 0；当前无 live build。
 - simple 迁移证据：106场景、7,667 Source assertions、1,605矩阵行、8,625有序 p/list 值、296递归值；原 fixture 339,824 bytes 完整核对。已完成的 staging bridge 勿重跑。其他既有验收见 acceptance。
-- 窄 consumer 图仍是旧快照 `54cc3867`/41测试，需按当前39测试与最新 FileAPI 刷新；不能据旧图判断消费者现状。
-- 当前并行工作：class_scripts/class_verification 补 multiscript/table 候选的完整值映射证明；class_inheritance 把 BaseItem 候选改为实际重放85组 Source label/expected。均只改 ignored 候选，Root 无 live build。
+- ignored 窄 consumer 图已刷新至 `6fdaf9f0`/39测试、FileAPI `index-2026-10-21T13-04-07-0092.json`；保留 provider/importer/API 引用的全部 hash 均已核。
+- multiscript Source-only owner/profile已提升并canonical226/1304 exact；Root完整旧Cpp/480矩阵/2631有序operand证明见 `multiscript-source-bridge-v4.log`、`multiscript-source-promoted.json`。旧Cpp/tools尚未退。table bridge v3已过135/4700、4146operand，staging已存在，待提升。
+- class_inheritance 正修 BaseItem bridge：原JSON85项exact，旧Cpp只有951385dc的两处历史类型适配差异（`base-item-original-mismatch.json`），须逐处核再全文比较，不能宣称原check直接通过。无live build/native。
 
 ## 精确下一动作
 
-Root 先刷新窄 consumer 图至当前 HEAD/FileAPI，再审阅修正后的 multiscript/table 候选，运行完整 Source 验证后才能提升。BaseItem 旧候选只有 hash 检查，不能接受；等待实际85组 Source label/expected 重放候选后再审。不可把“候选已交付”表述为“已验证”或“已提升”。
+Root 先提升已验table Source-only owner/profile，再按独立小批清理table/multiscript旧Cpp和专用工具/共享gate引用，parallel4 build后核byte-equal，再提交。BaseItem等待修正bridge并执行，不采用先前hash-only候选。所有已完成staging bridge勿重跑。
 
 ## 固定边界
 
