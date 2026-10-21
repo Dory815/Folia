@@ -58,7 +58,7 @@ green corpora establish reference data, not acceptance for rewritten code.
   observation seams, without adding production behavior switches. Verify
   cleanup and the Source-defined state of the next request.
 
-The request-lifetime observation batch (`54be844a`, following architecture lock
+The historical request-lifetime observation batch (`54be844a`, following architecture lock
 `77445af9`) instruments actual MmlNode/MmlDocument/CommonWrapper and DOM base
 construction/destruction with allocation-free typed counters. Parallel4
 `request-lifetime-build.log` and `request-lifetime-diagnostic-build.log` pass.
@@ -77,9 +77,65 @@ in this run. Persistent ParseOptions nevertheless retains expression lists and
 root/MathItem borrows after its document scope. These require an explicit
 caller-owned request lifetime while preserving Source observations inside that
 lifetime, rather than end-of-compile clearing or relaxed counters. A new full
-math run and request ownership acceptance remain pending.
+math run and request ownership acceptance were pending at that diagnostic checkpoint.
+
+The caller-owned request implementation follows lock `2f76e389`, retaining the
+original ParseOptions/TeX owners and all accepted parser/package algorithms.
+ParseRequest owns expression scratch and document borrows; TeXRequest binds the
+main/text frames. Configuration and semantic session state remain persistent.
+CompileScope restores the narrower MathItem/adaptor borrows on return/throw.
+No new production file, manual retirement or end-of-compile clearing is added.
+
+Stable parallel4 `parse-request-build-fixed2.log` exits0. Focused runs pass:
+scope 1/11, TeX input jax 5/551, texhtml 9/182, textmacros 12/868,
+hosted canonical75/150 1/1279 and default86 1/1021. The strict canonical replay
+preserves 73 equal SVGs and two explicit Source event-API errors; its native
+test exits1 as expected by that diagnostic wrapper.
+
+`parse-request-ownership.log` exits0, 1 test / 11 assertions. Over 192 + 768
+mixed requests every boundary returns actual MML/Common/DOM live populations
+and Debug CRT normal/client blocks/bytes to the warmed baseline. The real
+measurement exception, malformed TeX/merror, missing writer resource and
+subsequent successful requests also return to baseline. Requests are unbound
+after success/error; retained Scene serialization survives InputOwner teardown.
+This supersedes the repeating +5-block/144-byte diagnostic footprint above.
+The timing probe covers the complete helper execution and post-return Scene
+cleanup; it does not isolate total MML destruction time. Persistent macro/label
+semantics and application C ABI cancellation remain separate gates.
+
+The first full run exposed a Physics fixture access before request binding and
+a second creator probe retaining its parser/factory across document replacement.
+The tests now install configuration creators before compilation and end local
+borrows before replacing the frame; original assertions remain. Final parallel4
+`parse-request-build-physics.log` exits0; Physics passes 8/5373. Final full
+`parse-request-full-math.log` exits0: 847 tests / 215022 assertions / 170 suites,
+no skips. Request ownership and caller migration are committed as `af9a8891`.
+The lifetime test/helper and CMake registration are committed as `2a8b888a`.
+This accepts the native request batch, not application integration.
 
 ## C. Source fidelity
+
+Read component progress paragraphs below as historical evidence at their
+recorded revisions. The latest hosted canonical75/150 result supersedes earlier
+statements that that gate is pending; strict Lite still has the two explicit
+Source event-API errors. The broad phrase "remaining specialized families" is
+not an enumerated missing-case list. Reconcile existing registered Source
+witnesses against the pinned profile before assigning new family work; stale
+scope status fields alone do not establish an implementation gap. Do not edit
+hash-locked fixtures merely to refresh progress comments.
+
+The 2026-10-21 registration-only inventory found a named Source witness for
+each of the pinned 38 TeX packages. Those witnesses differ in strength (MML,
+package behavior, numerical probes or completed SVG); registration alone is
+not execution evidence. Existing dedicated completed-SVG/retained-Scene
+profiles cover tables, mglyph, maction, merror, XML, semantics and mfenced.
+Other families also occur in the hosted canonical profile. One concrete
+additional fidelity task is direct MathML munder/mover/munderover coverage:
+`native_common_limits.cpp` and `common-limits-source-witness.cjs` currently
+provide numerical/layout probes, while completed SVG is covered by canonical
+TeX examples. Extend those existing family owners with an independently
+captured direct-MathML Scene/SVG/after-request comparison; do not rewrite the
+accepted algorithms or count missing dedicated tests as an implementation bug.
 
 - Mathtools must preserve all six upstream file responsibilities and every
   implemented mapping. Compare matrices/cases/multlined/spreadlines, alignment
