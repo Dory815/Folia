@@ -17,12 +17,17 @@
   with 9,695 actual JavaScript binary64 observations. All are pushed.
 - Packet parser/layout `60691de3`, SVG `157e380b`, and complete official CSS
   fixture `535e5ab5` are pushed. Their Node oracles pass: 254 parser/layout
-  cases, 55 SVG cases. Native CI `39544210209` is running for `535e5ab5`.
+  cases, 55 SVG cases. Native CI `39544210209` passed Debug and Release.
   Earlier run `39544084249` failed on the missing CSS fixture header, now fixed.
+- Fork stage PR: https://github.com/zhao0349/Folia/pull/1, head `535e5ab5`.
+  PR-event CI `39544508181` is still running; merge after its checks pass.
 - Shared lexer extraction is the first Pie-stage batch: common metadata,
   hidden tokens and string conversion move out of Packet without changing its
   public API. CMake discovers the new module; existing Packet fixtures are the
-  required regression check. This refactor is not yet verified natively.
+  required regression check. Commit `8ece2acf` passed Debug/Release regression
+  CI `39544334238`.
+- Pie raw parser and DB semantics are ready as a separate small commit;
+  native verification and independent oracle tests are still pending.
 - Active agents: `official_parser` owns shared lexer/Pie parsing and Packet
   lexer extraction; `build_audit` owns Pie oracle/tests; `renderer_audit` owns
   source-derived D3 Pie geometry and its oracle/tests. These are next-stage
