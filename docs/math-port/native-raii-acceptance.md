@@ -704,8 +704,10 @@ values are outside the typed string field's domain, rather than a missing case.
 The first full run was stopped by its runner's 180-second limit while normal
 Source cases were progressing, not accepted as a passing run. Its output and
 terminal ETIMEDOUT/SIGTERM result are retained as retire-svg-full-timeout180.*.
-The existing accepted full-run harness uses 600 seconds; a new full run with
-that bound and cleared diagnostic environment is pending, not yet acceptance.
+The existing accepted full-run harness uses 600 seconds. The subsequent full
+run with that bound and cleared diagnostic environment exits0 (session43545):
+869 tests / 217108 assertions / 175 suites, zero skips. The result and complete
+log are retire-svg-full-results.json and retire-svg-full-math.log.
 
 Legacy native-only font extension observers/comparers retire with their Context
 Jax/Map dependency. The dynamic-map observer checks no glyph mathematics. The
@@ -737,6 +739,15 @@ test or tool importer after the reviewed consumer batches. The portable C ABI,
 original Common family algorithms/catalog, immutable Scene, SVG writer/XML
 serializer and Source oracles remain. This is retirement of an unused service
 graph, not removal of the active mathematical owners or all other inactive files.
+
+After removal, the parallel4 FoliaMathTests/FoliaNativeMath build exits0 with
+no work required, confirming the accepted executable is unchanged. The supported
+WinUI Debug build and actual worker probe are then rerun through the tracked
+PowerShell driver (session8116, retire-svg-worker-verify.log), exit0. Mathbb,
+fractions, Unicode, noundefined output, Formula recovery, cache/dependencies,
+Clear and disable/re-enable pass; stop join4423ms, probe total8.72s. No Release
+or GUI visual inspection is claimed. Removed draft paths no longer have ignore
+exceptions that could accidentally reintroduce them as current verification code.
 
 ## Evidence and failure handling
 
