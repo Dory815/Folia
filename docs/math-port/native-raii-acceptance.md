@@ -979,6 +979,23 @@ files / 650 code sources, 561 configured folia_math sources and 248 interfaces
 matching the module map, with zero unresolved active imports and 168 remaining
 unconfigured cpp/ixx sources. The original direction interface is now active.
 
+### Context record protocol test retirement (2026-10-21)
+
+Root read all nine remaining non-media dirty diffs and preserved their exact
+working bytes plus a binary patch in context-dirty-backup-20261021; all nine
+copies match scene-batch-before.json, and git apply --reverse --check passes.
+The other two protected media paths remain untouched.
+
+The unused context_object_record_retirement.cpp now retires separately after
+Root and Luna reviewed its complete body, including all 309 uncommitted added
+lines. Its fifteen tests assert only the withdrawn Context record table,
+handle/alias errors, diagnostics and reentrant manual cleanup protocols; none
+asserts mathematical layout, MML, DOM or SVG behavior. All seventeen targets in
+the existing Debug File API codemodel omit it, and no tracked native runner
+references it. No Context provider or active owner is removed by this batch.
+Evidence: context-record-disposition.md and context-record-before-removal.json.
+This is static retirement review, with no new build or runtime pass claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
