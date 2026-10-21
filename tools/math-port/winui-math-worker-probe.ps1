@@ -11,10 +11,15 @@ param(
 
     [switch]$CancelOnly,
 
-    [switch]$IndexOnly
+    [switch]$IndexOnly,
+
+    [switch]$CacheOnly
 )
 
 $ErrorActionPreference = 'Stop'
+if (@([bool]$CancelOnly, [bool]$IndexOnly, [bool]$CacheOnly).Where({ $_ }).Count -gt 1) {
+    throw 'Choose only one of -CancelOnly, -IndexOnly, or -CacheOnly.'
+}
 
 function Find-RepositoryRoot([string]$StartPath) {
     $directory = Get-Item -LiteralPath $StartPath
@@ -38,6 +43,20 @@ function Require-File([string]$Path, [string]$Description) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         throw "Missing $Description`: $Path"
     }
+}
+
+function Remove-VerifiedJunction([string]$Path, [string]$FixtureRoot) {
+    $separator = [IO.Path]::DirectorySeparatorChar
+    $fixtureFullPath = [IO.Path]::GetFullPath($FixtureRoot).TrimEnd($separator) + $separator
+    $junctionFullPath = [IO.Path]::GetFullPath($Path)
+    if (-not $junctionFullPath.StartsWith($fixtureFullPath, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to remove junction outside its fixture: $junctionFullPath"
+    }
+    $junctionItem = Get-Item -LiteralPath $junctionFullPath -Force
+    if (-not ($junctionItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw "Refusing to remove a fixture path that is not a reparse point: $junctionFullPath"
+    }
+    [IO.Directory]::Delete($junctionFullPath)
 }
 
 $root = Find-RepositoryRoot $PSScriptRoot
@@ -163,44 +182,112 @@ if ($LASTEXITCODE -ne 0) {
 Require-File $probeExecutable 'worker probe executable'
 Require-File (Join-Path $applicationDirectory 'FoliaNativeMath.dll') 'deployed native math DLL'
 $started = Get-Date
-$startArguments = @{
-    FilePath = $probeExecutable
-    WorkingDirectory = $applicationDirectory
-    WindowStyle = 'Hidden'
-    PassThru = $true
-    RedirectStandardOutput = $stdoutPath
-    RedirectStandardError = $stderrPath
-}
-if ($CancelOnly -and $IndexOnly) {
-    throw 'Choose either -CancelOnly or -IndexOnly for one focused probe run.'
-}
-if ($CancelOnly) { $startArguments.ArgumentList = @('--cancel-only') }
-if ($IndexOnly) { $startArguments.ArgumentList = @('--index-only') }
-$process = Start-Process @startArguments
-# Retain the process handle before waiting, including on Windows PowerShell 5.1.
-$processHandle = $process.Handle
-if (-not $process.WaitForExit(60000)) {
-    try { $process.Kill() } catch { }
-    $process.WaitForExit()
-    if (Test-Path -LiteralPath $stdoutPath) {
-        Write-Host 'probe stdout:'
-        Get-Content -LiteralPath $stdoutPath -Raw
+$cacheFixture = $null
+$junctionPaths = @()
+if ($CacheOnly) {
+    $separator = [IO.Path]::DirectorySeparatorChar
+    $scratchResolvedPath = (Resolve-Path -LiteralPath $scratchDirectory).Path
+    $scratchFullPath = [IO.Path]::GetFullPath($scratchResolvedPath).TrimEnd($separator) + $separator
+    $cacheFixture = Join-Path $scratchFullPath ("cache-reclaim-" + [guid]::NewGuid().ToString('N'))
+    $fixtureFullPath = [IO.Path]::GetFullPath($cacheFixture)
+    if (-not $fixtureFullPath.StartsWith($scratchFullPath, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Cache fixture path escaped the probe scratch directory: $fixtureFullPath"
     }
-    if (Test-Path -LiteralPath $stderrPath) {
-        Write-Host 'probe stderr:'
-        Get-Content -LiteralPath $stderrPath -Raw
+    New-Item -ItemType Directory -Path $fixtureFullPath | Out-Null
+
+    $cacheFixtureDirectory = Join-Path $fixtureFullPath 'FoliaMath'
+    $junctionTarget = Join-Path $fixtureFullPath 'junction-target'
+    $reparseRoot = Join-Path $fixtureFullPath 'reparse-root'
+    New-Item -ItemType Directory -Path $cacheFixtureDirectory | Out-Null
+    New-Item -ItemType Directory -Path $junctionTarget | Out-Null
+    New-Item -ItemType Directory -Path $reparseRoot | Out-Null
+    $directJunction = Join-Path $cacheFixtureDirectory '{74a13d90-4e9d-4f16-8207-97e949a6f001}.svgstore'
+    $rootJunction = Join-Path $reparseRoot 'FoliaMath'
+    try {
+        New-Item -ItemType Junction -Path $directJunction -Target $junctionTarget | Out-Null
+        $junctionPaths += $directJunction
+        New-Item -ItemType Junction -Path $rootJunction -Target $junctionTarget | Out-Null
+        $junctionPaths += $rootJunction
+        $targetCache = Join-Path $junctionTarget '{74a13d90-4e9d-4f16-8207-97e949a6f002}.svgstore'
+        [IO.File]::WriteAllText($targetCache, '')
+        [IO.File]::WriteAllText((Join-Path $junctionTarget 'owned-target.txt'), 'keep this target')
+        [IO.File]::WriteAllText((Join-Path $fixtureFullPath 'junctions.ready'), 'ready')
+        Write-Host 'cache reparse fixtures: directory junctions created inside isolated fixture'
     }
-    Write-Host 'probe exit code: timeout (probe process terminated)'
-    throw 'Synchronous math probe exceeded the 60-second deadline; only the probe process was terminated.'
+    catch {
+        Write-Host "cache reparse fixtures skipped: $($_.Exception.Message)"
+        foreach ($junctionPath in $junctionPaths) {
+            try { Remove-VerifiedJunction $junctionPath $fixtureFullPath } catch { }
+        }
+        $junctionPaths = @()
+    }
 }
-$process.Refresh()
-$exitCode = $process.ExitCode
-$elapsed = (Get-Date) - $started
-Write-Host 'probe stdout:'
-if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw }
-Write-Host 'probe stderr:'
-if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw }
-Write-Host "probe exit code: $exitCode; elapsed: $([math]::Round($elapsed.TotalSeconds, 2))s"
-if ($exitCode -ne 0) {
-    throw "Synchronous math probe failed with exit code $exitCode"
+
+try {
+    $startArguments = @{
+        FilePath = $probeExecutable
+        WorkingDirectory = $applicationDirectory
+        WindowStyle = 'Hidden'
+        PassThru = $true
+        RedirectStandardOutput = $stdoutPath
+        RedirectStandardError = $stderrPath
+    }
+    if ($CancelOnly) { $startArguments.ArgumentList = @('--cancel-only') }
+    if ($IndexOnly) { $startArguments.ArgumentList = @('--index-only') }
+    if ($CacheOnly) {
+        $startArguments.ArgumentList = @('--cache-only', (Quote-CmdArgument $fixtureFullPath))
+    }
+    $process = Start-Process @startArguments
+    # Retain the process handle before waiting, including on Windows PowerShell 5.1.
+    $processHandle = $process.Handle
+    if (-not $process.WaitForExit(60000)) {
+        try { $process.Kill() } catch { }
+        $process.WaitForExit()
+        if (Test-Path -LiteralPath $stdoutPath) {
+            Write-Host 'probe stdout:'
+            Get-Content -LiteralPath $stdoutPath -Raw
+        }
+        if (Test-Path -LiteralPath $stderrPath) {
+            Write-Host 'probe stderr:'
+            Get-Content -LiteralPath $stderrPath -Raw
+        }
+        Write-Host 'probe exit code: timeout (probe process terminated)'
+        throw 'Synchronous math probe exceeded the 60-second deadline; only the probe process was terminated.'
+    }
+    $process.Refresh()
+    $exitCode = $process.ExitCode
+    $elapsed = (Get-Date) - $started
+    Write-Host 'probe stdout:'
+    if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw }
+    Write-Host 'probe stderr:'
+    if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw }
+    Write-Host "probe exit code: $exitCode; elapsed: $([math]::Round($elapsed.TotalSeconds, 2))s"
+    if ($exitCode -ne 0) {
+        throw "Synchronous math probe failed with exit code $exitCode"
+    }
+}
+finally {
+    if ($cacheFixture -and (Test-Path -LiteralPath $cacheFixture)) {
+        $scratchResolvedPath = (Resolve-Path -LiteralPath $scratchDirectory).Path
+        $resolvedScratch = [IO.Path]::GetFullPath($scratchResolvedPath).TrimEnd($separator) + $separator
+        $resolvedFixture = (Resolve-Path -LiteralPath $cacheFixture).Path
+        $resolvedFixtureFullPath = [IO.Path]::GetFullPath($resolvedFixture)
+        if (-not $resolvedFixtureFullPath.StartsWith($resolvedScratch, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Refusing to remove cache fixture outside probe scratch directory: $resolvedFixtureFullPath"
+        }
+        $resolvedFixturePrefix = $resolvedFixtureFullPath.TrimEnd($separator) + $separator
+        foreach ($junctionPath in $junctionPaths) {
+            $junctionFullPath = [IO.Path]::GetFullPath($junctionPath)
+            if (-not $junctionFullPath.StartsWith($resolvedFixturePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Refusing to remove junction outside cache fixture: $junctionFullPath"
+            }
+            if (Test-Path -LiteralPath $junctionFullPath) {
+                Remove-VerifiedJunction $junctionFullPath $resolvedFixtureFullPath
+            }
+        }
+        Get-ChildItem -LiteralPath $resolvedFixtureFullPath -Force -Recurse | ForEach-Object {
+            $_.Attributes = $_.Attributes -band (-bnot [IO.FileAttributes]::ReadOnly)
+        }
+        Remove-Item -LiteralPath $resolvedFixtureFullPath -Recurse -Force
+    }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -11,6 +12,18 @@ namespace winrt::Folia
     class MathSvgStore
     {
     public:
+        struct CleanupResult
+        {
+            std::size_t removed = 0;
+            std::size_t inUse = 0;
+            std::size_t skipped = 0;
+            std::size_t failed = 0;
+        };
+
+        // Best-effort startup maintenance. Never follows directory links or
+        // removes files that cannot be exclusively opened for deletion.
+        static CleanupResult ReclaimOrphans() noexcept;
+
         struct Range
         {
             std::uint64_t offset = 0;

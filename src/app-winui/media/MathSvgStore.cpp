@@ -104,6 +104,128 @@ namespace winrt::Folia
                 ThrowWindowsError(GetLastError(), "CreateFileW(MathSvgStore)");
             return UniqueHandle(handle);
         }
+
+        bool IsStoreFileName(std::wstring_view name) noexcept
+        {
+            // StringFromGUID2's exact filename form, followed by our suffix.
+            if (name.size() != 47 || name.front() != L'{' || name[37] != L'}'
+                || name.substr(38) != L".svgstore") return false;
+            for (std::size_t index = 1; index < 37; ++index)
+            {
+                auto ch = name[index];
+                if (index == 9 || index == 14 || index == 19 || index == 24)
+                {
+                    if (ch != L'-') return false;
+                }
+                else if (!(ch >= L'0' && ch <= L'9')
+                    && !(ch >= L'a' && ch <= L'f') && !(ch >= L'A' && ch <= L'F'))
+                    return false;
+            }
+            return true;
+        }
+
+        void RecordOpenFailure(MathSvgStore::CleanupResult& result, DWORD error) noexcept
+        {
+            if (error == ERROR_SHARING_VIOLATION || error == ERROR_LOCK_VIOLATION)
+                ++result.inUse;
+            else if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND
+                || error == ERROR_DELETE_PENDING)
+                ++result.skipped;
+            else
+                ++result.failed;
+        }
+
+        void ReclaimStoreFile(std::filesystem::path const& path,
+            MathSvgStore::CleanupResult& result)
+        {
+            // The existing renderer holds a non-shared read/write handle.
+            // A live instance therefore prevents this exclusive open. Inspect
+            // and delete through the same handle, avoiding a second path lookup.
+            UniqueHandle file(CreateFileW(path.c_str(), DELETE | FILE_READ_ATTRIBUTES, 0, nullptr,
+                OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
+            if (file.get() == INVALID_HANDLE_VALUE)
+            {
+                RecordOpenFailure(result, GetLastError());
+                return;
+            }
+            BY_HANDLE_FILE_INFORMATION info{};
+            if (!GetFileInformationByHandle(file.get(), &info))
+            {
+                ++result.failed;
+                return;
+            }
+            if (info.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT))
+            {
+                ++result.skipped;
+                return;
+            }
+            FILE_DISPOSITION_INFO disposition{TRUE};
+            if (SetFileInformationByHandle(file.get(), FileDispositionInfo, &disposition, sizeof(disposition)))
+                ++result.removed;
+            else
+                ++result.failed;
+        }
+    }
+
+    MathSvgStore::CleanupResult MathSvgStore::ReclaimOrphans() noexcept
+    {
+        CleanupResult result;
+        try
+        {
+            auto directory = TemporaryDirectory() / L"FoliaMath";
+            // Keep the directory itself open without sharing delete access,
+            // so it cannot be renamed/replaced while paths are enumerated.
+            UniqueHandle folder(CreateFileW(directory.c_str(), FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES,
+                FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
+            if (folder.get() == INVALID_HANDLE_VALUE)
+            {
+                auto error = GetLastError();
+                if (error != ERROR_FILE_NOT_FOUND && error != ERROR_PATH_NOT_FOUND)
+                    RecordOpenFailure(result, error);
+                return result;
+            }
+            BY_HANDLE_FILE_INFORMATION info{};
+            if (!GetFileInformationByHandle(folder.get(), &info))
+            {
+                ++result.failed;
+                return result;
+            }
+            if (!(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                || (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+            {
+                ++result.skipped;
+                return result;
+            }
+            WIN32_FIND_DATAW entry{};
+            auto found = FindFirstFileExW((directory / L"*.svgstore").c_str(), FindExInfoBasic,
+                &entry, FindExSearchNameMatch, nullptr, 0);
+            if (found == INVALID_HANDLE_VALUE)
+            {
+                if (GetLastError() != ERROR_FILE_NOT_FOUND) ++result.failed;
+                return result;
+            }
+            auto closeSearch = [](void* handle) { FindClose(handle); };
+            std::unique_ptr<void, decltype(closeSearch)> search(found, closeSearch);
+            for (;;)
+            {
+                if (!IsStoreFileName(entry.cFileName)
+                    || (entry.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)))
+                    ++result.skipped;
+                else
+                    ReclaimStoreFile(directory / entry.cFileName, result);
+                if (!FindNextFileW(search.get(), &entry))
+                {
+                    if (GetLastError() != ERROR_NO_MORE_FILES) ++result.failed;
+                    break;
+                }
+            }
+        }
+        catch (...)
+        {
+            ++result.failed;
+        }
+        return result;
     }
 
     struct MathSvgStore::State
