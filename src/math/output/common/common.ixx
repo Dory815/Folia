@@ -34,3 +34,4 @@ export import :semantics;
 export import :tex_atom;
 export import :notation;
 export import :menclose;
+export import :xml_node;

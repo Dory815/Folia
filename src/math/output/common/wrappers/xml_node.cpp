@@ -1,168 +1,226 @@
+/*************************************************************
+ * Native mathematical services from MathJax 4.1.3
+ * output/common/Wrappers/XmlNode.ts.
+ * See src/math/LICENSE-MathJax.txt.
+ *************************************************************/
 module folia.math.output.common;
 import :xml_node;
 import :wrapper;
 import :output_jax;
-import folia.math.core.mml_tree.xml_dom_adaptor;
-import folia.math.core.math_item;
-import folia.math.util.js_number;
-import folia.math.util.option_types;
-import folia.math.util.property_host;
+import folia.math.core.mml_tree.html_adaptor;
+import folia.math.core.mml_tree.mml_document;
 import folia.math.util.string;
 import folia.math.util.utf16;
 import std;
 
 namespace folia::math::output::common {
 namespace {
-[[noreturn]] void typeError(std::u16string text){throw options::Exception("TypeError",std::move(text));}
-std::u16string sourceString(options::Context& context,options::Value value){
-    const auto primitive=context.toPrimitive(std::move(value),options::PrimitiveHint::stringHint);
-    if(const auto* text=std::get_if<std::u16string>(&primitive.data))return *text;
-    if(const auto* number=std::get_if<double>(&primitive.data))
-        return property_host::text(js_number::toString(*number));
-    if(const auto* boolean=std::get_if<bool>(&primitive.data))return *boolean?u"true":u"false";
-    if(std::holds_alternative<options::Null>(primitive.data))return u"null";
-    if(std::holds_alternative<options::Undefined>(primitive.data))return u"undefined";
-    if(std::holds_alternative<options::SymbolRef>(primitive.data))
-        throw options::Exception("TypeError",u"Cannot convert a Symbol value to a string");
-    throw options::Exception("TypeError",u"Source fontFamily result did not become a primitive");
-}
+
+std::u16string decode(std::string_view value) {
+    return utf16::decode(value).text;
 }
 
-CommonXmlNode::CommonXmlNode(CommonWrapperFactory& factory,mml::MmlNode& source,CommonWrapper* parentValue)
-    :CommonWrapper(factory,source,parentValue){}
-
-void CommonXmlNode::initializeSource(){
-    CommonWrapper::initializeSource();
-    rscale=getRScale();
-}
-void CommonXmlNode::getStyles(){}
-void CommonXmlNode::getScale(){}
-void CommonXmlNode::getVariant(){}
-
-Property CommonXmlNode::getHDW(DOMNodeRef xml,std::string_view use,
-                               std::optional<std::string_view> force){
-    const auto forceValue=force.value_or(use);
-    const Property hdw=adaptor().getAttribute(xml,u"data-mjx-hdw");
-    const auto optionsValue=jax().optionsContext().get(jax().options,options::Key(u"htmlHDW"));
-    const auto useText=utf16::decode(use).text,forceText=utf16::decode(forceValue).text;
-    const auto* option=std::get_if<std::u16string>(&optionsValue.data);
-    return property_host::truthy(hdw)&&option&&(*option==useText||*option==forceText)
-        ?hdw:Property(PropertyNull{});
-}
-
-std::array<double,3> CommonXmlNode::splitHDW(const Property& hdw)const{
-    const double scale=1/metrics().scale;
-    auto values=string_util::split(property_host::string(hdw));
-    std::array<double,3> result{};
-    for(std::size_t i=0;i<result.size();++i){
-        const auto value=i<values.size()&&!values[i].empty()
-            ?Property(property_host::debugText(values[i])):Property("0");
-        result[i]=length2em(value)*scale;
+std::string fixed(double value) {
+    if (std::abs(value) < .0006)
+        return "0";
+    auto result = lengths::format_decimal(value, 3);
+    if (result.find('.') != std::string::npos) {
+        while (result.ends_with('0'))
+            result.pop_back();
+        if (result.ends_with('.'))
+            result.pop_back();
     }
     return result;
 }
 
-Property CommonXmlNode::getFontStyles()const{
-    auto& output=const_cast<CommonXmlNode*>(this)->jax();
-    auto& context=output.optionsContext();
-    const options::Value adaptor=context.get(options::Value(output.instanceIdentity()),options::Key(u"adaptor"));
-    const auto& m=metrics();
+void setStyles(AbstractDOMAdaptor &adaptor, DOMNodeRef const &node,
+               styles::StyleList const &styles) {
+    for (const auto &[name, value] : styles)
+        adaptor.setStyle(node, decode(name), value);
+}
+
+DOMNodeRef makeElement(AbstractDOMAdaptor &adaptor, std::u16string_view kind,
+                       std::span<DOMNodeRef const> children = {},
+                       styles::StyleList const &styles = {},
+                       std::optional<std::u16string_view> variant = {}) {
+    auto result = adaptor.node(kind, std::span<AttributeData const>{}, children);
+    if (!result)
+        throw std::runtime_error("DOM adaptor failed to create an HTML measurement node");
+    setStyles(adaptor, result, styles);
+    if (variant)
+        adaptor.setAttribute(result, u"variant", *variant);
+    return result;
+}
+
+struct MeasurementCleanup {
+    AbstractDOMAdaptor &adaptor;
+    DOMNodeRef container;
+    DOMNodeRef measurement;
+    bool containerMayBeAttached = false;
+    bool measurementMayBeAttached = false;
+
+    ~MeasurementCleanup() noexcept {
+        if (containerMayBeAttached) {
+            try {
+                (void)adaptor.remove(container);
+            } catch (...) {
+            }
+        }
+        if (measurementMayBeAttached) {
+            try {
+                (void)adaptor.remove(measurement);
+            } catch (...) {
+            }
+        }
+    }
+};
+
+std::string_view htmlHdwName(CommonOptions::HtmlHDW value) {
+    switch (value) {
+    case CommonOptions::HtmlHDW::automatic:
+        return "automatic";
+    case CommonOptions::HtmlHDW::use:
+        return "use";
+    case CommonOptions::HtmlHDW::force:
+        return "force";
+    case CommonOptions::HtmlHDW::ignore:
+        return "ignore";
+    }
+    return "ignore";
+}
+
+} // namespace
+
+CommonXmlNode::CommonXmlNode(CommonWrapperFactory &factory, mml::MmlNode &source,
+                             CommonWrapper *parentValue)
+    : CommonWrapper(factory, source, parentValue) {}
+
+void CommonXmlNode::initializeSource() {
+    CommonWrapper::initializeSource();
+    rscale = getRScale();
+}
+
+void CommonXmlNode::getStyles() {}
+void CommonXmlNode::getScale() {}
+void CommonXmlNode::getVariant() {}
+
+std::optional<std::u16string> CommonXmlNode::getHDW(DOMNodeRef xml, std::string_view use,
+                                                    std::optional<std::string_view> force) {
+    if (!xml)
+        throw std::invalid_argument("CommonXmlNode::getHDW requires an XML DOM node");
+    auto const &service = jax().htmlMeasurement();
+    auto hdw = service.adaptor.getAttribute(xml, u"data-mjx-hdw");
+    if (!hdw || hdw->empty())
+        return {};
+    const auto forceValue = force.value_or(use);
+    const auto option = htmlHdwName(jax().options().htmlHDW);
+    if (option == use || option == forceValue)
+        return hdw;
+    return {};
+}
+
+UnknownBBox CommonXmlNode::splitHDW(std::u16string_view hdw) const {
+    const double scale = 1 / metrics().scale;
+    const auto values = string_util::split(hdw);
+    std::array<double, 3> result{};
+    for (std::size_t i = 0; i < result.size(); ++i) {
+        const auto value =
+            i < values.size() && !values[i].empty() ? values[i] : std::u16string(u"0");
+        result[i] = length2em(LengthInput(value)) * scale;
+    }
+    return {.w = result[2], .h = result[0], .d = result[1]};
+}
+
+styles::StyleList CommonXmlNode::getFontStyles() const {
+    if (!parent)
+        throw std::logic_error("CommonXmlNode requires a Common parent for font styles");
+    const auto &m = metrics();
     std::u16string family;
-    if(!parent)typeError(u"Cannot read properties of null (reading 'styles')");
-    if(parent->styles)family=parent->styles->get(u"font-family");
-    if(family.empty()&&property_host::truthy(m.family))family=property_host::string(m.family);
-    if(family.empty()){
-        const options::Value fontFamily=context.get(adaptor,options::Key(u"fontFamily"));
-        const options::Value parentMethod=context.get(adaptor,options::Key(u"parent"));
-        if(!output.math)typeError(u"Cannot read properties of null (reading 'start')");
-        auto document=std::get_if<core::MathDocumentService*>(&output.document);
-        if(!document||!*document)typeError(u"Cannot read properties of null (reading 'locationService')");
-        const auto location=core::readMathLocation(output.math->start,"node",&(*document)->locationService());
-        const auto value=propertyNode(location);
-        const auto* ref=std::get_if<DOMNodeRef>(&value);
-        if(!ref)typeError(u"Math start node is not an output DOM node");
-        const std::array<options::Value,1> parentArguments{output.sourceDOMValue(*ref)};
-        const auto parentValue=context.callMember(parentMethod,adaptor,parentArguments,u"adaptor.parent");
-        const std::array<options::Value,1> familyArguments{parentValue};
-        const auto familyValue=context.callMember(fontFamily,adaptor,familyArguments,u"adaptor.fontFamily");
-        family=options::truthy(familyValue)?sourceString(context,familyValue):u"initial";
+    if (parent->styles)
+        family = parent->styles->get(u"font-family");
+    if (family.empty() && !m.family.empty())
+        family = decode(m.family);
+    if (family.empty()) {
+        const auto &service = jax().htmlMeasurement();
+        family = service.adaptor.fontFamily(service.parent);
+        if (family.empty())
+            family = u"initial";
     }
-    if(family.empty())family=u"initial";
-    PropertyList styles;
-    styles.setOwn("font-family",Property(property_host::debugText(family)));
-    styles.setOwn("font-size",Property(property_host::debugText(
-        utf16::decode(output.sourceFixed(m.em*rscale)+"px").text)));
-    return Property(styles);
+    return {{"font-family", std::move(family)}, {"font-size", decode(fixed(m.em * rscale) + "px")}};
 }
 
-DOMNodeRef CommonXmlNode::getHTML(){
-    auto* xmlNode=dynamic_cast<mml::XMLNode*>(node);
-    if(!xmlNode)typeError(u"CommonXmlNode requires an XMLNode");
-    auto& output=jax();
-    auto& adaptor=output.domAdaptor();
-    auto html=adaptor.clone(output.htmlAdaptor().resolve(xmlNode->getXML()),true);
-    auto styles=PropertyList::record(getFontStyles()).value();
-    const auto hdw=getHDW(html,"force");
-    const double scale=jax().optionsContext().toNumber(jax().optionsContext().get(jax().options,options::Key(u"scale")));
-    if(property_host::truthy(hdw)||scale!=1){
-        html=addHDW(std::move(html),styles);
-    }
-    PropertyList definition;
-    if(!parent)typeError(u"Cannot read properties of null (reading 'variant')");
-    definition.setOwn("variant",Property(property_host::debugText(utf16::decode(parent->variant).text)));
-    definition.setOwn("style",Property(styles));
-    PropertyArray children;children.push(Property(nodeProperty(html)));
-    return jax().html(u"mjx-html",std::move(definition),std::move(children));
+DOMNodeRef CommonXmlNode::cloneXML() const {
+    auto const *xmlNode = dynamic_cast<mml::XMLNode const *>(node);
+    if (!xmlNode)
+        throw std::logic_error("CommonXmlNode requires an XMLNode");
+    auto const &owner = xmlNode->xmlAdaptor();
+    auto const *htmlAdaptor = dynamic_cast<mml::HtmlAdaptor const *>(owner.get());
+    if (!htmlAdaptor)
+        throw std::logic_error("XMLNode owner cannot clone its payload into the DOM");
+    auto result = htmlAdaptor->cloneDOM(xmlNode->getXML());
+    if (!result)
+        throw std::runtime_error("XMLNode owner returned no DOM clone");
+    return result;
 }
 
-BBox CommonXmlNode::measureXmlNode(DOMNodeRef xml){
-    auto& output=jax();auto& adaptor=output.domAdaptor();
-    const auto content=output.html(u"mjx-xml-block",
-        PropertyList{{"style",Property(PropertyList{{"display",Property(std::string("inline-block"))}})}},
-        PropertyArray{Property(nodeProperty(adaptor.clone(xml,true)))});
-    const auto base=output.html(u"mjx-baseline",
-        PropertyList{{"style",Property(PropertyList{{"display",Property(std::string("inline-block"))},
-            {"width",Property(0)},{"height",Property(0)}})}},PropertyArray{});
-    const auto style=getFontStyles();
-    const auto measure=output.html(u"mjx-measure-xml",
-        PropertyList{{"style",style}},
-        PropertyArray{Property(nodeProperty(base)),Property(nodeProperty(content))});
-    if(!output.math)typeError(u"Cannot read properties of null (reading 'start')");
-    const auto* document=std::get_if<core::MathDocumentService*>(&output.document);
-    if(!document||!*document)typeError(u"Cannot read properties of null (reading 'locationService')");
-    const auto location=core::readMathLocation(output.math->start,"node",&(*document)->locationService());
-    const auto startNodeValue=propertyNode(location);
-    const auto* startNode=std::get_if<DOMNodeRef>(&startNodeValue);
-    if(!startNode)typeError(u"Math start node is not an output DOM node");
-    const std::array<options::Value,1> parentArguments{output.sourceDOMValue(*startNode)};
-    const options::Value parentValue=output.sourceAdaptorCall(u"parent",parentArguments);
-    const std::array<options::Value,2> appendContainerArguments{
-        parentValue,output.sourceDOMValue(output.container)};
-    (void)output.sourceAdaptorCall(u"append",appendContainerArguments);
-    const std::array<options::Value,2> appendMeasureArguments{
-        output.sourceDOMValue(output.container),output.sourceDOMValue(measure)};
-    (void)output.sourceAdaptorCall(u"append",appendMeasureArguments);
-    const auto contentBox=adaptor.nodeBBox(content);
-    const auto baseBox=adaptor.nodeBBox(base);
-    const double emValue=metrics().em*metrics().scale*rscale;
-    const double width=(contentBox.right-contentBox.left)/emValue;
-    const double height=(baseBox.top-contentBox.top)/emValue;
-    const double depth=(contentBox.bottom-contentBox.top)/emValue-height;
-    adaptor.remove(output.container);
-    adaptor.remove(measure);
-    return BBox(BBoxData{.w=width,.h=height,.d=depth});
+DOMNodeRef CommonXmlNode::getHTML() {
+    auto &jaxValue = jax();
+    auto &adaptor = jaxValue.htmlMeasurement().adaptor;
+    auto html = cloneXML();
+    auto styles = getFontStyles();
+    const auto hdw = getHDW(html, "force");
+    if (hdw || jaxValue.options().scale != 1)
+        html = addHDW(std::move(html), styles);
+    if (!parent)
+        throw std::logic_error("CommonXmlNode requires a Common parent for HTML variant");
+    const std::array<DOMNodeRef, 1> children{html};
+    const auto variant = decode(parent->variant);
+    auto result = makeElement(adaptor, u"mjx-html", children, styles, std::u16string_view(variant));
+    return result;
 }
 
-void CommonXmlNode::computeBBox(BBox& target,bool){
-    auto* xmlNode=dynamic_cast<mml::XMLNode*>(node);
-    if(!xmlNode)typeError(u"CommonXmlNode requires an XMLNode");
+UnknownBBox CommonXmlNode::measureXmlNode(DOMNodeRef xml) {
+    if (!xml)
+        throw std::invalid_argument("CommonXmlNode::measureXmlNode requires an XML DOM node");
+    auto &output = jax();
+    auto const &service = output.htmlMeasurement();
+    auto &adaptor = service.adaptor;
+
+    const std::array<DOMNodeRef, 1> xmlChildren{adaptor.clone(xml, true)};
+    auto content =
+        makeElement(adaptor, u"mjx-xml-block", xmlChildren, {{"display", u"inline-block"}});
+    auto base = makeElement(adaptor, u"mjx-baseline", {},
+                            {{"display", u"inline-block"}, {"width", u"0"}, {"height", u"0"}});
+    auto measurement = makeElement(adaptor, u"mjx-measure-xml", {}, getFontStyles());
+    (void)adaptor.append(measurement, base);
+    (void)adaptor.append(measurement, content);
+
+    MeasurementCleanup cleanup{adaptor, service.container, measurement};
+    cleanup.containerMayBeAttached = true;
+    (void)adaptor.append(service.parent, service.container);
+    cleanup.measurementMayBeAttached = true;
+    (void)adaptor.append(service.container, measurement);
+
+    const auto contentBox = adaptor.nodeBBox(content);
+    const auto baseBox = adaptor.nodeBBox(base);
+    const double em = metrics().em * metrics().scale * rscale;
+    const double width = (contentBox.right - contentBox.left) / em;
+    const double height = (baseBox.top - contentBox.top) / em;
+    const double depth = (contentBox.bottom - contentBox.top) / em - height;
+    return {.w = width, .h = height, .d = depth};
+}
+
+void CommonXmlNode::computeBBox(BBox &target, bool) {
+    auto *xmlNode = dynamic_cast<mml::XMLNode *>(node);
+    if (!xmlNode)
+        throw std::logic_error("CommonXmlNode requires an XMLNode");
     target.empty();
-    const auto xml=jax().htmlAdaptor().resolve(xmlNode->getXML());
-    const auto hdw=getHDW(xml,"use","force");
-    if(property_host::truthy(hdw)){
-        const auto [h,d,w]=splitHDW(hdw);target.h=h;target.d=d;target.w=w;
-        return;
-    }
-    target.updateFrom(measureXmlNode(xml));
+    const auto xml = cloneXML();
+    const auto hdw = getHDW(xml, "use", "force");
+    const auto measured = hdw ? splitHDW(*hdw) : measureXmlNode(xml);
+    target.w = measured.w;
+    target.h = measured.h;
+    target.d = measured.d;
 }
-}
+
+} // namespace folia::math::output::common

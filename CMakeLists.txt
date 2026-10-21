@@ -473,7 +473,7 @@ target_sources(folia_math PRIVATE
 set(FOLIA_COMMON_NATIVE_FAMILIES
     mo mrow inferred_mrow text_node mi mn ms mspace mglyph mtext math
     scriptbase msubsup mmultiscripts munderover mfenced maction
-    mtable mtr mtd mpadded mphantom semantics tex_atom menclose)
+    mtable mtr mtd mpadded mphantom semantics tex_atom menclose xml_node)
 foreach(family IN LISTS FOLIA_COMMON_NATIVE_FAMILIES)
     target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
         src/math/output/common/wrappers/${family}.ixx)
@@ -759,6 +759,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_common_semantics.cpp
     tests/math/native_svg_merror.cpp
     tests/math/native_xml_dom_export.cpp
+    tests/math/native_common_xml.cpp
     tests/math/native_common_mfenced.cpp
     tests/math/native_common_containers.cpp
     tests/math/native_common_menclose.cpp

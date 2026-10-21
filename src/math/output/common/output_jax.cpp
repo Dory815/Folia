@@ -19,11 +19,18 @@ CommonOutputJax::CommonOutputJax(mml::MmlDocument &document, CommonOutputJaxConf
                                  LinebreakFactory linebreakFactory)
     : document_(document), fonts_(config.fonts), face_(fonts_.face(config.faceName)),
       metrics_(std::move(config.metrics)), options_(std::move(config.options)),
-      inlineBreakPolicy_(config.inlineBreakPolicy), measurement_(measurement) {
+      inlineBreakPolicy_(config.inlineBreakPolicy), measurement_(measurement),
+      htmlMeasurement_(std::move(config.htmlMeasurement)) {
     if (!std::isfinite(metrics_.em) || metrics_.em <= 0 || !std::isfinite(metrics_.ex) ||
         metrics_.ex < 0) {
         throw std::invalid_argument(
             "CommonOutputJax requires positive em and nonnegative ex metrics");
+    }
+
+    if (htmlMeasurement_ && options_.htmlHDW == CommonOptions::HtmlHDW::automatic) {
+        options_.htmlHDW = htmlMeasurement_->adaptor.canMeasureNodes
+                               ? CommonOptions::HtmlHDW::ignore
+                               : CommonOptions::HtmlHDW::force;
     }
 
     // Declaration order intentionally makes the visitor die before the
@@ -87,6 +94,14 @@ ExtendedMetrics const &CommonOutputJax::currentMetrics() const noexcept {
 
 CommonOptions const &CommonOutputJax::options() const noexcept {
     return options_;
+}
+
+HtmlMeasurement const &CommonOutputJax::htmlMeasurement() const {
+    if (!htmlMeasurement_)
+        throw std::logic_error("HTML measurement services are required for XML output");
+    if (!htmlMeasurement_->parent || !htmlMeasurement_->container)
+        throw std::logic_error("HTML measurement services require parent and container nodes");
+    return *htmlMeasurement_;
 }
 
 LinebreakOptions const &CommonOutputJax::currentLinebreakOptions() const noexcept {
@@ -308,6 +323,19 @@ void CommonOutputJax::finishScene(scene::Builder &builder, CommonWrapper &root,
     scene::FrameLayout frame;
     frame.minimum_extent = metrics_.em / 1000.0;
     finishInlineFrames(builder, root, rootNodes, frame);
+
+    double fontScale = metrics_.scale * options_.scale;
+    const auto *overflowValue = root.node->attributes().lookup(u"overflow");
+    const auto *overflow = overflowValue ? std::get_if<std::u16string>(overflowValue) : nullptr;
+    if (overflow && *overflow == u"scale" && metrics_.display) {
+        const double width = root.getOuterBBox().w;
+        const double available = std::max(0.0, metrics_.containerWidth - 4) / pxPerEm();
+        if (width > available && width)
+            fontScale *= available / width;
+    }
+    auto displayLayout = builder.display_layout();
+    displayLayout.font_scale = fontScale;
+    builder.set_display_layout(std::move(displayLayout));
 
     // Percentage width belongs to the completed outer Common BBox.  Keep the
     // original pwidth spelling alongside its resolved numeric percentage.

@@ -1,7 +1,9 @@
 export module folia.math.output.common:types;
 export import folia.math.core.tree.factory_types;
 export import folia.math.core.mml_tree.mml_document;
+export import folia.math.core.dom_adaptor;
 export import folia.math.util.style_json;
+export import folia.math.util.styles;
 export import folia.math.output.common.font_data;
 export import folia.math.output.common.line_bbox;
 import std;
@@ -15,6 +17,12 @@ class CommonTextNode;
 class CommonMtable;
 class Linebreaks;
 class LayoutJob;
+
+struct HtmlMeasurement {
+    AbstractDOMAdaptor &adaptor;
+    DOMNodeRef parent;
+    DOMNodeRef container;
+};
 
 enum class InlineBreakPolicy : std::uint8_t { opportunistic, forced };
 
@@ -73,6 +81,7 @@ struct CommonOutputJaxConfig {
     FontRepository const &fonts;
     std::string faceName;
     InlineBreakPolicy inlineBreakPolicy = InlineBreakPolicy::opportunistic;
+    std::optional<HtmlMeasurement> htmlMeasurement;
 };
 
 class MeasurementTarget {

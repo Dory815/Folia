@@ -19,6 +19,7 @@ class CommonOutputJax {
     CommonOptions options_;
     InlineBreakPolicy inlineBreakPolicy_;
     MeasurementTarget &measurement_;
+    std::optional<HtmlMeasurement> htmlMeasurement_;
     // No linebreak constraint exists until getLinebreakWidth runs. NaN keeps
     // width comparisons inactive, as in Source's unset mathematical width.
     double containerWidth_ = std::numeric_limits<double>::quiet_NaN();
@@ -59,6 +60,7 @@ class CommonOutputJax {
     FontFaceData const &face() const noexcept;
     ExtendedMetrics const &currentMetrics() const noexcept;
     CommonOptions const &options() const noexcept;
+    HtmlMeasurement const &htmlMeasurement() const;
     LinebreakOptions const &currentLinebreakOptions() const noexcept;
     Linebreaks &linebreaks() const noexcept;
     CommonWrapper *wrapperFor(mml::MmlNode const &) const noexcept;

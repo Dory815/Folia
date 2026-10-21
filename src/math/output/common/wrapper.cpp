@@ -1241,6 +1241,7 @@ SceneNodes CommonWrapper::emitScene(scene::Builder &builder,
     case mml::NodeKind::mtext:
     case mml::NodeKind::mo:
     case mml::NodeKind::tex_atom:
+    case mml::NodeKind::annotation_xml:
     case mml::NodeKind::none:
         break;
     default:
@@ -1379,7 +1380,8 @@ std::pair<std::string, double> CommonWrapper::processIndent(std::string_view ali
                 indent.erase(0, 2);
         }
     }
-    return {align, length2em(LengthInput(decodeUtf8(indent)), width.value_or(containerWidth()))};
+    return {align,
+            length2em(LengthInput(decodeUtf8(indent)), width.value_or(metrics().containerWidth))};
 }
 
 std::string CommonWrapper::getChildAlign(std::size_t) const {
