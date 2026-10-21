@@ -55,8 +55,7 @@ std::shared_ptr<LineBBox> CommonMspace::computeLineBBox(std::size_t index) {
     const auto &attributes = node->attributes();
     const auto *leading = attributes.lookup(u"data-lineleading");
     const auto defaultLeading = jax().currentLinebreakOptions().lineleading;
-    const auto leadingValue = leading ? lengthValue(leading) : LengthInput{defaultLeading};
-    const double lineLeading = length2em(leadingValue, defaultLeading);
+    const double lineLeading = length2em(lengthValue(leading), defaultLeading);
     auto result = std::make_shared<LineBBox>(LineBBox::from(BBox::zero(), lineLeading));
     if (index == 1) {
         result->getIndentData(*node);

@@ -1,3 +1,6 @@
+#include <array>
+#include <optional>
+#include <string_view>
 #include "support/folia_test.hpp"
 
 import folia.math.fonts.newcm_font_module_provider;
@@ -40,6 +43,48 @@ template <class Wrapper> common::CommonWrapperRegistration registration(mml::Nod
 } // namespace
 
 suite common_linebreak_native = [] {
+    "mspace line leading preserves the Source default and authored lengths"_test = [] {
+        auto bundle = folia::math::fonts::makeNewcmFontData();
+        NoUnknownText measurement;
+        struct LeadingCase {
+            std::optional<std::u16string_view> attribute;
+            double expected;
+        };
+        const std::array<LeadingCase, 4> cases{{
+            {std::nullopt, .2},
+            {u"", .2},
+            {u".4em", .4},
+            {u"0", 0},
+        }};
+        for (const auto &item : cases) {
+            mml::MmlDocument document;
+            mml::AttributeSet attributes;
+            attributes.set(u"linebreak", u"newline");
+            if (item.attribute)
+                attributes.set(u"data-lineleading", std::u16string(*item.attribute));
+            auto &space = document.factory().make(mml::NodeKind::mspace, std::move(attributes));
+            const std::array<mml::MmlNode *, 1> children{&space};
+            auto &math = document.factory().make(mml::NodeKind::math, {}, children);
+            document.setRoot(math);
+            math.setInheritedAttributes();
+            common::ExtendedMetrics metrics{16, 8, 640, 1, "MathJaxNewcm", false};
+            common::CommonOutputJax jax(document, {metrics, {}, bundle.fonts, "MathJaxNewcm"},
+                                        measurement, common::CommonWrapperFactory::standardNodes(),
+                                        &makeLinebreakVisitor);
+            (void)jax.factory().wrap(math);
+            auto *wrapper = dynamic_cast<common::CommonMspace *>(jax.wrapperFor(space));
+            expect(wrapper != nullptr);
+            if (!wrapper)
+                continue;
+            for (const auto index : {0u, 1u}) {
+                const auto line = wrapper->getLineBBox(index);
+                expect(line != nullptr);
+                if (line)
+                    expect(line->lineLeading == std::optional<double>{item.expected});
+            }
+        }
+    };
+
     "linebreak_visitor_uses_source_math_roots_and_recurses_into_children"_test = [] {
         auto bundle = folia::math::fonts::makeNewcmFontData();
         NoUnknownText measurement;
