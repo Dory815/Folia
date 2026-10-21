@@ -314,6 +314,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/fonts/newcm_font_data.ixx
     src/math/fonts/newcm_font_module_provider.ixx
     src/math/util/constants.ixx
+    src/math/util/instance_count.ixx
     src/math/util/prioritized_list.ixx
     src/math/util/function_list.ixx
     src/math/util/bbox.ixx

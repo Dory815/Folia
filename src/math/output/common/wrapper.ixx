@@ -10,6 +10,7 @@ export import folia.math.util.lengths;
 export import folia.math.output.common.font_data;
 export import folia.math.output.common.line_bbox;
 export import folia.math.output.scene.builder;
+import folia.math.util.instance_count;
 import std;
 
 export namespace folia::math::output::common {
@@ -64,6 +65,7 @@ struct CommonWrapperRegistration {
 using CommonWrapperCatalog = std::vector<CommonWrapperRegistration>;
 
 class CommonWrapper : public tree::AbstractWrapper<CommonWrapper, mml::MmlNode> {
+    [[no_unique_address]] util::InstanceCount<CommonWrapper> instance_count_;
     friend class CommonTextNode;
 
   protected:
