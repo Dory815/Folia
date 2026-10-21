@@ -6,21 +6,25 @@ its ownership-repair plans. The original MathJax version, 38-package profile,
 fonts and rendering requirements in `scope.json` remain in scope. No runtime
 or container retirement patch is part of this redesign.
 
-## Request-scoped font data (2026-10-22, implementation pending)
+## Request-scoped font data (implemented 2026-10-22)
 
 The user defines demand as one request, which may contain a bounded batch of
 formulas. There is one batch entry point; a single formula is a batch of one.
 Deduplicate glyph requirements within that request and read/decode them in
 groups. Do not preserve glyph bodies or decoded outlines between requests,
 including through an LRU, a persistent provider cache, or a renderer session.
-An idle native renderer may retain the TeX session and small lookup indexes.
+An idle native renderer retains the TeX session and small lookup indexes.
+`NewcmFontSource` shares immutable metadata and compiled read-only tables;
+`NewcmFontRequest` alone owns the loaded glyph map for one batch. Common and
+SVG project values from that same request. The existing single-item helpers
+delegate to the batch implementation rather than retaining a separate path.
 
 The font source is file-backed, read-only data, without SQLite. The reader's
 batch contract must return request-owned values or explicit lifetime leases,
 never pointers into a temporary read buffer. Platform mapping/handle APIs stay
 outside core. The existing compiled read-only font tables are source data;
-expanding every row into heap objects at engine construction is the behavior
-being removed. Storage lookup must preserve pinned variant inheritance, shallow
+there is no separate font-pack file. Engine construction does not expand every
+row into heap objects. Storage lookup preserves pinned variant inheritance, shallow
 link overlays, SMP remaps, extension precedence, SVG aliases, present-empty
 paths, compositions, and outline diagnostics. Missing or invalid data is a
 reported error, not a switch to the eager implementation.
