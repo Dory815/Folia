@@ -59,6 +59,18 @@
     {
       "path": "packages/mermaid/src/diagrams/packet/types.ts",
       "sha256": "5b2c564ad8d95f3d5dc62bb79fd33e05a10c46d1fc0e3c5325ccde5e152a6d84"
+    },
+    {
+      "path": "packages/parser/package.json",
+      "sha256": "7c7de36b32df30493e16d06cfa0009faf86f4682a32583dc74a368d1df5e001b"
+    },
+    {
+      "path": "packages/mermaid/src/setupGraphViewbox.js",
+      "sha256": "cebb629053c67dac36635cc31262d1c5e8cc7ff26a645ca080474a649326327b"
+    },
+    {
+      "path": "packages/mermaid/src/schemas/config.schema.yaml",
+      "sha256": "537073372efeaba5675e331b813220ee87b4403118952eccaa3362d8b78ca5e8"
     }
   ]
 }
