@@ -1798,3 +1798,29 @@ XML initializer callback (default rejects XML as before); do not add XML parsing
 to production Common. Then default86, canonical75 and a full math run. The two
 Source action event errors remain outstanding; no claim of complete75/150 or
 Folia integration follows from this batch.
+
+Source XML scale-2 witness reveals a missing pre-existing CommonOutputJax
+setScale responsibility: output option scale and math metrics.scale are distinct.
+Extend the same owner batch, without changing expected SVG: trailing
+DisplayLayout::font_scale defaults to 1 and is finite/nonnegative (Source
+overflow=scale can resolve to zero when containerWidth <= 4). CommonOutputJax
+finishScene resolves metrics.scale * options.scale, including Source display
+`overflow=scale` width fitting (containerWidth-4, pxPerEm, outerBBox), into this
+owned final value. It must not derive it from XML geometry or change em layout.
+Writer serializes the resolved scale as container font-size percent using the
+existing native Styles/length formatter. Preserve authored style order/override,
+merge minimum width in Source order, and insert generated scale style before
+processMath display/width/justify attributes (when scale=1, existing ordering is
+unchanged). Separate Scene validity, Common computed-scale, and writer focused
+checks cover this addition. The Source scale-2 case keeps actual metrics.scale=1.
+
+The direct MathML XML witness reaches SvgAnnotationXML, which Source defines in
+SVG/Wrappers/semantics.ts as an ordinary SvgWrapper plus one class-style rule.
+Allow annotation_xml in CommonWrapper's existing generic emitScene dispatch
+(the existing Common catalog registration remains generic). In the existing
+svg/xml_wrapper pair add SvgAnnotationXML : CommonWrapper and
+annotationXmlRegistration(); SVG catalog replaces that one registration with
+the Source foreignObject[data-mjx-xml] class styles. No second annotation
+layout, extra Scene wrapper or generic fallback. Source observer captures the
+actual annotation-xml constructor.styles into a separate flat typed table;
+native catalog metadata must match that table as well as XML/HTML metadata.

@@ -4,27 +4,25 @@
 
 ## 当前状态与下一步
 
-- merror已验收并小批提交：a95fcf3b（Scene Title/stylesheet/getters）、fdb42c27（writer）、0ee1f30c（原SVG owner/catalog接线及旧注册移除）、4fd31382（Source7/UT）。保护13未动。当前无活动build/测试；HTML批次Luna按下条分工，merror已freeze。
-- 最新full `build/math-port/merror-full-math.log` exit0：790tests/212141assert/153suites，无skip。merror Source7 UT 1/30、default86 1/1021通过。canonical75 `merror-results.json`：72 SVG byte equal、1 HTML native exception、2 Source error/native exception、0 SVG mismatch。未达75/150 gate；两action Source错误仍为 `node.addEventListener is not a function`，不能算异常相同即通过。
-- 当前HTML已在architecture末尾锁定接口/验收并授权六组Luna：common_radicals_emission=MML export/getter（已freeze）；scene_values_writer=owned HTML Scene/snapshot；common_rows_emission=Common XML及request measurement；common_scene_entry=SVG XML/catalog；common_base_emission=HTML serializer/writer；common_scene_source_tests=独立Source/UT及共享runtime可选XMLcapture。Root负责CMake、old placement/callback清退、canonical composition与统一build/tests/Git。只读proposal是候选，权威为最终Root lock。下一步review各owner交付，freeze后parallel4单build，再XML聚焦/旧Source fixtures no-op/default86/canonical75/full，尚未build本批。
-- HTML迁移边界：Common原wrappers/xml_node pair保留font/HDW/measurement/bbox职责；SVG原xml_wrapper pair保留包装/发射职责；Scene原html_types/html_snapshot迁移成owned值，清除旧foundation Transform依赖，不复制HTML树。当前proposal声称可直接复用的serializer实际仍Property，不能导入active路径；需迁移对应算法到当前writer。XmlDomAdaptor已有typed opaque XmlRef，但没有DOM export/resolve；XMLNode也无adaptor getter。Root必须先定窄的原生request期接口，不补Context兼容桥或序列化再解析。HTML已按最终Root lock授权，遵守该接口，非旧proposal。
-- merror Source fixture SHA256 `08ea0ed47413d39f5f43e40663342f52b89b932b3df45babb529341249a72647`；独立default/no-op与Root default已过。Source LiteParser.PCDATA包含title，特殊&<>原样、空Title自闭合；旧Group.tooltip不变。stylesheet保留class声明且不覆盖authored paint；完整CSS cascade仍单独gate。旧wrapper_factory_bindings不在CMake，后续清退，不补旧构造。
-- 新UT曾访问异常：stack精准定位isCss，Boost.UT比较组合使空指针仍解引用；已改新UT显式空值分支，恢复DEBUG flags后Source7及full通过。日志 `merror-debug-stack.log`；自有PDB/诊断exe/obj已清理151.4MB。不能据该测试问题重开已验生产所有权。
-- 已验composition修复见Git 2f8ed3be/0151394a/2b24e7e2/d7325313/c88df7d8：newcommand live-session marker、Font direct/overlay优先、Mo所有TextNode、连续TeX session+真实Lite测量、unknown text Source属性/逗号placement。禁止重复旧7mismatch审计。Source unknown width继承NodeMixin，非base零；复用typed LiteAdaptor，不重写分类/硬编码case bbox。
-- Source TeX148 SHA256 `31761f077a57e92177b38c44dba0808b78e6616e99e1242f50058aafbe8de8ba`；table MathML8 `893e46e25dc8520157bb05c2918a4ad6b82a4c3ada71e169262955d5afb48e0f`；semantics/fenced11 `11d404fe4054172ee0ff87b355dee48f6e39dfe3e3a0cd9aade3959bc0e9984d`。default/no-op/retirement已过。fixtures constexpr flat，旧递归vector C1060不重试。initialAllowTexHTML/final/errors在common-source/common-scene-inputs.json，canonical连续session，不拿旧fresh候选作依据。每次compile仍新MmlDocument；default86 scheduling不变。
+- XML/HTML已验收并小批提交：421844e1（MML owned DOM export）、04dc48de（Scene HTML/serializer/writer）、a9ef803e（Common XML/scale/indent）、0b347faf（SVG XML/catalog/旧XML placement桥清退）、7b950787（独立Source11/UT）。前批merror也已验收提交。保护13未动，当前无活动build/测试，六Luna全freeze，只有Root负责后续任务/构建/Git。
+- 最新full `build/math-port/xml-full-math.log` exit0：801tests/212330assert/157suites，无skip。Source XML11 1/46、merror7 1/30、default86 1/1021通过；XML export、Common测量/异常清理/HDW/scale、Scene snapshot、writer、catalog聚焦均过。canonical75 `xml-results.json`/`xml-native.log`正常exit1：73 SVG byte equal、2 Source error/native exceptions（action-toggle/action-tooltip）、0 SVG mismatch或Source-success native exceptions。两Source错误仍为 `node.addEventListener is not a function`，不能把两边不同异常当通过；75/150 gate仍未过。
+- 下一步：Root只研究剩余maction原Common/SVG owner及Source事件能力边界，先锁文件职责/原生接口/验收，再分Luna实现。不要重开已验XML/merror/旧7mismatch审计。Mermaid继续暂停；Folia集成、请求所有权完整gate、两缓存模式150及旧对象层退出仍未完成。
+- XML fixture最终SHA `037d34d9035c1441ea34ce350dbf7da7d1f2e73067cdc59b3ed39203253bc58d`，Root独立default `xml-source-root-final.log`、owner write/default/no-op及旧table/semantics/merror no-op均过。原生Src11数据和SVG未因修CPP更改。Source实际math.start=body、parent=html、metrics.family未设→Lite Times；output scale2时metrics.scale仍1。HTML geometry保留CSS px及em_per_pixel，Scene只owned树，native Common测真实nodeBBox/异常RAII清理，SVG不测量。font_scale有限非负，Source widthfit可0；em_per_pixel严格正。
+- 本批必须记住的已定坑：Root wrapper不在nodeMap，取job.build返回或实际wrapper.parent；processIndent默认width是Source metrics.containerWidth（Wrapper.ts1245），不能用未设置的linebreak containerWidth。新UT曾因临时std::array转span导致AV，fixture已用命名namespace-scope constexpr observations；不要再生成悬空span。Boost.UT作用域内pointer/bounds guard必须显式分支，不能把dereference藏在组合比较的右边。无DEBUG flags/PDB遗留；旧诊断临时文件已清。
+- 原inactive SVG output_jax仍Property，保留旧materialized/Serializer调用不代表active接口；最终旧层退出时清退，不补兼容constructor/Context桥。旧scene/xml_node pair、XmlSvgNodeCreator/caller及merror placement已清退；旧wrapper_factory_bindings未接CMake。XML annotation使用原xml_wrapper owner的SvgAnnotationXML（无独立布局），Common按Source普通wrapper发射。全部新接口在architecture末尾Root lock，不回到只读proposal。
+- merror fixture SHA `08ea0ed47413d39f5f43e40663342f52b89b932b3df45babb529341249a72647`。LiteParser.PCDATA含title，特殊&<>原样、空Title自闭合；旧Group.tooltip不变。stylesheet与authored颜色分开，merror排除link/viewport/foreignObject；完整CSS cascade仍独立gate。newcommand live-session marker、Font direct/overlay优先、Mo所有TextNode、canonical连续TeX session/真实Lite测量、unknown text Source属性/逗号placement都已验收，不重审旧修复。
+- Source TeX148 SHA `31761f077a57e92177b38c44dba0808b78e6616e99e1242f50058aafbe8de8ba`；table8 `893e46e25dc8520157bb05c2918a4ad6b82a4c3ada71e169262955d5afb48e0f`；semantics/fenced11 `11d404fe4054172ee0ff87b355dee48f6e39dfe3e3a0cd9aade3959bc0e9984d`。default/no-op/retirement已验。fixtures用constexpr flat，旧递归vector C1060不重试。initialAllowTexHTML/final/errors在common-source/common-scene-inputs.json；canonical连续session，每次compile新MmlDocument，default86 scheduling不变。Source unknown宽度继承NodeMixin，复用typed LiteAdaptor，不用base零或自造case bbox。
 ## 继续有效的 Source 验收边界
 
 - 实际full38/Newcm limits witness已重建并提交ac8270e1，common-limits-source-current-root.log通过，3个concrete Source native tests17assert通过。旧手工叠mixin零offset不是验收标准，不重开该问题。
 
-owner handles（未注明活动者均freeze，只有Root派followup）：
-- `scene_values_writer`：Scene types/validation及Scene UT、共享MathML test helper/table复用。
-- `common_base_emission`：SVG writer/UT与Wrapper、TextNode、TeXAtom；`common_mo_emission`：Mo。
-- `common_rows_emission`：Notation pair/UT与Mrow、Mtext、Math、Mphantom、Mtr/Mtd、Mfenced pair/UT；`common_radicals_emission`：Mfrac、Msqrt、Mroot、Mpadded、Mtable。
-- `common_scene_entry`：OutputJax、WrapperFactory、Semantics pair/UT；`common_scene_source_tests`：Source tool、fixture、UT。
-- `common_scripts_emission`：当前统一拥有scriptbase/msubsup/munderover/mmultiscripts及menclose emitter后续；旧limits/multiscripts owner不要并行改同文件。
-- layout_fixture_cleanup拥有canonical geometry comparer/selftest；Root 拥有公共契约、CMake、build/tests、Git；不可假设上述 agent 仍在运行。
+可复用的 frozen Luna handles（仅Root可派followup；不是仍在运行）：
+- `common_radicals_emission`：MML XML export/getter；`scene_values_writer`：Scene值/Builder/HTML snapshot。
+- `common_rows_emission`：Common XML/measurement/scale；`common_scene_entry`：SVG XML/merror/catalog。
+- `common_base_emission`：SVG writer/HTML serializer；`common_scene_source_tests`：独立Source/fixture/UT。
+- `common_scripts_emission`：scriptbase/msubsup/munderover/mmultiscripts/menclose既有emitter；旧limits/multiscripts handles不并行改同文件。Root拥有CMake/build/tests/Git。其它旧handles为历史，不据完成消息重开工作。
 - Unicode/Entities/mhchem 原 owner 已完成组件验收；texhtml 的既有 Source/native 证据已接受。组件验收不代表 75/150 gate 或 Folia 集成。
-- Source标准catalog为43个native NodeKind；menclose无profile时throw，有profile支持全部29种notation；XML/HTML仍throw。entry限定核对Source有效class metadata：Common字段均匹配commonDefaults；六组不同的SVG CSS归SVG原owner，不复制到Common，无scale字段。没有把该核对当作完整catalog渲染验收。
+- Source标准catalog为43个native NodeKind；menclose无profile时throw，有profile支持全部29种notation；XML/HTML由SVG catalog提供原生专用wrapper，Common默认catalog仍abstract。entry限定核对Source有效class metadata：Common字段均匹配commonDefaults；六组不同的SVG CSS归SVG原owner，不复制到Common，无scale字段。没有把该核对当作完整catalog渲染验收。
 ## 实现约束与未完成项
 
 Common→Scene Root contract 见架构文档 2026-10-21 的 Common-to-Scene 与 Script-family 段。保持统一 em/y-up；SceneContainers.nodes 是 own 输出，content 给 children；断行 Mrow 是单 outer 加多个 lineboxes。输出SceneNodes现为vector<optional<NodeId>>，content为valid SceneParents；默认place用child自身dx/id且跳缺失首段，显式target不额外叠加；Rule 不反转。
@@ -33,7 +31,7 @@ Inline fragments已验收：移动line entries到shell副本仅留一棵树；fi
 
 新viewport契约见架构Completed viewports段：Group末尾optional<Viewport>，bounds/view_box均em/y-up，aspect可选；Glyph末尾Transform；Scaling.explicit_axes仅序列化。Builder split必须保留viewport值；writer直接nested svg与path/use transform，禁止额外g。Mo一个viewport对应一个Source svg，不重复clip/scale节点。
 
-仍待实现/验证：table完整profile覆盖；mglyph image、Xml/HTML foreignObject及其余专用families。`CommonXmlNode`仍是Property，不得导入active路径。完整75-case layout、150条SVG byte comparison、请求所有权、Folia集成、旧对象层退出均未完成。
+仍待实现/验证：table完整profile覆盖；mglyph image、maction及其余专用families。XML/HTML foreignObject已按本批Source11验收，CommonXmlNode已是typed native active owner，不重做。完整75-case layout、150条SVG byte comparison、请求所有权、Folia集成、旧对象层退出均未完成。
 
 ## 继续有效的既定边界
 
