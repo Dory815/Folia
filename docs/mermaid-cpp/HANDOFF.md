@@ -2,16 +2,28 @@
 
 ## Current checkpoint — 2026-10-21
 
-- PR #3: https://github.com/zhao0349/Folia/pull/3 (draft). Measurement batch
-  1b830273 and shared XML/CMake fix 61d146b9 pushed. First CI failed only on
-  the module file-set base directory, corrected in the latter commit.
-- Active stage: real font measurement and Pie SVG. First batch adds a real
-  browser probe (60 cases) and an explicit-error DirectWrite adapter/probe.
-  Local Edge probe passed outside the sandbox after sandbox exit 0xc0000005.
-  Native results are pending CI; advance is NOT yet accepted as SVG bounds.
-  Next action: inspect same-host native/browser evidence, settle bounds, then
-  validate Pie SVG against 80 official renderer cases (candidate implemented). No live local process or agent. Candidate files are tracked
-  under tools/mermaid-cpp and src/platform/text/mermaid_measurer.ixx.
+- PR #3: https://github.com/zhao0349/Folia/pull/3 (draft).
+- Pushed batches: 1b830273 real-font probe; 61d146b9 shared XML encoder and
+  CMake base fix; 7f01112c Pie SVG + 80 official DOM cases; 60e2125c Windows
+  NOMINMAX fix. Native font/SVG validation is still pending.
+- Local Edge measured 60 cases successfully outside the sandbox (sandbox
+  launch exited 0xc0000005). Node Pie SVG oracle 80 and Packet SVG oracle 55
+  pass. These do not establish native C++ correctness.
+- CI 39547025762 compiled and passed native tests in Debug/Release, but SVG
+  comparison exposed commonDb title sanitization vs raw renderer input. The
+  oracle now supplies identical raw titles at the family boundary. Downloaded
+  Release native tests pass 330 focused assertions; 78 finite SVG DOMs match
+  official output, and 2 non-finite empty-left cases are explicitly rejected.
+  Local DirectWrite advance vs browser bounds differs by up to 2.14892578125.
+- The next committed batch tightens the DirectWrite layout box before reading
+  ink overhangs, records union bounds, and reuses the root platform target.
+  No live local process or agent. Files are in src/platform/text and
+  tools/mermaid-cpp; build/mermaid-cpp contains the ignored local probe output.
+- Next action: inspect native/browser evidence from CI, establish an explicit
+  measurement error bound, wire measured widths to Pie, then validate and merge
+  PR #3. Advance alone is NOT accepted as SVG bounds.
+
+## Established scope and historical stage results
 
 - User scope: replace Folia's Mermaid dependency with a C++ port based on the
   original official Mermaid JS/TS. Do not port the Rust rewrite. Website and
@@ -52,12 +64,12 @@
   `df9753da2a46aae851724397fce7acdbb98e7548`, preserving five small commits.
 - All three prior agents have delivered their assigned files and are idle.
   No background local build is running. All active verification is in Actions.
-- Next concrete action: implement the real text-measurement boundary and Pie
+- Historical next action (superseded by the checkpoint above): implement the real text-measurement boundary and Pie
   SVG output on the measurement branch. First establish a browser/native
   measurement comparison using exact resolved fonts and UTF-16 display text.
   Do not claim a completed Pie renderer or application replacement yet.
 
-## Next-stage measurement evidence
+## Measurement evidence recorded before this stage
 
 - Pie's official renderer measures both every legend and the title using
   `getBoundingClientRect().width`; title width can make viewBox X negative.

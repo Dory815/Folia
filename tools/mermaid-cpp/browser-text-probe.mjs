@@ -1,6 +1,6 @@
 // Real SVG measurement, on the same Windows host as the native probe.
 // No browser profile, JavaScript runtime, or browser dependency enters Folia.
-import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';

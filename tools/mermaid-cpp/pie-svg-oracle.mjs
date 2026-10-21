@@ -11,9 +11,18 @@ const dom = new JSDOM('<!doctype html><body></body>');
 globalThis.window=dom.window;
 globalThis.document=dom.window.document;
 const {default:mermaid}=await import('./oracle/node_modules/mermaid/dist/mermaid.core.mjs');
+const {parse}=await import('./oracle/node_modules/@mermaid-js/parser/dist/mermaid-parser.core.mjs');
 const chunks=new URL('./oracle/node_modules/mermaid/dist/chunks/mermaid.core/',import.meta.url);
+assert.equal(JSON.parse(readFileSync(new URL('./oracle/node_modules/mermaid/package.json',import.meta.url))).version,'12.2.0');
 const chunk=readdirSync(chunks).find(name=>/^pieDiagram-.*\.mjs$/.test(name));
 assert(chunk);
+const map=JSON.parse(readFileSync(new URL(chunk+'.map',chunks)));
+for(const name of ['pieRenderer.ts','pieStyles.ts']) {
+ const i=map.sources.findIndex(source=>source.endsWith('/diagrams/pie/'+name));
+ assert(i>=0);
+ assert.equal(map.sourcesContent[i].replaceAll('\r\n','\n'),readFileSync(new URL(
+  '../../.reference/mermaid-js/packages/mermaid/src/diagrams/pie/'+name,import.meta.url),'utf8').replaceAll('\r\n','\n'));
+}
 const {diagram:definition}=await import(new URL(chunk,chunks));
 const hex=text=>Array.from({length:text.length},(_,i)=>text.charCodeAt(i).toString(16).padStart(4,'0')).join('')||'-';
 const palette=['#112233','#223344','#334455','#445566','#556677','#667788',
@@ -74,6 +83,12 @@ for(const item of cases) {
    highlightSlice:item.highlight,useMaxWidth:item.maxWidth}});
  const diagram=await mermaid.mermaidAPI.getDiagramFromText('pie');
  diagram.db.clear(); await diagram.parser.parse(item.source);
+ // Compare the family renderer on identical display input. commonDb sanitizes
+ // title strings before this boundary; the native raw parser deliberately does
+ // not implement that shared MermaidAPI preprocessing stage yet.
+ const raw=await parse('pie',item.source);
+ const originalTitle=diagram.db.getDiagramTitle;
+ diagram.db.getDiagramTitle=()=>raw.title??'';
  const widths=[...diagram.db.getSections()].map((_,i)=>40+i*7.25);
  document.body.innerHTML='<svg id="probe" xmlns="http://www.w3.org/2000/svg"></svg>';
  dom.window.Element.prototype.getBoundingClientRect=function(){
@@ -82,6 +97,7 @@ for(const item of cases) {
   assert(i>=0);return {width:widths[i]};
  };
  await diagram.render('probe','12.2.0');
+ diagram.db.getDiagramTitle=originalTitle;
  const svg=document.querySelector('svg');
  const finite=snapshot(svg).viewBox.every(Number.isFinite) && !svg.outerHTML.includes('Infinity');
  fixture.push([item.name,hex(item.source),item.position,widths.join(',')||'-',item.titleWidth,

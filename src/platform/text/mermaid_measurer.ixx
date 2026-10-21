@@ -18,6 +18,7 @@ struct MermaidFont {
 struct MermaidTextMetrics {
     double advance{};
     double ink_width{};
+    double bounds_width{};
 };
 
 // Measures UTF-16 after SVG's default whitespace processing (collapse ASCII
@@ -75,13 +76,20 @@ public:
             return std::unexpected("DirectWrite layout creation failed");
         DWRITE_TEXT_METRICS metrics{};
         DWRITE_OVERHANG_METRICS ink{};
-        if (FAILED(layout->GetMetrics(&metrics)) || FAILED(layout->GetOverhangMetrics(&ink)))
+        if (FAILED(layout->GetMetrics(&metrics)))
             return std::unexpected("DirectWrite metrics query failed");
+        // Tighten the layout box before querying overhangs: subtracting a
+        // million-DIP float box would discard subpixel glyph-bound precision.
+        if (FAILED(layout->SetMaxWidth(metrics.widthIncludingTrailingWhitespace)) ||
+            FAILED(layout->GetOverhangMetrics(&ink)))
+            return std::unexpected("DirectWrite ink bounds query failed");
         double const advance = metrics.widthIncludingTrailingWhitespace;
-        double const ink_width = extent + static_cast<double>(ink.right) + ink.left;
+        double const ink_width = advance + static_cast<double>(ink.right) + ink.left;
+        double const bounds_width = advance + std::max(0.0, static_cast<double>(ink.right)) +
+            std::max(0.0, static_cast<double>(ink.left));
         if (!std::isfinite(advance) || !std::isfinite(ink_width) || advance < 0 || ink_width < 0)
             return std::unexpected("Invalid DirectWrite metrics");
-        return MermaidTextMetrics{advance, ink_width};
+        return MermaidTextMetrics{advance, ink_width, bounds_width};
     }
 };
 }

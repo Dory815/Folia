@@ -20,7 +20,9 @@ int main(int argc, char** argv) {
         auto result = measurer.measure(text, {{family.begin(), family.end()}, std::stof(size)});
         if (!result) { std::cerr << result.error() << '\n'; return 1; }
         output << line << '\t' << std::setprecision(17) << result->advance << '\t'
-            << result->ink_width << '\n';
+            << result->ink_width << '\t' << result->bounds_width << '\n';
+        std::cout << family << '\t' << size << '\t' << hex << '\t' << browser << '\t'
+            << std::setprecision(17) << result->advance << '\t' << result->bounds_width << '\n';
     }
     if (measurer.measure(u"text", {u"Folia deliberately missing font 792743", 17}) ||
         measurer.measure(std::u16string(1, 0xd800), {u"Arial", 17}) ||
