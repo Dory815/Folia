@@ -1617,3 +1617,28 @@ Root runs one build with parallel4, then the bounded 75-case evaluation. Only
 after examining its actual results will Root freeze the next original-owner
 implementation tasks. Abnormal native process exit stops broader execution.
 Passing focused86 or compiling the probe does not establish the 75/150 gate.
+
+### Canonical composition repairs (2026-10-21 Root lock)
+
+The pinned 148-record capture uses one persistent TeX input session; canonical75
+must use the same scheduling, while each compilation still owns a new
+MmlDocument and freezes a document-independent Scene. Reuse the existing TeX
+compile/setMmlFactory boundary. Preserve the Source fixture and case order;
+do not replace continuous-session evidence with ignored fresh-case candidates.
+The default focused test keeps its established scheduling.
+
+The canonical test composition supplies a real typed LiteAdaptor to
+CompileServices and to unknown-text measurement. Reuse LiteAdaptor::nodeSize
+on a real text element (1000, true); SVG measurement consumes its width and
+uses the Source SVG constants h=.75/d=.2. Do not duplicate NodeMixin character
+classification or use case-specific measurements. The default focused sentinel
+continues rejecting unexpected host measurements. This is test composition;
+production Common host wiring and HTML Scene emission remain separate work.
+
+Newcommand initialization belongs to the original package/session owner, with
+idempotence tied to live session state rather than a borrowed address comparison.
+Fix that boundary and test deterministic successive TeX lifetimes, preserving
+within-session definitions and the existing repeated-initialization contract.
+Font remap precedence belongs to FontData's existing resolver; direct glyphs
+must prevent inherited remaps from overriding Source character ownership.
+Neither issue belongs in Common row traversal or fixture special cases.
