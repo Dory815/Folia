@@ -1529,3 +1529,62 @@ do not relabel this extended corpus as the outstanding canonical 75/150 gate.
 Preserve existing exact layout expectations, replace path-approximation UT
 assertions with the real rect/ellipse/delta values, and exercise freeze/retirement
 for the new values. Root runs focused comparisons, then the complete math tests.
+
+### Semantics and fenced traversal (2026-10-21 Root lock)
+
+Add Scene overrides in the original semantics and mfenced declaration/implementation
+pairs only. Their accepted Common construction, bbox and linebreak algorithms
+remain authoritative. No new production module or permissive base-wrapper gate.
+
+CommonSemantics first uses toEmbellishedScene. Otherwise it creates standard
+containers, directly emits only presentation child0 into their content parents,
+and returns its own nodes. Empty children leave the standard containers; a null
+presentation child is an explicit error. Do not add child placement or traverse
+annotations. This does not introduce foreign XML/HTML payload support.
+
+CommonMfenced creates standard containers, then emits its existing inferred
+mrow into content parents, without extra placement. Temporarily point each
+direct child wrapper's parent at that mrow. Capture every original pointer
+before mutation and restore its exact value with local RAII on success or
+exception; never assume the prior pointer was this. Generated fence/separator
+wrappers already belong to the mrow. Do not change MML parents or rebuild rows.
+
+Independent direct-MathML evidence reuses the pinned compiler/Common/SVG/NewCM
+boundary. Extract that runtime/capture into common-mathml-source-runtime.cjs;
+the existing table entry retains its table observations, fixture formatting,
+CLI and unchanged eight-case output. New semantics/fenced cases and entry live
+in common-semantics-fenced-mathml-cases.json and
+common-semantics-fenced-mathml-source.cjs, with a separate canonical
+semantics-fenced-mathml-scene.inc. Preserve original element tree records;
+actual text nodes additionally carry getText() contents. Unsupported XML payload
+capture fails explicitly. A single runtime/reference instance serves a process.
+
+Shared test-only flat tree reconstruction belongs in
+tests/math/support/mathml_scene.hpp, namespace mathml_scene_test:
+AttributeKind{text,boolean,number}; Attribute{name,kind,text,number,boolean};
+Node{kind,is_inferred,parent,attribute_first,attribute_count,text};
+Metrics{em,ex,container_width,display};
+Case{name,metrics,nodes,attributes,source_svg}. Attribute names and text use
+u16string_view; case names/kind/SVG use string_view. Spans borrow constexpr
+fixture arrays. Node text
+is trailing and defaults empty. constructRoot(document,nodes,attributes) returns
+an owned MML root, checks parent/attribute ranges and inference markers, and
+uses allNodeKinds/nodeKindName instead of duplicating a kind catalog. It sets
+actual text-node contents; it does not parse markup, infer layout or keep owners.
+Existing table tests reuse these types/construction, retaining table assertions.
+
+Dedicated native_common_semantics.cpp and native_common_mfenced.cpp tests consume
+the new Source cases. Keep their responsibilities separate; shared fixture arrays
+are sourceSemanticsCases and sourceMfencedCases. Compare complete SVG bytes after
+fresh document/job layout and again after their destruction. Exercise ordinary,
+scaled/nested presentation, hidden text annotations and empty annotation-xml,
+embellished forced breaks, default/custom/repeated/empty separators, absent
+fences, nested and tall-content fences. Actual XML annotation payload coverage
+waits for its original XML owner. Add focused direct wrapper checks for empty
+semantics and exact fenced parent restoration, including a throwing child.
+
+Root owns CMake, build parallel4, native verification and commits. Separate Luna
+owners handle semantics+its tests, mfenced+its tests, the shared test helper/table
+reuse, and Source tools/cases/fixture. Freeze interfaces before builds. Acceptance
+requires new Source reproducibility, unchanged table fixture, successful focused
+Source/ownership tests and one complete math run after final production changes.

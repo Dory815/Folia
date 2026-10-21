@@ -4,21 +4,21 @@
 
 ## 当前状态与下一步
 
-- 已提交：7fd71f11（geometry comparer/selftest）、adef6867（Source148/selected86）、640bbe30（Common Notation+Menclose+UT）、e83bba8e（SVG writer/UT）、1a53b18f（Scene enclosure types/freeze/UT）。本批代码与工具已提交；全部owner freeze，无活动build/test。
-- 最新full math enclosure-all-full-math.log exit0：776tests/212075assert/150suites，无skip。focused selected86 SVG byteequal/1107assert、retirement12/24、recipe108、layout56/505、paint8、freeze21、writer8；Root实际geometry/paint/transform comparer56与selftest均exit0。日志enclosure-all-*.log；build parallel4与UT literal修正后的incremental build均exit0。
-- TeX Source148 default/no-op mtime、原115逐字节不变通过；fixture SHA256 31761f077a57e92177b38c44dba0808b78e6616e99e1242f50058aafbe8de8ba。direct MathML table8仍通过，SHA256 893e46e25dc8520157bb05c2918a4ad6b82a4c3ada71e169262955d5afb48e0f。fixture须constexpr flat节点/属性；旧递归vector曾C1060，不重试。
-- 已验收table rows/cells/labels/solid/dashed/dotted/equalrows/equalcolumns及全部29 menclose notations+4边界。MathML编译器是独立锁定Source输入，不算TeX profile覆盖；mtr mathsize150%仍rscale1，mstyle content1.5。旧ignored table/enclosure候选均被canonical替代，不恢复。
-- 下一步：锁定semantics/mfenced原owner Scene emission及独立MathML验收契约后派Luna。只读核对已完成：semantics先embellished后仅child0直发射、不place；mfenced标准容器内发射既有mrow，暂改直接child.parent，用RAII恢复各自原指针（含异常）。复用现有MathML Source compiler/capture，不把新职责塞table文件。其余families、75/150 gate、class CSS、C ABI/Folia未完成。
+- 本批代码已提交：d900333d（shared test helper/table）、5ef8c8ac（shared Source runtime/table）、3bdd8a18（Source11）、3cdaa2f4（semantics/mfenced原pair）、ef9ce49c（UT/CMake）；本批代码与工具已提交。此前enclosure已6批提交至e52d30b1。无活动build/test，所有Luna freeze。
+- 最新full math semantics-fenced-full-math.log exit0：782tests/212129assert/152suites，无skip。Source semantics4/17assert、mfenced7/14（均含retirement）、empty-null semantics2tests/8、parent恢复2tests/15、原table8/184均通过。此前enclosure selected86/1107、retirement12/24、geometry56 exact也已验收。无活动build/test，owner均freeze。
+- 独立Source：TeX148 default/no-op/原115 unchanged，SHA256 31761f077a57e92177b38c44dba0808b78e6616e99e1242f50058aafbe8de8ba；table MathML8 SHA256 893e46e25dc8520157bb05c2918a4ad6b82a4c3ada71e169262955d5afb48e0f，重构后仍byte/no-op unchanged；semantics/fenced MathML11 SHA256 11d404fe4054172ee0ff87b355dee48f6e39dfe3e3a0cd9aade3959bc0e9984d，default/no-op通过。Root复核脚本在ignored build/math-port/structural-mathml-source-verify.cjs。fixtures必须constexpr flat，旧递归vector曾C1060，不重试。
+- 已验收table rows/cells/labels/solid/dashed/dotted/equalrows/equalcolumns及全部29 menclose notations+4边界、semantics/mfenced遍历。XML annotation payload仍未支持。MathML编译器是独立锁定Source输入，不算TeX profile覆盖；mtr mathsize150%仍rscale1，mstyle content1.5。旧ignored table/enclosure候选均被canonical替代，不恢复。
+- 下一步：先扩展现有Common Scene对照到canonical75的真实执行矩阵，再按实际失败锁定剩余owner任务，勿盲目重写。Root只读coverage inventory在ignored build/math-port/canonical-scene-coverage.json：当前86 selected仅含canonical75中的17条，58条尚未纳入（不等于58条不支持）；11 direct-MathML与额外focused不能替代75/150 gate。新probe须保留Source expected errors、每case真实输入flags（尤其initialAllowTexHTML既定边界），不以fixture错误改期望。之后再决定maction/mglyph/foreign与CSS/C ABI/Folia顺序。上轮test接线问题已修：glyph writer需字体catalog；root wrapper用build返回，不在nodeMap；semantics inherit按arity补空row，直接空/null分支显式wrapper输入。
 
 ## 继续有效的 Source 验收边界
 
 - 实际full38/Newcm limits witness已重建并提交ac8270e1，common-limits-source-current-root.log通过，3个concrete Source native tests17assert通过。旧手工叠mixin零offset不是验收标准，不重开该问题。
 
 owner handles（未注明活动者均freeze，只有Root派followup）：
-- `scene_values_writer`：Scene types/validation及Scene UT。
+- `scene_values_writer`：Scene types/validation及Scene UT、共享MathML test helper/table复用。
 - `common_base_emission`：SVG writer/UT与Wrapper、TextNode、TeXAtom；`common_mo_emission`：Mo。
-- `common_rows_emission`：Notation pair/UT与Mrow、Mtext、Math、Mphantom、Mtr/Mtd；`common_radicals_emission`：Mfrac、Msqrt、Mroot、Mpadded、Mtable。
-- `common_scene_entry`：OutputJax、WrapperFactory；`common_scene_source_tests`：Source tool、fixture、UT。
+- `common_rows_emission`：Notation pair/UT与Mrow、Mtext、Math、Mphantom、Mtr/Mtd、Mfenced pair/UT；`common_radicals_emission`：Mfrac、Msqrt、Mroot、Mpadded、Mtable。
+- `common_scene_entry`：OutputJax、WrapperFactory、Semantics pair/UT；`common_scene_source_tests`：Source tool、fixture、UT。
 - `common_scripts_emission`：当前统一拥有scriptbase/msubsup/munderover/mmultiscripts及menclose emitter后续；旧limits/multiscripts owner不要并行改同文件。
 - layout_fixture_cleanup拥有canonical geometry comparer/selftest；Root 拥有公共契约、CMake、build/tests、Git；不可假设上述 agent 仍在运行。
 - Unicode/Entities/mhchem 原 owner 已完成组件验收；texhtml 的既有 Source/native 证据已接受。组件验收不代表 75/150 gate 或 Folia 集成。

@@ -322,6 +322,16 @@ accepted cases. The canonical 75 layout / two-mode 150 SVG gate, remaining
 specialized families, full request ownership and Folia integration remain open.
 The current checkpoint and next action belong only in HANDOFF.md.
 
+The semantics/mfenced extension at `ef9ce49c` adds 11 independent MathML SVG
+comparisons, including serialization after document/job destruction. Direct
+emitter tests verify empty/null semantics handling and exact fenced wrapper
+parent restoration on success and exception. The shared test builder replaces
+the duplicated table tree reconstruction; the existing eight-case table fixture
+remains byte-identical. Source generation and no-op writes reproduce both
+corpora. The subsequent full math run passes 782 tests / 212129 assertions /
+152 suites without skips (`semantics-fenced-full-math.log`). This accepts the
+two traversal owners; foreign XML annotation payloads remain outside this batch.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,
