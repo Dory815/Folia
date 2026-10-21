@@ -920,6 +920,14 @@ as do independent Source oracles, locks, data and licenses. All six paths have
 zero configured membership (font-fontDataConsumers-before-removal.json).
 No active implementation or configured test changes in this consumer batch.
 
+The second batch retires the four field/raw/lifecycle/replacement C++ probes
+and their three DynamicFile native-format comparators. Their effective assertions
+are replaceable Context Map/descriptor/receiver operations and callback/promise
+lifecycle; the success probe injects synthetic PUA glyphs through a test host,
+not a real NewCM shard. Current typed glyph data and independent Source
+lifecycle/field oracles remain. The seven paths have zero target membership
+(font-fontLifecycleConsumers-before-removal.json); no production/active test edits.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
