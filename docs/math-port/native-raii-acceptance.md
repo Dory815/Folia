@@ -1049,6 +1049,28 @@ follow-up build and both changed tests pass **2 tests / 40 assertions**
 (mml-consumer-coverage-build.log / mml-consumer-coverage-focused-results.json).
 This complements the earlier gate; it is not a new full math or worker run.
 
+### MML request projection test consumer retirement (2026-10-21)
+
+The protected mml_private_renderer_allocation_domain_g227.cpp now retires as a
+separate consumer batch (5bd8b49c). Its complete Luna review separates 38 old
+capture/identity/descriptor/retirement tests from the embedded real fraction
+repair, text-copy and public Renderer/Scene assertions. Root checked those mixed
+assertions against the existing typed copy tests and the preceding strengthened
+fraction/Renderer tests. Exact working bytes and the binary diff remain in the
+original nine-file backup; mml-request-before-removal.json records the hash and
+zero membership across seventeen targets. No MML provider or algorithm retires
+in this batch.
+
+The post-removal parallel4 build exits0 (session97930,
+mml-request-retirement-build.log). Its five verified test/binary files are
+byte-equal to the two-test/40-assertion follow-up inputs; all 478 active math
+source bytes and seventeen target source lists remain unchanged. The six
+remaining protected paths match their original bytes. The refreshed canonical
+manifest at 5bd8b49c still records 648 sources / 644 code, 162 unconfigured
+cpp/ixx, 561 configured sources, 248 exact interfaces and zero unresolved active
+imports. Evidence: mml-request-retirement-check.json / mml-request-final-check.json.
+No additional runtime, full math/font, worker, Release or GUI run is claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

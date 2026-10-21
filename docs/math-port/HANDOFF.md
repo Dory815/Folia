@@ -4,10 +4,10 @@
 
 ## 当前状态与下一步
 
-- 最后运行验证的代码提交为 `186a1fd7`，清单提交为 `d1e9cbb7`；本轮清理提交 `2ea7d904`。现存 inventory 与 files 清单一致：168 个未配置 cpp/ixx、active unresolved imports 0、接口/map 248 一致。未配置不等于可删除。
-- 本轮 parallel4 build 与15个聚焦测试/1733 assertions通过（`lite-coverage-check.json`）；补齐分式子节点类型、真实XMLNode序列化、公有Renderer结果/Scene存活和恢复断言。既有Source SVG/C ABI同时通过。上轮WinUI Debug worker PASS，数学QuickJS已退出；本轮未重跑worker/full math/full字体，未验Release/GUI。
-- 9 个非媒体 dirty diff 已读；原字节/patch 保存在 `build/math-port/context-dirty-backup-20261021/`，九份原件哈希及补丁 reverse-check 通过。现已单独退役 `context_object_record_retirement.cpp` 的 15 个纯旧对象协议测试；其余保护路径不变。未删 Context/Lite/MML provider。
-- **下一步**：四个Lite工具消费者已逐项归责，真实行为已补测通过；按 `lite-probes-retirement-review.md` / `lite-renderer-consumers-review.md` 和 `lite-retirement-check.cjs` 分批退役消费者、G259，再检查Lite module/store/text helper闭包。G227报告也已读，分式/复制与Renderer缺口已解决。全部报告/候选在ignored `build/math-port/`，无live agent/build。MML两处旧 `initializeFreshProperties` 无现存定义，不恢复旧投影API；MML provider仍有旧调用链，不能直接删。
+- 当前代码/清单快照 `5bd8b49c`：648源/644代码、162未配置cpp/ixx、561配置源、接口/map248一致、active unresolved imports0。清单据最新File API；未配置不等于可删除。
+- 已提交补测 `4e6beb14`、`0b310c6d`：15测试/1733断言（含完整Source SVG/C ABI），随后更新的空分式与tooltip存活测试2/40通过。清理后parallel4构建97930 exit0；478活动源、17目标列表及验证后二进制不变，6个保护路径字节不变。证据 `build/math-port/mml-request-final-check.json`；未重跑full math/full字体/worker，未验Release/GUI。既有WinUI worker已接入原生SVG，数学QuickJS退出。
+- Lite对象门面/store/反射textContent及消费者12路径已分6批退出，G227也已单独退出；数学算法、原typed DOM、Source oracle保留。原9个dirty文件及patch在 `build/math-port/context-dirty-backup-20261021/`，已校验。候选已吸收进三个既有测试，不要用旧镜像覆盖。
+- **下一步**：核对 `tests/math/mml_context_allocator_ownership.cpp`、`mml_factory_context_fields.cpp` 的真实断言，再沿旧MML()/classBinding调用链逐批退出消费者/provider。复用 ignored `remaining-mml-owners.md`、`mml-dirty-disposition.md`，不重做广审。两处旧 `initializeFreshProperties` 无现存定义，不恢复旧投影API。当前无live agent/build。
 - 搜索被忽略的交付候选时用 `rg --no-ignore`。不要按旧 agent 的完成消息推断当前状态，也不要重做已接受的广审。保护 dirty 不是永久保留理由，但处置前必须读 diff、备份并归责。
 
 ## 固定架构与执行边界
@@ -16,17 +16,13 @@
 
 Root 独占 Git、CMake/configure、build 和 native 测试；同一时间仅一个 build，parallel 不超过 4。Windows console probe 链接 `folia_console_test_runtime`。异常进程退出后停止扩大测试，只做有界诊断。小批提交，不 reset，不覆盖无关改动；生成物和日志留在 ignored build 目录。详细架构和验收标准见上述文档。
 
-## 保护中的 10 个 dirty 路径
+## 保护中的 6 个 dirty 路径
 
 处置前必须逐 diff 阅读、备份原字节与 patch 并明确归责；不得顺手覆盖或暂存。
 
 - `src/app-winui/media/MathJaxSvgParser.cpp`
 - `src/app-winui/media/SvgNormalizer.cpp`
-- `src/math/adaptors/lite/lite_module.cpp`
-- `src/math/adaptors/lite/lite_module.ixx`
 - `src/math/core/mml_tree/mml_context_bindings.cpp`
 - `src/math/core/mml_tree/mml_context_bindings.ixx`
 - `src/math/core/mml_tree/mml_nodes/mtable_bindings.cpp`
 - `src/math/core/mml_tree/mml_nodes/semantics_bindings.cpp`
-- `tests/math/lite_array_view_request_retirement_g259.cpp`
-- `tests/math/mml_private_renderer_allocation_domain_g227.cpp`
