@@ -14,14 +14,25 @@
   Debug/Release CI `39543613360` (862 source observations).
 - Number formatting `b3adc989` passes Windows Debug/Release CI `39543875561`
   with 9,695 actual JavaScript binary64 observations. All are pushed.
-- Packet parser/layout and SVG modules are being committed in separate
-  batches. Their Node oracles pass: 254 parser/layout cases, 55 SVG cases.
-  They have not yet passed a native build. The latter is the next required check.
-- `official_parser` completed Packet oracle and is preparing shared lexer/Pie
-  parsing; `build_audit` completed native Packet tests and read-only Pie
-  measurement analysis; `renderer_audit` completed Packet SVG oracle/tests.
-- Next concrete action: push both Packet commits, inspect native Debug/Release
-  CI failures if any, then proceed with Pie grammar and source-derived layout.
+- Packet parser/layout `60691de3` and SVG `157e380b` are pushed. Their Node
+  oracles pass: 254 parser/layout cases, 55 SVG cases. Native CI run
+  `39544084249` is in progress, not yet accepted. A subsequent fixture header
+  update adds independent verification of the complete official default CSS.
+- Active agents: `official_parser` owns shared lexer/Pie parsing and Packet
+  lexer extraction; `build_audit` owns Pie oracle/tests; `renderer_audit` owns
+  source-derived D3 Pie geometry and its oracle/tests. These are next-stage
+  changes and must not be mixed into the Packet stage PR.
+- Next concrete action: finish Packet native CI and independent review, create
+  the first PR into the user's fork, merge if verified, then branch for Pie.
+
+## User's incremental persistence instruction — 2026-10-21
+
+Persist every completed small part as a commit pushed to the user's fork.
+For each completed stage, open a PR into `zhao0349/Folia` and merge when
+verification and review support it. Preserve the small commits with a merge
+commit. Only after the entire dependency replacement is complete should a PR
+be submitted to `water2004/Folia`. The user explicitly authorized this workflow
+to avoid losing work when usage quota interrupts a session.
 
 ## Acceptance and remaining scope
 

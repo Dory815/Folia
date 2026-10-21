@@ -3,7 +3,7 @@ name: Mermaid C++
 on:
   push:
     branches:
-      - codex/mermaid-cpp-official
+      - 'codex/mermaid-cpp-*'
     paths:
       - .github/workflows/mermaid-cpp.yml
       - CMakeLists.txt
