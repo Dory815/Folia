@@ -1651,6 +1651,13 @@ Evidence: verification-source-executed-proof.json and
 verification-source-promoted.json. No new native runtime gate ran; the legacy
 C++ consumer and dedicated runner await their separate removal batch.
 
+The verification consumer and dedicated runner then retire separately.
+Build6566 passes with parallel4. verification-consumer-removal-final-check.json
+preserves 478 active sources, six formerly protected paths, nine verified
+input/binary paths, thirty-one retained paths and seventeen target lists.
+Interfaces remain 248, unresolved imports zero, and class-binding cpp/ixx
+test consumers decrease 36 to 35. No new native runtime gate ran.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
