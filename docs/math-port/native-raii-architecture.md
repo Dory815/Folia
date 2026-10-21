@@ -2003,3 +2003,58 @@ request retirement, owned Image values and legacy wrapper parent/ownership, then
 default86/canonical75/full math. Unknown/error observations remain explicit;
 do not classify successful rendering of Source-produced merror as mglyph-image
 output or silently omit legacy cases.
+
+### 2026-10-21 Root lock: remaining table profile witnesses
+
+Keep the existing CommonMtable, CommonMtr/CommonMlabeledtr and CommonMtd owners,
+TableData, Common linebreaks and Common-to-Scene emission. Do not create another
+table layout, SVG table wrapper, compatibility route, or expand mtable.cpp with
+unrelated helpers. Existing direct-MathML8, SVG14 and numeric branch8 evidence
+remains unchanged. New evidence is separate from those accepted fixtures.
+
+Luna Source owner creates tools/math-port/source-table-profile.cjs and the flat
+named arrays in tests/math/fixtures/table_profile_source.hpp. Use pinned full38
+NewCM, real MathML compilation, actual MathItem.display and real none/local
+FontCache prefixes. Observe after original processMath completes: root BBox,
+every table's compiled-MML node index, BBox, rows/columns, hasLabels/isTop/pWidth,
+and TableData H/D/W/NH/ND/L. Record actual unknown-text requests/results if any.
+Keep Source errors explicit; do not alter inputs or expected SVG for C++.
+
+Matrix: left/right labels with contrasting alignment, minlabelspacing and
+data-width-includes-label; percentage child and nested table; ragged rows with
+row/cell alignment overrides; horizontal stretchy operator in a constrained
+column; text and operator column breaks using the established branch inputs.
+Witness each representative in none and local modes. No rowspan/columnspan
+implementation is added: pinned Common does not consume those attributes.
+Source compilation must be inspected before inferring any normalization.
+
+Fixture contract shared with the independent native-UT owner:
+TableProfileBBox {double w,h,d,scale,rscale,L,R}; TableProfileTable
+{size_t node_index; TableProfileBBox bbox; size_t rows,cols; bool has_labels,is_top;
+double pwidth; span<double const> H,D,W,NH,ND; double label_width;};
+TableProfileMeasurement {u16string_view text; string_view variant,font_family;
+bool italic,bold; double w,h,d;}; TableProfileSourceCase
+{string_view name,mathml; bool requested_display,display; double em,ex,width;
+string_view font_cache; TableProfileBBox root_bbox; string_view error_name,
+error_message,svg; span<string_view const> local_cache_prefixes;
+span<TableProfileTable const> tables; span<TableProfileMeasurement const>
+measurements; span<mathml_scene_test::Node const> nodes;
+span<mathml_scene_test::Attribute const> attributes;};
+constexpr sourceTableProfileCases[] stores the cases. Spans reference named
+namespace-scope arrays only; raw strings are split below compiler limits.
+
+Independent UT owner creates tests/math/native_table_profile_source.cpp, using
+support/mathml_scene.hpp and SvgWrapperFactory::defaultNodes. Capture native
+layout state after buildScene, compare every observed table and complete SVG,
+then serialize again after document/job/measurement destruction. Measurement
+must match actual Source requests, not invent per-case geometry. Numerical
+comparisons use ordinary guarded bool expressions; do not put dereferences
+behind Boost.UT overloaded logical operators. BBox is folia::math::BBox.
+
+Root owns CMake, review, builds/native execution, mismatch triage, commits and
+the checkpoint. Common table owner prepares a read-only Source responsibility
+map while witnesses are built; production edits require a concrete observed
+mismatch and stay in its responsible original method. Acceptance includes
+independent Source default/write/no-op, final native layout/SVG in both modes
+before/after request retirement, unchanged existing table regression evidence,
+default86/canonical75 and full math. All builds remain single and parallel4.
