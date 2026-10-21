@@ -204,12 +204,12 @@ struct Parser {
         for (auto scan = from; scan < limit;) {
             const auto skipped = skip_emphasis_opaque(scan);
             if (skipped != scan) {
-                if (src[scan] == U'`' || src[scan] == U'<') return true;
+                if ((src[scan] == U'\\' && scan + 1 < limit
+                        && (ascii_punct(src[scan + 1]) || is_line_ending(src[scan + 1])))
+                    || src[scan] == U'`' || src[scan] == U'<') return true;
                 scan = skipped;
                 continue;
             }
-            if (src[scan] == U'\\' && scan + 1 < limit
-                && (ascii_punct(src[scan + 1]) || is_line_ending(src[scan + 1]))) return true;
             if (src[scan] == U'&') {
                 const auto entity = entity_end(src, scan);
                 if (entity != npos && entity <= limit) return true;

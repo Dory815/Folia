@@ -138,18 +138,25 @@ inline Node placeholder(std::string tag, std::string key, std::string value) {
 inline std::string code_block_text(BlockSourceDocument const& source) {
     auto text = utf8(block_source_content(source));
     auto const& tree = source.tree();
-    // The editor deliberately stores a terminating line break separately from
-    // editable code contents. Include that existing token in the HTML-shaped
-    // test projection; its omission is not a Markdown recognition failure.
     auto const boundary = tree.content_to_source.empty() ? std::size_t{0}
         : tree.content_to_source.back();
     bool separated_ending = std::ranges::any_of(tree.tokens, [&](auto const& token) {
         return token.kind == BlockSourceTokenKind::LineBreak
             && token.source_range.start == boundary;
     });
-    if (separated_ending) text.push_back('\n');
-    // HTML code-block text terminates its final content line even at EOF.
-    else if (!text.empty() && text.back() != '\n') text.push_back('\n');
+    // Indented-code normalization trims trailing blank lines but retains their
+    // source offsets in the terminal mapping. Fenced code instead keeps the
+    // separator before its closing fence as the ending of its final content
+    // line, so that ending must remain part of the projected code text.
+    if (tree.kind == BlockSourceKind::IndentedCode) {
+        if (!text.empty() && text.back() != '\n') text.push_back('\n');
+    } else if (separated_ending) {
+        // For fenced code this token is the ending of the last content line,
+        // including an otherwise empty final code line before the closing fence.
+        text.push_back('\n');
+    } else if (!text.empty() && text.back() != '\n') {
+        text.push_back('\n');
+    }
     return text;
 }
 

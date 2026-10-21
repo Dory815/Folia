@@ -847,6 +847,104 @@ public:
     bool line_starts_interrupting_block() const {
         return peek_line_start() && line_starts_interrupting_block(pos);
     }
+
+    // Returns whether a physical line, after iteratively removing only
+    // blockquote/list/task prefixes, ends in paragraph content. This is used
+    // to carry paragraph-open state across container boundaries without
+    // rewriting the source that nested parsers receive.
+    bool line_has_leaf_paragraph_content(
+        std::size_t start,
+        std::size_t line_end,
+        bool allow_container_prefixes = true) const {
+        auto cursor = start;
+        while (cursor < line_end) {
+            const auto indentation = scan_block_indentation(cps, cursor);
+            if (indentation.columns > 3 || indentation.end >= line_end) return false;
+            cursor = indentation.end;
+
+            if (cps[cursor] == U'>') {
+                if (!allow_container_prefixes) return false;
+                ++cursor;
+                if (cursor < line_end && (cps[cursor] == U' ' || cps[cursor] == U'\t')) ++cursor;
+                continue;
+            }
+
+            // Block thematic breaks take precedence over the bullet grammar.
+            if (line_is_thematic_break(cursor)) return false;
+
+            std::size_t marker_end = cursor;
+            bool list_marker = false;
+            const auto marker = cps[cursor];
+            if (marker == U'-' || marker == U'+' || marker == U'*') {
+                marker_end = cursor + 1;
+                list_marker = marker_end == line_end
+                    || cps[marker_end] == U' '
+                    || cps[marker_end] == U'\t';
+            } else if (is_ascii_digit_(marker)) {
+                std::size_t digits = 0;
+                while (marker_end < line_end && is_ascii_digit_(cps[marker_end]) && digits < 10) {
+                    ++marker_end;
+                    ++digits;
+                }
+                list_marker = digits > 0 && digits <= 9 && marker_end < line_end
+                    && (cps[marker_end] == U'.' || cps[marker_end] == U')');
+                if (list_marker) {
+                    ++marker_end;
+                    list_marker = marker_end == line_end
+                        || cps[marker_end] == U' '
+                        || cps[marker_end] == U'\t';
+                }
+            }
+            if (!list_marker) break;
+            if (!allow_container_prefixes) return false;
+
+            auto column = indentation.columns + marker_end - cursor;
+            const auto padding_start_column = column;
+            cursor = marker_end;
+            while (cursor < line_end && (cps[cursor] == U' ' || cps[cursor] == U'\t')) {
+                column += cps[cursor] == U'\t' ? 4 - column % 4 : 1;
+                ++cursor;
+            }
+            if (column - padding_start_column > 4) return false;
+            if (cursor >= line_end) return false;
+            if (input->dialect.gfm.task_lists
+                && (marker == U'-' || marker == U'+' || marker == U'*')
+                && cursor + 2 < line_end
+                && cps[cursor] == U'['
+                && (cps[cursor + 1] == U' ' || cps[cursor + 1] == U'x' || cps[cursor + 1] == U'X')
+                && cps[cursor + 2] == U']') {
+                cursor += 3;
+                if (cursor < line_end && (cps[cursor] == U' ' || cps[cursor] == U'\t')) ++cursor;
+                if (cursor >= line_end) return false;
+            }
+        }
+
+        if (cursor >= line_end) return false;
+
+        if (input->dialect.callouts && cps[cursor] == U'['
+            && cursor + 1 < line_end && cps[cursor + 1] == U'!') {
+            auto kind_end = cursor + 2;
+            while (kind_end < line_end && cps[kind_end] != U']') ++kind_end;
+            if (kind_end < line_end
+                && normalize_callout_kind(cps_to_utf8(std::u32string_view(cps).substr(
+                    cursor + 2, kind_end - cursor - 2)))) return false;
+        }
+        if (link_definition_at(cursor)) return false;
+        if (input->dialect.footnotes && cursor + 3 < line_end
+            && cps[cursor] == U'[' && cps[cursor + 1] == U'^') {
+            auto label_end = cursor + 2;
+            while (label_end < line_end && cps[label_end] != U']') ++label_end;
+            if (label_end < line_end && label_end + 1 < line_end && cps[label_end + 1] == U':') return false;
+        }
+        if ((input->dialect.toc.bracket_toc && line_end - cursor >= 5
+                && std::u32string_view(cps).substr(cursor, 5) == U"[TOC]")
+            || (input->dialect.toc.wiki_toc && line_end - cursor >= 7
+                && std::u32string_view(cps).substr(cursor, 7) == U"[[toc]]")) return false;
+
+        return !setext_underline_at(cursor).has_value()
+            && !line_starts_interrupting_block(cursor);
+    }
+
     // Read the current physical line without its CRLF/CR/LF terminator.
     std::pair<std::u32string, std::size_t> rest_of_line() const {
         const auto end = line_content_end(pos);
@@ -2338,20 +2436,13 @@ public:
             marker.content_start = whitespace_end;
 
             if (overpadded) {
-                const auto content_column = marker.indent + marker_width + 1;
-                auto expanded_column = marker.indent + marker_width;
-                for (auto index = marker.marker_end; index < whitespace_end; ++index) {
-                    const auto next_column = cps[index] == U'\t'
-                        ? expanded_column + (4 - expanded_column % 4)
-                        : expanded_column + 1;
-                    for (auto virtual_column = expanded_column + 1;
-                        virtual_column <= next_column; ++virtual_column) {
-                        if (virtual_column > content_column) {
-                            marker.initial_prefix.push_back(U' ');
-                            marker.initial_prefix_map.push_back(index);
-                        }
-                    }
-                    expanded_column = next_column;
+                // Keep actual whitespace in the child source. A tab spanning
+                // the list-prefix boundary must not become invented spaces
+                // in its lossless source; its remaining visual columns belong
+                // in the code indentation projection.
+                for (auto index = marker.marker_end + 1; index < whitespace_end; ++index) {
+                    marker.initial_prefix.push_back(cps[index]);
+                    marker.initial_prefix_map.push_back(index);
                 }
             }
 
@@ -2425,7 +2516,8 @@ public:
                 || marker->content_start < marker->content_end;
             bool lazy_paragraph_open = marker->initial_prefix.empty()
                 && first_line_has_content
-                && !line_starts_interrupting_block(marker->content_start);
+                && line_has_leaf_paragraph_content(
+                    marker->content_start, marker->content_end);
             auto item_end = marker->source_end;
             bool previous_blank = false;
             std::optional<std::size_t> trailing_blank_start;
@@ -2490,8 +2582,7 @@ public:
                     lazy_paragraph_open = false;
                 } else {
                     trailing_blank_start.reset();
-                    lazy_paragraph_open = !next_marker
-                        && !line_starts_interrupting_block(indent.end);
+                    lazy_paragraph_open = line_has_leaf_paragraph_content(indent.end, line_end);
                 }
                 item_end = next_line_start(line_end);
             }
@@ -2525,12 +2616,9 @@ public:
                     inner.push_back(U'\n');
                     inner_end_source = line_start;
                 }
-                // A tab can straddle the item's content column. Its remaining
-                // columns belong to the nested block, not to the list prefix.
-                for (auto column = content_indent; column < indent.columns; ++column) {
-                    offset_map.push_back(content - 1);
-                    inner.push_back(U' ');
-                }
+                // Retain source characters after the container prefix. Any
+                // partial tab columns require a semantic indentation mapping,
+                // not synthetic characters in this block-local source.
                 append_range(content, line_end);
                 line_start = line_end < item_end ? next_line_start(line_end) : line_end;
             }
@@ -2591,47 +2679,12 @@ public:
         std::size_t content_end = start;
         bool first = true;
         bool last_line_empty = false;
-        auto paragraph_content_line = [&](std::size_t line_start, std::size_t line_end, bool allow_list_line) {
+        auto paragraph_content_line = [&](std::size_t line_start, std::size_t line_end, bool allow_container_line) {
             if (line_start >= line_end) return false;
             const auto indentation = scan_block_indentation(cps, line_start);
             if (indentation.columns >= 4 || indentation.end >= line_end) return false;
-            auto cursor = indentation.end;
-            while (cursor < line_end && cps[cursor] == U'>') {
-                ++cursor;
-                if (cursor < line_end && (cps[cursor] == U' ' || cps[cursor] == U'\t')) ++cursor;
-            }
-            if (cursor >= line_end) return false;
-            const auto starts_list = [&](std::size_t at, std::size_t& after_marker) {
-                if (at >= line_end) return false;
-                if (cps[at] == U'-' || cps[at] == U'+' || cps[at] == U'*') {
-                    after_marker = at + 1;
-                    return after_marker == line_end || cps[after_marker] == U' ' || cps[after_marker] == U'\t';
-                }
-                if (!is_ascii_digit_(cps[at])) return false;
-                auto digit_end = at;
-                while (digit_end < line_end && is_ascii_digit_(cps[digit_end])) ++digit_end;
-                if (digit_end - at > 9 || digit_end >= line_end
-                    || (cps[digit_end] != U'.' && cps[digit_end] != U')')) return false;
-                after_marker = digit_end + 1;
-                return after_marker == line_end || cps[after_marker] == U' ' || cps[after_marker] == U'\t';
-            };
-            const auto is_interrupting = [&](std::size_t at) {
-                if (at >= line_end) return true;
-                return cps[at] == U'>'
-                    || line_starts_fenced_code(at)
-                    || line_is_thematic_break(at)
-                    || setext_underline_at(at).has_value()
-                    || line_starts_block_html(at)
-                    || line_starts_interrupting_block(at);
-            };
-            std::size_t after_marker = 0;
-            if (starts_list(cursor, after_marker)) {
-                if (!allow_list_line) return false;
-                cursor = after_marker;
-                while (cursor < line_end && (cps[cursor] == U' ' || cps[cursor] == U'\t')) ++cursor;
-                return cursor < line_end && !is_interrupting(cursor);
-            }
-            return !is_interrupting(cursor);
+            return line_has_leaf_paragraph_content(
+                line_start, line_end, allow_container_line);
         };
         bool lazy_paragraph_open = false;
         while (pos < cps.size() && peek_line_start()) {
