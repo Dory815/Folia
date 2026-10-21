@@ -1107,6 +1107,27 @@ treated as proof of childPosition. The follow-up parallel4 build exits0
 passes **1 test / 12 assertions** (mml-position-consumer-focused-results.json).
 No production algorithm changed.
 
+### MML Context consumer cleanup verification (2026-10-21)
+
+Six reviewed consumers retire in five small batches through c5b4853e: allocator
+ownership, node fields, the methods draft, factory fields, shared Context module
+and projected token walk. The two real behavior gaps above remain in their
+existing typed test owners. No production implementation retires in this batch.
+
+The final parallel4 build exits0 (session60121,
+mml-consumer-retirement-build.log). All 478 active source bytes, six protected
+paths, seventeen target source lists and 248-interface module map are unchanged.
+The two modified test files and both binaries match the successful position
+gate; the earlier eleven-test gate and subsequent position test remain the
+runtime evidence, without an unnecessary duplicate run. Refreshed inventory
+still records 648 sources / 644 code, 162 unconfigured cpp/ixx, 561 configured
+sources and zero unresolved active imports. Evidence:
+mml-consumer-retirement-input-check.json / mml-consumer-retirement-final-check.json.
+The refreshed narrow graph retains the remaining fields/values/methods owner
+edges and 61 class_binding test consumers; inactive membership alone does not
+authorize provider removal. No new full math/font, worker, Release or GUI gate
+is claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
