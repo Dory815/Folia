@@ -249,4 +249,27 @@ suite typed_mml_table = [] {
         expect(firstToken.childPosition() == std::optional<std::size_t>(0));
         expect(secondToken.childPosition() == std::optional<std::size_t>(0));
     };
+    "logical positions cover detached nodes and nested inferred rows"_test = [] {
+        MmlDocument document;
+        auto &node = document.factory().make(NodeKind::mi);
+        expect(node.Parent() == nullptr);
+        expect(!node.childPosition().has_value());
+
+        auto &root = document.factory().make(NodeKind::mrow);
+        auto &first = document.factory().make(NodeKind::mi);
+        auto &outer = document.factory().make(NodeKind::inferred_mrow);
+        auto &inner = document.factory().make(NodeKind::inferred_mrow);
+        document.append(root, first);
+        document.append(root, outer);
+        document.append(outer, inner);
+        document.append(inner, node);
+
+        expect(node.parent() == &inner);
+        expect(inner.parent() == &outer);
+        expect(node.Parent() == &root);
+        expect(inner.Parent() == &root);
+        expect(node.childPosition() == std::optional<std::size_t>(1));
+        expect(inner.childPosition() == std::optional<std::size_t>(1));
+    };
+
 };
