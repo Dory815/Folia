@@ -1,6 +1,30 @@
 # Mermaid C++ continuity
 
-## Current checkpoint - 2026-10-21, stage 4b verification
+## Current checkpoint - 2026-10-21, stage 4b merged
+
+- Stage 4b is merged: https://github.com/zhao0349/Folia/pull/5, merge commit
+  357d5bb1b2e616238b7eec931751fa05ef1be8d1 on fork master. Eight commits
+  preserved on the feature branch codex/mermaid-cpp-frontmatter.
+- Native YAML configuration trees and frontmatter extraction:
+  `parse_config_yaml` exposes owned null/bool/binary64/UTF-16/list/map values
+  matching js-yaml 4.3.0 JSON_SCHEMA. `extract_front_matter` dedents captured
+  fence indent and returns remaining diagram text with structured metadata.
+- Pinned yaml-cpp 0.9.0 grammar backend at 56e3bb550c91fd7005566f19c079cb7a503223cf
+  with checked-in patch for UTF-8 N/NBSP escapes, rejecting escaped apostrophes,
+  handling empty sequence/map nodes, and rejecting empty explicit tags in flow
+  collections.
+- Verification: 421 total oracle observations pass in native C++ tests. 12 cases
+  document explicit native safety rejection of surrogate and out-of-range Unicode
+  escapes. Windows Debug and Release CI (runs 39561034820 and 39561028639) pass
+  native suites, platform measurement, SVG oracles, and DOM comparisons.
+- No live agent/local build handles. Ignored reference is .reference/yaml-cpp.
+  No application switch or upstream PR.
+- Next concrete action: directive argument interpretation (`%%{init: ...}%%`),
+  config precedence (diagram-scoped overrides within layers), and default/dark
+  theme resolution with official runtime oracles before common frontend wiring
+  to Packet/Pie.
+
+## Stage 4b checkpoint (historical; superseded above) — 2026-10-21
 
 - Branch codex/mermaid-cpp-frontmatter, fork PR https://github.com/zhao0349/Folia/pull/5.
   User explicitly reconfirmed this public fork as the push/PR/merge destination.
@@ -18,9 +42,7 @@
 - YAML grammar: pinned yaml-cpp 0.9.0, 56e3bb550c91fd7005566f19c079cb7a503223cf.
   Separate resolver follows js-yaml 4.3.0 JSON_SCHEMA; config trees own their data.
   No silent config dropping, renderer wiring, editor changes or app switch.
-- Stage 4b is ready to merge into fork master with preserved commits.
-  Directive args, config precedence and themes remain next stages before common
-  frontend wiring to Packet/Pie.
+- PR #5 was merged into master at 357d5bb1 with eight commits preserved.
 - No live agent/local build handles. Ignored reference is .reference/yaml-cpp;
   stage-4b verification lives in Actions. No upstream PR.
 
