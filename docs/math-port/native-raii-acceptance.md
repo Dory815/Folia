@@ -1368,10 +1368,9 @@ The four fixture-only tools retire in 39ab4396; the shared inheritance runner
 drops only the constructor's 91 assertions/two tests (remaining 1,449/13),
 and was not run. The two unconfigured C++ consumers retire separately.
 Removal build57997 passes with parallel4. All 478 active sources, six protected
-paths, ten verified input/binary entries, six retained files and seventeen
-target source lists remain byte-equal. The list of ten includes the script
-test twice and represents nine distinct paths; no extra runtime gate is
-implied. Class-binding cpp/ixx test consumers decrease from 50 to 48.
+paths, nine distinct verified input/binary paths, six retained files and
+seventeen target source lists remain byte-equal. Class-binding cpp/ixx test
+consumers decrease from 50 to 48.
 Evidence: constructor-container-before.json,
 constructor-container-tools-promoted.json and constructor-container-final-check.json.
 No math provider/algorithm or Source profile is removed; no broad runtime
