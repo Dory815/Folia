@@ -604,6 +604,19 @@ a runner bookkeeping issue; the underlying worker probe also printed PASS.
 - Restore with `setup.ps1`, build the supported WinUI configuration, and run
   relevant deterministic platform tests. Keep Mermaid's dependencies separate.
 
+### Retired object-protocol tests (2026-10-21)
+
+The inactive `context_string_trim.cpp`, `context_string_match.cpp` and
+`context_string_split.cpp` tests are removed after individual review. Their
+24 cases exercise Context String/RegExp receiver coercion, live properties,
+Symbol dispatch, species construction and JS result-array descriptors. None
+imports a mathematical owner or tests TeX/MML/Common/Scene results or typed
+request lifetime. They were absent from the explicit FoliaMathTests source
+list; no current generator or fixture consumes them. Historical ignored draft
+patches are records, not build inputs. This removes no active test coverage and
+does not establish retirement of other mixed mathematical/object-protocol tests.
+The protected dirty files remain untouched.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
