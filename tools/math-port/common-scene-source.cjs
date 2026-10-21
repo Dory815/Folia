@@ -6,6 +6,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const assert = require('node:assert/strict');
 const {createReference} = require('./reference-profile.cjs');
+const {canonicalSceneCases} = require('./common-scene-cases.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const out = path.join(root, 'tests/math/fixtures/common_scene.inc');
@@ -22,23 +23,7 @@ const packageRoot = path.join(root, 'tools/mathjax-bundle/node_modules/@mathjax'
 for (const dependency of sourceLock.dependencies)
   assert.equal(digest(fs.readFileSync(path.join(packageRoot, dependency.file))), dependency.sha256,
     `pinned profile/font dependency changed: ${dependency.file}`);
-const cases = [
-  ['plain', 'x+y', false, 1280], ['mathbb', '\\mathbb{R}^n', false, 1280],
-  ['fraction-inline', '\\frac{a+b}{c}', false, 1280], ['fraction-display', '\\frac{a+b}{c}', true, 1280],
-  ['atop', '{a+b\\atop c}', true, 1280], ['root', '\\sqrt{x^2+1}', true, 1280],
-  ['indexed-root', '\\sqrt[3]{x}', false, 1280], ['scripts', 'x_i^{j^2}', false, 1280],
-  ['sum-limits', '\\sum_{i=1}^{n} i', true, 1280],
-  ['stretch-fences', '\\left(\\frac{1}{x}\\right)', true, 1280],
-  ['accent', '\\widehat{abc}+\\overline{x}', false, 1280],
-  ['matrix', '\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}', true, 1280],
-  ['arrow', '\\xrightarrow[a]{b}', true, 1280], ['text', '\\text{hello }x', false, 1280],
-  ['color', '\\color{red}{x+1}', false, 1280],
-  ['bbox', '\\bbox[2px,border:1px solid blue]{x}', false, 1280],
-  ['phantom', 'a\\phantom{x}+b', false, 1280],
-  ['linebreak', 'a+b+c+d+e+f+g+h+i+j', true, 100]
-].map(([name, tex, display, width]) => ({name, tex, display, width, features: ['base']}));
-for (const item of profileCases.cases) cases.push({name: item.name, tex: item.tex,
-  display: item.display ?? false, width: item.width ?? 1280, features: item.features});
+const cases = canonicalSceneCases(profileCases);
 for (const [name, tex, display, width] of [
   ['scene-identifiers-numbers', 'abc+123.45+\\mathbb{R}', false, 1280],
   ['scene-text-composition', '\\text{漢字😀 é}+x', false, 1280],
