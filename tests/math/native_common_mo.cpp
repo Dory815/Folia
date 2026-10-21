@@ -9,6 +9,7 @@ namespace {
 using namespace boost::ut;
 namespace mml = folia::math::mml;
 namespace common = folia::math::output::common;
+namespace scene = folia::math::output::scene;
 
 struct RejectUnexpectedMeasurement final : common::MeasurementTarget {
     common::ExtendedMetrics measureMetrics(common::MetricRequest const &) override {
@@ -72,6 +73,19 @@ auto makeRepository() {
     common::FontVariant normal;
     normal.name = "normal";
     normal.cache_id = "test-cache";
+    const std::array<std::pair<std::uint32_t, double>, 3> sceneGlyphs{
+        {{0x3E, .778}, {0x3C, .778}, {0x62, .6}}};
+    for (const auto &[codepoint, width] : sceneGlyphs) {
+        scene::PathGeometry outline;
+        outline.segments = {scene::MoveTo{{0, 0}}, scene::LineTo{{.5, .5}}, scene::LineTo{{0, .5}},
+                            scene::ClosePath{}};
+        common::FontGlyph glyph;
+        glyph.metrics = {.7, .2, width};
+        glyph.path_defined = true;
+        glyph.resource =
+            scene::GlyphResource::make("test-face", scene::GlyphOutline{std::move(outline)});
+        normal.glyphs.emplace(codepoint, std::move(glyph));
+    }
     face.variants.emplace("normal", std::move(normal));
     face.operatorRemap.emplace(0x2B, u"⊕");
     face.accentRemap.emplace(0x5E, u"ˆ");
@@ -100,6 +114,20 @@ mml::MmlMo &makeMo(mml::MmlDocument &document, std::u16string text) {
     token.setText(std::move(text));
     mo.appendChild(token);
     return mo;
+}
+
+void collectScene(scene::Group const &group, std::vector<scene::Group const *> &groups,
+                  std::vector<std::uint32_t> &codepoints) {
+    groups.push_back(&group);
+    for (auto const &entry : group.entries) {
+        if (auto const *primitive = std::get_if<scene::Primitive>(&entry)) {
+            if (auto const *run = std::get_if<scene::GlyphRun>(primitive))
+                for (auto const &glyph : run->glyphs)
+                    codepoints.push_back(glyph.key.codepoint);
+        } else if (auto const *child = std::get_if<std::shared_ptr<scene::Group const>>(&entry)) {
+            collectScene(**child, groups, codepoints);
+        }
+    }
 }
 } // namespace
 
@@ -269,5 +297,78 @@ suite common_mo_native_impl = [] {
         expect(mo->remapChars(plus) == std::vector<std::uint32_t>{0x2295});
         source.properties().tex.primes = u"′′";
         expect(mo->remapChars(plus) == std::vector<std::uint32_t>{0x2032, 0x2032});
+    };
+
+    "CommonMo emits and places every distinct text child"_test = [] {
+        auto fonts = makeRepository();
+        RejectUnexpectedMeasurement measurement;
+        mml::MmlDocument document;
+        auto &source = makeMo(document, u">");
+        source.attributes().set(u"mathvariant", u"normal");
+        auto &secondText =
+            dynamic_cast<mml::TextNode &>(document.factory().make(mml::NodeKind::text));
+        secondText.setText(u"<");
+        source.appendChild(secondText);
+
+        auto &following = document.factory().make(mml::NodeKind::mi);
+        following.attributes().set(u"mathvariant", u"normal");
+        auto &followingText =
+            dynamic_cast<mml::TextNode &>(document.factory().make(mml::NodeKind::text));
+        followingText.setText(u"b");
+        following.appendChild(followingText);
+
+        auto &row = document.factory().make(mml::NodeKind::mrow);
+        row.appendChild(source);
+        row.appendChild(following);
+        document.setRoot(row);
+        row.setInheritedAttributes();
+
+        common::CommonOptions options;
+        common::ExtendedMetrics metrics;
+        common::CommonOutputJax jax(document, {metrics, options, fonts, "test-face"}, measurement,
+                                    common::CommonWrapperFactory::standardNodes(), &makeLinebreaks);
+        auto &root = jax.factory().wrap(row);
+        auto *moWrapper = jax.wrapperFor(source);
+        expect(moWrapper != nullptr);
+        if (!moWrapper)
+            return;
+
+        scene::Builder builder;
+        const std::array<scene::NodeId, 1> parents{0};
+        (void)root.emitScene(builder, parents);
+        auto completed = std::move(builder).freeze();
+        std::vector<scene::Group const *> groups;
+        std::vector<std::uint32_t> codepoints;
+        collectScene(completed.root(), groups, codepoints);
+
+        std::vector<scene::Group const *> textGroups;
+        scene::Group const *followingGroup = nullptr;
+        for (auto const *group : groups) {
+            if (group->metadata.source_tag == "text")
+                textGroups.push_back(group);
+            if (group->metadata.source_tag == "mi")
+                followingGroup = group;
+        }
+        expect(textGroups.size() == 2_u) << "both mo text wrappers are emitted";
+        expect(codepoints == std::vector<std::uint32_t>{0x3E, 0x3C, 'b'})
+            << "glyphs preserve the MML child order";
+        if (textGroups.size() >= 2) {
+            expect(textGroups[0]->entries.size() == 1_u);
+            expect(textGroups[1]->entries.size() == 1_u);
+            expect(std::abs(textGroups[0]->transform.matrix().e) < 1e-12);
+            const auto firstTextBox = moWrapper->childNodes.front()->getOuterBBox();
+            const double secondTextX =
+                (firstTextBox.L + firstTextBox.w + firstTextBox.R) * firstTextBox.rscale;
+            expect(std::abs(secondTextX - .778) < 1e-12);
+            expect(std::abs(textGroups[1]->transform.matrix().e - secondTextX) < 1e-12)
+                << "second text child is placed after the first child's measured advance";
+        }
+        expect(followingGroup != nullptr) << "following sibling has a scene group";
+        if (followingGroup) {
+            const auto line = moWrapper->getLineBBox(0);
+            const double expectedX = (line->L + line->w + line->R) * line->rscale;
+            expect(std::abs(followingGroup->transform.matrix().e - expectedX) < 1e-12)
+                << "following sibling starts after the full mo bbox";
+        }
     };
 };

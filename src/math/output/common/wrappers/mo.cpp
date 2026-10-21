@@ -347,10 +347,10 @@ SceneNodes CommonMo::emitScene(scene::Builder &builder, std::span<scene::NodeId 
             builder.set_transform(*nodes[i], scene::Transform{std::move(operations)});
         }
         auto &owner = i == 1 && multChar ? *multChar : *this;
-        if (owner.childNodes.empty() || !owner.childNodes.front())
+        if (owner.childNodes.empty())
             throw std::logic_error("CommonMo scene emission requires its text child wrapper");
         const std::array<scene::NodeId, 1> target{content.at(i)};
-        (void)owner.childNodes.front()->emitScene(builder, target);
+        owner.addSceneChildren(builder, target);
     }
     return std::move(nodes);
 }
