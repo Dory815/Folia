@@ -14,6 +14,7 @@ struct Group {
     ElementRole role{ElementRole::math_wrapper};
     Paint paint{};
     std::optional<Viewport> viewport;
+    std::optional<ForeignContent> foreign_content;
 };
 
 // A Scene is a completed immutable value. All content is owned by value;

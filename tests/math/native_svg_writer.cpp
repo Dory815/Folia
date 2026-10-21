@@ -1,5 +1,6 @@
 #include "support/folia_test.hpp"
 import folia.math.output.scene.builder;
+import folia.math.output.svg.serializer;
 import folia.math.output.svg.writer;
 
 namespace {
@@ -293,6 +294,21 @@ suite native_svg_writer = [] {
         expect(output.starts_with(
             "<mjx-container class=\"MathJax\" jax=\"SVG\" overflow=\"linebreak\" display=\"true\" "
             "width=\"full\" justify=\"right\"><svg"));
+    };
+
+    "scaled display container merges generated font size and minimum width"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        builder.set_display_layout({true, "right", 0, 1.25, true, 2});
+        auto output =
+            svg::write(std::move(builder).freeze(),
+                       {.font_cache = svg::FontCacheMode::none,
+                        .container_attributes = {{"class", "MathJax"},
+                                                 {"style", "color: red; font-size: 150%;"}}});
+        expect(output.starts_with(
+            "<mjx-container class=\"MathJax\" style=\"color: red; font-size: 200%; min-width: "
+            "2.5ex;\" display=\"true\" width=\"full\" justify=\"right\"><svg"));
     };
 
     "fraction and radical rule rectangles retain Source width height x y order"_test = [] {
@@ -756,19 +772,73 @@ suite native_svg_writer = [] {
         expect(absent_path_failed);
     };
 
-    "unsupported foreign markup fails explicitly instead of returning fake SVG"_test = [] {
+    "owned HTML materialization follows Lite XML serialization rules"_test = [] {
+        scene::HtmlNodePrimitive root;
+        root.kind = u"div";
+        root.namespaceHint = u"http://www.w3.org/1999/xhtml";
+        root.attributes.push_back({u"title", u"a\"<&"});
+        root.children.push_back({u"#text", {}, {}, u"before < &", {}});
+        root.children.push_back({u"#comment", {}, {}, u"<!--kept-->", {}});
+        root.children.push_back({u"br", u"http://www.w3.org/1999/xhtml", {}, {}, {}});
+        root.children.push_back({u"span", {}, {}, {}, {}});
+        root.children.push_back({u"script", {}, {}, {}, {{u"#text", {}, {}, u"x < y && z", {}}}});
+        root.children.push_back({u"svg:svg",
+                                 u"http://www.w3.org/2000/svg",
+                                 {{u"xmlns:svg", u"http://www.w3.org/2000/svg"}},
+                                 {},
+                                 {{u"svg:rect",
+                                   u"http://www.w3.org/2000/svg",
+                                   {{u"xmlns:svg", u"http://www.w3.org/2000/svg"}},
+                                   {},
+                                   {}}}});
+
+        auto serialized = svg::serializeHtml(root);
+        expect(serialized ==
+               "<div title=\"a&quot;&lt;&amp;\">before &lt; &amp;<!--kept--><br/><span/>"
+               "<script>x < y && z</script><svg:svg xmlns:svg=\"http://www.w3.org/2000/svg\">"
+               "<svg:rect xmlns:svg=\"http://www.w3.org/2000/svg\"/></svg:svg></div>");
+    };
+
+    "foreignObject uses CSS pixel projection and ordered owned HTML"_test = [] {
         scene::Builder builder;
         builder.set_metrics({2, 0.8, 0.2});
         builder.set_font_metrics({1, 0.5, 0.5, 0.7});
-        builder.add_primitive(
-            0, scene::ForeignContent{"<b>foreign</b>", {0.25, 0.5}, {}, {0.75, 0.4, 0.1}, {}});
-        bool rejected = false;
-        try {
-            (void)svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
-        } catch (svg::UnsupportedError const &) {
-            rejected = true;
-        }
-        expect(rejected);
+        scene::HtmlNodePrimitive content{u"div",
+                                         u"http://www.w3.org/1999/xhtml",
+                                         {},
+                                         {},
+                                         {{u"#text", {}, {}, u"foreign<&>", {}}}};
+        scene::ForeignContent foreign{
+            std::move(content), {8.1234, 4.5678, 24.9876, 12.3456, 0.062345}, {}};
+        auto const group =
+            builder.add_group(0,
+                              scene::Transform{std::vector<scene::TransformOperation>{
+                                  scene::Translation{0.25, -0.5}}},
+                              {}, {}, {}, {}, scene::ElementRole::foreign_content_viewport, {}, {},
+                              std::move(foreign));
+        (void)group;
+        auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        expect(output.find("<foreignObject data-mjx-xml=\"true\" x=\"8.123px\" y=\"4.568px\" "
+                           "width=\"24.988px\" height=\"12.346px\" transform=\"translate(250 -500) "
+                           "scale(62.345) matrix(1 0 0 -1 0 0)\"><div>foreign&lt;&amp;&gt;</div>"
+                           "</foreignObject>") != output.npos);
+
+        scene::Builder boundary_builder;
+        boundary_builder.set_metrics({1, 0.5, 0.1});
+        boundary_builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::HtmlNodePrimitive empty{u"div", u"http://www.w3.org/1999/xhtml", {}, {}, {}};
+        scene::ForeignContent boundary{
+            std::move(empty), {-0.00055, 0.00055, 0.00055, 0.00155, 0.00000055}, {}};
+        (void)boundary_builder.add_group(0, {}, {}, {}, {}, {},
+                                         scene::ElementRole::foreign_content_viewport, {}, {},
+                                         std::move(boundary));
+        auto boundary_output = svg::write(std::move(boundary_builder).freeze(),
+                                          {.font_cache = svg::FontCacheMode::none});
+        expect(boundary_output.find("<foreignObject data-mjx-xml=\"true\" x=\"0px\" y=\"0px\" "
+                                    "width=\"0px\" height=\"0.002px\" transform=\"scale(0) "
+                                    "matrix(1 0 0 -1 0 0)\"><div/></foreignObject>") !=
+               boundary_output.npos);
     };
 
     "paint preserves inherited none currentColor and explicit color"_test = [] {

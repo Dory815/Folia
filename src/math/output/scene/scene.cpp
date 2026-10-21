@@ -73,6 +73,14 @@ void validate(SemanticMetadata const &metadata) {
         if (attribute.name.empty())
             throw std::invalid_argument("Scene metadata attribute name cannot be empty");
 }
+void validate(ForeignContent const &foreign) {
+    auto const &geometry = foreign.geometry;
+    if (!(finite(geometry.x) && finite(geometry.y) && finite(geometry.width) &&
+          finite(geometry.height) && finite(geometry.em_per_pixel)) ||
+        geometry.width < 0 || geometry.height < 0 || geometry.em_per_pixel <= 0)
+        throw std::invalid_argument("Scene foreignObject geometry is invalid");
+    validate(foreign.metadata);
+}
 FrameLayout validate_frames(Group const &root, FrameLayout frames) {
     if (!finite(frames.minimum_extent) || frames.minimum_extent <= 0)
         throw std::invalid_argument("Scene frame minimum extent must be finite and positive");
@@ -251,13 +259,6 @@ Primitive clone_primitive(Primitive const &source) {
                     throw std::invalid_argument("Scene text font size must be finite and positive");
                 validate(value.metadata);
                 copy.measured_glyphs = validate_and_clone(value.measured_glyphs);
-            } else if constexpr (std::same_as<T, ForeignContent>) {
-                copy.metrics = validate_metrics(value.metrics);
-                validate(value.origin);
-                validate(value.metadata);
-                for (std::size_t i = 0; i < copy.measured_runs.size(); ++i)
-                    copy.measured_runs[i].run =
-                        std::get<TextRun>(clone_primitive(Primitive{value.measured_runs[i].run}));
             }
             return copy;
         },
@@ -274,6 +275,13 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
         validate(*source.clip);
     if (source.viewport)
         validate(*source.viewport);
+    if (source.foreign_content) {
+        validate(*source.foreign_content);
+        if (!source.entries.empty() || source.viewport || source.clip || source.tooltip ||
+            source.link)
+            throw std::invalid_argument(
+                "Scene foreignObject group cannot have entries, viewport, clip, tooltip or link");
+    }
     Group copy;
     copy.id = source.id;
     copy.transform = source.transform;
@@ -284,6 +292,7 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
     copy.role = source.role;
     copy.paint = source.paint;
     copy.viewport = source.viewport;
+    copy.foreign_content = source.foreign_content;
     copy.entries.reserve(source.entries.size());
     for (auto const &entry : source.entries) {
         if (auto const *primitive = std::get_if<Primitive>(&entry))
@@ -314,8 +323,11 @@ Scene::Scene(Group root, Metrics metrics, FontMetrics font_metrics, DisplayLayou
       font_metrics_(validate(font_metrics)), display_layout_(std::move(display_layout)),
       frame_layout_(validate_frames(root_, std::move(frame_layout))) {
     if (!finite(display_layout_.shift) || !finite(display_layout_.minimum_width) ||
-        display_layout_.minimum_width < 0)
-        throw std::invalid_argument("Scene display layout values are invalid");
+        display_layout_.minimum_width < 0 || !finite(display_layout_.font_scale) ||
+        display_layout_.font_scale < 0)
+        throw std::invalid_argument(std::format(
+            "Scene display layout values are invalid (shift={}, minimum_width={}, font_scale={})",
+            display_layout_.shift, display_layout_.minimum_width, display_layout_.font_scale));
     if (display_layout_.alignment != "left" && display_layout_.alignment != "center" &&
         display_layout_.alignment != "right")
         throw std::invalid_argument("Scene display alignment is invalid");

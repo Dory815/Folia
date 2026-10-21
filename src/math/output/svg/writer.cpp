@@ -2,8 +2,11 @@
 // ts/output/svg.ts, ts/output/svg/Wrapper.ts, and ts/output/svg/FontCache.ts.
 // Copyright (c) 2018-2026 The MathJax Consortium; Apache-2.0. See README.md.
 module folia.math.output.svg.writer;
+import folia.math.output.svg.serializer;
 import std;
 import folia.math.util.lengths;
+import folia.math.util.styles;
+import folia.math.util.utf16;
 
 namespace folia::math::output::svg {
 namespace scene = folia::math::output::scene;
@@ -28,6 +31,12 @@ std::string number(double value, int precision = 1) {
     if (result == "-0")
         result = "0";
     return result;
+}
+
+std::string foreign_fixed(double value) {
+    if (std::abs(value) < 0.0006)
+        return "0";
+    return number(value, 3);
 }
 
 std::string ex_value(double em, double x_height) {
@@ -265,14 +274,19 @@ std::string transform_operation(scene::TransformOperation const &operation,
         operation);
 }
 
-void append_transform(std::string &out, scene::Transform const &transform,
-                      scene::ElementRole role) {
+std::string transform_value(scene::Transform const &transform, scene::ElementRole role) {
     std::string serialized;
     for (auto const &operation : transform.operations()) {
         if (!serialized.empty())
             serialized.push_back(' ');
         serialized += transform_operation(operation, role);
     }
+    return serialized;
+}
+
+void append_transform(std::string &out, scene::Transform const &transform,
+                      scene::ElementRole role) {
+    auto serialized = transform_value(transform, role);
     if (!serialized.empty())
         detail::append_attribute(out, "transform", serialized);
 }
@@ -329,10 +343,6 @@ void collect_cache(scene::Group const &group, SvgWriteOptions const &options, Ca
                     if (auto run = std::get_if<scene::GlyphRun>(&value))
                         for (auto const &glyph : run->glyphs)
                             add_glyph_cache(glyph, options, cache);
-                    else if (auto foreign = std::get_if<scene::ForeignContent>(&value))
-                        for (auto const &run : foreign->measured_runs)
-                            for (auto const &glyph : run.run.measured_glyphs.glyphs)
-                                add_glyph_cache(glyph, options, cache);
                 }
             },
             entry);
@@ -353,16 +363,6 @@ void validate_scene(scene::Group const &group) {
                 if constexpr (std::is_same_v<T, std::shared_ptr<scene::Group const>>) {
                     if (value)
                         validate_scene(*value);
-                } else {
-                    std::visit(
-                        [&](auto const &primitive) {
-                            using P = std::decay_t<decltype(primitive)>;
-                            if constexpr (std::is_same_v<P, scene::ForeignContent>) {
-                                throw UnsupportedError("foreign HTML markup requires a structured "
-                                                       "SVG/XHTML serializer");
-                            }
-                        },
-                        value);
                 }
             },
             entry);
@@ -816,9 +816,7 @@ void append_primitive(std::string &out, scene::Primitive const &primitive,
                     out += "<title/>";
                 else
                     out += "<title>" + value.text + "</title>";
-            } else
-                throw UnsupportedError(
-                    "foreign HTML markup requires a structured SVG/XHTML serializer");
+            }
         },
         primitive);
 }
@@ -838,6 +836,30 @@ void append_group_entries(std::string &out, scene::Group const &group,
 }
 
 void open_group(std::string &out, scene::Group const &group, SvgWriteOptions const &options) {
+    if (group.foreign_content) {
+        auto const &foreign = *group.foreign_content;
+        auto const &geometry = foreign.geometry;
+        out += "<foreignObject";
+        detail::append_attribute(out, "data-mjx-xml", "true");
+        if (geometry.x != 0)
+            detail::append_attribute(out, "x", foreign_fixed(geometry.x) + "px");
+        detail::append_attribute(out, "y", foreign_fixed(geometry.y) + "px");
+        detail::append_attribute(out, "width", foreign_fixed(geometry.width) + "px");
+        detail::append_attribute(out, "height", foreign_fixed(geometry.height) + "px");
+        static constexpr std::array<std::string_view, 6> reserved{
+            "data-mjx-xml", "x", "y", "width", "height", "transform"};
+        detail::append_metadata(out, foreign.metadata, reserved);
+        std::string transform = transform_value(group.transform, group.role);
+        if (!transform.empty())
+            transform.push_back(' ');
+        transform +=
+            "scale(" + foreign_fixed(1000 * geometry.em_per_pixel) + ") matrix(1 0 0 -1 0 0)";
+        detail::append_attribute(out, "transform", transform);
+        out += '>';
+        out += serializeHtml(foreign.content);
+        out += "</foreignObject>";
+        return;
+    }
     auto const inherited_paint = [](scene::Paint const &paint) {
         return std::holds_alternative<scene::InheritedPaint>(paint.fill) &&
                std::holds_alternative<scene::InheritedPaint>(paint.stroke) &&
@@ -1147,14 +1169,44 @@ std::string write(scene::Scene const &scene_value, SvgWriteOptions const &option
     if (options.include_math_container) {
         out += "<mjx-container";
         bool container_style = false;
-        for (auto const &attribute : options.container_attributes)
-            if (attribute.name == "style" && layout.minimum_width > 0) {
+        const bool scaled_container = layout.font_scale != 1;
+        for (auto const &attribute : options.container_attributes) {
+            if (attribute.name == "style" && scaled_container) {
+                styles::Styles merged(utf16::decode(attribute.value).text);
+                if (scaled_container)
+                    merged.set(
+                        u"font-size",
+                        styles::StyleValue(
+                            utf16::decode(folia::math::lengths::percent(layout.font_scale)).text));
+                if (layout.minimum_width > 0)
+                    merged.set(
+                        u"min-width",
+                        styles::StyleValue(
+                            utf16::decode(ex_value(layout.minimum_width, font.x_height)).text));
+                detail::append_attribute(out, attribute.name, utf16::encode(merged.cssText()));
+                container_style = true;
+            } else if (attribute.name == "style" && layout.minimum_width > 0) {
                 detail::append_attribute(out, attribute.name,
                                          attribute.value + "; min-width: " +
                                              ex_value(layout.minimum_width, font.x_height) + ";");
                 container_style = true;
             } else
                 detail::append_attribute(out, attribute.name, attribute.value);
+        }
+        if (scaled_container && !container_style) {
+            styles::Styles generated;
+            generated.set(
+                u"font-size",
+                styles::StyleValue(
+                    utf16::decode(folia::math::lengths::percent(layout.font_scale)).text));
+            if (layout.minimum_width > 0)
+                generated.set(
+                    u"min-width",
+                    styles::StyleValue(
+                        utf16::decode(ex_value(layout.minimum_width, font.x_height)).text));
+            detail::append_attribute(out, "style", utf16::encode(generated.cssText()));
+            container_style = true;
+        }
         if (layout.display)
             detail::append_attribute(out, "display", "true");
         if (layout.full_width)

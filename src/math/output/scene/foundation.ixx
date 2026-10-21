@@ -5,5 +5,4 @@
 export module folia.math.output.scene.foundation;
 export import :types;
 export import :builder;
-export import :html_snapshot;
 import std;

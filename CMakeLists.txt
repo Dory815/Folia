@@ -285,12 +285,15 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/input/tex/mhchem/configuration.ixx
     src/math/dependencies/mhchem_parser/parser.ixx
     src/math/output/scene/types.ixx
+    src/math/output/scene/html_types.ixx
+    src/math/output/scene/html_snapshot.ixx
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
     src/math/output/svg/writer.ixx
     src/math/output/svg/menclose_notations.ixx
     src/math/output/svg/merror.ixx
     src/math/output/svg/wrapper_factory.ixx
+    src/math/output/svg/serializer.ixx
     src/math/output/svg/font_data.ixx
     src/math/output/common/font_data.ixx
     src/math/output/common/font_path.ixx
@@ -437,10 +440,12 @@ target_sources(folia_math PRIVATE
     src/math/dependencies/mhchem_parser/texify.cpp
     src/math/output/scene/scene.cpp
     src/math/output/scene/builder.cpp
+    src/math/output/scene/html_snapshot.cpp
     src/math/output/svg/writer.cpp
     src/math/output/svg/menclose_notations.cpp
     src/math/output/svg/merror.cpp
     src/math/output/svg/wrapper_factory.cpp
+    src/math/output/svg/serializer.cpp
     src/math/output/svg/node_metadata.cpp
     src/math/output/svg/font_data.cpp
     src/math/output/common/font_data.cpp

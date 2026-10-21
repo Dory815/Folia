@@ -1,4 +1,5 @@
 export module folia.math.output.scene.types;
+export import folia.math.output.scene.html_types;
 import std;
 
 export namespace folia::math::output::scene {
@@ -357,16 +358,9 @@ struct Link {
 struct Tooltip {
     std::string text;
 };
-struct ForeignRun {
-    TextRun run;
-};
-// HTML/foreign content stays owned and retains already measured runs. `content`
-// is foreign HTML payload, never an SVG/XML DOM or a layout instruction.
 struct ForeignContent {
-    std::string content;
-    Point origin{};
-    std::vector<ForeignRun> measured_runs;
-    Metrics metrics{};
+    HtmlNodePrimitive content;
+    ForeignObjectGeometry geometry;
     SemanticMetadata metadata{};
 };
 struct Title {
@@ -377,6 +371,7 @@ struct DisplayLayout {
     std::string alignment{"center"};
     Unit shift{}, minimum_width{};
     bool full_width{};
+    Unit font_scale{1};
 };
 enum class InlineBreakKind { opportunity, forced };
 struct InlineBreak {
@@ -399,5 +394,5 @@ struct FrameLayout {
     std::vector<InlineFragment> inline_fragments;
     std::optional<PercentageFrame> percentage;
 };
-using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, ForeignContent, Ellipse, Title>;
+using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, Ellipse, Title>;
 } // namespace folia::math::output::scene

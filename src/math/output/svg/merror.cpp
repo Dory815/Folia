@@ -86,7 +86,7 @@ common::SceneNodes SvgMerror::emitScene(scene::Builder &builder,
     addSceneChildren(builder, containers.content);
     const auto childRoots = builder.child_groups(root);
     for (const auto child : childRoots) {
-        if (builder.link(child) || builder.viewport(child))
+        if (builder.link(child) || builder.viewport(child) || builder.has_foreign_content(child))
             continue;
         auto paint = builder.paint(child);
         paint.stylesheet = sourcePaint(red, red);

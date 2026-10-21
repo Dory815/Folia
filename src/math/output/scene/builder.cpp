@@ -28,6 +28,7 @@ struct Builder::State {
         ElementRole role{ElementRole::math_wrapper};
         Paint paint{};
         std::optional<Viewport> viewport;
+        std::optional<ForeignContent> foreign_content;
     };
     std::vector<MutableGroup> groups;
     Metrics metrics{};
@@ -64,6 +65,7 @@ struct Builder::State {
         out.role = source->role;
         out.paint = std::move(source->paint);
         out.viewport = std::move(source->viewport);
+        out.foreign_content = std::move(source->foreign_content);
         for (auto &entry : source->entries) {
             if (auto *primitive = std::get_if<Primitive>(&entry.value))
                 out.entries.emplace_back(std::move(*primitive));
@@ -85,12 +87,26 @@ Builder &Builder::operator=(Builder &&) noexcept = default;
 NodeId Builder::add_group(NodeId parent, Transform transform, std::optional<Clip> clip,
                           std::optional<Link> link, std::optional<Tooltip> tooltip,
                           SemanticMetadata metadata, ElementRole role, Paint paint,
-                          std::optional<Viewport> viewport) {
+                          std::optional<Viewport> viewport,
+                          std::optional<ForeignContent> foreign_content) {
     if (!state_)
         throw std::logic_error("Scene builder is moved from");
     auto *owner = state_->find(parent);
     if (!owner)
         throw std::out_of_range("Scene parent group does not exist");
+    if (owner->foreign_content)
+        throw std::invalid_argument("ForeignObject group cannot contain child groups");
+    if (foreign_content) {
+        auto const &geometry = foreign_content->geometry;
+        if (!(std::isfinite(geometry.x) && std::isfinite(geometry.y) &&
+              std::isfinite(geometry.width) && std::isfinite(geometry.height) &&
+              std::isfinite(geometry.em_per_pixel)) ||
+            geometry.width < 0 || geometry.height < 0 || geometry.em_per_pixel <= 0)
+            throw std::invalid_argument("ForeignObject geometry is invalid");
+        if (clip || link || tooltip || viewport)
+            throw std::invalid_argument(
+                "ForeignObject group cannot own clip, link, tooltip or viewport");
+    }
     if (state_->next_id == 0)
         throw std::overflow_error("Scene group id space exhausted");
     auto const id = state_->next_id++;
@@ -102,7 +118,8 @@ NodeId Builder::add_group(NodeId parent, Transform transform, std::optional<Clip
                                                  .metadata = std::move(metadata),
                                                  .role = role,
                                                  .paint = std::move(paint),
-                                                 .viewport = std::move(viewport)});
+                                                 .viewport = std::move(viewport),
+                                                 .foreign_content = std::move(foreign_content)});
     owner = state_->find(parent); // vector growth can invalidate the previous pointer
     owner->entries.push_back(State::Entry{NodeId{id}});
     return id;
@@ -173,6 +190,8 @@ void Builder::reparent_group(NodeId child_id, NodeId parent_id) {
     auto *new_parent = state_->find(parent_id);
     if (!child_group || !new_parent)
         throw std::out_of_range("Scene reparent group does not exist");
+    if (new_parent->foreign_content)
+        throw std::invalid_argument("ForeignObject group cannot contain child groups");
 
     std::unordered_map<NodeId, NodeId> parents;
     parents.reserve(state_->groups.size());
@@ -272,6 +291,11 @@ std::optional<Viewport> Builder::viewport(NodeId id) const {
         throw std::logic_error("Scene builder is moved from");
     return state_->require(id).viewport;
 }
+bool Builder::has_foreign_content(NodeId id) const {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    return state_->require(id).foreign_content.has_value();
+}
 std::size_t Builder::entry_count(NodeId id) const {
     if (!state_)
         throw std::logic_error("Scene builder is moved from");
@@ -362,7 +386,10 @@ void Builder::discard_group(NodeId id) {
 void Builder::insert_primitive(NodeId id, std::size_t index, Primitive value) {
     if (!state_)
         throw std::logic_error("Scene builder is moved from");
-    auto &entries = state_->require(id).entries;
+    auto &group = state_->require(id);
+    if (group.foreign_content)
+        throw std::invalid_argument("ForeignObject group cannot contain ordinary entries");
+    auto &entries = group.entries;
     if (index > entries.size())
         throw std::out_of_range("Scene primitive insertion index");
     entries.insert(entries.begin() + static_cast<std::ptrdiff_t>(index),
@@ -373,6 +400,8 @@ NodeId Builder::wrap_contents(NodeId id, Transform transform_value, SemanticMeta
     if (!state_)
         throw std::logic_error("Scene builder is moved from");
     auto &parent = state_->require(id);
+    if (parent.foreign_content)
+        throw std::invalid_argument("ForeignObject group cannot contain wrapped entries");
     if (state_->next_id == 0)
         throw std::overflow_error("Scene group id space exhausted");
     auto const wrapped_id = state_->next_id++;
@@ -436,6 +465,8 @@ std::vector<NodeId> Builder::split_group_contents(NodeId shell_id,
         const auto id = content_sources[i];
         if (!state_->find(id))
             throw std::out_of_range("Scene split content source does not exist");
+        if (state_->require(id).foreign_content)
+            throw std::invalid_argument("Scene split source cannot be a foreignObject group");
         if (id == shell_id || !is_descendant(id, shell_id))
             throw std::invalid_argument("Scene split content source must descend from its shell");
         if (!unique.insert(id).second)
@@ -464,7 +495,8 @@ std::vector<NodeId> Builder::split_group_contents(NodeId shell_id,
                                  .metadata = shell->metadata,
                                  .role = shell->role,
                                  .paint = shell->paint,
-                                 .viewport = shell->viewport};
+                                 .viewport = shell->viewport,
+                                 .foreign_content = shell->foreign_content};
         copy.entries.reserve(source.entries.size());
         prepared.push_back(std::move(copy));
         result.push_back(id);
@@ -499,6 +531,8 @@ std::vector<NodeId> Builder::split_group_contents(NodeId shell_id,
 void Builder::set_display_layout(DisplayLayout value) {
     if (!state_)
         throw std::logic_error("Scene builder is moved from");
+    if (!std::isfinite(value.font_scale) || value.font_scale < 0)
+        throw std::invalid_argument("Scene display font scale must be finite and nonnegative");
     state_->display_layout = std::move(value);
 }
 DisplayLayout Builder::display_layout() const {
@@ -523,6 +557,8 @@ void Builder::add_primitive(NodeId group, Primitive primitive) {
     auto *owner = state_->find(group);
     if (!owner)
         throw std::out_of_range("Scene target group does not exist");
+    if (owner->foreign_content)
+        throw std::invalid_argument("ForeignObject group cannot contain ordinary entries");
     owner->entries.push_back(State::Entry{std::move(primitive)});
 }
 

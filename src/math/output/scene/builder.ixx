@@ -22,7 +22,8 @@ class Builder {
                                    std::optional<Tooltip> tooltip = {},
                                    SemanticMetadata metadata = {},
                                    ElementRole role = ElementRole::math_wrapper, Paint paint = {},
-                                   std::optional<Viewport> viewport = {});
+                                   std::optional<Viewport> viewport = {},
+                                   std::optional<ForeignContent> foreign_content = {});
     void add_primitive(NodeId group, Primitive primitive);
     void discard_group(NodeId group);
     [[nodiscard]] std::optional<Rect> background_bounds(NodeId group) const;
@@ -38,6 +39,7 @@ class Builder {
     void set_paint(NodeId id, Paint value);
     [[nodiscard]] std::optional<Link> link(NodeId id) const;
     [[nodiscard]] std::optional<Viewport> viewport(NodeId id) const;
+    [[nodiscard]] bool has_foreign_content(NodeId id) const;
     [[nodiscard]] std::size_t entry_count(NodeId id) const;
     [[nodiscard]] std::vector<NodeId> child_groups(NodeId id) const;
     void insert_primitive(NodeId id, std::size_t index, Primitive primitive);
