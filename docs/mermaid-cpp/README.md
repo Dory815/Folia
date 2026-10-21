@@ -40,10 +40,24 @@ UTF-16 strings so positions and even unpaired code units retain JavaScript
 string semantics. Returned matches own their strings. The two comment functions
 have deliberately different behavior and must not be collapsed into one.
 
-Full YAML/configuration processing, diagram detection, family parsers, layout,
-SVG output and the Folia replacement remain separate work. No application
+The Packet component ports the official grammar, metadata value conversion,
+contiguous field validation, splitting into rows, and SVG geometry. It supports
+the Packet dimension, bit-order and sizing options. Its SVG currently uses the
+default Packet styles. The raw parser and renderer are deliberately separate
+from MermaidAPI's frontmatter, directives, entity handling and sanitization.
+
+Full YAML/configuration processing, diagram detection, shared themes, the other
+diagram families and the Folia replacement remain separate work. No application
 switch or fallback has been added. The old Rust dependency remains the active
-application dependency until the native pipeline is accepted.
+application dependency until the native pipeline is accepted. The current
+library is a foundation for the requested replacement, not that replacement.
+
+Packet has explicit native safety boundaries: non-finite bit counts and more
+than 10,000 rows produce an error. Upstream can silently truncate oversized
+fields at that row count. Invalid dimensions, invalid UTF-16, and characters
+forbidden in XML 1.0 also produce an error at the relevant stage. The renderer
+rebuilds layout from the document and configuration instead of trusting a
+mutable cached row array.
 
 ## Verification
 
@@ -58,6 +72,9 @@ digits per UTF-16 code unit; `-` denotes an empty string or an absent match.
 ```powershell
 git -c core.autocrlf=false clone --branch mermaid@12.2.0 --depth 1 https://github.com/mermaid-js/mermaid.git .reference/mermaid-js
 node tools/mermaid-cpp/source-text-oracle.mjs --check
+pnpm --dir tools/mermaid-cpp/oracle install --frozen-lockfile --ignore-scripts
+node tools/mermaid-cpp/packet-oracle.mjs --check
+node tools/mermaid-cpp/packet-svg-oracle.mjs --check
 git submodule update --init third_party/ut
 cmake -G Ninja -S tools/mermaid-cpp -B build/mermaid-cpp -DCMAKE_BUILD_TYPE=Debug
 cmake --build build/mermaid-cpp --parallel 4 --target FoliaMermaidTests
@@ -69,6 +86,13 @@ the repository's `import std;` gate. The standalone build avoids unrelated
 MathJax generation, WinUI restoration and Cargo. Native tests also exercise
 large adversarial documents and ownership after the input has been destroyed.
 Source observations alone are not evidence that the C++ implementation passes.
+
+The Packet oracles execute the official published parser and Mermaid renderer
+with JSDOM. The exact package versions and transitive integrity hashes are
+locked under `tools/mermaid-cpp/oracle`; these packages are test tools, not
+native runtime dependencies. Raw-parser, layout, renderer and full MermaidAPI
+observations are kept distinct so that frontend preprocessing does not become
+an incorrect expectation for a lower-level component.
 
 The original source's current functions are the oracle, including behavior not
 covered by its own legacy-regex examples. In particular, detection comment

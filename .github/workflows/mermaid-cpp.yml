@@ -76,6 +76,13 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Install the locked official oracle packages
+        run: |
+          npm install --global pnpm@11.25.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm --dir tools/mermaid-cpp/oracle install --frozen-lockfile --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Check the source oracle
         run: |
           $ErrorActionPreference = 'Stop'
@@ -86,6 +93,17 @@ jobs:
           New-Item -ItemType Directory -Force -Path build/mermaid-cpp | Out-Null
           node tools/mermaid-cpp/source-text-oracle.mjs --check 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/source-oracle.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Check the Packet parser and SVG oracles
+        run: |
+          node tools/mermaid-cpp/number-oracle.mjs --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/packet-oracle.mjs --check 2>&1 |
+            Tee-Object -FilePath build/mermaid-cpp/packet-oracle.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/packet-svg-oracle.mjs --check 2>&1 |
+            Tee-Object -FilePath build/mermaid-cpp/packet-svg-oracle.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Initialize the x64 MSVC environment
