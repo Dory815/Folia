@@ -119,6 +119,51 @@ void verifySourceMfenced(mathml_scene_test::Case const &expected,
 #include "fixtures/common-source/semantics-fenced-mathml-scene.inc"
 
 suite native_common_mfenced = [] {
+    "Mfenced rejects non-string typed delimiter inputs without changing the MML tree"_test = [] {
+        const std::array<std::u16string_view, 3> fields{u"open", u"close", u"separators"};
+        const std::array<mml::AttributeValue, 3> nonStrings{
+            mml::AttributeNull{}, false, 7.0};
+
+        for (const auto field : fields) {
+            for (const auto &value : nonStrings) {
+                mml::MmlDocument document;
+                auto &fencedNode = document.factory().make(mml::NodeKind::mfenced);
+                auto &fenced = dynamic_cast<mml::MmlMfenced &>(fencedNode);
+                auto &content = document.factory().make(mml::NodeKind::mspace);
+                fenced.appendChild(content);
+                auto &root = document.factory().make(mml::NodeKind::math);
+                root.appendChild(fenced);
+                document.setRoot(root);
+                expect(root.children().size() == 1_u);
+                if (root.children().size() != 1)
+                    return;
+                auto *const originalRootChild = root.children().front();
+                auto *const originalParent = fenced.parent();
+                const auto originalSize = document.size();
+                expect(originalParent == originalRootChild);
+                fenced.attributes().set(std::u16string(field), value);
+
+                expect(throws<std::invalid_argument>([&] { fenced.setInheritedAttributes(); }))
+                    << "non-string delimiter field is rejected: " << field.size();
+                expect(fenced.open == nullptr);
+                expect(fenced.close == nullptr);
+                expect(fenced.separators.empty());
+                expect(fenced.children().size() == 1_u);
+                if (fenced.children().size() != 1)
+                    return;
+                expect(fenced.children()[0] == &content);
+                expect(content.parent() == &fenced);
+                expect(fenced.parent() == originalParent);
+                expect(root.children().size() == 1_u);
+                if (root.children().size() != 1)
+                    return;
+                expect(root.children()[0] == originalRootChild);
+                expect(document.size() == originalSize)
+                    << "delimiter validation fails before fake text or operator nodes are adopted";
+            }
+        }
+    };
+
     "mfenced Scene serialization matches pinned Source MathML cases"_test = [] {
         auto bundle = folia::math::fonts::makeNewcmFontData();
         for (const auto &expected : sourceMfencedCases) {
