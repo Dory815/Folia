@@ -1,6 +1,30 @@
 # Mermaid C++ continuity
 
-## Current checkpoint - 2026-10-21, stage 4b merged
+## Current checkpoint - 2026-10-21, upstream PR #1 created
+
+- Upstream PR created: https://github.com/water2004/Folia/pull/1
+  ("feat(mermaid): port official Mermaid C++ foundation, Packet, Pie, preprocessing, and YAML frontmatter (stages 1-4b)").
+  Head: `zhao0349:feat/mermaid-cpp-port`, Base: `water2004/Folia:master`.
+- Packaged all updates up to stage 4b in 6 clean, reviewable stage commits:
+  1. `feat(mermaid): port official source text scanners and Packet diagram (stage 1)`
+  2. `feat(mermaid): port Pie grammar, D3 geometry, and layout (stage 2)`
+  3. `feat(mermaid): connect DirectWrite font measurement and themed Pie SVG (stage 3)`
+  4. `feat(mermaid): port common text preprocessing and directive removal (stage 4a)`
+  5. `feat(mermaid): parse native YAML configuration and frontmatter metadata (stage 4b)`
+  6. `docs(mermaid): record merged stage 4b and next configuration boundaries`
+- Excluded fork-specific workflow (`.github/workflows/mermaid-cpp.yml`), keeping
+  the PR strictly scoped to native modules, platform DirectWrite measurement,
+  fixtures, oracles, documentation, and root build integration (72 files total,
+  +25,000 / -1 lines). Status is mergeable with zero conflicts on upstream `af8c5ede`.
+- All agent continuity documents (`docs/mermaid-cpp/HANDOFF.md`, `README.md`,
+  `source-lock.json`) are included.
+- No live agent/local build handles. Ignored reference is `.reference/yaml-cpp`.
+- Next concrete action: directive argument interpretation (`%%{init: ...}%%`),
+  config precedence (diagram-scoped overrides within layers), and default/dark
+  theme resolution with official runtime oracles before common frontend wiring
+  to Packet/Pie.
+
+## Stage 4b merged checkpoint (historical; superseded above) — 2026-10-21
 
 - Stage 4b is merged: https://github.com/zhao0349/Folia/pull/5, merge commit
   357d5bb1b2e616238b7eec931751fa05ef1be8d1 on fork master. Eight commits
