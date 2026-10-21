@@ -940,6 +940,13 @@ records are retired Context contracts. Keep the independent Source provider
 oracle, locks, generated final data and active typed data comparison. No new
 runtime loader API or repeated full font comparison is introduced.
 
+With their consumers accounted, the NewCM/Common/SVG font_data_surface pairs
+retire together (six sources, font-fontBindings-before-removal.json). They
+install Context constructors/fields/methods and project extension records;
+the active generated typed data, font lookup/resource algorithms and Common
+layout owners remain. Root's tracked direct-API search finds no outside caller,
+and the current all-target/module-map check finds no configured source/importer.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
