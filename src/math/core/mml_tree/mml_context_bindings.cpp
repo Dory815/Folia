@@ -221,7 +221,7 @@ void MmlContextBindings::initialize(util::RuntimeModules& runtimeModules){
 }
 void MmlContextBindings::rollbackInitialization()noexcept{
     lease_->store(false,std::memory_order_release);
-    if(sourceBackend_){sourceBackend_->clearIdentityBinder(this);sourceBackend_->clearSourceClassInfoResolver(this);}
+    if(sourceBackend_){sourceBackend_->clearIdentityBinder(this);sourceBackend_->clearProductPropertiesBirthObserver(this);sourceBackend_->clearDefaultAttributesBirthObserver(this);sourceBackend_->clearSourceClassInfoResolver(this);}
     if(treeNodes_)nodeModule_->detachContextBindings(*treeNodes_);
     nodeMethods_.reset();factoryFields_.reset();factoryMethods_.reset();nodeFields_.reset();
     sourceAllocator_.reset();sourceBackend_.reset();treeNodes_.reset();
@@ -231,9 +231,11 @@ MmlContextBindings::~MmlContextBindings(){
     lease_->store(false,std::memory_order_release);
     for(auto& weak:boundFactories_)if(auto factory=weak.lock()){
         factory->clearIdentityBinder(this);
+        factory->clearProductPropertiesBirthObserver(this);
+        factory->clearDefaultAttributesBirthObserver(this);
         if(factoryFields_)factoryFields_->detach(factory);
     }
-    if(sourceBackend_){sourceBackend_->clearIdentityBinder(this);sourceBackend_->clearSourceClassInfoResolver(this);}
+    if(sourceBackend_){sourceBackend_->clearIdentityBinder(this);sourceBackend_->clearProductPropertiesBirthObserver(this);sourceBackend_->clearDefaultAttributesBirthObserver(this);sourceBackend_->clearSourceClassInfoResolver(this);}
     if(treeNodes_)nodeModule_->detachContextBindings(*treeNodes_);
     arrays_.clear();factories_.clear();nodes_.clear();
 }
@@ -310,6 +312,8 @@ void MmlContextBindings::retireSourceAllocationDomain(SourceAllocationDomain& do
     // failure leaves the domain handle available for an idempotent retry.
     if(factoryFields_)factoryFields_->retireFactoryOwner(domain.factory_);
     domain.factory_->clearIdentityBinder(this);
+    domain.factory_->clearProductPropertiesBirthObserver(this);
+    domain.factory_->clearDefaultAttributesBirthObserver(this);
     if(factoryFields_)factoryFields_->detach(domain.factory_);
     std::erase_if(boundFactories_,[&](const auto& weak){
         const auto factory=weak.lock();
@@ -334,13 +338,41 @@ std::array<std::size_t,3> MmlContextBindings::nativeOwnerCountsForDiagnostics()c
     return {nodeModule_->attributes().canonicalHandleCountForDiagnostics(),
             projections[0],projections[1]};
 }
-RequestIdentityCapture MmlContextBindings::beginPrivateRendererProjectionCapture(){
+RequestIdentityCapture MmlContextBindings::beginPrivateRendererProjectionCapture(
+        std::shared_ptr<MmlFactory> nativeProductFactory){
     if(privateRendererProjectionCapture_)
         throw Exception("TypeError",u"A previous private MML projection capture is still pending retirement");
-    const auto token=nodeModule_->attributes().beginRequestCapture();
+    if(!nativeProductFactory)
+        throw Exception("TypeError",u"Private MML projection capture requires its actual request product factory");
+    const auto factoryIdentity=factories_.find(nativeProductFactory.get());
+    if(!factoryIdentity)
+        throw Exception("TypeError",u"Private MML projection capture factory is not the canonical Context owner");
+    const auto canonicalFactory=resolveFactory(*factoryIdentity);
+    if(canonicalFactory.get()!=nativeProductFactory.get()||
+       canonicalFactory.owner_before(nativeProductFactory)||nativeProductFactory.owner_before(canonicalFactory))
+        throw Exception("TypeError",u"Private MML projection capture factory is not the canonical Context owner");
+    const std::weak_ptr<MmlContextBindings> weak=weak_from_this();
+    nativeProductFactory->setDefaultAttributesBirthObserver(this,
+        [weak](const Property& storage,MmlFactory& factory){
+            const auto self=weak.lock();
+            if(!self)throw Exception("TypeError",u"MML projection capture owner has expired");
+            self->observeNativeDefaultAttributes(storage,factory);
+        });
+    RequestIdentityCapture token;
+    try{token=nodeModule_->attributes().beginRequestCapture();}
+    catch(...){nativeProductFactory->clearDefaultAttributesBirthObserver(this);throw;}
     // The single inline optional is non-allocating for an empty capture. Once
     // Attributes returns a token, cleanup state is therefore already retained.
-    privateRendererProjectionCapture_.emplace(PrivateRendererProjectionCapture{token,{},{},{}});
+    try{
+        privateRendererProjectionCapture_.emplace(
+            PrivateRendererProjectionCapture{token,std::move(nativeProductFactory),{},{},{},{},false});
+    }catch(...){
+        nodeModule_->attributes().retireCapturedRequestBindings(token);
+        // The local canonical owner still exists because emplace did not
+        // complete; remove only our hook and preserve any foreign hook.
+        canonicalFactory->clearDefaultAttributesBirthObserver(this);
+        throw;
+    }
     activePrivateRendererProjectionCapture_=token;
     return token;
 }
@@ -355,9 +387,20 @@ void MmlContextBindings::retirePrivateRendererProjectionCapture(RequestIdentityC
     if(activePrivateRendererProjectionCapture_&&activePrivateRendererProjectionCapture_->id==token.id)
         activePrivateRendererProjectionCapture_.reset();
     auto& capture=*privateRendererProjectionCapture_;
+    capture.nativeProductFactory->clearDefaultAttributesBirthObserver(this);
     if(!capture.attributesRetired){
         nodeModule_->attributes().retireCapturedRequestBindings(token);
         capture.attributesRetired=true;
+    }
+    if(capture.pendingNativeProperties){
+        nodeModule_->properties().retireNativeProjectionForStorage(
+            capture.pendingNativeProperties->storage);
+        capture.pendingNativeProperties.reset();
+    }
+    auto& nativeProperties=capture.nativeProperties;
+    while(!nativeProperties.empty()){
+        nodeModule_->properties().retireNativeProjectionForStorage(nativeProperties.back().storage);
+        nativeProperties.pop_back();
     }
     if(capture.pendingBirth){
         const auto& pending=*capture.pendingBirth;
@@ -435,6 +478,59 @@ void MmlContextBindings::observeTreeOwnedObject(ObjectRef receiver,Key field,Obj
     // on failure the inline pending token still owns the exact object/storage.
     capture.sourceObjects.push_back(*capture.pendingBirth);
     capture.pendingBirth.reset();
+}
+void MmlContextBindings::observeNativeProductProperties(
+        MmlNode& node,const Property& value,MmlFactory& factory){
+    if(!activePrivateRendererProjectionCapture_)return;
+    if(!privateRendererProjectionCapture_||
+       privateRendererProjectionCapture_->token.id!=activePrivateRendererProjectionCapture_->id)
+        throw Exception("TypeError",u"Private MML native product refers to a missing projection capture");
+    auto& capture=*privateRendererProjectionCapture_;
+    if(capture.nativeProductFactory.get()!=&factory)return;
+    if(capture.pendingNativeProperties)
+        throw Exception("TypeError",u"Another native MML properties birth is pending in this non-reentrant capture");
+    const auto* storage=std::get_if<std::shared_ptr<PropertyStorage>>(&value.value);
+    if(!storage||!*storage||(*storage)->binding)
+        throw Exception("TypeError",u"Native MML properties birth must be an unbound fresh PropertyStorage");
+    const auto identity=nodes_.find(&node);
+    if(!identity)
+        throw Exception("TypeError",u"Native MML properties birth is not owned by the request product factory");
+    const auto actualOwner=resolveProductOwner(*identity,node);
+    if(actualOwner.get()!=capture.nativeProductFactory.get()||
+       actualOwner.owner_before(capture.nativeProductFactory)||
+       capture.nativeProductFactory.owner_before(actualOwner))
+        throw Exception("TypeError",u"Native MML properties birth is not owned by the request product factory");
+    // A Source accessor may retain the object passed by the native field
+    // writer. Do not retire storage exposed through an accessor-backed field.
+    auto prototype=context_.prototype(*identity);
+    while(prototype){
+        if(const auto descriptor=context_.descriptor(Value(*prototype),Key(u"properties"));
+           descriptor&&descriptor->accessor)return;
+        prototype=context_.prototype(*prototype);
+    }
+    // Keep the exact storage before any vector growth. If projection or later
+    // node initialization throws, request teardown still has the storage token.
+    capture.pendingNativeProperties.emplace(
+        PrivateRendererProjectionCapture::NativePropertiesBirth{*storage});
+    capture.nativeProperties.push_back(*capture.pendingNativeProperties);
+    capture.pendingNativeProperties.reset();
+}
+void MmlContextBindings::observeNativeDefaultAttributes(const Property& value,MmlFactory& factory){
+    if(!activePrivateRendererProjectionCapture_)return;
+    if(!privateRendererProjectionCapture_||
+       privateRendererProjectionCapture_->token.id!=activePrivateRendererProjectionCapture_->id)
+        throw Exception("TypeError",u"Private MML default attributes refer to a missing projection capture");
+    auto& capture=*privateRendererProjectionCapture_;
+    if(capture.nativeProductFactory.get()!=&factory)return;
+    const auto* storage=std::get_if<std::shared_ptr<PropertyStorage>>(&value.value);
+    if(!storage||!*storage||(*storage)->binding)
+        throw Exception("TypeError",u"MML default attributes birth must be a fresh native PropertyStorage");
+    if(capture.pendingNativeProperties)
+        throw Exception("TypeError",u"Another native MML property birth is pending in this non-reentrant capture");
+    capture.pendingNativeProperties.emplace(
+        PrivateRendererProjectionCapture::NativePropertiesBirth{*storage});
+    capture.nativeProperties.push_back(*capture.pendingNativeProperties);
+    capture.pendingNativeProperties.reset();
 }
 NativeIdentityBindings<MmlNode*>& MmlContextBindings::nodes(){return nodes_;}
 NativeIdentityBindings<MmlFactory*>& MmlContextBindings::factories(){return factories_;}
@@ -591,6 +687,10 @@ ObjectRef MmlContextBindings::bindFactory(std::shared_ptr<MmlFactory> factory){
                 self->factoryFields_->bindNodePrototype(object,node);
             }
             (void)self->bindNode(object,node,owner);
+        });
+        factory->setProductPropertiesBirthObserver(this,[weak](MmlNode& node,const Property& storage,MmlFactory& owner){
+            const auto self=weak.lock();if(!self)throw Exception("TypeError",u"MML Context binding owner has expired");
+            self->observeNativeProductProperties(node,storage,owner);
         });
         requireCurrentProgress(u"identity binder installation");
         progress->binder=true;

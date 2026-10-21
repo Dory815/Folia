@@ -63,9 +63,15 @@ private:
         std::shared_ptr<MmlFactory> expectedOwner;
     };
     struct PrivateRendererProjectionCapture {
+        struct NativePropertiesBirth {
+            std::shared_ptr<PropertyStorage> storage;
+        };
         RequestIdentityCapture token;
+        std::shared_ptr<MmlFactory> nativeProductFactory;
         std::vector<CapturedSourceObject> sourceObjects;
         std::optional<CapturedSourceObject> pendingBirth;
+        std::vector<NativePropertiesBirth> nativeProperties;
+        std::optional<NativePropertiesBirth> pendingNativeProperties;
         bool attributesRetired=false;
     };
     struct ReceiverInitializationScope {
@@ -95,6 +101,8 @@ private:
     std::shared_ptr<MmlFactory> selectedSourceBackend()const;
     void deactivateSourceAllocation(std::uint64_t)noexcept;
     std::shared_ptr<MmlFactory> resolveProductOwner(options::ObjectRef,MmlNode&)const;
+    void observeNativeProductProperties(MmlNode&,const Property&,MmlFactory&);
+    void observeNativeDefaultAttributes(const Property&,MmlFactory&);
     void observeTreeOwnedObject(options::ObjectRef,options::Key,options::ObjectRef,
                                 tree::TreeOwnedObjectHandoff&);
     std::uint64_t beginReceiverInitialization(options::ObjectRef,SourceReceiverProvenance,bool);
@@ -109,7 +117,7 @@ public:
     MmlContextBindings& operator=(const MmlContextBindings&)=delete;
     options::Context& context()const;
     std::array<std::size_t,3> nativeOwnerCountsForDiagnostics()const;
-    RequestIdentityCapture beginPrivateRendererProjectionCapture();
+    RequestIdentityCapture beginPrivateRendererProjectionCapture(std::shared_ptr<MmlFactory>);
     void retirePrivateRendererProjectionCapture(RequestIdentityCapture);
     NativeIdentityBindings<MmlNode*>& nodes();
     NativeIdentityBindings<MmlFactory*>& factories();

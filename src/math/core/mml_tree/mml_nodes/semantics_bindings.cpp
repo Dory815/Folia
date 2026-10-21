@@ -24,6 +24,6 @@ std::string MmlAnnotationXML::kind()const{return "annotation-xml";}
 namespace {PropertyList MmlAnnotationDefaults=[] {auto value=host::arithmeticCopy(MmlAnnotationXML::defaults());
 return value;}();}
 PropertyList& MmlAnnotation::defaults(){return MmlAnnotationDefaults;}
-void MmlAnnotation::initializeClassFields(){propertyOwner(PropertyList{{"isChars",true}});}
+void MmlAnnotation::initializeClassFields(){initializeFreshProperties(PropertyList{{"isChars",true}});}
 std::string MmlAnnotation::kind()const{return "annotation";}
 }
