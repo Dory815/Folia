@@ -1128,6 +1128,49 @@ edges and 61 class_binding test consumers; inactive membership alone does not
 authorize provider removal. No new full math/font, worker, Release or GUI gate
 is claimed.
 
+### Class consumer review: retained semantics and accent-role correction (2026-10-21)
+
+The 61 class_binding test consumers are split into eight responsibility groups,
+with 2,901 static test names recorded in class-consumer-review-snapshot.json.
+Luna reports are static reviews, not runtime acceptance or deletion approval.
+Root returned broad coverage claims for exact assertion mapping; the old
+consumers remain tracked while uncovered semantics are resolved.
+
+Seven focused behavior tests now live in four existing test owners: the full
+8-by-8 TeX spacing matrix and both script suppression paths; stable error-tree
+reverification; paired post/prescript level and prime alternation; MathChoice
+display/clamped-level/empty-branch selection; operator form precedence; and
+accent role/width rules. The first build failed only in the test printer's
+UTF-16 vector comparison; explicit boolean assertions corrected that diagnostic
+instantiation without changing the behavior under test.
+
+The accent-role test first reproduced one failed assertion out of twelve:
+munderover chose the over key merely because an over core existed. Pinned
+mo.ts:299-303 compares the current operator identity to each role's core.
+The original mo_classes.cpp now preserves those identity comparisons in place;
+no other node family or layout owner changed. The fix and its three operator
+tests are committed in 93544b62; other tests in 4b7c7bcf, 26921683 and 311766cb.
+
+The parallel4 fix build exits0 (class-accent-fix-build.log), followed by
+**8 tests / 1299 assertions**, including full pinned Source SVG. Evidence:
+class-accent-reproduce-results.json, class-accent-fixed-results.json and
+class-coverage-check.json. Of 478 active source files, 477 are byte-equal and
+the sole change is the reviewed mo_classes.cpp fix; all six protected paths
+remain unchanged. No full math/font, worker, Release, GUI or new walk-depth
+boundary run is claimed. Inheritance's initial explicit-only mathsize theory
+was rejected after reading Source Attributes.isSet: own and inherited both
+count, while default-only does not. No production inheritance change was made.
+
+An independent locked MathJax 4.1.3 CJS probe then directly invoked the Source
+getter/inheritance methods for all twelve accent-role and five width/role
+observations: **17 assertions pass**, exit0, empty stderr
+(class-accent-source-observations-fixed.json). Module hashes and the existing
+compiled-package lock were checked. Its first metadata pass named nonexistent
+standalone mover/munder modules; these classes actually share munderover.js.
+Root corrected that dependency list before running the successful observation;
+the initial dependency failure remains recorded, not reported as a Source
+behavior failure.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

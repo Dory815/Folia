@@ -1,6 +1,6 @@
 {
   "schema": "folia.math.native-raii.decision-manifest.v1",
-  "snapshotRevision": "c5b4853edf49f222c263185b0ed2bf0249e56c7e",
+  "snapshotRevision": "311766cb61ad0bd626dca7fc20e66d1baa7b48f0",
   "generator": {
     "path": "tools/math-port/native-raii-inventory.cjs",
     "sha256": "dd7a35814f11a56305c3b109d112b6dffd152396c83c1626fd6d322cecf6a61c",
