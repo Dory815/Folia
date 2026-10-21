@@ -4,20 +4,17 @@
 
 ## 当前 checkpoint
 
-当前无live agent/build/test；33093 build exit0。默认worker接入 **ba9ee591**，可复验probe/验收 **7f38e4d9**；WinUI Debug、真实worker、平台80/3429/17 suites、core455/40840/50 suites均exit0无skip。tracked runner 57717 exit0，日志worker-reproducible-probe.log，stop join4575ms/total8.91s。部署DLL与core哈希一致，详细证据见acceptance。纯Context字符串协议3测试/24 cases已退休 **2e09ac91**，不减active数学/owner覆盖。
+当前无live agent/build/test。native full **43545 exit0**：869 tests/217108 assertions/175 suites无skip，retire-svg-full-math.log/results.json。删除后parallel4 native build exit0/no work；支持的WinUI Debug+真实worker **8116 exit0**，retire-svg-worker-verify.log（stop join4423ms/total8.72s）。旧61693是180s驱动timeout而非pass，保留retire-svg-full-timeout180.*；后按原600s上限完整通过。
 
-Root已review/promote tex_jax的a><b真实compile/结构断言：focused1/9、原TeXjax5/551均exit0，retirement-{combine,tex-jax}-test.log；旧tex_combine_relations.cpp退休及typed测试已提交 **3159d12c**。下一步复核旧SVG18文件+15剩余测试/probe的退休边界，逐项核数学断言的实际承接，不能只按标题/路径认定已覆盖。Luna已完成并冻结ignored `build/math-port/retirement-production-inventory.md` 的16测试表，已纠正textmacros_filter_record_roundtrip inactive误报；Root仅抽查并发现过此错，未全面批准该表用于删除。12文件旧SVG核心需连18文件wrapper图及测试/probe一起account，尚未批准生产删除。Root已读typeset-helper identity：覆写JS helper/投影属性，属撤销契约，不是兼容缺口。
+本轮关键提交：deb2b2f4保留fixInitialMO/maction多行/length/过滤器priority；254e0860保留public会话行为1/23；b4a0a410退旧Scene测试；c8ea9201保留75两路几何及Source150SVG(profile1/1354)、XMLfamily1/6。15旧测试及31 tracked tools CPP已分批退出，独立Source oracles/inputs/locks/fixtures保留。**fab831cc** 移除旧SVG9模块对18文件；**4383d220** 完整验收及ignore例外清理。before-removal graph retire-svg-graph.json证明这些模块不在全部configured targets/active247且无剩余tracked Src/tests/tools imports；ignored历史候选仍有同名文本，不是当前模块。其他旧对象层尚未清完。
+
+下一步：用CMake fileAPI准确更新既有inventory的facts，再按Core/TeX/旧Scene等职责逐批account其余inactive文件和实际消费者；不要重做已通过广审/算法。旧inventory脚本漏foreach112 sources，勿覆盖canonical；正确facts候选在ignored current-inventory-candidate/configured-target-facts.json（target560 sources/247模块）。6个Luna及后续只读报告均完成，ignored retire-svg-*为审阅材料而非自动删除授权。12保护dirty继续保留；媒体2文件Root刚核normalized blob hash与HEAD相同，仅CRLF/stat状态，无需迁移其代码。下一批如要退出其他保护的旧bindings/tests，须先逐diff明确account并保留原patch，不能顺手删。
+
+默认worker接入ba9ee591、可复验probe入口7f38e4d9；平台80/3429/core455/40840此前通过，未改编辑器。原a><b typed迁移3159d12c与字符串协议退休2e09ac91已完成。
 
 - 原生API full **4060** exit0：860 tests/216708 assertions/174 suites无skip，`renderer-owner-full-math.log`；12专项全过，精确数见acceptance。原Renderer/CABI DLL/API tests **a08e9723**，验收/worker架构锁 **12b62b30**；247 active modules无旧对象层，DLL仅9个Cexports。
 
-- limits full **78558** exit0：848 tests/215119 assertions/171 suites无skip；Source包 **d688445e**、UT **73ae4eef**。Source24条1/97、原数值6/34、hosted1/1279通过，Root default/write-no-op/旧numeric过。新fixtureSHA bb52168574af0b70a7f63a6dcff0c5bff05f9c5ca6922cdb10f76527abafc636。
-
-- 2f76e389 锁定、af9a8891 实施 ParseRequest/TeXRequest：保留 ParseOptions 配置/session；请求数据进入 caller-owned frame。CompileScope 恢复 MathItem/adaptor 借用，新增生产文件为 0。physics 两个 creator probe 的局部借用先结束再换文档；build-physics exit0、专项8/5373过。
-- 稳定构建 parse-request-build-fixed2.log exit 0；formatter 已完成。
-- 请求 ownership 门槛 parse-request-ownership.log exit 0：1 test / 11 assertions。MML/Common/DOM 计数、真实 Debug CRT blocks/bytes、owner 退出后的 retained Scene 均通过。诊断 session 11188 已终止。
-- 专项结果：scope 1/11，tex-jax 5/551，texhtml 9/182，textmacros 12/868；hosted 75 layout / 150 Scene / 150 SVG 1/1279；default 86 1/1021，均通过。
-- 本次 strict canonical 已复验：73 equal 和 2 个 source_error_native_success，原因是 Lite 缺 addEventListener；wrapper exit 0 表示类别符合预期，native 本身 exit 1。需保留此差异事实。
-- 当前请求门槛替代了旧的 +5 blocks / 144 bytes 失败结果：当时持久 ParseOptions 留有请求 scratch，现已移入 caller-owned frame。
+- 组件与Source witness的完整旧结果在acceptance，不重复恢复。已接受caller-owned ParseRequest/TeXRequest；真实MML/Common/DOM及CRT基线192+768请求通过，旧+5 blocks/144bytes scratch问题已修。strict Lite仍73 equal+2 source_error_native_success（缺addEventListener），hosted75/150独立通过；不宣称browser事件dispatch。
 
 ## 目标与边界
 
@@ -26,8 +23,6 @@ Root已review/promote tex_jax的a><b真实compile/结构断言：focused1/9、�
 架构已定：保留 MathJax 原 owner、算法和消费方边界；不模拟 JS 对象，不建平行 native/new/typed 实现，不加请求释放补丁。完整约束及各组件证据以架构和验收文档为准。组件通过不等于 Folia 集成。
 
 38包及专用family已有Source映射，不凭scope陈旧状态重复实现。Renderer lock在architecture末尾；已确认canonical75实际tag_side全空、em16/ex8、width四值，全部可直接用现API验原fixture，无新Source/隐藏选项。原math.cpp dirty已由Root读diff/account，旧callback/projection退休随退出Context图结束，resident诊断随旧probe退出；备份与原patch在ignored `build/math-port/renderer-owner-candidate/math.cpp-before-integration` / `math.cpp-prior-work.patch`。只有math.cpp经明确原owner重写授权退出保护名单，其余12条仍保护。API/CABI及WinUI build/worker probe已通过；磁盘旧对象层尚未退出。
-
-worker lock在architecture末尾；全部Luna已freeze ignored `build/math-port/worker-integration-candidate/` 三份接线镜像和 `winui-math-worker-probe.cpp`(194行)。Root加stop已请求时跳过native初始化、格式化新增backend并保留原queue/cache；真实probe仅include实际class，必须链接app生成的MathJaxRenderer/MathJaxSvgParser对象及queue/std必要对象与CABI importlib，手动编译加windows_console_runtime.cpp。Debug复用build/core，Release build/core-release；实际app对象已生成并用于probe，含pch/std/queue对象；手动build成功日志worker-probe-build.log。
 
 ## 执行约束
 
