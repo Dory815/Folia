@@ -4,28 +4,25 @@
 
 ## 当前状态与下一步
 
-- 最近代码提交 `9294fc82`（enclosure Source51/retirement8）；direct-MML Source+test `bc2fe4d9`/`12815933`。此前table/Scene/entry/menclose/Source48已分7批提交，契约docs `15eedc89`。所有owner freeze，无活动build/test/候选待合并。
-- 最近完整math `common-table-final-full-math.log` exit0：773tests/211281assert/150suites（当时Source48+7retirement）。之后只增加测试/Source数据：direct-MML8全部byteequal/184assert（1test，`table-mathml-focused.log`）；TeX Source51 byteequal/603assert（`enclosure-source-focused.log`），retirement8/16assert（`enclosure-retirement-focused.log`）。未冒称新增后已跑完整774。
-- 最终build `enclosure-source-build.log` exit0，parallel4。独立TeX Source115 default/no-op mtime通过，原112记录逐字节未变；fixture SHA256 `6e8a1e3f83f0db671ced8f7de927721765baa92d408be79911821a13d1d40881`。独立MathML8同样通过default/no-op，fixture SHA256 `893e46e25dc8520157bb05c2918a4ad6b82a4c3ada71e169262955d5afb48e0f`，工具`common-table-mathml-source.cjs`。递归vector fixture曾C1060，已改constexpr flat节点/属性，不重试旧版。
-- 已验收：table rows/cells/labels/solid/dashed/dotted/equalrows/equalcolumns及menclose所有line recipes与radical child。MathML编译器是单独锁定的Source输入边界，不算TeX profile覆盖；mtr mathsize=150%仍rscale1，mstyle仅content1.5。ignored table-direct-mml与enclosure-scene-cases均被canonical替代，不再从旧candidate恢复。
-- 下一步：Root先划清menclose剩余rect/roundedbox/ellipse/path/arrow的typed Scene契约，再按原Notation/menclose/Scene/writer职责分Luna实现；复用已存在geometry算法，避免path近似冒充Source原元素。当前这些shape明确throw；mglyph/foreign/XML/HTML等families、75/150 gate、class CSS、最终C ABI和Folia切换均未完成。
-## 现有验证边界（此前已完成）
+- 已提交：7fd71f11（geometry comparer/selftest）、adef6867（Source148/selected86）、640bbe30（Common Notation+Menclose+UT）、e83bba8e（SVG writer/UT）、1a53b18f（Scene enclosure types/freeze/UT）。本批代码与工具已提交；全部owner freeze，无活动build/test。
+- 最新full math enclosure-all-full-math.log exit0：776tests/212075assert/150suites，无skip。focused selected86 SVG byteequal/1107assert、retirement12/24、recipe108、layout56/505、paint8、freeze21、writer8；Root实际geometry/paint/transform comparer56与selftest均exit0。日志enclosure-all-*.log；build parallel4与UT literal修正后的incremental build均exit0。
+- TeX Source148 default/no-op mtime、原115逐字节不变通过；fixture SHA256 31761f077a57e92177b38c44dba0808b78e6616e99e1242f50058aafbe8de8ba。direct MathML table8仍通过，SHA256 893e46e25dc8520157bb05c2918a4ad6b82a4c3ada71e169262955d5afb48e0f。fixture须constexpr flat节点/属性；旧递归vector曾C1060，不重试。
+- 已验收table rows/cells/labels/solid/dashed/dotted/equalrows/equalcolumns及全部29 menclose notations+4边界。MathML编译器是独立锁定Source输入，不算TeX profile覆盖；mtr mathsize150%仍rscale1，mstyle content1.5。旧ignored table/enclosure候选均被canonical替代，不恢复。
+- 下一步：锁定semantics/mfenced原owner Scene emission及独立MathML验收契约后派Luna。只读核对已完成：semantics先embellished后仅child0直发射、不place；mfenced标准容器内发射既有mrow，暂改直接child.parent，用RAII恢复各自原指针（含异常）。复用现有MathML Source compiler/capture，不把新职责塞table文件。其余families、75/150 gate、class CSS、C ABI/Folia未完成。
 
-- 此前full math766tests/211042assert/150suites，包含35Source cases与4个重复请求case；不是完整75/150渲染gate。
-- 此前Source witness102 records的Root bytecheck通过：`padded-source-root.log`；默认生成工具不读取native输出。102不是最终75/150 gate。
-- 最新viewport-review/report.json的59 Scene/writer/limits/scripts tests477assert全过；随后namespace/split补充改动复验viewport值9assert、writer13、split16，lifetime8均过，日志`assembly-*.log`。28Source全部匹配，不代表全profile。
-- 实际full38/Newcm limits witness已重建并提交`ac8270e1`，`common-limits-source-current-root.log`通过；3个concrete Source native tests17assert通过。旧手工叠mixin零offset不是验收标准。
+## 继续有效的 Source 验收边界
 
+- 实际full38/Newcm limits witness已重建并提交ac8270e1，common-limits-source-current-root.log通过，3个concrete Source native tests17assert通过。旧手工叠mixin零offset不是验收标准，不重开该问题。
 
 owner handles（未注明活动者均freeze，只有Root派followup）：
-- `scene_values_writer`：Scene 5 files、SVG writer、两份原 UT。
-- `common_base_emission`：Wrapper、TextNode、TeXAtom；`common_mo_emission`：Mo。
-- `common_rows_emission`：Mrow、Mtext、Math、Mphantom、Mtr/Mtd；`common_radicals_emission`：Mfrac、Msqrt、Mroot、Mpadded、Mtable。
+- `scene_values_writer`：Scene types/validation及Scene UT。
+- `common_base_emission`：SVG writer/UT与Wrapper、TextNode、TeXAtom；`common_mo_emission`：Mo。
+- `common_rows_emission`：Notation pair/UT与Mrow、Mtext、Math、Mphantom、Mtr/Mtd；`common_radicals_emission`：Mfrac、Msqrt、Mroot、Mpadded、Mtable。
 - `common_scene_entry`：OutputJax、WrapperFactory；`common_scene_source_tests`：Source tool、fixture、UT。
 - `common_scripts_emission`：当前统一拥有scriptbase/msubsup/munderover/mmultiscripts及menclose emitter后续；旧limits/multiscripts owner不要并行改同文件。
-- Root 拥有公共契约、CMake、build/tests、Git；不可假设上述 agent 仍在运行。
+- layout_fixture_cleanup拥有canonical geometry comparer/selftest；Root 拥有公共契约、CMake、build/tests、Git；不可假设上述 agent 仍在运行。
 - Unicode/Entities/mhchem 原 owner 已完成组件验收；texhtml 的既有 Source/native 证据已接受。组件验收不代表 75/150 gate 或 Folia 集成。
-- Source标准catalog为43个native NodeKind；menclose无profile时throw，有profile仅line/radical；XML/HTML仍throw。entry限定核对Source有效class metadata：Common字段均匹配commonDefaults；六组不同的SVG CSS归SVG原owner，不复制到Common，无scale字段。没有把该核对当作完整catalog渲染验收。
+- Source标准catalog为43个native NodeKind；menclose无profile时throw，有profile支持全部29种notation；XML/HTML仍throw。entry限定核对Source有效class metadata：Common字段均匹配commonDefaults；六组不同的SVG CSS归SVG原owner，不复制到Common，无scale字段。没有把该核对当作完整catalog渲染验收。
 ## 实现约束与未完成项
 
 Common→Scene Root contract 见架构文档 2026-10-21 的 Common-to-Scene 与 Script-family 段。保持统一 em/y-up；SceneContainers.nodes 是 own 输出，content 给 children；断行 Mrow 是单 outer 加多个 lineboxes。输出SceneNodes现为vector<optional<NodeId>>，content为valid SceneParents；默认place用child自身dx/id且跳缺失首段，显式target不额外叠加；Rule 不反转。

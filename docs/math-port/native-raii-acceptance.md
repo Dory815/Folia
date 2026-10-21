@@ -307,20 +307,20 @@ bytecheck by default and preserve unchanged fixture mtime on explicit writes.
 Run focused package/dependency tests then one full math run after final changes.
 Scene/SVG emission and Folia remain separate outstanding acceptance work.
 
-## Common-to-Scene component checkpoint (2026-10-21)
+## Common-to-Scene component evidence (2026-10-21)
 
-Scene's owned paint/text/display values, finite Builder edits and SVG spelling
-changes passed 35 focused tests / 144 assertions in
-`build/math-port/scene-scripts-review/0.log` through `34.log`. The current
-`FoliaMathTests` build succeeded in `scene-foundation-scripts-tests-fixed-build.log`;
-retired-request Scene serialization passed 1 test / 2 assertions (`36.log`).
-This accepts the Scene foundation component only. The real 20-case Common
-SVG comparison has 11 byte-equal cases and 9 remaining mismatches/errors
-(`35.log`); old limits tests also expose assumptions from an incomplete
-Source mixin harness and require independent concrete-Source evidence.
-The current Source witness reproduces 93 records, preserving the original
-75 inputs; it is not the final two-mode 150 SVG gate. Common emission,
-all-profile rendering, request ownership and Folia integration remain open.
+The enclosure extension at `adef6867` passed 86 selected TeX/Common/Scene SVG
+byte comparisons (1107 assertions), including every actual notation and four
+boundary inputs. Twelve retired-request cases passed 24 assertions. All 56
+positive/negative-height enclosure geometry, transform and paint outputs match
+the independent pinned Source witness; raw bbox/extender checks also pass.
+The full math run passed 776 tests / 212075 assertions / 150 suites without
+skips in `build/math-port/enclosure-all-full-math.log`. These results supersede
+the earlier foundation-only 11/20 comparison. Source148 retains the previous
+115 records unchanged, and the separate direct-MathML table corpus has eight
+accepted cases. The canonical 75 layout / two-mode 150 SVG gate, remaining
+specialized families, full request ownership and Folia integration remain open.
+The current checkpoint and next action belong only in HANDOFF.md.
 
 ## D. Application integration
 

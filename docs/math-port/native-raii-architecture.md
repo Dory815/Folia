@@ -1435,8 +1435,8 @@ until their exact typed primitive projection is implemented and Source-tested;
 a path approximation must not be presented as byte-equal rect/ellipse output.
 Line marks are Scene PathElement::line with enclosure_mark role; SVG serializes
 completed coordinates then Source stroke-width, with inherited fill/stroke.
-No additional group is introduced around each line. The table row-rule case is
-required and remains failing until real native output equals the pinned SVG.
+No additional group is introduced around each line. The required table row-rule
+case and all line/radical combinations now match the pinned SVG.
 
 Table follow-up Source evidence: SvgMtable.handleColor unconditionally writes
 getWidth() to its first output child; that child can be the bottom broken-border
@@ -1462,3 +1462,70 @@ locks the MathML compiler separately; it is not extra TeX package coverage.
 Source preserves mtr mathsize="150%" but keeps that row's rscale at 1 in the
 captured case. A separate mstyle scales cell content to 1.5. These observations
 do not establish nonunit row-scale coverage.
+
+### Complete enclosure geometry (2026-10-21 Root lock)
+
+The 29-notation Source survey and four valid boundary cases are captured by
+`tools/math-port/common-scene-source.cjs` in the canonical 148-record fixture;
+the original 115 records remain unchanged. Actual Source output puts the sole
+stroke-width style before path d, with separate cap, join and fill attributes.
+Phasor's join token is `mitre`. Empty roundedbox retains rx=.267 for a .467-wide
+rect. Preserve those observations without retaining SVG markup in Common.
+
+Extend the existing Scene types, not a second enclosure scene hierarchy:
+
+- `CoordinateMode {absolute, relative}`; trailing `mode` on LineTo and ArcTo,
+  default absolute. Relative endpoints are completed local deltas, not formulas.
+  Consumers resolve ordinary vector path coordinates; SVG retains l/a commands.
+- `ArcFlagSeparator {space, comma}`; trailing `flags_separator` on ArcTo,
+  default space. This affects serialization only, retaining Source's `0,1` token.
+- Rule gains trailing `optional<Unit> corner_radius`. It denotes a symmetric
+  rounded rectangle; keep the declared radius. Consumers apply ordinary shape
+  radius limits, while SVG retains the supplied rx. No hand-built corner arcs.
+- Ellipse contains `Point center`, `Unit radius_x/radius_y`, Paint, metadata and
+  role. Append it to Primitive so existing alternatives keep their indexes.
+- Path gains trailing Transform, `PathSyntax {compact, spaced}`,
+  `PathPaintEncoding {attributes, stroke_width_style}`, and
+  `StrokeJoinSpelling {standard, mitre}`. Geometry, paint and transform remain
+  authoritative once; the finite spelling fields affect projection only.
+
+Scene freeze validates new enums, finite values, nonnegative radii and path
+transforms and snapshots them. The mitre spelling requires an actual miter
+paint join with stroke_width_style. Relative commands have the same finite
+coordinate validation as absolute commands. Do not store SVG d/style strings.
+
+In the original Common Notation pair, replace the path-only NotationGeometry
+record with `variant<scene::Rule, scene::Ellipse, scene::Path>`. Keep existing
+bbox/extender/arrow formulas and traversal. Box emits one Rule; roundedbox adds
+its existing thickness+padding radius and deletes its old path approximation;
+circle emits one Ellipse with the existing center/radius formulas. Lines retain
+their proven PathElement::line emission. Phasor/longdiv retain their math and
+use spaced/stroke_width_style Paths; longdiv's arc stores its actual relative
+delta and comma flags. Arrows reuse the original arrow helper, retain relative
+line deltas at the original Source calls and move its transform onto Path.
+Remove the superseded absolute-path construction helpers when no longer used.
+All these primitives carry enclosure_mark role; there is no extra mark group.
+CommonMenclose emits the variant once and preserves its accepted child/radical
+traversal. Its previous shape restriction is removed only with concrete output.
+
+File ownership: Scene types/validation and native_raii_scene UT stay with the
+Scene owner; writer.cpp/native_svg_writer UT only serialize those values;
+common/notation pair owns numerical recipes and native_common_menclose UT;
+CommonMenclose pair owns traversal; common-scene-source/fixture/common_scene UT
+owns independent full38 Source comparison. No new production files or modules.
+Root owns interfaces, build parallel4, Source generation review and small commits.
+
+SVG projects enclosure rect x,y,width,height,fill,stroke-width,optional rx;
+ellipse rx,ry,cx,cy,fill,stroke-width; stroked path style,d,cap,join,fill;
+filled arrow d,optional transform. Noninherited paint values must still be
+represented. Defaults preserve all already accepted table/glyph/line output.
+Spaced path commands and numbers use Source spacing; compact paths remain as
+before. Transform belongs on the path, never an added g.
+
+Acceptance: all 29 actual TeX notations plus four surveyed boundary inputs and
+the existing mixed enclose/cancel package cases compare raw SVG bytes through
+TeX -> MML -> Common -> Scene. Keep the prior 115 Source records unchanged;
+do not relabel this extended corpus as the outstanding canonical 75/150 gate.
+Preserve existing exact layout expectations, replace path-approximation UT
+assertions with the real rect/ellipse/delta values, and exercise freeze/retirement
+for the new values. Root runs focused comparisons, then the complete math tests.
