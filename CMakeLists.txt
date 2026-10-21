@@ -763,6 +763,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_xml_dom_export.cpp
     tests/math/native_common_xml.cpp
     tests/math/native_svg_xml_wrapper.cpp
+    tests/math/native_svg_xml.cpp
     tests/math/native_common_mfenced.cpp
     tests/math/native_common_containers.cpp
     tests/math/native_common_menclose.cpp

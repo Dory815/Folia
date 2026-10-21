@@ -18,6 +18,7 @@ struct Node {
     std::size_t attribute_first{};
     std::size_t attribute_count{};
     std::u16string_view text{};
+    std::size_t xml_payload_index = std::numeric_limits<std::size_t>::max();
 };
 
 struct Metrics {
@@ -33,9 +34,12 @@ struct Case {
     std::string_view source_svg;
 };
 
+using XmlInitializer = std::function<void(folia::math::mml::XMLNode &, std::size_t)>;
+
 inline folia::math::mml::MmlNode &constructRoot(folia::math::mml::MmlDocument &document,
                                                 std::span<Node const> nodes,
-                                                std::span<Attribute const> attributes) {
+                                                std::span<Attribute const> attributes,
+                                                XmlInitializer const &initialize_xml = {}) {
     using namespace folia::math::mml;
     constexpr auto no_parent = std::numeric_limits<std::size_t>::max();
     if (nodes.empty())
@@ -69,8 +73,14 @@ inline folia::math::mml::MmlNode &constructRoot(folia::math::mml::MmlDocument &d
         const bool inferred_kind = *kind == NodeKind::inferred_mrow;
         if (node.is_inferred != inferred_kind)
             throw std::invalid_argument("MathML fixture inferred marker does not match its kind");
-        if (*kind == NodeKind::xml || *kind == NodeKind::html)
+        if (*kind == NodeKind::html)
             throw std::invalid_argument("MathML fixture XML/HTML payload is unsupported");
+        if (*kind == NodeKind::xml && !initialize_xml)
+            throw std::invalid_argument(
+                "MathML fixture XML payload requires an explicit initializer");
+        if (*kind == NodeKind::xml &&
+            node.xml_payload_index == std::numeric_limits<std::size_t>::max())
+            throw std::invalid_argument("MathML fixture XML payload index is missing");
         if (*kind != NodeKind::text && !node.text.empty())
             throw std::invalid_argument("Only MathML text nodes may carry text content");
         kinds.push_back(*kind);
@@ -117,6 +127,12 @@ inline folia::math::mml::MmlNode &constructRoot(folia::math::mml::MmlDocument &d
         auto &node = document.factory().make(kinds[i], std::move(own_attributes), children);
         if (kinds[i] == NodeKind::text)
             node.setText(std::u16string(nodes[i].text));
+        if (kinds[i] == NodeKind::xml) {
+            auto *xml = dynamic_cast<XMLNode *>(&node);
+            if (!xml)
+                throw std::logic_error("XML kind did not construct an XMLNode");
+            initialize_xml(*xml, nodes[i].xml_payload_index);
+        }
         built[i] = &node;
     }
     return *built[root_index];
