@@ -89,6 +89,9 @@ suite native_mml_base = [] {
         expect(fraction.children().front()->children().front() == &sourceChild);
         fraction.setInheritedAttributes();
         expect(fraction.children().size() == 2) << "finite arity is repaired with mrows";
+        for (auto const *child : fraction.children())
+            expect(child->kind() == m::NodeKind::mrow)
+                << "finite-arity repair creates mrow children";
 
         auto &inferred = document.factory().make(m::NodeKind::inferred_mrow);
         auto &child = document.factory().make(m::NodeKind::mi);

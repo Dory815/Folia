@@ -996,6 +996,29 @@ references it. No Context provider or active owner is removed by this batch.
 Evidence: context-record-disposition.md and context-record-before-removal.json.
 This is static retirement review, with no new build or runtime pass claimed.
 
+### Native behavior retained before Lite consumer cleanup (2026-10-21)
+
+Three existing test owners now retain the genuine behavior found in obsolete
+Context consumers: native_raii_mml_base checks each repaired fraction child is
+an mrow; xml_dom_adaptor checks XMLNode serialization through its retained real
+Lite/XML adaptor after the caller releases that adaptor; native_renderer_bridge
+directly exercises the C++ Renderer result/Scene lifetime, persistent macros and
+tags/references, matrix cells, malformed-input recovery and pre-cancel/Unicode
+RangeError recovery. Retained Scenes serialize to the complete same SVG after
+Renderer destruction using an independent immutable font resource catalog.
+The original C ABI tests remain intact; no production implementation changed.
+
+The first owner test incorrectly assumed resolved mathematical glyph keys were
+ASCII; its four matrix assertions failed normally. It now compares each cell
+with the resolved glyph from an individual render. The initial failure log is
+preserved as lite-coverage-public-owner.log. The fixed parallel4 build exits0
+(lite-coverage-build-fixed.log); eleven bounded filters execute **15 tests /
+1733 assertions**, all passing (lite-coverage-fixed-focused-results.json),
+including existing Lite/TeXHTML/XML, complete pinned Source SVG and C ABI checks.
+All ten remaining protected paths match their original byte baseline;
+lite-coverage-check.json records inputs and output hashes. No new full math,
+full font comparison, worker, Release or GUI run is claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

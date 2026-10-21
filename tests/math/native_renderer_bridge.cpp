@@ -5,20 +5,58 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <stdexcept>
+#include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <variant>
 #include <vector>
 #include "folia/math/native_renderer_bridge.h"
 #include "support/folia_test.hpp"
 
 import folia.math.util.utf16;
+import folia.math;
+import folia.math.fonts.newcm_font_module_provider;
+import folia.math.output.svg.writer;
 
 using namespace boost::ut;
 
 #include "fixtures/canonical_scene_modes_source.hpp"
 
 namespace {
+namespace scene = folia::math::output::scene;
+namespace svg = folia::math::output::svg;
+
+void collectCodepoints(scene::Group const &group, std::vector<std::uint32_t> &result) {
+    for (auto const &entry : group.entries) {
+        if (auto const *primitive = std::get_if<scene::Primitive>(&entry)) {
+            if (auto const *run = std::get_if<scene::GlyphRun>(primitive)) {
+                for (auto const &glyph : run->glyphs)
+                    result.push_back(glyph.key.codepoint);
+            } else if (auto const *text = std::get_if<scene::TextRun>(primitive)) {
+                for (auto const &glyph : text->measured_glyphs.glyphs)
+                    result.push_back(glyph.key.codepoint);
+            }
+        } else if (auto const *child =
+                       std::get_if<std::shared_ptr<scene::Group const>>(&entry)) {
+            if (*child)
+                collectCodepoints(**child, result);
+        }
+    }
+}
+
+std::vector<std::uint32_t> codepoints(scene::Scene const &value) {
+    std::vector<std::uint32_t> result;
+    collectCodepoints(value.root(), result);
+    return result;
+}
+
+bool containsCodepoint(std::vector<std::uint32_t> const &values, std::uint32_t value) {
+    return std::find(values.begin(), values.end(), value) != values.end();
+}
+
 struct RendererDelete {
     void operator()(FoliaNativeMathRenderer *p) const noexcept {
         FoliaNativeMathRendererDestroy(p);
@@ -253,6 +291,103 @@ suite native_renderer_bridge = [] {
         expect(after.status == FOLIA_NATIVE_MATH_SESSION_UNUSABLE)
             << "in-flight cancellation invalidates later requests";
         expect(after.result != nullptr) << "unusable session returns owned error result";
+    };
+
+    "public C++ Renderer retains its RenderResult Scene after destruction"_test = [] {
+        std::optional<folia::math::RenderResult> retained;
+        std::string retainedSvg;
+        std::vector<std::uint32_t> retainedCodepoints;
+        auto fontData = folia::math::fonts::makeNewcmFontData();
+        {
+            folia::math::Renderer renderer;
+            auto const baseline = renderer.render("x");
+            expect(!baseline.svg.empty()) << "public Renderer produces baseline SVG";
+
+            (void)renderer.render(R"(\newcommand{\FoliaOwnerMacro}{x})");
+            auto const macroUse = renderer.render(R"(\FoliaOwnerMacro)");
+            expect(codepoints(macroUse.scene) == codepoints(baseline.scene))
+                << "macro definition persists across public Renderer requests";
+
+            auto const labelA = renderer.render(
+                R"(\begin{equation}\tag{A}\label{folia:owner:a}x\end{equation})");
+            auto const labelB = renderer.render(
+                R"(\begin{equation}\tag{B}\label{folia:owner:b}\ref{folia:owner:a}\end{equation})");
+            const auto labelACodepoints = codepoints(labelA.scene);
+            const auto labelBCodepoints = codepoints(labelB.scene);
+            expect(containsCodepoint(labelACodepoints, static_cast<std::uint32_t>('A')))
+                << "tag A is present in the rendered Scene";
+            expect(containsCodepoint(labelBCodepoints, static_cast<std::uint32_t>('A')) &&
+                   containsCodepoint(labelBCodepoints, static_cast<std::uint32_t>('B')))
+                << "tag B and the reference to label A are present in the rendered Scene";
+
+            auto const matrix =
+                renderer.renderScene(R"(\begin{matrix}x&y\\z&w\end{matrix})");
+            const auto matrixCodepoints = codepoints(matrix);
+            for (const auto character : std::string_view("xyzw")) {
+                const auto cellCodepoints =
+                    codepoints(renderer.renderScene(std::string(1, character)));
+                expect(!cellCodepoints.empty()) << "individual matrix cell has a glyph";
+                for (const auto codepoint : cellCodepoints)
+                    expect(containsCodepoint(matrixCodepoints, codepoint))
+                        << "renderScene retains each cell's resolved mathematical glyph";
+            }
+
+            auto const malformed = renderer.render(R"(\frac{)");
+            expect(malformed.svg.find("data-mjx-error=") != std::string::npos ||
+                   malformed.svg.find("data-mml-node=\"merror\"") != std::string::npos)
+                << "malformed TeX produces the Source merror output";
+            expect(renderer.render("x").svg == baseline.svg)
+                << "Renderer recovers with identical SVG after malformed TeX";
+
+            retained.emplace(renderer.render("x+1"));
+            retainedSvg = retained->svg;
+            retainedCodepoints = codepoints(retained->scene);
+            svg::SvgWriteOptions options;
+            options.font_cache = svg::FontCacheMode::none;
+            options.font_resources = &fontData.svg_resources;
+            expect(svg::write(retained->scene, options) == retainedSvg)
+                << "complete Scene serialization matches Renderer SVG while Renderer is alive";
+        }
+
+        expect(retained.has_value()) << "RenderResult remains owned outside Renderer scope";
+        if (!retained)
+            return;
+        expect(retained->svg == retainedSvg) << "RenderResult SVG survives Renderer destruction";
+        expect(codepoints(retained->scene) == retainedCodepoints)
+            << "immutable Group Scene glyphs survive Renderer destruction";
+        svg::SvgWriteOptions options;
+        options.font_cache = svg::FontCacheMode::none;
+        options.font_resources = &fontData.svg_resources;
+        expect(svg::write(retained->scene, options) == retainedSvg)
+            << "complete Scene serialization remains byte-identical after Renderer destruction";
+    };
+
+    "public C++ Renderer cancellation and RangeError leave the session reusable"_test = [] {
+        folia::math::Renderer renderer;
+        const auto baseline = renderer.render("x").svg;
+        std::stop_source stopped;
+        stopped.request_stop();
+        bool observedCancellation = false;
+        try {
+            (void)renderer.render(std::string_view("x"), stopped.get_token(), {});
+        } catch (folia::math::RenderError const &error) {
+            observedCancellation = error.name == "Cancelled";
+        }
+        expect(observedCancellation) << "pre-cancelled public Renderer request reports Cancelled";
+        expect(renderer.render("x").svg == baseline)
+            << "pre-cancellation leaves the public Renderer session usable";
+
+        bool observedRangeError = false;
+        try {
+            (void)renderer.render(R"(\mathtip{x}{\unicode{x110000}})");
+        } catch (std::range_error const &error) {
+            observedRangeError =
+                std::string_view(error.what()) == "Invalid code point 1114112";
+        }
+        expect(observedRangeError)
+            << "out-of-range Unicode propagates the Source RangeError as std::range_error";
+        expect(renderer.render("x").svg == baseline)
+            << "Renderer recovers with identical SVG after Unicode RangeError";
     };
 };
 } // namespace

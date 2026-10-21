@@ -5,9 +5,9 @@
 ## 当前状态与下一步
 
 - 最后运行验证的代码提交为 `186a1fd7`，清单提交为 `d1e9cbb7`；本轮清理提交 `2ea7d904`。现存 inventory 与 files 清单一致：168 个未配置 cpp/ixx、active unresolved imports 0、接口/map 248 一致。未配置不等于可删除。
-- 已验 native parallel4 build、9 个聚焦测试/26,340 assertions、WinUI Debug worker PASS，数学 QuickJS 路径已退出。本轮只做静态审阅；未重跑 build/test，未验 Release/GUI 视觉。
+- 本轮 parallel4 build 与15个聚焦测试/1733 assertions通过（`lite-coverage-check.json`）；补齐分式子节点类型、真实XMLNode序列化、公有Renderer结果/Scene存活和恢复断言。既有Source SVG/C ABI同时通过。上轮WinUI Debug worker PASS，数学QuickJS已退出；本轮未重跑worker/full math/full字体，未验Release/GUI。
 - 9 个非媒体 dirty diff 已读；原字节/patch 保存在 `build/math-port/context-dirty-backup-20261021/`，九份原件哈希及补丁 reverse-check 通过。现已单独退役 `context_object_record_retirement.cpp` 的 15 个纯旧对象协议测试；其余保护路径不变。未删 Context/Lite/MML provider。
-- **下一步**：Root 已读 `build/math-port/{lite-dirty-disposition,mml-dirty-disposition}.md`。Lite 转义/序列化已有具名原生测试；下一批先核对其四个旧工具消费者，再处理 G259。G227 的分式补子节点/文本复制断言须与现有 typed 测试逐项对照后处置。三份 Luna 报告已完成，无 live agent/build。两处旧 `initializeFreshProperties` 调用无现存定义，不恢复旧投影 API。不能直接删 provider，仍有旧 runtime/MML()/classBinding 调用链。
+- **下一步**：四个Lite工具消费者已逐项归责，真实行为已补测通过；按 `lite-probes-retirement-review.md` / `lite-renderer-consumers-review.md` 和 `lite-retirement-check.cjs` 分批退役消费者、G259，再检查Lite module/store/text helper闭包。G227报告也已读，分式/复制与Renderer缺口已解决。全部报告/候选在ignored `build/math-port/`，无live agent/build。MML两处旧 `initializeFreshProperties` 无现存定义，不恢复旧投影API；MML provider仍有旧调用链，不能直接删。
 - 搜索被忽略的交付候选时用 `rg --no-ignore`。不要按旧 agent 的完成消息推断当前状态，也不要重做已接受的广审。保护 dirty 不是永久保留理由，但处置前必须读 diff、备份并归责。
 
 ## 固定架构与执行边界
