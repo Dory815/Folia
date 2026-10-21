@@ -11,7 +11,8 @@
   56e3bb550c91fd7005566f19c079cb7a503223cf, with a separate js-yaml JSON_SCHEMA
   resolver and owned UTF-16 config tree. No yaml-cpp default scalar conversions.
   Depth/size/alias expansion limits and cyclic aliases must fail explicitly.
-- Next: implement typed YAML/config values and frontmatter extraction, consume
+- Implementation candidate now exists in config_value/frontmatter/config_yaml modules, with native oracle and resource-limit tests. Not yet built or accepted.
+- Next: push the implementation batch and verify Windows Debug/Release; consume
   the oracle in native tests, then run Debug/Release CI and review a stage PR.
   Directive interpretation, config precedence and themes remain subsequent work;
   do not wire shared preprocessing to family renderers before those are ready.
@@ -211,4 +212,5 @@ oracle passing is distinct from native C++ tests passing.
   Negative coordinates in an empty diagram can be legitimate.
 - Number formatting must use JavaScript shortest significant digits; exact
   fixed integer formatting differs for values above the safe integer range.
+
 
