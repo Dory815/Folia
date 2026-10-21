@@ -1353,6 +1353,30 @@ native test passes 55 assertions. Evidence: script-base-class-source-observation
 script-base-promoted.json, script-base-build.log and
 script-base-native-covered-results.json. No broad runtime gate was repeated.
 
+### Constructor/container consumer retirement (2026-10-21)
+
+The constructor's original 88-case Source profile passes unchanged. The
+container oracle first passes its complete original fixture/profile check,
+then passes the same 6,480 frozen rows after removing only C++ emission.
+Both independent profiles remain byte-equal. Actual BaseNode behavior is
+protected by the preceding four-branch 1/55 native test; factory kinds,
+defaults, attributes and LayoutNode coverage retain their previously accepted
+tests. Sparse/prototype arrays and custom callback/getter choreography are
+Source provenance, not native API requirements.
+
+The four fixture-only tools retire in 39ab4396; the shared inheritance runner
+drops only the constructor's 91 assertions/two tests (remaining 1,449/13),
+and was not run. The two unconfigured C++ consumers retire separately.
+Removal build57997 passes with parallel4. All 478 active sources, six protected
+paths, ten verified input/binary entries, six retained files and seventeen
+target source lists remain byte-equal. The list of ten includes the script
+test twice and represents nine distinct paths; no extra runtime gate is
+implied. Class-binding cpp/ixx test consumers decrease from 50 to 48.
+Evidence: constructor-container-before.json,
+constructor-container-tools-promoted.json and constructor-container-final-check.json.
+No math provider/algorithm or Source profile is removed; no broad runtime
+gate was repeated.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
