@@ -4,14 +4,19 @@
 [native-raii-architecture.md](native-raii-architecture.md)，总验收门槛见
 [native-raii-acceptance.md](native-raii-acceptance.md)。实质状态变化后更新本文件；不另建交接笔记。
 
-## 当前 checkpoint：canonical 75/150 已验，下一步请求生命周期
+## 当前 checkpoint：请求期内存门槛诊断中（75/150 已验）
 
-- 最新parallel4 build `canonical-modes-build-fixed2.log` exit0；full `canonical-modes-full-math.log` exit0：845 tests / 214872 assertions / 170 suites，无skip。无live build/process；全部owner已freeze。
+- 无live build/process，所有owner freeze。下一动作：Root根据只读结论锁定原ParseOptions/TeX的调用者RAII request frame及核心compile接口；先划清配置/session/表达式状态，保留文档活着时的Source观测和原算法，再分工实施。禁止compile返回时随手clear/retire或放宽CRT判定。当前request UT未通过，不能接入Folia或写完成。
+
+- 最近完整math基线（加入生命周期观测前）：`canonical-modes-full-math.log` exit0，845 tests / 214872 assertions / 170 suites，无skip。配套parallel4 build `canonical-modes-build-fixed2.log` exit0。
 - hosted 75 layout pairs、150最终Scene metrics、150完整SVG byte-equal：1/1279；default86：1/1021；leading：1/20；fonts：1/73。独立Source两child各75零异常，实际EventTarget只注册不dispatch。fixture SHA `5c970e41dc36f7717f1dbf31c576a6c875f445068284fc8c2cd7042e9a17985c`，write/default/no-op过。
 - strict `canonical-modes-results.json`仍73equal+2 `source_error_native_success`（Lite缺addEventListener），strict原fixture SHA `31761f077a57e92177b38c44dba0808b78e6616e99e1242f50058aafbe8de8ba`不变。hosted通过不改变strict事实，也不证明浏览器事件行为。
 - 本批提交：`c8e53353`架构、`8ce3d53b`共享输入、`060bd58d`共享测试管线、`5743e3fc`mspace默认leading、`71e4abe5`Source cacheID/outline来源、`7f83584a`Source/fixture、`af8c5ede`UT/CMake。独立空cache后缀与缺失glyph不同；bbm-bold感叹号outline来源为MathJaxNewcm/bold。
 - generator512MB有界写出完整证据，保留整数键顺序与eager lookup副作用；40shards/80events/24646profile锁过，第二次88outputs mtime不变。旧OOM/初次hosted失败均已被上述结果取代，不要重复诊断。
-- 下一批已由Root在architecture末尾锁定：原owner中的无分配typed InstanceCount成员+Windows Debug CRT真实normal/client blocks/bytes观测，复用既有buildScene（本来就是scene-only入口），不复制compile管线/不改所有权/不加释放补丁。common_base_emission负责counter与MML/Common成员，common_rows_emission仅DOM base成员，common_scene_entry仅192+768混合请求UT/CRT test helper。Root等freeze→review→注册CMake→parallel4 build→聚焦→必要full。旧Context计数不可代替新管线；持久宏/label及C ABI取消另验。无live进程；额度不再受限。
+- 下一批已由Root在architecture末尾锁定并提交`77445af9`：原owner无分配InstanceCount成员+Windows Debug CRT真实normal/client blocks/bytes；复用buildScene（已是scene-only入口），不复制compile管线/不改所有权/不加释放补丁。counter/MML/Common、DOM、UT三owner均freeze，Root已review/format/注册CMake。UT用12个无状态输入，192+768混合请求；错误路径另测，不能循环含宏/label/编号的canonical75断言零增长。
+- request build和diagnostic-build均exit0，parallel4。两次focused正常exit1（1test/10asserts，5pass5fail）；无live build/process。日志`request-lifetime-objects-heap.log`（最新含差值）、`...-first.log`（首轮）。活MML/Common/DOM、owner退出和retained Scene均过；CRT门槛未过。12输入第二轮逐项重复，after192==after960：相对x baseline +5 blocks/144 bytes，最大+16/480；不是持续增长，仍不能写请求所有权通过。
+- 新证据：ParseOptions.root/nodeLists/mathItem、TeX::mathNode_/latex_、textmacro请求scratch仍在持久对象上。CompileScope只清texhtmlAdaptor；tests/tex_jax.cpp:327+在文档活着时观测字段。common_scene_entry只读结论已收到：保留原配置/factory配置/tag定义/session语义，表达式equation/parsers/root/lists/error/factory借用及输入需caller-owned frame；接口仍待Root锁定，未实施。Counter/原owner观测已提交`54be844a`；未提交候选仅request_lifetime.cpp、heap_snapshot.hpp及CMake一行注册（有意保留失败证据，不冒充green）。未跑新的full。
+- 接入只读结论（未实施）：现folia_math没有编入math.ixx/.cpp和C ABI bridge，WinUI仍QuickJS；原Renderer owner仍Context路径。后续保留C ABI UTF16/线程/取消/结果释放接口和WinUI队列/缓存，只更换原owner内部管线，仍通过SVG parser接入，不扩展D2D/额外Scene ABI。math.cpp既有dirty需保留，不可reset覆盖。
 
 ## 已接受的近期证据
 

@@ -58,6 +58,27 @@ green corpora establish reference data, not acceptance for rewritten code.
   observation seams, without adding production behavior switches. Verify
   cleanup and the Source-defined state of the next request.
 
+The request-lifetime observation batch (`54be844a`, following architecture lock
+`77445af9`) instruments actual MmlNode/MmlDocument/CommonWrapper and DOM base
+construction/destruction with allocation-free typed counters. Parallel4
+`request-lifetime-build.log` and `request-lifetime-diagnostic-build.log` pass.
+The pending request UT runs 12 stateless formulas for 192 + 768 mixed Scene/SVG
+requests, actual error/recovery paths and retained Scene use after InputOwner
+destruction. Both focused executions exit normally with failure: 1 test /
+10 assertions, 5 pass and 5 fail. This is diagnostic evidence, not acceptance;
+the UT and its CMake registration remain uncommitted pending the ownership fix.
+
+Live node/wrapper/DOM counts and retained Scene output pass, but the Windows
+Debug CRT normal allocation baseline fails. `request-lifetime-objects-heap.log`
+records a repeating per-input footprint, with the second cycle identical to
+the first, at most +16 blocks / 480 bytes relative to the x baseline; after192
+and after960 both end at +5 blocks / 144 bytes. No continuous growth is observed
+in this run. Persistent ParseOptions nevertheless retains expression lists and
+root/MathItem borrows after its document scope. These require an explicit
+caller-owned request lifetime while preserving Source observations inside that
+lifetime, rather than end-of-compile clearing or relaxed counters. A new full
+math run and request ownership acceptance remain pending.
+
 ## C. Source fidelity
 
 - Mathtools must preserve all six upstream file responsibilities and every
