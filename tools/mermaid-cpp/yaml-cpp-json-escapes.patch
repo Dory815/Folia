@@ -23,9 +23,12 @@ diff --git a/src/exp.cpp b/src/exp.cpp
 diff --git a/src/singledocparser.cpp b/src/singledocparser.cpp
 --- a/src/singledocparser.cpp
 +++ b/src/singledocparser.cpp
-@@ -144,5 +144,12 @@ void SingleDocParser::HandleNode(EventHandler& eventHandler) {
+@@ -144,5 +144,15 @@ void SingleDocParser::HandleNode(EventHandler& eventHandler) {
    if (tag == "?")
      eventHandler.OnNull(mark, anchor);
++  else if (m_pCollectionStack->GetCurCollectionType() == CollectionType::FlowMap ||
++           m_pCollectionStack->GetCurCollectionType() == CollectionType::FlowSeq)
++    throw ParserException(mark, ErrorMsg::FLOW_END);
 +  else if (tag == "tag:yaml.org,2002:seq") {
 +    eventHandler.OnSequenceStart(mark, tag, anchor, EmitterStyle::Default);
 +    eventHandler.OnSequenceEnd();
