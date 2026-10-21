@@ -63,6 +63,9 @@ suite native_svg_writer = [] {
         builder.add_primitive(
             parent,
             scene::Rule{{0, 0.2, 0.25, 0.05}, scene::Paint{.fill = scene::Color{255, 0, 0, 255}}});
+        builder.add_primitive(parent,
+                              scene::Rule{{0.1, -0.2, 0.3, 0.4}, {}, {},
+                                          scene::ElementRole::link_hitbox});
         scene::Paint path_paint;
         path_paint.fill_rule = scene::FillRule::evenodd;
         builder.add_primitive(
@@ -76,6 +79,9 @@ suite native_svg_writer = [] {
         auto anchor = output.find(
             "<a href=\"https://example.test/?a&amp;b\" target=\"_blank\" rel=\"noopener\">");
         auto rule = output.find("<rect x=\"0\" y=\"200\" width=\"250\" height=\"50\"");
+        auto hitbox = output.find("<rect data-hitbox=\"true\" fill=\"none\" stroke=\"none\" "
+                                  "pointer-events=\"all\" width=\"300\" height=\"400\" "
+                                  "x=\"100\" y=\"-200\"/>");
         auto child = output.find("transform=\"matrix(1 0 0 1 500 250)\"");
         expect(output.find("<title>x&lt;&amp;</title>") != output.npos);
         expect(output.find("clip-path=\"url(#clip-") != output.npos);
@@ -86,6 +92,7 @@ suite native_svg_writer = [] {
         expect(output.find("transform=\"translate(719,363) scale(0.707)\"") != output.npos);
         expect(output.find("transform=\"scale(1,-1)\"") != output.npos);
         expect(anchor < rule && rule < child);
+        expect(anchor < hitbox);
         expect(output.find("class=\"outer\"") != output.npos);
     };
 

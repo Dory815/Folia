@@ -461,12 +461,31 @@ void append_rule(std::string &out, scene::Rule const &rule) {
         return;
     }
     const bool background = rule.role == scene::ElementRole::background_box;
-    if (background)
-        append_paint(out, rule.paint);
     if (rule.role == scene::ElementRole::link_hitbox) {
         detail::append_attribute(out, "data-hitbox", "true");
+        detail::append_attribute(out, "fill", "none");
+        detail::append_attribute(out, "stroke", "none");
         detail::append_attribute(out, "pointer-events", "all");
+        detail::append_attribute(out, "width", number(rule.bounds.width * 1000));
+        detail::append_attribute(out, "height", number(rule.bounds.height * 1000));
+        detail::append_attribute(out, "x", number(rule.bounds.x * 1000));
+        detail::append_attribute(out, "y", number(rule.bounds.y * 1000));
+        if (rule.corner_radius)
+            detail::append_attribute(out, "rx", number(*rule.corner_radius * 1000));
+        auto paint = rule.paint;
+        paint.fill = scene::InheritedPaint{};
+        paint.stroke = scene::InheritedPaint{};
+        append_paint(out, paint);
+        static constexpr std::array<std::string_view, 17> reserved{
+            "data-hitbox", "fill", "stroke", "pointer-events", "width", "height", "x", "y",
+            "rx", "fill-rule", "fill-opacity", "stroke-opacity", "stroke-width", "opacity",
+            "stroke-linecap", "stroke-linejoin", "stroke-dasharray"};
+        detail::append_metadata(out, rule.metadata, reserved);
+        out += "/>";
+        return;
     }
+    if (background)
+        append_paint(out, rule.paint);
     if (rule.role == scene::ElementRole::fraction_rule ||
         rule.role == scene::ElementRole::radical_rule) {
         detail::append_attribute(out, "width", number(rule.bounds.width * 1000));
@@ -479,13 +498,8 @@ void append_rule(std::string &out, scene::Rule const &rule) {
         detail::append_attribute(out, "width", number(rule.bounds.width * 1000));
         detail::append_attribute(out, "height", number(rule.bounds.height * 1000));
     }
-    auto paint = rule.paint;
-    if (rule.role == scene::ElementRole::link_hitbox) {
-        paint.fill = scene::NoPaint{};
-        paint.stroke = scene::NoPaint{};
-    }
     if (!background)
-        append_paint(out, paint);
+        append_paint(out, rule.paint);
     if (rule.corner_radius)
         detail::append_attribute(out, "rx", number(*rule.corner_radius * 1000));
     static constexpr std::array<std::string_view, 17> reserved{"x",
