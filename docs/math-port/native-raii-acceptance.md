@@ -1485,6 +1485,34 @@ accent-expectations-bridge.log, accent-protocols-promoted.json and
 accent-protocols-final-check.json. No production algorithm or new native
 runtime/broad gate is involved.
 
+### Simple MML independent Source profile (2026-10-21)
+
+Root separated the existing five-family observer from C++ emission. The
+one-time ignored observer reproduces all 339,824 bytes of the frozen fixture,
+then the clean owner matches all 106 ordered scenarios, 368 direct equals,
+349 deep expectations, 31 configuration observations, 102 calls and three
+complete matrices (1,605 rows). Every one of 8,625 legacy p/list operands
+matches in order; their recursive values are exactly the original 296-value
+graph. The 732 static C++ expect calls include matrix loop bodies; 357 are
+static deep calls, while 349 are ordinary Source deep observations. The
+original reported assertion count is 7,667. These counts have distinct scopes.
+
+The independent tagged JSON preserves undefined/null, NaN/infinities/-0,
+UTF-16 strings, ordered object keys and array lengths/keys. It passes exact
+checking through the replacement existing simple-mml-oracle.cjs owner.
+No native values generate expectations; no C++ emitter/slot table survives in
+the canonical owner. The native defaults, menclose/mpadded, table alignment
+and mglyph owners retain their previously accepted coverage. A separate Luna
+static review found no specific omission; Root owns the executed proof.
+
+The fixture-only simple runner retires. Shared action gates drop only the
+simple fixture/counts and its five method edits (main remains 1,364/1,346;
+red has no count change). The compile-only group retains mfenced as primary
+and maction as additional fixture. None of these legacy native gates ran.
+Evidence: simple-source-migration/bridge-proof.json,
+simple-source-migration/independent-review.md and simple-source-promoted.json.
+The C++ consumer still awaits its separate removal/build batch.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

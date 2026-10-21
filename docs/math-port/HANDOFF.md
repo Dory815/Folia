@@ -15,7 +15,9 @@
 
 accent已验收/提交，窄图已刷新。无live agent/build/native。
 
-**下一具体工作由Root接手**：读 `tools/math-port/simple-mml-oracle.cjs`，设计与HTML相同的一次性Source observer：先完整匹配旧Cpp，再捕获并证明全部Source输入/期待顺序，存独立JSON；clean Source-only替换原owner，不留Cpp模板/槽表/并列oracle。Luna只交了 `build/math-port/scripts-retirement-next/simple-source-migration/STATUS.md` 静态未完成报告（106场景/732期待/357deep/1605矩阵行/296递归值及pins），未实现可靠迁移；紧耦合不等于无法做。Root拒绝只留kinds/pins替代全部期待。原 `run-retirement-gates.cjs`未执行，勿重跑已接受Common/string广测；reference_script/simple_mml均保留。
+**最新停点/下一步**：simple-mml原owner与独立profile已提升，canonical106/7667 exact通过；一专用runner退、action gates只减simple7667/106及5method edits，compile组保留mfenced primary+maction（均未跑）。证据 `simple-source-promoted.json`，快照 `simple-consumer-before.json`。此工具/profile批待提交，旧Cpp仍在；提交后单独退Cpp→parallel4 build/hash核对。完整339824byte旧Cpp、106场景/1605矩阵行/8625 p/list顺序/296递归值证明见 `simple-source-migration/bridge-proof.json`；profile742240byte/hash d1e05bb9…56ede，Luna独立静态复核无遗漏。勿重跑已存在staging的桥。
+
+Luna `/root/class_scripts` 正修 `build/math-port/script-source-migration/`：Root已读候选，指出observer begin缺inputs初始化及桥未校验observer全文，另要求hash锁/拒覆盖；等待修正版再审，尚未执行。原script/simple Cpp均保留。旧 `scripts-retirement-next/run-retirement-gates.cjs` 不用，勿重跑已接受Common/string广测。
 
 已决事项勿重开：paired scripts、wrapper classes、BaseNode、forms/accent缺口均已修/验；512/513是旧host预算而非MathJax算法，walk/replace consumer已退，不重建；现有typed遍历/parent/return与RAII恢复保留，不声称任意深树有界。后续沿八组 `class-review-*.json` 既有报告推进。
 

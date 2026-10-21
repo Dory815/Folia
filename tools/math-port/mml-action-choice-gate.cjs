@@ -33,12 +33,5 @@ inherit('action-tooltip-case-fold-omitted','host::lowerString(actiontype)','host
 inherit('action-tooltip-fixed-args-replaced','setInheritedAttributes(attributes, false, 1, false);','setInheritedAttributes(attributes, display, level, prime);');
 inherit('action-tooltip-tip-read-before-base-callback','const NodeValue tip = host::numericChild(childNodes, 1);','');
 mutants.at(-1).edits.push(['const NodeValue base = host::numericChild(childNodes, 0);','const NodeValue tip = host::numericChild(childNodes, 1);\n    const NodeValue base = host::numericChild(childNodes, 0);']);
-const menclose=method('core/mml_tree/mml_nodes/menclose.cpp','NodeValue MmlMenclose::setTeXclass(');
-menclose('menclose-update-omitted','updateTeXclass(children->get(0));','');
-menclose('menclose-child-result-discarded','return previous;','return this;');
-const padded=method('core/mml_tree/mml_nodes/mpadded.cpp','NodeValue MmlMpadded::setTeXclass(');
-padded('mpadded-previous-class-omitted','getPrevClass(previous);','');
-padded('mpadded-ord-write-omitted','setTexClass(Property(static_cast<double>(TEXCLASS.ORD)));','');
-padded('mpadded-child-null-input-replaced','.setTeXclass(NodeValue(PropertyNull{}));','.setTeXclass(previous);');
 method('core/mml_tree/action_host.ixx','inline std::u16string lowerString(')('action-null-string-error-flattened','if(std::holds_alternative<PropertyNull>(value.value))typeError("Cannot read properties of null (reading \'toLowerCase\')");','');
-require('./native-mutation-runner.cjs')({name:'math-port-action-choice-consumers',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_maction.cpp',additionalFixtures:['reference_mathchoice.cpp','reference_simple_mml.cpp','reference_mml_action_entries.inc','reference_mml_action_errors.cpp'],pattern:'*math_port*',assertions:9031,tests:1452,suiteSummaries:[{assertions:935,tests:934},{assertions:412,tests:410},{assertions:7667,tests:106},{assertions:9,tests:1},{assertions:8,tests:1}],mutants});
+require('./native-mutation-runner.cjs')({name:'math-port-action-choice-consumers',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_maction.cpp',additionalFixtures:['reference_mathchoice.cpp','reference_mml_action_entries.inc','reference_mml_action_errors.cpp'],pattern:'*math_port*',assertions:1364,tests:1346,suiteSummaries:[{assertions:935,tests:934},{assertions:412,tests:410},{assertions:9,tests:1},{assertions:8,tests:1}],mutants});
