@@ -52,7 +52,7 @@ import folia.math.input.tex.upgreek.configuration;
 import folia.math.input.tex.verb.configuration;
 import folia.math.output.common;
 import folia.math.output.scene;
-import folia.math.output.svg.menclose_notations;
+import folia.math.output.svg.wrapper_factory;
 import folia.math.output.svg.writer;
 import folia.math.util.utf16;
 
@@ -186,8 +186,7 @@ common::CommonOutputJaxConfig commonConfig(CommonSceneCase const &item, InputOwn
 scene::Scene buildSceneFromDocument(mml::MmlDocument &document, CommonSceneCase const &item,
                                     InputOwner &owner, common::MeasurementTarget &measurement) {
     common::LayoutJob job(document, commonConfig(item, owner), measurement,
-                          common::CommonWrapperFactory::standardNodes(svg::mencloseNotations()),
-                          makeLinebreakVisitor);
+                          svg::SvgWrapperFactory::defaultNodes(), makeLinebreakVisitor);
     return job.buildScene();
 }
 
@@ -222,8 +221,7 @@ class NativeOutput final : public folia::math::core::MathOutputJaxService {
         auto config = commonConfig(item_, owner_);
         return common::CommonOutputJax::getBBox(
             document, *math.root, std::move(config), measurement_,
-            common::CommonWrapperFactory::standardNodes(svg::mencloseNotations()),
-            makeLinebreakVisitor);
+            svg::SvgWrapperFactory::defaultNodes(), makeLinebreakVisitor);
     }
 };
 

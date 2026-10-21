@@ -289,6 +289,8 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/scene/builder.ixx
     src/math/output/svg/writer.ixx
     src/math/output/svg/menclose_notations.ixx
+    src/math/output/svg/merror.ixx
+    src/math/output/svg/wrapper_factory.ixx
     src/math/output/svg/font_data.ixx
     src/math/output/common/font_data.ixx
     src/math/output/common/font_path.ixx
@@ -437,6 +439,8 @@ target_sources(folia_math PRIVATE
     src/math/output/scene/builder.cpp
     src/math/output/svg/writer.cpp
     src/math/output/svg/menclose_notations.cpp
+    src/math/output/svg/merror.cpp
+    src/math/output/svg/wrapper_factory.cpp
     src/math/output/svg/node_metadata.cpp
     src/math/output/svg/font_data.cpp
     src/math/output/common/font_data.cpp

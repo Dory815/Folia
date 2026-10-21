@@ -12,7 +12,6 @@ export import :menclose;
 export import :text_node;
 export import :math;
 export import :mfenced;
-export import :merror;
 export import :maction;
 export import :semantics;
 export import :tex_atom;
