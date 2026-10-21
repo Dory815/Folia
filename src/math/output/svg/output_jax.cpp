@@ -356,16 +356,6 @@ std::vector<scene::NodeRef> SvgOutputJax::buildScene(
     } scope(container,parent);
     const auto bbox=wrapper.getOuterBBox();
 
-    auto previousXmlCreator=placements_.exchangeXmlSvgNodeCreator(
-        [this](scene::Builder& target,scene::NodeRef shell,
-            const PropertyList& attributes,DOMNodeRef html){
-            return createXmlSceneNode(target,std::move(shell),attributes,std::move(html));
-        });
-    struct RestoreXmlCreator {
-        scene::WrapperFactory& placements;
-        scene::WrapperFactory::XmlSvgNodeCreator previous;
-        ~RestoreXmlCreator(){(void)placements.exchangeXmlSvgNodeCreator(std::move(previous));}
-    } restoreXmlCreator{placements_,std::move(previousXmlCreator)};
     auto [root,flip]=createSVG(builder,bbox->h,bbox->d,bbox->w,
         appendToProjectedParent?parent:DOMNodeRef{});
     if(!bbox->pwidth.empty()){
@@ -555,23 +545,6 @@ void SvgOutputJax::bindSceneContextNodes(std::shared_ptr<SceneContextNodes> node
         if(!dom||!*dom)return scene::NodeRef{};
         return importXmlSvgNode(std::make_shared<scene::Node>(),*dom);
     });
-}
-
-scene::NodeRef SvgOutputJax::createXmlSceneNode(scene::Builder& builder,
-    scene::NodeRef shell,const PropertyList& attributes,DOMNodeRef html){
-    if(!propertyBindings_||!sceneContextNodes_||!liteModule_)
-        throw Exception("Unimplemented",u"SVG XML Scene services are not bound");
-    const auto content=PropertyArray{nodeProperty(html)};
-    auto previousTarget=exchangeSceneSvgTarget({});
-    struct RestoreTarget {
-        SvgOutputJax& jax;
-        SceneSvgTarget previous;
-        ~RestoreTarget(){(void)jax.exchangeSceneSvgTarget(std::move(previous));}
-    } restoreTarget{*this,std::move(previousTarget)};
-    auto actual=sourceSvgNode(u"foreignObject",PropertyList(attributes),content);
-    const auto identity=propertyBindings_->to(nodeProperty(actual));
-    if(const auto mapped=sceneContextNodes_->sourceNode(identity))return *mapped;
-    return importXmlSvgNode(builder,std::move(shell),actual);
 }
 
 scene::NodeRef SvgOutputJax::importXmlSvgNode(scene::Builder& builder,

@@ -174,8 +174,8 @@ common::CommonOutputJaxConfig commonConfig(CommonSceneCase const &item, InputOwn
     common::CommonOptions options;
     options.displayOverflow = "linebreak";
     options.linebreaks.inlineBreaks = true;
-    common::ExtendedMetrics metrics{item.em, item.ex,        static_cast<double>(item.width),
-                                    1,       "MathJaxNewcm", item.display};
+    common::ExtendedMetrics metrics{item.em, item.ex, static_cast<double>(item.width),
+                                    1,       {},      item.display};
     common::CommonOutputJaxConfig config{metrics, std::move(options), owner.fonts.fonts,
                                          "MathJaxNewcm"};
     // Source SVG::forceInlineBreaks returns the enabled inline-break option.
@@ -183,9 +183,21 @@ common::CommonOutputJaxConfig commonConfig(CommonSceneCase const &item, InputOwn
     return config;
 }
 
+common::HtmlMeasurement htmlMeasurement(InputOwner &owner) {
+    // Source convert() starts at body; XML measurement attaches its container
+    // to that node's actual parent (html), not to a fabricated font metrics host.
+    const auto document = owner.adaptor.parse(u"", u"text/html");
+    const auto parent = owner.adaptor.parent(owner.adaptor.body(document));
+    const std::array<folia::math::AttributeData, 2> attributes{
+        {{u"class", u"MathJax"}, {u"jax", u"SVG"}}};
+    return {owner.adaptor, parent, owner.adaptor.node(u"mjx-container", attributes)};
+}
+
 scene::Scene buildSceneFromDocument(mml::MmlDocument &document, CommonSceneCase const &item,
                                     InputOwner &owner, common::MeasurementTarget &measurement) {
-    common::LayoutJob job(document, commonConfig(item, owner), measurement,
+    auto config = commonConfig(item, owner);
+    config.htmlMeasurement.emplace(htmlMeasurement(owner));
+    common::LayoutJob job(document, std::move(config), measurement,
                           svg::SvgWrapperFactory::defaultNodes(), makeLinebreakVisitor);
     return job.buildScene();
 }
@@ -219,6 +231,7 @@ class NativeOutput final : public folia::math::core::MathOutputJaxService {
             throw std::logic_error(
                 "Common-to-Scene proof measurement requires compiled MathItem root");
         auto config = commonConfig(item_, owner_);
+        config.htmlMeasurement.emplace(htmlMeasurement(owner_));
         return common::CommonOutputJax::getBBox(
             document, *math.root, std::move(config), measurement_,
             svg::SvgWrapperFactory::defaultNodes(), makeLinebreakVisitor);

@@ -4,6 +4,7 @@
 module folia.math.output.svg.wrapper_factory;
 import folia.math.output.svg.menclose_notations;
 import folia.math.output.svg.merror;
+import folia.math.output.svg.xml_wrapper;
 import folia.math.core.mml_tree.mml_document;
 import std;
 
@@ -15,6 +16,22 @@ common::CommonWrapperCatalog SvgWrapperFactory::defaultNodes() {
     if (merror == catalog.end())
         throw std::logic_error("Common standard catalog has no merror registration");
     *merror = merrorRegistration();
+    const auto xml = std::ranges::find(catalog, folia::math::mml::NodeKind::xml,
+                                       &common::CommonWrapperRegistration::kind);
+    if (xml == catalog.end())
+        throw std::logic_error("Common standard catalog has no XML registration");
+    *xml = xmlRegistration();
+    const auto html = std::ranges::find(catalog, folia::math::mml::NodeKind::html,
+                                        &common::CommonWrapperRegistration::kind);
+    if (html == catalog.end())
+        throw std::logic_error("Common standard catalog has no HTML registration");
+    *html = htmlRegistration();
+    const auto annotationXml =
+        std::ranges::find(catalog, folia::math::mml::NodeKind::annotation_xml,
+                          &common::CommonWrapperRegistration::kind);
+    if (annotationXml == catalog.end())
+        throw std::logic_error("Common standard catalog has no annotation-xml registration");
+    *annotationXml = annotationXmlRegistration();
     return catalog;
 }
 

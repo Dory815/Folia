@@ -20,7 +20,6 @@ export import :scriptbase;
 export import :msubsup;
 export import :munderover;
 export import :mmultiscripts;
-export import :xml_node;
 export import :inherited_svg_wrapper;
 import std;
 

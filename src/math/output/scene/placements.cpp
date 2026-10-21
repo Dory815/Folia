@@ -22,6 +22,5 @@ void registerScenePlacements(WrapperFactory& factory){
     registerMsubsupPlacement(factory);
     registerMunderoverPlacement(factory);
     registerMmultiscriptsPlacement(factory);
-    registerXmlNodePlacement(factory);
 }
 }

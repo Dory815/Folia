@@ -99,8 +99,6 @@ public:
     }
     options::Value dispatchSvg(std::span<const options::Value> args);
     DOMNodeRef sourceSvgNode(std::u16string_view,PropertyList={},PropertyArray={});
-    scene::NodeRef createXmlSceneNode(scene::Builder&,scene::NodeRef,
-        const PropertyList&,DOMNodeRef);
     void bindSceneContextNodes(std::shared_ptr<SceneContextNodes>,
         std::shared_ptr<adaptors::lite::LiteModule>);
     void setDefaultHtmlMethod(options::ObjectRef function){defaultHtmlMethod_=function;}

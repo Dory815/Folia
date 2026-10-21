@@ -36,18 +36,7 @@ class WrapperFactory {
         std::string_view,std::string,Builder&)> glyphCache_;
     bool useXlink_=false;
     std::function<common::UnknownBBox(const NodeRef&,std::u16string_view,std::string_view)> textMeasurement_;
-    std::function<NodeRef(Builder&,NodeRef,const PropertyList&,DOMNodeRef)> xmlSvgNodeCreator_;
 public:
-    using XmlSvgNodeCreator=std::function<NodeRef(Builder&,NodeRef,const PropertyList&,DOMNodeRef)>;
-    XmlSvgNodeCreator exchangeXmlSvgNodeCreator(XmlSvgNodeCreator creator){
-        return std::exchange(xmlSvgNodeCreator_,std::move(creator));
-    }
-    NodeRef createXmlSvgNode(Builder& builder,NodeRef shell,const PropertyList& attributes,
-                             DOMNodeRef html)const{
-        if(!xmlSvgNodeCreator_)
-            throw options::Exception("Unimplemented",u"SVG XML node creator is not bound");
-        return xmlSvgNodeCreator_(builder,std::move(shell),attributes,std::move(html));
-    }
     using MactionAction = std::function<void(common::CommonMaction&,Builder&,
         std::span<const NodeRef>)>;
     void setLayoutObserver(LayoutEventObserverRef observer){observer_=std::move(observer);}
