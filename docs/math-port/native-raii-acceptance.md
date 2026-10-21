@@ -1511,7 +1511,12 @@ red has no count change). The compile-only group retains mfenced as primary
 and maction as additional fixture. None of these legacy native gates ran.
 Evidence: simple-source-migration/bridge-proof.json,
 simple-source-migration/independent-review.md and simple-source-promoted.json.
-The C++ consumer still awaits its separate removal/build batch.
+The C++ consumer then retires separately. Removal build63833 passes with
+parallel4; all 478 active sources, six protected paths, nine verified
+input/binary paths, eight retained paths and seventeen target lists remain
+byte-equal. Class-binding cpp/ixx test consumers decrease 41 to 40. Evidence:
+simple-consumer-before.json and simple-consumer-final-check.json. No repeated
+native/broad runtime gate is claimed.
 
 ## Evidence and failure handling
 

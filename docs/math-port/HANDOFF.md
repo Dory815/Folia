@@ -15,9 +15,9 @@
 
 accent已验收/提交，窄图已刷新。无live agent/build/native。
 
-**最新停点/下一步**：simple-mml原owner与独立profile已提升，canonical106/7667 exact通过；一专用runner退、action gates只减simple7667/106及5method edits，compile组保留mfenced primary+maction（均未跑）。证据 `simple-source-promoted.json`，快照 `simple-consumer-before.json`。此工具/profile批待提交，旧Cpp仍在；提交后单独退Cpp→parallel4 build/hash核对。完整339824byte旧Cpp、106场景/1605矩阵行/8625 p/list顺序/296递归值证明见 `simple-source-migration/bridge-proof.json`；profile742240byte/hash d1e05bb9…56ede，Luna独立静态复核无遗漏。勿重跑已存在staging的桥。
+**最新停点**：simple-mml工具/profile `094324b0` 已提交（106/7667 Source exact）；旧Cpp删除随本提交，build63833 parallel4通过，`simple-consumer-final-check.json`核478活动/保护6/17targets/9已验输入/8保留不变，class_binding测试41→40。完整339824byte旧Cpp、106场景/1605矩阵行/8625 p/list顺序/296递归值证明见 `simple-source-migration/bridge-proof.json`；Luna独立静态复核无遗漏。勿重跑已有staging的桥。
 
-Luna `/root/class_scripts` 正修 `build/math-port/script-source-migration/`：Root已读候选，指出observer begin缺inputs初始化及桥未校验observer全文，另要求hash锁/拒覆盖；等待修正版再审，尚未执行。原script/simple Cpp均保留。旧 `scripts-retirement-next/run-retirement-gates.cjs` 不用，勿重跑已接受Common/string广测。
+**精确下一动作**：script桥v2已通过原oracle和observer各自全文check、17场景/1683期待(ordinal1..1683)+inputs与clean exact，staged `script-source-migration/script-source-profile.json`。Root修了fixture-name regex；计数1680已否定：全文1686静态expect里native-only循环3点/运行6，原报告1689、Source1683。证据 `script-source-bridge-v2.log`，候选已Root读，未canonical提升。下一步快照→clean提升(根../../..改../..、移--bridge-profile、清理unusedCpp type变量)+profile转docs/evidence→canonical --check→旧工具/gate仅退script1689/18→Cpp删除/build。无live agent/build/native。旧 `run-retirement-gates.cjs` 不用，不重跑Common/string广测。
 
 已决事项勿重开：paired scripts、wrapper classes、BaseNode、forms/accent缺口均已修/验；512/513是旧host预算而非MathJax算法，walk/replace consumer已退，不重建；现有typed遍历/parent/return与RAII恢复保留，不声称任意深树有界。后续沿八组 `class-review-*.json` 既有报告推进。
 
