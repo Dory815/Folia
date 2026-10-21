@@ -7,7 +7,7 @@
 - 最近代码提交 **6f7cc0e7**：退旧 reference_leaf/native driver，Source oracle 输出改 ignored；其数学断言先保留到两个原测试文件（**5cf687cb**），无生产算法改动。Source display 探针6观察通过，聚焦 **6 tests/78 assertions**通过。最后 parallel4 build **85509 exit0**，相对聚焦后 test/DLL hash不变、保护11字节不变；日志 `build/math-port/mml-leaf-retirement-build*`。
 - 上述新测试前的完整math **96710 exit0：870 tests/217144 assertions/176 suites/0 skips**；WinUI Debug真实worker **64450 exit0/PASS**。之后未重复full/worker；未验Release/GUI视觉。证据在acceptance及 `retire-scene-{full-math,worker-verify}.log`。
 - canonical已刷新至 **6f7cc0e7**、**index-2026-10-21T08-41-46-0351.json**：668源/664代码、183未配置cpp/ixx、560配置源、247接口与map exact、保护11字节不变；Root断言在 `latest-retirement-inventory-check.json`。未配置不等于死代码。旧Scene/SVG重复布局与Common factory对象链均已分批退出；真实数学留原owner。
-- **下一步**：首批font消费者提交59c87592；现再退4个field/raw/lifecycle/replacement探针及3比较器，证据font-fontLifecycleConsumers-before-removal.json，未改active代码/UT。继续退provider旧消费者，再退font绑定。Root已读3个Luna实读报告并核实真正typed接口；immutable FontRepository没有旧charOptions/tuple/ListPatch mutator合同，Source/data/typed font gate保留。
+- **下一步**：font消费者首两批提交59c87592/6e457efd；现再退option-array测试/2旧provider probe及runner/2比较器，证据font-fontProviderConsumers-before-removal.json。随后退font绑定6源和support8源，Direction保留。Root核实active NewCM只有eager bundle/coverage；40/80是Source provenance，不能恢复旧runtime loader/promise/cache API。Source/data/typed font gate保留；本轮尚无新build/native运行。
 - 当前无live agent/build/native。Direction职责窄审通过：保留原direction.ixx，接着将现有StretchDirection enum从font_data放回该owner并export-import/CMake登记，不删除或恢复旧字符串别名。Lite/MML旧provider仍有保护消费者及MML()/classBinding调用者，不能按无显式import先删。找ignored交付先rg --no-ignore；旧graph仅历史线索。
 
 ## 已接受架构与执行约束

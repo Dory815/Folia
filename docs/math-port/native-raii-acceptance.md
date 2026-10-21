@@ -928,6 +928,18 @@ not a real NewCM shard. Current typed glyph data and independent Source
 lifecycle/field oracles remain. The seven paths have zero target membership
 (font-fontLifecycleConsumers-before-removal.json); no production/active test edits.
 
+The third consumer batch removes the old option-array tests, two NewCM runtime
+provider probes and their native-only runner/two comparators (six paths,
+font-fontProviderConsumers-before-removal.json). Root read the actual active
+newcm_font_module_provider interface/implementation: makeNewcmFontData eagerly
+constructs all pinned shards into an immutable bundle; newcmProviderCoverage
+measures direct glyph/remap/resource counts. The 40 modules/80 events are Source
+provenance metadata, not a claim of native runtime JS/CJS module evaluation.
+The old runtime loader class, promise/setup/cache identity and failure/retry
+records are retired Context contracts. Keep the independent Source provider
+oracle, locks, generated final data and active typed data comparison. No new
+runtime loader API or repeated full font comparison is introduced.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
