@@ -16,6 +16,9 @@ on:
       - tests/main.cpp
       - tests/support/**
       - tools/mermaid-cpp/**
+      - src/platform/text/mermaid_measurer.ixx
+      - src/platform/text/mermaid_pie.ixx
+      - tests/platform/mermaid_measurement.cpp
       - tools/test-support/windows_console_runtime.cpp
   pull_request:
     paths:
@@ -30,6 +33,9 @@ on:
       - tests/main.cpp
       - tests/support/**
       - tools/mermaid-cpp/**
+      - src/platform/text/mermaid_measurer.ixx
+      - src/platform/text/mermaid_pie.ixx
+      - tests/platform/mermaid_measurement.cpp
       - tools/test-support/windows_console_runtime.cpp
   workflow_dispatch:
 
@@ -114,6 +120,8 @@ jobs:
           node tools/mermaid-cpp/pie-layout-oracle.mjs --check 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/pie-layout-oracle.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/pie-svg-oracle.mjs --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Initialize the x64 MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
@@ -155,15 +163,40 @@ jobs:
 
       - name: Build the native Mermaid tests
         run: |
-          cmake --build build/mermaid-cpp --parallel 4 --target FoliaMermaidTests 2>&1 |
+          cmake --build build/mermaid-cpp --parallel 4 --target FoliaMermaidTests FoliaMermaidTextProbe FoliaMermaidPlatformTests 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Run the native Mermaid tests
         run: |
+          $env:FOLIA_MERMAID_SVG_OUTPUT = Join-Path $pwd 'build/mermaid-cpp/pie-svg'
           ctest --test-dir build/mermaid-cpp --output-on-failure 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/pie-svg-oracle.mjs --compare build/mermaid-cpp/pie-svg
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Compare real browser and DirectWrite text measurements
+        run: |
+          node tools/mermaid-cpp/browser-text-probe.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          build/mermaid-cpp/FoliaMermaidTextProbe.exe build/mermaid-cpp/browser-text.tsv build/mermaid-cpp/native-text.tsv
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/compare-text-probe.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload text measurement evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mermaid-text-${{ matrix.configuration }}
+          path: |
+            build/mermaid-cpp/*text.tsv
+            build/mermaid-cpp/browser-text.json
+            build/mermaid-cpp/text-comparison.json
+            build/mermaid-cpp/pie-svg/*.svg
+            build/mermaid-cpp/FoliaMermaidTextProbe.exe
+            build/mermaid-cpp/FoliaMermaidPlatformTests.exe
 
       - name: Upload the native test executable
         if: always() && hashFiles('build/mermaid-cpp/FoliaMermaidTests.exe') != ''
