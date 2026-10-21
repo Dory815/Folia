@@ -1824,3 +1824,48 @@ the Source foreignObject[data-mjx-xml] class styles. No second annotation
 layout, extra Scene wrapper or generic fallback. Source observer captures the
 actual annotation-xml constructor.styles into a separate flat typed table;
 native catalog metadata must match that table as well as XML/HTML metadata.
+
+### 2026-10-21 Root lock: maction ownership and nested math
+
+Keep CommonMaction's accepted selected/BBox/break algorithms and the actual MML
+selection owner. Common adds getParameters() and tipDx()/tipDy() values only,
+using Source data-offsets splitting/defaults/length2em after base initialization.
+CommonOutputJax::buildScene(CommonWrapper&) extracts the existing LayoutJob
+completion path; LayoutJob delegates to it. This entry takes an already wrapped
+auxiliary math, uses the same factory/measurement/finishScene, and does not parse,
+change document.root, mark breaks or re-run TeX classification.
+
+Scene primary owns an ActionRegion entry (Rule hitbox plus optional shared const
+completed Scene tooltip), alongside Primitive and const Group entries. It is a
+semantic rectangle with optional mathematical tooltip, not a second HTML tree
+or prebuilt SVG. Freeze copies the pointed-to Scene value to sever mutable
+aliases; completed Scenes retain no wrappers/MML/DOM/adaptors. Nested scenes have
+their own NodeId scope. Group gains optional Action, a variant of ToggleAction
+(double selection, size_t child_count, bool enriched), MathTooltipAction
+(Unit dx/dy, uint32_t post_delay_ms=600/clear_delay_ms=100) and StatuslineAction
+(owned UTF-8 text). These are interaction descriptions, never callbacks/timers.
+Builder provides add_action_region(NodeId, ActionRegion) and set_action(NodeId,
+Action); copies/splits preserve action. Reject nonfinite offsets/selection and
+invalid region geometry. Text tooltip uses the existing raw Source Title entry.
+No frontend dispatch/rerender capability is claimed by these data descriptors.
+
+Original SVG maction_surface pair will become svg/maction pair and native
+SvgMaction : CommonMaction, owning hitbox/selected-child/action ordering and
+Source class styles. For mathematical tips it creates auxiliary math in the
+same request MmlDocument, wraps with the same factory, builds the nested Scene
+through CommonOutputJax, and restores the tip's original parent by RAII on both
+success and exceptions. No generic Common fallback or duplicate placement file.
+Writer projects ActionRegion as Source rect (width,height,x,y,fill,pointer-events)
+and its optional hidden foreignObject/mjx-tool/mjx-tip/nested SVG, without extra
+groups or container. SVG font-cache traversal must follow independently observed
+Source nested-cache behavior; independent write() calls cannot assume equivalent
+cache state. Source witness must include none/local and nested-following glyphs.
+
+Keep existing strict Lite errors/goldens intact. A separately labelled witness
+adds a real EventTarget registration host to actual Lite nodes, never replaces
+MathJax handlers. Capture actual callbacks' registration receiver/type/order,
+before/after serialization, Source class styles, BBoxes and successful SVGs.
+Cover toggle/selection, text/math tooltip, statusline, missing tips, unknown
+action, offsets, line segments and nested tips; test owner retirement and parent
+restoration. Root reviews evidence and interfaces before SVG implementation;
+Root alone runs native/build, owns CMake/legacy cleanup and small commits.
