@@ -19,3 +19,4 @@ tests/math/fixtures/common-source/merror-mathml-scene.inc text eol=lf
 tests/math/fixtures/common-source/xml-mathml-scene.inc text eol=lf
 tests/math/fixtures/maction_scene_source.hpp text eol=lf
 tests/math/fixtures/mglyph_scene_source.hpp text eol=lf
+tests/math/fixtures/table_profile_source.hpp text eol=lf
