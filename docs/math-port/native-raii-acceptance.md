@@ -861,6 +861,34 @@ and FoliaNativeMath.dll are identical, and all eleven protected paths remain
 byte-identical. This verification checks retirement/build membership; it does
 not claim a newly repeated full mathematical or worker run.
 
+### Retain substantive leaf assertions at typed owners
+
+Root reviewed the old reference_leaf case map and retained its additional
+supported mathematics in the existing native_mml_row_tokens.cpp and
+typed_mml_containers.cpp. Real document-owned Mo rows now assert embellished
+core selection and the two-operator branch; delimiter rows assert previous
+class transfer. Mspace tests retain explicit attribute presence, negative
+Unicode-whitespace-prefixed widths and suppressed newlines; mtext retains
+explicit style/background presence. Math tests distinguish own attributes,
+explicit inherited slots and attached-child displaystyle for mode/display
+and explicit true/false precedence. No production algorithm changes.
+
+The independent ignored math-display-source-probe.cjs executes real Source
+MmlFactory nodes and passes all six observations, with empty stderr. It checks
+the existing p9 math.ts/runtime lock and records exact MmlFactory/Attributes
+dependency hashes; it does not imply these dependencies are entries in p9.
+Source getInherited reads defaults through the inherited object's prototype;
+typed inherited() is the explicit slot and effectiveInherited() adds that
+fallback. Raw Source own-slot observations justify the tests' layer checks.
+
+The first candidate build failed on three explicit string_view-to-owned-key
+conversions in the test; Root fixed those conversions and required headers.
+The subsequent parallel4 math/DLL build exits0
+(mml-leaf-test-build-fixed.log). All six bounded focused runs pass, each
+executing exactly one test: **78 assertions total**, recorded in
+mml-leaf-focused-results.json and mml-leaf-*.log. This is new focused test
+acceptance, not a repeated full math/worker run or replay of old Context traces.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

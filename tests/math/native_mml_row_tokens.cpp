@@ -1,3 +1,6 @@
+#include <array>
+#include <string>
+#include <string_view>
 #include "support/folia_test.hpp"
 import folia.math.core.mml_tree.mml_document;
 import folia.math.core.mml_tree.mml_nodes.mrow;
@@ -7,6 +10,7 @@ import folia.math.core.mml_tree.mml_nodes.mtext;
 import folia.math.core.mml_tree.mml_nodes.ms;
 import folia.math.core.mml_tree.mml_nodes.mspace;
 import folia.math.core.mml_tree.mml_nodes.mglyph;
+import folia.math.core.mml_tree.mml_nodes.mo;
 
 namespace {
 using namespace boost::ut;
@@ -45,6 +49,51 @@ suite native_mml_row_tokens = [] {
         expect(inferred.isInferred());
         expect(inferred.notParent());
         expect(inferred.kind() == mml::NodeKind::inferred_mrow);
+    };
+
+    "row_projects_a_single_real_embellished_operator"_test = [] {
+        mml::MmlDocument document;
+        auto &factory = document.factory();
+        auto &row = dynamic_cast<mml::MmlMrow &>(factory.make(mml::NodeKind::mrow));
+        auto &space = dynamic_cast<mml::MmlMspace &>(factory.make(mml::NodeKind::mspace));
+        auto &op = dynamic_cast<mml::MmlMo &>(makeToken(factory, mml::NodeKind::mo, u"+"));
+        expect(op.isEmbellished());
+        document.append(row, space);
+        document.append(row, op);
+
+        expect(row.isEmbellished());
+        expect(row.core() == &op);
+        expect(row.coreMO() == &op);
+
+        auto &second = dynamic_cast<mml::MmlMo &>(makeToken(factory, mml::NodeKind::mo, u"="));
+        expect(second.isEmbellished());
+        document.append(row, second);
+        expect(!row.isEmbellished());
+        expect(row.core() == &row);
+        expect(row.coreMO() == &row);
+    };
+
+    "row_delimiter_properties_preserve_previous_class"_test = [] {
+        constexpr std::array<std::u16string_view, 2> delimiters{u"(", u")"};
+        for (const auto delimiter : delimiters) {
+            mml::MmlDocument document;
+            auto &factory = document.factory();
+            auto &row = dynamic_cast<mml::MmlMrow &>(factory.make(mml::NodeKind::mrow));
+            auto &previous = dynamic_cast<mml::MmlMi &>(makeToken(factory, mml::NodeKind::mi, u"p"));
+            auto &child = dynamic_cast<mml::MmlMi &>(makeToken(factory, mml::NodeKind::mi, u"x"));
+            previous.setTexClass(mml::TexClass::rel);
+            child.setTexClass(mml::TexClass::ord);
+            document.append(row, child);
+            if (delimiter == u"(")
+                row.properties().tex.open = std::u16string(delimiter);
+            else
+                row.properties().tex.close = std::u16string(delimiter);
+
+            expect(row.setTeXclass(&previous) == &row);
+            expect(row.texClass() == mml::TexClass::inner);
+            expect(row.prevClass() == mml::TexClass::rel);
+            expect(!child.prevClass().has_value());
+        }
     };
 
     "mi_keeps_unicode_single_character_and_auto_operator_rules"_test = [] {
@@ -118,6 +167,57 @@ suite native_mml_row_tokens = [] {
         space.attributes().set(u"linebreak", u"newline");
         expect(space.hasNewline());
         expect(!space.isSpacelike());
+    };
+
+    "mspace_explicit_dimensions_and_styles_disable_breaking_by_presence"_test = [] {
+        constexpr std::array<std::u16string_view, 5> keys{
+            u"height", u"depth", u"style", u"mathbackground", u"background"};
+        for (const auto key : keys) {
+            mml::MmlDocument document;
+            auto &space = dynamic_cast<mml::MmlMspace &>(
+                document.factory().make(mml::NodeKind::mspace));
+            space.attributes().set(std::u16string(key), false);
+            expect(!space.canBreak());
+            expect(!space.isSpacelike());
+            space.attributes().set(std::u16string(key), std::u16string{});
+            expect(!space.canBreak());
+            expect(!space.isSpacelike());
+        }
+    };
+
+    "mspace_newline_breaks_respect_negative_width_and_explicit_height"_test = [] {
+        mml::MmlDocument document;
+        auto &factory = document.factory();
+        auto &negative = dynamic_cast<mml::MmlMspace &>(factory.make(mml::NodeKind::mspace));
+        negative.attributes().set(u"linebreak", u"indentingnewline");
+        negative.attributes().set(u"width", u"-1em");
+        expect(!negative.canBreak());
+        expect(!negative.hasNewline());
+
+        auto &height = dynamic_cast<mml::MmlMspace &>(factory.make(mml::NodeKind::mspace));
+        height.attributes().set(u"linebreak", u"newline");
+        height.attributes().set(u"height", 0.0);
+        expect(!height.canBreak());
+        expect(!height.hasNewline());
+
+        auto &feff = dynamic_cast<mml::MmlMspace &>(factory.make(mml::NodeKind::mspace));
+        feff.attributes().set(u"width", u" \uFEFF-0");
+        expect(!feff.canBreak());
+        auto &lineSeparator = dynamic_cast<mml::MmlMspace &>(factory.make(mml::NodeKind::mspace));
+        lineSeparator.attributes().set(u"width", u"\u2028-1");
+        expect(!lineSeparator.canBreak());
+    };
+
+    "mtext_explicit_style_background_keys_disable_spacelike_status"_test = [] {
+        constexpr std::array<std::u16string_view, 3> keys{
+            u"style", u"mathbackground", u"background"};
+        for (const auto key : keys) {
+            mml::MmlDocument document;
+            auto &text = dynamic_cast<mml::MmlMtext &>(
+                makeToken(document.factory(), mml::NodeKind::mtext, u" "));
+            text.attributes().set(std::u16string(key), false);
+            expect(!text.isSpacelike());
+        }
     };
 
     "token_kinds_and_attribute_verification_are_family_owned"_test = [] {

@@ -1,3 +1,6 @@
+#include <optional>
+#include <string>
+#include <utility>
 #include "support/folia_test.hpp"
 import folia.math.core.mml_tree.mml_document;
 import folia.math.core.mml_tree.mml_nodes.math;
@@ -24,6 +27,69 @@ suite typed_mml_containers = [] {
         displayMath.setInheritedAttributes({}, false, 0.0, false);
         const auto *displayStyle = displayMath.attributes().lookup(u"displaystyle");
         expect(displayStyle && std::get_if<bool>(displayStyle) && *std::get_if<bool>(displayStyle));
+
+        const auto checkInheritance = [&](bool modeDisplay,
+                                          std::optional<std::u16string> display,
+                                          std::optional<bool> explicitDisplayStyle,
+                                          bool expectedChildStyle) {
+            m::MmlDocument caseDocument;
+            m::AttributeSet attributes;
+            if (modeDisplay)
+                attributes.set(u"mode", std::u16string{u"display"});
+            if (display)
+                attributes.set(u"display", *display);
+            if (explicitDisplayStyle)
+                attributes.set(u"displaystyle", *explicitDisplayStyle);
+            auto &caseMath = static_cast<m::MmlMath &>(
+                caseDocument.factory().make(m::NodeKind::math, std::move(attributes)));
+            auto &child = caseDocument.factory().make(m::NodeKind::mi);
+            caseMath.appendChild(child);
+            caseMath.setInheritedAttributes({}, false, 0.0, false);
+
+            const auto *ownDisplay = caseMath.attributes().own(u"display");
+            if (display) {
+                const auto *value = ownDisplay ? std::get_if<std::u16string>(ownDisplay) : nullptr;
+                expect(value && *value == *display);
+            } else {
+                expect(ownDisplay == nullptr);
+            }
+            const auto *inheritedDisplay = caseMath.attributes().inherited(u"display");
+            if (modeDisplay) {
+                const auto *value = inheritedDisplay
+                                        ? std::get_if<std::u16string>(inheritedDisplay)
+                                        : nullptr;
+                expect(value && *value == u"block");
+            } else {
+                expect(inheritedDisplay == nullptr);
+            }
+
+            const auto *ownDisplayStyle = caseMath.attributes().own(u"displaystyle");
+            if (explicitDisplayStyle) {
+                const auto *value = ownDisplayStyle ? std::get_if<bool>(ownDisplayStyle) : nullptr;
+                expect(value && *value == *explicitDisplayStyle);
+            } else {
+                expect(ownDisplayStyle == nullptr);
+            }
+            const auto *mathInheritedStyle = caseMath.attributes().inherited(u"displaystyle");
+            const auto *mathStyle = mathInheritedStyle
+                                        ? std::get_if<bool>(mathInheritedStyle)
+                                        : nullptr;
+            expect(mathStyle && *mathStyle == expectedChildStyle);
+            const auto *childStyle = child.attributes().inherited(u"displaystyle");
+            const auto *childStyleValue = childStyle ? std::get_if<bool>(childStyle) : nullptr;
+            expect(childStyleValue && *childStyleValue == expectedChildStyle);
+        };
+
+        // Values follow the pinned Source math.ts rule: mode writes inherited
+        // display=block, while an own display value remains visible and wins
+        // for the child-style calculation. Explicit false still falls through
+        // to display=block, so the child can inherit true while math owns false.
+        checkInheritance(true, std::nullopt, std::nullopt, true);
+        checkInheritance(true, std::u16string{u"inline"}, std::nullopt, false);
+        checkInheritance(false, std::u16string{u"inline"}, false, false);
+        checkInheritance(false, std::u16string{u"inline"}, true, true);
+        checkInheritance(false, std::u16string{u"block"}, false, true);
+        checkInheritance(false, std::u16string{u"block"}, true, true);
     };
 
     "mathchoice selects branch by display and script level"_test = [] {
