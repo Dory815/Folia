@@ -4,15 +4,15 @@
 
 ## 当前 checkpoint（2026-10-21）
 
-- 本提交退BaseItem旧Cpp/专用工具；Source owner批 `a6215622`。此前table/multiscript清理 `031da185`，Source批 `9f24ae80`/`6e7adb88`。原生SVG已接Folia，残余对象模拟源码/consumer清理仍未完，不能宣布完整移植完成；Mermaid暂停。
+- 最新代码 `8ba6b468` 退BaseItem旧Cpp/专用工具；Source owner批 `a6215622`。此前table/multiscript清理 `031da185`，Source批 `9f24ae80`/`6e7adb88`。原生SVG已接Folia，残余对象模拟源码/consumer清理仍未完，不能宣布完整移植完成；Mermaid暂停。
 - 最新build89489 parallel4 exit0；`base-item-consumer-final-check.json`核478活动、保护6、verified9、retained24、17targets、248接口/map一致、active unresolved0，测试importer37→36。无live build/native。此前SVG1047/完整math/font/RAII/worker验收见acceptance，不重复广测。
 - multiscript226/1304、table135/4700、BaseItem85 Source exact，全部旧期待已保留；证明见acceptance与各 `*-source-promoted.json`。BaseItem旧Cpp只限定951385dc两历史适配后全文相等，不能称原check直接通过。已有staging/执行proof勿重跑。
-- ignored窄图仍 `031da185`/37测试，Root提交后需刷新36；Fields→ContextBindings→ParserRuntime owner链仍完整，唯一values调用fields.cpp:439，不能孤删/stub。
+- ignored窄图已到 `8ba6b468`/36测试、FileAPI `index-2026-10-21T13-27-41-0497.json`；保留引用hash均已核。Fields→ContextBindings→ParserRuntime owner链仍完整，唯一values调用fields.cpp:439，不能孤删/stub。
 - 两个Luna仅准备ignored候选：class_verification→`verification-source-migration/`（reference_mml_verification/p35现有72行profile）；class_operations→`copy-source-migration/`（copy/copy_boundary）。均待Root审与Source执行，未提升；只动ignored，不跑Source/native/build。
 
 ## 精确下一动作
 
-Root 提交本删除批后窄刷新consumer图37→36，再审两Luna候选，保留原profile全部期待并运行实际Source exact后才提升；共享gate仅删对应引用/计数，专用旧runner退场，不运行旧对象协议native gates。按职责小批提交，别重复已验问题。
+Root 审两Luna候选，保留原profile全部期待并运行实际Source exact后才提升；共享gate仅删对应引用/计数，专用旧runner退场，不运行旧对象协议native gates。按职责小批提交，别重复已验问题。
 
 ## 固定边界
 
