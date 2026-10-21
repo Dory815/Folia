@@ -692,6 +692,78 @@ struct Builder {
                     item.style = text_style;
                     target.push_back(std::move(item));
                 };
+                auto append_code_span_text = [&](const InlineCstNode& code_node, const InlineStyle& text_style) {
+                    struct ProjectedCharacter {
+                        char32_t value;
+                        SourceRange source_range;
+                    };
+                    const auto content = code_node.delimiter_ranges().content;
+                    const auto raw = inline_source_slice(document, content);
+                    const auto normalized = normalize_inline_code_span(raw);
+                    std::vector<ProjectedCharacter> projected;
+                    projected.reserve(raw.size());
+                    for (std::size_t offset = 0; offset < raw.size(); ++offset) {
+                        const auto source_start = content.start + offset;
+                        const auto value = raw[offset];
+                        if (value == U'\r') {
+                            auto source_end = source_start + 1;
+                            if (offset + 1 < raw.size() && raw[offset + 1] == U'\n') {
+                                ++offset;
+                                ++source_end;
+                            }
+                            projected.push_back({U' ', {source_start, source_end}});
+                        } else if (value == U'\n') {
+                            projected.push_back({U' ', {source_start, source_start + 1}});
+                        } else {
+                            projected.push_back({value, {source_start, source_start + 1}});
+                        }
+                    }
+
+                    auto content_start = std::size_t{0};
+                    auto content_end = projected.size();
+                    const auto trim_outer_spaces = projected.size() >= 2
+                        && projected.front().value == U' '
+                        && projected.back().value == U' '
+                        && std::ranges::any_of(projected, [](const auto& character) {
+                            return character.value != U' ';
+                        });
+                    if (trim_outer_spaces) {
+                        append_marker(target, code_node, projected.front().source_range);
+                        ++content_start;
+                        --content_end;
+                    }
+
+                    auto cursor = content_start;
+                    while (cursor < content_end) {
+                        if (projected[cursor].source_range.length() != 1) {
+                            const auto display_start = cursor - content_start;
+                            append_text(
+                                normalized.substr(display_start, 1),
+                                projected[cursor].source_range,
+                                text_style);
+                            ++cursor;
+                            continue;
+                        }
+                        auto run_end = cursor + 1;
+                        while (run_end < content_end
+                            && projected[run_end].source_range.length() == 1
+                            && projected[run_end - 1].source_range.end
+                                == projected[run_end].source_range.start) {
+                            ++run_end;
+                        }
+                        const auto display_start = cursor - content_start;
+                        auto text = normalized.substr(display_start, run_end - cursor);
+                        append_text(
+                            std::move(text),
+                            {projected[cursor].source_range.start, projected[run_end - 1].source_range.end},
+                            text_style);
+                        cursor = run_end;
+                    }
+
+                    if (trim_outer_spaces) {
+                        append_marker(target, code_node, projected.back().source_range);
+                    }
+                };
                 switch (node.kind) {
                     case K::Strong: {
                         auto child_style = style; child_style.bold = true;
@@ -717,7 +789,7 @@ struct Builder {
                     case K::CodeSpan: {
                         auto child_style = style; child_style.code = true;
                         append_marker(target, node, delim.opening);
-                        append_text(inline_source_slice(document, delim.content), delim.content, child_style);
+                        append_code_span_text(node, child_style);
                         if (delim.closing) append_marker(target, node, *delim.closing);
                         break;
                     }
@@ -847,9 +919,11 @@ struct Builder {
                         append_text(decode_inline_entity(inline_source_slice(document, node.range)), node.range, style);
                         break;
                     case K::SoftBreak:
-                        append_text(preserve_soft_breaks ? U"\n" : U" ", node.range, style);
-                        break;
                     case K::HardBreak:
+                        if (node.kind == K::SoftBreak) {
+                            append_text(preserve_soft_breaks ? U"\n" : U" ", node.range, style);
+                            break;
+                        }
                         append_text(U"\n", node.range, style);
                         break;
                     case K::FootnoteRef: {

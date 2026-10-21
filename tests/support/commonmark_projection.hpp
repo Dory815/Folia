@@ -184,7 +184,7 @@ inline void project_inline_nodes(
             }
             case K::CodeSpan: {
                 auto n = element("code");
-                append_text(n, content());
+                append_text(n, cps_to_utf8(normalize_inline_code_span(inline_source_slice(doc, item.delimiter_ranges().content))));
                 append_node(parent, std::move(n));
                 break;
             }
@@ -212,9 +212,11 @@ inline void project_inline_nodes(
                 break;
             }
             case K::SoftBreak:
+                if (item.range.end == doc.source.size()) break;
                 append_text(parent, "\n");
                 break;
             case K::HardBreak:
+                if (item.range.end == doc.source.size()) break;
                 append_node(parent, element("br"));
                 append_text(parent, "\n");
                 break;
