@@ -124,6 +124,17 @@ bool checkResult(FoliaNativeMathResult const *result, std::string_view expectedS
 }
 
 suite native_renderer_bridge = [] {
+    "Renderer batch shares request fonts and matches batches of one"_test = [] {
+        folia::math::Renderer renderer;
+        const std::array<folia::math::RenderInput, 4> input{{
+            {u"x^2", {}, {}}, {u"\\frac{x}{2}", {}, {}},
+            {u"\\mathbb{R}", {}, {}}, {u"\\sqrt{x+1}", {}, {}}}};
+        auto batch = renderer.renderBatch(input);
+        expect(batch.size() == input.size());
+        for (std::size_t i=0; i<batch.size(); ++i)
+            expect(batch[i].svg == renderer.render(input[i].tex).svg);
+        expect(renderer.renderBatch({}).empty());
+    };
     "opaque C ABI renders the canonical Source profile and retains result storage"_test = [] {
         static_assert(sizeof(char16_t) == sizeof(std::uint16_t));
         expect(std::size(sourceCanonicalSceneCases) == 75u) << "canonical source has 75 inputs";

@@ -72,13 +72,16 @@ std::u16string scalarText(std::uint32_t scalar) {
             static_cast<char16_t>(0xdc00 + (scalar & 0x3ff))};
 }
 
-std::uint32_t italicGlyphWithCorrection(FontFaceData const &face) {
-    auto const variant = face.variants.find("italic");
-    if (variant == face.variants.end())
-        throw std::logic_error("pinned NewCM face has no italic variant");
-    for (auto const &[codepoint, glyph] : variant->second.glyphs)
-        if (glyph.metrics.ic != 0.0 && glyph.resource)
-            return codepoint;
+std::uint32_t italicGlyphWithCorrection(FontRepository const &fonts) {
+    auto const& face = fonts.face("MathJaxNewcm");
+    auto request = std::dynamic_pointer_cast<folia::math::fonts::NewcmFontRequest const>(face.glyphSource);
+    if (!request) throw std::logic_error("pinned NewCM request provider is absent");
+    for (auto const& key : request->keys()) {
+        if (key.variant != "italic") continue;
+        const auto* glyph = fonts.glyph(face.name, key.variant, key.codepoint);
+        if (glyph && glyph->metrics.ic != 0.0 && glyph->resource)
+            return key.codepoint;
+    }
     throw std::logic_error("pinned NewCM italic face has no glyph with italic correction");
 }
 
@@ -269,7 +272,7 @@ suite native_common_containers = [] {
         const auto bundle = folia::math::fonts::makeNewcmFontData();
         RejectUnexpectedMeasurement measurement;
         MmlDocument document;
-        const auto codepoint = italicGlyphWithCorrection(bundle.fonts.face("MathJaxNewcm"));
+        const auto codepoint = italicGlyphWithCorrection(bundle.fonts);
         expect(codepoint == 33_u);
         auto &mi = makeMi(document, scalarText(codepoint));
         const std::array<MmlNode *, 1> atomChildren{&mi};
