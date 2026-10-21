@@ -332,6 +332,25 @@ corpora. The subsequent full math run passes 782 tests / 212129 assertions /
 152 suites without skips (`semantics-fenced-full-math.log`). This accepts the
 two traversal owners; foreign XML annotation payloads remain outside this batch.
 
+The maction batch at `e389abf5` / `e07b3b16` / `0fe4fb0c` / `51ada53b` /
+`970cff98` retains Common selection/layout, owns nested completed Scenes and
+typed interaction descriptions, and replaces the old maction Surface/placement
+bridge in its original SVG owner. Independent pinned Source uses real EventTarget
+registration on Lite nodes without dispatch. Seven fontCache=none MathML cases
+match exact SVG bytes, including serialization after request retirement; three
+local-cache math-tooltip cases remain explicitly Unsupported, not parity passes.
+Typed Source class styles, actual wrapper/root metrics, listener shape, parent
+restoration on success/exception and Scene alias independence are checked.
+MathML input compilation can override the requested display flag; the fixture
+records the actual MathItem.display while preserving requested inputs and SVG.
+
+The full math run passes 818 tests / 212525 assertions / 162 suites without skips
+(`maction-full-math.log`). Canonical75 retains 73 byte-equal normal Source SVGs;
+both strict-Lite action cases now return native Scenes while Source fails event
+registration. This is recorded as source_error_native_success and does not pass
+the 75/150 gate. Local recursive cache order, browser interaction, complete
+request ownership and application integration are still open.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,

@@ -1844,9 +1844,14 @@ their own NodeId scope. Group gains optional Action, a variant of ToggleAction
 (double selection, size_t child_count, bool enriched), MathTooltipAction
 (Unit dx/dy, uint32_t post_delay_ms=600/clear_delay_ms=100) and StatuslineAction
 (owned UTF-8 text). These are interaction descriptions, never callbacks/timers.
-Builder provides add_action_region(NodeId, ActionRegion) and set_action(NodeId,
-Action); copies/splits preserve action. Reject nonfinite offsets/selection and
-invalid region geometry. Text tooltip uses the existing raw Source Title entry.
+Builder provides add_action_region(NodeId, ActionRegion) returning its entry
+index, set_action_region_tooltip(NodeId,index,shared_ptr<Scene const>) for late
+attachment after selected-child emission, and set_action(NodeId, Action).
+Copies/splits preserve action. Reject nonfinite offsets and invalid
+region geometry. Toggle selection retains all numeric values, including NaN and
+infinity: the already accepted MML selection algorithm handles these and Source
+can serialize their data-toggle spelling. Text tooltip uses the existing raw
+Source Title entry.
 No frontend dispatch/rerender capability is claimed by these data descriptors.
 
 Original SVG maction_surface pair will become svg/maction pair and native
@@ -1869,3 +1874,11 @@ Cover toggle/selection, text/math tooltip, statusline, missing tips, unknown
 action, offsets, line segments and nested tips; test owner retirement and parent
 restoration. Root reviews evidence and interfaces before SVG implementation;
 Root alone runs native/build, owns CMake/legacy cleanup and small commits.
+
+Incremental writer gate: initial ActionRegion projection accepts fontCache=none,
+and local caching for actions with no mathematical tooltip. Local math tooltips
+explicitly report UnsupportedError until the Source generation-order cache plan
+is implemented and compared to the retained local witnesses. They are not
+passing SVG cases. A per-Group tooltip deferral is insufficient for multiple own
+segments: Source emits all selected segments before processing all tooltips.
+Do not serialize each nested Scene independently and claim cache parity.
