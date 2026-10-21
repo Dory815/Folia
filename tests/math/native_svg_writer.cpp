@@ -852,4 +852,104 @@ suite native_svg_writer = [] {
         check_local(local_ab, first_path, second_path);
         check_local(local_ba, second_path, first_path);
     };
+
+    "enclosure primitives preserve Source element syntax order and typed geometry"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({3, 1, 0.5});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+
+        scene::Paint rounded_paint;
+        rounded_paint.fill = scene::NoPaint{};
+        rounded_paint.stroke_width = 0.067;
+        scene::Rule rounded{
+            {0.1, 0.2, 0.467, 0.8}, rounded_paint, {}, scene::ElementRole::enclosure_mark};
+        rounded.corner_radius = 0.267;
+        builder.add_primitive(0, rounded);
+
+        scene::Paint ellipse_paint;
+        ellipse_paint.fill = scene::CssColor{"#123456"};
+        ellipse_paint.stroke = scene::CurrentColorPaint{};
+        ellipse_paint.stroke_width = 0.04;
+        builder.add_primitive(
+            0, scene::Ellipse{
+                   {0.5, -0.1}, 0.4, 0.2, ellipse_paint, {}, scene::ElementRole::enclosure_mark});
+
+        scene::Paint phasor_paint;
+        phasor_paint.fill = scene::NoPaint{};
+        phasor_paint.stroke_width = 0.067;
+        phasor_paint.line_cap = scene::StrokeCap::round;
+        phasor_paint.line_join = scene::StrokeJoin::miter;
+        scene::Path phasor;
+        phasor.geometry.segments = {scene::MoveTo{{0, 0}}, scene::LineTo{{1, 1}}};
+        phasor.paint = phasor_paint;
+        phasor.role = scene::ElementRole::enclosure_mark;
+        phasor.syntax = scene::PathSyntax::spaced;
+        phasor.paint_encoding = scene::PathPaintEncoding::stroke_width_style;
+        phasor.join_spelling = scene::StrokeJoinSpelling::mitre;
+        builder.add_primitive(0, phasor);
+
+        scene::Path longdiv;
+        longdiv.geometry.segments = {scene::MoveTo{{0, 0}},
+                                     scene::ArcTo{0.1,
+                                                  0.1,
+                                                  0,
+                                                  false,
+                                                  true,
+                                                  {0, 0.5},
+                                                  scene::CoordinateMode::relative,
+                                                  scene::ArcFlagSeparator::comma},
+                                     scene::LineTo{{1, 0.5}}};
+        longdiv.paint.fill = scene::NoPaint{};
+        longdiv.role = scene::ElementRole::enclosure_mark;
+        longdiv.syntax = scene::PathSyntax::spaced;
+        longdiv.paint_encoding = scene::PathPaintEncoding::stroke_width_style;
+        builder.add_primitive(0, longdiv);
+
+        scene::Path arrow;
+        arrow.geometry.segments = {scene::MoveTo{{0, 0}},
+                                   scene::LineTo{{1, 0}, scene::CoordinateMode::relative},
+                                   scene::LineTo{{0.5, 1}}, scene::ClosePath{}};
+        arrow.role = scene::ElementRole::enclosure_mark;
+        arrow.syntax = scene::PathSyntax::spaced;
+        arrow.transform = scene::Transform{std::vector<scene::TransformOperation>{
+            scene::Translation{0.1, 0}, scene::Rotation{30, {0.5, 0.5}}}};
+        builder.add_primitive(0, arrow);
+
+        scene::Path zero_stroke;
+        zero_stroke.geometry.segments = {scene::MoveTo{{0, 0}}};
+        zero_stroke.role = scene::ElementRole::enclosure_mark;
+        zero_stroke.paint_encoding = scene::PathPaintEncoding::stroke_width_style;
+        builder.add_primitive(0, zero_stroke);
+
+        scene::Rule rounded_fraction{
+            {0.1, 0.2, 0.3, 0.4}, {}, {}, scene::ElementRole::fraction_rule};
+        rounded_fraction.corner_radius = 0.15;
+        builder.add_primitive(0, rounded_fraction);
+
+        scene::Path relative_line;
+        relative_line.element = scene::PathElement::line;
+        relative_line.geometry.segments = {
+            scene::MoveTo{{0.2, 0.3}}, scene::LineTo{{0.1, 0.2}, scene::CoordinateMode::relative}};
+        relative_line.paint.stroke = scene::CssColor{"red"};
+        builder.add_primitive(0, relative_line);
+
+        const auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        expect(output.find("<rect x=\"100\" y=\"200\" width=\"467\" height=\"800\" "
+                           "fill=\"none\" stroke-width=\"67\" rx=\"267\"/>") != output.npos);
+        expect(output.find("<ellipse rx=\"400\" ry=\"200\" cx=\"500\" cy=\"-100\" "
+                           "fill=\"#123456\" stroke=\"currentColor\" stroke-width=\"40\"/>") !=
+               output.npos);
+        expect(output.find("<path style=\"stroke-width: 67;\" d=\"M 0 0 L 1000 1000\" "
+                           "stroke-linecap=\"round\" stroke-linejoin=\"mitre\" fill=\"none\"/>") !=
+               output.npos);
+        expect(output.find("<path style=\"stroke-width: 0;\" d=\"M0,0\"/>") != output.npos);
+        expect(output.find("<rect width=\"300\" height=\"400\" x=\"100\" y=\"200\" "
+                           "rx=\"150\"/>") != output.npos);
+        expect(output.find("<line x1=\"200\" y1=\"300\" x2=\"300\" y2=\"500\" "
+                           "stroke=\"red\"/>") != output.npos);
+        expect(output.find("d=\"M 0 0 a 100 100 0 0,1 0 500 L 1000 500\"") != output.npos);
+        expect(output.find("d=\"M 0 0 l 1000 0 L 500 1000 Z\" "
+                           "transform=\"translate(100 0) rotate(30 500 500)\"/>") != output.npos);
+    };
 };

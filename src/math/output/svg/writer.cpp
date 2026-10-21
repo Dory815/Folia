@@ -132,43 +132,58 @@ void append_paint(std::string &out, scene::Paint const &paint, bool stroke_first
     }
 }
 
-void append_path(std::string &out, scene::PathGeometry const &path) {
+void append_path(std::string &out, scene::PathGeometry const &path,
+                 scene::PathSyntax syntax = scene::PathSyntax::compact) {
+    const bool spaced = syntax == scene::PathSyntax::spaced;
+    auto command = [&](char value) {
+        if (spaced && !out.empty() && out.back() != ' ')
+            out.push_back(' ');
+        out.push_back(value);
+        if (spaced)
+            out.push_back(' ');
+    };
+    auto point = [&](scene::Point const &value) {
+        out += number(value.x * 1000);
+        out += spaced ? " " : ",";
+        out += number(value.y * 1000);
+    };
     for (auto const &segment : path.segments) {
         std::visit(
             [&](auto const &item) {
                 using T = std::decay_t<decltype(item)>;
-                auto point = [&](scene::Point const &p) {
-                    out += number(p.x * 1000) + "," + number(p.y * 1000);
-                };
                 if constexpr (std::is_same_v<T, scene::MoveTo>) {
-                    out += 'M';
+                    command('M');
                     point(item.to);
                 } else if constexpr (std::is_same_v<T, scene::LineTo>) {
-                    out += 'L';
+                    command(item.mode == scene::CoordinateMode::relative ? 'l' : 'L');
                     point(item.to);
                 } else if constexpr (std::is_same_v<T, scene::QuadTo>) {
-                    out += 'Q';
+                    command('Q');
                     point(item.control);
-                    out += ' ';
+                    out.push_back(' ');
                     point(item.to);
                 } else if constexpr (std::is_same_v<T, scene::CubicTo>) {
-                    out += 'C';
+                    command('C');
                     point(item.control1);
-                    out += ' ';
+                    out.push_back(' ');
                     point(item.control2);
-                    out += ' ';
+                    out.push_back(' ');
                     point(item.to);
                 } else if constexpr (std::is_same_v<T, scene::ArcTo>) {
-                    out += 'A';
+                    command(item.mode == scene::CoordinateMode::relative ? 'a' : 'A');
                     out += number(item.radius_x * 1000) + " " + number(item.radius_y * 1000) + " ";
                     // Arc values remain in Scene's y-up local coordinate system.
                     // The enclosing SVG transform maps the finished path; changing
                     // arc flags here would apply the reflection twice.
-                    out += number(item.rotation, 3) + " " + (item.large_arc ? "1" : "0") + " ";
-                    out += (item.sweep ? "1 " : "0 ");
+                    out += number(item.rotation, 3) + " " + (item.large_arc ? "1" : "0");
+                    out += item.flags_separator == scene::ArcFlagSeparator::comma ? "," : " ";
+                    out += item.sweep ? "1 " : "0 ";
                     point(item.to);
-                } else
+                } else {
+                    if (spaced && !out.empty() && out.back() != ' ')
+                        out.push_back(' ');
                     out += 'Z';
+                }
             },
             segment);
     }
@@ -404,6 +419,35 @@ void append_table_stroke(std::string &out, scene::Paint const &paint) {
 
 void append_rule(std::string &out, scene::Rule const &rule) {
     out += "<rect";
+    if (rule.role == scene::ElementRole::enclosure_mark) {
+        detail::append_attribute(out, "x", number(rule.bounds.x * 1000));
+        detail::append_attribute(out, "y", number(rule.bounds.y * 1000));
+        detail::append_attribute(out, "width", number(rule.bounds.width * 1000));
+        detail::append_attribute(out, "height", number(rule.bounds.height * 1000));
+        append_paint(out, rule.paint);
+        if (rule.corner_radius)
+            detail::append_attribute(out, "rx", number(*rule.corner_radius * 1000));
+        static constexpr std::array<std::string_view, 17> reserved{"x",
+                                                                   "y",
+                                                                   "width",
+                                                                   "height",
+                                                                   "fill",
+                                                                   "stroke",
+                                                                   "fill-rule",
+                                                                   "fill-opacity",
+                                                                   "stroke-opacity",
+                                                                   "stroke-width",
+                                                                   "opacity",
+                                                                   "stroke-linecap",
+                                                                   "stroke-linejoin",
+                                                                   "stroke-dasharray",
+                                                                   "rx",
+                                                                   "ry",
+                                                                   "transform"};
+        detail::append_metadata(out, rule.metadata, reserved);
+        out += "/>";
+        return;
+    }
     if (rule.role == scene::ElementRole::table_frame) {
         append_table_markers(out, rule.metadata);
         detail::append_attribute(out, "width", number(rule.bounds.width * 1000));
@@ -411,6 +455,8 @@ void append_rule(std::string &out, scene::Rule const &rule) {
         detail::append_attribute(out, "x", number(rule.bounds.x * 1000));
         detail::append_attribute(out, "y", number(rule.bounds.y * 1000));
         append_table_stroke(out, rule.paint);
+        if (rule.corner_radius)
+            detail::append_attribute(out, "rx", number(*rule.corner_radius * 1000));
         out += "/>";
         return;
     }
@@ -440,7 +486,9 @@ void append_rule(std::string &out, scene::Rule const &rule) {
     }
     if (!background)
         append_paint(out, paint);
-    static constexpr std::array<std::string_view, 16> reserved{"x",
+    if (rule.corner_radius)
+        detail::append_attribute(out, "rx", number(*rule.corner_radius * 1000));
+    static constexpr std::array<std::string_view, 17> reserved{"x",
                                                                "y",
                                                                "width",
                                                                "height",
@@ -455,19 +503,30 @@ void append_rule(std::string &out, scene::Rule const &rule) {
                                                                "stroke-linejoin",
                                                                "stroke-dasharray",
                                                                "data-hitbox",
-                                                               "pointer-events"};
+                                                               "pointer-events",
+                                                               "rx"};
     detail::append_metadata(out, rule.metadata, reserved);
     out += "/>";
 }
 
 std::vector<scene::Point> path_vertices(scene::PathGeometry const &geometry) {
     std::vector<scene::Point> points;
+    scene::Point current{};
     for (auto const &segment : geometry.segments)
         std::visit(
             [&](auto const &part) {
                 using T = std::decay_t<decltype(part)>;
-                if constexpr (std::is_same_v<T, scene::MoveTo> || std::is_same_v<T, scene::LineTo>)
-                    points.push_back(part.to);
+                if constexpr (std::is_same_v<T, scene::MoveTo>) {
+                    current = part.to;
+                    points.push_back(current);
+                } else if constexpr (std::is_same_v<T, scene::LineTo>) {
+                    if (part.mode == scene::CoordinateMode::relative) {
+                        current.x += part.to.x;
+                        current.y += part.to.y;
+                    } else
+                        current = part.to;
+                    points.push_back(current);
+                }
             },
             segment);
     return points;
@@ -483,9 +542,12 @@ void append_path_element(std::string &out, scene::Path const &path) {
     out += tag;
     if (table_line)
         append_table_markers(out, path.metadata);
+    if (path.paint_encoding == scene::PathPaintEncoding::stroke_width_style)
+        detail::append_attribute(out, "style",
+                                 "stroke-width: " + number(path.paint.stroke_width * 1000) + ";");
     if (path.element == scene::PathElement::path) {
         std::string data;
-        append_path(data, path.geometry);
+        append_path(data, path.geometry, path.syntax);
         detail::append_attribute(out, "d", data);
     } else {
         auto const points = path_vertices(path.geometry);
@@ -534,6 +596,30 @@ void append_path_element(std::string &out, scene::Path const &path) {
         auto paint = path.paint;
         paint.stroke_width = 0;
         append_paint(out, paint);
+    } else if (path.paint_encoding == scene::PathPaintEncoding::stroke_width_style) {
+        if (path.paint.line_cap)
+            detail::append_attribute(out, "stroke-linecap", stroke_cap_name(*path.paint.line_cap));
+        if (path.paint.line_join) {
+            const std::string_view spelling = path.join_spelling == scene::StrokeJoinSpelling::mitre
+                                                  ? std::string_view{"mitre"}
+                                                  : stroke_join_name(*path.paint.line_join);
+            detail::append_attribute(out, "stroke-linejoin", spelling);
+        }
+        append_color(out, "fill", "fill-opacity", path.paint.fill);
+        if (path.paint.fill_rule == scene::FillRule::evenodd)
+            detail::append_attribute(out, "fill-rule", "evenodd");
+        append_color(out, "stroke", "stroke-opacity", path.paint.stroke);
+        if (path.paint.opacity != 1)
+            detail::append_attribute(out, "opacity", number(path.paint.opacity, 3));
+        if (path.paint.dash_array) {
+            std::string values;
+            for (auto const length : *path.paint.dash_array) {
+                if (!values.empty())
+                    values.push_back(' ');
+                values += number(length * 1000);
+            }
+            detail::append_attribute(out, "stroke-dasharray", values.empty() ? "none" : values);
+        }
     } else if (!table_line)
         append_paint(out, path.paint, path.role == scene::ElementRole::background_box);
     else {
@@ -541,12 +627,65 @@ void append_path_element(std::string &out, scene::Path const &path) {
         out += "/>";
         return;
     }
-    static constexpr std::array<std::string_view, 16> reserved{"d",
-                                                               "points",
-                                                               "x1",
-                                                               "y1",
-                                                               "x2",
-                                                               "y2",
+    static constexpr std::array<std::string_view, 18> reserved_with_source_path{"d",
+                                                                                "points",
+                                                                                "x1",
+                                                                                "y1",
+                                                                                "x2",
+                                                                                "y2",
+                                                                                "transform",
+                                                                                "style",
+                                                                                "fill",
+                                                                                "stroke",
+                                                                                "fill-rule",
+                                                                                "fill-opacity",
+                                                                                "stroke-opacity",
+                                                                                "stroke-width",
+                                                                                "opacity",
+                                                                                "stroke-dasharray",
+                                                                                "stroke-linecap",
+                                                                                "stroke-linejoin"};
+    if (path.layout_width) {
+        static constexpr std::array<std::string_view, 19> reserved_with_width{"d",
+                                                                              "points",
+                                                                              "x1",
+                                                                              "y1",
+                                                                              "x2",
+                                                                              "y2",
+                                                                              "width",
+                                                                              "transform",
+                                                                              "style",
+                                                                              "fill",
+                                                                              "stroke",
+                                                                              "fill-rule",
+                                                                              "fill-opacity",
+                                                                              "stroke-opacity",
+                                                                              "stroke-width",
+                                                                              "opacity",
+                                                                              "stroke-dasharray",
+                                                                              "stroke-linecap",
+                                                                              "stroke-linejoin"};
+        detail::append_metadata(out, path.metadata, reserved_with_width);
+    } else {
+        detail::append_metadata(out, path.metadata, reserved_with_source_path);
+    }
+    if (path.layout_width)
+        detail::append_attribute(out, "width", number(*path.layout_width * 1000));
+    append_transform(out, path.transform, path.role);
+    out += "/>";
+}
+
+void append_ellipse(std::string &out, scene::Ellipse const &ellipse) {
+    out += "<ellipse";
+    detail::append_attribute(out, "rx", number(ellipse.radius_x * 1000));
+    detail::append_attribute(out, "ry", number(ellipse.radius_y * 1000));
+    detail::append_attribute(out, "cx", number(ellipse.center.x * 1000));
+    detail::append_attribute(out, "cy", number(ellipse.center.y * 1000));
+    append_paint(out, ellipse.paint);
+    static constexpr std::array<std::string_view, 15> reserved{"rx",
+                                                               "ry",
+                                                               "cx",
+                                                               "cy",
                                                                "fill",
                                                                "stroke",
                                                                "fill-rule",
@@ -554,21 +693,11 @@ void append_path_element(std::string &out, scene::Path const &path) {
                                                                "stroke-opacity",
                                                                "stroke-width",
                                                                "opacity",
-                                                               "stroke-dasharray",
                                                                "stroke-linecap",
-                                                               "stroke-linejoin"};
-    if (path.layout_width) {
-        static constexpr std::array<std::string_view, 17> reserved_with_width{
-            "d",          "points",       "x1",         "y1",          "x2",      "y2",
-            "width",      "fill",         "stroke",     "fill-rule",   "fill-opacity",
-            "stroke-opacity", "stroke-width", "opacity", "stroke-dasharray", "stroke-linecap",
-            "stroke-linejoin"};
-        detail::append_metadata(out, path.metadata, reserved_with_width);
-    } else {
-        detail::append_metadata(out, path.metadata, reserved);
-    }
-    if (path.layout_width)
-        detail::append_attribute(out, "width", number(*path.layout_width * 1000));
+                                                               "stroke-linejoin",
+                                                               "stroke-dasharray",
+                                                               "transform"};
+    detail::append_metadata(out, ellipse.metadata, reserved);
     out += "/>";
 }
 
@@ -619,6 +748,8 @@ void append_primitive(std::string &out, scene::Primitive const &primitive,
                 append_rule(out, value);
             else if constexpr (std::is_same_v<T, scene::Path>)
                 append_path_element(out, value);
+            else if constexpr (std::is_same_v<T, scene::Ellipse>)
+                append_ellipse(out, value);
             else if constexpr (std::is_same_v<T, scene::TextRun>)
                 append_text_run(out, value);
             else
