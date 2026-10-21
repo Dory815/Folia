@@ -4,16 +4,16 @@
 
 ## 当前 checkpoint
 
-- 最新工具提交 `56b227f5`，accent两Cpp退场随本提交。WinUI worker已接原生SVG、数学QuickJS已退出；剩余对象模拟源码/consumer清理未完，不能宣布移植完成。Mermaid暂停。
+- 最新代码 `54cc3867`（本轮12个小批）。WinUI worker已接原生SVG、数学QuickJS已退出；剩余对象模拟源码/consumer清理未完，不能宣布移植完成。Mermaid暂停。
 - 源树未改：648源、162未配置cpp/ixx；478活动+83生成=561配置、248接口/map一致、active unresolved0、17targets。最新FileAPI `index-2026-10-21T12-31-24-0772.json`；未配置不等于可删。
 - BaseNode四分支测试 `5acd4e70` **1/55通过**。本轮已归责退9旧Cpp consumer、9专用工具；class_binding直接cpp/ixx importer生产2+测试41（inc另计）。生产算法未改。
 - Source exact均通过：constructor88、container6480、parent rebind2160、HTML75/434、mfenced length4、token walk780、replaceChild1504、raw/math accent72/33；旧profiles保留。HTML新profile有完整旧fixture/全部Source期待迁移证明，见 `html-source-promoted.json`，勿重复跑锁旧owner/已有staging的bridge。
 - 最新removal build97637 parallel4 exit0；`build/math-port/accent-protocols-final-check.json`确认478活动、保护6、17targets、9已验输入/二进制、7保留不变。当前二进制基线 `script-base-final-check.json`。此前SVG1047/完整math/font/RAII/worker见acceptance；本轮不重复广测，legacy native runners均未跑。
-- 窄图 `build/math-port/mml-current-consumer-graph.json/.md`目前到8632e901/43测试；提交accent后只需减两旧边至41并刷新FileAPI。Fields→ContextBindings→ParserRuntime owner链仍完整，values唯一调用fields.cpp:439；不能孤删/stub。
+- 窄图 `build/math-port/mml-current-consumer-graph.json/.md`已到54cc3867/41测试和最新FileAPI，保留provider/importer/API引用hash均已核。Fields→ContextBindings→ParserRuntime owner链仍完整，values唯一调用fields.cpp:439；不能孤删/stub。
 
 ## 精确下一动作
 
-accent已验收/提交；先刷新窄图的两旧边43→41。无live agent/build/native。
+accent已验收/提交，窄图已刷新。无live agent/build/native。
 
 **下一具体工作由Root接手**：读 `tools/math-port/simple-mml-oracle.cjs`，设计与HTML相同的一次性Source observer：先完整匹配旧Cpp，再捕获并证明全部Source输入/期待顺序，存独立JSON；clean Source-only替换原owner，不留Cpp模板/槽表/并列oracle。Luna只交了 `build/math-port/scripts-retirement-next/simple-source-migration/STATUS.md` 静态未完成报告（106场景/732期待/357deep/1605矩阵行/296递归值及pins），未实现可靠迁移；紧耦合不等于无法做。Root拒绝只留kinds/pins替代全部期待。原 `run-retirement-gates.cjs`未执行，勿重跑已接受Common/string广测；reference_script/simple_mml均保留。
 
