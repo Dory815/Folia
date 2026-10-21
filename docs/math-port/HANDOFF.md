@@ -7,7 +7,8 @@
 - 当前代码/清单快照 `5bd8b49c`：648源/644代码、162未配置cpp/ixx、561配置源、接口/map248一致、active unresolved imports0。清单据最新File API；未配置不等于可删除。
 - 本轮补齐唯一inferred-row虚复制：真实TextNode、属性独立、源树不变；原有测试文件 `mml_native_factory.cpp` 新增一项。parallel4 build及11测试/1989断言通过（`build/math-port/mml-copy-consumer-check.json`），含完整Source SVG。478活动源和6保护路径字节不变。既有WinUI worker已接入原生SVG，数学QuickJS退出；本轮未重跑full math/full字体/worker，未验Release/GUI。
 - Lite对象门面/store/反射textContent及消费者12路径已分6批退出，G227也已单独退出；数学算法、原typed DOM、Source oracle保留。原9个dirty文件及patch在 `build/math-port/context-dirty-backup-20261021/`，已校验。候选已吸收进三个既有测试，不要用旧镜像覆盖。
-- **下一步**：上述copy补测提交后，按已读的 `mml-{allocator,node-fields,factory-consumer-first,factory-consumer-last,values-consumers}-review.md` 分批退6个消费者（含methods draft），每批跑 `mml-consumer-check.cjs`。reports/candidate均在ignored `build/math-port/`；无live agent/build。`mml-current-consumer-graph.json` 是当前窄图：class_binding仍有61测试消费者，values仍由旧factory_context_fields实现调用，methods仍被ContextBindings/ParserRuntime用；不能直接删provider。两处旧 `initializeFreshProperties` 无定义，不恢复旧投影API。
+- **精确停点**：copy补测已提交 `ac063e20`；allocator/node-fields/methods draft三消费者已分别退至 `43ed535d`。childPosition逻辑槽位补测也已吸收到既有 `mml_typed_table.cpp`，build75046 exit0、1测试/12断言通过（`mml-position-consumer-*`）。提交此补测后退factory-fields/values共三个文件。Root已读对应报告，勿重审已退消费者。无live agent/build。
+- 窄图 `mml-current-consumer-graph.json` 的三个已退消费者边待末尾刷新；class_binding仍有61测试消费者，values仍由旧factory_context_fields实现调用，methods仍被ContextBindings/ParserRuntime用，不能直接删provider。两处旧 `initializeFreshProperties` 无定义，不恢复旧投影API。
 - 搜索被忽略的交付候选时用 `rg --no-ignore`。不要按旧 agent 的完成消息推断当前状态，也不要重做已接受的广审。保护 dirty 不是永久保留理由，但处置前必须读 diff、备份并归责。
 
 ## 固定架构与执行边界

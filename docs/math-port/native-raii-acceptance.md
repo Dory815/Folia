@@ -1096,6 +1096,17 @@ mml-copy-consumer-check.json records verified test/binary hashes. The six
 protected paths and all 478 active math source bytes remain unchanged.
 No new full math/font comparison, worker, Release or GUI run is claimed.
 
+Root's final factory-consumer review identified one further concrete gap:
+childPosition must skip an inferred row when reporting the slot in the logical
+parent. The existing mml_typed_table.cpp now checks the original cell/token
+slot-zero cases, a second cell at slot one, and two tokens whose physical
+indices differ while both logical slots remain zero. Parent queries and the
+actual inferred-row shape are checked directly; tree shape alone was not
+treated as proof of childPosition. The follow-up parallel4 build exits0
+(session75046, mml-position-consumer-build.log) and its bounded focused test
+passes **1 test / 12 assertions** (mml-position-consumer-focused-results.json).
+No production algorithm changed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

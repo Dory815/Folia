@@ -214,4 +214,39 @@ suite typed_mml_table = [] {
         expect(mark.arity() == 0.0);
         expect(mark.isSpacelike());
     };
+    "typed childPosition uses logical parent slots across inferred cell rows"_test = [] {
+        MmlDocument document;
+        auto& factory = document.factory();
+        auto& table = factory.make(NodeKind::mtable);
+        auto& row = factory.make(NodeKind::mtr);
+        auto& firstCell = factory.make(NodeKind::mtd);
+        auto& secondCell = factory.make(NodeKind::mtd);
+        auto& firstToken = factory.make(NodeKind::mi);
+        auto& secondToken = factory.make(NodeKind::mi);
+
+        // Mtd initialization owns an inferred mrow; appends go through it.
+        firstCell.appendChild(firstToken);
+        firstCell.appendChild(secondToken);
+        row.appendChild(firstCell);
+        row.appendChild(secondCell);
+        table.appendChild(row);
+
+        expect(firstCell.children().size() == 1_u);
+        if (firstCell.children().empty()) return;
+        auto* firstInferred = firstCell.children().front();
+        expect(firstInferred->kind() == NodeKind::inferred_mrow);
+        expect(firstInferred->children().size() == 2_u);
+        expect(firstInferred->childIndex(secondToken) == std::optional<std::size_t>(1));
+
+        // Cells resolve to their physical row slot. Token positions climb past
+        // the inferred wrapper and report the wrapper's slot in the cell.
+        expect(firstCell.Parent() == &row);
+        expect(secondCell.Parent() == &row);
+        expect(firstCell.childPosition() == std::optional<std::size_t>(0));
+        expect(secondCell.childPosition() == std::optional<std::size_t>(1));
+        expect(firstToken.Parent() == &firstCell);
+        expect(secondToken.Parent() == &firstCell);
+        expect(firstToken.childPosition() == std::optional<std::size_t>(0));
+        expect(secondToken.childPosition() == std::optional<std::size_t>(0));
+    };
 };
