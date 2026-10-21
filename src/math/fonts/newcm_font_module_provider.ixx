@@ -14,9 +14,9 @@ struct NewcmFontDataBundle {
     output::common::FontRepository fonts;
     output::svg::SvgFontResources svg_resources;
 };
-// Builds all pinned shards before publication. module_count and request_count
-// Source trace fields are provenance metadata. Native direct glyph, remap and
-// resource counts are measured from the constructed immutable face.
+// Publishes one font request over pinned read-only records. Source trace fields
+// are provenance metadata. Available glyph/remap records are separate from
+// resource objects actually materialized by this request.
 NewcmFontDataBundle makeNewcmFontData();
 NewcmProviderCoverage newcmProviderCoverage(output::common::FontRepository const& repository);
 }

@@ -118,7 +118,6 @@ class SceneOutput final : public core::MathOutputJaxService {
 struct Renderer::State {
     std::thread::id owner = std::this_thread::get_id();
     bool unusable = false;
-    fonts::NewcmFontDataBundle fontData = fonts::makeNewcmFontData();
     adaptors::lite::LiteAdaptor adaptor;
     tex::ConfigurationHandler configurations;
     tex::MapHandler maps;
@@ -129,7 +128,7 @@ struct Renderer::State {
     Warnings warnings;
     std::unique_ptr<tex::TeX> input;
 
-    RenderResult render(std::u16string_view, std::stop_token, RenderOptions);
+    RenderResult render(std::u16string_view, std::stop_token, RenderOptions, fonts::NewcmFontDataBundle const&);
     scene::Scene renderScene(std::u16string_view, std::stop_token, RenderOptions);
     std::u16string decode(std::string_view, std::stop_token, RenderOptions) const;
     void validateOptions(RenderOptions const &) const;
@@ -184,7 +183,8 @@ struct Renderer::State {
             throw RenderError("WrongThread", "Renderer used from a non-owning thread");
     }
 
-    output::scene::Scene buildScene(std::u16string_view source, RenderOptions options) {
+    output::scene::Scene buildScene(std::u16string_view source, RenderOptions options,
+                                   fonts::NewcmFontDataBundle const& fontData) {
         cancellation::checkpoint(cancellation::CheckpointStage::TeX);
         mml::MmlDocument document;
         tex::TeXRequest request(*input, document.factory());
@@ -256,7 +256,7 @@ BBox SceneOutput::getBBox(core::MathItem &math, mml::MmlDocument &document) {
 } // namespace
 
 RenderResult Renderer::State::render(std::u16string_view source, std::stop_token stop,
-                                     RenderOptions options) {
+                                     RenderOptions options, fonts::NewcmFontDataBundle const& fontData) {
     cancellation::Request request(stop, options.deadline);
     checkThread();
     if (unusable)
@@ -269,7 +269,7 @@ RenderResult Renderer::State::render(std::u16string_view source, std::stop_token
     validateOptions(options);
     cancellation::Scope scope(request);
     try {
-        auto completedScene = buildScene(source, options);
+        auto completedScene = buildScene(source, options, fontData);
         cancellation::checkpoint(cancellation::CheckpointStage::Serialization);
         svg::SvgWriteOptions writeOptions;
         writeOptions.font_cache = svg::FontCacheMode::none;
@@ -297,7 +297,8 @@ scene::Scene Renderer::State::renderScene(std::u16string_view source, std::stop_
     validateOptions(options);
     cancellation::Scope scope(request);
     try {
-        auto result = buildScene(source, options);
+        const auto fontData = fonts::makeNewcmFontData();
+        auto result = buildScene(source, options, fontData);
         request.checkpoint();
         return result;
     } catch (cancellation::Cancelled const &) {
@@ -337,6 +338,19 @@ std::u16string Renderer::State::decode(std::string_view text, std::stop_token st
 Renderer::Renderer() : state_(std::make_unique<State>()) {}
 Renderer::~Renderer() = default;
 
+std::vector<RenderResult> Renderer::renderBatch(std::span<RenderInput const> requests) {
+    state_->checkThread();
+    std::vector<RenderResult> results;
+    results.reserve(requests.size());
+    if (requests.empty()) return results;
+    // This is the only font-body owner for the batch. The persistent parser
+    // has no reference to it; returned Scenes own only their used resources.
+    const auto fontData = fonts::makeNewcmFontData();
+    for (auto const& request : requests)
+        results.push_back(state_->render(request.tex, request.stop, request.options, fontData));
+    return results;
+}
+
 RenderResult Renderer::render(std::u16string_view source, RenderOptions options) {
     return render(source, std::stop_token{}, options);
 }
@@ -345,7 +359,9 @@ RenderResult Renderer::render(std::string_view source, RenderOptions options) {
 }
 RenderResult Renderer::render(std::u16string_view source, std::stop_token stop,
                               RenderOptions options) {
-    return state_->render(source, stop, options);
+    const RenderInput request{source, stop, options};
+    auto result = renderBatch(std::span{&request, std::size_t{1}});
+    return std::move(result.front());
 }
 RenderResult Renderer::render(std::string_view source, std::stop_token stop,
                               RenderOptions options) {

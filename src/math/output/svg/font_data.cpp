@@ -2,11 +2,11 @@ module folia.math.output.svg.font_data;
 import std;
 
 namespace folia::math::output::svg {
-SvgFontGlyphSource const* SvgFontResources::find(SvgFontGlyphKey const& key) const noexcept {
+SvgFontGlyphSource const* SvgFontResources::find(SvgFontGlyphKey const& key) const {
     auto current = glyphs_.find(key);
     if (current != glyphs_.end()) return &current->second;
     auto alias = aliases_.find(key);
-    if (alias == aliases_.end()) return nullptr;
+    if (alias == aliases_.end()) return source_ ? source_->find(key) : nullptr;
     current = glyphs_.find(alias->second);
     return current == glyphs_.end() ? nullptr : &current->second;
 }
@@ -28,6 +28,6 @@ SvgFontResources SvgFontResourcesBuilder::freeze() && {
     for (auto const& [_, target] : aliases_)
         if (!glyphs_.contains(target))
             throw std::invalid_argument("SVG font alias target is absent");
-    return SvgFontResources(std::move(glyphs_), std::move(aliases_));
+    return SvgFontResources(std::move(glyphs_), std::move(aliases_), std::move(source_));
 }
 }

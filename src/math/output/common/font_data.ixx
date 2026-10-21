@@ -22,6 +22,15 @@ struct FontGlyph {
     std::vector<std::uint32_t> composition;
     std::shared_ptr<output::scene::GlyphResource const> resource;
 };
+// A font request owns the values returned by this mathematical lookup view.
+// Implementations may acquire data on demand; published Scene resources own
+// their used outlines independently of this request.
+class FontGlyphLookup {
+public:
+    virtual ~FontGlyphLookup() = default;
+    virtual FontGlyph const* glyph(std::string_view variant, std::uint32_t codepoint) const = 0;
+    virtual std::size_t glyphCount() const noexcept = 0;
+};
 struct GlyphReference {
     std::string variant;
     std::uint32_t codepoint{};
@@ -93,6 +102,7 @@ struct FontFaceData {
     std::map<std::uint32_t, std::u16string> operatorRemap;
     std::map<std::uint32_t, std::u16string> accentRemap;
     std::map<std::uint32_t, std::u16string> numberRemap;
+    std::shared_ptr<FontGlyphLookup const> glyphSource;
     std::size_t glyphCount() const noexcept;
     std::size_t sourceProfileGlyphCount() const noexcept { return source_profile_glyph_count; }
     std::string getFamily(std::string_view family) const;
@@ -107,7 +117,7 @@ public:
     FontRepository() = default;
     FontFaceData const& face(std::string_view name) const;
     FontGlyph const* glyph(std::string_view face, std::string_view variant,
-                           std::uint32_t codepoint) const noexcept;
+                           std::uint32_t codepoint) const;
     std::optional<ResolvedFontGlyph> resolveGlyph(std::string_view face,
                            std::string_view variant, std::uint32_t codepoint) const;
     std::optional<GlyphReference> remap(std::string_view face,

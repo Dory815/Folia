@@ -18,6 +18,14 @@ NewcmProviderCoverage newcmProviderCoverage(output::common::FontRepository const
         direct+=variant.glyphs.size(); remaps+=variant.remap.size();
         for(auto const& [__,glyph]:variant.glyphs)if(glyph.resource)resources.insert(glyph.resource.get());
     }
+    if (auto request = std::dynamic_pointer_cast<NewcmFontRequest const>(face.glyphSource)) {
+        direct += request->glyphCount();
+        return {.source_dynamic_module_count=face.source_dynamic_module_count,
+                .source_provider_trace_events=face.source_provider_trace_events,
+                .native_actual_direct_glyph_records=direct,
+                .native_actual_remap_records=remaps,
+                .native_actual_glyph_resource_objects=request->loadedResourceCount()};
+    }
     return {.source_dynamic_module_count=face.source_dynamic_module_count,
             .source_provider_trace_events=face.source_provider_trace_events,
             .native_actual_direct_glyph_records=direct,
