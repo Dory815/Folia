@@ -160,6 +160,10 @@ ConfigValue scalar_value(std::string_view text, std::string_view tag) {
     ConfigValue value;
     const bool implicit = tag == "?";
     const auto is_tag = [&](std::string_view suffix) { return tag == std::string("tag:yaml.org,2002:") + std::string(suffix); };
+    if (text.empty() && (is_tag("seq") || is_tag("map"))) {
+        value.kind = is_tag("seq") ? ConfigKind::sequence : ConfigKind::mapping;
+        return value;
+    }
     if ((implicit || is_tag("null")) && (text.empty() || text == "~" || text == "null" || text == "Null" || text == "NULL")) return value;
     if (implicit || is_tag("bool")) {
         if (text == "true" || text == "True" || text == "TRUE" || text == "false" || text == "False" || text == "FALSE") {
@@ -296,7 +300,14 @@ public:
 std::expected<ConfigValue, std::string> parse_config_yaml(std::u16string_view source, YamlLimits limits) {
     if (source.size() > limits.source_units) return std::unexpected("YAML source limit exceeded");
     try {
-        std::istringstream input{utf8(source)};
+        if (source.find(u'\0') != source.npos) fail("NUL in YAML source");
+        auto bytes = utf8(source);
+        // A document-end token keeps yaml-cpp's event API from losing an
+        // explicit tag on an empty node at EOF. It adds no scalar content;
+        // js-yaml also supplies a final LF when the input has none.
+        if (!bytes.empty() && bytes.back() != '\n' && bytes.back() != '\r') bytes += '\n';
+        bytes += "...\n";
+        std::istringstream input{bytes};
         YAML::Parser parser{input};
         Builder builder{limits};
         while (parser.HandleNextDocument(builder)) {}

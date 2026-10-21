@@ -87,7 +87,7 @@ suite frontmatter = [] {
             }
             ++count;
         }
-        expect(count == 315_u);
+        expect(count == 409_u);
     };
     "mermaid_yaml_resource_limits_cycles_and_unicode_errors"_test = [] {
         expect(!parse_config_yaml(u"&self [*self]"));
@@ -99,6 +99,9 @@ suite frontmatter = [] {
         expect(!parse_config_yaml(deep));
         expect(!parse_config_yaml(std::u16string{u't', u':', u' ', char16_t{0xd800}}));
         expect(!parse_config_yaml(u"a: 1\n---\nb: 2"));
+        auto huge = parse_config_yaml(std::u16string(100000, u'9'));
+        expect(fatal(huge.has_value()));
+        expect(huge->kind == ConfigKind::string);
         expect(parse_config_yaml(u"[]", {.depth = 0}).has_value());
         auto alias = parse_config_yaml(u"base: &a [1]\ncopy: *a");
         expect(fatal(alias.has_value()));

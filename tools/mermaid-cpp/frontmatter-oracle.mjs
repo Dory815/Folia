@@ -45,7 +45,13 @@ const scalars = ['', 'null', 'Null', 'NULL', '~', 'true', 'True', 'TRUE', 'false
   '""', "'it''s quoted'", '"escaped\\nline\\tend"', '"\\u4e2d\\U0001f600"',
   '[]', '{}', '[1, null, false, [2, 3], {x: 4}]', '{a: 1}', '{toString: false}',
   '!!str true', '!!bool TRUE', '!!int 0xff', '!!float 1', '!!null null', '!!int nope',
-  '!!timestamp 2026-10-21', '!custom value', '!!binary QQ==', '!!map {}', '!!seq []'];
+  '!!timestamp 2026-10-21', '!custom value', '!!binary QQ==', '!!map {}', '!!seq []',
+  '!!str', '!!null', '!!bool', '!!int', '!!float', '!!seq', '!!map',
+  '9007199254740993', '9007199254740995', '0x20000000000001', '0x20000000000003',
+  '0o400000000000000001', '-00', '-0.0', '2.2250738585072014e-308', '5e-324', '1e-324',
+  '1.7976931348623157e308', '1.7976931348623159e308', '"\\0"', '"\\u0001"',
+  '"\\uD800"', '"\\uDC00"', '"\\uD83D\\uDE00"', '"\\U00110000"',
+  '"\\N\\_\\L\\P"', '"\\a\\b\\v\\f\\e"', '"bad\\q"', '"bad\\\'"'];
 for (const [i, value] of scalars.entries()) {
   bodyCase(`scalar-${i}`, `config: {value: ${value}}`);
   bodyCase(`title-${i}`, `title: ${value}\ndisplayMode: ${value}`);
@@ -70,12 +76,19 @@ for (const [name, body] of Object.entries({
   ignored: 'unknown: [1, 2]\ntitle: known', comment: '# comment\ntitle: value # trailing',
   tagMismatch: 'config: !!seq {}', tabs: 'config:\n\tx: 1',
   multiple: 'title: first\n...\n---\ntitle: second',
+  emptyStringAtEnd: 'config: !!str', emptySeqAtEnd: 'config: !!seq', emptyMapAtEnd: 'config: !!map',
+  nonSpecific: 'config: ! 12', reusedAnchor: 'a: &x first\nb: &x second\ntitle: *x',
+  nul: 'title: before\u0000after', unicodeSeparators: 'title: a\u0085b\u2028c\u2029d',
 })) bodyCase(name, body);
 for (let i = 0; i < 80; ++i) bodyCase(`generated-${i}`, `title: ${i}\nconfig: {pie: {showData: ${i % 2 ? 'true' : 'false'}, width: ${i * 17}}, values: [${i}, "${i}"]}`);
 const lines = cases.map(({ name, input }) => {
   try {
     const result = extractFrontMatter(input);
-    return [name, hex(input), 'ok', hex(result.text), snapshot(result.metadata)].join('\t');
+    // Explicit native safety boundary: the grammar backend rejects surrogate
+    // escapes (even a pair) and out-of-range Unicode escapes. Retain the actual
+    // official result so this divergence cannot be mistaken for source parity.
+    const nativeUnicodeBoundary = /\\uD[89A-Fa-f][0-9A-Fa-f]{2}|\\U00110000/.test(input);
+    return [name, hex(input), nativeUnicodeBoundary ? 'unicode-boundary' : 'ok', hex(result.text), snapshot(result.metadata)].join('\t');
   } catch {
     return [name, hex(input), 'error', '-', '-'].join('\t');
   }

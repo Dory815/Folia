@@ -1,24 +1,27 @@
 # Mermaid C++ continuity
 
-## Current checkpoint - 2026-10-21, stage 4b in progress
+## Current checkpoint - 2026-10-21, stage 4b verification
 
-- Branch codex/mermaid-cpp-frontmatter; clean starting base was 90b1f4cd.
-  Fork master verified at merged stage 4a, 4ec7eea49d260656f737672d87df905be6da4da2.
-- First batch adds 315 original extractFrontMatter runtime observations using
-  js-yaml 4.3.0, matching the pinned upstream lockfile. Local write/check pass.
-  Source hashes and the oracle are wired into Windows CI. No native YAML claim yet.
-- Native boundary selected: pinned yaml-cpp 0.9.0 event parser at
-  56e3bb550c91fd7005566f19c079cb7a503223cf, with a separate js-yaml JSON_SCHEMA
-  resolver and owned UTF-16 config tree. No yaml-cpp default scalar conversions.
-  Depth/size/alias expansion limits and cyclic aliases must fail explicitly.
-- Implementation candidate now exists in config_value/frontmatter/config_yaml modules, with native oracle and resource-limit tests. Not yet built or accepted.
-- Next: push the implementation batch and verify Windows Debug/Release; consume
-  the oracle in native tests, then run Debug/Release CI and review a stage PR.
-  Directive interpretation, config precedence and themes remain subsequent work;
-  do not wire shared preprocessing to family renderers before those are ready.
-- No live agent/build handles. Reference yaml-cpp checkout is ignored at
-  .reference/yaml-cpp. Local MSVC is still unavailable; native verification uses CI.
-  No application switch or upstream PR.
+- Branch codex/mermaid-cpp-frontmatter, fork PR https://github.com/zhao0349/Folia/pull/5.
+  User explicitly reconfirmed this public fork as the push/PR/merge destination.
+- Pushed batches: 9718acb7 (315 source observations), dd3fbc31 (native YAML/config
+  values and frontmatter). Windows run 39556529626 passes native tests, platform
+  tests, SVG and measurement comparisons in Debug/Release; final uploads pending
+  when checked. No local MSVC build. This is not final-head acceptance.
+- Current refinement adds 409 observations, empty tagged-node handling, large
+  scalar/resource checks, and a three-change yaml-cpp escape patch (correct UTF-8
+  for N/NBSP escapes, reject escaped apostrophe). Patch --check and oracle pass.
+  12 cases document explicit rejection of surrogate/out-of-range Unicode escapes;
+  actual official results are retained. README states budgets and this divergence.
+- YAML grammar: pinned yaml-cpp 0.9.0, 56e3bb550c91fd7005566f19c079cb7a503223cf.
+  Separate resolver follows js-yaml 4.3.0 JSON_SCHEMA; config trees own their data.
+  No silent config dropping, renderer wiring, editor changes or app switch.
+- Next: commit/push the refinement, verify final Debug/Release CI, review PR #5
+  and merge with preserved commits only after checks pass. Then record exact
+  merged head and next stage here. Directive args, config precedence and themes
+  remain next stages before common frontend wiring to Packet/Pie.
+- No live agent/local build handles. Ignored reference is .reference/yaml-cpp;
+  stage-4b verification lives in Actions. No upstream PR.
 
 ## Stage 4a checkpoint (historical; superseded above) — 2026-10-21
 
@@ -212,5 +215,3 @@ oracle passing is distinct from native C++ tests passing.
   Negative coordinates in an empty diagram can be legitimate.
 - Number formatting must use JavaScript shortest significant digits; exact
   fixed integer formatting differs for values above the safe integer range.
-
-
