@@ -4,6 +4,7 @@ import folia.core.render_model;
 import folia.core.types;
 
 #include "editor/rendering/EditorContentPreparation.h"
+#include "editor/rendering/EditorContentGeometry.h"
 #include "editor/rendering/EditorDocumentPainter.h"
 #include "editor/rendering/EditorTableBlockRenderer.h"
 
@@ -53,7 +54,7 @@ namespace winrt::Folia
                 auto renderCellIndex = row * table.columnCount + column;
                 if (renderCellIndex < special.table_cells.size())
                 {
-                    display = BuildDisplayInlineText(special.table_cells[renderCellIndex], caret, {sourceSpan.container_id, sourceSpan.source_range.end, folia::TextAffinity::Downstream}, mathJax, svgNormalizer, styleSheet.textColor, styleSheet.body.size, (std::max)(1.0f, columnWidth - 20.0f), svgSupported, requestEmbedded, highPriority);
+                    display = BuildDisplayInlineText(special.table_cells[renderCellIndex], caret, {sourceSpan.container_id, sourceSpan.source_range.end, folia::TextAffinity::Downstream}, mathJax, svgNormalizer, styleSheet.textColor, styleSheet.body.size, EditorTableCellContentWidth(tableWidth, table.columnCount), svgSupported, requestEmbedded, highPriority);
                 }
                 else
                 {
@@ -61,7 +62,7 @@ namespace winrt::Folia
                     display.displayToSource.push_back({sourceSpan.container_id, sourceSpan.source_range.end, folia::TextAffinity::Downstream});
                 }
                 auto wide = ToWide(display.text);
-                auto layout = textLayoutEngine.Create(wide, resources.textFormat.Get(), (std::max)(1.0f, columnWidth - 20.0f));
+                auto layout = textLayoutEngine.Create(wide, resources.textFormat.Get(), EditorTableCellContentWidth(tableWidth, table.columnCount));
                 auto cellTextHeight = styleSheet.body.lineHeight;
                 if (layout)
                 {
@@ -108,7 +109,7 @@ namespace winrt::Folia
                 auto images = inlineImageRenderer.Resolve(
                     layout.Get(),
                     display.imageOverlays,
-                    (std::max)(1.0f, columnWidth - 20.0f),
+                    EditorTableCellContentWidth(tableWidth, table.columnCount),
                     requestEmbedded);
                 prepared.pendingImage = prepared.pendingImage || std::ranges::any_of(
                     images,
@@ -121,6 +122,7 @@ namespace winrt::Folia
                 cell.displayToSource = std::move(display.displayToSource);
                 cell.textHeight = cellTextHeight + previewHeight;
                 cell.layout = std::move(layout);
+                prepared.pendingMath = prepared.pendingMath || display.pendingMath;
                 prepared.displays.push_back(std::move(display));
                 prepared.imageDraws.push_back(std::move(images));
                 prepared.mathPreviews.push_back(std::move(previews));

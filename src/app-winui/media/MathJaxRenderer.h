@@ -1,13 +1,19 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <functional>
+#include <condition_variable>
+#include <exception>
+#include <filesystem>
+#include <mutex>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <stop_token>
+#include <thread>
 #include <vector>
 
 namespace winrt::Folia
@@ -17,6 +23,12 @@ namespace winrt::Folia
         None,
         Formula,
         Infrastructure,
+    };
+
+    enum class MathRenderPurpose
+    {
+        Document,
+        Preview,
     };
 
     struct MathJaxSvgFragment
@@ -47,11 +59,8 @@ namespace winrt::Folia
         }
     };
 
-    class SvgNormalizer;
-    class NativeMathSession;
-
-    // A document-owned index. Live layout metrics are not evicted for cache
-    // capacity; SVG bytes live in its delete-on-close temporary store.
+    // Document-owned, asynchronous native math cache. All native rendering
+    // and SVG normalization run on its private worker.
     class MathJaxRenderer
     {
     public:
@@ -68,9 +77,36 @@ namespace winrt::Folia
             bool display,
             float em,
             float containerWidth,
-            SvgNormalizer& normalizer,
             std::string_view color,
-            std::stop_token stop = {});
+            std::stop_token stop = {},
+            MathRenderPurpose purpose = MathRenderPurpose::Document);
+        std::shared_ptr<MathJaxSvg const> Prepare(
+            std::string_view tex,
+            bool display,
+            float em,
+            float containerWidth,
+            std::string_view color,
+            std::stop_token stop = {},
+            MathRenderPurpose purpose = MathRenderPurpose::Document);
+        std::shared_ptr<std::string const> GetSvg(std::uint64_t renderId);
+        void WaitForIdle(std::stop_token stop = {});
+        void SetCompletionCallback(std::function<void()> callback);
+
+        struct Statistics
+        {
+            std::size_t entries = 0;
+            std::size_t svgBytes = 0;
+            std::size_t nativeRenders = 0;
+            std::size_t pending = 0;
+            std::uint64_t fileReads = 0;
+            std::uint64_t fileWrites = 0;
+            std::size_t residentSvgBytes = 0;
+            std::size_t previewSvgBytes = 0;
+            std::filesystem::path backingPath;
+            std::thread::id lastIoThread;
+        };
+        Statistics Snapshot() const;
+
         void SetPreparationStopToken(std::stop_token stop);
         void BeginBlock(std::uint64_t owner);
         void EndBlock();
@@ -79,10 +115,9 @@ namespace winrt::Folia
 
     private:
         struct State;
+        std::shared_ptr<State> CurrentState() const;
 
-        std::unique_ptr<State> state;
-        // Thread-confined execution state is never moved with the document
-        // cache. The preparation host destroys it on its creating thread.
-        std::unique_ptr<NativeMathSession> session;
+        mutable std::mutex stateMutex;
+        std::shared_ptr<State> state;
     };
 }

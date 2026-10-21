@@ -314,6 +314,7 @@ namespace winrt::Folia
             target.footnoteOverlays.push_back(std::move(overlay));
         }
         target.pendingMermaid = target.pendingMermaid || source.pendingMermaid;
+        target.pendingMath = target.pendingMath || source.pendingMath;
     }
 
     void AppendSourceText(DisplayInlineText& display, std::u32string_view sourceText, folia::TextSpan sourceSpan, folia::InlineStyle style, bool marker)
@@ -499,10 +500,12 @@ namespace winrt::Folia
                     continue;
                 }
                 auto displayMath = item.special().display == folia::MathDisplayMode::Block;
+                auto editing = CaretTouchesSpan(caret, item.source_span);
                 auto math = mathJax.Render(
                     folia::cps_to_utf8(item.text), displayMath, fontSize,
-                    containerWidth, svgNormalizer, SvgColor(svgColor));
-                auto editing = CaretTouchesSpan(caret, item.source_span);
+                    containerWidth, SvgColor(svgColor), {},
+                    editing ? MathRenderPurpose::Preview : MathRenderPurpose::Document);
+                display.pendingMath = display.pendingMath || !math;
                 auto delimiterLength = item.special().display == folia::MathDisplayMode::Block
                     ? std::size_t{0}
                     : item.special().math_delim == folia::MathDelimiter::InlineParen ? std::size_t{2} : std::size_t{1};

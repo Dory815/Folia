@@ -123,6 +123,7 @@ namespace winrt::Folia
         std::vector<TaskCheckboxOverlay> taskCheckboxOverlays;
         std::vector<FootnoteOverlay> footnoteOverlays;
         bool pendingMermaid = false;
+        bool pendingMath = false;
     };
 
     std::wstring ToWide(std::u32string_view text);

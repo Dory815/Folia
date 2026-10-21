@@ -58,6 +58,7 @@ namespace winrt::Folia
             bool embeddedRequested = false;
             bool pendingImage = false;
             bool pendingMermaid = false;
+            bool pendingMath = false;
             bool valid = false;
             std::uint64_t embeddedGeneration = 0;
             std::uint64_t remoteImageGeneration = 0;

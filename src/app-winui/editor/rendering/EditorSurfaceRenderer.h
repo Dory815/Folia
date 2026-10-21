@@ -9,7 +9,7 @@ import folia.platform.editor_scroll_state;
 #include "media/SvgNormalizer.h"
 #include "media/TreeSitterHighlighter.h"
 #include "editor/rendering/EditorStyleSheet.h"
-#include "editor/rendering/EditorDocumentPreparation.h"
+#include "editor/rendering/EditorMathPreparation.h"
 #include "editor/rendering/EditorRenderCache.h"
 #include "editor/rendering/EditorRenderResources.h"
 #include "export/EditorPdfExportTypes.h"
@@ -46,14 +46,14 @@ namespace winrt::Folia
         void CancelPdfExport();
         void SetTheme(folia::ThemeProfile const& value);
         folia::ThemeProfile Theme() const;
-        EditorDocumentPreparationContext CapturePreparationContext() const;
-        bool MatchesPreparationContext(EditorDocumentPreparationContext const& context) const;
-        static std::unique_ptr<EditorDocumentPreparation> PrepareDocument(
+        EditorMathPreparationContext CaptureMathPreparationContext() const;
+        bool MatchesMathPreparationContext(EditorMathPreparationContext const& context) const;
+        static std::unique_ptr<EditorMathPreparation> PrepareMath(
             detail::EditorRenderFrame const& frame,
-            EditorDocumentPreparationContext const& context,
+            EditorMathPreparationContext const& context,
             std::stop_token stop,
             std::function<void(std::size_t, std::size_t)> progress);
-        void AdoptDocumentPreparation(std::unique_ptr<EditorDocumentPreparation> preparation);
+        void AdoptMathPreparation(std::unique_ptr<EditorMathPreparation> preparation);
         void SetMathPreparationStopToken(std::stop_token stop);
         void ResetDocumentCaches();
         void SetInvalidateCallback(std::function<void()> callback);
@@ -88,6 +88,7 @@ namespace winrt::Folia
             detail::EditorRenderFrame const& frame,
             std::optional<float> sourceTopOverride = std::nullopt);
         void ClearPreparedDocument();
+        void AttachMathCompletion();
 
         void Invalidate();
 
@@ -104,6 +105,7 @@ namespace winrt::Folia
         using VisualTable = EditorVisualTable;
         using VisualMathHit = EditorVisualMathHit;
 
+        winrt::Microsoft::UI::Dispatching::DispatcherQueue mathDispatcher{nullptr};
         EditorRenderResources resources;
         EditorRenderCache renderCache;
         MathJaxRenderer mathJax;
@@ -129,9 +131,7 @@ namespace winrt::Folia
         bool resizing = false;
         bool rendering = false;
         bool printMode = false;
-        bool preparingDocument = false;
-        std::stop_token preparationStop;
-        std::function<void(std::size_t, std::size_t)> preparationProgress;
+        std::stop_token mathPreparationStop;
         bool exporting = false;
         std::atomic_bool deferredInvalidate = false;
     };

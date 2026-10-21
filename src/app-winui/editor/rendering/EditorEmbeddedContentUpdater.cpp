@@ -58,6 +58,8 @@ namespace winrt::Folia
                 && (prepared.remoteImageGeneration != remoteImageGeneration
                     || (prepared.pendingImage
                         && prepared.embeddedGeneration != embeddedGeneration));
+            auto refreshForMath = prepared.pendingMath
+                && prepared.embeddedGeneration != embeddedGeneration;
             auto refreshForMermaid = prepared.containsMermaid
                 && prepared.embeddedRequested
                 && prepared.pendingMermaid
@@ -68,7 +70,8 @@ namespace winrt::Folia
                 && (prepared.containsImage
                     || prepared.containsMermaid)
                 && (!viewportActive || highPriority);
-            if (!refreshForImages
+            if (!refreshForMath
+                && !refreshForImages
                 && !refreshForMermaid
                 && !enteredEmbeddedBand)
                 return true;

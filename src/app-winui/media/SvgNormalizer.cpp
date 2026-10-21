@@ -90,16 +90,35 @@ namespace
         std::string error;
     };
 
-    winrt::Folia::NormalizedSvg NormalizeSvg(std::string const& source, float fontSize)
+    struct SharedRuntime
     {
-        // usvg's font database is application-wide. Serial access lets a
-        // document preparation and later edits reuse it across calling
-        // threads without rescanning system fonts for every opened document.
-        static std::mutex mutex;
-        static std::unique_ptr<Runtime> runtime;
-        std::scoped_lock lock(mutex);
-        if (!runtime) runtime = std::make_unique<Runtime>();
-        return runtime->Process(source, fontSize);
+        std::mutex mutex;
+        std::unique_ptr<Runtime> runtime;
+    };
+
+    std::shared_ptr<SharedRuntime> AcquireSharedRuntime()
+    {
+        static std::mutex registryMutex;
+        static std::weak_ptr<SharedRuntime> registry;
+        std::scoped_lock lock(registryMutex);
+        auto shared = registry.lock();
+        if (!shared)
+        {
+            shared = std::make_shared<SharedRuntime>();
+            registry = shared;
+        }
+        return shared;
+    }
+
+    winrt::Folia::NormalizedSvg NormalizeSvg(
+        std::shared_ptr<SharedRuntime> const& shared,
+        std::string const& source, float fontSize)
+    {
+        // Keep the DLL and shared font database alive for every normalization
+        // lease, including detached document workers. Loading stays lazy.
+        std::scoped_lock lock(shared->mutex);
+        if (!shared->runtime) shared->runtime = std::make_unique<Runtime>();
+        return shared->runtime->Process(source, fontSize);
     }
 }
 
@@ -118,7 +137,7 @@ namespace winrt::Folia
             float fontSize = 0.0f;
         };
 
-        State() : worker([this] { Run(); }) {}
+        State() : runtimeLease(AcquireSharedRuntime()), worker([this] { Run(); }) {}
 
         ~State()
         {
@@ -149,7 +168,7 @@ namespace winrt::Folia
                     request = std::move(queued->work);
                     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
                 }
-                auto result = NormalizeSvg(request.source, request.fontSize);
+                auto result = NormalizeSvg(runtimeLease, request.source, request.fontSize);
                 std::function<void()> callback;
                 {
                     std::scoped_lock lock(mutex);
@@ -185,14 +204,15 @@ namespace winrt::Folia
         }
 
         std::mutex mutex;
+        std::shared_ptr<SharedRuntime> runtimeLease;
         std::condition_variable wake;
         bool stopping = false;
-        std::thread worker;
         EditorPriorityWorkQueue<Request> requestQueue;
         std::unordered_map<std::string, NormalizedSvg> cache;
         std::deque<std::string> cacheOrder;
         std::size_t cacheBytes = 0;
         std::function<void()> completion;
+        std::thread worker;
     };
 
     SvgNormalizer::SvgNormalizer() : state(std::make_unique<State>()) {}
@@ -200,7 +220,7 @@ namespace winrt::Folia
 
     NormalizedSvg SvgNormalizer::NormalizeNow(std::string_view source, float fontSize)
     {
-        auto result = NormalizeSvg(std::string(source), fontSize);
+        auto result = NormalizeSvg(state->runtimeLease, std::string(source), fontSize);
         if (result.error.empty()) result.id = nextSvgId.fetch_add(1);
         return result;
     }

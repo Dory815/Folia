@@ -406,7 +406,7 @@ namespace winrt::Folia
             co_return;
         }
         if (loadFailure) std::rethrow_exception(loadFailure);
-        std::unique_ptr<EditorDocumentPreparation> preparation;
+        std::unique_ptr<EditorMathPreparation> preparation;
         for (;;)
         {
             if (!Active(state, generation) || state->loadSerial.load() != loadTicket) co_return;
@@ -416,7 +416,7 @@ namespace winrt::Folia
                 if (state->setStatus) state->setStatus(Localize(L"StatusOpenCancelled"));
                 co_return;
             }
-            auto context = state->renderer->CapturePreparationContext();
+            auto context = state->renderer->CaptureMathPreparationContext();
             if (!context.ready)
             {
                 co_await winrt::resume_after(std::chrono::milliseconds(32));
@@ -430,7 +430,7 @@ namespace winrt::Folia
             try
             {
                 loaded->SetTheme(context.theme);
-                preparation = EditorSurfaceRenderer::PrepareDocument(
+                preparation = EditorSurfaceRenderer::PrepareMath(
                     loaded->RenderFrame(), context, loadStop,
                     [state, generation, loadTicket, dispatcher, mathProgressActive, mathPercent]
                     (std::size_t completed, std::size_t total)
@@ -457,9 +457,9 @@ namespace winrt::Folia
                 co_return;
             }
             if (loadFailure) std::rethrow_exception(loadFailure);
-            if (state->renderer->MatchesPreparationContext(context)) break;
-            // A resize/font/theme change during preparation requires fresh
-            // geometry before the new document becomes visible.
+            if (state->renderer->MatchesMathPreparationContext(context)) break;
+            // Only formula inputs depend on this context; ordinary blocks
+            // continue through the existing viewport materialization path.
             preparation.reset();
         }
         auto versionAfterParse = folia::platform::reload::query_watched_file_version(
@@ -467,7 +467,7 @@ namespace winrt::Folia
         *state->session = std::move(*loaded);
         if (state->renderer)
         {
-            state->renderer->AdoptDocumentPreparation(std::move(preparation));
+            state->renderer->AdoptMathPreparation(std::move(preparation));
             state->renderer->SetScrollOffset(scrollOffset);
         }
         if (state->textInput) state->textInput->NotifyTextChanged();

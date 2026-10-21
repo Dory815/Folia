@@ -1,33 +1,23 @@
 # MathJax 原生移植：当前交接
 
-恢复/压缩后先实际读本文。架构、职责和详细验收见 [architecture](native-raii-architecture.md)、[files](native-raii-files.json)、[acceptance](native-raii-acceptance.md)。只复查能推翻现有结论的新变化；本机 ignored 候选用 `rg --no-ignore`。
+恢复/压缩后先实际读本文。架构、职责和详细验收见 [architecture](native-raii-architecture.md)、[files](native-raii-files.json)、[acceptance](native-raii-acceptance.md)。只复查新变化；ignored候选用 `rg --no-ignore`。
 
-## 当前 checkpoint：启动回收与0.2.2 MSI已完成（2026-10-21）
+## 当前 checkpoint：通用数学异步流程（2026-10-22，Debug验收完成）
 
-- 用户要求已完成：启动回收遗留缓存、保留其他实例文件、整理提交并构建MSI；未推送/发布Release。实现/专项测试`e1b66948`，统一版本0.2.2（CMake/MSI/manifest/关于页）`230c1430`。原Math迁移清理仍暂停；当前无live agent/build/native进程。
-- `MathSvgStore::ReclaimOrphans`仅扫描TEMP/FoliaMath直接子项且匹配`{GUID}.svgstore`，目录/重解析点跳过。持有目录句柄防止扫描期间改名；独占打开候选DELETE+READ_ATTRIBUTES后复核类型，通过同一文件句柄标记删除。在用文件共享冲突跳过，不按PID/年龄推断；App::OnLaunched后台调用，无异常外泄，不阻塞UI。原DELETE_ON_CLOSE继续负责普通退出/进程结束；断电时遗留可于下次启动回收，旧内容不复用。只存可重建SVG，不提供未保存编辑恢复。
-- MSI：`build/installer/bin/Folia-0.2.2-x64.msi`，**53,337,766 bytes**，SHA256 **2134773981B611CE18FE471739B19B64E60C3BF03EAFCE3A2115A418CC3C30E7**，同目录`.sha256`。Release自包含构建通过，parallel≤4；包内148文件逐个与来源hash一致，EXE/数学DLL与Release产物一致，DLL也匹配core-release；两个测试EXE及旧JS数学资产排除，运行probe后重新生成payload无变化。证明`build/math-port/math-cache-cleanup-release-deployment.json`、`math-cache-cleanup-release-package-check.log`；均ignored，不随Git传输。
-- setup与Debug构建通过。Debug/Release cache专项分别0.34/0.38s：空/残缺遗留、同进程占用后释放、独立子进程真实store保留、两个并发扫描回收16文件、readonly失败报告后恢复可回收、缺目录no-op、无关名称/目录保留、GUID目录junction与根目录junction均跳过且目标数据不变。文件symlink因1314未覆盖；junction实际覆盖已过。PS5.1测试目录junction清理使用验证后的非递归Directory.Delete，脚本整体退出0。
-- Release真实native/store专项2.02s通过（mathbb/分式/Unicode/诊断/块归属/跨线程缓存移动/16MiB+4097范围/子进程结束删除）；真实布局专项3.53s通过（长公式15行重复视口稳定、4100数学段落完整准备、取消及发布context校验）。日志统一ignored `build/math-port/math-cache-cleanup-*`；不重复旧宽审。复验脚本为worker probe的`-SkipBuild -CacheOnly`，Release再加`-Configuration Release -SelfContained`；layout probe用`-Configuration Release`。一次一个build，手工console probe继续链接console runtime。
-- **下一步：用户安装MSI实际GUI试用**（打开进度/取消/连续打开、窗口变化、滚动/编辑）。本轮未安装、未目视GUI验收、未做物理断电实验；异常遗留通过空/残缺文件模拟。无需重跑已过检查或恢复35个旧测试清理。
-- 自动审批拦截删除旧测试残留目录（仅返回blocked by policy），暂留`build/math-port/worker-probe/Debug/cache-reclaim-9f3496cb771f4cc395a1bbd80711917d`（fixture内部junction及少量哨兵文件）。不影响MSI；不递归处理该路径以绕过审批。
+- **用户边界**：普通内容维持原视口排版；打开只提前异步算数学公式，文档SVG存临时文件。滚动不在UI做缓存文件IO；实时编辑预览异步计算、只存内存。任何文档都可后来写公式，禁止HasMath预扫描/文档分类/开关；之前错误的全内存方向已撤回。旧迁移清理与Mermaid仍暂停。
+- 接入：统一扫描已解析的render节点，遇到数学才请求工作；零数学自然零请求/线程/文件。删除全文PrepareAll/离屏renderer准备，结果只含math cache，不携带全文块几何。原viewport、普通文本/图片/Mermaid流程保留。CST/source/selection/history/core/math均未改；尺寸/断行仍属布局，不写CST。
+- 缓存：Document常驻immutable指标+文件范围，ready SVG使用8MiB LRU，viewport cache hit/GetSvg只排后台读任务；Preview独立purpose key、immutable共享SVG，仅内存。编辑BeginBlock/EndBlock及RetainBlocks移除旧owner、取消过期任务；旧state完成不能写入新state。PDF在既有后台导出线程等完整数学/读取结果，UI不等待。
+- 文件职责：`EditorSurfaceRenderer.Math.cpp`仅数学扫描/采用，`EditorMathPreparation.h`仅数学结果/context，`EditorContentGeometry.h`共用既有宽度计算（保持原浮点运算次序）。`MathJaxRenderer.cpp`为facade，`.State.h`仅内部声明，`.Cache.cpp`为请求/owner/取消/LRU引用，`.Worker.cpp`为native+normalize+文件读写/整理；所有文件IO与native会话都在worker。Normalizer共享Runtime lease，DLL懒加载；工作结束前保留lease，避免静态析构与detached任务重叠。零公式不创建数学worker/normalizer/store。
+- **已通过**：WinUI Debug `math-scoped-async-debug-build-complete.log`（parallel≤4）；最终worker `math-scoped-async-worker-accepted.log`25.62s（mathbb/分式/Unicode/诊断/owner/连续预览替换/取消/Clear/跨线程转移/文件关闭）。8个实际SVG共8,968,637 bytes，resident 7,847,770 bytes；淘汰后后台读回逐字节相等、renderId/指标不变，IO线程不同于调用线程，GetSvg调用2us。Preview缓存读写均0且无文件，Clear后旧文件后台关闭。
+- **布局已过**：`math-scoped-async-layout-accepted.log`16.95s；普通段落用正常InsertText现场输入公式→不完整→修复→离开，内存预览更新、随后Document写文件；长公式15行反复重建断点/基线/坐标稳定；4100数学段落预计算、重复公式native仅1次，4100普通段落0数学工作（扫描60ms，无全文排版）；宽窄各6数学表达式，取消/context验证及source/model身份保持。私有内存/peak日志来自同时保留多个synthetic session的Debug测试，**不是用户文档前后性能比较，不能据此宣称运行内存已降低**。
+- 最终legacy缓存回收专项 `math-scoped-async-cache-accepted.log`0.14s已过（多实例/并发/残缺文件/junction保留）。文件symlink权限1314仍跳过；目录junction实际覆盖。最新IndexOnly `math-scoped-async-index-accepted.log`29.01s已过，4100不同公式首尾ID/geometry保留。所有检查是当前最终代码；无live build/test。
+- 限制：8MiB仅ready SVG缓存预算，metadata/可见绘制资源/preview另外持有；单个SVG大于8MiB时允许一次交付的临时超额。尚无新Release/MSI、安装或GUI目视试用；可试`build/app-winui/bin/x64/Debug/Folia.exe`。旧0.2.2 MSI不含本轮修改。无live agent；Root独占build/Git，一次一个build、parallel≤4。本轮生产修改与probe分两批提交，随后用户GUI试用；实际大文档性能尚未做同输入前后比较。
 
-## 历史 checkpoint：打开前完成数学准备（2026-10-21）
+## 历史：0.2.2安装包（已被当前源码替代）
 
-- **已接入并通过下述检查，待用户GUI试用。** 公式固定启用；设置UI、AppSettings字段/JSON键、数学优先队列及两阶段pending依赖均删除。旧迁移清理goal与Mermaid仍暂停，不自动恢复。
-- 用户选择“先准备完整数学布局，再显示正文；期间显示进度”。LoadDocumentAsync后台准备独立session，完整测量后匹配当前宽度/主题再发布；进度可取消，新加载/Detach会停止旧准备。失败不发布半成品。图片/Mermaid仍有各自异步流程；本轮消除的是数学完成引发的重排。
-- 职责：`NativeMathSession`封装同线程ABI/取消；`MathSvgStore`仅一个文档文件的追加/读取/RAII；`MathJaxRenderer`同步完成native+规范化并按块拥有指标/文件范围，旧块/旧公式回收，失效SVG累计后整理文件。原生会话在宿主线程复用，缓存移动只移动文档数据，原宿主销毁ABI句柄。SVG规范化共用串行字体数据库。
-- `EditorSurfaceRenderer.Preparation.cpp`负责后台准备/采用边界；`EditorDocumentPreparationPass::PrepareAll`复用既有block preparer、DirectWrite行内对象与虚拟化批次，转移前释放设备/可视资源，仅保留块几何及完整数学索引。**CST/source/selection/history未改；尺寸/基线/断行属于布局，不写入CST。** MathJax提供可断行SVG片段，DirectWrite决定段落断行；宽窄窗口片段数可以相同（本例均81），不能期待片段数就是行数。
-- 文件位于系统临时目录`FoliaMath/{GUID}.svgstore`，非继承/独占/CREATE_NEW，TEMPORARY + DELETE_ON_CLOSE；普通关闭/进程实际结束由Windows关闭句柄删除，不依赖C++析构/退出回调；仅无响应而进程仍存活时不会清理。断电不保证当场清理；启动回收缺口已由上方当前checkpoint补齐。下次启动使用新GUID文件和新内存索引，旧半写SVG不会被复用。缓存不存源文档，也不提供未保存编辑的恢复。渲染层补了同步异常的EndDraw/错误显示边界。
-- **验证通过**：setup；WinUI Debug `math-preparation-app-build-final.log`（parallel≤4）；同步native/store `math-preparation-probe-final.log`（mathbb/分式/Unicode/公式诊断/块归属回收/跨线程缓存移动/16,781,312字节4097范围/析构及子进程结束删除，11.07s）；真实4100不同公式索引 `math-preparation-index-probe-final.log`（首尾ID和指标不淘汰，28.31s）。所有日志在ignored `build/math-port/`。
-- **布局验证通过**：`math-preparation-layout-probe-final-v2.log`（15.1s）：7块富文档宽窄1266.01/671.563 DIP；长公式15行，反复视口内/外重建时逐行断点/基线/高度及公式坐标完全相同；4101虚拟化块中4100数学段落均测量（另1尾空块）；提前/中途取消不返回部分结果；匹配context采用、宽度失配拒绝；源码/模型标识保持。WiX清单生成检查也通过：两个数学测试exe均排除。当时无GUI目视验收及新Release/MSI；现已打包至上方0.2.2。
-- 可运行 `build/app-winui/bin/x64/Debug/Folia.exe`；复验脚本 `tools/math-port/winui-math-worker-probe.ps1 -SkipBuild`（另`-IndexOnly`）、`winui-math-layout-probe.ps1`。布局脚本复用当前app工具链/PCH/IFC/CRT，禁止与app编译并行。console runtime已链接，CRT失败无桌面弹窗。
-- 本轮两批本地提交：接入/同步缓存及运行检查 `25165f62`；本checkpoint所在提交补齐完整布局检查和打包排除测试exe。尚未推送。无live agent/build/native。此历史checkpoint已由上方当前checkpoint接续；不擅自恢复35个旧测试清理。
-
-## 历史：上一版MSI与推送（2026-10-21）
-
-- 上一轮已将全部tracked改动推至origin/master `2d58ded9`，无tag/Release。旧自包含Release MSI `build/installer/bin/Folia-0.2.1-x64.msi`，53,329,574 bytes，SHA256 `6D044C437C52FC211866D9747738944AF06FE929D8EA252EA5D62DAEC3335541`；不含当前数学准备改动。包内解包核hash及Debug/Release真实worker已过，详细证明见acceptance。需要新包时运行 `build_msi.ps1`，复验现成自包含产物用probe的`-Configuration Release -SkipBuild -SelfContained`，别改部署配置。
-- 活动路径仍为TeX → request-owned MML → 原Common共享布局 → immutable Scene → SVG → Folia；旧对象模拟链/consumer尚未全部退出，不能宣布整个移植已完成。verification Source/删除批46940bb0/073e6abe已验；保留下面暂停工作的精确起点。
+- `e1b66948`启动回收、`230c1430`版本、`5942bade`验包记录；未推送/发布。0.2.2自包含MSI `build/installer/bin/Folia-0.2.2-x64.msi`，53,337,766 bytes，SHA256 `2134773981B611CE18FE471739B19B64E60C3BF03EAFCE3A2115A418CC3C30E7`。148文件解包hash已验，两个probe EXE与旧JS资产排除；证明`math-cache-cleanup-release-deployment.json`。不要用旧MSI验当前异步流程。
+- 0.2.2的全文块预排版/额外离屏renderer已由当前源码移除，不重新恢复。更早0.2.1推送至origin/master `2d58ded9`；当前不擅自推送/打包。原生接入仍为TeX→request-owned MML→原Common共享布局→immutable Scene→SVG→Folia，整个旧移植清理尚未完成。
+- MathSvgStore仍沿用TEMP/FoliaMath/{GUID}.svgstore、独占非继承/DELETE_ON_CLOSE；普通退出/进程结束关闭句柄删除，断电遗留下次后台回收，不复用半写内容。缓存不含源文档，不提供未保存编辑恢复。此前删除旧probe小目录被自动审批拦截，保留`build/math-port/worker-probe/Debug/cache-reclaim-9f3496cb771f4cc395a1bbd80711917d`，不要为清它绕过审批；不影响产物。
 
 ## 历史：旧迁移还差什么（暂停）
 
@@ -42,4 +32,4 @@
 - Root独占Git/CMake/build/native，一次一个build、parallel≤4。Windows console probe链接 `folia_console_test_runtime`；异常退出后只做有界诊断。小批提交，不reset，不覆盖接手人的改动。
 - 已完成staging/执行proof不重复运行；512/513及verification旧256/257是host预算，不新增MathJax深度规则，不重新抽取旧对象协议测试。
 - 之前6个dirty路径已按用户授权全部处理：4个旧binding源码保存于fe5eba6e；MathJaxSvgParser.cpp/SvgNormalizer.cpp只有行尾/状态差异，暂存后无内容改动。原备份仍在 `build/math-port/context-dirty-backup-20261021/`；不再存在“永远保护这6个未提交文件”的限制。
-- **build/日志/候选/安装包均ignored，不随Git推送。** 远端接手者应按tracked脚本重建，不能假设本机候选存在；canonical Source profiles与owners在仓库中。没有live进程需要恢复。
+- **build/日志/候选/安装包均ignored，不随Git推送。** 远端接手者应按tracked脚本重建，不能假设本机候选存在；canonical Source profiles与owners在仓库中。live句柄只以上方当前checkpoint为准。

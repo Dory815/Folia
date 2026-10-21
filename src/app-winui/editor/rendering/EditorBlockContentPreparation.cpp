@@ -121,7 +121,9 @@ namespace winrt::Folia
 
         auto math = mathJax.Render(
             folia::cps_to_utf8(special.tex), true, fontSize,
-            containerWidth, svgNormalizer, SvgColor(svgColor));
+            containerWidth, SvgColor(svgColor), {},
+            editing ? MathRenderPurpose::Preview : MathRenderPurpose::Document);
+        display.pendingMath = !math;
         if (editing)
         {
             AppendProjectedSourceText(

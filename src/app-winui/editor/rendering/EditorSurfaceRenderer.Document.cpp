@@ -74,10 +74,17 @@ namespace winrt::Folia
             frame.baseDirectory,
             !printMode);
         auto drawMath = [&](MathJaxSvgFragment const& fragment, D2D1_POINT_2F origin, D2D1_COLOR_F) {
-            if (!fragment.svg) return false;
+            auto payload = fragment.svg ? fragment.svg : mathJax.GetSvg(fragment.renderId);
+            if (!payload && printMode)
+            {
+                // PDF export runs off the UI thread and must record complete pages.
+                mathJax.WaitForIdle(mathPreparationStop);
+                payload = mathJax.GetSvg(fragment.renderId);
+            }
+            if (!payload) return true; // Geometry is final; the background read will request a repaint.
             return svgPainter.Draw(
                 fragment.renderId,
-                *fragment.svg,
+                *payload,
                 fragment.width,
                 fragment.height,
                 origin);
@@ -113,7 +120,7 @@ namespace winrt::Folia
             printMode ? std::span<const detail::EditorSearchHighlight>{} : frame.searchHighlights,
             frame.renderModel.editable_index);
 
-        if (frame.renderModel.blocks.empty() && !printMode && !preparingDocument)
+        if (frame.renderModel.blocks.empty() && !printMode)
         {
             auto message = Localize(L"EmptyDocumentHint");
             resources.d2dContext->DrawTextW(
@@ -159,12 +166,6 @@ namespace winrt::Folia
             remoteImageGeneration,
             scrollOffset,
             printMode);
-        if (preparingDocument)
-        {
-            preparationPass.PrepareAll(frame, blockPreparer, preparationStop, preparationProgress);
-            totalDocumentHeight = preparedDocument->totalHeight;
-            return;
-        }
         auto preparation = preparationPass.Prepare();
         scrollOffset = preparation.scrollOffset;
         if (preparation.invalidateRequested) Invalidate();

@@ -9,6 +9,7 @@ namespace winrt::Folia
     EditorSurfaceRenderer::~EditorSurfaceRenderer()
     {
         renderCache.Detach();
+        mathJax.SetCompletionCallback({});
         svgNormalizer.SetCompletionCallback({});
         mermaid.SetCompletionCallback({});
         std::scoped_lock lock(invalidationState->mutex);
@@ -36,6 +37,7 @@ namespace winrt::Folia
     void EditorSurfaceRenderer::ResetDocumentCaches()
     {
         mathJax.Clear();
+        AttachMathCompletion();
         mathModelRevision.reset();
         treeSitter.Clear();
         renderCache.ClearTextLayouts();
@@ -54,6 +56,26 @@ namespace winrt::Folia
         invalidationState->callback = std::move(callback);
     }
 
+    void EditorSurfaceRenderer::AttachMathCompletion()
+    {
+        if (!mathDispatcher) return;
+        std::weak_ptr<InvalidationState> weak = invalidationState;
+        mathJax.SetCompletionCallback([weak, dispatcher = mathDispatcher, this]
+        {
+            dispatcher.TryEnqueue([weak, this]
+            {
+                auto state = weak.lock();
+                if (!state) return;
+                {
+                    std::scoped_lock lock(state->mutex);
+                    if (!state->active) return;
+                }
+                ++embeddedGeneration;
+                Invalidate();
+            });
+        });
+    }
+
     void EditorSurfaceRenderer::Invalidate()
     {
         if (rendering || exporting) { deferredInvalidate = true; return; }
@@ -70,6 +92,8 @@ namespace winrt::Folia
         if (resources.Ready()) return;
         resources.Initialize(panel, styleSheet);
         auto dispatcher = panel.DispatcherQueue();
+        mathDispatcher = dispatcher;
+        AttachMathCompletion();
         renderCache.Attach(dispatcher, [this] { Invalidate(); });
         auto completion = [this, dispatcher]
         {

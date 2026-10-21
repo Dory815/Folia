@@ -43,6 +43,7 @@ namespace winrt::Folia
             std::vector<float> textHeights;
             float height = 0.0f;
             bool pendingImage = false;
+            bool pendingMath = false;
         };
 
         static std::optional<PreparedTable> Prepare(

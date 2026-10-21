@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "editor/rendering/EditorDocumentBlockPreparer.h"
+#include "editor/rendering/EditorContentGeometry.h"
 
 import folia.core.utf;
 
@@ -261,9 +262,7 @@ namespace winrt::Folia
                 || block.kind == folia::RenderBlockKind::Callout);
         auto paddingTop = flowContainer ? 0.0f : block.block_style.padding_top;
         auto paddingBottom = flowContainer ? 0.0f : block.block_style.padding_bottom;
-        auto paddingLeft = flowContainer ? 0.0f : block.block_style.padding_left;
-        auto paddingRight = flowContainer ? 0.0f : block.block_style.padding_right;
-        auto contentWidth = (std::max)(1.0f, documentWidth - paddingLeft - paddingRight);
+        auto contentWidth = EditorBlockContentWidth(block, documentWidth);
         if (block.kind == folia::RenderBlockKind::ThematicBreak) return 40.0f;
         if (block.kind == folia::RenderBlockKind::Blank)
             return styleSheet.body.lineHeight + paddingTop + paddingBottom;
@@ -558,6 +557,7 @@ namespace winrt::Folia
                 for (auto const& span : block.special().table_cell_spans)
                     addOwner(span.container_id);
                 prepared.pendingImage = prepared.table->pendingImage;
+                prepared.pendingMath = prepared.table->pendingMath;
                 prepared.height = prepared.table->height;
                 prepared.valid = true;
                 mathJax.EndBlock();
@@ -569,9 +569,7 @@ namespace winrt::Folia
                 || block.kind == folia::RenderBlockKind::Callout);
         auto paddingTop = flowContainer ? 0.0f : block.block_style.padding_top;
         auto paddingBottom = flowContainer ? 0.0f : block.block_style.padding_bottom;
-        auto paddingLeft = flowContainer ? 0.0f : block.block_style.padding_left;
-        auto paddingRight = flowContainer ? 0.0f : block.block_style.padding_right;
-        auto contentWidth = (std::max)(1.0f, documentWidth - paddingLeft - paddingRight);
+        auto contentWidth = EditorBlockContentWidth(block, documentWidth);
         prepared.display = BuildDisplay(
             block,
             contentWidth,
@@ -622,6 +620,7 @@ namespace winrt::Folia
         }
         documentPainter.ApplyNestedCodeHighlights(prepared.display, block);
         prepared.pendingMermaid = prepared.display.pendingMermaid;
+        prepared.pendingMath = prepared.display.pendingMath;
         auto format = textLayoutEngine.FormatFor(
             prepared.code || prepared.sourceMode,
             prepared.display.ranges);

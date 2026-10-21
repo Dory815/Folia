@@ -86,42 +86,4 @@ namespace winrt::Folia
         };
     }
 
-    void EditorDocumentPreparationPass::PrepareAll(
-        detail::EditorRenderFrame const& frame,
-        EditorDocumentBlockPreparer& blockPreparer,
-        std::stop_token stop,
-        std::function<void(std::size_t, std::size_t)> const& progress)
-    {
-        cache.Reconcile(selection, documentWidth, themeRevision);
-        cache.EnsureGeometry();
-        auto const count = frame.renderModel.blocks.size();
-        constexpr std::size_t batchSize = 16;
-        if (progress) progress(0, count);
-        for (std::size_t begin = 0; begin < count; begin += batchSize)
-        {
-            if (stop.stop_requested()) throw winrt::hresult_canceled();
-            auto end = (std::min)(count, begin + batchSize);
-            if (frame.materializeBlocks) frame.materializeBlocks(begin, end);
-            for (auto index = begin; index < end; ++index)
-            {
-                if (stop.stop_requested()) throw winrt::hresult_canceled();
-                auto const& source = frame.renderModel.blocks[index];
-                if (source.kind != folia::RenderBlockKind::ThematicBreak)
-                {
-                    auto measured = blockPreparer.Prepare(source, true, true);
-                    // No DirectWrite layout, D2D image, or worker device crosses
-                    // the publication boundary. Exact heights remain resident.
-                    measured.ReleaseVisualContent();
-                    preparedDocument->blocks[index] = std::move(measured);
-                    preparedDocument->geometry.UpdateHeight(
-                        index, preparedDocument->blocks[index].height);
-                }
-                if (progress) progress(index + 1, count);
-            }
-            if (frame.releaseBlocksOutside) frame.releaseBlocksOutside(end, end);
-        }
-        preparedDocument->totalHeight = preparedDocument->geometry.TotalHeight();
-        preparedDocument->layoutBlocks.clear();
-        preparedDocument->embeddedBlocks.clear();
-    }
 }

@@ -2,305 +2,185 @@
 
 import std;
 #include "media/MathJaxRenderer.h"
-#include "media/MathSvgStore.h"
-#include "media/NativeMathSession.h"
-#include "media/SvgNormalizer.h"
+#include "media/MathJaxRenderer.State.h"
 
 namespace winrt::Folia
 {
-    struct MathJaxRenderer::State
+    MathJaxRenderer::MathJaxRenderer() : state(std::make_shared<State>()) {}
+
+    MathJaxRenderer::~MathJaxRenderer()
     {
-        struct Entry
-        {
-            std::uint64_t id = 0;
-            std::string const* cacheKey = nullptr;
-            MathJaxSvg geometry;
-            std::vector<MathSvgStore::Range> fragments;
-            std::unordered_set<std::uint64_t> owners;
-            bool unowned = false;
-        };
+        auto old = CurrentState();
+        if (old) old->Stop();
+    }
 
-        MathSvgStore store;
-        std::unordered_map<std::string, Entry> index;
-        std::unordered_map<std::uint64_t, Entry*> entriesById;
-        std::unordered_map<std::uint64_t, std::unordered_set<std::uint64_t>> ownerEntries;
-        std::optional<std::uint64_t> activeOwner;
-        std::unordered_set<std::uint64_t> blockEntries;
-        std::stop_token preparationStop;
-        std::uint64_t writtenBytes = 0;
-        std::uint64_t deadBytes = 0;
-        std::uint64_t nextEntryId = 1;
-
-        std::shared_ptr<MathJaxSvg const> Read(Entry const& entry) const
-        {
-            auto result = std::make_shared<MathJaxSvg>(entry.geometry);
-            for (std::size_t i = 0; i < result->fragments.size(); ++i)
-                result->fragments[i].svg = store.Read(entry.fragments[i]);
-            return result;
-        }
-
-        void AddDeadBytes(std::uint64_t bytes) noexcept
-        {
-            auto const maximum = (std::numeric_limits<std::uint64_t>::max)();
-            deadBytes = bytes > maximum - deadBytes ? maximum : deadBytes + bytes;
-        }
-
-        void MaybeCompact()
-        {
-            constexpr std::uint64_t minimumDeadBytes = 8ull * 1024 * 1024;
-            if (deadBytes < minimumDeadBytes || deadBytes <= writtenBytes / 2)
-                return;
-
-            MathSvgStore replacement;
-            std::vector<std::pair<Entry*, std::vector<MathSvgStore::Range>>> replacementRanges;
-            replacementRanges.reserve(index.size());
-            std::uint64_t liveBytes = 0;
-            for (auto& item : index)
-            {
-                auto& entry = item.second;
-                std::vector<MathSvgStore::Range> ranges;
-                ranges.reserve(entry.fragments.size());
-                for (auto const& range : entry.fragments)
-                {
-                    auto svg = store.Read(range);
-                    ranges.push_back(replacement.Append(*svg));
-                    liveBytes += range.size;
-                }
-                replacementRanges.emplace_back(&entry, std::move(ranges));
-            }
-
-            // All reads and writes succeeded. Range vectors are committed by
-            // no-throw swaps before replacing the old delete-on-close store.
-            for (auto& [entry, ranges] : replacementRanges)
-                entry->fragments.swap(ranges);
-            store = std::move(replacement);
-            writtenBytes = liveBytes;
-            deadBytes = 0;
-        }
-
-        void CollectOrphans(std::unordered_set<std::uint64_t> const& candidates)
-        {
-            for (auto entryId : candidates)
-            {
-                auto found = entriesById.find(entryId);
-                if (found == entriesById.end()) continue;
-                auto& entry = *found->second;
-                if (entry.unowned || !entry.owners.empty()) continue;
-                for (auto const& range : entry.fragments) AddDeadBytes(range.size);
-                auto cacheEntry = index.find(*entry.cacheKey);
-                entriesById.erase(found);
-                index.erase(cacheEntry);
-            }
-            MaybeCompact();
-        }
-
-        void FinishBlock()
-        {
-            if (!activeOwner)
-                throw std::logic_error("EndBlock called without BeginBlock");
-
-            auto const owner = *activeOwner;
-            std::erase_if(blockEntries, [&](std::uint64_t entryId)
-            {
-                return !entriesById.contains(entryId);
-            });
-            auto ownerIt = ownerEntries.try_emplace(owner).first;
-            auto affected = ownerIt->second;
-            affected.insert(blockEntries.begin(), blockEntries.end());
-
-            // Stage only new memberships, not copies of every other block
-            // sharing this formula. A repeated formula in a large document
-            // must take constant work per owner rather than quadratic work.
-            std::vector<Entry*> added;
-            added.reserve(blockEntries.size());
-            try
-            {
-                for (auto entryId : blockEntries)
-                {
-                    auto entry = entriesById.at(entryId);
-                    if (entry->owners.insert(owner).second) added.push_back(entry);
-                }
-            }
-            catch (...)
-            {
-                for (auto entry : added) entry->owners.erase(owner);
-                throw;
-            }
-            for (auto entryId : ownerIt->second)
-                if (!blockEntries.contains(entryId))
-                    if (auto entry = entriesById.find(entryId); entry != entriesById.end())
-                        entry->second->owners.erase(owner);
-            ownerIt->second.swap(blockEntries);
-            blockEntries.clear();
-            if (ownerIt->second.empty()) ownerEntries.erase(ownerIt);
-            activeOwner.reset();
-            CollectOrphans(affected);
-        }
-
-        void Retain(std::span<std::uint64_t const> owners)
-        {
-            std::unordered_set<std::uint64_t> retained(owners.begin(), owners.end());
-            std::unordered_set<std::uint64_t> affected;
-            for (auto it = ownerEntries.begin(); it != ownerEntries.end();)
-            {
-                if (retained.contains(it->first))
-                {
-                    ++it;
-                    continue;
-                }
-                for (auto entryId : it->second)
-                {
-                    affected.insert(entryId);
-                    if (auto entry = entriesById.find(entryId); entry != entriesById.end())
-                        entry->second->owners.erase(it->first);
-                }
-                it = ownerEntries.erase(it);
-            }
-            CollectOrphans(affected);
-        }
-    };
-
-    MathJaxRenderer::MathJaxRenderer() : state(std::make_unique<State>()) {}
-    MathJaxRenderer::~MathJaxRenderer() = default;
     MathJaxRenderer::MathJaxRenderer(MathJaxRenderer&& other) noexcept
-        : state(std::move(other.state)) {}
+    {
+        std::scoped_lock lock(other.stateMutex);
+        state = std::move(other.state);
+    }
 
     MathJaxRenderer& MathJaxRenderer::operator=(MathJaxRenderer&& other) noexcept
     {
         if (this != &other)
         {
-            session.reset();
-            state = std::move(other.state);
+            std::shared_ptr<State> old;
+            {
+                std::scoped_lock lock(stateMutex, other.stateMutex);
+                old = std::move(state);
+                state = std::move(other.state);
+            }
+            if (old) old->Stop();
         }
         return *this;
     }
 
-    void MathJaxRenderer::Clear()
+    std::shared_ptr<MathJaxRenderer::State> MathJaxRenderer::CurrentState() const
     {
-        state = std::make_unique<State>();
-        session.reset();
-    }
-
-    void MathJaxRenderer::SetPreparationStopToken(std::stop_token stop)
-    {
-        state->preparationStop = stop;
-    }
-
-    void MathJaxRenderer::BeginBlock(std::uint64_t owner)
-    {
-        state->CollectOrphans(state->blockEntries);
-        state->activeOwner = owner;
-        state->blockEntries.clear();
-    }
-
-    void MathJaxRenderer::EndBlock()
-    {
-        state->FinishBlock();
-    }
-
-    void MathJaxRenderer::RetainBlocks(std::span<std::uint64_t const> owners)
-    {
-        state->Retain(owners);
+        std::scoped_lock lock(stateMutex);
+        return state;
     }
 
     std::shared_ptr<MathJaxSvg const> MathJaxRenderer::Render(
         std::string_view tex, bool display, float em, float containerWidth,
-        SvgNormalizer& normalizer, std::string_view color, std::stop_token stop)
+        std::string_view color, std::stop_token stop, MathRenderPurpose purpose)
     {
-        if (!stop.stop_possible()) stop = state->preparationStop;
-        if (stop.stop_requested()) throw winrt::hresult_canceled();
-        // Exact float bytes avoid rounding two distinct layout contexts to
-        // the same key. The length prefix also permits any TeX character.
-        auto key = std::to_string(tex.size()) + ':' + std::string(tex);
-        key.push_back(display ? '1' : '0');
-        key.append(reinterpret_cast<char const*>(&em), sizeof(em));
-        key.append(reinterpret_cast<char const*>(&containerWidth), sizeof(containerWidth));
-        key.append(color);
-        if (auto found = state->index.find(key); found != state->index.end())
-        {
-            if (state->activeOwner)
-                state->blockEntries.insert(found->second.id);
-            return state->Read(found->second);
-        }
+        auto current = CurrentState();
+        if (!current) throw winrt::hresult_canceled();
+        auto entry = current->Request(tex, display, em, containerWidth, color, stop, purpose);
+        std::scoped_lock lock(current->mutex);
+        return entry->result;
+    }
 
-        // Reuse the native execution context on this host thread. Moves only
-        // transfer document data; this session stays with its original host.
-        if (!session) session = std::make_unique<NativeMathSession>();
-        auto result = session->Render(tex, display, em, containerWidth, stop);
-        for (auto& fragment : result.fragments)
+    std::shared_ptr<MathJaxSvg const> MathJaxRenderer::Prepare(
+        std::string_view tex, bool display, float em, float containerWidth,
+        std::string_view color, std::stop_token stop, MathRenderPurpose purpose)
+    {
+        auto current = CurrentState();
+        if (!current) throw winrt::hresult_canceled();
+        if (!stop.stop_possible())
         {
-            if (!fragment.svg) throw std::runtime_error("Math fragment has no SVG payload");
-            auto colored = *fragment.svg;
-            constexpr std::string_view marker = "currentColor";
-            for (std::size_t at = 0; (at = colored.find(marker, at)) != std::string::npos;)
-            {
-                colored.replace(at, marker.size(), color);
-                at += color.size();
-            }
-            if (stop.stop_requested()) throw winrt::hresult_canceled();
-            auto normalized = normalizer.NormalizeNow(colored, em);
-            if (!normalized)
-            {
-                result.fragments.clear();
-                result.error = normalized.error;
-                result.errorKind = MathJaxErrorKind::Infrastructure;
-                break;
-            }
-            fragment.renderId = normalized.id;
-            fragment.svg = std::move(normalized.svg);
+            std::scoped_lock lock(current->mutex);
+            stop = current->preparationStop;
         }
+        auto entry = current->Request(tex, display, em, containerWidth, color, stop, purpose);
+        {
+            std::unique_lock lock(current->mutex);
+            if (!current->ready.wait(lock, stop, [&]
+                { return !entry->pending || current->stopping || entry->removed || current->workerFinished; }))
+                throw winrt::hresult_canceled();
+            if (stop.stop_requested() || entry->removed || current->stopping)
+                throw winrt::hresult_canceled();
+            if (!entry->result) throw winrt::hresult_canceled();
+            if (entry->result->errorKind == MathJaxErrorKind::Infrastructure
+                || purpose == MathRenderPurpose::Preview)
+                return entry->result;
+        }
+        return current->AwaitFull(entry, stop);
+    }
+
+    std::shared_ptr<std::string const> MathJaxRenderer::GetSvg(std::uint64_t renderId)
+    {
+        auto current = CurrentState();
+        return current ? current->GetSvg(renderId) : std::shared_ptr<std::string const>{};
+    }
+
+    void MathJaxRenderer::WaitForIdle(std::stop_token stop)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::unique_lock lock(current->mutex);
+        if (!current->idle.wait(lock, stop, [&]
+            { return (current->pending == 0 && !current->workerBusy) || current->workerFinished; }))
+            throw winrt::hresult_canceled();
         if (stop.stop_requested()) throw winrt::hresult_canceled();
-        auto rendered = std::make_shared<MathJaxSvg const>(result);
-        State::Entry entry;
-        entry.id = state->nextEntryId++;
-        auto const entryId = entry.id;
-        entry.geometry = *rendered;
-        entry.fragments.reserve(entry.geometry.fragments.size());
-        entry.unowned = !state->activeOwner.has_value();
-        std::uint64_t appendedBytes = 0;
-        try
+        if (current->workerFailure) std::rethrow_exception(current->workerFailure);
+    }
+
+    void MathJaxRenderer::SetCompletionCallback(std::function<void()> callback)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::scoped_lock lock(current->mutex);
+        if (!current->stopping && !current->workerFinished)
+            current->completion = std::move(callback);
+    }
+
+    MathJaxRenderer::Statistics MathJaxRenderer::Snapshot() const
+    {
+        Statistics result;
+        auto current = CurrentState();
+        if (!current) return result;
+        std::scoped_lock lock(current->mutex);
+        result.entries = current->index.size();
+        result.svgBytes = current->residentSvgBytes + current->previewSvgBytes;
+        result.nativeRenders = current->nativeRenders;
+        result.pending = current->pending;
+        result.fileReads = current->fileReads;
+        result.fileWrites = current->fileWrites;
+        result.residentSvgBytes = current->residentSvgBytes;
+        result.previewSvgBytes = current->previewSvgBytes;
+        result.backingPath = current->backingPath;
+        result.lastIoThread = current->lastIoThread;
+        return result;
+    }
+
+    void MathJaxRenderer::SetPreparationStopToken(std::stop_token stop)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::scoped_lock lock(current->mutex);
+        current->preparationStop = stop;
+    }
+
+    void MathJaxRenderer::BeginBlock(std::uint64_t owner)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::vector<std::shared_ptr<State::Entry>> cancelAfterUnlock;
         {
-            if (state->activeOwner)
-                state->blockEntries.insert(entry.id);
-            for (auto& fragment : entry.geometry.fragments)
-            {
-                auto range = state->store.Append(*fragment.svg);
-                state->writtenBytes += range.size;
-                appendedBytes += range.size;
-                entry.fragments.push_back(range);
-                fragment.svg.reset();
-            }
-            auto [inserted, success] = state->index.emplace(key, std::move(entry));
-            if (!success)
-            {
-                state->AddDeadBytes(appendedBytes);
-                appendedBytes = 0;
-                if (state->activeOwner)
-                {
-                    state->blockEntries.erase(entryId);
-                    state->blockEntries.insert(inserted->second.id);
-                }
-                state->MaybeCompact();
-                if (!state->activeOwner) inserted->second.unowned = true;
-                return state->Read(inserted->second);
-            }
-            inserted->second.cacheKey = &inserted->first;
-            try
-            {
-                if (!state->entriesById.emplace(entryId, &inserted->second).second)
-                    throw std::logic_error("Duplicate MathJax cache entry id");
-            }
-            catch (...)
-            {
-                state->index.erase(inserted);
-                throw;
-            }
-            return rendered;
+            std::scoped_lock lock(current->mutex);
+            auto previous = std::move(current->blockEntries);
+            current->blockEntries.clear();
+            for (auto id : previous) current->RemoveIfOrphanLocked(id, cancelAfterUnlock);
+            current->activeOwner = owner;
         }
-        catch (...)
+        for (auto const& entry : cancelAfterUnlock) entry->cancel.request_stop();
+    }
+
+    void MathJaxRenderer::EndBlock()
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::vector<std::shared_ptr<State::Entry>> cancelAfterUnlock;
         {
-            state->AddDeadBytes(appendedBytes);
-            throw;
+            std::scoped_lock lock(current->mutex);
+            current->FinishBlock(cancelAfterUnlock);
         }
+        for (auto const& entry : cancelAfterUnlock) entry->cancel.request_stop();
+    }
+
+    void MathJaxRenderer::RetainBlocks(std::span<std::uint64_t const> owners)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::vector<std::shared_ptr<State::Entry>> cancelAfterUnlock;
+        {
+            std::scoped_lock lock(current->mutex);
+            current->Retain(owners, cancelAfterUnlock);
+        }
+        for (auto const& entry : cancelAfterUnlock) entry->cancel.request_stop();
+    }
+
+    void MathJaxRenderer::Clear()
+    {
+        auto replacement = std::make_shared<State>();
+        std::shared_ptr<State> old;
+        {
+            std::scoped_lock lock(stateMutex);
+            old = std::move(state);
+            state = std::move(replacement);
+        }
+        if (old) old->Stop();
     }
 }
