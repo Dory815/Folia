@@ -4,6 +4,7 @@
 
 ## 当前 checkpoint：请求字体、统一批量与0.2.3已验收（2026-10-22）
 
+- **用户确认**：2026-10-22 用户确认当前版本无误，要求整理提交；本轮功能已收尾。不将此确认解释为具体内存数值测量或整个旧移植清理完成。
 - **用户边界**：只有一种批量实现，单个=1项；字体正文/轮廓/解码对象仅属本批请求，结束即释放，不跨请求LRU。数学线程与轻量引擎持续驻留。普通视口流程不变、禁止HasMath分类/全文视觉排版；滚动UI零同步IO、离屏任务取消；编辑预览异步且仅内存。固定**0.2.3**并允许同版本更新，不回退/擅自bump。Mermaid及旧移植清理暂停。
 - **实现已提交**：视口取消/移除8MiB历史SVG缓存 `b8ded311`，测试 `8b7a8028`；请求字体 `3248adc2`、Source验收 `a6e0a005`；Core C ABI批量及字体职责整理 `2d591d14`；Folia有界批量/驻留轻量引擎 `3205ccab`；启动批次/未提交请求取消/视口测试 `0fc6b705`。无reset/推送/发布。Root独占Git/build，parallel≤4、math pool2。
 - 字体职责：`newcm_font_data.*`只读POD表/索引/元数据，`newcm_font_module_provider.*`拥有本批NewcmFontRequest及去重/解码；Renderer仅保留共享只读元数据和解析器，每批建/释放FontDataBundle，Scene只持用到的resource。数据为DLL文件支持的只读表，无全量堆展开、SQLite/独立fontpack。Common/SVG借用同请求，不引入第二套数学算法。
@@ -11,8 +12,8 @@
 - **最终Core验收**：构建 `font-request-owner-core-final-build.log`；math全测 `font-request-owner-all-math-tests.log`6.64s通过；Core全测 `font-request-core-tests.log`通过。Source `font-request-owner-source-compare.log` **14,568,049值0差异**（24,307 glyph/642,872段/238,666 aliases）。比较器已分别严格检查既有semantic resourceID和SVG cacheID；旧eager-map测试helper改为实际lookup，原33号glyph/BBox期待不变，不重新调查这两项已解决差异。
 - **最终内存探针** `font-request-owner-memory-batch.log`：引擎持续存活，64×16=1024公式；private idle4,165,632→重复后5,582,848→取消/错误后5,754,880 bytes，重复一致/取消/恢复通过，1.92s。旧全量引擎仅构造曾约增加112MiB；这是隔离测量，**不是Folia GUI回到128MB的证明**。用户实际基线是首次native运行时版 `2d58ded9`；同文档/同内存列的GUI对照仍待提供文档并实测。
 - **最终App验收**：`font-request-release-msi.log` Release构建成功；worker `font-request-release-worker-final.log`1.76s PASS：预览文件IO0、引擎驻留、离屏SVG0，100次视口替换取消107 Read、实际1 Read+1当前native render，abandoned batch无遗留pending/文件。layout `font-request-release-layout-final.log`1.68s PASS：512不同公式32批，同owner80公式3批、entries完整；4100重复/普通节点及15行稳定断行通过。
-- **当前MSI包含上述最终代码**：`build/installer/bin/Folia-0.2.3-x64.msi`，53,366,438 bytes；SHA256 `C8D29D3B708B67C76238C58AE0A36643B36CDC299A1A92A538C3F6A16188F23C`。`font-request-release-deployment.json`记录148文件逐个hash相符、Core DLL相符、probe/旧JS排除、同版本升级开启且ProductCode更新。安装清单重生成一致；验包用Windows PowerShell，pwsh7的排序差异只改变XML顺序。WiX有预期ICE61同版本覆盖warning。未安装/GUI试用/断电实测/推送/发布。
-- **精确停止点与下一步**：无live agent/build/test，无候选等待合入；本轮代码/测试/MSI已完成。接下来让用户实际测试当前MSI；若继续内存调查，先取得同一文档和内存指标，仅检查新证据。旧迁移清理保持暂停，不重开宽审。build、日志、验包JSON/MSI均ignored，远端需按tracked脚本重建。
+- **当前MSI包含上述最终代码**：`build/installer/bin/Folia-0.2.3-x64.msi`，53,366,438 bytes；SHA256 `C8D29D3B708B67C76238C58AE0A36643B36CDC299A1A92A538C3F6A16188F23C`。`font-request-release-deployment.json`记录148文件逐个hash相符、Core DLL相符、probe/旧JS排除、同版本升级开启且ProductCode更新。安装清单重生成一致；验包用Windows PowerShell，pwsh7的排序差异只改变XML顺序。WiX有预期ICE61同版本覆盖warning。用户已确认无误；agent未安装/GUI试用/断电实测，未推送/发布。
+- **精确停止点与下一步**：无live agent/build/test，无候选等待合入；本轮代码/测试/MSI及用户确认已完成，验包记录已提交 `11594681`。等待用户后续安排；若提出新的内存问题，先取得同一文档和内存指标，仅检查新证据。旧迁移清理保持暂停，不重开宽审。build、日志、验包JSON/MSI均ignored，远端需按tracked脚本重建。
 
 ## 历史：0.2.3前两次包
 
@@ -29,7 +30,7 @@
 1. **旧测试直接消费者仍有35个cpp/ixx +4个inc**（按文件，不是断言；未包含所有间接依赖）。旧consumer退出必须保留全部Source期待和实际数学覆盖。现有窄图仍是 `8ba6b468`/36测试，恢复时仅刷新verification删除后的35，不重做宽审。
 2. copy/copy_boundary两Cpp尚未移除。Root已实际通过完整Source profile与全文Cpp映射：sparse 299行中108项copy + boundary6项，原profiles不变。canonical owners为 `sparse-mml-oracle.cjs`/`mml-copy-boundary-oracle.cjs`。恢复后退两Cpp/两freeze mapper，shared `mml-inheritance-regressions.cjs` 仅减114断言/2suite（1449/13→1335/11），保留metadata32/1与profile。本机候选 `build/math-port/copy-source-migration/`；已成功proof `copy-source-executed-proof.json` 不重复跑。
 3. 旧生产owner链仍需整体收尾：Fields → ContextBindings → ParserRuntime，values唯一调用仍fields.cpp:439。未配置不等于死代码；不能孤删/stub或新增双轨。`fe5eba6e` 按用户“全部提交”保存了原有4文件投影补丁（context_bindings.cpp/.ixx、mtable_bindings.cpp、semantics_bindings.cpp）；它们不在478活动源内，未重新验旧协议。**这是交接存档，不是继续扩展投影补丁的方向**，仍按RAII架构退出整条旧链。
-4. 最终完成前还要对剩余源码/工具/依赖清理做对应验收及完整完成审查；D2D不是本轮接入前提。用户实际GUI测试尚待进行。不要把既有Source-only检查或编译成功当作新的native运行验收。
+4. 整个旧移植清理最终完成前，还要对剩余源码/工具/依赖做对应验收及完整完成审查；D2D不是本轮接入前提。本轮请求字体/批量/视口改动已获用户确认，不代表剩余旧迁移已验收。不要把既有Source-only检查或编译成功当作新的native运行验收。
 
 ## 固定边界与本机资料
 
