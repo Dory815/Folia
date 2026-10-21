@@ -1568,6 +1568,23 @@ and multiscript-source-promoted.json. The existing multiscript-oracle.cjs is
 now Source-only and exact-checks the compact independent profile. Its legacy
 C++ consumer and dedicated tools await a separate removal batch.
 
+### Table independent Source profile (2026-10-21)
+
+The full legacy table fixture matches both its original oracle and observer.
+The Source-only owner preserves all 135 cases and 4,700 runtime expectations:
+240 raw inheritance rows account for 3,120 expectations, 160 display/default/
+cramped rows for 800, and the remaining observations for 780. The bridge
+separately records 790 static expect sites, 428 recursive value records and
+4,146 ordered p/list calls; every operand occurs in its own case's full input
+and expectation ledger. All matrix fields and ordered observations match.
+Root added the exact verify-options and outer-inherited argument records
+after the completeness check identified their absence; no expectation changed.
+
+The existing table-oracle.cjs now checks the compact independent profile,
+with no C++ emitter or profile-writing mode. Evidence: table-source-bridge-v3.log
+and table-source-promoted.json. No production algorithm or accepted native
+test changed; the old C++ consumer and tools await their separate removal.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
