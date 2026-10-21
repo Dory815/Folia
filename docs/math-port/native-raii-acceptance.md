@@ -1376,6 +1376,21 @@ constructor-container-tools-promoted.json and constructor-container-final-check.
 No math provider/algorithm or Source profile is removed; no broad runtime
 gate was repeated.
 
+### Remaining parent-position protocol consumer (2026-10-21)
+
+The separate rebind consumer retires after its original 2,160-row Source-only
+profile check passes unchanged. Logical Parent/childPosition behavior remains
+in the accepted typed table tests, including detached nodes and nested inferred
+rows; their bytes still match the earlier accepted snapshot. Dynamic getters,
+sparse/prototype arrays and callback rebinding are Source provenance only.
+Build42085 passes with parallel4. All 478 active sources, six protected paths,
+nine verified input/binary paths, six retained files and seventeen target lists
+remain byte-equal. Class-binding cpp/ixx test consumers decrease 48 to 47.
+Evidence: position-rebind-before.json, position-rebind-removed.json,
+position-rebind-source-check.log and position-rebind-final-check.json.
+No provider, mathematical algorithm or frozen Source profile changed; prior
+runtime gates are retained without repeating them.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
