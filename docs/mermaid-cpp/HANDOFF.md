@@ -2,12 +2,15 @@
 
 ## Current checkpoint — 2026-10-21
 
+- PR #3: https://github.com/zhao0349/Folia/pull/3 (draft). Measurement batch
+  1b830273 and shared XML/CMake fix 61d146b9 pushed. First CI failed only on
+  the module file-set base directory, corrected in the latter commit.
 - Active stage: real font measurement and Pie SVG. First batch adds a real
   browser probe (60 cases) and an explicit-error DirectWrite adapter/probe.
   Local Edge probe passed outside the sandbox after sandbox exit 0xc0000005.
   Native results are pending CI; advance is NOT yet accepted as SVG bounds.
   Next action: inspect same-host native/browser evidence, settle bounds, then
-  implement Pie SVG. No live local process or agent. Candidate files are tracked
+  validate Pie SVG against 80 official renderer cases (candidate implemented). No live local process or agent. Candidate files are tracked
   under tools/mermaid-cpp and src/platform/text/mermaid_measurer.ixx.
 
 - User scope: replace Folia's Mermaid dependency with a C++ port based on the

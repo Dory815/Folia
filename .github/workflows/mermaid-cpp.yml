@@ -116,6 +116,8 @@ jobs:
           node tools/mermaid-cpp/pie-layout-oracle.mjs --check 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/pie-layout-oracle.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/pie-svg-oracle.mjs --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Initialize the x64 MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
@@ -163,8 +165,11 @@ jobs:
 
       - name: Run the native Mermaid tests
         run: |
+          $env:FOLIA_MERMAID_SVG_OUTPUT = Join-Path $pwd 'build/mermaid-cpp/pie-svg'
           ctest --test-dir build/mermaid-cpp --output-on-failure 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/pie-svg-oracle.mjs --compare build/mermaid-cpp/pie-svg
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Compare real browser and DirectWrite text measurements
