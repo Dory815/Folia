@@ -6,6 +6,52 @@ its ownership-repair plans. The original MathJax version, 38-package profile,
 fonts and rendering requirements in `scope.json` remain in scope. No runtime
 or container retirement patch is part of this redesign.
 
+## Request-scoped font data (2026-10-22, implementation pending)
+
+The user defines demand as one request, which may contain a bounded batch of
+formulas. There is one batch entry point; a single formula is a batch of one.
+Deduplicate glyph requirements within that request and read/decode them in
+groups. Do not preserve glyph bodies or decoded outlines between requests,
+including through an LRU, a persistent provider cache, or a renderer session.
+An idle native renderer may retain the TeX session and small lookup indexes.
+
+The font source is file-backed, read-only data, without SQLite. The reader's
+batch contract must return request-owned values or explicit lifetime leases,
+never pointers into a temporary read buffer. Platform mapping/handle APIs stay
+outside core. The existing compiled read-only font tables are source data;
+expanding every row into heap objects at engine construction is the behavior
+being removed. Storage lookup must preserve pinned variant inheritance, shallow
+link overlays, SMP remaps, extension precedence, SVG aliases, present-empty
+paths, compositions, and outline diagnostics. Missing or invalid data is a
+reported error, not a switch to the eager implementation.
+
+| Owner | Responsibility |
+|---|---|
+| `fonts/newcm_font_data.*` and its existing generator | Pinned read-only records/indexes and exact source metadata; no eager outline construction |
+| `fonts/newcm_font_module_provider.*` | One request's deduplicated batch reads and typed font values; release all loaded bodies at request completion/cancellation/failure |
+| `output/common/font_data.*` | Mathematical metrics, variant/remap resolution and a borrow from the active request; no Windows APIs, disk queue, or persistent glyph-body cache |
+| `output/svg/font_data.*` | Exact SVG path/content access from the same request; no second font selection implementation |
+| `math.*` / native C ABI | One batch request lifecycle shared by startup computation and editing; persistent lightweight parser, independent per-formula MML ownership/results |
+| Folia math worker | Bounded startup batches, asynchronous preview, request cancellation; file access never on the UI thread |
+
+Completed Scene results still own only the glyph resources they actually use,
+as required by the existing immutable Scene contract. A Scene must not capture
+the complete font request or renderer. SVG results retain no font source/body
+after serialization. Returning a Scene must remain valid after its request and
+engine are destroyed.
+
+Acceptance must include batch-of-one versus multi-formula equivalence against
+the same pinned Source, glyph deduplication inside a batch, exact metrics/SVG
+aliases/outlines, and retained-Scene ownership. Measure cold and repeated
+requests while leaving the engine alive, and verify zero loaded font bodies
+after success, cancellation and errors. Compare the user's original native
+runtime-rendering baseline (`2d58ded9`) with the same document and memory metric;
+the font-only measurement alone does not explain the reported 128→218 MB delta.
+Keep the scrolling checks: obsolete queued reads/native jobs are removed;
+already-started obsolete reads cannot publish bytes or trigger repaint. No
+opening-time full-document visual layout, HasMath document classification,
+UI-thread file IO, or disk-backed editing preview is introduced.
+
 ## Pipeline and responsibilities
 
 ```text
