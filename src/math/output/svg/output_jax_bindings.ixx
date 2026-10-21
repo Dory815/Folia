@@ -13,7 +13,6 @@ export import folia.math.output.common;
 export import folia.math.input.tex.parser;
 export import folia.math.util.map_bindings;
 export import folia.math.output.svg.menclose_surface;
-export import folia.math.output.svg.maction_surface;
 export import folia.math.output.svg.scene_context_nodes;
 import std;
 
@@ -34,7 +33,6 @@ public:
     options::Context& context()const;
     options::MapContextBindings& mapBindings()const;
     void bindMencloseSurface(std::shared_ptr<SvgMencloseSourceSurface>);
-    void bindMactionSurface(std::shared_ptr<SvgMactionSourceSurface>);
     void bindSceneContextNodes(std::shared_ptr<SceneContextNodes>,
         std::shared_ptr<adaptors::lite::LiteModule>);
     options::ObjectRef registerClass(options::ObjectRef commonConstructor,

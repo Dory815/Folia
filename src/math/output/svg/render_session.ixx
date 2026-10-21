@@ -16,7 +16,6 @@ export import folia.math.core.mml_tree.mml_factory;
 export import folia.math.output.svg.wrapper_constructors;
 export import folia.math.output.svg.wrapper_source_methods;
 export import folia.math.output.svg.menclose_surface;
-export import folia.math.output.svg.maction_surface;
 export import folia.math.output.svg.scene_context_nodes;
 import std;
 
@@ -56,8 +55,6 @@ class SvgRenderServiceGraph final
     std::shared_ptr<svg::SvgWrapperSourceMethods> wrapperMethods_;
     std::shared_ptr<SvgMencloseSourceSurface> mencloseSurface_;
     std::shared_ptr<SceneContextNodes> sceneContextNodes_;
-    std::shared_ptr<TimerHost> mactionTimers_;
-    std::shared_ptr<SvgMactionSourceSurface> mactionSurface_;
     std::shared_ptr<folia::math::adaptors::lite::LiteModule> lite_;
     std::vector<options::ObjectRef> retainedConstructors_;
     options::ObjectRef commonConstructor_{};
@@ -92,8 +89,6 @@ public:
     folia::math::adaptors::lite::LiteModule& lite()const noexcept{return *lite_;}
     SvgMencloseSourceSurface& menclose()const noexcept{return *mencloseSurface_;}
     SceneContextNodes& sceneContextNodes()const noexcept{return *sceneContextNodes_;}
-    SvgMactionSourceSurface& maction()const noexcept{return *mactionSurface_;}
-    TimerHost& mactionTimers()const noexcept{return *mactionTimers_;}
     options::ObjectRef commonConstructor()const noexcept{return commonConstructor_;}
     options::ObjectRef fontConstructor()const noexcept{return fontConstructor_;}
     options::ObjectRef svgFontConstructor()const noexcept{return svgFontConstructor_;}

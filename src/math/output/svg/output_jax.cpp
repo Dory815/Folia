@@ -75,12 +75,6 @@ void SvgOutputJax::initializeSvg(Value supplied,ObjectRef defaultFactory,
         for(const auto& node:materialized(*source))domAdaptor().append(parent,node);
     };
     placements_.setDisplayHandler([this](common::CommonMath& wrapper){handleMathDisplay(wrapper);});
-    placements_.setMactionAction([this](common::CommonMaction& wrapper,scene::Builder& builder,
-        std::span<const scene::NodeRef> roots){
-        if(!mactionSurface_)
-            throw Exception("Unimplemented",u"SVG Maction source surface is not bound");
-        mactionSurface_->runAction(wrapper,builder,roots);
-    });
     placements_.setTextMeasurement([this](const scene::NodeRef& node,
         std::u16string_view chars,std::string_view variant){
         return measureTextWithCache(chars,variant,{},[this,node,chars,variant]{

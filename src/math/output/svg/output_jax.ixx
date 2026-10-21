@@ -7,7 +7,6 @@ export import folia.math.output.svg.serializer;
 export import folia.math.output.svg.font_cache;
 export import folia.math.output.scene;
 import folia.math.output.svg.menclose_surface;
-import folia.math.output.svg.maction_surface;
 import folia.math.output.svg.scene_context_nodes;
 import folia.math.adaptors.lite.lite_module;
 import std;
@@ -32,7 +31,6 @@ private:
     SceneSvgTarget sceneSvgTarget_;
     std::optional<options::ObjectRef> defaultHtmlMethod_;
     std::shared_ptr<SvgMencloseSourceSurface> mencloseSurface_;
-    std::shared_ptr<SvgMactionSourceSurface> mactionSurface_;
     std::shared_ptr<SceneContextNodes> sceneContextNodes_;
     std::shared_ptr<adaptors::lite::LiteModule> liteModule_;
     SceneOutputConsumer sceneOutputConsumer_;
@@ -104,9 +102,6 @@ public:
     void setDefaultHtmlMethod(options::ObjectRef function){defaultHtmlMethod_=function;}
     void bindMencloseSurface(std::shared_ptr<SvgMencloseSourceSurface> surface){
         mencloseSurface_=std::move(surface);
-    }
-    void bindMactionSurface(std::shared_ptr<SvgMactionSourceSurface> surface){
-        mactionSurface_=std::move(surface);
     }
 };
 }

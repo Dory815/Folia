@@ -25,7 +25,6 @@ struct SvgOutputJaxContextBindings::State
     ObjectRef defaultFont;
     std::optional<ObjectRef> defaultHtmlMethod;
     std::shared_ptr<SvgMencloseSourceSurface> mencloseSurface;
-    std::shared_ptr<SvgMactionSourceSurface> mactionSurface;
     std::shared_ptr<SceneContextNodes> sceneContextNodes;
     std::shared_ptr<adaptors::lite::LiteModule> liteModule;
 
@@ -109,7 +108,6 @@ struct SvgOutputJaxContextBindings::State
         context.payload(identity)=std::static_pointer_cast<NativeObject>(owner);
         owner->bindOutputJaxFields(std::static_pointer_cast<void>(owner));
         owner->bindMencloseSurface(mencloseSurface);
-        owner->bindMactionSurface(mactionSurface);
         owner->bindSceneContextNodes(sceneContextNodes,liteModule);
         if(defaultHtmlMethod)owner->setDefaultHtmlMethod(*defaultHtmlMethod);
         owner->initializeSvg(std::move(supplied),factoryConstructor,defaultFont,
@@ -158,15 +156,6 @@ void SvgOutputJaxContextBindings::bindMencloseSurface(
     if(state_->constructor)
         throw Exception("TypeError",u"SvgMenclose surface must be bound before Jax construction");
     state_->mencloseSurface=std::move(surface);
-}
-void SvgOutputJaxContextBindings::bindMactionSurface(
-    std::shared_ptr<SvgMactionSourceSurface> surface){
-    if(!surface)throw Exception("TypeError",u"Cannot bind an empty SVG Maction surface");
-    if(&surface->context()!=&state_->context)
-        throw Exception("TypeError",u"SvgMaction surface belongs to another Context");
-    if(state_->constructor)
-        throw Exception("TypeError",u"SvgMaction surface must be bound before Jax construction");
-    state_->mactionSurface=std::move(surface);
 }
 
 void SvgOutputJaxContextBindings::bindSceneContextNodes(

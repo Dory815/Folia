@@ -37,8 +37,6 @@ class WrapperFactory {
     bool useXlink_=false;
     std::function<common::UnknownBBox(const NodeRef&,std::u16string_view,std::string_view)> textMeasurement_;
 public:
-    using MactionAction = std::function<void(common::CommonMaction&,Builder&,
-        std::span<const NodeRef>)>;
     void setLayoutObserver(LayoutEventObserverRef observer){observer_=std::move(observer);}
     const LayoutEventObserverRef& layoutObserver()const noexcept{return observer_;}
     void setDisplayHandler(std::function<void(common::CommonMath&)> handler){
@@ -65,15 +63,7 @@ public:
         if(!textMeasurement_)throw options::Exception("Unimplemented",u"Source text-node measurement is not bound");
         return textMeasurement_(node,chars,variant);
     }
-    void setMactionAction(MactionAction action){mactionAction_=std::move(action);}
-    void runMactionAction(common::CommonMaction& wrapper,Builder& builder,
-                          std::span<const NodeRef> roots)const{
-        if(!mactionAction_)throw options::Exception("Unimplemented",u"SVG Maction action bridge is not bound");
-        mactionAction_(wrapper,builder,roots);
-    }
     std::vector<NodeRef> build(common::CommonWrapper&,Builder&,std::span<const NodeRef> parents);
-private:
-    MactionAction mactionAction_;
 };
 
 // Exact base SvgWrapper.addChildren flow for wrapper kinds that inherit that

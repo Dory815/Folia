@@ -43,7 +43,6 @@ import folia.math.core.math_item;
 import folia.math.output.common.font_data_surface;
 import folia.math.output.svg.font_data_surface;
 import folia.math.output.svg.menclose_surface;
-import folia.math.output.svg.maction_surface;
 import folia.math.output.svg.wrapper_constructors;
 import folia.math.fonts.newcm_font_data;
 import folia.math.fonts.svg_extensions;
@@ -272,23 +271,6 @@ void SvgRenderServiceGraph::initialize(){
     (void)mencloseSurface_->install(menclose->second);
     svgJax_->bindMencloseSurface(mencloseSurface_);
 
-    const auto svgMaction=std::find_if(wrapperConstructors_.begin(),wrapperConstructors_.end(),
-        [](const auto& entry){return entry.first==u"SvgMaction";});
-    const auto commonMaction=std::find_if(wrapperConstructors_.begin(),wrapperConstructors_.end(),
-        [](const auto& entry){return entry.first==u"CommonMactionMixin";});
-    if(svgMaction==wrapperConstructors_.end()||commonMaction==wrapperConstructors_.end())
-        throw Exception("TypeError",u"SVG wrapper constructor graph has no Maction constructor chain");
-    mactionTimers_=std::make_shared<TimerHost>(context);
-    mactionSurface_=std::make_shared<SvgMactionSourceSurface>(
-        context,*maps_,commonFactories_,mactionTimers_,sceneContextNodes_,
-        std::static_pointer_cast<void>(shared_from_this()));
-    const auto stateProjection=parser_->properties.to(Property(core::STATE));
-    const auto* stateObject=std::get_if<ObjectRef>(&stateProjection.data);
-    if(!stateObject)throw Exception("TypeError",u"MathItem STATE did not project to a Context object");
-    (void)mactionSurface_->install(svgMaction->second,commonMaction->second,*stateObject);
-    mactionSurface_->bindLiteModule(*lite_);
-    mactionSurface_->bindPropertyBindings(parser_->properties);
-    svgJax_->bindMactionSurface(mactionSurface_);
 
     (void)svgJax_->registerClass(commonConstructor_,parser(),newcmFontConstructor_);
 }

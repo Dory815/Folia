@@ -13,7 +13,6 @@ void registerScenePlacements(WrapperFactory& factory){
     registerTextNodePlacement(factory);
     registerMathPlacement(factory);
     registerMfencedPlacement(factory);
-    registerMactionPlacement(factory);
     registerSemanticsPlacement(factory);
     registerTeXAtomPlacement(factory);
     registerMglyphPlacement(factory);

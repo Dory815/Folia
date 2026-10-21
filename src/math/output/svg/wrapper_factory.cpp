@@ -4,6 +4,7 @@
 module folia.math.output.svg.wrapper_factory;
 import folia.math.output.svg.menclose_notations;
 import folia.math.output.svg.merror;
+import folia.math.output.svg.maction;
 import folia.math.output.svg.xml_wrapper;
 import folia.math.core.mml_tree.mml_document;
 import std;
@@ -11,6 +12,11 @@ import std;
 namespace folia::math::output::svg {
 common::CommonWrapperCatalog SvgWrapperFactory::defaultNodes() {
     auto catalog = common::CommonWrapperFactory::standardNodes(mencloseNotations());
+    const auto maction = std::ranges::find(catalog, folia::math::mml::NodeKind::maction,
+                                           &common::CommonWrapperRegistration::kind);
+    if (maction == catalog.end())
+        throw std::logic_error("Common standard catalog has no maction registration");
+    *maction = mactionRegistration();
     auto const merror = std::ranges::find(catalog, folia::math::mml::NodeKind::merror,
                                           &common::CommonWrapperRegistration::kind);
     if (merror == catalog.end())
