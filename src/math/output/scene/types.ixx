@@ -283,6 +283,7 @@ struct Glyph {
 };
 struct GlyphRun {
     std::vector<Glyph> glyphs;
+    std::uint64_t resource_order{};
 };
 enum class PathElement { path, polygon, line };
 struct Rule {

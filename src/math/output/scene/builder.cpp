@@ -37,6 +37,18 @@ struct Builder::State {
     DisplayLayout display_layout{};
     FrameLayout frame_layout{};
     NodeId next_id{1};
+    std::uint64_t next_resource_order{1};
+    std::uint64_t resource_order() const {
+        if (next_resource_order == 0)
+            throw std::overflow_error("Scene resource order space exhausted");
+        return next_resource_order;
+    }
+    void commit_resource_order() noexcept {
+        if (next_resource_order == std::numeric_limits<std::uint64_t>::max())
+            next_resource_order = 0;
+        else
+            ++next_resource_order;
+    }
     State() {
         groups.push_back(MutableGroup{.id = 0});
     }
@@ -394,8 +406,16 @@ void Builder::insert_primitive(NodeId id, std::size_t index, Primitive value) {
     auto &entries = group.entries;
     if (index > entries.size())
         throw std::out_of_range("Scene primitive insertion index");
+    auto *run = std::get_if<GlyphRun>(&value);
+    auto const has_resource_event = run && !run->glyphs.empty();
+    if (run && !has_resource_event)
+        run->resource_order = 0;
+    else if (has_resource_event)
+        run->resource_order = state_->resource_order();
     entries.insert(entries.begin() + static_cast<std::ptrdiff_t>(index),
                    State::Entry{std::move(value)});
+    if (has_resource_event)
+        state_->commit_resource_order();
 }
 NodeId Builder::wrap_contents(NodeId id, Transform transform_value, SemanticMetadata metadata_value,
                               ElementRole role_value) {
@@ -562,7 +582,15 @@ void Builder::add_primitive(NodeId group, Primitive primitive) {
         throw std::out_of_range("Scene target group does not exist");
     if (owner->foreign_content)
         throw std::invalid_argument("ForeignObject group cannot contain ordinary entries");
+    auto *run = std::get_if<GlyphRun>(&primitive);
+    auto const has_resource_event = run && !run->glyphs.empty();
+    if (run && !has_resource_event)
+        run->resource_order = 0;
+    else if (has_resource_event)
+        run->resource_order = state_->resource_order();
     owner->entries.push_back(State::Entry{std::move(primitive)});
+    if (has_resource_event)
+        state_->commit_resource_order();
 }
 std::size_t Builder::add_action_region(NodeId group_id, ActionRegion region) {
     if (!state_)
@@ -570,8 +598,15 @@ std::size_t Builder::add_action_region(NodeId group_id, ActionRegion region) {
     auto &group = state_->require(group_id);
     if (group.foreign_content)
         throw std::invalid_argument("ForeignObject group cannot contain action regions");
+    auto const has_resource_event = static_cast<bool>(region.tooltip);
+    if (has_resource_event)
+        region.resource_order = state_->resource_order();
+    else
+        region.resource_order = 0;
     auto const index = group.entries.size();
     group.entries.push_back(State::Entry{std::move(region)});
+    if (has_resource_event)
+        state_->commit_resource_order();
     return index;
 }
 void Builder::set_action_region_tooltip(NodeId group_id, std::size_t index,
@@ -586,7 +621,14 @@ void Builder::set_action_region_tooltip(NodeId group_id, std::size_t index,
     auto *region = std::get_if<ActionRegion>(&group.entries[index].value);
     if (!region)
         throw std::invalid_argument("Scene entry is not an action region");
-    region->tooltip = std::move(tooltip);
+    if (tooltip) {
+        region->resource_order = state_->resource_order();
+        region->tooltip = std::move(tooltip);
+        state_->commit_resource_order();
+    } else {
+        region->tooltip.reset();
+        region->resource_order = 0;
+    }
 }
 void Builder::set_action(NodeId group_id, Action action) {
     if (!state_)

@@ -200,6 +200,7 @@ Glyph clone_glyph(Glyph const &source) {
 }
 GlyphRun validate_and_clone(GlyphRun const &source) {
     GlyphRun copy;
+    copy.resource_order = source.resource_order;
     copy.glyphs.reserve(source.glyphs.size());
     for (auto const &glyph : source.glyphs) {
         if (!glyph.resource)
@@ -214,6 +215,35 @@ GlyphRun validate_and_clone(GlyphRun const &source) {
     }
     return copy;
 }
+struct ResourceOrderState {
+    bool has_events{};
+    bool specified{};
+    std::uint64_t next_automatic{1};
+    std::unordered_set<std::uint64_t> explicit_orders;
+
+    void observe(std::uint64_t &order) {
+        auto const is_specified = order != 0;
+        if (!has_events) {
+            has_events = true;
+            specified = is_specified;
+        } else if (specified != is_specified) {
+            throw std::invalid_argument(
+                "Scene resource orders must be all explicit or all unspecified");
+        }
+        if (specified) {
+            if (!explicit_orders.insert(order).second)
+                throw std::invalid_argument("Scene resource orders must be unique");
+            return;
+        }
+        if (next_automatic == 0)
+            throw std::overflow_error("Scene resource order space exhausted");
+        order = next_automatic;
+        if (next_automatic == std::numeric_limits<std::uint64_t>::max())
+            next_automatic = 0;
+        else
+            ++next_automatic;
+    }
+};
 Metrics validate_metrics(Metrics value) {
     return validate(value);
 }
@@ -276,7 +306,7 @@ Primitive clone_primitive(Primitive const &source) {
         source);
 }
 Group clone_group(Group const &source, std::unordered_set<Group const *> &active,
-                  std::unordered_set<NodeId> &ids) {
+                  std::unordered_set<NodeId> &ids, ResourceOrderState &resource_orders) {
     if (!ids.insert(source.id).second)
         throw std::invalid_argument("Scene group ids must be unique");
     validate(source.transform);
@@ -309,22 +339,29 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
     copy.action = source.action;
     copy.entries.reserve(source.entries.size());
     for (auto const &entry : source.entries) {
-        if (auto const *primitive = std::get_if<Primitive>(&entry))
-            copy.entries.emplace_back(clone_primitive(*primitive));
-        else if (auto const *child_group = std::get_if<std::shared_ptr<Group const>>(&entry)) {
+        if (auto const *primitive = std::get_if<Primitive>(&entry)) {
+            auto cloned = clone_primitive(*primitive);
+            if (auto *run = std::get_if<GlyphRun>(&cloned); run && !run->glyphs.empty())
+                resource_orders.observe(run->resource_order);
+            copy.entries.emplace_back(std::move(cloned));
+        } else if (auto const *child_group = std::get_if<std::shared_ptr<Group const>>(&entry)) {
             auto const &child = *child_group;
             if (!child)
                 throw std::invalid_argument("Scene group entries cannot contain null groups");
             if (!active.insert(child.get()).second)
                 throw std::invalid_argument("Scene group hierarchy cannot contain cycles");
-            auto cloned = clone_group(*child, active, ids);
+            auto cloned = clone_group(*child, active, ids, resource_orders);
             active.erase(child.get());
             copy.entries.emplace_back(std::make_shared<Group const>(std::move(cloned)));
         } else {
             auto region = std::get<ActionRegion>(entry);
             region.hitbox = std::get<Rule>(clone_primitive(Primitive{region.hitbox}));
-            if (region.tooltip)
+            if (region.tooltip) {
+                resource_orders.observe(region.resource_order);
                 region.tooltip = std::make_shared<Scene const>(*region.tooltip);
+            } else {
+                region.resource_order = 0;
+            }
             copy.entries.emplace_back(std::move(region));
         }
     }
@@ -333,7 +370,8 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
 Group snapshot_group(Group const &source) {
     std::unordered_set<Group const *> active;
     std::unordered_set<NodeId> ids;
-    return clone_group(source, active, ids);
+    ResourceOrderState resource_orders;
+    return clone_group(source, active, ids, resource_orders);
 }
 } // namespace
 

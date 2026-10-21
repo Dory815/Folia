@@ -7,6 +7,7 @@ class Scene;
 struct ActionRegion {
     Rule hitbox;
     std::shared_ptr<Scene const> tooltip;
+    std::uint64_t resource_order{};
 };
 struct ToggleAction {
     double selection{};
