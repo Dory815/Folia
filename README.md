@@ -115,6 +115,16 @@ For installer builds, `build_app.ps1` receives the compile-time Assets token
 `{LocalAppData}\Folia\Assets`; it is resolved for the current user at runtime.
 Normal developer builds continue to use their existing Assets location.
 
+To check the native math worker in the existing self-contained MSI payload:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\math-port\winui-math-worker-probe.ps1 -Configuration Release -SkipBuild -SelfContained
+```
+
+This checks the built application objects and deployed math DLL without
+rebuilding the application with different deployment settings. The MSI excludes
+the worker probe and obsolete QuickJS math/font scripts.
+
 All generated files stay below `build/`. Application binaries are written to
 `build/app-winui/bin/<platform>/<configuration>/`; builds do not write into
 the source tree.

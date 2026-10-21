@@ -1,7 +1,13 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Debug'
+    [string]$Configuration = 'Debug',
+
+    # Validate an existing payload without changing its self-contained or
+    # Assets build properties, as required after building an MSI.
+    [switch]$SkipBuild,
+
+    [switch]$SelfContained
 )
 
 $ErrorActionPreference = 'Stop'
@@ -49,10 +55,16 @@ $nativeRuntime = Join-Path $nativeBuildDirectory 'FoliaNativeMath.dll'
 $probeExecutable = Join-Path $applicationDirectory 'FoliaMathWorkerProbe.exe'
 
 New-Item -ItemType Directory -Force -Path $scratchDirectory | Out-Null
-Write-Host "Building FoliaNativeMath and the WinUI application ($Configuration)..."
-& $buildApp -Configuration $Configuration
-if (-not $?) {
-    throw "build_app.ps1 failed for $Configuration"
+if (-not $SkipBuild) {
+    Write-Host "Building FoliaNativeMath and the WinUI application ($Configuration)..."
+    $buildArguments = @{ Configuration = $Configuration }
+    if ($SelfContained) { $buildArguments.SelfContained = $true }
+    & $buildApp @buildArguments
+    if (-not $?) {
+        throw "build_app.ps1 failed for $Configuration"
+    }
+} else {
+    Write-Host "Using the existing Folia application payload ($Configuration)..."
 }
 
 Require-File $probeSource 'worker probe source'
@@ -80,7 +92,11 @@ $compilerPdb = Join-Path $scratchDirectory 'worker-probe-compiler.pdb'
 $linkerPdb = Join-Path $scratchDirectory 'FoliaMathWorkerProbe.pdb'
 $stdoutPath = Join-Path $scratchDirectory 'probe.stdout.log'
 $stderrPath = Join-Path $scratchDirectory 'probe.stderr.log'
-$runtimeFlag = if ($Configuration -eq 'Debug') { '/MDd' } else { '/MD' }
+$runtimeFlag = if ($SelfContained) {
+    if ($Configuration -eq 'Debug') { '/MTd' } else { '/MT' }
+} else {
+    if ($Configuration -eq 'Debug') { '/MDd' } else { '/MD' }
+}
 $debugFlag = if ($Configuration -eq 'Debug') { '/Zi' } else { '' }
 $compileFlags = @(
     '/nologo', '/std:c++latest', '/EHsc', $runtimeFlag, $debugFlag, '/utf-8',
@@ -112,6 +128,14 @@ $linkCommand = 'link /NOLOGO /SUBSYSTEM:CONSOLE /INCREMENTAL:NO /MANIFEST:NO /ST
     (Quote-CmdArgument $probeExecutable) + ' /PDB:' + (Quote-CmdArgument $linkerPdb)
 if ($Configuration -eq 'Debug') {
     $linkCommand += ' /DEBUG'
+} else {
+    $linkCommand += ' /LTCG'
+}
+if ($SelfContained) {
+    # Match the self-contained application's CRT linkage in Folia.vcxproj.
+    $staticUcrt = if ($Configuration -eq 'Debug') { 'libucrtd.lib' } else { 'libucrt.lib' }
+    $dynamicUcrt = if ($Configuration -eq 'Debug') { 'ucrtd.lib' } else { 'ucrt.lib' }
+    $linkCommand += " /NODEFAULTLIB:$staticUcrt /DEFAULTLIB:$dynamicUcrt"
 }
 $linkCommand += ' ' + ($linkInputs -join ' ') + ' windowsapp.lib runtimeobject.lib'
 

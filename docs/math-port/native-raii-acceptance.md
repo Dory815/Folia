@@ -1658,6 +1658,42 @@ input/binary paths, thirty-one retained paths and seventeen target lists.
 Interfaces remain 248, unresolved imports zero, and class-binding cpp/ixx
 test consumers decrease 36 to 35. No new native runtime gate ran.
 
+### Current Debug and self-contained Release MSI (2026-10-21)
+
+Dependency setup passes. The supported Debug application build and actual
+worker probe pass (session20610, folia-latest-worker.log). The deployed Debug
+math DLL now matches core SHA256 CFDA6103DC0C55754EAC52AB5BDB617F26B3AAF08B8756D9F6DB43096A51A373.
+The stale deployment recorded in the preceding handoff is superseded.
+
+The self-contained x64 Release application and MSI build pass (final
+session17523, folia-latest-release-msi-v2.log), with zero build warnings/errors.
+Folia-0.2.1-x64.msi contains 127 program files and 21 asset files, excluding
+the obsolete mathjax-quickjs.js, font JavaScript and worker probe executable.
+Third-party notices remain. WiX decompilation/extraction succeeds, and the
+actual extracted Folia.exe and FoliaNativeMath.dll match their Release output
+hashes; the deployed DLL also matches core-release. The MSI is 53,329,574 bytes,
+SHA256 6D044C437C52FC211866D9747738944AF06FE929D8EA252EA5D62DAEC3335541.
+
+The Release probe uses -SkipBuild -SelfContained to preserve MSI deployment
+settings and match its static CRT linkage. The original probe's dynamic CRT
+link attempt failed before execution; the corrected driver matches the actual
+Folia.vcxproj settings. The actual Release worker then passes mathbb, fraction
+cache/dependencies, Unicode, noundefined, malformed-formula recovery, Clear and
+disable/re-enable (folia-latest-release-worker-v2.log; stop join501ms, total1.19s,
+empty stderr). No application rebuild follows this check. Regenerating the
+payload after creating the probe produces identical XML, proving it stays out
+of subsequent packages. Evidence: folia-latest-release-deployment.json.
+
+All 478 active math source files, six previously protected files, nine verified
+inputs/binaries and retained Source profiles remain byte-identical. The user
+then explicitly requested committing every tracked change: fe5eba6e preserves
+the four pre-existing legacy projection edits, which are outside the active
+source list. Their commit is preservation for handoff, not native runtime
+acceptance or a new ownership design. The two media paths had no content diff.
+No MSI installation, GUI visual test, GitHub Release or tag publication is
+claimed. Generated artifacts, local logs and ignored candidates are not Git
+deliverables; a new checkout must recreate them with the tracked scripts.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
