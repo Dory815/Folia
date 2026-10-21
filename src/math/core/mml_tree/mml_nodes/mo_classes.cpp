@@ -109,15 +109,13 @@ bool MmlMo::isAccent() {
         if (!multi)
             throw std::logic_error("munderover kind has incompatible family type");
         const auto children = enclosing->children();
-        const auto coreOfCore = [&](std::size_t index) -> MmlNode * {
-            if (index >= children.size() || !children[index])
-                return nullptr;
-            MmlNode *const core = children[index]->coreMO();
-            return core ? core->coreMO() : nullptr;
+        const auto isRoleCore = [&](std::size_t index) {
+            return index < children.size() && children[index] &&
+                   children[index]->coreMO() == this;
         };
-        if (coreOfCore(multi->over()))
+        if (isRoleCore(multi->over()))
             key = u"accent";
-        else if (coreOfCore(multi->under()))
+        else if (isRoleCore(multi->under()))
             key = u"accentunder";
     }
     if (!key)
