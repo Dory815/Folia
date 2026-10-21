@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "source": {
+    "upstream": "MathJax 4.1.3",
+    "commit": "fb987178c2d279a99b0db5ea02e751691703955e",
+    "font": "NewCM 4.1.3",
+    "inputJax": "MathML",
+    "outputJax": "SVG",
+    "profileBoundary": "Pinned MathML compiler to shared SVG/Common/NewCM; not TeX package or full-profile input coverage."
+  },
+  "cases": [
+    {
+      "group": "semantics",
+      "name": "semantics-presentation-hidden-annotations",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow><annotation encoding=\"application/x-test-hidden\">SOURCE-HIDDEN-SEMANTICS-ONE</annotation><annotation-xml encoding=\"application/xml\"/></semantics></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 640, "display": false}
+    },
+    {
+      "group": "semantics",
+      "name": "semantics-scaled-nested-presentation",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mstyle mathsize=\"150%\"><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow></mstyle><annotation encoding=\"application/x-test-hidden\">SOURCE-HIDDEN-SEMANTICS-TWO</annotation></semantics></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 640, "display": false}
+    },
+    {
+      "group": "semantics",
+      "name": "semantics-forced-break-before-embellished-operator",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>x</mi><semantics><msub><mo linebreak=\"newline\" linebreakstyle=\"before\">+</mo><mi>i</mi></msub><annotation encoding=\"application/x-test-hidden\">SOURCE-HIDDEN-SEMANTICS-THREE</annotation></semantics></mrow></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 72, "display": false}
+    },
+    {
+      "group": "semantics",
+      "name": "semantics-forced-break-after-embellished-operator",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><semantics><msub><mo linebreak=\"newline\" linebreakstyle=\"after\">+</mo><mi>i</mi></msub><annotation encoding=\"application/x-test-hidden\">SOURCE-HIDDEN-SEMANTICS-FOUR</annotation></semantics><mi>x</mi></mrow></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 72, "display": false}
+    },
+    {
+      "group": "mfenced",
+      "name": "mfenced-default-two-children",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfenced><mi>x</mi><mi>y</mi></mfenced></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 640, "display": false}
+    },
+    {
+      "group": "mfenced",
+      "name": "mfenced-custom-repeated-separator",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfenced open=\"[\" close=\"]\" separators=\";|\"><mi>a</mi><mi>b</mi><mi>c</mi><mi>d</mi></mfenced></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 640, "display": false}
+    },
+    {
+      "group": "mfenced",
+      "name": "mfenced-empty-separator",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfenced separators=\"\"><mi>x</mi><mi>y</mi></mfenced></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 640, "display": false}
+    },
+    {
+      "group": "mfenced",
+      "name": "mfenced-absent-open-close",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfenced open=\"\" close=\"\" separators=\"\"><mi>x</mi></mfenced></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 640, "display": false}
+    },
+    {
+      "group": "mfenced",
+      "name": "mfenced-nested",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfenced><mi>x</mi><mfenced open=\"[\" close=\"]\"><mi>y</mi><mi>z</mi></mfenced></mfenced></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 640, "display": false}
+    },
+    {
+      "group": "mfenced",
+      "name": "mfenced-tall-fraction-content",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfenced><mfrac><msup><mi>x</mi><mn>2</mn></msup><msup><mi>y</mi><mn>3</mn></msup></mfrac><mi>z</mi></mfenced></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 640, "display": false}
+    },
+    {
+      "group": "mfenced",
+      "name": "mfenced-empty-children",
+      "mathml": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mfenced/></math>",
+      "metrics": {"em": 16, "ex": 8, "container_width": 640, "display": false}
+    }
+  ]
+}
