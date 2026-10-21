@@ -2,6 +2,21 @@
 
 ## Current checkpoint — 2026-10-21
 
+- Stage 4a in progress on codex/mermaid-cpp-shared-config: common text
+  normalization and directive removal, before YAML/config interpretation.
+  Official preprocess.ts, utils.ts and directiveRegex inspected; 1,221 pinned
+  runtime observations generated from the original function bodies. Native
+  implementation and CI still pending. Next: implement the UTF-16 scanners,
+  verify native Debug/Release and existing renderer regressions, then stage PR.
+- Boundary decision: full config is not a simple shallow merge: official
+  diagram-scoped appearance precedence and YAML JSON_SCHEMA need separate
+  implementation. This batch must not expose a pretend complete preprocess API
+  or silently discard configuration in a renderer. Default/dark theme work is
+  still pending. No application switch and no live build/agent handles.
+
+## Stage 3 checkpoint (historical; superseded above)
+
+
 - Stage 3 is merged: https://github.com/zhao0349/Folia/pull/3, merge commit
   8b8dc27aa27521530208a5efce7cdb40391bc04c on fork master. Eight small commits
   preserved. Reviewed head 721b20f3f459beb703abaa31b67abc9d417ef354 passed final
