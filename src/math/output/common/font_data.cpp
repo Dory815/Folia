@@ -42,7 +42,7 @@ std::optional<GlyphReference> resolveSourceRemap(FontFaceData const &face, FontV
                                                  std::uint32_t codepoint) {
     auto hasDirect = [&](FontVariant const& variant, std::uint32_t cp) {
         return variant.glyphs.contains(cp)
-            || (face.glyphSource && face.glyphSource->glyph(variant.name, cp));
+            || (face.glyphSource && face.glyphSource->contains(variant.name, cp));
     };
     auto resolve = [&](auto &&self, FontVariant const &current, std::uint32_t cp,
                        unsigned depth) -> std::optional<GlyphReference> {
@@ -165,6 +165,8 @@ void FontRepositoryBuilder::addGlyph(std::string_view faceName, std::string_view
     if (it == faces_.end()) throw std::out_of_range("unknown font face");
     auto& variant = it->second->variants[std::string(variantName)];
     variant.name = variantName;
+    if (it->second->glyphSource && it->second->glyphSource->contains(variantName, codepoint))
+        throw std::invalid_argument("duplicate glyph in generated font data");
     if (!variant.glyphs.emplace(codepoint, std::move(glyph)).second)
         throw std::invalid_argument("duplicate glyph in generated font data");
 }

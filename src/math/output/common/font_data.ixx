@@ -29,6 +29,7 @@ class FontGlyphLookup {
 public:
     virtual ~FontGlyphLookup() = default;
     virtual FontGlyph const* glyph(std::string_view variant, std::uint32_t codepoint) const = 0;
+    virtual bool contains(std::string_view variant, std::uint32_t codepoint) const = 0;
     virtual std::size_t glyphCount() const noexcept = 0;
 };
 struct GlyphReference {

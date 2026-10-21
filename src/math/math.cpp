@@ -118,6 +118,7 @@ class SceneOutput final : public core::MathOutputJaxService {
 struct Renderer::State {
     std::thread::id owner = std::this_thread::get_id();
     bool unusable = false;
+    std::shared_ptr<fonts::NewcmFontSource const> fontSource = fonts::newcmFontSource();
     adaptors::lite::LiteAdaptor adaptor;
     tex::ConfigurationHandler configurations;
     tex::MapHandler maps;
@@ -297,7 +298,7 @@ scene::Scene Renderer::State::renderScene(std::u16string_view source, std::stop_
     validateOptions(options);
     cancellation::Scope scope(request);
     try {
-        const auto fontData = fonts::makeNewcmFontData();
+        const auto fontData = fonts::makeNewcmFontData(fontSource);
         auto result = buildScene(source, options, fontData);
         request.checkpoint();
         return result;
@@ -338,16 +339,26 @@ std::u16string Renderer::State::decode(std::string_view text, std::stop_token st
 Renderer::Renderer() : state_(std::make_unique<State>()) {}
 Renderer::~Renderer() = default;
 
-std::vector<RenderResult> Renderer::renderBatch(std::span<RenderInput const> requests) {
+std::vector<RenderOutcome> Renderer::renderBatch(std::span<RenderInput const> requests) {
     state_->checkThread();
-    std::vector<RenderResult> results;
+    std::vector<RenderOutcome> results;
     results.reserve(requests.size());
     if (requests.empty()) return results;
     // This is the only font-body owner for the batch. The persistent parser
     // has no reference to it; returned Scenes own only their used resources.
-    const auto fontData = fonts::makeNewcmFontData();
-    for (auto const& request : requests)
-        results.push_back(state_->render(request.tex, request.stop, request.options, fontData));
+    const auto fontData = fonts::makeNewcmFontData(state_->fontSource);
+    for (auto const& request : requests) {
+        auto options = request.options;
+        if (request.timeout > std::chrono::milliseconds::zero()) {
+            const auto deadline = std::chrono::steady_clock::now() + request.timeout;
+            if (!options.deadline || deadline < *options.deadline) options.deadline = deadline;
+        }
+        try {
+            results.push_back({state_->render(request.tex, request.stop, options, fontData), {}});
+        } catch (...) {
+            results.push_back({{}, std::current_exception()});
+        }
+    }
     return results;
 }
 
@@ -361,7 +372,8 @@ RenderResult Renderer::render(std::u16string_view source, std::stop_token stop,
                               RenderOptions options) {
     const RenderInput request{source, stop, options};
     auto result = renderBatch(std::span{&request, std::size_t{1}});
-    return std::move(result.front());
+    if (result.front().error) std::rethrow_exception(result.front().error);
+    return std::move(*result.front().result);
 }
 RenderResult Renderer::render(std::string_view source, std::stop_token stop,
                               RenderOptions options) {

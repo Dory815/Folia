@@ -28,6 +28,13 @@ suite font_repository_contract = [] {
             if (!request) return;
             requestLifetime = request;
             expect(request->loadedGlyphCount() == 0_u);
+            expect(request->contains("normal", 0x41));
+            FontRepositoryBuilder duplicate;
+            duplicate.addFace(bundle.fonts.face("MathJaxNewcm"));
+            expect(throws<std::invalid_argument>([&] {
+                duplicate.addGlyph("MathJaxNewcm", "normal", 0x41, FontGlyph{});
+            }));
+            expect(request->loadedGlyphCount() == 0_u);
             const std::array<SvgFontGlyphKey, 3> keys{{{"normal", 0x41}, {"bold", 0x42}, {"normal", 0x41}}};
             auto values = request->read(keys);
             expect(values.size() == 3_u);

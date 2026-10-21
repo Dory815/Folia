@@ -19,6 +19,11 @@ struct RenderInput {
     std::u16string_view tex;
     std::stop_token stop;
     RenderOptions options;
+    std::chrono::milliseconds timeout{};
+};
+struct RenderOutcome {
+    std::optional<RenderResult> result;
+    std::exception_ptr error;
 };
 
 class RenderError : public std::runtime_error {
@@ -39,7 +44,7 @@ class Renderer final {
     ~Renderer();
     Renderer(Renderer const &) = delete;
     Renderer &operator=(Renderer const &) = delete;
-    std::vector<RenderResult> renderBatch(std::span<RenderInput const> requests);
+    std::vector<RenderOutcome> renderBatch(std::span<RenderInput const> requests);
     RenderResult render(std::u16string_view, RenderOptions = {});
     RenderResult render(std::string_view, RenderOptions = {});
     RenderResult render(std::u16string_view, std::stop_token, RenderOptions);

@@ -124,6 +124,30 @@ bool checkResult(FoliaNativeMathResult const *result, std::string_view expectedS
 }
 
 suite native_renderer_bridge = [] {
+    "C ABI batch isolates item errors and shares the single rendering path"_test = [] {
+        auto renderer = makeRenderer();
+        auto cancel = makeCancellation();
+        const std::array<std::u16string_view, 3> texts{u"x^2", u"\\unicode{x110000}", u"\\mathbb{R}"};
+        std::array<std::vector<std::uint16_t>, 3> units;
+        std::array<FoliaNativeMathInput, 3> inputs{};
+        std::array<FoliaNativeMathOutput, 3> outputs{};
+        for (std::size_t i = 0; i < texts.size(); ++i) {
+            for (auto value : texts[i]) units[i].push_back(static_cast<std::uint16_t>(value));
+            inputs[i] = {units[i].data(), units[i].size(), 0, 16, 640, cancel.get(), 2000};
+        }
+        expect(FoliaNativeMathRenderSvgBatch(renderer.get(), inputs.data(), inputs.size(), outputs.data())
+            == FOLIA_NATIVE_MATH_OK);
+        std::array<Result, 3> results;
+        for (std::size_t i = 0; i < outputs.size(); ++i) results[i].reset(outputs[i].result);
+        expect(outputs[0].status == FOLIA_NATIVE_MATH_OK);
+        expect(outputs[1].status == FOLIA_NATIVE_MATH_INFRASTRUCTURE_ERROR);
+        expect(outputs[2].status == FOLIA_NATIVE_MATH_OK);
+        const auto one = render(renderer.get(), texts[2], cancel.get(), false, 16, 640, 2000);
+        std::size_t size = 0;
+        const auto* bytes = FoliaNativeMathResultSvg(one.result.get(), &size);
+        if (bytes) checkResult(results[2].get(), std::string_view(bytes, size), "batch-of-one equivalence");
+        expect(FoliaNativeMathRenderSvgBatch(renderer.get(), nullptr, 0, nullptr) == FOLIA_NATIVE_MATH_OK);
+    };
     "Renderer batch shares request fonts and matches batches of one"_test = [] {
         folia::math::Renderer renderer;
         const std::array<folia::math::RenderInput, 4> input{{
@@ -132,7 +156,9 @@ suite native_renderer_bridge = [] {
         auto batch = renderer.renderBatch(input);
         expect(batch.size() == input.size());
         for (std::size_t i=0; i<batch.size(); ++i)
-            expect(batch[i].svg == renderer.render(input[i].tex).svg);
+            expect(batch[i].result.has_value() && !batch[i].error);
+        for (std::size_t i=0; i<batch.size(); ++i)
+            if (batch[i].result) expect(batch[i].result->svg == renderer.render(input[i].tex).svg);
         expect(renderer.renderBatch({}).empty());
     };
     "opaque C ABI renders the canonical Source profile and retains result storage"_test = [] {
