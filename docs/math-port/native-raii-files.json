@@ -1,16 +1,16 @@
 {
   "schema": "folia.math.native-raii.decision-manifest.v1",
-  "snapshotRevision": "57a153f3d300b1ecaa26b06675b43ede40a854ac",
+  "snapshotRevision": "45f03d9a041958a7f71c8b186fc3f994f0d574bf",
   "generator": {
     "path": "tools/math-port/native-raii-inventory.cjs",
     "sha256": "dd7a35814f11a56305c3b109d112b6dffd152396c83c1626fd6d322cecf6a61c",
     "revisionNote": "Revision identifies HEAD only; file hashes describe the observed working tree, which may contain uncommitted changes."
   },
   "scope": {
-    "allSrcMathFiles": 678,
-    "codeSources": 674,
-    "moduleUnits": 349,
-    "implementationUnits": 322,
+    "allSrcMathFiles": 668,
+    "codeSources": 664,
+    "moduleUnits": 343,
+    "implementationUnits": 318,
     "otherSourceFiles": 3,
     "currentCMakeLiteralFoliaMathReferences": 365,
     "existingCMakeDirectFoliaMathFiles": 477,
@@ -20,7 +20,7 @@
     "unresolvedCMakeDirectFoliaMathFiles": 0,
     "lexicalCandidateUnresolvedMathReferences": 0,
     "moduleImportClosureFiles": 560,
-    "filesOutsideFoliaMathModuleClosure": 201,
+    "filesOutsideFoliaMathModuleClosure": 191,
     "allTargetCMakeMentions": 523,
     "generatedFoliaMathFontSources": 83,
     "lockedButInactiveFontShardCandidates": 40,
@@ -39,8 +39,8 @@
   ],
   "sourceProvenanceGate": {
     "status": "note-index-only",
-    "indexedSourceFiles": 60,
-    "totalSourceFiles": 674,
+    "indexedSourceFiles": 59,
+    "totalSourceFiles": 664,
     "limitation": "No completeness or algorithm-equivalence claim; this is not an acceptance gate."
   },
   "cmakeModuleMapEvidence": {
@@ -1559,8 +1559,8 @@
     "status": "ready",
     "authoritative": true,
     "reason": null,
-    "indexFile": "index-2026-10-21T08-13-34-0100.json",
-    "codemodelFile": "codemodel-v2-304ebf0e6c74a2d57bea.json",
+    "indexFile": "index-2026-10-21T08-28-56-0446.json",
+    "codemodelFile": "codemodel-v2-a8ca15ee3975dca1cca5.json",
     "generatedModuleMapPath": "build/core/CMakeFiles/folia_math.dir/CXXModules.json",
     "moduleMapCheck": {
       "moduleMapCount": 247,
@@ -1574,51 +1574,51 @@
     },
     "evidence": {
       "index": {
-        "path": "build/core/.cmake/api/v1/reply/index-2026-10-21T08-13-34-0100.json",
-        "sha256": "425fe8e138667b0ab9abd0ad253bba687c7de66fc9b8829b73bccdb810be29a8",
-        "mtimeUtc": "2026-10-21T08:13:34.100Z"
+        "path": "build/core/.cmake/api/v1/reply/index-2026-10-21T08-28-56-0446.json",
+        "sha256": "19ab11531d61e958f423d19c1a330ffd2008c8b607365fb044a40910f836534e",
+        "mtimeUtc": "2026-10-21T08:28:56.446Z"
       },
       "codemodel": {
-        "path": "build/core/.cmake/api/v1/reply/codemodel-v2-304ebf0e6c74a2d57bea.json",
-        "sha256": "ccddbf0901e8d255b0b4227773879cc11bec3f6087738c872d9a65249b95bf35",
-        "mtimeUtc": "2026-10-21T08:13:34.099Z"
+        "path": "build/core/.cmake/api/v1/reply/codemodel-v2-a8ca15ee3975dca1cca5.json",
+        "sha256": "e38026499afc474ea3ad2a2b809df8772b3e0497d6c9ab6d58999e6d6e3bf7d2",
+        "mtimeUtc": "2026-10-21T08:28:56.444Z"
       },
       "targets": [
         {
           "name": "FoliaEncodingTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaEncodingTests-Debug-41f2d9ff5c5f862d1f63.json",
-          "sha256": "be5325bb3cac3370b3e9de162617937fa64848594514fe1c07d9b13f14161260",
-          "mtimeUtc": "2026-10-21T08:13:34.062Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaEncodingTests-Debug-95cd3224c5c1b9ac333a.json",
+          "sha256": "607941a3b5566e6f2ec45cbb287df0a26248627c02c6616f96c7329d8a19c835",
+          "mtimeUtc": "2026-10-21T08:28:56.400Z"
         },
         {
           "name": "FoliaMathFontDump",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathFontDump-Debug-e86f9f79ca59cecea4fa.json",
-          "sha256": "a88fbfeaab5d608ac119ddc306668667ada58acdd93165490c2b9c2298e844a2",
-          "mtimeUtc": "2026-10-21T08:13:34.064Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathFontDump-Debug-f13453854912aa80e269.json",
+          "sha256": "7e42f3382f91629a8f133898b9a52a1f298b303fee55e034d4d06ecaa5e53f44",
+          "mtimeUtc": "2026-10-21T08:28:56.402Z"
         },
         {
           "name": "FoliaMathTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathTests-Debug-f8d286c761b0e72040b3.json",
-          "sha256": "10031a96b17a23a7110ddce73de1b9d1e3f457c32990de7b4cb1064d452f517a",
-          "mtimeUtc": "2026-10-21T08:13:34.066Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathTests-Debug-7615a693e25d84dc66b8.json",
+          "sha256": "65619bbaa3bc8a0b6191ab2b4516860dcfbc67fae861508be976a62cc6599d7a",
+          "mtimeUtc": "2026-10-21T08:28:56.404Z"
         },
         {
           "name": "FoliaNativeMath",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaNativeMath-Debug-be88b858d32cb53d51b5.json",
-          "sha256": "639124d4f23031bf67a48290f9247e5d7365d378f237e91ef242e55231b0f42f",
-          "mtimeUtc": "2026-10-21T08:13:34.068Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaNativeMath-Debug-aa881962d95e25fe646e.json",
+          "sha256": "0c00db6674aa7dec8dac50c8dbfe1b61410c97ecd04b5bc3b2366cea21480c5f",
+          "mtimeUtc": "2026-10-21T08:28:56.406Z"
         },
         {
           "name": "FoliaTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaTests-Debug-d4d8ac6f983746be4091.json",
-          "sha256": "7228cee9153251777d02075ee65e4c12faf5ad616914f3d9a83539ccbcb1e5cf",
-          "mtimeUtc": "2026-10-21T08:13:34.069Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaTests-Debug-901405503fe2bf13ef33.json",
+          "sha256": "b34275206965f1fc1199fa50ff40b7101c44c8d58d274fab11c95eb05c4e1ee9",
+          "mtimeUtc": "2026-10-21T08:28:56.408Z"
         },
         {
           "name": "FoliaWindowsEditorTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaWindowsEditorTests-Debug-44ff446e15203ef78b7b.json",
-          "sha256": "4a16dcdb3115a41b141c3f715952e135a8225a63a4b471a76278916f103b14e7",
-          "mtimeUtc": "2026-10-21T08:13:34.071Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaWindowsEditorTests-Debug-cf191cced1d5a7ed69d1.json",
+          "sha256": "6d37a7274f50af1d5c1e226e49f44b0fc0a739ddf2fa86eb482c88043113bfc0",
+          "mtimeUtc": "2026-10-21T08:28:56.410Z"
         },
         {
           "name": "folia_console_test_runtime",
@@ -1628,39 +1628,39 @@
         },
         {
           "name": "folia_core",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_core-Debug-e144581654a6bf1eb703.json",
-          "sha256": "ac0d7109ca22638fcbac9212b76d35325d421e55f5a96017e8b3f0f24281a65f",
-          "mtimeUtc": "2026-10-21T06:50:21.382Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_core-Debug-81521af21db688e376aa.json",
+          "sha256": "fa2edbe7833eaacc57904d09dadf81c35682b2a7b6868f3bf9bfd7817ee6e7d8",
+          "mtimeUtc": "2026-10-21T08:28:56.414Z"
         },
         {
           "name": "folia_core@synth_cdc4dcefe43e",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_core@synth_cdc4dcefe43e-Debug-dd5fe24d9e65c1a23be0.json",
-          "sha256": "96ae9641f0719acfd48295c6b02b04b824e6fe401f4c408beaac92c5cd02837a",
-          "mtimeUtc": "2026-10-21T06:50:21.385Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_core@synth_cdc4dcefe43e-Debug-762f9baa449e81b0f9d1.json",
+          "sha256": "66b1a4c37582d1096e4de3fd02ea04a641b451611dd6017f3823f575bc3acb35",
+          "mtimeUtc": "2026-10-21T08:28:56.417Z"
         },
         {
           "name": "folia_math",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_math-Debug-a69d917c8bd12b0425d5.json",
-          "sha256": "429d5f63e91c14759e9f51a77e50a05fb79899fe48bd613f039b78dc213a74d4",
-          "mtimeUtc": "2026-10-21T06:50:21.391Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_math-Debug-c7b4c03838f08ecc0d38.json",
+          "sha256": "84412eefb38f13710551eea349af95a3586716b7e0a17744db495889ff2220e2",
+          "mtimeUtc": "2026-10-21T08:28:56.424Z"
         },
         {
           "name": "folia_math@synth_cdc4dcefe43e",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_math@synth_cdc4dcefe43e-Debug-3e2d319594a027d91188.json",
-          "sha256": "e949a119462c653ea18114c97081087db0eaa762e5668f68178b434abdb0ab0d",
-          "mtimeUtc": "2026-10-21T06:50:21.396Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_math@synth_cdc4dcefe43e-Debug-98ab751c12ca2e263a6a.json",
+          "sha256": "636992f4cd5276ffb0f180200bb357316ce07ba1b5a4424cc1d26579ca8209ef",
+          "mtimeUtc": "2026-10-21T08:28:56.429Z"
         },
         {
           "name": "folia_platform",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_platform-Debug-1971b475dd738f8ab3ef.json",
-          "sha256": "ad529141f1ad1d7e8eee0af2c4643c777afe3a472998075563175b75eca531f2",
-          "mtimeUtc": "2026-10-21T08:13:34.090Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_platform-Debug-0e71a9428fd2ae0dacfe.json",
+          "sha256": "a1e5624086d1054c1d4c1d15abc9542c4377e3f46c5b2b3e3df9e8e47f2b9fd3",
+          "mtimeUtc": "2026-10-21T08:28:56.433Z"
         },
         {
           "name": "folia_platform@synth_cdc4dcefe43e",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_platform@synth_cdc4dcefe43e-Debug-dfd2475a60ecae42ff90.json",
-          "sha256": "c4b2a8bc0a5ca8641d89048bc4405862e1312facff163b168ebdb263cf50781f",
-          "mtimeUtc": "2026-10-21T08:13:34.092Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_platform@synth_cdc4dcefe43e-Debug-727164f657d02fabc6d7.json",
+          "sha256": "1ba26b8de41a7aca3758f5cbd87216213577dce88cf956ac2b900bf662e50445",
+          "mtimeUtc": "2026-10-21T08:28:56.436Z"
         },
         {
           "name": "folia_tree_sitter_html",
@@ -1676,15 +1676,15 @@
         },
         {
           "name": "ut_module",
-          "path": "build/core/.cmake/api/v1/reply/target-ut_module-Debug-a3fc5db58b6f2687f49d.json",
-          "sha256": "c00ef1f909a28bd647f4d3b10472a4a99501a74a24b9e8369bfcb783f0750e0f",
-          "mtimeUtc": "2026-10-21T06:50:21.406Z"
+          "path": "build/core/.cmake/api/v1/reply/target-ut_module-Debug-e5b8fc2ef68293f56fd4.json",
+          "sha256": "1b1f7343798939a7fadf982d40bc6664731e706daf580678c5666f5c1aa78b0b",
+          "mtimeUtc": "2026-10-21T08:28:56.440Z"
         },
         {
           "name": "ut_module@synth_fa07998319df",
-          "path": "build/core/.cmake/api/v1/reply/target-ut_module@synth_fa07998319df-Debug-82717d8cc7a3b5c2c1bd.json",
-          "sha256": "2d5031f64b791c5ba41de194f38c1a35404bed53cdf663c83466995385fee9a1",
-          "mtimeUtc": "2026-10-21T06:50:21.408Z"
+          "path": "build/core/.cmake/api/v1/reply/target-ut_module@synth_fa07998319df-Debug-05b76d9f47908932ace7.json",
+          "sha256": "ea52ad21ad1ec890bf1dfcddc9578060407eddac1928aaaab04b3339d08946ac",
+          "mtimeUtc": "2026-10-21T08:28:56.442Z"
         }
       ],
       "generatedModuleMap": {
@@ -1695,7 +1695,7 @@
     },
     "freshness": {
       "status": "mtime-current-at-read",
-      "indexMtimeUtc": "2026-10-21T08:13:34.100Z",
+      "indexMtimeUtc": "2026-10-21T08:28:56.446Z",
       "checkedCMakeInputs": [
         "CMakeLists.txt",
         "third_party/ut/CMakeLists.txt",
@@ -16434,45 +16434,6 @@
       ]
     },
     {
-      "path": "src/math/output/common/common_bindings.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.common",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "multiple-note-index-entries",
-      "sourceAnnotationIndex": [
-        {
-          "document": "docs/math-port/font-subsystem-work-plan.md",
-          "line": 15,
-          "sourcePaths": [
-            "ts/output/common/Direction.ts"
-          ],
-          "sourceSha256": "cfa6ccfacb73e6991d373a3677a097356de2092405c742f29811337fd9e511c2",
-          "status": "annotated"
-        },
-        {
-          "document": "docs/math-port/font-subsystem-work-plan.md",
-          "line": 16,
-          "sourcePaths": [
-            "ts/output/common/FontData.ts"
-          ],
-          "sourceSha256": "7d8eeca536fa1b7c14517590b9c5a372ad10b34667d196d09b030f88cda780b2",
-          "status": "annotated"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/common/common_bindings.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.common",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
       "path": "src/math/output/common/direction.ixx",
       "decisionStatus": "unreviewed",
       "responsibilityGroup": "math.common",
@@ -16509,16 +16470,6 @@
           "status": "path-or-hash-incomplete"
         }
       ]
-    },
-    {
-      "path": "src/math/output/common/factory_context_fields.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.common",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
     },
     {
       "path": "src/math/output/common/font_data.cpp",
@@ -16918,16 +16869,6 @@
         "folia_math@synth_cdc4dcefe43e"
       ],
       "directlyListedByFoliaMath": true,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/common/wrapper_class_bindings.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.common",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
       "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
       "sourceAnnotationIndex": []
     },
@@ -18986,26 +18927,6 @@
       "sourceAnnotationIndex": []
     },
     {
-      "path": "src/math/output/svg/timer_host.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.svg",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/svg/timer_host.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.svg",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
       "path": "src/math/output/svg/wrapper_factory.cpp",
       "decisionStatus": "unreviewed",
       "responsibilityGroup": "math.svg",
@@ -19029,56 +18950,6 @@
       "directlyListedByFoliaMath": true,
       "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
       "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/svg/wrapper_factory_bindings.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.svg",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/svg/wrapper_factory_bindings.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.svg",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/svg/wrappers/math.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.svg",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/svg/wrappers/math.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.svg",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/svg/wrappers/math.ixx",
-          "line": 1,
-          "sourcePaths": [
-            "output/svg/Wrappers/math.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
     },
     {
       "path": "src/math/output/svg/writer.cpp",
