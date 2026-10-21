@@ -1585,6 +1585,24 @@ with no C++ emitter or profile-writing mode. Evidence: table-source-bridge-v3.lo
 and table-source-promoted.json. No production algorithm or accepted native
 test changed; the old C++ consumer and tools await their separate removal.
 
+### Table/multiscript consumer removal (2026-10-21)
+
+The two legacy C++ consumers retire after the independent profiles above.
+Their two dedicated runners and the completed parent-fixture selector retire;
+the existing 88-case parent-verification include remains byte-identical.
+The shared table/multiscript group retains its other fixtures with a total
+of 13,587 assertions/11 tests, using table-repair as primary. The old red
+group retains only its pending include at 2/1; compile-only observers remove
+the two retired inputs. These legacy runners were not executed.
+
+Removal build5483 passes with parallel4. The final check preserves all 478
+active sources, six protected paths, nine verified input/binary paths, fifteen
+retained paths and seventeen target lists. Interfaces remain 248 with zero
+unresolved imports; class-binding cpp/ixx test consumers decrease 39 to 37.
+Evidence: table-multiscript-consumers-before.json, -removed.json and
+-final-check.json. Existing accepted native behavior remains byte-identical;
+no new runtime acceptance or production cleanup is claimed by this batch.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

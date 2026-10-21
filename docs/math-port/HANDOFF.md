@@ -4,16 +4,16 @@
 
 ## 当前 checkpoint（2026-10-21）
 
-- HEAD `6fdaf9f0` 完成 script 旧 C++ consumer 删除；Source 批为 `6a289ec5`。simple Source 迁移 `094324b0` 与旧 C++ consumer 删除 `5e5c123c` 已通过。
+- HEAD `9f24ae80`（table Source），前一批 `6e7adb88`（multiscript Source）；script旧consumer删除 `6fdaf9f0`。simple/script既有验收不重复。
 - Root 已执行 inventory 与 `verify-consumer-removal script-consumer 39 92516`；全通过：478 活动源、保护6路径、已验证9输入/二进制、保留7文件、17 targets、248接口/map一致、active unresolved imports 0。build session 92516 exit 0；当前无 live build。
 - simple 迁移证据：106场景、7,667 Source assertions、1,605矩阵行、8,625有序 p/list 值、296递归值；原 fixture 339,824 bytes 完整核对。已完成的 staging bridge 勿重跑。其他既有验收见 acceptance。
 - ignored 窄 consumer 图已刷新至 `6fdaf9f0`/39测试、FileAPI `index-2026-10-21T13-04-07-0092.json`；保留 provider/importer/API 引用的全部 hash 均已核。
-- multiscript Source-only批 `6e7adb88` 已提交且canonical226/1304 exact；table本提交已提升canonical135/4700 exact。Root完整旧Cpp/矩阵/operand证明见 `multiscript-source-bridge-v4.log`、`table-source-bridge-v3.log` 及各 `*-source-promoted.json`。旧Cpp/tools尚未退；已有staging勿重跑。
-- class_inheritance 正修 BaseItem bridge：原JSON85项exact，旧Cpp只有951385dc的两处历史类型适配差异（`base-item-original-mismatch.json`），须逐处核再全文比较，不能宣称原check直接通过。无live build/native。
+- multiscript canonical226/1304、table canonical135/4700 exact；完整旧Cpp/矩阵/operand证明见 `multiscript-source-bridge-v4.log`、`table-source-bridge-v3.log` 及各 `*-source-promoted.json`。本提交退两旧Cpp/三专用工具，共享gate只移引用/计数（未跑），保留88-case parent inc。
+- build5483 parallel4 exit0，`table-multiscript-consumers-final-check.json`核478活动/保护6/verified9/retained15/targets17/248接口/unresolved0，测试importer39→37。无live build/agent/native。BaseItem bridge v2已过85 exact；旧Cpp限定951385dc两适配后全文相等，见 `base-item-source-migration/executed-proof.json`，不能称原check直接通过；canonical未改。
 
 ## 精确下一动作
 
-Root 按独立小批清理table/multiscript旧Cpp和专用工具/共享gate引用，parallel4 build后核byte-equal，再提交。BaseItem修正bridge已交回待Root审/执行，不采用先前hash-only候选。所有已完成staging bridge勿重跑。
+Root 先窄刷新consumer图39→37，再提升BaseItem实际Source owner，旧p42b JSON仅移cpp字段保留全部85有序label/expected，canonical exact后提交；再独立清理旧consumer/专用工具。已有staging/执行proof勿重跑。
 
 ## 固定边界
 
