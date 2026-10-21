@@ -16,6 +16,7 @@ on:
       - tests/main.cpp
       - tests/support/**
       - tools/mermaid-cpp/**
+      - src/platform/text/mermaid_measurer.ixx
       - tools/test-support/windows_console_runtime.cpp
   pull_request:
     paths:
@@ -30,6 +31,7 @@ on:
       - tests/main.cpp
       - tests/support/**
       - tools/mermaid-cpp/**
+      - src/platform/text/mermaid_measurer.ixx
       - tools/test-support/windows_console_runtime.cpp
   workflow_dispatch:
 
@@ -155,7 +157,7 @@ jobs:
 
       - name: Build the native Mermaid tests
         run: |
-          cmake --build build/mermaid-cpp --parallel 4 --target FoliaMermaidTests 2>&1 |
+          cmake --build build/mermaid-cpp --parallel 4 --target FoliaMermaidTests FoliaMermaidTextProbe 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -164,6 +166,23 @@ jobs:
           ctest --test-dir build/mermaid-cpp --output-on-failure 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Compare real browser and DirectWrite text measurements
+        run: |
+          node tools/mermaid-cpp/browser-text-probe.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          build/mermaid-cpp/FoliaMermaidTextProbe.exe build/mermaid-cpp/browser-text.tsv build/mermaid-cpp/native-text.tsv
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload text measurement evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mermaid-text-${{ matrix.configuration }}
+          path: |
+            build/mermaid-cpp/*text.tsv
+            build/mermaid-cpp/browser-text.json
+            build/mermaid-cpp/FoliaMermaidTextProbe.exe
 
       - name: Upload the native test executable
         if: always() && hashFiles('build/mermaid-cpp/FoliaMermaidTests.exe') != ''

@@ -2,6 +2,14 @@
 
 ## Current checkpoint — 2026-10-21
 
+- Active stage: real font measurement and Pie SVG. First batch adds a real
+  browser probe (60 cases) and an explicit-error DirectWrite adapter/probe.
+  Local Edge probe passed outside the sandbox after sandbox exit 0xc0000005.
+  Native results are pending CI; advance is NOT yet accepted as SVG bounds.
+  Next action: inspect same-host native/browser evidence, settle bounds, then
+  implement Pie SVG. No live local process or agent. Candidate files are tracked
+  under tools/mermaid-cpp and src/platform/text/mermaid_measurer.ixx.
+
 - User scope: replace Folia's Mermaid dependency with a C++ port based on the
   original official Mermaid JS/TS. Do not port the Rust rewrite. Website and
   release tooling are excluded; this is unrelated to the MathJax migration.
