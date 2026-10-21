@@ -747,6 +747,8 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_common_fence_action.cpp
     tests/math/native_common_linebreak.cpp
     tests/math/native_common_table.cpp
+    tests/math/native_common_semantics.cpp
+    tests/math/native_common_mfenced.cpp
     tests/math/native_common_containers.cpp
     tests/math/native_common_menclose.cpp
     tests/math/native_scene_element_roles.cpp
