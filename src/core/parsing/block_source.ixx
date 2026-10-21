@@ -5,6 +5,7 @@ export module folia.core.block_source;
 import std;
 import folia.core.text_edit;
 import folia.core.utf;
+import folia.core.html_entities;
 
 export namespace folia {
 
@@ -170,6 +171,40 @@ inline std::u32string trim_horizontal(std::u32string_view value) {
     return std::u32string(value.substr(start, end - start));
 }
 
+inline bool ascii_punctuation(char32_t value) {
+    return (value >= U'!' && value <= U'/')
+        || (value >= U':' && value <= U'@')
+        || (value >= U'[' && value <= U'`')
+        || (value >= U'{' && value <= U'~');
+}
+
+inline std::u32string decode_info_word(std::u32string_view raw) {
+    std::u32string decoded;
+    for (std::size_t cursor = 0; cursor < raw.size();) {
+        if (raw[cursor] == U'&') {
+            auto semicolon = cursor + 1;
+            while (semicolon < raw.size() && semicolon - cursor <= 35
+                && raw[semicolon] != U';' && !horizontal_space(raw[semicolon])) {
+                ++semicolon;
+            }
+            if (semicolon < raw.size() && raw[semicolon] == U';') {
+                if (auto value = decode_html_character_reference(raw.substr(cursor, semicolon - cursor + 1))) {
+                    decoded.append(*value);
+                    cursor = semicolon + 1;
+                    continue;
+                }
+            }
+        }
+        if (raw[cursor] == U'\\' && cursor + 1 < raw.size() && ascii_punctuation(raw[cursor + 1])) {
+            decoded.push_back(raw[cursor + 1]);
+            cursor += 2;
+        } else {
+            decoded.push_back(raw[cursor++]);
+        }
+    }
+    return decoded;
+}
+
 inline std::optional<SourceRange> closing_fence(
     std::u32string_view source,
     std::size_t content_start,
@@ -247,9 +282,9 @@ inline BlockSourceTree parse_fenced(std::u32string_view source, BlockSourceKind 
     }
     if (language_start < language_end) {
         tree.language_range = SourceRange{language_start, language_end};
-        tree.language = cps_to_utf8(source.substr(
+        tree.language = cps_to_utf8(decode_info_word(source.substr(
             language_start,
-            language_end - language_start));
+            language_end - language_start)));
     }
     auto content_start = first_end;
     if (opening_line_ending_length != 0) {

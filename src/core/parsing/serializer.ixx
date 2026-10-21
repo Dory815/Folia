@@ -509,10 +509,7 @@ inline ProjectedText serialize_block(const BlockNode& block) {
             return result;
         }
         case BlockKind::ImageBlock: {
-            auto const& special = block.image_special();
-            auto value = U"![" + utf8_to_cps(special.image_alt) + U"](" + utf8_to_cps(special.src);
-            if (special.image_title) value += U" \"" + utf8_to_cps(*special.image_title) + U"\"";
-            return atomic_text(block.id, value + U")");
+            return atomic_text(block.id, block.inline_content.source);
         }
         case BlockKind::Callout: {
             auto const& marker_special = block.text_special();
@@ -544,8 +541,10 @@ inline ProjectedText serialize_block(const BlockNode& block) {
             const std::u32string marker = special.fmt == FrontmatterFormat::Toml ? U"+++" : U"---";
             return atomic_text(block.id, marker + U"\n" + utf8_to_cps(special.raw) + U"\n" + marker);
         }
-        case BlockKind::ThematicBreak:
-            return atomic_text(block.id, U"---");
+        case BlockKind::ThematicBreak: {
+            const auto& marker = block.text_special().opening_marker;
+            return atomic_text(block.id, marker.empty() ? U"---" : marker);
+        }
         case BlockKind::LinkDefinition:
         case BlockKind::UnsupportedMarkup:
             return atomic_text(block.id, utf8_to_cps(block.atomic_special().raw));

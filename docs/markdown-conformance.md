@@ -7,63 +7,66 @@ running the official CommonMark examples. This is a syntax implementation
 task, not an editor architecture migration. The previous Folia UI high-CPU
 investigation is paused at the user's request.
 
-Initial official run: all **652** CommonMark 0.31.2 examples executed;
-**292** strict semantic-tree matches, **360** differences. Inline source/CST
-losslessness: **652/652**. Exact save serialization: **571/652**, with 81
-differences (an additional editor invariant, not a CommonMark requirement).
-With all three assertions, 403 test cases fail, 249 pass. Native exit is the
-normal test-failure code 1; no abnormal process exit. No cases are skipped.
-Full immutable pre-fix results are in ignored
-`build/markdown-conformance/baseline/`; current results overwrite the parent
-directory. Generated fixtures and third-party sources stay under ignored build.
+Formal harness committed as `64afdc25`. Immutable initial results in ignored
+`build/markdown-conformance/baseline/`: 292/652 strict semantic matches,
+652/652 inline source/CST checks, 571/652 exact serializations. Its 360 failed
+semantic cases were checked against pinned md4c: 360 semantic matches, including
+29 differences only in raw HTML formatting newlines. No examples were skipped.
 
-The 360 semantic differences currently comprise 30 that match only after
-diagnostic list-paragraph unwrapping, 28 carrying HTML policy/projection labels,
-45 carrying other model/projection limits, and 257 without a known projection
-limit. These are not 360 independently established parser defects. The strict
-tests remain failing for every difference; relaxed comparison never passes a
-formal test. The test projection translates empty editing paragraphs, code
-content's separately stored line endings, and standalone image blocks to their
-standard semantic shapes. It never reparses Markdown or consults expected HTML
-to manufacture results.
+First integrated repair batch completed all 652 cases in 0.575 seconds:
+506 semantic matches, 652 inline source/CST checks, 558 exact serializations.
+Saved in ignored `build/markdown-conformance/phase-one/`. Remaining differences
+are explicit failures; diagnostic relaxed comparison never passes a formal test.
+The initial #230 quote nonprogress bug was fixed and verified by a bounded
+focused run before repeating all examples. The dispatcher and quote consumer
+now agree on indentation and consume a nonzero source range.
 
-The pinned md4c reference is
-`f9e5eb232b95b737373ae706648cb75bd259ed1a`; the independent reference tests run
-only the failed official subset and compare md4c output with **official** HTML.
-Source hashes and licenses: `tools/markdown-conformance/sources.lock.json`.
+Current working tree includes the second syntax batch: label/destination fixes,
+dialect-gated wiki links and math interruption, reference definitions, code-info
+entities, literal terminal backslashes, original thematic markers, and retained
+Markdown image InlineDocument on atomic block promotion. New shared utilities
+provide immutable Unicode P/S + Zs + full casefold and named character references;
+numeric references use Unicode scalars directly (CommonMark 2.5), with U+FFFD for
+zero/invalid scalars. Reference labels fold raw spellings; href/title decode once.
+WinUI project explicitly includes the two added modules.
 
-The reference target executed all 360 failed cases: 331 exact HTML matches,
-29 formatting-only newline differences; shared canonical comparison gives
-**360/360 semantic matches**. Its exact-byte native assertions intentionally
-still return failure code 1; do not describe those 29 as Markdown syntax bugs.
-Logs: `build/markdown-conformance/md4c-build-test.log`, `md4c/results.json`.
+Existing core checks exposed two regressions which were corrected: ATX trailing
+whitespace stays in InlineDocument.source; rendering keeps the prior terminal
+line-break behavior for editing. Code-span normalization retains exact source
+spans, including CRLF and trimmed padding. The HTML-shaped test projection alone
+omits the paragraph-terminating physical line ending. List continuation tab
+expansion was rejected because it rewrote raw inline/code source. The speculative
+`emphasis-editor` candidate was rejected: no confirmed failing CST contract.
 
-Exact stop point: no live native build. Root has added (not yet compiled)
-immutable Unicode 15.1 P/S + Zs + full-casefold helpers to existing `utf.ixx`,
-and shared reference-label identity in `parsing/link_label.ixx`. These are
-leaf syntax utilities; global editing `is_cp_white` remains unchanged.
-Root owns native builds/Git; max build parallelism 4. Next: integrate scalar
-candidate + emphasis + links + containers, then block leaves as delivered;
-apply rendering normalization with explicit original source spans, run official
-and existing core tests. Candidate directories below hold base and candidate
-full files; merge against the base, never overwrite another family's changes.
-Update this checkpoint as candidates/results change; do not rely on old agent
-completion messages after context recovery.
+Verified commits: `a6c11c20` shared character/label utilities and `6c36adc5`
+inline syntax + code-span source projection. Block/serializer batch follows.
+Final repair-batch check: **519/652 strict semantic**, **652/652 inline lossless**,
+**592/652 exact serialization**; 133 strict differences and 60 save differences
+remain explicit failures (174 combined failed cases). All 652 ran in 0.603s.
+No strict semantic or CST regression against the original baseline. The 13 newly
+failing exact saves are #7/#93/#230/#232/#233/#241/#247/#250/#273/#274/#278/#311/#313;
+correct block recognition exposes their existing structural prefix normalization.
+They are not inline CST data loss and must remain visible until fixed.
 
-| Luna task | Candidate / stopping point |
-|---|---|
-| `commonmark_projection` | Emphasis delivered: `build/markdown-conformance/candidates/emphasis/{base,candidate}/inline_parser.ixx`; depends on root UTF helpers; not compiled |
-| `commonmark_official_tests` | Links delivered: `.../candidates/links/{base,candidate}/inline_parser.ixx`; depends on shared label/entities; entity_end overlaps scalar, keep one implementation |
-| `commonmark_fixture_tests` | Containers delivered: `.../candidates/containers/{base,candidate}/parser.ixx`; only list/quote methods; root/block-leaf agent owns dispatch |
-| `commonmark_block_leaves` | Active: `.../candidates/block-leaves/{base,candidate}/parser.ixx`; leaf recognition, main dispatch and definitions; preserve raw characters, no trim-to-pass |
-| `commonmark_inline_scalars` | Delivered `.../candidates/scalars/`: base/candidate inline_parser + inline_document, new `support/html_entities.ixx` + 2125-entry data + generator/license. Root must adapt generator paths and embed attribution before committing |
-| `commonmark_runner` | Active render-scalar integration candidate `.../candidates/render-scalars/`; code span normalization must retain original TextSpan pieces/marker padding, not whole-span approximate mapping |
+Core and deterministic Windows editor suites both pass (exit 0). The structure
+property test passes 8074 assertions, including zero full-document parse,
+serialization and transaction-diff work on edits. The mixed-bullet rendering test
+now expects three lists, per CommonMark, and retains glyph/display assertions.
+md4c repeated all 133 remaining official differences: 133 semantic matches;
+111 exact HTML matches, 22 formatting-newline differences (normal exit 1).
+Logs: `core-tests.log`, `platform-tests.log`, `syntax-build-test.log`,
+`md4c-build-test.log` under ignored `build/markdown-conformance/`.
 
-Candidate code has not been accepted merely because a Luna delivered it. Root
-must compile, inspect actual source/range/incomplete behavior, run official and
-old tests, then give narrow failure feedback to the owning agent. No production
-parser candidates have been applied yet. Test harness is ready to commit;
-previous Math handoff modifications predate this task and are separate.
+No live build/agent handles. Next narrow syntax work: quote/list lazy continuation
+(#93/#238/#292/#293/#312), reference definitions (#194/#201), and raw-preserving
+code tab/indent projection (#5/#6/#117). Of 133 strict differences, 39 are only
+list-tightness projection, 29 already carry HTML policy/projection labels,
+20 carry other limits (some also actual syntax), 45 have no current label.
+Do not call all 133 independently established parser bugs or mask tests.
+
+Candidates remain ignored; speculative `emphasis-editor` and source-normalizing
+list indentation changes must not be applied. Previous Math handoff changes
+are separate and remain uncommitted.
 
 ## Fixed architecture and ownership
 

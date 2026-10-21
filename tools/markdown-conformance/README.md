@@ -116,3 +116,21 @@ The official CommonMark `spec.json` fixture is licensed under
 md4c reference files are licensed under the [MIT License](https://opensource.org/license/mit/).
 Source URLs, versions, commits, and SHA-256 hashes are recorded in
 `sources.lock.json`.
+
+## Shared character data
+
+Production syntax utilities use immutable Unicode 15.1 punctuation/symbol,
+space-separator and full-casefold tables, plus the named HTML character-reference
+data. Their generators verify the pinned inputs in `sources.lock.json` and embed
+the input licenses/provenance in the generated `.inc` files:
+
+```bat
+python tools\markdown-conformance\generate_unicode.py --fetch
+python tools\markdown-conformance\generate_entities.py
+```
+
+The entity generator uses the verified md4c `entity.c` data downloaded by the
+reference preparation step. This reuses character mappings only; Folia does not
+link the md4c parser in production. Numeric references follow CommonMark's Unicode
+scalar rule rather than HTML's Windows-1252 control-character replacements.
+The generated tables are reviewed source data, not build products.
