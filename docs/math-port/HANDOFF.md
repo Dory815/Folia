@@ -4,16 +4,15 @@
 
 ## 当前 checkpoint（2026-10-21）
 
-- HEAD `031da185` 已退table/multiscript两旧Cpp/三工具；Source批为 `9f24ae80`/`6e7adb88`；script旧consumer删除 `6fdaf9f0`。既有验收不重复。
-- Root 已执行 inventory 与 `verify-consumer-removal script-consumer 39 92516`；全通过：478 活动源、保护6路径、已验证9输入/二进制、保留7文件、17 targets、248接口/map一致、active unresolved imports 0。build session 92516 exit 0；当前无 live build。
-- simple 迁移证据：106场景、7,667 Source assertions、1,605矩阵行、8,625有序 p/list 值、296递归值；原 fixture 339,824 bytes 完整核对。已完成的 staging bridge 勿重跑。其他既有验收见 acceptance。
-- ignored 窄 consumer 图已刷新至 `031da185`/37测试、FileAPI `index-2026-10-21T13-23-38-0559.json`；保留 provider/importer/API 引用的全部 hash 均已核。Fields唯一调用仍fields.cpp:439。
-- multiscript canonical226/1304、table canonical135/4700 exact；完整旧Cpp/矩阵/operand证明见 `multiscript-source-bridge-v4.log`、`table-source-bridge-v3.log` 及各 `*-source-promoted.json`。本提交退两旧Cpp/三专用工具，共享gate只移引用/计数（未跑），保留88-case parent inc。
-- build5483 parallel4 exit0，`table-multiscript-consumers-final-check.json`核478活动/保护6/verified9/retained15/targets17/248接口/unresolved0，测试importer39→37。无live build/agent/native。BaseItem本提交改实际Source owner，canonical85 exact；旧p42b JSON仅去cpp字段。桥限定951385dc两适配后全文相等，不能称原check直接通过，证据见acceptance。
+- 本提交退BaseItem旧Cpp/专用工具；Source owner批 `a6215622`。此前table/multiscript清理 `031da185`，Source批 `9f24ae80`/`6e7adb88`。原生SVG已接Folia，残余对象模拟源码/consumer清理仍未完，不能宣布完整移植完成；Mermaid暂停。
+- 最新build89489 parallel4 exit0；`base-item-consumer-final-check.json`核478活动、保护6、verified9、retained24、17targets、248接口/map一致、active unresolved0，测试importer37→36。无live build/native。此前SVG1047/完整math/font/RAII/worker验收见acceptance，不重复广测。
+- multiscript226/1304、table135/4700、BaseItem85 Source exact，全部旧期待已保留；证明见acceptance与各 `*-source-promoted.json`。BaseItem旧Cpp只限定951385dc两历史适配后全文相等，不能称原check直接通过。已有staging/执行proof勿重跑。
+- ignored窄图仍 `031da185`/37测试，Root提交后需刷新36；Fields→ContextBindings→ParserRuntime owner链仍完整，唯一values调用fields.cpp:439，不能孤删/stub。
+- 两个Luna仅准备ignored候选：class_verification→`verification-source-migration/`（reference_mml_verification/p35现有72行profile）；class_operations→`copy-source-migration/`（copy/copy_boundary）。均待Root审与Source执行，未提升；只动ignored，不跑Source/native/build。
 
 ## 精确下一动作
 
-Root 独立清理BaseItem旧consumer与专用工具（base-item-mutation-test不是typed runner，不运行），保留base_items/stack/tex_parser等实际数学覆盖；parallel4 build/inventory/hash核36测试importer后提交。已有staging/执行proof勿重跑。
+Root 提交本删除批后窄刷新consumer图37→36，再审两Luna候选，保留原profile全部期待并运行实际Source exact后才提升；共享gate仅删对应引用/计数，专用旧runner退场，不运行旧对象协议native gates。按职责小批提交，别重复已验问题。
 
 ## 固定边界
 

@@ -1622,6 +1622,15 @@ base-item-source-migration/executed-proof.json and base-item-source-promoted.jso
 Existing native stack/frame/error/annotation owners remain unchanged; the
 legacy C++ consumer and its dedicated runner await separate removal.
 
+The legacy BaseItem C++ consumer and its fixture-only runner then retire in a
+separate batch. Build89489 passes with parallel4. The final check preserves
+478 active sources, six protected paths, nine verified input/binary paths,
+twenty-four retained paths and seventeen target lists. Interfaces remain 248
+with zero unresolved imports; class-binding cpp/ixx test consumers decrease
+37 to 36. Evidence: base-item-consumer-before.json, -removed.json and
+-final-check.json. Native base_items, stack, parser and source-annotation
+coverage remains byte-identical; no repeated runtime gate is claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
