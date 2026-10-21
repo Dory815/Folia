@@ -4,10 +4,10 @@
 
 ## 当前状态与下一步
 
-- 当前代码/清单快照 `311766cb`：648源/644代码、162未配置cpp/ixx、561配置源、接口/map248一致、active unresolved imports0；File API `index-2026-10-21T10-07-55-0680.json`。未配置不等于可删除。
+- 当前代码/清单快照 `01e584cb`：648源/644代码、162未配置cpp/ixx、561配置源、接口/map248一致、active unresolved imports0；File API `index-2026-10-21T10-48-30-0986.json`。未配置不等于可删除。
 - WinUI worker已接入原生SVG，数学QuickJS退出；既有完整验证见acceptance。Lite层及此前6个MML消费者已小批退出，勿重审。原9个dirty字节与patch备份 `build/math-port/context-dirty-backup-20261021/` 已验。
-- **精确停点**：文档至 `88392404`，代码至 `311766cb`。61个class_binding消费者的8组静态报告 `build/math-port/class-review-GROUP.json/.md` 已经Root退回补证；它们仍未删。7补测分4提交，含原mo_classes.cpp的munderover角色身份修复 `93544b62`。修复前1/12断言失败，修复后parallel4 build exit0、8测试/1299断言通过（含完整Source SVG）；独立锁定Source CJS的17重音观测exit0、stderr空。证据 `class-coverage-check.json`/`class-accent-source-observations-fixed.json`；477活动源及6保护路径不变。无live build/native/agent；本轮未重跑full math/font/worker，未验Release/GUI。
-- **精确下一包**：提升/窄测既有owner的inheritAttributesFrom三种mathsize来源、NodeUtil值/slot/lookup及detached childPosition候选。候选与basehash见 `class-review-{inheritance,positions}.json` 和 `class-candidates/{inheritance,positions}/`；其余组候选未验收，61消费者一律未删。多镜像基于旧base，禁止整份覆盖已新增canonical测试。Source Attributes.ts176的isSet=own OR inherited，先前explicit-only推断已撤销。operations的512/513真实MML walk边界单独待审，预算镜像deferred、不恢复旧对象机制。旧fields/values/methods仍有ContextBindings/ParserRuntime完整owner链，不能孤删/stub；两处旧initializeFreshProperties不恢复。
+- **精确停点**：helper七补测/66断言已分3提交；maction继承非string拒绝已复现21/33失败并在原owner修复 `be421fe0`，修后3/53+Source SVG1/1047及独立Source六场景通过。positions四旧test+六fixture工具已分3批退出（`09d0fd01`/`7288e2e8`/`01e584cb`），独立Source对照12978观测保留且exact check通过。清理后build63368 exit0；478活动源、6保护路径、17target、248接口及验证后测试/二进制不变。证据 `class-helper-coverage-check.json`/`maction-inheritance-check.json`/`positions-consumer-retirement-final-check.json`。窄图已刷新：class_binding剩57测试；无live build/native/agent。未重跑full math/font/worker，未验Release/GUI。
+- **精确下一包**：审/提升既有owner候选：`class-candidates/families/native_common_mfenced_v2.cpp`（三字段非string拒绝、真实子树不变，Source在fakeNode前验证）；`class-candidates/classes-v2/tests/math/mml_native_factory.cpp`（43初始flags，依据 `class-initial-flags-source-review.json`）；scripts/verification/operations其余候选见各 `class-review-GROUP.json`，均未验收。HTML实际Text/Comment wrapper已有active xml_dom_adaptor覆盖，不重复补mock。多镜像基于旧base，禁止整份覆盖canonical。operations的512/513真实MML walk边界单独待审、预算镜像deferred；旧fields/values/methods完整ContextBindings/ParserRuntime链不能孤删/stub，不恢复旧对象投影。
 - 搜索被忽略的交付候选时用 `rg --no-ignore`。不要按旧 agent 的完成消息推断当前状态，也不要重做已接受的广审。保护 dirty 不是永久保留理由，但处置前必须读 diff、备份并归责。
 
 ## 固定架构与执行边界

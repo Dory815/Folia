@@ -1171,6 +1171,82 @@ Root corrected that dependency list before running the successful observation;
 the initial dependency failure remains recorded, not reported as a Source
 behavior failure.
 
+### Inheritance and NodeUtil value coverage (2026-10-21)
+
+Three existing owners now retain seven focused cases in 8f486bb4, 9c643891 and
+85d29a15: own/inherited/default-only mathsize sources and source immutability;
+NodeUtil attribute/property value copy, independent destination mutation,
+requested operator form, postfix fallback and own/inherited false precedence;
+child slot ownership and cross-parent detach; detached logical position and
+two nested inferred rows mapping to the outer parent's slot one.
+
+The first five cases pass 5 tests / 46 assertions. The original slot candidate
+then indexed former slot two after native detach had compacted its old parent
+to length two. CRT failure stayed on stderr; broader evaluation stopped. Root
+corrected this test to the existing MmlDocument ownership contract without
+changing production code. The bounded slot follow-up passes 1/12, and the
+extended position case passes 1/8: seven distinct cases, 66 assertions across
+the recorded passes. Final parallel4 build exits0; all 478 active source bytes
+and six protected paths remain unchanged. Evidence:
+class-helper-coverage-check.json. No additional broad gate is claimed.
+
+### Maction inheritance receiver validation (2026-10-21)
+
+Root's Source review rejected the initial classification of malformed
+actiontype as disposable exception behavior. Source maction.ts calls
+toLowerCase before dispatching child inheritance; typed null/bool/number inputs
+are reachable through native AttributeSet and must be rejected there. This is
+separate from verifyAttributes clearing selection for non-toggle values.
+
+Test-only reproduction fails 21 of 33 assertions. The original
+maction_behavior.cpp now rejects non-string input with std::invalid_argument
+and reuses the configured Unicode lowercase primitive; no Context/property
+projection or new module is added. This maps the native finite type boundary,
+without promising JS TypeError names/messages. The tests cover unchanged child
+state before failure, continued inheritance after changing the same node to
+toggle, uppercase TOOLTIP with isolated tooltip style/prime, and default versus
+explicit toggle. Source's existing branch and family responsibilities remain.
+
+The parallel4 fix build exits0, then three cases pass 3/53 and full pinned
+Source SVG passes 1/1047. An independent locked MathJax 4.1.3 CJS probe passes
+all six corresponding Source scenarios, including its three TypeErrors and
+same-node continuation, with empty stderr. Evidence:
+maction-inheritance-check.json / maction-inheritance-source-observations.json.
+Of 478 active source files, 477 remain byte-equal and the only new change is
+maction_behavior.cpp; six protected paths remain unchanged. Commit be421fe0.
+No full math/font, worker, Release, GUI or new walk-resource gate is claimed.
+
+### Position consumer and generator retirement (2026-10-21)
+
+The positions packet's four old C++ suites now retire after the native value,
+slot and logical-position assertions above are retained. Root first resolved
+their tool consumers: the Parent/childPosition and NodeUtil-order oracles keep
+the original Source execution, pins and exact profile check while dropping old
+C++ fixture emission. The inheritance regression tool drops only the two
+retired fixture entries and adjusts its summaries; its unrelated fixtures stay
+and that legacy native runner was not executed or claimed passing.
+
+The three Source-only checks pass 10,800 main parent cases, 2,160 rebind cases
+and 18 NodeUtil-order cases, with exact frozen profile equality. Five shared
+Source profiles and their independent loaders/locks remain byte-equal. Six
+fixture-only generators/runners retire in 7288e2e8; the two oracle edits and
+inheritance fixture-list edit are in 09d0fd01. The four reviewed test consumers
+retire separately in 01e584cb; no math provider or algorithm retires here.
+
+The final parallel4 build exits0 (session63368,
+positions-consumer-retirement-build.log). All 478 active source bytes, six
+protected paths, seventeen target source lists, 248-interface module map and
+six verified test/binary files remain unchanged from the preceding successful
+inputs. Therefore the helper and maction/Source SVG gates above are retained
+without a duplicate runtime run. Refreshed inventory: 648 sources, 162
+unconfigured cpp/ixx, 561 configured sources and zero unresolved active imports.
+Evidence: positions-retirement-before.json,
+mml-consumer-class_positions-before-removal.json and
+positions-consumer-retirement-final-check.json. The refreshed narrow graph
+counts 57 remaining class_binding test consumers and preserves the complete
+Fields/ContextBindings/ParserRuntime chain; inactive providers are not inferred
+removable. No new full math/font, worker, Release or GUI gate is claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
