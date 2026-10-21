@@ -6,6 +6,7 @@ import folia.math.output.svg.menclose_notations;
 import folia.math.output.svg.merror;
 import folia.math.output.svg.maction;
 import folia.math.output.svg.xml_wrapper;
+import folia.math.output.svg.mglyph;
 import folia.math.core.mml_tree.mml_document;
 import std;
 
@@ -38,6 +39,11 @@ common::CommonWrapperCatalog SvgWrapperFactory::defaultNodes() {
     if (annotationXml == catalog.end())
         throw std::logic_error("Common standard catalog has no annotation-xml registration");
     *annotationXml = annotationXmlRegistration();
+    const auto mglyph = std::ranges::find(catalog, folia::math::mml::NodeKind::mglyph,
+                                          &common::CommonWrapperRegistration::kind);
+    if (mglyph == catalog.end())
+        throw std::logic_error("Common standard catalog has no mglyph registration");
+    *mglyph = mglyphRegistration();
     return catalog;
 }
 

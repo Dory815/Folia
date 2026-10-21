@@ -14,7 +14,6 @@ export import :math;
 export import :mfenced;
 export import :semantics;
 export import :tex_atom;
-export import :mglyph;
 export import :scriptbase;
 export import :msubsup;
 export import :munderover;

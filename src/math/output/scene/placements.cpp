@@ -15,7 +15,6 @@ void registerScenePlacements(WrapperFactory& factory){
     registerMfencedPlacement(factory);
     registerSemanticsPlacement(factory);
     registerTeXAtomPlacement(factory);
-    registerMglyphPlacement(factory);
     registerMrowSvgWrapper(factory);
     registerScriptbasePlacement(factory);
     registerMsubsupPlacement(factory);
