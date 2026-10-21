@@ -111,7 +111,7 @@ suite parse_util_tests = [] {
         expect(throws<std::out_of_range>([&] { internalMath(parser, u"\\U{110000}"); }));
         std::vector<std::string> calls;
         CreationCallsScope scope(calls);
-        fixture.options->nodeFactory.setCreators(
+        fixture.options->request().nodeFactory.setCreators(
             NodeCreators{.node = traceNode, .token = unexpectedToken, .text = traceText});
         NodeDefinition definition;
         definition.attributes.set(u"mathvariant", u"-tex-calligraphic");
@@ -138,7 +138,7 @@ suite parse_util_tests = [] {
         expect(copy.children()[2]->parent() == &copy);
         expect(copy.attributes().own(u"id") == nullptr);
         expect(copy.properties().tex.in_lists->size() == 2_u);
-        expect(fixture.options->nodeLists[u"custom"].back() == &copy);
+        expect(fixture.options->request().nodeLists[u"custom"].back() == &copy);
         expect(script.properties().tex.in_lists->size() == 1_u);
     };
     "ParseUtil under over and finite NodeUtil definitions preserve Source properties"_test = [] {

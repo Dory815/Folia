@@ -35,9 +35,14 @@ mml::MmlNode &formatDefaultError(TeX &jax, TexError const &error) {
     return jax.formatError(error);
 }
 struct CompileScope {
-    ParseOptions &options;
+    ParseRequest &request;
+    core::MathItem *previousItem;
+    AbstractDOMAdaptor *previousAdaptor;
+    explicit CompileScope(ParseRequest &value) noexcept
+        : request(value), previousItem(value.mathItem), previousAdaptor(value.texhtmlAdaptor) {}
     ~CompileScope() {
-        options.texhtmlAdaptor = nullptr;
+        request.mathItem = previousItem;
+        request.texhtmlAdaptor = previousAdaptor;
     }
 };
 } // namespace
@@ -55,8 +60,8 @@ TexOptionValues TeX::defaults() {
     return values;
 }
 TeX::TeX(ConfigurationHandler &registry, MapHandler &maps, MacroCallbacks const &callbacks,
-         WarningSink &warnings, mml::MmlFactory &factory, TexOptionValues supplied)
-    : AbstractInputJax(factory, inputOptions(supplied)) {
+         WarningSink &warnings, TexOptionValues supplied)
+    : AbstractInputJax(inputOptions(supplied)) {
     if (!registry.get(u"base"))
         BasePackage::initialize(registry, maps);
     configuration_ = std::make_unique<ParserConfiguration>(registry, maps, session_, callbacks,
@@ -66,7 +71,7 @@ TeX::TeX(ConfigurationHandler &registry, MapHandler &maps, MacroCallbacks const 
     auto configured = options;
     configured.mergeDefaults(configuration_->options);
     parseOptions_ = std::make_unique<ParseOptions>(
-        *configuration_, options, session_, factory,
+        *configuration_, options, session_,
         ParseOptions::getVariant(configured.mathStyle.value_or(u"TeX")));
     options.mergeDefaults(packageOptions(std::move(supplied)));
     configuration_->config(*this);
@@ -103,23 +108,22 @@ void TeX::installTextMacros(std::unique_ptr<TextMacrosData> data) {
     parseOptions_->textmacros = textmacros_.get();
     textmacros_->parseOptions->textmacros = textmacros_.get();
 }
-void TeX::setMmlFactory(mml::MmlFactory &factory) {
-    AbstractInputJax::setMmlFactory(factory);
-    parseOptions_->nodeFactory.setMmlFactory(factory);
-}
 void TeX::reset(std::int64_t offset) {
-    parseOptions_->clear();
+    if (parseOptions_->hasRequest())
+        parseOptions_->clear();
     parseOptions_->tags->reset(offset);
 }
 mml::MmlNode &TeX::compile(core::MathItem &math, mml::MmlDocument &document,
                           core::CompileServices services) {
-    setMmlFactory(document.factory());
     auto &parsed = *parseOptions_;
+    auto &request = parsed.request();
+    if (&request.nodeFactory.mmlFactory() != &document.factory())
+        throw std::logic_error("TeX request factory does not match the supplied MmlDocument");
+    const CompileScope scope{request};
     parsed.clear();
-    const CompileScope scope{parsed};
-    parsed.mathItem = &math;
+    request.mathItem = &math;
     executeFilters(preFilters, math, document, parsed, services);
-    latex_ = math.math;
+    std::u16string latex = math.math;
     parsed.tags->startEquation(math);
     std::unique_ptr<TexParser> parser;
     mml::MmlNode *node{};
@@ -127,19 +131,19 @@ mml::MmlNode &TeX::compile(core::MathItem &math, mml::MmlDocument &document,
         ParserEnvironmentSeed seed;
         seed.environment.display = math.isDisplay();
         seed.is_inner = false;
-        parser = std::make_unique<TexParser>(latex_, std::move(seed), parsed);
+        parser = std::make_unique<TexParser>(latex, std::move(seed), parsed);
         node = parser->mml();
     } catch (TexError const &error) {
-        parsed.error = true;
+        request.error = true;
         node = &(*options.formatError)(*this, error);
     }
-    const std::array children{node};
-    auto &root = parsed.nodeFactory.makeNode(mml::NodeKind::math, children);
-    root.attributes().set(u"data-latex", latex_);
+    const std::array<mml::MmlNode *, 1> children{node};
+    auto &root = request.nodeFactory.makeNode(mml::NodeKind::math, children);
+    root.attributes().set(u"data-latex", latex);
     if (math.isDisplay())
         root.attributes().set(u"display", u"block");
     parsed.tags->finishEquation(math);
-    parsed.root = &root;
+    request.root = &root;
     executeFilters(postFilters, math, document, parsed, services);
     if (parser) {
         auto const &width = parser->stack.env().horizontal_size;
@@ -148,8 +152,7 @@ mml::MmlNode &TeX::compile(core::MathItem &math, mml::MmlDocument &document,
             root.attributes().set(u"overflow", u"linebreak");
         }
     }
-    mathNode_ = parsed.root;
-    return *mathNode_;
+    return *request.root;
 }
 mml::MmlNode &TeX::formatError(TexError const &error) {
     std::u16string message(error.message());
@@ -159,6 +162,13 @@ mml::MmlNode &TeX::formatError(TexError const &error) {
         auto end = message.find_first_of(u"\n\r\u2028\u2029", begin + 1);
         message.erase(begin, end == message.npos ? message.npos : end - begin);
     }
-    return parseOptions_->nodeFactory.makeError(message);
+    return parseOptions_->request().nodeFactory.makeError(message);
+}
+TeXRequest::TeXRequest(TeX &jax, mml::MmlFactory &factory) : main(jax.parseOptions(), factory) {
+    if (jax.textmacros_) {
+        if (!jax.textmacros_->parseOptions)
+            throw std::logic_error("TeX text-macro configuration has no ParseOptions");
+        text.emplace(*jax.textmacros_->parseOptions, factory);
+    }
 }
 } // namespace folia::math::tex

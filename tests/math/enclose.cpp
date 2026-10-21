@@ -22,6 +22,7 @@ struct EncloseFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     std::u16string message;
     explicit EncloseFixture(bool combined = false, bool aliases = false) {
@@ -37,8 +38,8 @@ struct EncloseFixture {
             options.packages->push_back({u"newcommand", {}});
         }
         options.formatError = &formatEncloseError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -56,7 +57,7 @@ struct EncloseFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     MmlNode &ok(std::u16string source) {
@@ -116,7 +117,8 @@ suite enclose = [] {
                 }
             } restore;
             encloseRequests = &requests;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.node = &observeEnclose});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.node = &observeEnclose});
             f.ok(u"\\enclose{box,updiagonalstrike}[data-arrowhead={foo\\,bar},color=red,mathcolor="
                  u"blue,"
                  u"background={a,b=c},mathbackground=yellow,data-padding={{1em}},data-thickness="

@@ -8,23 +8,45 @@ import std;
 
 namespace folia::math::tex {
 ParseOptions::ParseOptions(ParserConfiguration &configuration, TexOptionValues &effective,
-                           TexSessionState &session, mml::MmlFactory &factory,
-                           MathStyleResolver captured)
-    : ParseOptions(configuration, SharedTexOptions{effective}, session, factory, captured) {
+                           TexSessionState &session, MathStyleResolver captured)
+    : ParseOptions(configuration, SharedTexOptions{effective}, session, captured) {
     options.mergeDefaults(configuration.options);
 }
 ParseOptions::ParseOptions(ParserConfiguration &configuration, SharedTexOptions effective,
-                           TexSessionState &session, mml::MmlFactory &factory,
-                           MathStyleResolver captured)
+                           TexSessionState &session, MathStyleResolver captured)
     : handlers(configuration.handlers), options(effective.values),
       itemFactory(std::make_unique<StackItemFactory>(*this, configuration.items)),
-      nodeFactory(factory, this), mathStyle(captured ? captured : getVariant(u"TeX")),
+      mathStyle(captured ? captured : getVariant(u"TeX")),
       columnParser(std::make_unique<ColumnParser>(session.columnDefinitions())),
-      packageData(session), configuration_(configuration) {
-    nodeFactory.setConfiguration(*this);
-    nodeFactory.setCreators(configuration.nodes);
-}
+      packageData(session), configuration_(configuration), nodeCreators_(configuration.nodes) {}
 ParseOptions::~ParseOptions() = default;
+ParseRequest &ParseOptions::request() {
+    if (!active_request_)
+        throw std::logic_error("ParseOptions has no active request");
+    return *active_request_;
+}
+ParseRequest const &ParseOptions::request() const {
+    if (!active_request_)
+        throw std::logic_error("ParseOptions has no active request");
+    return *active_request_;
+}
+bool ParseOptions::hasRequest() const noexcept {
+    return active_request_ != nullptr;
+}
+void ParseOptions::setNodeCreators(NodeCreators const &creators) {
+    nodeCreators_.merge(creators);
+    if (active_request_)
+        active_request_->nodeFactory.setCreators(creators);
+}
+ParseRequest::ParseRequest(ParseOptions &options, mml::MmlFactory &factory)
+    : options_(options), previous_(options.active_request_), nodeFactory(factory, &options) {
+    nodeFactory.setConfiguration(options);
+    nodeFactory.setCreators(options.nodeCreators_);
+    options_.active_request_ = this;
+}
+ParseRequest::~ParseRequest() {
+    options_.active_request_ = previous_;
+}
 MapHandler &ParseOptions::maps() const noexcept {
     return configuration_.maps();
 }
@@ -35,19 +57,23 @@ MacroCallbacks const &ParseOptions::callbacks() const noexcept {
     return configuration_.callbacks();
 }
 void ParseOptions::pushParser(TexParser &parser) {
-    parsers.insert(parsers.begin(), &parser);
+    auto &active = request();
+    active.parsers.insert(active.parsers.begin(), &parser);
 }
 void ParseOptions::popParser() {
-    if (!parsers.empty())
-        parsers.erase(parsers.begin());
+    auto &active = request();
+    if (!active.parsers.empty())
+        active.parsers.erase(active.parsers.begin());
 }
-void ParseOptions::removeParser(TexParser &parser) noexcept {
-    auto found = std::ranges::find(parsers, &parser);
-    if (found != parsers.end())
-        parsers.erase(found);
+void ParseOptions::removeParser(TexParser &parser) {
+    auto &active = request();
+    auto found = std::ranges::find(active.parsers, &parser);
+    if (found != active.parsers.end())
+        active.parsers.erase(found);
 }
-TexParser *ParseOptions::parser() const noexcept {
-    return parsers.empty() ? nullptr : parsers.front();
+TexParser *ParseOptions::parser() const {
+    auto const &active = request();
+    return active.parsers.empty() ? nullptr : active.parsers.front();
 }
 TexEnvironment const &ParseOptions::environment() const {
     auto current = parser();
@@ -56,11 +82,12 @@ TexEnvironment const &ParseOptions::environment() const {
     return current->stack.env();
 }
 void ParseOptions::clear() {
-    parsers.clear();
-    texhtmlAdaptor = nullptr;
-    root = nullptr;
-    nodeLists.clear();
-    error = false;
+    auto &active = request();
+    active.parsers.clear();
+    active.texhtmlAdaptor = nullptr;
+    active.root = nullptr;
+    active.nodeLists.clear();
+    active.error = false;
     if (!tags)
         throw std::logic_error("TeX tags have not been configured");
     tags->resetTag();
@@ -70,7 +97,8 @@ void ParseOptions::addNode(mml::NodeKind kind, mml::MmlNode &node) {
     addNode(std::u16string(name.begin(), name.end()), node);
 }
 void ParseOptions::addNode(std::u16string_view property, mml::MmlNode &node) {
-    nodeLists[std::u16string(property)].push_back(&node);
+    auto &lists = request().nodeLists;
+    lists[std::u16string(property)].push_back(&node);
     auto kind = mml::nodeKindName(node.kind());
     if (property != std::u16string(kind.begin(), kind.end())) {
         if (!node.properties().tex.in_lists)
@@ -78,21 +106,23 @@ void ParseOptions::addNode(std::u16string_view property, mml::MmlNode &node) {
         node.properties().tex.in_lists->emplace_back(property);
     }
 }
-bool ParseOptions::inTree(mml::MmlNode const &node) const noexcept {
+bool ParseOptions::inTree(mml::MmlNode const &node) const {
+    auto const &active = request();
     for (auto current = &node; current; current = current->parent())
-        if (current == root)
+        if (current == active.root)
             return true;
     return false;
 }
 std::span<mml::MmlNode *const> ParseOptions::getList(std::u16string_view property) {
-    auto &list = nodeLists[std::u16string(property)];
+    auto &list = request().nodeLists[std::u16string(property)];
     std::erase_if(list, [&](auto node) { return !node || !inTree(*node); });
     return list;
 }
 void ParseOptions::removeFromList(std::u16string_view property,
                                   std::span<mml::MmlNode *const> nodes) {
-    auto found = nodeLists.find(std::u16string(property));
-    if (found == nodeLists.end())
+    auto &lists = request().nodeLists;
+    auto found = lists.find(std::u16string(property));
+    if (found == lists.end())
         return;
     std::vector<mml::MmlNode *> selected(nodes.begin(), nodes.end());
     for (auto node : selected) {

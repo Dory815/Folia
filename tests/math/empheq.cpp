@@ -22,6 +22,7 @@ struct EmpheqFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit EmpheqFixture(std::u16string_view side = u"right", bool bold = false) {
         AmsConfiguration::initializeModule(registry, maps);
@@ -37,8 +38,8 @@ struct EmpheqFixture {
         options.tagSide = std::u16string(side);
         options.maxMacros = 1000;
         options.formatError = &formatEmpheqError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -52,7 +53,7 @@ struct EmpheqFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(true);
         auto &result = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return result;
     }
     MmlNode &ok(std::u16string source) {
@@ -286,7 +287,7 @@ suite empheq_suite = [] {
                 copy->children()[0]->attributes().set(u"data-copy", u"yes");
                 expect(!original.children()[0]->attributes().own(u"data-copy"));
                 copy->children()[0]->attributes().erase(u"data-copy");
-                auto const &list = f.jax->parseOptions().nodeLists.at(u"mtable");
+                auto const &list = f.jax->parseOptions().request().nodeLists.at(u"mtable");
                 expect(std::ranges::find(list, copy) != list.end());
             } else if (std::ranges::equal(c.name, u"rowspanCell"sv)) {
                 result = &f.document.factory().make(NodeKind::mtd);
@@ -303,7 +304,7 @@ suite empheq_suite = [] {
             matchesSource(*result, c.snapshot);
             parentLinks(*result);
             parser.mml();
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
         }
     };
     "empheq utility column counts options tag creation and configured creator boundaries"_test =
@@ -329,7 +330,8 @@ suite empheq_suite = [] {
                     emphRequests = nullptr;
                 }
             } reset;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.node = &observeEmphNode});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.node = &observeEmphNode});
             auto &table = utilityTable(f);
             EmpheqUtil::topRowTable(table, parser);
             expect(std::ranges::count(requests, NodeKind::mphantom) == 0);
@@ -339,12 +341,12 @@ suite empheq_suite = [] {
             expect(std::ranges::count(requests, NodeKind::mphantom) == 1);
             parser.tags().setLabel(u"side");
             EmpheqUtil::cellBlock(u"L", utilityTable(f), parser, u"align");
-            auto const &equation = f.jax->parseOptions().equation;
+            auto const &equation = f.jax->parseOptions().request().equation;
             expect(equation.current_tag.environment == "align");
             expect(std::ranges::equal(equation.labels.at(u"side").tag, u"1"sv));
             expect(std::ranges::equal(equation.labels.at(u"side").id, u"mjx-eqn:side"sv));
             parser.mml();
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
         };
     "empheq label next reference and original errors recover parser borrows"_test = [] {
         EmpheqFixture labels(u"left");
@@ -354,7 +356,7 @@ suite empheq_suite = [] {
             EmpheqFixture f;
             f.compile(std::u16string(c.source));
             expect(f.error == c.id);
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"x");
         }
         for (auto source : empheqTypeErrors) {
@@ -364,7 +366,7 @@ suite empheq_suite = [] {
                 expect(false) << "Expected Empheq argument type error";
             } catch (std::invalid_argument const &) {
             }
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"x");
             auto &recovered = f.ok(u"\\begin{equation}z\\label{after}\\end{equation}");
             expect(emphNodes(recovered, NodeKind::mlabeledtr).size() == 1_u);

@@ -56,9 +56,9 @@ struct PhysicsFixture {
     MapHandler maps;
     MacroCallbacks callbacks{physicsCallbacks, physicsTokens};
     Warnings warnings;
-    MmlDocument bootstrap;
     std::unique_ptr<MmlDocument> document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit PhysicsFixture(bool italic = false, bool arrow = false, bool extra = false) {
         PhysicsConfiguration::initializeModule(registry, maps);
@@ -74,8 +74,7 @@ struct PhysicsFixture {
         options.physics = selected;
         options.maxMacros = 1000;
         options.formatError = &physicsFormatError;
-        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, bootstrap.factory(),
-                                    options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -86,14 +85,16 @@ struct PhysicsFixture {
             }
         } restore;
         physicsError = &error;
+        request.reset();
         document = std::make_unique<MmlDocument>();
+        request = std::make_unique<TeXRequest>(*jax, document->factory());
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         return jax->compile(math, *document);
     }
     MmlNode &ok(std::u16string source) {
         auto &node = compile(std::move(source));
         expect(error.empty()) << error;
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return node;
     }
 };
@@ -400,7 +401,7 @@ suite physics_package = [] {
             PhysicsFixture f(entry.italic, entry.arrow);
             f.compile(std::u16string(entry.source));
             expect(f.error == entry.id) << entry.id;
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"x");
             f.ok(u"\\qty(x)");
         }
@@ -408,7 +409,7 @@ suite physics_package = [] {
             PhysicsFixture f;
             expect(entry.kind == "RangeError");
             expect(throws<std::length_error>([&] { f.compile(std::u16string(entry.source)); }));
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"x");
             f.ok(u"\\qty(x)");
         }
@@ -424,7 +425,7 @@ suite physics_package = [] {
             expect(entry.runtime.empty());
             auto &root = fixture->compile(std::u16string(entry.source));
             expect(fixture->error == entry.error);
-            expect(fixture->jax->parseOptions().parsers.empty());
+            expect(fixture->jax->parseOptions().request().parsers.empty());
             physicsMatchesSource(root, entry.snapshot);
         }
     };
@@ -442,24 +443,20 @@ suite physics_package = [] {
             physicsMatchesSource(node, entry.snapshot);
             physicsParents(node);
             parser.mml();
-            expect(options.parsers.empty());
+            expect(options.request().parsers.empty());
         }
     };
     "physics configured creators see original fences before marker stripping"_test = [] {
         PhysicsFixture f;
         std::vector<PhysicsRequest> requests;
-        auto &factory = f.jax->parseOptions().nodeFactory;
         struct Restore {
-            NodeFactory &factory;
-            NodeCreators creators;
             std::vector<PhysicsRequest> *old{physicsRequests};
             ~Restore() {
-                factory.setCreators(creators);
                 physicsRequests = old;
             }
-        } restore{factory, factory.creators()};
+        } restore;
         physicsRequests = &requests;
-        factory.setCreators(NodeCreators{.node = &physicsNode});
+        f.jax->parseOptions().setNodeCreators(NodeCreators{.node = &physicsNode});
         auto &root = f.ok(u"\\qty(x)");
         bool found = false;
         for (auto const &request : requests)
@@ -478,42 +475,44 @@ suite physics_package = [] {
         PhysicsFixture f;
         f.ok(u"x");
         auto &options = f.jax->parseOptions();
-        auto &factory = options.nodeFactory;
-        const auto creators = factory.creators();
-        struct Restore {
-            NodeFactory &factory;
-            NodeCreators creators;
-            bool fail{physicsThrow};
-            ~Restore() {
-                factory.setCreators(creators);
-                physicsThrow = fail;
-            }
-        } restore{factory, creators};
-        factory.setCreators(NodeCreators{.node = &physicsNode, .token = &physicsToken});
-        TexEnvironment env;
-        env.font = u"normal";
-        TexParser parser(u"", ParserEnvironmentSeed{env}, options);
-        auto invoke = [&](std::u16string source) {
-            parser.setString(std::move(source));
-            parser.setPosition(0);
-            const std::span<TexArgument const> args;
-            return PhysicsMethods::VectorBold(parser, MacroInvocation{u"\\vb", u"\\vb", args});
-        };
-        invoke(u"{a\\vb*{b}c}");
-        expect(factory.creators().token.value() == &physicsToken);
-        expect(parser.stack.env().font == u"normal");
-        expect(!parser.stack.env().vector_font);
-        expect(!parser.stack.env().vector_star);
-        physicsThrow = true;
-        expect(throws<std::runtime_error>([&] { invoke(u"{q}"); }));
-        expect(factory.creators().token.value() == &physicsToken);
-        expect(parser.stack.env().font == u"normal");
-        expect(!parser.stack.env().vector_font);
-        expect(!parser.stack.env().vector_star);
-        physicsThrow = false;
-        invoke(u"{z}");
-        parser.mml();
-        expect(options.parsers.empty());
+        {
+            auto &factory = options.request().nodeFactory;
+            const auto creators = factory.creators();
+            struct Restore {
+                NodeFactory &factory;
+                NodeCreators creators;
+                bool fail{physicsThrow};
+                ~Restore() {
+                    factory.setCreators(creators);
+                    physicsThrow = fail;
+                }
+            } restore{factory, creators};
+            factory.setCreators(NodeCreators{.node = &physicsNode, .token = &physicsToken});
+            TexEnvironment env;
+            env.font = u"normal";
+            TexParser parser(u"", ParserEnvironmentSeed{env}, options);
+            auto invoke = [&](std::u16string source) {
+                parser.setString(std::move(source));
+                parser.setPosition(0);
+                const std::span<TexArgument const> args;
+                return PhysicsMethods::VectorBold(parser, MacroInvocation{u"\\vb", u"\\vb", args});
+            };
+            invoke(u"{a\\vb*{b}c}");
+            expect(factory.creators().token.value() == &physicsToken);
+            expect(parser.stack.env().font == u"normal");
+            expect(!parser.stack.env().vector_font);
+            expect(!parser.stack.env().vector_star);
+            physicsThrow = true;
+            expect(throws<std::runtime_error>([&] { invoke(u"{q}"); }));
+            expect(factory.creators().token.value() == &physicsToken);
+            expect(parser.stack.env().font == u"normal");
+            expect(!parser.stack.env().vector_font);
+            expect(!parser.stack.env().vector_star);
+            physicsThrow = false;
+            invoke(u"{z}");
+            parser.mml();
+            expect(options.request().parsers.empty());
+        }
         f.ok(u"x");
         f.ok(u"\\vb{a}b");
     };
@@ -544,7 +543,7 @@ suite physics_package = [] {
                 frame.reset();
                 expect(!weak.expired());
                 expect(live == 1);
-                auto &node = options.nodeFactory.makeToken(NodeKind::mi, u"x");
+                auto &node = options.request().nodeFactory.makeToken(NodeKind::mi, u"x");
                 stack.Push(&node);
                 if (i % 2 == 0) {
                     auto close = factory.create(StackKind::close);
@@ -565,7 +564,7 @@ suite physics_package = [] {
             }
             expect(weak.expired());
             expect(live == 0);
-            expect(options.parsers.empty());
+            expect(options.request().parsers.empty());
         }
         factory.setNodeClass(
             StackKind::auto_open,

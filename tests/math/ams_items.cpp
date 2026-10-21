@@ -16,6 +16,7 @@ struct AmsArrayFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit AmsArrayFixture(bool left = false) {
         AmsConfiguration::initializeModule(registry, maps);
@@ -24,8 +25,8 @@ struct AmsArrayFixture {
         options.tags = u"ams";
         options.tagSide = left ? u"left" : u"right";
         options.formatError = &formatArrayError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -39,7 +40,7 @@ struct AmsArrayFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(true);
         auto &tree = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return tree;
     }
 };
@@ -137,7 +138,7 @@ suite ams_items = [] {
             expect(tables.size() == 1_u);
             if (tables.size() != 1)
                 continue;
-            expect(tableShape(*tables[0], f.jax->parseOptions().equation.stack.size()) ==
+            expect(tableShape(*tables[0], f.jax->parseOptions().request().equation.stack.size()) ==
                    item.shape);
             std::vector<MmlNode *> labels;
             for (auto row : tables[0]->children())
@@ -168,7 +169,7 @@ suite ams_items = [] {
                 auto tables = arrayTables(f.compile(u"\\begin{multline*}a\\\\b\\end{multline*}"));
                 expect(f.error.empty());
                 expect(tables.size() == 1_u);
-                expect(f.jax->parseOptions().equation.stack.empty());
+                expect(f.jax->parseOptions().request().equation.stack.empty());
             }
         };
 };

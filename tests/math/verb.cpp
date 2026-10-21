@@ -31,6 +31,7 @@ struct VerbFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::pair<std::string, std::u16string> error;
     explicit VerbFixture(bool aliases = false, bool bold = false) {
         VerbConfiguration::initializeModule(registry, maps);
@@ -45,8 +46,8 @@ struct VerbFixture {
             options.packages->push_back({u"boldsymbol", {}});
         }
         options.formatError = &formatVerbError;
-        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(),
-                                    std::move(options));
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, std::move(options));
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error = {};
@@ -109,7 +110,7 @@ suite verb_package = [] {
             expect(NodeUtil::getText(*tokens[0]) == expected);
             expect(attr(*tokens[0], u"mathvariant") == u"monospace");
             expect(tokens[0]->children().size() == 1_u);
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
         }
     };
     "verb package keeps monospace through surrounding font and boldsymbol scopes"_test = [] {
@@ -134,7 +135,7 @@ suite verb_package = [] {
             f.compile(std::u16string(source));
             expect(f.error.first == id);
             expect(std::ranges::equal(f.error.second, message));
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
         }
         auto token = verbText(f.compile(u"\\verb|ok|"))[0];
         expect(f.error.first.empty());
@@ -158,7 +159,8 @@ suite verb_package = [] {
     "verb package passes literal text and monospace through the configured token creator"_test =
         [] {
             VerbFixture f;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.token = observeVerbToken});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.token = observeVerbToken});
             int calls{};
             struct Restore {
                 int *old{verbTokenCalls};

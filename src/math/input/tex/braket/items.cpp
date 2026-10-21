@@ -58,7 +58,7 @@ mml::MmlNode &BraketItem::toMml(bool inferred, bool forceRow) {
     definition.attributes.set(u"stretchy", false);
     definition.attributes.set(u"symmetric", true);
     definition.properties.tex.explicit_tex_class = mml::TexClass::open;
-    auto &nodes = factory().configuration().nodeFactory;
+    auto &nodes = factory().configuration().request().nodeFactory;
     auto &openNode = nodes.makeToken(mml::NodeKind::mo, open, definition);
     definition.properties.tex.explicit_tex_class = mml::TexClass::close;
     auto &closeNode = nodes.makeToken(mml::NodeKind::mo, close, std::move(definition));

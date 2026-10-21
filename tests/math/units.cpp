@@ -18,6 +18,7 @@ struct UnitsFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit UnitsFixture(bool loose = false, bool ugly = false, bool aliases = false) {
         UnitsConfiguration::initializeModule(registry, maps);
@@ -29,8 +30,8 @@ struct UnitsFixture {
             NewcommandConfiguration::initializeModule(registry, maps);
             options.packages->push_back({u"newcommand", {}});
         }
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -44,7 +45,7 @@ struct UnitsFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     MmlNode &ok(std::u16string source) {
@@ -167,7 +168,8 @@ suite units = [] {
                 }
             } restore;
             unitRequests = &requests;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.node = &observeUnits});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.node = &observeUnits});
             auto fractions = unitsNodes(f.ok(u"\\nicefrac{a}{b}"), NodeKind::mfrac);
             expect(requests.size() == 1_u && fractions.size() == 1_u);
             if (requests.size() == 1 && fractions.size() == 1) {

@@ -28,6 +28,7 @@ struct NewcommandFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string lastError;
     explicit NewcommandFixture(bool scopes = false, std::size_t maxMacros = 1000) {
         NewcommandConfiguration::initializeModule(registry, maps);
@@ -39,8 +40,8 @@ struct NewcommandFixture {
             BegingroupConfiguration::initializeModule(registry, maps);
             options.packages->insert(options.packages->begin() + 1, {u"begingroup", {}});
         }
-        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(),
-                                    std::move(options));
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, std::move(options));
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         lastError.clear();
@@ -104,12 +105,13 @@ suite newcommand = [] {
         NewcommandFixture f;
         std::optional<MmlDocument> document;
         std::optional<TeX> jax;
+        std::optional<TeXRequest> request;
         const auto createJax = [&] {
             document.emplace();
             TexOptionValues options;
             options.packages = std::vector<PackageSelection>{{u"base", {}}, {u"newcommand", {}}};
-            jax.emplace(f.registry, f.maps, f.callbacks, f.warnings, document->factory(),
-                        std::move(options));
+            jax.emplace(f.registry, f.maps, f.callbacks, f.warnings, std::move(options));
+            request.emplace(*jax, document->factory());
         };
         const auto compile = [&](std::u16string source) {
             folia::math::core::AbstractMathItem math(std::move(source), &*jax);
@@ -148,6 +150,7 @@ suite newcommand = [] {
         expect(f.maps.getMap(NEW_ENVIRONMENT) == firstEnvironment);
         expect(handlerState() == firstHandlers);
 
+        request.reset();
         jax.reset();
         document.reset();
         createJax();
@@ -299,7 +302,7 @@ suite newcommand = [] {
                 NewcommandFixture f;
                 f.compile(test.source);
                 expect(f.lastError == test.id) << test.id;
-                expect(f.jax->parseOptions().parsers.empty());
+                expect(f.jax->parseOptions().request().parsers.empty());
             }
         };
     "newcommand global definitions use existing owned definition layers"_test = [] {
@@ -316,7 +319,7 @@ suite newcommand = [] {
         NewcommandFixture f(false, 12);
         f.compile(u"\\def\\loop{\\loop}\\loop");
         expect(f.lastError == "MaxMacroSub1");
-        expect(f.jax->parseOptions().parsers.empty());
+        expect(f.jax->parseOptions().request().parsers.empty());
         expect(f.text(u"\\def\\loop{x}\\loop") == u"x");
         NewcommandFixture environment(false, 2);
         environment.compile(u"\\newenvironment{e}{}{}\\begin{e}\\begin{e}\\end{e}\\end{e}");

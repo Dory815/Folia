@@ -81,7 +81,7 @@ void _cleanSubSup(ParseOptions &options, bool underover) {
         auto kind = underover ? (lower ? NodeKind::munder : NodeKind::mover)
                               : (lower ? NodeKind::msub : NodeKind::msup);
         const std::array children{child(*node, base), lower ? lower : upper};
-        auto &replacement = options.nodeFactory.makeNode(kind, children);
+        auto &replacement = options.request().nodeFactory.makeNode(kind, children);
         NodeUtil::copyAttributes(*node, replacement);
         parent->replaceChild(replacement, *node);
         removed.push_back(node);
@@ -100,7 +100,7 @@ void _moveLimits(ParseOptions &options, std::u16string_view list, NodeKind repla
             !core->attributes().own(u"movablelimits")) {
             auto children =
                 std::vector<MmlNode *>(node->children().begin(), node->children().end());
-            auto &replacement = options.nodeFactory.makeNode(replacementKind, children);
+            auto &replacement = options.request().nodeFactory.makeNode(replacementKind, children);
             NodeUtil::copyAttributes(*node, replacement);
             node->parent()->replaceChild(replacement, *node);
             removed.push_back(node);
@@ -111,13 +111,13 @@ void _moveLimits(ParseOptions &options, std::u16string_view list, NodeKind repla
 } // namespace
 
 void FilterUtil::cleanSubSup(TexFilterData &arg) {
-    if (arg.data.error)
+    if (arg.data.request().error)
         return;
     _cleanSubSup(arg.data, false);
     _cleanSubSup(arg.data, true);
 }
 void FilterUtil::setInherited(TexFilterData &arg) {
-    arg.data.root->setInheritedAttributes({}, arg.math.isDisplay(), 0, false);
+    arg.data.request().root->setInheritedAttributes({}, arg.math.isDisplay(), 0, false);
 }
 void FilterUtil::checkScriptlevel(TexFilterData &arg) {
     auto &options = arg.data;
@@ -158,7 +158,7 @@ void FilterUtil::cleanStretchy(TexFilterData &arg) {
         }
 }
 void FilterUtil::cleanAttributes(TexFilterData &arg) {
-    arg.data.root->walkTree([](MmlNode &node) {
+    arg.data.request().root->walkTree([](MmlNode &node) {
         auto const &keep = node.properties().tex.keep_attributes.value_or(u"");
         std::unordered_set<std::u16string_view> retained;
         std::size_t begin{};

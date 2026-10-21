@@ -39,6 +39,7 @@ struct ColortblFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     ConfigMethod colorConfigurer{};
     int configCalls{};
@@ -71,8 +72,8 @@ struct ColortblFixture {
         options.maxMacros = 1000;
         options.formatError = &tableColorFormatError;
         ObserveConfig observe(colorConfigurer, configCalls);
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     void configure() {
         ObserveConfig observe(colorConfigurer, configCalls);
@@ -90,7 +91,7 @@ struct ColortblFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(true);
         auto &result = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return result;
     }
     MmlNode &ok(std::u16string source) {
@@ -204,7 +205,7 @@ template <class Fn> void withColorArray(ColortblFixture &f, Fn action) {
     parser.stack.Pop();
     parser.stack.Push(stop);
     parser.mml();
-    expect(f.jax->parseOptions().parsers.empty());
+    expect(f.jax->parseOptions().request().parsers.empty());
 }
 void addColorToken(TexParser &parser, ArrayItem &array, std::u16string_view text) {
     auto &node = parser.createToken(NodeKind::mi, text);
@@ -295,7 +296,7 @@ suite colortbl_suite = [] {
             ColortblFixture f;
             f.compile(std::u16string(c.source));
             expect(f.error == c.id);
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"\\begin{array}{c}\\cellcolor{blue}x\\end{array}");
         }
     };

@@ -38,6 +38,7 @@ struct OptionFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     OptionFixture(TexOptionValues options = {}, std::vector<std::u16string> packages = {},
                   bool reversed = false, bool withRequire = false) {
@@ -69,8 +70,8 @@ struct OptionFixture {
             options.packages->push_back({u"setoptions-local-require", {}});
         }
         options.formatError = &optionFormatError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -84,7 +85,7 @@ struct OptionFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &result = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return result;
     }
     MmlNode &ok(std::u16string source) {
@@ -433,7 +434,7 @@ suite setoptions_suite = [] {
             expect(false);
         } catch (folia::math::regexp_host::RegexError const &) {
         }
-        expect(f.jax->parseOptions().parsers.empty());
+        expect(f.jax->parseOptions().request().parsers.empty());
         f.ok(u"x");
         TexParser parser(u"", {}, f.jax->parseOptions());
         parser.mml();
@@ -539,7 +540,8 @@ suite setoptions_suite = [] {
         expect(std::ranges::equal(*f.jax->options.tagIndent, u"9em"sv));
         std::vector<MmlNode *> tokens;
         optionTokens = &tokens;
-        f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.token = &observeOptionToken});
+        f.jax->parseOptions().request().nodeFactory.setCreators(
+            NodeCreators{.token = &observeOptionToken});
         auto &root = f.ok(u"a\\setOptions{}b");
         auto actual = optionNodes(root, NodeKind::mi);
         expect(tokens.size() == 2_u);

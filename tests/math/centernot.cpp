@@ -18,6 +18,7 @@ struct CenterFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit CenterFixture(bool aliases = false) {
         CenternotConfiguration::initializeModule(registry, maps);
@@ -28,8 +29,8 @@ struct CenterFixture {
             options.packages->push_back({u"newcommand", {}});
         }
         options.formatError = &formatCenterError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -43,7 +44,7 @@ struct CenterFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     MmlNode &ok(std::u16string source) {
@@ -126,7 +127,8 @@ suite centernot = [] {
             }
         } restore;
         centerCreatedTokens = &requests;
-        f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.token = &observeCenterToken});
+        f.jax->parseOptions().request().nodeFactory.setCreators(
+            NodeCreators{.token = &observeCenterToken});
         auto &root = f.ok(u"\\centerOver{xy}{z}");
         const std::array<std::u16string_view, 5> expected{u"z", u"x", u"y", u"x", u"y"};
         expect(requests.size() == expected.size());
@@ -176,7 +178,7 @@ suite centernot = [] {
                 f.ok(u"\\centernot{=}");
             }
             expect(throws<std::out_of_range>([&] { f.compile(u"\\centernot{}"); }));
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"\\centernot{=}");
         };
 };

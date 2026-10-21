@@ -38,7 +38,7 @@ void fixPrescripts(TexFilterData &filter) {
         int missing = 0;
         for (std::size_t index : {1u, 2u}) {
             if (index >= node->children().size() || !node->children()[index]) {
-                auto &none = data.nodeFactory.makeNode(mml::NodeKind::none);
+                auto &none = data.request().nodeFactory.makeNode(mml::NodeKind::none);
                 NodeUtil::setChild(*node, index, none);
                 ++missing;
             }

@@ -67,7 +67,7 @@ MmlNode &EmpheqUtil::cellBlock(std::u16string_view tex, MmlNode &table, TexParse
     if (!result)
         throw std::logic_error("Empheq side material produced no MML");
     if (!env.empty() && !nested.tags().label().empty()) {
-        nested.configuration.equation.current_tag.environment = utf16::encode(env);
+        nested.configuration.request().equation.current_tag.environment = utf16::encode(env);
         nested.tags().getTag(true);
     }
     if (result->isInferred()) {

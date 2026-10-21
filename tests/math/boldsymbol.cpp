@@ -37,12 +37,13 @@ struct BoldFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     BoldFixture() {
         BoldsymbolConfiguration::initializeModule(registry, maps);
         TexOptionValues options;
         options.packages = std::vector<PackageSelection>{{u"base", {}}, {u"boldsymbol", {}}};
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string text) {
         folia::math::core::AbstractMathItem math(std::move(text), jax.get());
@@ -134,7 +135,7 @@ suite boldsymbol = [] {
         expect(marked.size() == 3_u);
         expect(std::ranges::none_of(
             marked, [](auto node) { return node->properties().tex.fix_bold.has_value(); }));
-        expect(options.parsers.empty());
+        expect(options.request().parsers.empty());
         expect(f.registry.get(u"boldsymbol")->postprocessors.front().priority == 5.0);
     };
     "boldsymbol actual TeX package preserves unsupported variants and mtext"_test = [] {

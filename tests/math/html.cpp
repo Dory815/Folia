@@ -22,6 +22,7 @@ struct HtmlFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     std::u16string message;
     explicit HtmlFixture(bool aliases = false, bool selected = true) {
@@ -35,8 +36,8 @@ struct HtmlFixture {
             options.packages->push_back({u"newcommand", {}});
         }
         options.formatError = &formatHtmlError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -54,7 +55,7 @@ struct HtmlFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     MmlNode &ok(std::u16string source) {
@@ -224,7 +225,8 @@ suite html = [] {
                 }
             } restore;
             htmlRequests = &requests;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.node = &observeHtml});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.node = &observeHtml});
             auto node = htmlOne(f.ok(u"\\class{outer}{\\href{target}{xy}}"), u"class");
             expect(std::ranges::count(requests, NodeKind::mrow) == 1);
             if (node)
@@ -247,7 +249,7 @@ suite html = [] {
             }
             expect(throws<std::invalid_argument>(
                 [&] { f.compile(u"\\style{color:red}{\\mmlToken{mi}[style=true]{x}}"); }));
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"\\href{target}{y}");
         };
 };

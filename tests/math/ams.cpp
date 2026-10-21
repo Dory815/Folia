@@ -18,6 +18,7 @@ struct AmsFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit AmsFixture(bool tags = false, bool groups = false) {
         if (groups)
@@ -33,8 +34,8 @@ struct AmsFixture {
         options.tags = tags ? u"ams" : u"none";
         options.maxMacros = 1000;
         options.formatError = &formatAmsError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source, bool display = true) {
         error.clear();
@@ -48,7 +49,7 @@ struct AmsFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(display);
         auto &result = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return result;
     }
     MmlNode &ok(std::u16string source) {

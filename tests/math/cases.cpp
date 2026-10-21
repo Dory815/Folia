@@ -27,6 +27,7 @@ struct CasesFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit CasesFixture(std::u16string_view mode = u"cases", std::u16string_view side = u"right",
                           bool format = false) {
@@ -44,8 +45,8 @@ struct CasesFixture {
         options.tagSide = std::u16string(side);
         options.maxMacros = 1000;
         options.formatError = &casesFormatError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -59,7 +60,7 @@ struct CasesFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(true);
         auto &tree = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return tree;
     }
     MmlNode &ok(std::u16string source) {
@@ -280,7 +281,7 @@ suite cases_suite = [] {
             CasesFixture f;
             f.compile(std::u16string(c.source));
             expect(f.error == c.id);
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"x");
             f.ok(u"\\begin{numcases}{g=}z & recovered\\label{after}\\end{numcases}");
             expect(std::ranges::equal(f.jax->session().labels().at(u"after").tag, c.recoveryTag));
@@ -291,7 +292,7 @@ suite cases_suite = [] {
         CasesNumberProbe tag(f.jax->parseOptions());
         for (auto const &c : casesFormats)
             expect(std::ranges::equal(tag.formatNumberDefault(7, c.sub), c.expected));
-        auto &eq = f.jax->parseOptions().equation;
+        auto &eq = f.jax->parseOptions().request().equation;
         tag.start("subnumcases", true, true);
         tag.autoTag();
         expect(std::ranges::equal(*eq.current_tag.tag, u"1a"sv));

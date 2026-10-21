@@ -263,32 +263,40 @@ inline scene::Scene buildScene(TexSceneInput const &item, InputOwner &owner,
         if (!owner.canonicalInput)
             owner.canonicalInput =
                 std::make_unique<tex::TeX>(owner.configurations, owner.maps, owner.callbacks,
-                                           owner.warnings, document.factory(), owner.texOptions);
+                                           owner.warnings, owner.texOptions);
         input = owner.canonicalInput.get();
     } else {
-        transientInput =
-            std::make_unique<tex::TeX>(owner.configurations, owner.maps, owner.callbacks,
-                                       owner.warnings, document.factory(), owner.texOptions);
+        transientInput = std::make_unique<tex::TeX>(
+            owner.configurations, owner.maps, owner.callbacks, owner.warnings, owner.texOptions);
         input = transientInput.get();
     }
     // The canonical Source capture reuses one input jax but supplies each
     // request's configured tag side. The input's parse options refer to this
     // same live option record.
     input->options.tagSide = owner.texOptions.tagSide;
-    NativeOutput output(item, owner, measurement);
-    folia::math::core::AbstractMathItem expression(
-        folia::math::utf16::decode(item.tex).text, input,
-        item.display ? folia::math::core::MathDisplay::display_math
-                     : folia::math::core::MathDisplay::inline_math);
-    expression.setMetrics(item.em, item.ex, item.width, 1);
-    expression.compile(document, {&output, &owner.adaptor});
-    if (!expression.root)
-        throw std::logic_error("TeX input produced no MathItem root");
-    document.setRoot(*expression.root);
-    expression.typeset(output, document);
-    if (!expression.typesetRoot)
-        throw std::logic_error("NativeOutput did not retain its owned frozen Scene value");
-    return std::move(*expression.typesetRoot);
+    std::optional<scene::Scene> result;
+    {
+        // The request owns every expression-time parser/factory borrow through
+        // compile, Common layout, and the final immutable Scene snapshot.
+        [[maybe_unused]] tex::TeXRequest request(*input, document.factory());
+        NativeOutput output(item, owner, measurement);
+        folia::math::core::AbstractMathItem expression(
+            folia::math::utf16::decode(item.tex).text, input,
+            item.display ? folia::math::core::MathDisplay::display_math
+                         : folia::math::core::MathDisplay::inline_math);
+        expression.setMetrics(item.em, item.ex, item.width, 1);
+        expression.compile(document, {&output, &owner.adaptor});
+        if (!expression.root)
+            throw std::logic_error("TeX input produced no MathItem root");
+        document.setRoot(*expression.root);
+        expression.typeset(output, document);
+        if (!expression.typesetRoot)
+            throw std::logic_error("NativeOutput did not retain its owned frozen Scene value");
+        result.emplace(std::move(*expression.typesetRoot));
+    }
+    if (input->parseOptions().hasRequest())
+        throw std::logic_error("TeX request remained bound after scene construction");
+    return std::move(*result);
 }
 
 } // namespace tex_scene_test

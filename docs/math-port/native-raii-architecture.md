@@ -2237,6 +2237,11 @@ compile checks that the active request factory matches its document, keeps
 latex as a local snapshot after prefilters, and returns the final request.root;
 remove persistent latex_/mathNode_. Configuration is still installed only once.
 No implicit request, compatibility path or retained default request is allowed.
+MathItem and CompileServices adaptor borrows are narrower than the frame: keep
+the existing compile-scope restoration role for them, saving/restoring previous
+borrows on every return/throw. This neither clears expression data nor changes
+the lifetime of the caller-owned document; post-compile root/list observations
+remain valid until the frame ends.
 
 TextMacrosData keeps only textConf/ParseOptions configuration. Its texParser
 borrow moves into the text ParseRequest; internalMath retains its existing

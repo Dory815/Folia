@@ -39,6 +39,7 @@ struct ArrowFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     std::u16string message;
     explicit ArrowFixture(bool groups = false) {
@@ -53,8 +54,8 @@ struct ArrowFixture {
         }
         options.packages->push_back({u"extpfeil", {}});
         options.formatError = &formatArrowError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -72,7 +73,7 @@ struct ArrowFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     MmlNode &ok(std::u16string source) {
@@ -183,7 +184,8 @@ suite extpfeil = [] {
                     arrowRequests = nullptr;
                 }
             } restore;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.token = &observeArrow});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.token = &observeArrow});
             f.ok(u"\\Newextarrow{\\custom}{5,10}{8594}\\custom{a}");
             expect(requests.size() == 1_u);
             if (requests.size() == 1) {
@@ -221,7 +223,7 @@ suite extpfeil = [] {
             ArrowFixture f;
             f.ok(u"\\Newextarrow{\\invalid}{1,2}{1114112}");
             expect(throws<std::out_of_range>([&] { f.compile(u"\\invalid{a}"); }));
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             expect(hasArrow(f.ok(u"\\xmapsto{a}"), u"↦"));
         };
 };

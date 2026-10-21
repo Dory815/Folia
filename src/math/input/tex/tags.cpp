@@ -9,14 +9,14 @@ AbstractTags::~AbstractTags() = default;
 ParseOptions &AbstractTags::configuration() const noexcept {
     return configuration_;
 }
-std::string_view AbstractTags::env() const noexcept {
-    return configuration_.equation.current_tag.environment;
+std::string_view AbstractTags::env() const {
+    return configuration_.request().equation.current_tag.environment;
 }
-std::u16string_view AbstractTags::label() const noexcept {
-    return configuration_.equation.current_tag.label_id;
+std::u16string_view AbstractTags::label() const {
+    return configuration_.request().equation.current_tag.label_id;
 }
 void AbstractTags::setLabel(std::u16string label) {
-    configuration_.equation.current_tag.label_id = std::move(label);
+    configuration_.request().equation.current_tag.label_id = std::move(label);
 }
 namespace {
 TagFormatValue defaultTag(std::u16string_view value) {
@@ -138,7 +138,7 @@ std::u16string AbstractTags::formatNumberDefault(std::int64_t number, std::optio
     return defaultNumber(number);
 }
 void AbstractTags::start(std::string_view environment, bool taggable, bool defaultTags) {
-    auto &equation = configuration_.equation;
+    auto &equation = configuration_.request().equation;
     equation.stack.push_back(equation.current_tag);
     auto label = equation.current_tag.label_id;
     equation.current_tag = TagInfoState{
@@ -146,7 +146,7 @@ void AbstractTags::start(std::string_view environment, bool taggable, bool defau
     setLabel(std::move(label));
 }
 void AbstractTags::end() {
-    auto &equation = configuration_.equation;
+    auto &equation = configuration_.request().equation;
     if (equation.stack.empty())
         throw std::out_of_range("No enclosing tag environment");
     equation.history.push_back(equation.current_tag);
@@ -157,20 +157,20 @@ void AbstractTags::end() {
         setLabel(std::move(label));
 }
 void AbstractTags::tag(std::u16string_view value, bool noFormat) {
-    auto &tag = configuration_.equation.current_tag;
+    auto &tag = configuration_.request().equation.current_tag;
     tag.tag = std::u16string(value);
     tag.tag_format = noFormat ? TagFormatValue(std::u16string(value)) : formatTag(value);
     tag.no_tag = false;
 }
 void AbstractTags::notag() {
     tag(u"", true);
-    configuration_.equation.current_tag.no_tag = true;
+    configuration_.request().equation.current_tag.no_tag = true;
 }
-bool AbstractTags::noTag() const noexcept {
-    return configuration_.equation.current_tag.no_tag;
+bool AbstractTags::noTag() const {
+    return configuration_.request().equation.current_tag.no_tag;
 }
 void AbstractTags::autoTag() {
-    auto &equation = configuration_.equation;
+    auto &equation = configuration_.request().equation;
     if (!equation.current_tag.tag) {
         if (equation.counter.equation == std::numeric_limits<std::int64_t>::max())
             throw std::overflow_error("Equation counter exhausted");
@@ -178,40 +178,44 @@ void AbstractTags::autoTag() {
     }
 }
 void AbstractTags::clearTag() {
-    auto &tag = configuration_.equation.current_tag;
+    auto &tag = configuration_.request().equation.current_tag;
     tag.tag.reset();
     tag.tag_format = std::u16string{};
     tag.no_tag = false;
     tag.tag_id.clear();
 }
 void AbstractTags::resetTag() {
-    auto &equation = configuration_.equation;
+    auto &equation = configuration_.request().equation;
     equation.history.clear();
     equation.redo = false;
     equation.ref_update = false;
     clearTag();
 }
 void AbstractTags::reset(std::int64_t offset) {
-    resetTag();
     configuration_.packageData.resetTags(offset);
-    configuration_.equation.counter.equation = offset;
-    setLabel({});
+    if (configuration_.hasRequest()) {
+        resetTag();
+        auto &equation = configuration_.request().equation;
+        equation.counter.equation = offset;
+        setLabel({});
+    }
 }
 void AbstractTags::startEquation(core::MathItem const &math) {
-    auto previousUpdate = configuration_.equation.ref_update;
-    configuration_.equation = configuration_.packageData.beginEquation(
+    auto &equation = configuration_.request().equation;
+    auto previousUpdate = equation.ref_update;
+    equation = configuration_.packageData.beginEquation(
         math.inputData.recompile.has_value(),
         math.inputData.recompile ? std::optional(math.inputData.recompile->counter) : std::nullopt);
     if (!math.inputData.recompile)
-        configuration_.equation.ref_update = previousUpdate;
+        equation.ref_update = previousUpdate;
 }
 void AbstractTags::finishEquation(core::MathItem &math) {
-    auto result = configuration_.packageData.finishEquation(configuration_.equation);
+    auto result = configuration_.packageData.finishEquation(configuration_.request().equation);
     if (result.recompile_counter)
         math.inputData.recompile = core::MathRecompile{math.state(), *result.recompile_counter};
 }
 void AbstractTags::makeId() {
-    auto &tag = configuration_.equation.current_tag;
+    auto &tag = configuration_.request().equation.current_tag;
     auto value = configuration_.options.useLabelIds.value_or(true) && !label().empty()
                      ? std::u16string(label())
                      : tag.tag.value_or(u"null");
@@ -219,9 +223,9 @@ void AbstractTags::makeId() {
 }
 mml::MmlNode &AbstractTags::makeTag() {
     makeId();
-    auto &current = configuration_.equation.current_tag;
+    auto &current = configuration_.request().equation.current_tag;
     if (!label().empty()) {
-        configuration_.equation.labels.insert_or_assign(
+        configuration_.request().equation.labels.insert_or_assign(
             std::u16string(label()), LabelRecord{current.tag.value_or(u""), current.tag_id});
         setLabel({});
     }
@@ -247,15 +251,15 @@ mml::MmlNode &AbstractTags::makeTag() {
     mml::AttributeSet attributes;
     attributes.set(u"id", current.tag_id);
     attributes.set(u"rowalign", configuration_.options.tagAlign.value_or(u"baseline"));
-    return configuration_.nodeFactory.makeNode(mml::NodeKind::mtd, {&mml, 1},
-                                               std::move(attributes));
+    return configuration_.request().nodeFactory.makeNode(mml::NodeKind::mtd, {&mml, 1},
+                                                         std::move(attributes));
 }
 mml::MmlNode *AbstractTags::getTag(bool force) {
     if (force) {
         autoTag();
         return &makeTag();
     }
-    auto &current = configuration_.equation.current_tag;
+    auto &current = configuration_.request().equation.current_tag;
     if (current.taggable && !current.no_tag) {
         if (current.default_tags)
             autoTag();
@@ -265,7 +269,7 @@ mml::MmlNode *AbstractTags::getTag(bool force) {
     return nullptr;
 }
 mml::MmlNode &AbstractTags::enTag(mml::MmlNode &node, mml::MmlNode &tag) {
-    auto &nf = configuration_.nodeFactory;
+    auto &nf = configuration_.request().nodeFactory;
     // Use stable local pointer arrays: all products remain MmlDocument-owned.
     std::array cellChildren{&node};
     auto cell = &nf.makeNode(mml::NodeKind::mtd, cellChildren);
@@ -278,19 +282,19 @@ mml::MmlNode &AbstractTags::enTag(mml::MmlNode &node, mml::MmlNode &tag) {
     return nf.makeNode(mml::NodeKind::mtable, {&row, 1}, std::move(attrs));
 }
 mml::MmlNode &AbstractTags::finalize(mml::MmlNode &node, TexEnvironment const &env) {
-    auto &current = configuration_.equation.current_tag;
+    auto &current = configuration_.request().equation.current_tag;
     if (!env.display.value_or(false) || !current.environment.empty() || !current.tag)
         return node;
     return enTag(node, makeTag());
 }
 void NoTags::autoTag() {}
 mml::MmlNode *NoTags::getTag(bool) {
-    auto const &tag = configuration().equation.current_tag.tag;
+    auto const &tag = configuration().request().equation.current_tag.tag;
     return !tag || tag->empty() ? nullptr : AbstractTags::getTag();
 }
 mml::MmlNode &AllTags::finalize(mml::MmlNode &node, TexEnvironment const &env) {
     if (!env.display.value_or(false) ||
-        std::ranges::any_of(configuration().equation.history,
+        std::ranges::any_of(configuration().request().equation.history,
                             [](auto const &tag) { return tag.taggable; }))
         return node;
     return enTag(node, *getTag(true));

@@ -21,7 +21,7 @@ void CasesTags::start(std::string_view env, bool taggable, bool defaultTags) {
     AmsTags::start(env, taggable, defaultTags);
 }
 void CasesTags::autoTag() {
-    auto &equation = configuration().equation;
+    auto &equation = configuration().request().equation;
     if (equation.current_tag.tag)
         return;
     auto increment = [](std::int64_t &counter) {

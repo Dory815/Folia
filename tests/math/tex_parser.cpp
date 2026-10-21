@@ -47,14 +47,14 @@ suite tex_parser = [] {
                                Case{u"α𝛼", u"inferredMrow(mi(text(α)),mi(text(𝛼)))"}};
         for (auto const &item : cases) {
             TexParser parser(item.source, ParserEnvironmentSeed{}, *fixture.options);
-            expect(fixture.options->parsers.size() == 1_u);
+            expect(fixture.options->request().parsers.size() == 1_u);
             auto node = parser.mml();
             expect(node != nullptr);
             if (!node)
                 continue;
             expect(shape(*node) == item.expected);
             expect(attr(*node, u"data-latex") == item.source);
-            expect(fixture.options->parsers.empty());
+            expect(fixture.options->request().parsers.empty());
         }
     };
     "tex parser construction exceptions remove the exact request scope"_test = [] {
@@ -64,15 +64,15 @@ suite tex_parser = [] {
         map->setParser(TokenMapParser{TokenInputHandler{failCharacter}});
         texError([&] { TexParser failed(u"x", ParserEnvironmentSeed{}, *fixture.options); },
                  "Fixture");
-        expect(fixture.options->parsers.size() == 1_u);
+        expect(fixture.options->request().parsers.size() == 1_u);
         expect(fixture.options->parser() == &outer);
         map->setParser(TokenMapParser{TokenInputHandler{literal}});
         TexParser inner(u"x", ParserEnvironmentSeed{}, *fixture.options);
-        expect(fixture.options->parsers.size() == 2_u);
+        expect(fixture.options->request().parsers.size() == 2_u);
         expect(inner.mml() != nullptr);
         expect(fixture.options->parser() == &outer);
         expect(outer.mml() != nullptr);
-        expect(fixture.options->parsers.empty());
+        expect(fixture.options->request().parsers.empty());
     };
     "tex parser provenance snapshots survive source replacement without retaining parser objects"_test =
         [] {
@@ -102,7 +102,7 @@ suite tex_parser = [] {
         options.addNode(u"postprocess", live);
         options.addNode(u"postprocess", live);
         options.addNode(u"postprocess", dead);
-        options.root = &root;
+        options.request().root = &root;
         expect(options.getList(u"postprocess").size() == 2_u);
         expect(live.properties().tex.in_lists->size() == 2_u);
         expect(dead.properties().tex.in_lists->size() == 1_u);
@@ -116,11 +116,11 @@ suite tex_parser = [] {
             std::ranges::equal(*clone.properties().tex.in_lists, *live.properties().tex.in_lists));
         fixture.effective.maxBuffer = 123;
         fixture.session.defineMacro(u"persist", MacroDefinition{.replacement_source = u"x"});
-        options.error = true;
+        options.request().error = true;
         options.clear();
-        expect(options.root == nullptr);
-        expect(options.nodeLists.empty());
-        expect(!options.error);
+        expect(options.request().root == nullptr);
+        expect(options.request().nodeLists.empty());
+        expect(!options.request().error);
         expect(fixture.effective.maxBuffer.value() == 123_u);
         expect(fixture.session.findMacro(u"persist") != nullptr);
     };

@@ -24,6 +24,7 @@ struct MathtoolsFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit MathtoolsFixture(TexOptionValues options = {}, std::optional<bool> reverseOrder = {}) {
         AmsConfiguration::initializeModule(registry, maps);
@@ -42,8 +43,8 @@ struct MathtoolsFixture {
         options.tags = u"ams";
         options.maxMacros = 1000;
         options.formatError = &fullFormatError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         const auto diagnostic = folia::math::utf16::encode(source);
@@ -59,7 +60,7 @@ struct MathtoolsFixture {
         math.setDisplay(true);
         try {
             auto &tree = jax->compile(math, document);
-            expect(jax->parseOptions().parsers.empty());
+            expect(jax->parseOptions().request().parsers.empty());
             return tree;
         } catch (std::exception const &e) {
             throw std::runtime_error(diagnostic + ": " + e.what());
@@ -274,10 +275,10 @@ suite mathtools = [] {
     "mathtools package prescript postfilter fills only missing postscript slots"_test = [] {
         MathtoolsFixture f;
         auto &options = f.jax->parseOptions();
-        auto &factory = options.nodeFactory;
+        auto &factory = options.request().nodeFactory;
         TexParser active(u"", {}, options);
         for (int present = 0; present < 4; ++present) {
-            options.nodeLists.clear();
+            options.request().nodeLists.clear();
             auto &base = factory.makeToken(NodeKind::mi, u"x");
             std::array<MmlNode *, 1> first{&base};
             auto &node = factory.makeNode(NodeKind::mmultiscripts, first);
@@ -290,7 +291,7 @@ suite mathtools = [] {
             NodeUtil::setChild(node, 4, factory.makeNode(NodeKind::none));
             NodeUtil::setChild(node, 5, factory.makeNode(NodeKind::none));
             node.properties().tex.fix_prescript = true;
-            options.root = &node;
+            options.request().root = &node;
             f.document.setRoot(node);
             folia::math::core::AbstractMathItem math(u"", f.jax.get());
             TexFilterData data{math, f.document, options};

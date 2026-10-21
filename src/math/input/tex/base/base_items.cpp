@@ -395,10 +395,10 @@ CheckResult LeftItem::checkItem(FrameHandle const &incoming) {
         NodeDefinition closeDef, openDef;
         closeDef.properties.tex.explicit_tex_class = TexClass::close;
         openDef.properties.tex.explicit_tex_class = TexClass::open;
-        auto &close = factory().configuration().nodeFactory.makeNode(NodeKind::tex_atom, {},
-                                                                     std::move(closeDef));
-        auto &open = factory().configuration().nodeFactory.makeNode(NodeKind::tex_atom, {},
-                                                                    std::move(openDef));
+        auto &close = factory().configuration().request().nodeFactory.makeNode(
+            NodeKind::tex_atom, {}, std::move(closeDef));
+        auto &open = factory().configuration().request().nodeFactory.makeNode(
+            NodeKind::tex_atom, {}, std::move(openDef));
         const std::array<MmlNode *, 3> values{&close, &middle, &open};
         Push(values);
         setEnv(std::make_shared<TexEnvironment>());
@@ -493,8 +493,8 @@ CheckResult FnItem::checkItem(FrameHandle const &incoming) {
         return replay({top, ReuseIncoming{}});
     NodeDefinition def;
     def.properties.tex.explicit_tex_class = TexClass::none;
-    auto &apply =
-        factory().configuration().nodeFactory.makeToken(NodeKind::mo, u"\u2061", std::move(def));
+    auto &apply = factory().configuration().request().nodeFactory.makeToken(NodeKind::mo, u"\u2061",
+                                                                            std::move(def));
     return replay({top, &apply, ReuseIncoming{}});
 }
 CheckResult NotItem::checkItem(FrameHandle const &incoming) {
@@ -507,7 +507,7 @@ CheckResult NotItem::checkItem(FrameHandle const &incoming) {
         auto chars = NodeUtil::getText(*first);
         if (chars.size() == 1 && !first->properties().tex.move_sup_sub.value_or(false) &&
             first->children().size() == 1) {
-            auto &nf = factory().configuration().nodeFactory;
+            auto &nf = factory().configuration().request().nodeFactory;
             if (remap && remap->contains(chars)) {
                 const auto lookup = remap->lookup(chars);
                 auto const *token = std::get<Token const *>(lookup);
@@ -521,7 +521,7 @@ CheckResult NotItem::checkItem(FrameHandle const &incoming) {
             return replay({ReuseIncoming{}});
         }
     }
-    auto &nf = factory().configuration().nodeFactory;
+    auto &nf = factory().configuration().request().nodeFactory;
     auto &slash = nf.makeNode(NodeKind::mtext, {}, {}, nf.makeText(u"\u29F8"));
     auto &padded = node(*this, NodeKind::mpadded, {&slash}, attributes({{u"width", 0.0}}));
     NodeDefinition def;

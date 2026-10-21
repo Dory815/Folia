@@ -68,6 +68,7 @@ struct UnicodeFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
 
     UnicodeFixture() {
         ownedRegistry = std::make_unique<ConfigurationHandler>();
@@ -90,8 +91,8 @@ struct UnicodeFixture {
             std::vector<PackageSelection>{{u"base", {}}, {u"newcommand", {}}, {u"unicode", {}}};
         options.maxMacros = 1000;
         options.formatError = &formatUnicodeError;
-        jax = std::make_unique<TeX>(*registry, *maps, callbacks, warnings, document.factory(),
-                                    std::move(options));
+        jax = std::make_unique<TeX>(*registry, *maps, callbacks, warnings, std::move(options));
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
 
     MmlNode &compile(std::u16string_view source, UnicodeFailure &failure) {
@@ -189,7 +190,7 @@ suite unicode_package = [] {
                     << folia::math::utf16::encode(entry.name);
             else
                 expect(tree == nullptr) << folia::math::utf16::encode(entry.name);
-            expect(fixture.jax->parseOptions().parsers.empty())
+            expect(fixture.jax->parseOptions().request().parsers.empty())
                 << folia::math::utf16::encode(entry.name);
         }
     };
@@ -248,7 +249,7 @@ suite unicode_package = [] {
             }
         } restore;
         unicodeCapturedRequests = &requests;
-        fixture.jax->parseOptions().nodeFactory.setCreators(
+        fixture.jax->parseOptions().request().nodeFactory.setCreators(
             NodeCreators{.token = &observeUnicodeToken});
         UnicodeFailure failure;
         auto &tree = fixture.compile(unicodeCreatorSource, failure);
@@ -294,7 +295,7 @@ suite unicode_package = [] {
                         << folia::math::utf16::encode(entry.source);
                 else
                     expect(tree == nullptr) << folia::math::utf16::encode(entry.source);
-                expect(fixture.jax->parseOptions().parsers.empty())
+                expect(fixture.jax->parseOptions().request().parsers.empty())
                     << folia::math::utf16::encode(entry.source);
             }
         }

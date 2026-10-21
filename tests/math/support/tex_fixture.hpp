@@ -21,6 +21,7 @@ struct Fixture {
     TexOptionValues effective;
     MmlDocument document;
     std::unique_ptr<ParseOptions> options;
+    std::unique_ptr<ParseRequest> request;
     Fixture() {
         configuration.items = baseItemClasses();
         effective.maxBuffer = 10000;
@@ -30,10 +31,10 @@ struct Fixture {
         effective.tagIndent = u"0.8em";
         maps.registerMap(std::make_shared<CharacterMap>(
             CharacterMapInit{{u"not_remap", std::nullopt}, {Token(u"=", std::u16string(u"≠"))}}));
-        options =
-            std::make_unique<ParseOptions>(configuration, effective, session, document.factory(),
-                                           ParseOptions::getVariant(u"TeX"));
+        options = std::make_unique<ParseOptions>(configuration, effective, session,
+                                                 ParseOptions::getVariant(u"TeX"));
         options->tags = std::make_unique<NoTags>(*options);
+        request = std::make_unique<ParseRequest>(*options, document.factory());
     }
     StackItemFactory &factory() {
         return *options->itemFactory;
@@ -42,10 +43,10 @@ struct Fixture {
         return factory().create(kind, init);
     }
     MmlNode &token(NodeKind kind = NodeKind::mi, std::u16string_view text = u"x") {
-        return options->nodeFactory.makeToken(kind, text);
+        return options->request().nodeFactory.makeToken(kind, text);
     }
     MmlNode &node(NodeKind kind, std::span<MmlNode *const> children = {}) {
-        return options->nodeFactory.makeNode(kind, children);
+        return options->request().nodeFactory.makeNode(kind, children);
     }
     FrameHandle mml(MmlNode &node) {
         return item(StackKind::mml, MmlItemInit{node});

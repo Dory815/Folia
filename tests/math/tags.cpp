@@ -4,7 +4,7 @@ suite tags = [] {
     "tags keep nested environment labels and explicit no numbering on the request owner"_test = [] {
         Fixture fixture;
         AbstractTags tags(*fixture.options);
-        auto &equation = fixture.options->equation;
+        auto &equation = fixture.options->request().equation;
         tags.setLabel(u"outer");
         tags.start("align", true, true);
         expect(tags.label() == u"outer");
@@ -39,7 +39,7 @@ suite tags = [] {
     "tags commit equation counters labels and recompile state using real MathItem"_test = [] {
         Fixture fixture;
         AbstractTags tags(*fixture.options);
-        auto &equation = fixture.options->equation;
+        auto &equation = fixture.options->request().equation;
         folia::math::core::AbstractMathItem math(u"x", nullptr);
         tags.reset(7);
         tags.startEquation(math);
@@ -82,7 +82,7 @@ suite tags = [] {
         expect(row->children()[1]->children()[0]->children()[0] == &math);
         expect(attr(table, u"side") == u"right");
         expect(attr(table, u"minlabelspacing") == u"0.8em");
-        expect(fixture.options->nodeLists[u"mtable"].back() == &table);
+        expect(fixture.options->request().nodeLists[u"mtable"].back() == &table);
     };
     "tags factory resolves configured creators builtins and explicit unknown defaults"_test = [] {
         Fixture fixture;
@@ -102,7 +102,7 @@ suite tags = [] {
             [&] { (void)TagsFactory::create(*fixture.options, u"missing", u"also-missing", {}); }));
         tags->start("align", true, true);
         tags->autoTag();
-        expect(!fixture.options->equation.current_tag.tag);
+        expect(!fixture.options->request().equation.current_tag.tag);
         expect(tags->getTag(true) == nullptr);
     };
 };

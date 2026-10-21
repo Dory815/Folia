@@ -14,9 +14,7 @@ template <class Data> struct InputJaxFilterData {
 };
 template <class Options, class Data> class AbstractInputJax : public MathInputJaxService {
   protected:
-    mml::MmlFactory *mmlFactory_;
-    AbstractInputJax(mml::MmlFactory &factory, Options supplied)
-        : mmlFactory_(&factory), options(std::move(supplied)) {
+    explicit AbstractInputJax(Options supplied) : options(std::move(supplied)) {
         if (options.preFilters)
             preFilters.addList(*options.preFilters);
         if (options.postFilters)
@@ -37,9 +35,6 @@ template <class Options, class Data> class AbstractInputJax : public MathInputJa
     virtual std::string_view name() const noexcept = 0;
     virtual bool processStrings() const noexcept {
         return true;
-    }
-    virtual void setMmlFactory(mml::MmlFactory &factory) {
-        mmlFactory_ = &factory;
     }
     virtual void initialize() {}
 };

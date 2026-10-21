@@ -20,6 +20,7 @@ struct BoxFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     std::u16string message;
     explicit BoxFixture(bool aliases = false) {
@@ -31,8 +32,8 @@ struct BoxFixture {
             options.packages->push_back({u"newcommand", {}});
         }
         options.formatError = &formatBoxError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -50,7 +51,7 @@ struct BoxFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     MmlNode &ok(std::u16string source) {
@@ -163,7 +164,7 @@ suite bbox = [] {
         boxRequests = &requests;
         NodeCreators creators;
         creators.node = &observeBox;
-        f.jax->parseOptions().nodeFactory.setCreators(creators);
+        f.jax->parseOptions().request().nodeFactory.setCreators(creators);
         f.ok(u"\\bbox[red,.25em,border:1px solid blue]{x}");
         expect(requests.size() == 2_u);
         if (requests.size() == 2) {

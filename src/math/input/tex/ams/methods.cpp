@@ -430,7 +430,7 @@ DispatchOutcome AmsMethods::Genfrac(TexParser &parser, MacroInvocation const &in
     return NoParseResult{};
 }
 DispatchOutcome AmsMethods::HandleTag(TexParser &parser, MacroInvocation const &invocation) {
-    auto const &tag = parser.configuration.equation.current_tag;
+    auto const &tag = parser.configuration.request().equation.current_tag;
     auto env = parser.tags().env();
     if (!tag.taggable && !env.empty())
         error("CommandNotAllowedInEnv", u"%1 not allowed in %2 environment",

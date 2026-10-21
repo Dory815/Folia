@@ -37,6 +37,7 @@ struct ConfigMacrosFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit ConfigMacrosFixture(TexOptionValues options = {}, bool newcommand = false) {
         ConfigMacrosConfiguration::initializeModule(registry, maps);
@@ -46,8 +47,8 @@ struct ConfigMacrosFixture {
             options.packages->push_back({u"newcommand", {}});
         }
         options.formatError = &configMacroFormatError;
-        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(),
-                                    std::move(options));
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, std::move(options));
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -195,6 +196,6 @@ suite configmacros = [] {
         f.compile(u"\\begin{recursive}");
         expect(f.error == "MaxMacroSub2");
         expect(f.text(u"\\begin{e}x\\end{e}") == u"axb");
-        expect(f.jax->parseOptions().parsers.empty());
+        expect(f.jax->parseOptions().request().parsers.empty());
     };
 };

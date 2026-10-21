@@ -1165,7 +1165,7 @@ StackEntry BaseMethods::IndentAlign(TexParser &p, FrameHandle const &begin, Argu
 }
 StackEntry BaseMethods::Equation(TexParser &p, FrameHandle const &begin, Arguments args) {
     auto display = present(args, 1) ? flag(args, 1) : true;
-    p.configuration.mathItem->setDisplay(display);
+    p.configuration.request().mathItem->setDisplay(display);
     p.stack.env().display = display;
     parse_util::checkEqnEnv(p);
     p.Push(begin);
@@ -1216,7 +1216,7 @@ DispatchOutcome BaseMethods::HandleLabel(TexParser &p, MacroInvocation const &i)
     if (!p.tags().label().empty())
         error("MultipleCommand", u"Multiple %1", {p.currentCS()});
     p.tags().setLabel(label);
-    auto &equation = p.configuration.equation;
+    auto &equation = p.configuration.request().equation;
     if (!equation.ref_update) {
         if ((p.configuration.packageData.findLabel(label) || equation.labels.contains(label)) &&
             !p.options().ignoreDuplicateLabels.value_or(false))
@@ -1227,7 +1227,7 @@ DispatchOutcome BaseMethods::HandleLabel(TexParser &p, MacroInvocation const &i)
 }
 DispatchOutcome BaseMethods::HandleRef(TexParser &p, MacroInvocation const &i) {
     auto label = required(p, i.dispatch_token);
-    auto &equation = p.configuration.equation;
+    auto &equation = p.configuration.request().equation;
     auto *ref = p.configuration.packageData.findLabel(label);
     if (!ref) {
         auto found = equation.labels.find(label);

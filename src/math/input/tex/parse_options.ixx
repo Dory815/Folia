@@ -152,28 +152,26 @@ struct TexOptionValues {
     void mergeDefaults(TexOptionValues const&);
 };
 
-// The original request owner borrows the input-jax options/configuration and
-// session, and owns its factories, column parser, tags and equation scratch.
-// Input-jax-owned text parsing service. Both ParseOptions borrow this record;
-// the main parser borrow exists only while internalMath is on the call stack.
+// Input-jax-owned text parsing configuration. Both ParseOptions borrow this
+// record; the text parser bridge belongs to its active ParseRequest frame.
 struct TextMacrosData {
     std::unique_ptr<ParserConfiguration> textConf;
     std::unique_ptr<ParseOptions> parseOptions;
-    TexParser *texParser{};
     TextMacrosData();
     ~TextMacrosData();
 };
 // Source's text parser shares the already configured input-jax options after
 // capturing its own math-style resolver; it must not reapply text defaults.
 struct SharedTexOptions { TexOptionValues &values; };
+class ParseRequest;
 class ParseOptions : public NodeFactoryConfiguration {
 public:
     using MathStyleResolver = std::u16string (*)(std::u16string_view, bool);
     static MathStyleResolver getVariant(std::u16string_view) noexcept;
-    ParseOptions(ParserConfiguration&, TexOptionValues&, TexSessionState&,
-                 mml::MmlFactory&, MathStyleResolver capturedMathStyle);
-    ParseOptions(ParserConfiguration&, SharedTexOptions, TexSessionState&,
-                 mml::MmlFactory&, MathStyleResolver capturedMathStyle);
+    ParseOptions(ParserConfiguration &, TexOptionValues &, TexSessionState &,
+                 MathStyleResolver capturedMathStyle);
+    ParseOptions(ParserConfiguration &, SharedTexOptions, TexSessionState &,
+                 MathStyleResolver capturedMathStyle);
     ~ParseOptions() override;
     ParseOptions(ParseOptions const&) = delete;
     ParseOptions& operator=(ParseOptions const&) = delete;
@@ -184,24 +182,20 @@ public:
     MacroCallbacks const& callbacks() const noexcept;
     TexOptionValues& options; // borrowed input-jax lifetime record, never per-expression defaults
     std::unique_ptr<StackItemFactory> itemFactory;
-    NodeFactory nodeFactory;
     std::unique_ptr<Tags> tags;
     std::unique_ptr<BegingroupStack> begingroup;
     MathStyleResolver mathStyle; // captured by input-jax construction, independent of later options
     std::unique_ptr<ColumnParser> columnParser;
     TexSessionState& packageData;
     TextMacrosData *textmacros{}; // borrowed from TeX, never stored in session values
-    TexEquationState equation;
-    std::vector<TexParser*> parsers;
-    core::MathItem* mathItem{};
-    AbstractDOMAdaptor* texhtmlAdaptor{}; // set/cleared by package filters; request borrow only
-    mml::MmlNode* root{};
-    std::unordered_map<std::u16string, std::vector<mml::MmlNode*>> nodeLists;
-    bool error{};
+    ParseRequest &request();
+    ParseRequest const &request() const;
+    bool hasRequest() const noexcept;
+    void setNodeCreators(NodeCreators const &);
     void pushParser(TexParser&);
     void popParser();
-    void removeParser(TexParser&) noexcept;
-    TexParser* parser() const noexcept;
+    void removeParser(TexParser &);
+    TexParser *parser() const;
     void clear();
     TexEnvironment const& environment() const override;
     void addNode(mml::NodeKind, mml::MmlNode&) override;
@@ -210,6 +204,32 @@ public:
     void removeFromList(std::u16string_view, std::span<mml::MmlNode* const>);
 private:
     ParserConfiguration& configuration_;
-    bool inTree(mml::MmlNode const&) const noexcept;
+    NodeCreators nodeCreators_;
+    ParseRequest *active_request_{};
+    bool inTree(mml::MmlNode const &) const;
+    friend class ParseRequest;
+};
+
+class ParseRequest final {
+    ParseOptions &options_;
+    ParseRequest *previous_{};
+
+  public:
+    NodeFactory nodeFactory;
+    TexEquationState equation;
+    std::vector<TexParser *> parsers;
+    core::MathItem *mathItem{};
+    AbstractDOMAdaptor *texhtmlAdaptor{};
+    mml::MmlNode *root{};
+    std::unordered_map<std::u16string, std::vector<mml::MmlNode *>> nodeLists;
+    bool error{};
+    TexParser *texParser{};
+
+    ParseRequest(ParseOptions &, mml::MmlFactory &);
+    ParseRequest(ParseRequest const &) = delete;
+    ParseRequest &operator=(ParseRequest const &) = delete;
+    ParseRequest(ParseRequest &&) = delete;
+    ParseRequest &operator=(ParseRequest &&) = delete;
+    ~ParseRequest();
 };
 }
