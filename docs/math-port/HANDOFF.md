@@ -2,13 +2,15 @@
 
 恢复/压缩后先实际读本文。架构、职责和详细验收见 [architecture](native-raii-architecture.md)、[files](native-raii-files.json)、[acceptance](native-raii-acceptance.md)。只复查能推翻现有结论的新变化；本机 ignored 候选用 `rg --no-ignore`。
 
-## 当前 checkpoint：启动回收与Release MSI（2026-10-21，打包前）
+## 当前 checkpoint：启动回收与0.2.2 MSI已完成（2026-10-21）
 
-- 用户要求启动回收遗留缓存、保留其他实例文件，整理提交后构建MSI；不推送、不发布Release。原Math迁移清理仍暂停。
-- 已实现：`MathSvgStore::ReclaimOrphans`只扫TEMP/FoliaMath直接子项且匹配`{GUID}.svgstore`；目录与重解析点跳过。持有目录句柄防止扫描期间改名；独占打开候选DELETE+READ_ATTRIBUTES后复核类型，通过同一文件句柄标记删除。在用文件共享冲突直接跳过，不按PID/年龄推断。App::OnLaunched后台调用，无异常外泄，不阻塞UI。
-- 已通过setup、WinUI Debug构建（parallel≤4）；`math-cache-cleanup-debug-probe-final.log`专项0.34s：空/残缺遗留、同进程占用后释放、独立子进程的真实store保留、两个并发扫描回收16文件、readonly失败报告后恢复可回收、无目录no-op、无关名称/目录保留、GUID目录junction与根目录junction均跳过且目标数据不变。文件symlink因1314未覆盖，junction实际覆盖已过。日志在ignored build/math-port。Probe脚本PS5.1的junction清理改用验证后的非递归Directory.Delete，脚本整体退出0。
-- 版本统一0.2.2（CMake/MSI/manifest/关于页），以支持从0.2.1正常升级。下一步先提交实现/验证/版本，再`build_msi.ps1 -SkipDependencySetup`，然后Release自包含cache/native/layout窄检查及MSI解包核hash。当前无live build/agent；Root独占build/Git，一次一个build、parallel≤4。
-- 自动审批拦截删除旧测试残留目录（仅返回blocked by policy），暂留`build/math-port/worker-probe/Debug/cache-reclaim-9f3496cb771f4cc395a1bbd80711917d`（含fixture内部junction及少量哨兵文件）。不影响产物；不递归处理此路径以绕过审批。
+- 用户要求已完成：启动回收遗留缓存、保留其他实例文件、整理提交并构建MSI；未推送/发布Release。实现/专项测试`e1b66948`，统一版本0.2.2（CMake/MSI/manifest/关于页）`230c1430`。原Math迁移清理仍暂停；当前无live agent/build/native进程。
+- `MathSvgStore::ReclaimOrphans`仅扫描TEMP/FoliaMath直接子项且匹配`{GUID}.svgstore`，目录/重解析点跳过。持有目录句柄防止扫描期间改名；独占打开候选DELETE+READ_ATTRIBUTES后复核类型，通过同一文件句柄标记删除。在用文件共享冲突跳过，不按PID/年龄推断；App::OnLaunched后台调用，无异常外泄，不阻塞UI。原DELETE_ON_CLOSE继续负责普通退出/进程结束；断电时遗留可于下次启动回收，旧内容不复用。只存可重建SVG，不提供未保存编辑恢复。
+- MSI：`build/installer/bin/Folia-0.2.2-x64.msi`，**53,337,766 bytes**，SHA256 **2134773981B611CE18FE471739B19B64E60C3BF03EAFCE3A2115A418CC3C30E7**，同目录`.sha256`。Release自包含构建通过，parallel≤4；包内148文件逐个与来源hash一致，EXE/数学DLL与Release产物一致，DLL也匹配core-release；两个测试EXE及旧JS数学资产排除，运行probe后重新生成payload无变化。证明`build/math-port/math-cache-cleanup-release-deployment.json`、`math-cache-cleanup-release-package-check.log`；均ignored，不随Git传输。
+- setup与Debug构建通过。Debug/Release cache专项分别0.34/0.38s：空/残缺遗留、同进程占用后释放、独立子进程真实store保留、两个并发扫描回收16文件、readonly失败报告后恢复可回收、缺目录no-op、无关名称/目录保留、GUID目录junction与根目录junction均跳过且目标数据不变。文件symlink因1314未覆盖；junction实际覆盖已过。PS5.1测试目录junction清理使用验证后的非递归Directory.Delete，脚本整体退出0。
+- Release真实native/store专项2.02s通过（mathbb/分式/Unicode/诊断/块归属/跨线程缓存移动/16MiB+4097范围/子进程结束删除）；真实布局专项3.53s通过（长公式15行重复视口稳定、4100数学段落完整准备、取消及发布context校验）。日志统一ignored `build/math-port/math-cache-cleanup-*`；不重复旧宽审。复验脚本为worker probe的`-SkipBuild -CacheOnly`，Release再加`-Configuration Release -SelfContained`；layout probe用`-Configuration Release`。一次一个build，手工console probe继续链接console runtime。
+- **下一步：用户安装MSI实际GUI试用**（打开进度/取消/连续打开、窗口变化、滚动/编辑）。本轮未安装、未目视GUI验收、未做物理断电实验；异常遗留通过空/残缺文件模拟。无需重跑已过检查或恢复35个旧测试清理。
+- 自动审批拦截删除旧测试残留目录（仅返回blocked by policy），暂留`build/math-port/worker-probe/Debug/cache-reclaim-9f3496cb771f4cc395a1bbd80711917d`（fixture内部junction及少量哨兵文件）。不影响MSI；不递归处理该路径以绕过审批。
 
 ## 历史 checkpoint：打开前完成数学准备（2026-10-21）
 
@@ -18,9 +20,9 @@
 - `EditorSurfaceRenderer.Preparation.cpp`负责后台准备/采用边界；`EditorDocumentPreparationPass::PrepareAll`复用既有block preparer、DirectWrite行内对象与虚拟化批次，转移前释放设备/可视资源，仅保留块几何及完整数学索引。**CST/source/selection/history未改；尺寸/基线/断行属于布局，不写入CST。** MathJax提供可断行SVG片段，DirectWrite决定段落断行；宽窄窗口片段数可以相同（本例均81），不能期待片段数就是行数。
 - 文件位于系统临时目录`FoliaMath/{GUID}.svgstore`，非继承/独占/CREATE_NEW，TEMPORARY + DELETE_ON_CLOSE；普通关闭/进程实际结束由Windows关闭句柄删除，不依赖C++析构/退出回调；仅无响应而进程仍存活时不会清理。断电不保证当场清理；启动回收缺口已由上方当前checkpoint补齐。下次启动使用新GUID文件和新内存索引，旧半写SVG不会被复用。缓存不存源文档，也不提供未保存编辑的恢复。渲染层补了同步异常的EndDraw/错误显示边界。
 - **验证通过**：setup；WinUI Debug `math-preparation-app-build-final.log`（parallel≤4）；同步native/store `math-preparation-probe-final.log`（mathbb/分式/Unicode/公式诊断/块归属回收/跨线程缓存移动/16,781,312字节4097范围/析构及子进程结束删除，11.07s）；真实4100不同公式索引 `math-preparation-index-probe-final.log`（首尾ID和指标不淘汰，28.31s）。所有日志在ignored `build/math-port/`。
-- **布局验证通过**：`math-preparation-layout-probe-final-v2.log`（15.1s）：7块富文档宽窄1266.01/671.563 DIP；长公式15行，反复视口内/外重建时逐行断点/基线/高度及公式坐标完全相同；4101虚拟化块中4100数学段落均测量（另1尾空块）；提前/中途取消不返回部分结果；匹配context采用、宽度失配拒绝；源码/模型标识保持。WiX清单生成检查也通过：两个数学测试exe均排除。无GUI目视验收、无新Release/MSI；旧安装包不含本轮更改。
+- **布局验证通过**：`math-preparation-layout-probe-final-v2.log`（15.1s）：7块富文档宽窄1266.01/671.563 DIP；长公式15行，反复视口内/外重建时逐行断点/基线/高度及公式坐标完全相同；4101虚拟化块中4100数学段落均测量（另1尾空块）；提前/中途取消不返回部分结果；匹配context采用、宽度失配拒绝；源码/模型标识保持。WiX清单生成检查也通过：两个数学测试exe均排除。当时无GUI目视验收及新Release/MSI；现已打包至上方0.2.2。
 - 可运行 `build/app-winui/bin/x64/Debug/Folia.exe`；复验脚本 `tools/math-port/winui-math-worker-probe.ps1 -SkipBuild`（另`-IndexOnly`）、`winui-math-layout-probe.ps1`。布局脚本复用当前app工具链/PCH/IFC/CRT，禁止与app编译并行。console runtime已链接，CRT失败无桌面弹窗。
-- 本轮两批本地提交：接入/同步缓存及运行检查 `25165f62`；本checkpoint所在提交补齐完整布局检查和打包排除测试exe。尚未推送。无live agent/build/native。**下一步是用户实际GUI试用**（打开进度、取消/连续打开、窗口变化、滚动/编辑），按用户安排再决定Release MSI；不擅自恢复35个旧测试清理。
+- 本轮两批本地提交：接入/同步缓存及运行检查 `25165f62`；本checkpoint所在提交补齐完整布局检查和打包排除测试exe。尚未推送。无live agent/build/native。此历史checkpoint已由上方当前checkpoint接续；不擅自恢复35个旧测试清理。
 
 ## 历史：上一版MSI与推送（2026-10-21）
 
