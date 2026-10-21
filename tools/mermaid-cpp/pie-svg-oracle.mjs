@@ -108,20 +108,28 @@ for(const item of cases) {
   const parsed=new JSDOM(native,{contentType:'image/svg+xml'});
   const actual=parsed.window.document.documentElement;
   equal(snapshot(svg),snapshot(actual),item.name);
-  // Check every resolved family style, including inherited font and paints.
-  for(const [selector,attrs] of Object.entries({
-   '.pieCircle':{stroke:ink,'stroke-width':'2',opacity:'0.7'},
-   '.pieOuterCircle':{stroke:ink,'stroke-width':'2',fill:'none'},
-   '.pieTitleText':{fill:ink,'font-size':'25','text-anchor':'middle'},
-   '.slice':{fill:ink,'font-size':'17'},'.legend text':{fill:ink,'font-size':'17'}
-  })) for(const n of actual.querySelectorAll(selector))
-   for(const [key,value] of Object.entries(attrs)) assert.equal(n.getAttribute(key),value,`${item.name} ${selector} ${key}`);
-  assert.equal(actual.querySelector('g').getAttribute('font-family'),theme.fontFamily);
-  // The official stylesheet is also executed, ensuring the checked style
-  // properties above are derived from the same supplied resolved theme.
-  const css=definition.styles(theme).replace(/\s+/g,'');
-  assert(css.includes('.pieCircle{stroke:'+ink+';stroke-width:2px;opacity:0.7;}'));
-  assert(actual.querySelector('style').textContent.includes('scale:1.05;opacity:1;'));
+  // Compare every declaration from the official family stylesheet. The native
+  // writer uses presentation attributes for base rules and CSS for interactions.
+  const css=definition.styles(theme).replace(/\/\/[^\n]*/g,'');
+  let rules=0;
+  for(const [,selectorText,body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+   const selector=selectorText.trim();
+   const declarations=body.split(';').map(s=>s.trim()).filter(Boolean).map(s=>{
+    const colon=s.indexOf(':'); return [s.slice(0,colon).trim(),s.slice(colon+1).trim()];
+   });
+   if(selector.includes('highlighted')) {
+    const rule=selector+'{'+declarations.map(([key,value])=>`${key}:${value};`).join('')+'}';
+    assert(actual.querySelector('style').textContent.includes(rule),`${item.name} ${selector}`);
+   } else for(const n of actual.querySelectorAll(selector)) {
+    for(const [key,value] of declarations) {
+     const owner=key==='font-family'?actual.querySelector('g'):n;
+     const expected=(key==='font-size'||key==='stroke-width')?String(Number.parseFloat(value)):value;
+     assert.equal(owner.getAttribute(key),expected,`${item.name} ${selector} ${key}`);
+    }
+   }
+   ++rules;
+  }
+  assert.equal(rules,7);
   parsed.window.close();++compared;
  }
 }

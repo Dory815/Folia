@@ -16,13 +16,19 @@
   Regression ceilings are 0.0625 / 2.5 for this corpus ONLY. Native outline
   bounds are not pixel-identical to Chromium hinted bounds; no compensation
   or character-count fallback. System glyph fallback remains OS-dependent.
-- New batch wires the same resolved font/theme to measured Pie SVG, adds
-  platform tests and enforces the comparison ceilings in CI. No application
+- 664d5595 wires the same resolved font/theme to measured Pie SVG, with
+  platform tests and enforced measurement ceilings. CI 39547896069 passes
+  Debug/Release, both native suites, 78 valid SVG comparisons and 96 real
+  font comparisons (max errors match local observations). No application
   renderer switch. Root build reuses its existing platform module target.
+- Local Edge visual review of native light/dark, donut, filtered and Unicode
+  samples completed; build/mermaid-cpp/pie-preview.png is ignored evidence.
+  Final test/docs batch checks all seven official Pie style rules and records
+  the public API, supported theme input and measurement acceptance limits.
 - No live local process or agent. build/mermaid-cpp holds isolated browser
   profile, downloaded CI executables, native SVGs and measurement evidence.
-- Next action: push/verify the measured-Pie bridge batch, inspect its output,
-  review final diff, then merge PR #3 preserving small commits. Full shared
+- Next action: verify final test/docs head CI, review final PR metadata, then
+  merge PR #3 preserving small commits. Full shared
   preprocessing/themes, other families and application replacement remain out
   of this stage; no upstream PR yet.
 
