@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Debug'
+    [string]$Configuration = 'Debug',
+    [switch]$EditOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -54,7 +55,7 @@ Require-File (Join-Path $applicationDirectory 'FoliaNativeMath.dll') 'deployed n
 
 $requiredObjects = @(
     'EditorSession.obj',
-    'EditorSurfaceRenderer.Preparation.obj',
+    'EditorSurfaceRenderer.Math.obj',
     'EditorDocumentPreparationPass.obj',
     'EditorDocumentBlockPreparer.obj',
     'EditorRenderResources.obj',
@@ -96,13 +97,13 @@ $libraryPaths = @([regex]::Matches($records[1], '(?:^|\s)(/LIBPATH:"[^"]+"|/LIBP
 $compileRecords = Get-Content -LiteralPath $compileTlog
 $baselineCommand = $null
 for ($index = 0; $index + 1 -lt $compileRecords.Count; $index++) {
-    if ($compileRecords[$index] -match 'EDITOR\\RENDERING\\EDITORSURFACERENDERER\.PREPARATION\.CPP$') {
+    if ($compileRecords[$index] -match 'EDITOR\\RENDERING\\EDITORSURFACERENDERER\.MATH\.CPP$') {
         $baselineCommand = $compileRecords[$index + 1]
         break
     }
 }
 if (-not $baselineCommand) {
-    throw 'Could not find the current EditorSurfaceRenderer.Preparation.cpp compile command.'
+    throw 'Could not find the current EditorSurfaceRenderer.Math.cpp compile command.'
 }
 $vsWhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 Require-File $vsWhere 'Visual Studio locator'
@@ -187,8 +188,16 @@ if ($LASTEXITCODE -ne 0) {
 Require-File $probeExecutable 'layout probe executable'
 
 $started = Get-Date
-$process = Start-Process -FilePath $probeExecutable -WorkingDirectory $applicationDirectory `
-    -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+$processArguments = @{
+    FilePath = $probeExecutable
+    WorkingDirectory = $applicationDirectory
+    WindowStyle = 'Hidden'
+    PassThru = $true
+    RedirectStandardOutput = $stdoutPath
+    RedirectStandardError = $stderrPath
+}
+if ($EditOnly) { $processArguments.ArgumentList = @('--edit-only') }
+$process = Start-Process @processArguments
 $processHandle = $process.Handle
 if (-not $process.WaitForExit(60000)) {
     try { $process.Kill() } catch { }

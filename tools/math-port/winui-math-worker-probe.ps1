@@ -96,6 +96,8 @@ Require-File $runtimeSource 'console test runtime source'
 Require-File (Join-Path $configurationDirectory 'pch.obj') 'WinUI PCH object'
 Require-File (Join-Path $generatedFilesDirectory 'winrt\base.h') 'app-matched C++/WinRT base header'
 Require-File (Join-Path $configurationDirectory 'MathJaxRenderer.obj') 'MathJaxRenderer object'
+Require-File (Join-Path $configurationDirectory 'MathJaxRenderer.Cache.obj') 'MathJaxRenderer cache object'
+Require-File (Join-Path $configurationDirectory 'MathJaxRenderer.Worker.obj') 'MathJaxRenderer worker object'
 Require-File (Join-Path $configurationDirectory 'NativeMathSession.obj') 'NativeMathSession object'
 Require-File (Join-Path $configurationDirectory 'MathSvgStore.obj') 'MathSvgStore object'
 Require-File (Join-Path $configurationDirectory 'SvgNormalizer.obj') 'SVG normalizer object'
@@ -148,6 +150,8 @@ $linkInputs = @(
     (Quote-CmdArgument $runtimeObject),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'pch.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'MathJaxRenderer.obj')),
+    (Quote-CmdArgument (Join-Path $configurationDirectory 'MathJaxRenderer.Cache.obj')),
+    (Quote-CmdArgument (Join-Path $configurationDirectory 'MathJaxRenderer.Worker.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'NativeMathSession.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'MathSvgStore.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'SvgNormalizer.obj')),
@@ -173,10 +177,10 @@ $linkCommand += ' ' + ($linkInputs -join ' ') + ' windowsapp.lib runtimeobject.l
 
 $cmdLine = 'call ' + (Quote-CmdArgument $vcvars64) + ' >nul && ' +
     $compileProbe + ' && ' + $compileRuntime + ' && ' + $linkCommand
-Write-Host 'Compiling and linking the synchronous MathJaxRenderer and MathSvgStore probe...'
+Write-Host 'Compiling and linking the asynchronous math/cache probe...'
 & $env:ComSpec /d /s /c $cmdLine
 if ($LASTEXITCODE -ne 0) {
-    throw "Synchronous math probe compilation/link failed with exit code $LASTEXITCODE"
+    throw "Asynchronous math/cache probe compilation/link failed with exit code $LASTEXITCODE"
 }
 
 Require-File $probeExecutable 'worker probe executable'
@@ -252,7 +256,7 @@ try {
             Get-Content -LiteralPath $stderrPath -Raw
         }
         Write-Host 'probe exit code: timeout (probe process terminated)'
-        throw 'Synchronous math probe exceeded the 60-second deadline; only the probe process was terminated.'
+        throw 'Asynchronous math/cache probe exceeded the 60-second deadline; only the probe process was terminated.'
     }
     $process.Refresh()
     $exitCode = $process.ExitCode
@@ -263,7 +267,7 @@ try {
     if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw }
     Write-Host "probe exit code: $exitCode; elapsed: $([math]::Round($elapsed.TotalSeconds, 2))s"
     if ($exitCode -ne 0) {
-        throw "Synchronous math probe failed with exit code $exitCode"
+        throw "Asynchronous math/cache probe failed with exit code $exitCode"
     }
 }
 finally {

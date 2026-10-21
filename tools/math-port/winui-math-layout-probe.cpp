@@ -1,14 +1,20 @@
 #include "pch.h"
 
 import std;
+import folia.core.command;
 import folia.core.render_model;
 
+#include <Psapi.h>
+
 #include "editor/session/EditorSession.h"
-#include "editor/rendering/EditorPreparedDocument.h"
+#include "editor/rendering/EditorContentPreparation.h"
 #include "editor/rendering/EditorSurfaceRenderer.h"
-#include "media/SvgNormalizer.h"
 #include "editor/rendering/EditorDocumentBlockPreparer.h"
 #include "editor/rendering/EditorSvgPainter.h"
+#include "editor/rendering/EditorContentGeometry.h"
+#include "media/SvgNormalizer.h"
+
+#pragma comment(lib, "Psapi.lib")
 
 namespace
 {
@@ -17,6 +23,25 @@ namespace
     void Require(bool condition, std::string_view message)
     {
         if (!condition) throw std::runtime_error(std::string(message));
+    }
+
+    void WaitForIdleBounded(MathJaxRenderer& renderer,
+        std::chrono::seconds timeout = std::chrono::seconds(50))
+    {
+        std::stop_source waitStop;
+        std::mutex mutex;
+        std::condition_variable_any changed;
+        std::jthread watchdog([&](std::stop_token stop) {
+            std::unique_lock lock(mutex);
+            if (!changed.wait_for(lock, stop, timeout, [] { return false; }))
+                waitStop.request_stop();
+        });
+        try { renderer.WaitForIdle(waitStop.get_token()); }
+        catch (winrt::hresult_canceled const&) {
+            watchdog.request_stop();
+            throw std::runtime_error("timed out waiting for native math preparation");
+        }
+        watchdog.request_stop();
     }
 
     struct BlockStamp
@@ -38,44 +63,36 @@ namespace
         return result;
     }
 
-    void CheckLayout(EditorDocumentPreparation const& preparation, std::string_view label)
+    struct ProcessMemory
     {
-        Require(preparation.layout != nullptr, std::string(label) + ": layout exists");
-        Require(!preparation.layout->blocks.empty(), std::string(label) + ": blocks were prepared");
-        Require(std::isfinite(preparation.layout->totalHeight) && preparation.layout->totalHeight > 0.0f,
-            std::string(label) + ": total height is finite and positive");
-        Require(preparation.layout->geometry.Initialized()
-                && preparation.layout->geometry.Size() == preparation.layout->blocks.size(),
-            std::string(label) + ": geometry index covers every prepared block");
+        SIZE_T privateBytes = 0;
+        SIZE_T peakWorkingSet = 0;
+    };
 
-        bool containsMath = false;
-        for (std::size_t index = 0; index < preparation.layout->blocks.size(); ++index)
-        {
-            auto const& block = preparation.layout->blocks[index];
-            Require(std::isfinite(block.height) && block.height > 0.0f,
-                std::string(label) + ": every block has measured height");
-            auto placement = preparation.layout->geometry.At(index);
-            Require(std::isfinite(placement.top) && std::isfinite(placement.bottom)
-                    && std::abs((placement.bottom - placement.top) - block.height) < 0.01f,
-                std::string(label) + ": geometry placement retains each measured height");
-            Require(!block.layout && block.images.empty() && block.mathPreviews.empty()
-                    && block.mermaids.empty() && block.mermaidPreviews.empty() && !block.table,
-                std::string(label) + ": visual resources do not cross preparation boundary");
-            Require(block.display.text.empty() && block.display.mathOverlays.empty()
-                    && block.display.imageOverlays.empty() && block.display.mermaidOverlays.empty(),
-                std::string(label) + ": display projections are released after measurement");
-            containsMath = containsMath || block.containsMath;
-        }
-        Require(containsMath, std::string(label) + ": math blocks reached the layout preparer");
+    ProcessMemory ReadProcessMemory()
+    {
+        PROCESS_MEMORY_COUNTERS_EX counters{};
+        counters.cb = sizeof(counters);
+        if (!GetProcessMemoryInfo(GetCurrentProcess(),
+            reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters), sizeof(counters)))
+            throw std::system_error(static_cast<int>(GetLastError()), std::system_category(),
+                "GetProcessMemoryInfo");
+        return { counters.PrivateUsage, counters.PeakWorkingSetSize };
     }
 
-    float DocumentWidth(EditorDocumentPreparationContext const& context)
+    void ReportStage(std::string_view stage, std::chrono::steady_clock::duration elapsed)
     {
-        auto padding = (std::min)(context.theme.layout.document_horizontal_padding,
-            (std::max)(12.0f, context.surfaceWidth * 0.06f));
-        auto left = padding;
-        auto right = (std::max)(left + 1.0f, context.surfaceWidth - padding - 14.0f);
-        return right - left;
+        const auto memory = ReadProcessMemory();
+        std::cout << "stage=" << stage
+                  << " elapsed-ms=" << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count()
+                  << " private-bytes=" << memory.privateBytes
+                  << " peak-working-bytes=" << memory.peakWorkingSet << '\n';
+    }
+
+    float DocumentWidth(EditorMathPreparationContext const& context)
+    {
+        return EditorDocumentContentWidth(context.surfaceWidth,
+            context.theme.layout.document_horizontal_padding);
     }
 
     std::string TextColor(folia::ThemeProfile const& theme)
@@ -118,7 +135,7 @@ namespace
     }
 
     void CheckReadingLayout(detail::EditorRenderFrame const& frame,
-        EditorDocumentPreparation& preparation, std::size_t index)
+        EditorMathPreparation& preparation, std::size_t index)
     {
         auto const& context = preparation.context;
         auto sheet = CreateEditorStyleSheet(context.theme);
@@ -148,17 +165,13 @@ namespace
         };
         auto first = preparer.Prepare(frame.renderModel.blocks[index], true, true);
         Require(first.layout && !first.display.mathOverlays.empty(), "reading uses math inline objects");
-        Require(first.height == preparation.layout->blocks[index].height,
-            "reading height exactly matches the complete preparation height");
         auto firstLines = makeLines(first.layout.Get());
         Require(firstLines.size() > 1, "long inline formula wraps in DirectWrite");
         auto firstPositions = EditorDocumentPainter::PositionMath(first.layout.Get(), first.display.mathOverlays, width);
         for (int pass = 0; pass < 6; ++pass)
         {
-            // Re-materialize with embedded content outside/inside the viewport
-            // band, exactly as scrolling does, without retaining visual state.
+            // Exercise the same offscreen preparation used when a block returns to the viewport.
             auto reread = preparer.Prepare(frame.renderModel.blocks[index], pass % 2 != 0, false);
-            Require(reread.height == first.height, "scroll rematerialization preserves measured height");
             auto lines = makeLines(reread.layout.Get());
             Require(lines.size() == firstLines.size(), "scroll rematerialization preserves line count");
             for (std::size_t line = 0; line < lines.size(); ++line)
@@ -173,25 +186,188 @@ namespace
                     && positions[part].localTop == firstPositions[part].localTop,
                     "scroll rematerialization preserves formula positions");
         }
+
+        // Publication checks stay with the test-only reader-resource path.
+        EditorSurfaceRenderer publicationRenderer;
+        publicationRenderer.InitializeForPdf();
+        const auto publicationContext = publicationRenderer.CaptureMathPreparationContext();
+        auto matching = EditorSurfaceRenderer::PrepareMath(frame, publicationContext, {}, {});
+        WaitForIdleBounded(matching->math);
+        publicationRenderer.AdoptMathPreparation(std::move(matching));
+        Require(publicationRenderer.MatchesMathPreparationContext(publicationContext),
+            "renderer adopts math results with the current publication context");
+        auto changedContext = publicationContext;
+        changedContext.surfaceWidth += 1.0f;
+        auto mismatched = EditorSurfaceRenderer::PrepareMath(frame, changedContext, {}, {});
+        WaitForIdleBounded(mismatched->math);
+        bool rejected = false;
+        try { publicationRenderer.AdoptMathPreparation(std::move(mismatched)); }
+        catch (std::logic_error const&) { rejected = true; }
+        Require(rejected, "renderer rejects math results prepared at another width");
         std::cout << "reading lines=" << firstLines.size() << " repeated-placements=stable\n";
+    }
+
+    void CheckPlainDocumentCanGainMath()
+    {
+        EditorSession session;
+        session.SetText(L"type formula: ");
+        auto initialFrame = session.RenderFrame();
+        Require(initialFrame.renderModel.blocks.size() == 1, "plain edit fixture has one paragraph");
+        auto const owner = initialFrame.renderModel.blocks.front().id;
+
+        EditorSurfaceRenderer publicationRenderer;
+        publicationRenderer.InitializeForPdf();
+        auto context = publicationRenderer.CaptureMathPreparationContext();
+        auto initial = EditorSurfaceRenderer::PrepareMath(initialFrame, context, {}, {});
+        auto initialStats = initial->math.Snapshot();
+        Require(initial->formulaCount == 0 && initialStats.nativeRenders == 0
+                && initialStats.pending == 0 && initialStats.backingPath.empty(),
+            "plain document math preparation has no formulas, worker jobs, or cache file");
+        publicationRenderer.AdoptMathPreparation(std::move(initial));
+
+        auto const insertion = std::u32string(U"$x+1$");
+        auto const sourceStart = session.EditableSource(owner)->size();
+        const folia::TextPosition insertionPoint{owner, sourceStart, folia::TextAffinity::Downstream};
+        session.SetSelection(insertionPoint, insertionPoint);
+        Require(session.ExecuteCommand(folia::Command::InsertText(insertion)),
+            "normal InsertText command adds inline math to the existing paragraph");
+        Require(session.TextUtf8() == "type formula: $x+1$",
+            "source editing preserves the exact newly inserted math spelling");
+        session.SetSelection(
+            {owner, sourceStart + 2, folia::TextAffinity::Downstream},
+            {owner, sourceStart + 2, folia::TextAffinity::Downstream});
+
+        auto editedFrame = session.RenderFrame();
+        auto const& editedBlock = editedFrame.renderModel.blocks.front();
+        auto const caret = editedFrame.selection.active;
+        Require(caret.container_id == owner, "caret remains in the original edited container");
+        auto editedMath = EditorSurfaceRenderer::PrepareMath(editedFrame, context, {}, {});
+        Require(editedMath->formulaCount == 1,
+            "unified math scan discovers a formula added after plain-document preparation");
+        WaitForIdleBounded(editedMath->math);
+        auto const editedFormulaCount = editedMath->formulaCount;
+        publicationRenderer.AdoptMathPreparation(std::move(editedMath));
+
+        auto const sheet = CreateEditorStyleSheet(context.theme);
+        const auto contentWidth = DocumentWidth(context);
+        SvgNormalizer normalizer;
+        MathJaxRenderer previewRenderer;
+        auto buildInlineDisplay = [&](folia::TextPosition position) {
+            previewRenderer.BeginBlock(owner.v);
+            auto display = BuildDisplayInlineText(editedBlock.inline_items, position,
+                {owner, editedBlock.content_span.source_range.end, folia::TextAffinity::Downstream},
+                previewRenderer, normalizer, sheet.textColor, sheet.body.size,
+                contentWidth, true, false, true);
+            previewRenderer.EndBlock();
+            return display;
+        };
+
+        auto pending = buildInlineDisplay(caret);
+        Require(pending.pendingMath && pending.mathPreviews.empty(),
+            "editing display returns immediately while its RAM preview is pending");
+        auto previewStats = previewRenderer.Snapshot();
+        Require(previewStats.fileReads == 0 && previewStats.fileWrites == 0
+                && previewStats.backingPath.empty(),
+            "cold editing preview performs no file reads or writes");
+        WaitForIdleBounded(previewRenderer);
+        auto ready = buildInlineDisplay(caret);
+        Require(!ready.pendingMath && ready.mathPreviews.size() == 1,
+            "worker completion supplies the active inline math preview to display construction");
+        previewStats = previewRenderer.Snapshot();
+        Require(previewStats.fileReads == 0 && previewStats.fileWrites == 0
+                && previewStats.previewSvgBytes > 0 && previewStats.backingPath.empty(),
+            "ready editing preview remains resident in memory without creating a cache file");
+
+        auto const malformed = std::u32string(U"$\\frac{x}{");
+        session.SetSelection({owner, sourceStart, folia::TextAffinity::Downstream},
+            {owner, sourceStart + insertion.size(), folia::TextAffinity::Upstream});
+        Require(session.ExecuteCommand(folia::Command::InsertText(malformed)),
+            "normal source edit can leave a temporarily incomplete formula");
+        Require(session.TextUtf8() == "type formula: $\\frac{x}{",
+            "incomplete formula source is preserved exactly while editing");
+        auto malformedFrame = session.RenderFrame();
+        auto const& malformedBlock = malformedFrame.renderModel.blocks.front();
+        previewRenderer.BeginBlock(owner.v);
+        auto malformedDisplay = BuildDisplayInlineText(malformedBlock.inline_items,
+            malformedFrame.selection.active,
+            {owner, malformedBlock.content_span.source_range.end, folia::TextAffinity::Downstream},
+            previewRenderer, normalizer, sheet.textColor, sheet.body.size,
+            contentWidth, true, false, true);
+        previewRenderer.EndBlock();
+        Require(malformedDisplay.mathPreviews.empty(),
+            "temporarily incomplete formula is not published as a stale preview");
+
+        auto const valid = std::u32string(U"$\\frac{x}{2}$");
+        const auto malformedEnd = sourceStart + malformed.size();
+        session.SetSelection({owner, sourceStart, folia::TextAffinity::Downstream},
+            {owner, malformedEnd, folia::TextAffinity::Upstream});
+        Require(session.ExecuteCommand(folia::Command::InsertText(valid)),
+            "normal source edit repairs the incomplete formula");
+        Require(session.TextUtf8() == "type formula: $\\frac{x}{2}$",
+            "repaired formula source remains lossless");
+        session.SetSelection(
+            {owner, sourceStart + 3, folia::TextAffinity::Downstream},
+            {owner, sourceStart + 3, folia::TextAffinity::Downstream});
+        auto repairedFrame = session.RenderFrame();
+        auto const& repairedBlock = repairedFrame.renderModel.blocks.front();
+        auto repairedCaret = repairedFrame.selection.active;
+        previewRenderer.BeginBlock(owner.v);
+        auto repairedDisplay = BuildDisplayInlineText(repairedBlock.inline_items, repairedCaret,
+            {owner, repairedBlock.content_span.source_range.end, folia::TextAffinity::Downstream},
+            previewRenderer, normalizer, sheet.textColor, sheet.body.size,
+            contentWidth, true, false, true);
+        previewRenderer.EndBlock();
+        Require(repairedDisplay.pendingMath,
+            "repaired edit schedules its newest preview asynchronously");
+        WaitForIdleBounded(previewRenderer);
+        previewRenderer.BeginBlock(owner.v);
+        repairedDisplay = BuildDisplayInlineText(repairedBlock.inline_items, repairedCaret,
+            {owner, repairedBlock.content_span.source_range.end, folia::TextAffinity::Downstream},
+            previewRenderer, normalizer, sheet.textColor, sheet.body.size,
+            contentWidth, true, false, true);
+        previewRenderer.EndBlock();
+        Require(!repairedDisplay.pendingMath && repairedDisplay.mathPreviews.size() == 1,
+            "latest valid edit is the preview published to the display");
+
+        // Once the caret leaves the formula, the same renderer independently
+        // requests the ordinary file-backed document result.
+        auto outsideCaret = folia::TextPosition{owner, 0, folia::TextAffinity::Upstream};
+        previewRenderer.BeginBlock(owner.v);
+        auto documentDisplay = BuildDisplayInlineText(repairedBlock.inline_items, outsideCaret,
+            {owner, repairedBlock.content_span.source_range.end, folia::TextAffinity::Downstream},
+            previewRenderer, normalizer, sheet.textColor, sheet.body.size,
+            contentWidth, true, false, true);
+        previewRenderer.EndBlock();
+        Require(documentDisplay.pendingMath,
+            "caret leaving the formula requests document rendering asynchronously");
+        WaitForIdleBounded(previewRenderer);
+        auto documentStats = previewRenderer.Snapshot();
+        Require(documentStats.fileWrites > 0 && !documentStats.backingPath.empty(),
+            "document SVG persistence starts independently after editing preview");
+        Require(session.TextUtf8() == "type formula: $\\frac{x}{2}$",
+            "math preview and document caching do not alter edited source");
+        std::cout << "plain-to-math editing formula-count=" << editedFormulaCount
+                  << " preview-svg-bytes=" << previewStats.previewSvgBytes
+                  << " document-file-writes=" << documentStats.fileWrites << '\n';
     }
 
     void RunProbe()
     {
+        CheckPlainDocumentCanGainMath();
+        const auto processStart = ReadProcessMemory();
+        auto stageStart = std::chrono::steady_clock::now();
         std::string longFormula = "x";
-        for (std::size_t index = 0; index < 80; ++index)
-            longFormula += "+x";
+        for (std::size_t index = 0; index < 80; ++index) longFormula += "+x";
 
-        winrt::Folia::EditorSession session;
+        EditorSession session;
         std::wstring source =
-            L"# Layout preparation\n\n"
+            L"# Math preparation\n\n"
             L"A long paragraph exercises DirectWrite wrapping at more than one surface width. "
             L"It carries an inline formula $\\frac{1}{2}$ between words, then continues with enough "
             L"ordinary text to occupy several lines when the document is narrow. The source must stay "
             L"exactly as entered after every preparation pass.\n\n"
             L"MATH_WRAP_SENTINEL $";
-        for (char character : longFormula)
-            source.push_back(static_cast<wchar_t>(character));
+        for (char character : longFormula) source.push_back(static_cast<wchar_t>(character));
         source +=
             L"$\n\n"
             L"- First list item with $x^2$\n"
@@ -218,64 +394,52 @@ namespace
         }), "sample includes display math");
         auto hasIndentedFlow = [](auto const& self, auto const& block) -> bool {
             if (block.flow_local_indent_columns > 0) return true;
-            return std::ranges::any_of(block.child_blocks, [&](auto const& child) {
-                return self(self, child);
-            });
+            return std::ranges::any_of(block.child_blocks, [&](auto const& child) { return self(self, child); });
         };
         Require(std::ranges::any_of(frame.renderModel.blocks, [&](auto const& block) {
             return hasIndentedFlow(hasIndentedFlow, block);
         }), "sample includes an indented list flow");
+        ReportStage("rich-model", std::chrono::steady_clock::now() - stageStart);
 
-        EditorSurfaceRenderer renderer;
-        renderer.InitializeForPdf();
-        const auto baseContext = renderer.CapturePreparationContext();
+        const EditorMathPreparationContext baseContext{
+            folia::default_theme_profile(), 1, 1280.0f, 1000.0f, true };
         auto narrowContext = baseContext;
         narrowContext.surfaceWidth = 300.0f;
         narrowContext.surfaceHeight = 1000.0f;
         auto wideContext = narrowContext;
         wideContext.surfaceWidth = 1100.0f;
 
-        std::size_t progressCurrent = 0;
-        std::size_t progressTotal = 0;
-        auto narrow = EditorSurfaceRenderer::PrepareDocument(frame, narrowContext, {},
-            [&](std::size_t current, std::size_t total) {
-                progressCurrent = current;
-                progressTotal = total;
-            });
-        CheckLayout(*narrow, "narrow");
-        Require(progressCurrent == frame.renderModel.blocks.size()
-                && progressTotal == frame.renderModel.blocks.size(),
-            "preparation progress reaches the full block count");
+        stageStart = std::chrono::steady_clock::now();
+        auto narrow = EditorSurfaceRenderer::PrepareMath(frame, narrowContext, {}, {});
+        Require(narrow->formulaCount > 0, "narrow math scan finds formulas across rich block types");
+        WaitForIdleBounded(narrow->math);
+        ReportStage("rich-narrow-math", std::chrono::steady_clock::now() - stageStart);
         Require(session.TextUtf8() == originalText && Stamp(frame) == originalStamps,
-            "narrow preparation preserves exact source and render model identities");
+            "narrow math preparation preserves exact source and render model identities");
 
-        auto wide = EditorSurfaceRenderer::PrepareDocument(frame, wideContext, {}, {});
-        CheckLayout(*wide, "wide");
-        Require(narrow->layout->totalHeight > wide->layout->totalHeight,
-            "narrow DirectWrite layout wraps to a greater document height");
-        Require(narrow->layout->blocks[mathOnlyBlock].height > wide->layout->blocks[mathOnlyBlock].height,
-            "narrow MathJax fragments increase the math-only paragraph height");
+        stageStart = std::chrono::steady_clock::now();
+        auto wide = EditorSurfaceRenderer::PrepareMath(frame, wideContext, {}, {});
+        WaitForIdleBounded(wide->math);
+        ReportStage("rich-wide-math", std::chrono::steady_clock::now() - stageStart);
         Require(session.TextUtf8() == originalText && Stamp(frame) == originalStamps,
-            "wide preparation preserves exact source and render model identities");
+            "wide math preparation preserves exact source and render model identities");
 
-        SvgNormalizer normalizer;
         const auto em = baseContext.theme.typography.body.size;
         const auto width = DocumentWidth(narrowContext);
         const auto color = TextColor(narrowContext.theme);
-        auto preparedMath = narrow->math.Render(longFormula, false, em, width, normalizer, color);
-        auto repeatedMath = narrow->math.Render(longFormula, false, em, width, normalizer, color);
-        auto wideMath = wide->math.Render(longFormula, false, em, DocumentWidth(wideContext), normalizer, color);
+        auto preparedMath = narrow->math.Render(longFormula, false, em, width, color);
+        auto repeatedMath = narrow->math.Render(longFormula, false, em, width, color);
+        auto wideMath = wide->math.Render(longFormula, false, em,
+            DocumentWidth(wideContext), color);
         Require(preparedMath && repeatedMath && wideMath && static_cast<bool>(*preparedMath)
-                && static_cast<bool>(*wideMath),
-            "prepared document retains usable inline math metrics");
+                && static_cast<bool>(*wideMath), "prepared math returns usable inline metrics");
         Require(preparedMath->fragments.size() > 1
                 && std::ranges::any_of(preparedMath->fragments, [](auto const& fragment) {
                     return fragment.breakBefore;
                 }) && wideMath->fragments.size() > 1,
-            "MathJax supplies optional inline fragment breaks for DirectWrite at both widths");
+            "MathJax supplies optional inline fragment breaks at both widths");
         Require(SameMetrics(*preparedMath, *repeatedMath),
             "repeated prepared math preserves metrics and SVG render ids");
-
         CheckReadingLayout(frame, *narrow, mathOnlyBlock);
 
         std::stop_source cancellation;
@@ -283,102 +447,93 @@ namespace
         bool cancelled = false;
         try
         {
-            (void)EditorSurfaceRenderer::PrepareDocument(frame, narrowContext,
+            (void)EditorSurfaceRenderer::PrepareMath(frame, narrowContext,
                 cancellation.get_token(), {});
         }
-        catch (winrt::hresult_canceled const&)
-        {
-            cancelled = true;
-        }
-        Require(cancelled, "pre-cancelled preparation throws and yields no result");
+        catch (winrt::hresult_canceled const&) { cancelled = true; }
+        Require(cancelled, "pre-cancelled math preparation throws and yields no result");
 
-        std::stop_source midway;
-        bool midwayCancelled = false;
-        std::unique_ptr<EditorDocumentPreparation> incomplete;
-        try
-        {
-            incomplete = EditorSurfaceRenderer::PrepareDocument(frame, narrowContext, midway.get_token(),
-                [&](std::size_t current, std::size_t) { if (current == 2) midway.request_stop(); });
-        }
-        catch (winrt::hresult_canceled const&) { midwayCancelled = true; }
-        Require(midwayCancelled && !incomplete, "midway cancellation never returns partial preparation");
+        EditorSession largePlainSession;
+        std::wstring largePlainSource;
+        for (int block = 0; block < 4100; ++block) largePlainSource += L"Plain paragraph with no formula.\n\n";
+        largePlainSession.SetText(winrt::hstring(largePlainSource));
+        auto largePlainFrame = largePlainSession.RenderFrame();
+        Require(largePlainFrame.renderModel.virtualized, "large plain fixture uses model virtualization");
+        stageStart = std::chrono::steady_clock::now();
+        auto plain = EditorSurfaceRenderer::PrepareMath(largePlainFrame, narrowContext, {}, {});
+        WaitForIdleBounded(plain->math);
+        ReportStage("large-plain-math", std::chrono::steady_clock::now() - stageStart);
+        auto plainStats = plain->math.Snapshot();
+        Require(plain->formulaCount == 0 && plainStats.nativeRenders == 0 && plainStats.pending == 0,
+            "large plain document math preparation performs no native renders");
 
-        // Force the existing virtualized model path and prepare every batch,
-        // including the last block, without changing document source.
         EditorSession largeSession;
         std::wstring largeSource;
         for (int block = 0; block < 4100; ++block) largeSource += L"Paragraph $1$\n\n";
         largeSession.SetText(winrt::hstring(largeSource));
         auto largeOriginalText = largeSession.TextUtf8();
         auto largeFrame = largeSession.RenderFrame();
-        Require(largeFrame.renderModel.virtualized, "large fixture uses existing render-model virtualization");
-        auto large = EditorSurfaceRenderer::PrepareDocument(largeFrame, narrowContext, {}, {});
-        CheckLayout(*large, "virtualized");
-        auto mathBlocks = std::ranges::count_if(large->layout->blocks,
-            [](auto const& block) { return block.containsMath; });
-        Require(large->layout->blocks.size() == largeFrame.renderModel.blocks.size()
-            && mathBlocks == 4100,
-            "complete preparation measures every virtualized math paragraph, including the final one");
+        Require(largeFrame.renderModel.virtualized, "large math fixture uses model virtualization");
+        stageStart = std::chrono::steady_clock::now();
+        auto large = EditorSurfaceRenderer::PrepareMath(largeFrame, narrowContext, {}, {});
+        WaitForIdleBounded(large->math);
+        ReportStage("large-math-prewarm", std::chrono::steady_clock::now() - stageStart);
+        Require(large->formulaCount == 4100,
+            "math prewarm counts every formula occurrence across virtualized blocks");
         Require(largeSession.TextUtf8() == largeOriginalText,
-            "virtualized preparation preserves exact source");
-        std::cout << "virtualized blocks=" << large->layout->blocks.size() << " math-paragraphs=" << mathBlocks
-                  << " cancellation-midway=success\n";
+            "virtualized math prewarm preserves exact source");
+        auto largeStats = large->math.Snapshot();
+        Require(largeStats.pending == 0 && largeStats.nativeRenders > 0,
+            "large virtualized math prewarm finishes its asynchronous native work");
 
-        auto matching = EditorSurfaceRenderer::PrepareDocument(frame, baseContext, {}, {});
-        renderer.AdoptDocumentPreparation(std::move(matching));
-        Require(renderer.MatchesPreparationContext(baseContext),
-            "renderer adopts a preparation with matching context");
-        auto changedContext = baseContext;
-        changedContext.surfaceWidth += 1.0f;
-        auto mismatched = EditorSurfaceRenderer::PrepareDocument(frame, changedContext, {}, {});
-        bool rejected = false;
-        try
-        {
-            renderer.AdoptDocumentPreparation(std::move(mismatched));
-        }
-        catch (std::logic_error const&)
-        {
-            rejected = true;
-        }
-        Require(rejected, "renderer rejects preparation measured at another width");
         Require(session.TextUtf8() == originalText && Stamp(frame) == originalStamps,
-            "all preparation paths preserve exact source and render model identities");
+            "all math preparation paths preserve exact source and render model identities");
 
-        std::cout << "layout narrow-height=" << narrow->layout->totalHeight
-                  << " wide-height=" << wide->layout->totalHeight
-                  << " blocks=" << originalStamps.size()
-                  << " progress=" << progressCurrent << '/' << progressTotal
+        auto finalMemory = ReadProcessMemory();
+        std::cout << "memory-baseline-private-bytes=" << processStart.privateBytes
+                  << " final-private-bytes=" << finalMemory.privateBytes
+                  << " peak-working-bytes=" << finalMemory.peakWorkingSet << '\n';
+        std::cout << "math-preparation formulas-narrow=" << narrow->formulaCount
+                  << " formulas-wide=" << wide->formulaCount
+                  << " math-only-virtualized-formulas=" << large->formulaCount
+                  << " unique-native-renders=" << largeStats.nativeRenders
                   << " math-fragments=" << preparedMath->fragments.size()
                   << " wide-math-fragments=" << wideMath->fragments.size()
-                  << " cancellation=success publication-context=success\n";
-        std::cout << "native MathJax document layout probe: PASS\n";
+                  << " cancellation=success reading-layout=stable\n";
+        std::cout << "native MathJax math preparation probe: PASS\n";
     }
 }
 
-int wmain()
+int wmain(int argc, wchar_t** argv)
 {
+    std::cout << std::unitbuf;
     try
     {
         winrt::init_apartment(winrt::apartment_type::single_threaded);
-        RunProbe();
+        if (argc == 2 && std::wstring_view(argv[1]) == L"--edit-only")
+        {
+            CheckPlainDocumentCanGainMath();
+            std::cout << "editing preview probe: PASS\n";
+        }
+        else RunProbe();
         winrt::uninit_apartment();
         return 0;
     }
     catch (winrt::hresult_error const& error)
     {
-        std::cerr << "native MathJax document layout probe: FAIL: HRESULT 0x"
+        std::cerr << "native MathJax math preparation probe: FAIL: HRESULT 0x"
                   << std::hex << static_cast<std::uint32_t>(error.code().value)
                   << ": " << winrt::to_string(error.message()) << '\n';
         return 1;
     }
     catch (std::exception const& error)
     {
-        std::cerr << "native MathJax document layout probe: FAIL: " << error.what() << '\n';
+        std::cerr << "native MathJax math preparation probe: FAIL: " << error.what() << '\n';
         return 1;
     }
     catch (...)
     {
-        std::cerr << "native MathJax document layout probe: FAIL: unknown exception\n";
+        std::cerr << "native MathJax math preparation probe: FAIL: unknown exception\n";
         return 1;
     }
 }

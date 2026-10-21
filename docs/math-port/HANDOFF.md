@@ -11,7 +11,7 @@
 - **已通过**：WinUI Debug `math-scoped-async-debug-build-complete.log`（parallel≤4）；最终worker `math-scoped-async-worker-accepted.log`25.62s（mathbb/分式/Unicode/诊断/owner/连续预览替换/取消/Clear/跨线程转移/文件关闭）。8个实际SVG共8,968,637 bytes，resident 7,847,770 bytes；淘汰后后台读回逐字节相等、renderId/指标不变，IO线程不同于调用线程，GetSvg调用2us。Preview缓存读写均0且无文件，Clear后旧文件后台关闭。
 - **布局已过**：`math-scoped-async-layout-accepted.log`16.95s；普通段落用正常InsertText现场输入公式→不完整→修复→离开，内存预览更新、随后Document写文件；长公式15行反复重建断点/基线/坐标稳定；4100数学段落预计算、重复公式native仅1次，4100普通段落0数学工作（扫描60ms，无全文排版）；宽窄各6数学表达式，取消/context验证及source/model身份保持。私有内存/peak日志来自同时保留多个synthetic session的Debug测试，**不是用户文档前后性能比较，不能据此宣称运行内存已降低**。
 - 最终legacy缓存回收专项 `math-scoped-async-cache-accepted.log`0.14s已过（多实例/并发/残缺文件/junction保留）。文件symlink权限1314仍跳过；目录junction实际覆盖。最新IndexOnly `math-scoped-async-index-accepted.log`29.01s已过，4100不同公式首尾ID/geometry保留。所有检查是当前最终代码；无live build/test。
-- 限制：8MiB仅ready SVG缓存预算，metadata/可见绘制资源/preview另外持有；单个SVG大于8MiB时允许一次交付的临时超额。尚无新Release/MSI、安装或GUI目视试用；可试`build/app-winui/bin/x64/Debug/Folia.exe`。旧0.2.2 MSI不含本轮修改。无live agent；Root独占build/Git，一次一个build、parallel≤4。本轮生产修改与probe分两批提交，随后用户GUI试用；实际大文档性能尚未做同输入前后比较。
+- 限制：8MiB仅ready SVG缓存预算，metadata/可见绘制资源/preview另外持有；单个SVG大于8MiB时允许一次交付的临时超额。尚无新Release/MSI、安装或GUI目视试用；可试`build/app-winui/bin/x64/Debug/Folia.exe`。旧0.2.2 MSI不含本轮修改。无live agent；Root独占build/Git，一次一个build、parallel≤4。生产提交`1c98e559`；probe及本checkpoint为第二批提交。下一步用户GUI试用；实际大文档性能尚未做同输入前后比较。
 
 ## 历史：0.2.2安装包（已被当前源码替代）
 

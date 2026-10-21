@@ -9,6 +9,8 @@
 #include <winrt/base.h>
 
 #include <array>
+#include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <iostream>
@@ -24,15 +26,15 @@
 #include <utility>
 #include <vector>
 
+
 #include "media/MathJaxRenderer.h"
 #include "media/MathSvgStore.h"
-#include "media/SvgNormalizer.h"
 
 using winrt::Folia::MathJaxErrorKind;
+using winrt::Folia::MathRenderPurpose;
 using winrt::Folia::MathJaxRenderer;
 using winrt::Folia::MathJaxSvg;
 using winrt::Folia::MathSvgStore;
-using winrt::Folia::SvgNormalizer;
 
 namespace {
 void require(bool condition, std::string_view message) {
@@ -40,16 +42,59 @@ void require(bool condition, std::string_view message) {
         throw std::runtime_error(std::string(message));
 }
 
-void checkFragments(MathJaxSvg const &value, std::string_view name) {
+void checkGeometry(MathJaxSvg const& value, std::string_view name) {
     require(static_cast<bool>(value), std::string(name) + ": parsed result is usable");
     require(value.width > 0 && value.height > 0, std::string(name) + ": aggregate dimensions");
     require(!value.fragments.empty(), std::string(name) + ": at least one SVG fragment");
     for (auto const &fragment : value.fragments) {
         require(fragment.renderId != 0, std::string(name) + ": fragment render id");
-        require(fragment.svg && !fragment.svg->empty(), std::string(name) + ": fragment SVG bytes");
         require(fragment.width > 0 && fragment.height > 0,
                 std::string(name) + ": fragment dimensions");
     }
+}
+
+void checkFragments(MathJaxSvg const &value, std::string_view name) {
+    checkGeometry(value, name);
+    for (auto const &fragment : value.fragments)
+        require(fragment.svg && !fragment.svg->empty(), std::string(name) + ": fragment SVG bytes");
+}
+
+std::shared_ptr<MathJaxSvg const> Ready(MathJaxRenderer& renderer,
+    std::string_view tex, bool display, float em, float containerWidth,
+    std::string_view color, std::stop_token stop = {},
+    MathRenderPurpose purpose = MathRenderPurpose::Document) {
+    auto prepared = renderer.Prepare(tex, display, em, containerWidth, color, stop, purpose);
+    auto rendered = renderer.Render(tex, display, em, containerWidth, color, stop, purpose);
+    require(static_cast<bool>(rendered), "prepared math geometry is immediately available");
+    require(prepared && rendered->fragments.size() == prepared->fragments.size(),
+            "prepared math SVGs correspond to the resident geometry fragments");
+    for (std::size_t index = 0; index < prepared->fragments.size(); ++index)
+        require(prepared->fragments[index].renderId == rendered->fragments[index].renderId,
+                "prepared SVG retains its geometry render id");
+    return prepared;
+}
+
+void WaitForIdleBounded(MathJaxRenderer& renderer,
+    std::chrono::seconds timeout = std::chrono::seconds(50))
+{
+    std::stop_source waitStop;
+    std::mutex mutex;
+    std::condition_variable_any changed;
+    std::jthread watchdog([&](std::stop_token stop) {
+        std::unique_lock lock(mutex);
+        if (!changed.wait_for(lock, stop, timeout, [] { return false; }))
+            waitStop.request_stop();
+    });
+    try
+    {
+        renderer.WaitForIdle(waitStop.get_token());
+    }
+    catch (winrt::hresult_canceled const&)
+    {
+        watchdog.request_stop();
+        throw std::runtime_error("timed out waiting for native math worker to become idle");
+    }
+    watchdog.request_stop();
 }
 
 bool sameMetrics(MathJaxSvg const& left, MathJaxSvg const& right) {
@@ -511,7 +556,7 @@ void testStore() {
     std::cout << "store child-process-delete=success\n";
 }
 
-void testOwnership(SvgNormalizer& normalizer) {
+void testOwnership() {
     MathJaxRenderer renderer;
     constexpr std::string_view sharedTex = R"(\frac{7}{9})";
     constexpr std::string_view replacementTex = R"(\sqrt{13})";
@@ -519,18 +564,18 @@ void testOwnership(SvgNormalizer& normalizer) {
     auto replacementId = std::uint64_t{};
 
     renderer.BeginBlock(101);
-    auto first = renderer.Render(sharedTex, false, 16.0f, 900.0f, normalizer, "#000000");
+    auto first = Ready(renderer, sharedTex, false, 16.0f, 900.0f, "#000000");
     renderer.EndBlock();
     checkFragments(*first, "owner 101 shared formula");
     sharedId = first->fragments.front().renderId;
 
     renderer.BeginBlock(202);
-    auto secondOwner = renderer.Render(sharedTex, false, 16.0f, 900.0f, normalizer, "#000000");
+    auto secondOwner = Ready(renderer, sharedTex, false, 16.0f, 900.0f, "#000000");
     renderer.EndBlock();
     require(sameRenderIds(*first, *secondOwner), "same cache key is shared by both block owners");
 
     renderer.BeginBlock(101);
-    auto replacement = renderer.Render(replacementTex, false, 16.0f, 900.0f, normalizer, "#000000");
+    auto replacement = Ready(renderer, replacementTex, false, 16.0f, 900.0f, "#000000");
     renderer.EndBlock();
     checkFragments(*replacement, "owner replacement formula");
     replacementId = replacement->fragments.front().renderId;
@@ -539,52 +584,250 @@ void testOwnership(SvgNormalizer& normalizer) {
 
     const std::array bothOwners{std::uint64_t{101}, std::uint64_t{202}};
     renderer.RetainBlocks(bothOwners);
-    auto stillShared = renderer.Render(sharedTex, false, 16.0f, 900.0f, normalizer, "#000000");
+    auto stillShared = Ready(renderer, sharedTex, false, 16.0f, 900.0f, "#000000");
     require(stillShared->fragments.front().renderId == sharedId,
             "changing block 101's key retains the formula still owned by block 202");
-    auto stillReplacement = renderer.Render(replacementTex, false, 16.0f, 900.0f,
-                                             normalizer, "#000000");
+    auto stillReplacement = Ready(renderer, replacementTex, false, 16.0f, 900.0f,
+                                             "#000000");
     require(stillReplacement->fragments.front().renderId == replacementId,
             "changed block 101 retains its replacement result");
 
     for (std::uint64_t i = 0; i < 12; ++i) {
         const auto tex = i % 2 == 0 ? R"(\sqrt{17})" : R"(\sqrt{19})";
         renderer.BeginBlock(101);
-        auto edited = renderer.Render(tex, false, 16.0f, 900.0f, normalizer, "#000000");
+        auto edited = Ready(renderer, tex, false, 16.0f, 900.0f, "#000000");
         checkFragments(*edited, "repeated owner edit");
         renderer.EndBlock();
         currentTex = tex;
         currentId = edited->fragments.front().renderId;
         renderer.RetainBlocks(bothOwners);
-        require(renderer.Render(sharedTex, false, 16.0f, 900.0f, normalizer, "#000000")
+        require(Ready(renderer, sharedTex, false, 16.0f, 900.0f, "#000000")
                     ->fragments.front().renderId == sharedId,
                 "repeated edits to block 101 keep block 202's shared result");
     }
 
     const std::array onlyFirstOwner{std::uint64_t{101}};
     renderer.RetainBlocks(onlyFirstOwner);
-    auto releasedShared = renderer.Render(sharedTex, false, 16.0f, 900.0f, normalizer, "#000000");
+    auto releasedShared = Ready(renderer, sharedTex, false, 16.0f, 900.0f, "#000000");
     require(releasedShared->fragments.front().renderId != sharedId,
             "removing the last owner releases the old key");
-    auto releasedReplacement = renderer.Render(replacementTex, false, 16.0f, 900.0f,
-                                                normalizer, "#000000");
+    auto releasedReplacement = Ready(renderer, replacementTex, false, 16.0f, 900.0f,
+                                                "#000000");
     require(releasedReplacement->fragments.front().renderId != replacementId,
             "repeated edits release block 101's superseded key");
-    auto current = renderer.Render(currentTex, false, 16.0f, 900.0f, normalizer, "#000000");
+    auto current = Ready(renderer, currentTex, false, 16.0f, 900.0f, "#000000");
     require(current->fragments.front().renderId == currentId,
             "removing block 202 preserves block 101's current live result");
     std::cout << "block ownership=shared replaced retained repeat-edits released\n";
 }
 
+void testAsyncEditsAndClear() {
+    MathJaxRenderer renderer;
+    auto completions = std::make_shared<std::atomic_size_t>(0);
+    renderer.SetCompletionCallback([completions] { completions->fetch_add(1, std::memory_order_relaxed); });
+
+    constexpr std::string_view initialTex = R"(\frac{1}{x+1})";
+    renderer.BeginBlock(403);
+    auto initialPending = renderer.Render(initialTex, false, 16.0f, 640.0f, "#000000", {},
+                                          MathRenderPurpose::Preview);
+    renderer.EndBlock();
+    require(!initialPending, "cold edit preview returns immediately while native work is pending");
+    auto initial = renderer.Prepare(initialTex, false, 16.0f, 640.0f, "#000000", {},
+                                    MathRenderPurpose::Preview);
+    checkFragments(*initial, "memory-only initial preview");
+    WaitForIdleBounded(renderer);
+    auto initialStats = renderer.Snapshot();
+    require(initialStats.fileReads == 0 && initialStats.fileWrites == 0
+                && initialStats.backingPath.empty(),
+            "preview-only rendering performs no file I/O and creates no SVG store");
+
+    const std::string oldPreview = "\\int_0^{1000} \\frac{x^2+1}{x+1} dx";
+    constexpr std::string_view latestPreview = R"(\sqrt{101})";
+    renderer.BeginBlock(404);
+    auto oldPending = renderer.Render(oldPreview, false, 16.0f, 640.0f, "#000000", {},
+                                     MathRenderPurpose::Preview);
+    renderer.EndBlock();
+    require(!oldPending, "cold live-edit preview returns immediately while native work is pending");
+
+    renderer.BeginBlock(404);
+    auto latestPending = renderer.Render(latestPreview, false, 16.0f, 640.0f, "#000000", {},
+                                        MathRenderPurpose::Preview);
+    renderer.EndBlock();
+    auto latest = Ready(renderer, latestPreview, false, 16.0f, 640.0f, "#000000", {},
+                        MathRenderPurpose::Preview);
+    checkFragments(*latest, "latest edited preview");
+    WaitForIdleBounded(renderer);
+    auto afterEdit = renderer.Snapshot();
+    require(afterEdit.pending == 0 && afterEdit.entries == 2,
+            "replacing a block preview releases its stale key and keeps the newest result");
+    require(sameRenderIds(*latest,
+                *renderer.Render(latestPreview, false, 16.0f, 640.0f, "#000000", {},
+                                 MathRenderPurpose::Preview)),
+            "latest edit preview remains cached with stable SVG ids");
+    std::cout << "async-edit old-request=pending latest-request="
+              << (latestPending ? "already-ready" : "pending")
+              << " entries-after-replacement=" << afterEdit.entries
+              << " file-reads=" << afterEdit.fileReads << " file-writes=" << afterEdit.fileWrites
+              << " backing-file=" << (afterEdit.backingPath.empty() ? "none" : "unexpected") << '\n';
+
+    constexpr std::string_view malformed = R"(\frac{x}{)";
+    renderer.BeginBlock(404);
+    (void)renderer.Render(malformed, false, 16.0f, 640.0f, "#000000", {},
+                          MathRenderPurpose::Preview);
+    renderer.EndBlock();
+    auto malformedResult = Ready(renderer, malformed, false, 16.0f, 640.0f, "#000000", {},
+                                 MathRenderPurpose::Preview);
+    require(malformedResult->errorKind == MathJaxErrorKind::Formula && !malformedResult->fragments.empty(),
+            "malformed edit preview returns a formula diagnostic during editing");
+    constexpr std::string_view repaired = R"(\frac{x}{2})";
+    renderer.BeginBlock(404);
+    (void)renderer.Render(repaired, false, 16.0f, 640.0f, "#000000", {},
+                          MathRenderPurpose::Preview);
+    renderer.EndBlock();
+    auto repairedResult = Ready(renderer, repaired, false, 16.0f, 640.0f, "#000000", {},
+                                MathRenderPurpose::Preview);
+    checkFragments(*repairedResult, "repaired edit preview");
+    require(repairedResult->errorKind == MathJaxErrorKind::None,
+            "valid source immediately replaces the malformed preview");
+
+    renderer.BeginBlock(405);
+    (void)renderer.Render(R"(\sum_{i=1}^{500} i^2)", false, 16.0f, 640.0f,
+                          "#000000", {}, MathRenderPurpose::Preview);
+    renderer.EndBlock();
+    renderer.Clear();
+    constexpr std::string_view afterClearTex = R"(\mathbb{N})";
+    renderer.BeginBlock(406);
+    (void)renderer.Render(afterClearTex, false, 16.0f, 640.0f, "#000000", {},
+                          MathRenderPurpose::Preview);
+    renderer.EndBlock();
+    auto afterClear = Ready(renderer, afterClearTex, false, 16.0f, 640.0f, "#000000", {},
+                            MathRenderPurpose::Preview);
+    WaitForIdleBounded(renderer);
+    auto afterClearStats = renderer.Snapshot();
+    require(afterClear && afterClearStats.pending == 0 && afterClearStats.entries == 1
+                && afterClearStats.previewSvgBytes > 0
+                && afterClearStats.fileReads == 0 && afterClearStats.fileWrites == 0
+                && afterClearStats.backingPath.empty(),
+            "completion of pre-Clear work cannot mutate the new cache state");
+    require(completions->load(std::memory_order_relaxed) != 0,
+            "asynchronous preview completion callbacks are delivered");
+    std::cout << "async-clear stale-completion=isolated callbacks="
+              << completions->load(std::memory_order_relaxed)
+              << " final-entries=" << afterClearStats.entries
+              << " preview-bytes=" << afterClearStats.previewSvgBytes
+              << " file-reads=" << afterClearStats.fileReads
+              << " file-writes=" << afterClearStats.fileWrites
+              << " backing-file=none\n";
+}
+
+void testDocumentSvgEviction() {
+    using namespace std::chrono;
+    constexpr std::size_t targetBytes = 8u * 1024u * 1024u;
+    constexpr std::size_t formulaLimit = 256;
+    std::string body = "x";
+    for (std::size_t index = 0; index < 767; ++index) body += "+x";
+
+    MathJaxRenderer renderer;
+    std::vector<std::uint64_t> owners;
+    owners.reserve(formulaLimit);
+    std::string firstFormula;
+    std::vector<std::string> firstSvgs;
+    std::vector<std::uint64_t> firstRenderIds;
+    std::size_t cumulativeSvgBytes = 0;
+    auto stageStart = steady_clock::now();
+    for (std::size_t index = 1; index <= formulaLimit && cumulativeSvgBytes <= targetBytes; ++index) {
+        auto formula = std::string(R"(\underbrace{)") + body + "}_{" + std::to_string(index) + "}";
+        const auto owner = static_cast<std::uint64_t>(index);
+        owners.push_back(owner);
+        renderer.BeginBlock(owner);
+        auto prepared = renderer.Prepare(formula, false, 16.0f, 640.0f, "#000000", {},
+                                         MathRenderPurpose::Document);
+        renderer.EndBlock();
+        checkFragments(*prepared, "document formula before SVG eviction");
+        auto geometry = renderer.Render(formula, false, 16.0f, 640.0f, "#000000", {},
+                                        MathRenderPurpose::Document);
+        checkGeometry(*geometry, "resident document geometry");
+        require(geometry->fragments.size() == prepared->fragments.size(),
+                "document geometry retains all prepared SVG fragments");
+        for (std::size_t fragment = 0; fragment < prepared->fragments.size(); ++fragment) {
+            require(prepared->fragments[fragment].renderId == geometry->fragments[fragment].renderId,
+                    "document geometry IDs match prepared SVG data");
+            cumulativeSvgBytes += prepared->fragments[fragment].svg->size();
+        }
+        if (index == 1) {
+            firstFormula = std::move(formula);
+            for (auto const& fragment : prepared->fragments) {
+                firstSvgs.push_back(*fragment.svg);
+                firstRenderIds.push_back(fragment.renderId);
+            }
+        }
+    }
+    WaitForIdleBounded(renderer);
+    renderer.RetainBlocks(owners);
+    auto pressureStats = renderer.Snapshot();
+    require(cumulativeSvgBytes > targetBytes,
+            "document fixture produced more than eight MiB of actual prepared SVG bytes");
+    require(pressureStats.fileWrites > 0 && !pressureStats.backingPath.empty()
+                && FileExists(pressureStats.backingPath),
+            "document SVG pressure is persisted in the owned temporary SVG store");
+    require(pressureStats.residentSvgBytes <= targetBytes,
+            "document cache evicts ready SVG bytes while preserving geometry");
+
+    auto geometry = renderer.Render(firstFormula, false, 16.0f, 640.0f, "#000000", {},
+                                    MathRenderPurpose::Document);
+    checkGeometry(*geometry, "evicted formula geometry");
+    require(geometry->fragments.size() == firstRenderIds.size()
+                && geometry->fragments.front().renderId == firstRenderIds.front()
+                && !geometry->fragments.front().svg,
+            "SVG eviction retains the formula geometry and stable render id");
+    const auto readStart = steady_clock::now();
+    std::vector<std::shared_ptr<std::string const>> svgs(geometry->fragments.size());
+    bool queuedRead = false;
+    for (std::size_t index = 0; index < geometry->fragments.size(); ++index) {
+        require(geometry->fragments[index].renderId == firstRenderIds[index],
+                "SVG eviction preserves every fragment render id");
+        svgs[index] = renderer.GetSvg(firstRenderIds[index]);
+        queuedRead = queuedRead || !svgs[index];
+    }
+    const auto readCall = duration_cast<microseconds>(steady_clock::now() - readStart).count();
+    WaitForIdleBounded(renderer);
+    for (std::size_t index = 0; index < firstRenderIds.size(); ++index) {
+        if (!svgs[index]) svgs[index] = renderer.GetSvg(firstRenderIds[index]);
+        require(svgs[index] && *svgs[index] == firstSvgs[index],
+                "worker SVG reload preserves exact complete formula bytes");
+    }
+    auto afterReadStats = renderer.Snapshot();
+    require(afterReadStats.lastIoThread != std::this_thread::get_id()
+                && afterReadStats.lastIoThread != std::thread::id{},
+            "SVG file operations run on the cache worker, not the calling scroll thread");
+    require(afterReadStats.fileReads > pressureStats.fileReads,
+            "asynchronous SVG reload is recorded as worker file I/O");
+    std::cout << "document-svg-pressure formulas=" << owners.size()
+              << " prepared-bytes=" << cumulativeSvgBytes
+              << " resident-bytes=" << pressureStats.residentSvgBytes
+              << " file-writes=" << pressureStats.fileWrites
+              << " reload-reads=" << afterReadStats.fileReads - pressureStats.fileReads
+              << " GetSvg-initial=" << (queuedRead ? "queued" : "prefetched")
+              << " GetSvg-call-us=" << readCall
+              << " prep-elapsed-ms=" << duration_cast<milliseconds>(steady_clock::now() - stageStart).count()
+              << " exact-reload=success\n";
+    auto previousPath = afterReadStats.backingPath;
+    renderer.Clear();
+    auto closeDeadline = GetTickCount64() + 5000;
+    while (FileExists(previousPath) && GetTickCount64() < closeDeadline) Sleep(5);
+    require(!FileExists(previousPath), "Clear closes the previous document cache on its worker");
+    require(renderer.Snapshot().backingPath.empty(), "fresh state creates no file before its first formula");
+    std::cout << "document-cache-clear worker-close=success fresh-state=no-file\n";
+}
+
 void runCancellationProbe() {
-    SvgNormalizer normalizer;
     MathJaxRenderer renderer;
     std::stop_source cancelled;
     cancelled.request_stop();
     bool caughtCancellation = false;
     try {
         (void)renderer.Render(R"(\sqrt{2})", false, 16.0f, 1280.0f,
-                              normalizer, "#000000", cancelled.get_token());
+                              "#000000", cancelled.get_token());
     } catch (winrt::hresult_canceled const&) {
         caughtCancellation = true;
     }
@@ -597,17 +840,18 @@ void testCrossThreadRendererMove() {
     std::optional<MathJaxRenderer> transferred;
     std::exception_ptr workerFailure;
     std::uint64_t expectedRenderId = 0;
+    std::string expectedSvg;
 
     std::thread worker([&] {
         try {
-            SvgNormalizer workerNormalizer;
             MathJaxRenderer producer;
             producer.BeginBlock(303);
-            auto first = producer.Render(cachedTex, false, 16.0f, 640.0f,
-                                         workerNormalizer, "#000000");
+            auto first = Ready(producer, cachedTex, false, 16.0f, 640.0f,
+                                         "#000000");
             producer.EndBlock();
             checkFragments(*first, "worker-owned cached formula");
             expectedRenderId = first->fragments.front().renderId;
+            expectedSvg = *first->fragments.front().svg;
             transferred.emplace(std::move(producer));
         } catch (...) {
             workerFailure = std::current_exception();
@@ -618,22 +862,30 @@ void testCrossThreadRendererMove() {
         std::rethrow_exception(workerFailure);
     require(transferred.has_value(), "worker transfers the renderer cache");
 
-    SvgNormalizer uiNormalizer;
     auto cached = transferred->Render(cachedTex, false, 16.0f, 640.0f,
-                                      uiNormalizer, "#000000");
-    checkFragments(*cached, "transferred cache hit on main thread");
+                                      "#000000");
+    checkGeometry(*cached, "transferred cache hit on main thread");
     require(cached->fragments.front().renderId == expectedRenderId,
             "cross-thread cache hit preserves the worker render id");
+    auto transferStats = transferred->Snapshot();
+    require(transferStats.nativeRenders == 1 && transferStats.pending == 0,
+            "UI-side cache lookup reuses the transferred prepared SVG without native work");
+    auto cachedSvg = transferred->GetSvg(expectedRenderId);
+    if (!cachedSvg) {
+        WaitForIdleBounded(*transferred);
+        cachedSvg = transferred->GetSvg(expectedRenderId);
+    }
+    require(cachedSvg && *cachedSvg == expectedSvg,
+            "cross-thread cache move preserves the resident SVG bytes");
 
-    auto mainThreadRender = transferred->Render(R"(\sqrt{31})", false, 16.0f, 640.0f,
-                                                uiNormalizer, "#000000");
+    auto mainThreadRender = Ready(*transferred, R"(\sqrt{31})", false, 16.0f, 640.0f,
+                                  "#000000");
     checkFragments(*mainThreadRender, "new render after cross-thread cache transfer");
-    std::cout << "cross-thread move=cache-preserved main-thread-session=created\n";
+    std::cout << "cross-thread move=cache-preserved new-request=worker-computed\n";
 }
 
 void runIndexProbe() {
     constexpr std::size_t formulaCount = 4100;
-    SvgNormalizer normalizer;
     MathJaxRenderer renderer;
     std::vector<std::uint64_t> owners;
     owners.reserve(formulaCount);
@@ -651,7 +903,7 @@ void runIndexProbe() {
         const auto owner = static_cast<std::uint64_t>(i);
         owners.push_back(owner);
         renderer.BeginBlock(owner);
-        auto rendered = renderer.Render(tex, false, 16.0f, 640.0f, normalizer, "#000000");
+        auto rendered = Ready(renderer, tex, false, 16.0f, 640.0f, "#000000");
         renderer.EndBlock();
         checkFragments(*rendered, "numeric index formula");
         if (i == 1) {
@@ -669,13 +921,13 @@ void runIndexProbe() {
     }
 
     renderer.RetainBlocks(owners);
-    auto firstAgain = renderer.Render("1", false, 16.0f, 640.0f, normalizer, "#000000");
+    auto firstAgain = Ready(renderer, "1", false, 16.0f, 640.0f, "#000000");
     checkFragments(*firstAgain, "first formula after large index");
     require(firstAgain->fragments.front().renderId == firstRenderId
                 && firstAgain->width == firstWidth && firstAgain->height == firstHeight
                 && firstAgain->verticalAlign == firstVerticalAlign,
             "first formula and metrics remain indexed after 4100 renders");
-    auto lastAgain = renderer.Render("4100", false, 16.0f, 640.0f, normalizer, "#000000");
+    auto lastAgain = Ready(renderer, "4100", false, 16.0f, 640.0f, "#000000");
     checkFragments(*lastAgain, "last formula after large index");
     require(lastAgain->fragments.front().renderId == lastRenderId
                 && lastAgain->width == lastWidth && lastAgain->height == lastHeight
@@ -686,37 +938,36 @@ void runIndexProbe() {
 }
 
 void runProbe() {
-    SvgNormalizer normalizer;
     MathJaxRenderer renderer;
 
-    auto mathbb = renderer.Render(R"(\mathbb{R})", false, 16.0f, 1280.0f,
-                                  normalizer, "#000000");
+    auto mathbb = Ready(renderer, R"(\mathbb{R})", false, 16.0f, 1280.0f,
+                                  "#000000");
     checkFragments(*mathbb, "mathbb");
     std::cout << "mathbb fragments=" << mathbb->fragments.size() << '\n';
 
     constexpr std::string_view fraction = R"(\frac{1}{2})";
-    auto first = renderer.Render(fraction, true, 16.0f, 1280.0f, normalizer, "#000000");
+    auto first = Ready(renderer, fraction, true, 16.0f, 1280.0f, "#000000");
     checkFragments(*first, "fraction");
-    auto same = renderer.Render(fraction, true, 16.0f, 1280.0f, normalizer, "#000000");
+    auto same = Ready(renderer, fraction, true, 16.0f, 1280.0f, "#000000");
     require(sameMetrics(*same, *first),
             "identical cache key preserves render ids and metrics");
 
-    auto recolored = renderer.Render(fraction, true, 16.0f, 1280.0f, normalizer, "#c02020");
+    auto recolored = Ready(renderer, fraction, true, 16.0f, 1280.0f, "#c02020");
     checkFragments(*recolored, "recolored fraction");
     require(!sameRenderIds(*recolored, *first), "color participates in cache key");
-    auto resized = renderer.Render(fraction, true, 16.0f, 720.0f, normalizer, "#000000");
+    auto resized = Ready(renderer, fraction, true, 16.0f, 720.0f, "#000000");
     checkFragments(*resized, "resized fraction");
     require(!sameRenderIds(*resized, *first), "container width participates in cache key");
     std::cout << "fraction cache=stable color-key=distinct width-key=distinct\n";
 
     constexpr std::string_view unicode = "\xCE\xB1+\xCE\xB2";
-    auto unicodeResult = renderer.Render(unicode, false, 16.0f, 1280.0f, normalizer, "#000000");
+    auto unicodeResult = Ready(renderer, unicode, false, 16.0f, 1280.0f, "#000000");
     checkFragments(*unicodeResult, "raw Unicode");
     std::cout << "raw-unicode fragments=" << unicodeResult->fragments.size() << '\n';
 
     constexpr std::string_view malformed = R"(\frac{a}{)";
-    auto formulaError = renderer.Render(malformed, false, 16.0f, 1280.0f,
-                                        normalizer, "#000000");
+    auto formulaError = Ready(renderer, malformed, false, 16.0f, 1280.0f,
+                                        "#000000");
     require(formulaError->errorKind == MathJaxErrorKind::Formula,
             "malformed TeX is classified as a formula diagnostic");
     require(!formulaError->error.empty(), "formula diagnostic retains its message");
@@ -724,18 +975,21 @@ void runProbe() {
     std::cout << "malformed kind=Formula fragments=" << formulaError->fragments.size() << '\n';
 
     renderer.Clear();
-    auto afterClear = renderer.Render(fraction, true, 16.0f, 1280.0f, normalizer, "#000000");
+    auto afterClear = Ready(renderer, fraction, true, 16.0f, 1280.0f, "#000000");
     checkFragments(*afterClear, "fraction after Clear");
     require(!sameRenderIds(*afterClear, *first), "Clear removes the prior cached result");
     std::cout << "clear=rerendered\n";
 
-    testOwnership(normalizer);
+    testOwnership();
+    testAsyncEditsAndClear();
     testCrossThreadRendererMove();
+    testDocumentSvgEviction();
 
 }
 } // namespace
 
 int wmain(int argc, wchar_t** argv) {
+    std::cout << std::unitbuf;
     try {
         if (argc == 2 && std::wstring_view(argv[1]) == L"--cancel-only") {
             runCancellationProbe();
@@ -756,18 +1010,18 @@ int wmain(int argc, wchar_t** argv) {
         runProbe();
         testStore();
         std::cout << "math-index >4096 formulas: not exercised; store records test only\n";
-        std::cout << "synchronous math and SVG store probe: PASS\n";
+        std::cout << "asynchronous math and file-backed SVG probe: PASS\n";
         return 0;
     } catch (winrt::hresult_error const& error) {
-        std::cerr << "synchronous math and SVG store probe: FAIL: HRESULT=0x"
+        std::cerr << "asynchronous math and file-backed SVG probe: FAIL: HRESULT=0x"
                   << std::hex << static_cast<std::uint32_t>(error.code())
                   << " message=" << winrt::to_string(error.message()) << '\n';
         return 1;
     } catch (std::exception const &error) {
-        std::cerr << "synchronous math and SVG store probe: FAIL: " << error.what() << '\n';
+        std::cerr << "asynchronous math and file-backed SVG probe: FAIL: " << error.what() << '\n';
         return 1;
     } catch (...) {
-        std::cerr << "synchronous math and SVG store probe: FAIL: unknown non-standard exception\n";
+        std::cerr << "asynchronous math and file-backed SVG probe: FAIL: unknown non-standard exception\n";
         return 1;
     }
 }
