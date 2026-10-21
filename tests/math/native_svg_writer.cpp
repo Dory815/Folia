@@ -167,6 +167,44 @@ suite native_svg_writer = [] {
         expect(output.find("data-math-role=\"unknown\"") != output.npos);
     };
 
+    "error background title and children retain ordered typed SVG values"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        scene::Paint root_paint;
+        root_paint.stylesheet = scene::PaintColors{scene::CssColor{"red"}, scene::CssColor{"red"}};
+        builder.set_paint(0, root_paint);
+
+        scene::Paint authored;
+        authored.fill = scene::CssColor{"blue"};
+        authored.stroke = scene::CurrentColorPaint{};
+        authored.stylesheet = scene::PaintColors{scene::CssColor{"yellow"}, scene::NoPaint{}};
+        builder.add_primitive(
+            0, scene::Rule{{0, -0.2, 1, 0.8}, authored, {}, scene::ElementRole::error_background});
+        // LiteParser.PCDATA includes title; serializeInner copies PCDATA verbatim.
+        builder.add_primitive(0, scene::Title{"bad<&>"});
+        builder.add_primitive(0, scene::Title{""});
+        builder.add_primitive(0, scene::TextRun{"child", {}, {}, {}, {}});
+        auto legacy = builder.add_group(0, {}, {}, {}, scene::Tooltip{"legacy"});
+        builder.add_primitive(legacy, scene::TextRun{"tooltip child", {}, {}, {}, {}});
+
+        auto output =
+            svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
+        auto retained_root_group = output.find("<g");
+        auto background = output.find("<rect data-background=\"true\" width=\"1000\" "
+                                      "height=\"800\" y=\"-200\" fill=\"blue\" "
+                                      "stroke=\"currentColor\"/>");
+        auto title = output.find("<title>bad<&></title>");
+        auto empty_title = output.find("<title/>");
+        auto child = output.find("<text transform=\"scale(1,-1)\">child</text>");
+        expect(retained_root_group < background);
+        expect(background < title && title < empty_title && empty_title < child);
+        expect(output.find("fill=\"yellow\"") == output.npos);
+        expect(output.find("fill=\"red\"") == output.npos);
+        expect(output.find("<title>legacy</title>") != output.npos);
+        expect(output.find("tooltip child") != output.npos);
+    };
+
     "Source initial transforms bracket metadata at the recorded phase"_test = [] {
         scene::Builder initial;
         initial.set_metrics({1, 0.5, 0.1});

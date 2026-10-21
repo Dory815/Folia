@@ -230,6 +230,7 @@ std::string_view translation_separator(
     case scene::ElementRole::id_alignment_marker:
     case scene::ElementRole::fraction_rule:
     case scene::ElementRole::radical_rule:
+    case scene::ElementRole::error_background:
         return " ";
     }
     throw std::invalid_argument("unknown Scene element role");
@@ -419,6 +420,34 @@ void append_table_stroke(std::string &out, scene::Paint const &paint) {
 
 void append_rule(std::string &out, scene::Rule const &rule) {
     out += "<rect";
+    if (rule.role == scene::ElementRole::error_background) {
+        detail::append_attribute(out, "data-background", "true");
+        detail::append_attribute(out, "width", number(rule.bounds.width * 1000));
+        detail::append_attribute(out, "height", number(rule.bounds.height * 1000));
+        detail::append_attribute(out, "y", number(rule.bounds.y * 1000));
+        append_paint(out, rule.paint);
+        if (rule.corner_radius)
+            detail::append_attribute(out, "rx", number(*rule.corner_radius * 1000));
+        static constexpr std::array<std::string_view, 16> reserved{"data-background",
+                                                                   "width",
+                                                                   "height",
+                                                                   "x",
+                                                                   "y",
+                                                                   "rx",
+                                                                   "fill",
+                                                                   "stroke",
+                                                                   "fill-rule",
+                                                                   "fill-opacity",
+                                                                   "stroke-opacity",
+                                                                   "stroke-width",
+                                                                   "opacity",
+                                                                   "stroke-linecap",
+                                                                   "stroke-linejoin",
+                                                                   "stroke-dasharray"};
+        detail::append_metadata(out, rule.metadata, reserved);
+        out += "/>";
+        return;
+    }
     if (rule.role == scene::ElementRole::enclosure_mark) {
         detail::append_attribute(out, "x", number(rule.bounds.x * 1000));
         detail::append_attribute(out, "y", number(rule.bounds.y * 1000));
@@ -781,7 +810,13 @@ void append_primitive(std::string &out, scene::Primitive const &primitive,
                 append_ellipse(out, value);
             else if constexpr (std::is_same_v<T, scene::TextRun>)
                 append_text_run(out, value);
-            else
+            else if constexpr (std::is_same_v<T, scene::Title>) {
+                // LiteParser treats title as PCDATA, which serializeInner copies verbatim.
+                if (value.text.empty())
+                    out += "<title/>";
+                else
+                    out += "<title>" + value.text + "</title>";
+            } else
                 throw UnsupportedError(
                     "foreign HTML markup requires a structured SVG/XHTML serializer");
         },
@@ -808,7 +843,7 @@ void open_group(std::string &out, scene::Group const &group, SvgWriteOptions con
                std::holds_alternative<scene::InheritedPaint>(paint.stroke) &&
                paint.stroke_width == 0 && paint.opacity == 1 &&
                paint.fill_rule == scene::FillRule::nonzero && !paint.line_cap && !paint.line_join &&
-               !paint.dash_array;
+               !paint.dash_array && !paint.stylesheet;
     };
     bool const sentinel =
         group.id == 0 && group.transform.operations().empty() && !group.clip && !group.link &&
