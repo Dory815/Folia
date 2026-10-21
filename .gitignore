@@ -58,7 +58,6 @@ compile_commands.json
 !/tools/math-port/drafts/mhchem-native-dependency.cpp
 !/tools/math-port/drafts/mml-factory-context-methods-native-tests.cpp
 !/tools/math-port/drafts/parser-projection-native-candidate.cpp
-!/tools/math-port/drafts/scene-layering-source-tests.cpp
 !/tools/math-port/drafts/subhandlers-live-owner-native-candidate.cpp
 !/tools/math-port/drafts/tag-setoptions-default-methods-native-witness.cpp
 !/tools/math-port/drafts/texhtml-bridge-native-test.cpp

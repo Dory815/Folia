@@ -365,9 +365,8 @@ suite common_scene_source = [] {
         LiteUnknownTextMeasurement canonicalMeasurement(owner.adaptor);
         // Stage coverage is deliberately limited to focused currently emitted
         // Common families, table branches, and isolated script-family probes.
-        // Other pinned Source cases remain outstanding until their families
-        // emit Scene nodes. This is not the required 75/150 full-profile gate.
-        constexpr std::array<std::string_view, 86> selected{
+        // The accepted canonical 75/150 profile has its separate test entry.
+        constexpr std::array<std::string_view, 88> selected{
             "plain",
             "mathbb",
             "fraction-inline",
@@ -453,7 +452,9 @@ suite common_scene_source = [] {
             "scene-enclose-boundary-roundedbox-empty",
             "scene-enclose-boundary-uparrow-left",
             "scene-enclose-boundary-rightarrow-top",
-            "scene-enclose-boundary-arrow-custom-parameters"};
+            "scene-enclose-boundary-arrow-custom-parameters",
+            "scene-border-dashed",
+            "scene-border-dotted"};
         const char *profileEnvironment = std::getenv("FOLIA_MATH_SCENE_PROFILE");
         bool canonicalProfile = false;
         if (profileEnvironment)
@@ -599,6 +600,67 @@ suite common_scene_source = [] {
                         stats.horizontal_extender_roles == sourcePieces &&
                         stats.horizontal_extender_viewports == sourcePieces;
                 }
+                bool brokenBorderGeometryOk = true;
+                if (name == "scene-border-dashed" || name == "scene-border-dotted") {
+                    const bool dotted = name == "scene-border-dotted";
+                    std::vector<std::array<double, 7>> observed;
+                    const auto collectLines = [&](auto &&self, scene::Group const &group) -> void {
+                        for (auto const &entry : group.entries) {
+                            if (auto const *child =
+                                    std::get_if<std::shared_ptr<scene::Group const>>(&entry)) {
+                                if (*child)
+                                    self(self, **child);
+                                continue;
+                            }
+                            if (!std::holds_alternative<scene::Primitive>(entry))
+                                continue;
+                            auto const &primitive = std::get<scene::Primitive>(entry);
+                            const auto *line = std::get_if<scene::Path>(&primitive);
+                            if (!line || line->element != scene::PathElement::line ||
+                                !line->paint.dash_array)
+                                continue;
+                            brokenBorderGeometryOk = brokenBorderGeometryOk &&
+                                line->paint.dash_array->size() == 2 && line->paint.line_cap ==
+                                    (dotted ? scene::StrokeCap::round : scene::StrokeCap::square) &&
+                                std::get_if<scene::CssColor>(&line->paint.stroke) &&
+                                std::get<scene::CssColor>(line->paint.stroke).value == "red" &&
+                                line->geometry.segments.size() == 2;
+                            const auto *from = line->geometry.segments.size() == 2
+                                ? std::get_if<scene::MoveTo>(&line->geometry.segments[0]) : nullptr;
+                            const auto *to = line->geometry.segments.size() == 2
+                                ? std::get_if<scene::LineTo>(&line->geometry.segments[1]) : nullptr;
+                            if (!from || !to || line->paint.dash_array->size() != 2)
+                                continue;
+                            observed.push_back({from->to.x, from->to.y, to->to.x, to->to.y,
+                                line->paint.stroke_width, (*line->paint.dash_array)[0],
+                                (*line->paint.dash_array)[1]});
+                        }
+                    };
+                    collectLines(collectLines, completed.root());
+                    const std::vector<std::array<double, 7>> expected = dotted
+                        ? std::vector<std::array<double, 7>>{
+                            {-.06025,.64325,2.3446944444444444,.64325,.1105,.001,.21663131313131312},
+                            {2.3446944444444444,-.26525,2.3446944444444444,.64325,.1105,.001,.1797},
+                            {-.06025,-.26525,2.3446944444444444,-.26525,.1105,.001,.21663131313131312},
+                            {-.06025,-.26525,-.06025,.64325,.1105,.001,.1797}}
+                        : std::vector<std::array<double, 7>>{
+                            {-.06025,.64325,2.3446944444444444,.64325,.1105,.09619777777777777,.2885933333333333},
+                            {2.3446944444444444,-.26525,2.3446944444444444,.64325,.1105,.10094444444444445,.30283333333333334},
+                            {-.06025,-.26525,2.3446944444444444,-.26525,.1105,.09619777777777777,.2885933333333333},
+                            {-.06025,-.26525,-.06025,.64325,.1105,.10094444444444445,.30283333333333334}};
+                    brokenBorderGeometryOk = brokenBorderGeometryOk && observed.size() == 4;
+                    for (const auto &wanted : expected)
+                        brokenBorderGeometryOk = brokenBorderGeometryOk &&
+                            std::ranges::any_of(observed, [&](const auto &actual) {
+                                for (std::size_t i = 0; i < wanted.size(); ++i)
+                                    if (std::abs(actual[i] - wanted[i]) > 1e-10)
+                                        return false;
+                                return true;
+                            });
+                    expect(bool(brokenBorderGeometryOk))
+                        << "CommonWrapper border geometry differs from the Source observation for "
+                        << name;
+                }
                 const bool typedSceneOk =
                     stats.groups > 0 && completedMetrics && frameMetrics && fragmentRootsOwned &&
                     frameFragmentsMatchSource && extenderRolesMatchSource &&
@@ -697,7 +759,8 @@ suite common_scene_source = [] {
                 const bool svgMatches = actual == source.svg;
                 expect(bool(svgMatches)) << "Source SVG bytes differ for " << name;
                 const bool casePassed =
-                    typedSceneOk && phantomEmissionOk && tableStructureOk && svgMatches;
+                    typedSceneOk && phantomEmissionOk && tableStructureOk &&
+                    brokenBorderGeometryOk && svgMatches;
                 if (canonicalProfile)
                     std::cerr << "Common-to-Scene profile=canonical case=" << name << " category="
                               << (casePassed   ? "source_success_svg_equal"

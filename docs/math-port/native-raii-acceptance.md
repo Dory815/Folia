@@ -768,6 +768,23 @@ child, and its broken control includes an operand so it actually creates a line
 stack rather than the distinct embellished-operator path. Full math and worker
 verification after the pending old Scene removal remain to be run.
 
+### Retained CommonWrapper broken-border coverage
+
+The two obsolete Scene candidate translation units used the withdrawn mutable
+NodeRef/Transform representation. Their still-supported ownership, transforms,
+HTML, viewport and notation assertions have active typed Scene/Source counterparts.
+Their CSS dashed/dotted border checks are retained in the existing Common-to-Scene
+test: actual TeX `\\bbox[border:2px dashed/dotted red]{x+y}` reaches CommonWrapper's
+border emitter, then checks all four raw endpoints, widths, dash lengths, caps,
+red stroke, complete Source SVG and serialization after request teardown.
+
+The independent Source generator appended exactly two records; all prior 148
+records, including the canonical first75, remain byte-identical. The extended
+selected 88-case test passes 1 test / 1047 assertions (`border-coverage-native.log`
+and `border-coverage-native-results.json`); parallel4 build passes. Source helper
+`common-border-dash-source.cjs`, its fixture, text-tip oracle and comparer remain.
+No production border algorithm was changed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
