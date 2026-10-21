@@ -13,6 +13,12 @@ void validate(Point value) {
 bool valid(FillRule rule) noexcept {
     return rule == FillRule::nonzero || rule == FillRule::evenodd;
 }
+bool valid(CoordinateMode mode) noexcept {
+    return mode == CoordinateMode::absolute || mode == CoordinateMode::relative;
+}
+bool valid(ArcFlagSeparator separator) noexcept {
+    return separator == ArcFlagSeparator::space || separator == ArcFlagSeparator::comma;
+}
 Affine validate_affine(Affine const &transform) {
     if (!(finite(transform.a) && finite(transform.b) && finite(transform.c) &&
           finite(transform.d) && finite(transform.e) && finite(transform.f)))
@@ -118,9 +124,13 @@ void validate(PathGeometry const &path) {
         std::visit(
             [](auto const &part) {
                 using S = std::remove_cvref_t<decltype(part)>;
-                if constexpr (std::same_as<S, MoveTo> || std::same_as<S, LineTo>)
+                if constexpr (std::same_as<S, MoveTo>)
                     validate(part.to);
-                else if constexpr (std::same_as<S, QuadTo>) {
+                else if constexpr (std::same_as<S, LineTo>) {
+                    validate(part.to);
+                    if (!valid(part.mode))
+                        throw std::invalid_argument("Scene line coordinate mode is invalid");
+                } else if constexpr (std::same_as<S, QuadTo>) {
                     validate(part.control);
                     validate(part.to);
                 } else if constexpr (std::same_as<S, CubicTo>) {
@@ -132,6 +142,8 @@ void validate(PathGeometry const &path) {
                     if (!finite(part.radius_x) || !finite(part.radius_y) ||
                         !finite(part.rotation) || part.radius_x < 0 || part.radius_y < 0)
                         throw std::invalid_argument("Scene arc parameters are invalid");
+                    if (!valid(part.mode) || !valid(part.flags_separator))
+                        throw std::invalid_argument("Scene arc spelling is invalid");
                 }
             },
             segment);
@@ -198,15 +210,37 @@ Primitive clone_primitive(Primitive const &source) {
                     !finite(value.bounds.width) || !finite(value.bounds.height) ||
                     value.bounds.width < 0 || value.bounds.height < 0)
                     throw std::invalid_argument("Scene rule bounds are invalid");
+                if (value.corner_radius &&
+                    (!finite(*value.corner_radius) || *value.corner_radius < 0))
+                    throw std::invalid_argument("Scene rule corner radius is invalid");
                 validate(value.paint);
                 validate(value.metadata);
             } else if constexpr (std::same_as<T, Path>) {
                 validate(value.geometry);
                 validate(value.paint);
                 validate(value.metadata);
+                validate(value.transform);
                 if (value.layout_width &&
                     (!finite(*value.layout_width) || *value.layout_width < 0))
                     throw std::invalid_argument("Scene path layout width is invalid");
+                if ((value.syntax != PathSyntax::compact && value.syntax != PathSyntax::spaced) ||
+                    (value.paint_encoding != PathPaintEncoding::attributes &&
+                     value.paint_encoding != PathPaintEncoding::stroke_width_style) ||
+                    (value.join_spelling != StrokeJoinSpelling::standard &&
+                     value.join_spelling != StrokeJoinSpelling::mitre))
+                    throw std::invalid_argument("Scene path spelling is invalid");
+                if (value.join_spelling == StrokeJoinSpelling::mitre &&
+                    (value.paint_encoding != PathPaintEncoding::stroke_width_style ||
+                     value.paint.line_join != StrokeJoin::miter))
+                    throw std::invalid_argument(
+                        "Scene mitre spelling requires stroked miter paint");
+            } else if constexpr (std::same_as<T, Ellipse>) {
+                validate(value.center);
+                if (!finite(value.radius_x) || !finite(value.radius_y) || value.radius_x < 0 ||
+                    value.radius_y < 0)
+                    throw std::invalid_argument("Scene ellipse radii are invalid");
+                validate(value.paint);
+                validate(value.metadata);
             } else if constexpr (std::same_as<T, TextRun>) {
                 copy.metrics = validate_metrics(value.metrics);
                 validate(value.origin);

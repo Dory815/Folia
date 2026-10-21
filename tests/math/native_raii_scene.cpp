@@ -238,6 +238,136 @@ suite scene_freeze = [] {
         expect(std::get<TextRun>(std::get<Primitive>(frozen->entries.front())).utf8 == "before");
     };
 
+    "enclosure geometry values freeze their ownership and preserve typed spelling"_test = [] {
+        Path path;
+        path.geometry.segments = {MoveTo{{1, 2}}, LineTo{{0.5, -0.25}, CoordinateMode::relative},
+                                  ArcTo{0.4,
+                                        0.3,
+                                        15,
+                                        true,
+                                        false,
+                                        {0.2, 0.1},
+                                        CoordinateMode::relative,
+                                        ArcFlagSeparator::comma}};
+        path.paint.stroke_width = 0.04;
+        path.paint.line_join = StrokeJoin::miter;
+        path.transform = Transform{std::vector<TransformOperation>{Translation{0.1, 0.2}}};
+        path.syntax = PathSyntax::spaced;
+        path.paint_encoding = PathPaintEncoding::stroke_width_style;
+        path.join_spelling = StrokeJoinSpelling::mitre;
+        Rule rounded{{0, 0, 0.467, 0.8}, {}, {}, ElementRole::enclosure_mark, 0.267};
+        Ellipse ellipse{{0.4, -0.2}, 0.15, 0.3, {}, {}, ElementRole::enclosure_mark};
+        Group root;
+        root.entries.emplace_back(Primitive{rounded});
+        root.entries.emplace_back(Primitive{path});
+        root.entries.emplace_back(Primitive{ellipse});
+        Scene scene{root, {}, {}};
+
+        auto &mutable_path = std::get<Path>(std::get<Primitive>(root.entries[1]));
+        mutable_path.geometry.segments.clear();
+        mutable_path.transform = {};
+        auto &mutable_ellipse = std::get<Ellipse>(std::get<Primitive>(root.entries[2]));
+        mutable_ellipse.center.x = 99;
+        auto const &frozen_rule = std::get<Rule>(std::get<Primitive>(scene.root().entries[0]));
+        auto const &frozen_path = std::get<Path>(std::get<Primitive>(scene.root().entries[1]));
+        auto const &frozen_ellipse =
+            std::get<Ellipse>(std::get<Primitive>(scene.root().entries[2]));
+        expect(frozen_rule.corner_radius == 0.267);
+        expect(frozen_path.geometry.segments.size() == 3_u);
+        expect(std::get<LineTo>(frozen_path.geometry.segments[1]).mode == CoordinateMode::relative);
+        auto const &arc = std::get<ArcTo>(frozen_path.geometry.segments[2]);
+        expect(arc.mode == CoordinateMode::relative);
+        expect(arc.flags_separator == ArcFlagSeparator::comma);
+        expect(frozen_path.transform.matrix() == Affine{1, 0, 0, 1, 0.1, 0.2});
+        expect(frozen_path.syntax == PathSyntax::spaced);
+        expect(frozen_path.paint_encoding == PathPaintEncoding::stroke_width_style);
+        expect(frozen_path.join_spelling == StrokeJoinSpelling::mitre);
+        expect(frozen_ellipse.center.x == 0.4_d);
+
+        auto rejects_path = [](Path const &candidate) {
+            Group invalid_root;
+            invalid_root.entries.emplace_back(Primitive{candidate});
+            try {
+                Scene invalid{std::move(invalid_root), {}, {}};
+            } catch (std::invalid_argument const &) {
+                return true;
+            }
+            return false;
+        };
+        auto invalid_mode = path;
+        invalid_mode.geometry.segments = {LineTo{{1, 0}, static_cast<CoordinateMode>(99)}};
+        expect(rejects_path(invalid_mode));
+        auto invalid_separator = path;
+        invalid_separator.geometry.segments = {ArcTo{1,
+                                                     1,
+                                                     0,
+                                                     false,
+                                                     true,
+                                                     {1, 0},
+                                                     CoordinateMode::relative,
+                                                     static_cast<ArcFlagSeparator>(99)}};
+        expect(rejects_path(invalid_separator));
+        auto invalid_transform = path;
+        invalid_transform.transform = Transform{
+            std::vector<TransformOperation>{Translation{std::numeric_limits<Unit>::infinity(), 0}}};
+        expect(rejects_path(invalid_transform));
+        auto invalid_syntax = path;
+        invalid_syntax.syntax = static_cast<PathSyntax>(99);
+        expect(rejects_path(invalid_syntax));
+        auto invalid_encoding = path;
+        invalid_encoding.paint_encoding = static_cast<PathPaintEncoding>(99);
+        expect(rejects_path(invalid_encoding));
+        auto invalid_join = path;
+        invalid_join.paint.line_join = StrokeJoin::round;
+        expect(rejects_path(invalid_join));
+        auto invalid_join_encoding = path;
+        invalid_join_encoding.paint_encoding = PathPaintEncoding::attributes;
+        expect(rejects_path(invalid_join_encoding));
+        auto invalid_ellipse = ellipse;
+        invalid_ellipse.radius_x = -0.1;
+        Group ellipse_root;
+        ellipse_root.entries.emplace_back(Primitive{invalid_ellipse});
+        bool rejected_ellipse = false;
+        try {
+            Scene invalid{std::move(ellipse_root), {}, {}};
+        } catch (std::invalid_argument const &) {
+            rejected_ellipse = true;
+        }
+        expect(rejected_ellipse);
+        invalid_ellipse.radius_x = 0.1;
+        invalid_ellipse.radius_y = std::numeric_limits<Unit>::infinity();
+        Group nonfinite_ellipse_root;
+        nonfinite_ellipse_root.entries.emplace_back(Primitive{invalid_ellipse});
+        bool rejected_nonfinite_ellipse = false;
+        try {
+            Scene invalid{std::move(nonfinite_ellipse_root), {}, {}};
+        } catch (std::invalid_argument const &) {
+            rejected_nonfinite_ellipse = true;
+        }
+        expect(rejected_nonfinite_ellipse);
+        auto invalid_radius = rounded;
+        invalid_radius.corner_radius = std::numeric_limits<Unit>::quiet_NaN();
+        Group radius_root;
+        radius_root.entries.emplace_back(Primitive{invalid_radius});
+        bool rejected_radius = false;
+        try {
+            Scene invalid{std::move(radius_root), {}, {}};
+        } catch (std::invalid_argument const &) {
+            rejected_radius = true;
+        }
+        expect(rejected_radius);
+        invalid_radius.corner_radius = -0.1;
+        Group negative_radius_root;
+        negative_radius_root.entries.emplace_back(Primitive{invalid_radius});
+        bool rejected_negative_radius = false;
+        try {
+            Scene invalid{std::move(negative_radius_root), {}, {}};
+        } catch (std::invalid_argument const &) {
+            rejected_negative_radius = true;
+        }
+        expect(rejected_negative_radius);
+    };
+
     "viewport values are validated and deeply frozen with groups and glyphs"_test = [] {
         Viewport viewport{{0.1, -0.2, 0.8, 0.7},
                           {-0.3, -0.4, 1.2, 1.1},

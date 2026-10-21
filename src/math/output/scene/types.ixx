@@ -183,8 +183,11 @@ struct MoveTo {
     Point to;
     friend bool operator==(MoveTo const &, MoveTo const &) = default;
 };
+enum class CoordinateMode { absolute, relative };
 struct LineTo {
     Point to;
+    // Relative coordinates are completed local deltas, not cached endpoints.
+    CoordinateMode mode{CoordinateMode::absolute};
     friend bool operator==(LineTo const &, LineTo const &) = default;
 };
 struct QuadTo {
@@ -195,10 +198,15 @@ struct CubicTo {
     Point control1, control2, to;
     friend bool operator==(CubicTo const &, CubicTo const &) = default;
 };
+enum class ArcFlagSeparator { space, comma };
 struct ArcTo {
     Unit radius_x{}, radius_y{}, rotation{};
     bool large_arc{}, sweep{};
     Point to;
+    // Relative coordinates are completed local deltas, not cached endpoints.
+    CoordinateMode mode{CoordinateMode::absolute};
+    // Preserves the source separator between the two arc flags.
+    ArcFlagSeparator flags_separator{ArcFlagSeparator::space};
     friend bool operator==(ArcTo const &, ArcTo const &) = default;
 };
 struct ClosePath {
@@ -273,7 +281,12 @@ struct Rule {
     Paint paint{};
     SemanticMetadata metadata{};
     ElementRole role{ElementRole::math_wrapper};
+    // Keep the requested radius; shape consumers clamp it to the rectangle.
+    std::optional<Unit> corner_radius;
 };
+enum class PathSyntax { compact, spaced };
+enum class PathPaintEncoding { attributes, stroke_width_style };
+enum class StrokeJoinSpelling { standard, mitre };
 struct Path {
     PathGeometry geometry;
     Paint paint{};
@@ -283,6 +296,18 @@ struct Path {
     // Source table background sizing may target a first-child border path.
     // This completed width does not change the path geometry or stroke width.
     std::optional<Unit> layout_width;
+    // Transform is semantic; the following spelling fields affect projection only.
+    Transform transform{};
+    PathSyntax syntax{PathSyntax::compact};
+    PathPaintEncoding paint_encoding{PathPaintEncoding::attributes};
+    StrokeJoinSpelling join_spelling{StrokeJoinSpelling::standard};
+};
+struct Ellipse {
+    Point center;
+    Unit radius_x{}, radius_y{};
+    Paint paint{};
+    SemanticMetadata metadata{};
+    ElementRole role{ElementRole::math_wrapper};
 };
 struct TextFont {
     std::string family;
@@ -363,5 +388,5 @@ struct FrameLayout {
     std::vector<InlineFragment> inline_fragments;
     std::optional<PercentageFrame> percentage;
 };
-using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, ForeignContent>;
+using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, ForeignContent, Ellipse>;
 } // namespace folia::math::output::scene
