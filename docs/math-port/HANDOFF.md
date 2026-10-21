@@ -4,12 +4,12 @@
 
 ## 当前状态与下一步
 
-- HEAD **57a153f3**。旧 Scene 50 源已分五批退出，只剩 builder/scene/types/html_types/html_snapshot 共8源；真实算法留在原 Common owner。8fe4445b 修正 CommonMrow inferred fast path；cad58dcd 将两条 border 数学断言保留到既有 CommonScene。提交与 Source 细节在 acceptance，不恢复旧重复层。
+- 记录提交 **402a7fab**。旧 Scene 50 源已分五批退出，只剩 builder/scene/types/html_types/html_snapshot 共8源；真实算法留在原 Common owner。8fe4445b 修正 CommonMrow inferred fast path；cad58dcd 保留两条 border 数学断言。现再退出旧 SvgMath/TimerHost 四源：前者宽度算法原已在CommonMath，后者只服务撤销的Context回调；无tracked外部API/imports或任何target成员，before-removal证据scene-svgFinal-before-removal.json。parallel4 FoliaMathTests/FoliaNativeMath build exit0，未改活跃代码。
 - 最新完整 math **96710 exit0：870 tests/217144 assertions/176 suites/0 skips**；支持的 WinUI Debug+真实 worker **64450 exit0**，stop join4599ms/total9.07s/empty stderr。日志：`build/math-port/retire-scene-{full-math,worker-verify}.log`、`retire-scene-full-results.json`。删除后 parallel4 native build exit0/no work。未验 Release/GUI 视觉。
 - canonical 清单已刷新至 **57a153f3**、File API **index-2026-10-21T08-13-34-0100.json**：678文件/674代码；560配置源（含83生成字体cpp）、247接口与module map相等、active imports未解析0。清单仅配置事实，Source注释仅索引，不按文件名/空membership判删。工具b38c7627/a074b59f的55项自测与隔离cwd复验已接受。
-- **下一动作**：先提交本轮记录/清单，再从 ignored `build/math-port/remaining-object-retirement-queue.md` 选择小消费者批次，Root实际读候选内容和direct API，保留mixed数学断言后逐批退图。剩余193个未配置cpp/ixx：MML64、TeX36、Core+tree/util58、font/common/svg25、Lite/html10；mapping_data.inc及license另计并保留。不得只凭未配置或agent结论删除。
+- **下一动作**：提交四源退役，再处理 `remaining-object-retirement-queue.md` 的纯protocol叶子测试。Root已读Common factory live fields、MML factory call-order、MML node Context probe；两项factory测试无数学输出，node probe的getText/isKind需对照typed断言再定。provider仍有其他旧消费者，不一并删。剩余189个未配置cpp/ixx：MML64、TeX36、Core+tree/util58、font/common/svg21、Lite/html10；mapping_data.inc/license保留。canonical清单尚是上述678快照，下一批后再刷新。
 - 只读材料在 `build/math-port/remaining-{object-graph,mml-owners,tex-owners,tree-util-owners,font-common-owners,lite-html-owners}.md`（graph另有json）。Root已读六报告；graph仅事实。树/util报告的active归类、TeX旧ledger缺口及MML保护名单有错误，正在精确纠正，未接受为删除依据。旧Scene报告仅历史before-removal证据。
-- 当前无build/native运行。活跃Luna：remaining_object_graph（新index及小消费者队列）、remaining_tree_util_owners（配置/测试事实纠错）、remaining_tex_owners（实际owner与旧ledger交叉核对）、remaining_mml_owners（保护名单与小批队列）；只写ignored报告。不依据早期agent完成消息覆盖此checkpoint。
+- 当前无build/native或Luna运行。上述四项报告纠错已回报；Root已读queue及修订报告，但TeX最初两版曾误认未配置runtime/test为active，必须继续以实际canonical membership/代码核实，不能泛信报告。新旧index的478个src/math target/path pairs相同。MML bindings仍有旧MML()/classBinding直接消费者，不能仅按implementation无import退源。
 
 ## 已接受决策
 

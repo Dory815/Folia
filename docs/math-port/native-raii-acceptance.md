@@ -812,6 +812,17 @@ No Release or GUI visual inspection is claimed. The canonical inventory records
 247 active interfaces matching the module map, and eight active Scene sources;
 the latest File API index is index-2026-10-21T08-13-34-0100.json.
 
+The remaining unused SvgMath pair and TimerHost pair retire separately. Root
+read their complete implementations: the former's percentage-width rule is
+already in CommonMath::setChildPWidths and the standard catalog uses CommonMath;
+the latter schedules only Context ObjectRef callbacks, which are outside the
+accepted completed-Scene contract. The typed maction tests retain selected
+geometry, text/math tooltip Scenes and delay values, not a simulated event loop.
+All four sources have zero all-target memberships and zero surviving tracked
+imports/API callers (scene-svgFinal-before-removal.json). The timer draft is
+ignored historical material, not a tracked consumer. The parallel4 native
+math/DLL build exits0 after removal; no active code or test body changes.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
