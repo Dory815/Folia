@@ -105,6 +105,89 @@ suite math_native_mml_factory = [] {
         }
     };
 
+    "all_registered_node_initial_class_flags_and_empty_state_match_source"_test = [] {
+        struct Expected final {
+            mml::NodeKind kind;
+            bool token;
+            bool inferred;
+            bool notParent;
+        };
+        const Expected expected[]{
+            {mml::NodeKind::math, false, false, false},
+            {mml::NodeKind::mi, true, false, false},
+            {mml::NodeKind::mn, true, false, false},
+            {mml::NodeKind::mo, true, false, false},
+            {mml::NodeKind::mtext, true, false, false},
+            {mml::NodeKind::mspace, true, false, false},
+            {mml::NodeKind::ms, true, false, false},
+            {mml::NodeKind::mrow, false, false, false},
+            {mml::NodeKind::inferred_mrow, false, true, true},
+            {mml::NodeKind::mfrac, false, false, false},
+            {mml::NodeKind::msqrt, false, false, false},
+            {mml::NodeKind::mroot, false, false, false},
+            {mml::NodeKind::mstyle, false, false, false},
+            {mml::NodeKind::merror, false, false, false},
+            {mml::NodeKind::mpadded, false, false, false},
+            {mml::NodeKind::mphantom, false, false, false},
+            {mml::NodeKind::mfenced, false, false, false},
+            {mml::NodeKind::menclose, false, false, false},
+            {mml::NodeKind::maction, false, false, false},
+            {mml::NodeKind::msub, false, false, false},
+            {mml::NodeKind::msup, false, false, false},
+            {mml::NodeKind::msubsup, false, false, false},
+            {mml::NodeKind::munder, false, false, false},
+            {mml::NodeKind::mover, false, false, false},
+            {mml::NodeKind::munderover, false, false, false},
+            {mml::NodeKind::mmultiscripts, false, false, false},
+            {mml::NodeKind::mprescripts, false, false, false},
+            {mml::NodeKind::none, false, false, false},
+            {mml::NodeKind::mtable, false, false, false},
+            {mml::NodeKind::mlabeledtr, false, false, false},
+            {mml::NodeKind::mtr, false, false, false},
+            {mml::NodeKind::mtd, false, false, false},
+            {mml::NodeKind::maligngroup, false, false, false},
+            {mml::NodeKind::malignmark, false, false, false},
+            {mml::NodeKind::mglyph, true, false, false},
+            {mml::NodeKind::semantics, false, false, true},
+            {mml::NodeKind::annotation, false, false, false},
+            {mml::NodeKind::annotation_xml, false, false, false},
+            {mml::NodeKind::tex_atom, false, false, true},
+            {mml::NodeKind::math_choice, false, false, true},
+            {mml::NodeKind::text, false, false, false},
+            {mml::NodeKind::xml, false, false, false},
+            {mml::NodeKind::html, false, false, false},
+        };
+        expect(std::size(expected) == mml::allNodeKinds.size());
+        std::array<bool, mml::allNodeKinds.size()> visited{};
+        mml::MmlDocument document;
+        for (const auto& entry : expected) {
+            const auto position = std::find(mml::allNodeKinds.begin(), mml::allNodeKinds.end(), entry.kind);
+            const bool registered = position != mml::allNodeKinds.end();
+            expect(registered);
+            if (!registered)
+                return;
+            const auto index = static_cast<std::size_t>(position - mml::allNodeKinds.begin());
+            expect(!visited[index]);
+            visited[index] = true;
+            auto& node = document.factory().make(entry.kind);
+            expect(node.isToken() == entry.token);
+            expect(node.isEmpty());
+            expect(node.isInferred() == entry.inferred);
+            expect(node.notParent() == entry.notParent);
+            const bool emptyFamily = entry.kind == mml::NodeKind::text ||
+                                     entry.kind == mml::NodeKind::xml ||
+                                     entry.kind == mml::NodeKind::html;
+            if (emptyFamily) {
+                expect(node.prevClass() == mml::TexClass::none);
+                expect(node.prevLevel() == 0.0);
+            } else {
+                expect(!node.prevClass().has_value());
+                expect(!node.prevLevel().has_value());
+            }
+        }
+        expect(std::all_of(visited.begin(), visited.end(), [](bool value) { return value; }));
+    };
+
     "infinite_arity_parent_flattens_inferred_child"_test = [] {
         mml::MmlDocument document;
         auto& factory = document.factory();
