@@ -2,6 +2,7 @@
 export module folia.math.output.common.font_data;
 import std;
 import folia.math.output.scene.types;
+export import folia.math.output.common.direction;
 export import folia.math.util.style_json;
 export import folia.math.output.common.font_path;
 
@@ -42,7 +43,6 @@ struct FontVariant {
     // Source's synthetic SMP entries identify one exact target variant/key.
     std::map<std::uint32_t, GlyphReference> remap;
 };
-enum class StretchDirection : std::uint8_t { none, horizontal, vertical };
 struct DelimiterRecipe {
     StretchDirection direction{StretchDirection::none};
     std::vector<double> sizes;

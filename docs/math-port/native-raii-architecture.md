@@ -2465,3 +2465,19 @@ the CommonWrapper style offset. It adds no request state or parallel layout
 helper. The old family, script, menclose, glyph-painter and support files are
 not alternative production implementations. Other inactive object-projection
 files still require per-owner consumer review before retirement.
+
+### Font direction and value boundaries (2026-10-21)
+
+The original output/common/direction.ixx owns the closed StretchDirection enum,
+matching the responsibility of Source Direction.ts. FontData re-exports that
+module and keeps DelimiterRecipe; Common wrappers share the same type. The
+move preserves enum values and all stretch/layout algorithms. No string-valued
+DIRECTION/V/H compatibility aliases or second direction type remain.
+
+FontRepository/FontGlyph and SvgFontResources publish immutable final font data.
+The existing NewCM module owner builds all pinned shards before publication;
+Source module/event counts are provenance, while direct glyph/remap/resource
+counts come from the actual native values. Old mutable FontDataClass/tuple,
+constructor/prototype, ListPatch and runtime JS-loader bindings are retired.
+The Source data generators/locks, final typed payload and independent oracles
+remain; no runtime loader/cache/promise API is reintroduced to satisfy old probes.

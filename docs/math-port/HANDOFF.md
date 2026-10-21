@@ -4,11 +4,11 @@
 
 ## 当前状态与下一步
 
-- 最近代码提交 **6f7cc0e7**：退旧 reference_leaf/native driver，Source oracle 输出改 ignored；其数学断言先保留到两个原测试文件（**5cf687cb**），无生产算法改动。Source display 探针6观察通过，聚焦 **6 tests/78 assertions**通过。最后 parallel4 build **85509 exit0**，相对聚焦后 test/DLL hash不变、保护11字节不变；日志 `build/math-port/mml-leaf-retirement-build*`。
-- 上述新测试前的完整math **96710 exit0：870 tests/217144 assertions/176 suites/0 skips**；WinUI Debug真实worker **64450 exit0/PASS**。之后未重复full/worker；未验Release/GUI视觉。证据在acceptance及 `retire-scene-{full-math,worker-verify}.log`。
-- canonical已刷新至 **6f7cc0e7**、**index-2026-10-21T08-41-46-0351.json**：668源/664代码、183未配置cpp/ixx、560配置源、247接口与map exact、保护11字节不变；Root断言在 `latest-retirement-inventory-check.json`。未配置不等于死代码。旧Scene/SVG重复布局与Common factory对象链均已分批退出；真实数学留原owner。
-- **下一步**：font消费者3批及surface6源已提交（末次7faaab18）；现退support8源，证据font-fontSupport-before-removal.json。Source/data/typed gate等18文件baseline在font-retained-before.json。接着实现Direction原owner登记并build/聚焦验证。active NewCM为eager bundle/coverage，40/80是Source provenance，不恢复旧loader/promise/cache API；本轮尚无新build/native运行。
-- 当前无live agent/build/native。Direction职责窄审通过：保留原direction.ixx，接着将现有StretchDirection enum从font_data放回该owner并export-import/CMake登记，不删除或恢复旧字符串别名。Lite/MML旧provider仍有保护消费者及MML()/classBinding调用者，不能按无显式import先删。找ignored交付先rg --no-ignore；旧graph仅历史线索。
+- 字体旧消费者/比较器及14绑定源已分5批提交（末次46958781）。Source/data/typed gate保留；18文件及保护11逐字节不变，证据font-direction-retained-check.json；before-removal在font-*-before-removal.json。新Direction改动把现有StretchDirection放回原direction.ixx并从FontData re-export、CMake登记，无新类型/算法/别名。
+- 最新parallel4 native **42226 exit0**；9聚焦 **9 tests/26340 assertions**通过，含完整Source SVG、分式/根式/表格/Mo/字体/BBox。WinUI Debug真实worker **56295 exit0/PASS**：join4372ms/8.93s/empty stderr。日志font-direction-{build,worker}.log及font-direction-focused-results.json。本轮未重复full math/full字体data gate；旧整跑96710（870/217144/176/0skip）及上轮leaf聚焦6/78仍留acceptance，不冒充新整跑。未验Release/GUI视觉。
+- 清单已临时刷新到46958781 HEAD的观察工作树，**index-2026-10-21T09-05-51-0865.json**：654源/650代码、168未配置cpp/ixx、561配置源、248接口与map exact、active未解析imports0。断言font-direction-inventory-check.json。**下一动作**：提交Direction三文件+记录后，再刷新canonical到该代码提交并小批提交清单。
+- 随后处理保护的旧Context文件：Root先逐diff读9个非媒体dirty，备份原字节/patch并明确account，再分派Luna核实旧对象protocol消费者与真正数学断言。不要直接退Lite/MML provider：仍有MML()/classBinding及旧runtime/test调用者。新CM eager bundle/coverage的40/80为Source provenance，不是native JS模块loader合同。font消费者已清完，不重审旧tuple/ListPatch API。
+- 当前无live agent/build/native。找ignored候选先rg --no-ignore；旧remaining-object-graph包含已退路径，只作历史线索。恢复依此checkpoint，不重做已接受广审。
 
 ## 已接受架构与执行约束
 

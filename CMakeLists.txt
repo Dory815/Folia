@@ -300,6 +300,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/svg/xml_wrapper.ixx
     src/math/output/svg/serializer.ixx
     src/math/output/svg/font_data.ixx
+    src/math/output/common/direction.ixx
     src/math/output/common/font_data.ixx
     src/math/output/common/font_path.ixx
     src/math/output/common/line_bbox.ixx

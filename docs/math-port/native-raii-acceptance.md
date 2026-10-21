@@ -956,6 +956,29 @@ stays in util/bbox and common/line_bbox. Source generators, observations, locks,
 licenses and the active typed include are retained; the 18-file byte baseline
 is font-retained-before.json. Direction is kept for its real shared type owner.
 
+### Direction owner and post-retirement verification
+
+StretchDirection now lives in the existing Direction.ts counterpart,
+output/common/direction.ixx. FontData re-exports it and retains DelimiterRecipe;
+CMake registers that one original interface. Enum values and all mathematical
+algorithms are unchanged; no compatibility aliases or second type are added.
+The parallel4 FoliaMathTests/FoliaNativeMath build exits0 (session42226,
+font-direction-build.log). Nine bounded focused tests execute exactly once
+each and pass **26340 assertions**, including pinned NewCM values, Mo/table
+stretching, all generated fraction/radical pairs, complete Source SVG and
+LineBBox operations (font-direction-focused-results.json / font-direction-*.log).
+
+The supported WinUI Debug build and real deployed worker probe exit0
+(session56295, font-direction-worker.log): mathbb, fractions/cache/dependencies,
+Unicode, noundefined, Formula recovery, Clear and disable/re-enable pass;
+stop join4372ms, elapsed8.93s, empty stderr. No new full math, full font-data
+comparison, Release or GUI visual run is claimed. All 18 retained font/data/
+oracle/license files and eleven protected paths are byte-identical.
+The new File API index index-2026-10-21T09-05-51-0865.json records 654 src/math
+files / 650 code sources, 561 configured folia_math sources and 248 interfaces
+matching the module map, with zero unresolved active imports and 168 remaining
+unconfigured cpp/ixx sources. The original direction interface is now active.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
