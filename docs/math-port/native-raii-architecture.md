@@ -2401,8 +2401,14 @@ Reuse build_app.ps1 to configure/build FoliaNativeMath with parallel4 before
 MSBuild (also capped4). Debug reuses build/core; Release uses build/core-release
 so the existing test tree is not silently reconfigured. vcxproj has matching
 build-dir defaults, early missing-library checks and an after-build DLL copy.
-No new scripts/projects, header-only std replacement, restored package commits
+No additional application build scripts/projects, header-only std replacement, restored package commits
 or extra build tree for the Debug path. Existing app stack reserve32MiB remains.
 Root runs setup.ps1, supported WinUI build and relevant deterministic platform
 tests, then verifies a real queue->C ABI->SVG-parser worker run including cache,
 priority/dependencies, generation changes, formula errors and shutdown.
+
+The reproducible test owner is tools/math-port/winui-math-worker-probe.cpp with
+its PowerShell runner. It invokes the supported build_app.ps1, reuses actual
+MSBuild worker/parser/module/PCH objects and the deployed DLL, and includes the
+console failure runtime. It adds no alternate application implementation or
+build project; generated compiler/linker files and logs stay under ignored build.

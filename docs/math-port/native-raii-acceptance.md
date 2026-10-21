@@ -552,8 +552,47 @@ Lite measurement cancellation/recovery 1/2, nested thread-local scope 1/4,
 wrong-thread rejection 1/2 and normal result contract 1/4. OOM status mapping is
 reviewed, not induced by exhausting memory. Final `renderer-owner-full-math.log`
 passes 860 tests / 216708 assertions / 174 suites without skips. This proves
-the native application-facing boundary; the WinUI worker switch/deployment,
-real worker probe and remaining obsolete on-disk graph retirement are pending.
+the native application-facing boundary. The worker integration evidence follows;
+obsolete on-disk graph retirement remains pending.
+
+### Default WinUI SVG worker checkpoint (2026-10-21)
+
+Commit `ba9ee591` replaces the original MathJaxRenderer worker backend with
+the opaque native C ABI; queue/cache/generation/priority/dependency behavior
+and SVG parser are retained. QuickJS runtime calls, link/build target and JS
+math/font deployment items are removed. Mermaid and its Rust normalizer are
+unchanged. setup.ps1 exits0 (`worker-setup.log`), supported Debug build exits0
+(`worker-app-build.log`, session24161, parallel4). The built and deployed
+FoliaNativeMath.dll share SHA-256
+`0FB98CA1ADD2BB9D1BEA9315A03F31917C6FA40CDA73F173D0B990B5762CFFFC`.
+
+The actual MSBuild MathJaxRenderer, MathJaxSvgParser, queue, std and pch objects
+link with the native import library and console failure runtime in a bounded
+worker probe. `worker-probe.log` exits0: mathbb, display fraction, raw UTF-8,
+noundefined output, malformed fraction mapped to Formula with fragments,
+subsequent recovery, identical cached shared result, completion dependency,
+Clear generation drop and disable/join/re-enable all pass. The stop join takes
+4454ms in this Debug run, within the ten-second test bound. Unknown commands
+are accepted by the configured noundefined package; the probe's initial wrong
+Formula expectation was corrected to use genuinely unclosed fraction input.
+No production parsing/error classification change was made for that test fix.
+
+`cmd /c build_platform_test.bat` exits0 (`worker-platform-tests.log`, session78599):
+80 tests / 3429 assertions / 17 suites, including the existing deterministic
+priority queue tests. `cmd /c build_test.bat` exits0 (`worker-core-tests.log`,
+session95496): 455 tests / 40840 assertions / 50 suites. Neither run skips tests.
+This establishes the default worker-to-native-to-existing-SVG-parser path;
+it does not claim a launched WinUI visual inspection, a Release build or browser
+event dispatch support.
+
+Reproduce with `powershell -NoProfile -ExecutionPolicy Bypass -File
+tools/math-port/winui-math-worker-probe.ps1` after setup. The runner uses
+build_app.ps1 and actual app objects, never a duplicate worker implementation.
+Root ran this tracked runner under Windows PowerShell: session57717 exits0,
+`worker-reproducible-probe.log`; probe PASS, stop join4575ms, total8.91s.
+The runner explicitly retains its process handle before waiting so PowerShell
+5.1 reports the actual child exit code. The initial runner's null ExitCode was
+a runner bookkeeping issue; the underlying worker probe also printed PASS.
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,
   cancellation, deadlines and errors against the accepted native library.

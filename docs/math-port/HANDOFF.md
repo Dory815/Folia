@@ -4,7 +4,9 @@
 
 ## 当前 checkpoint
 
-当前无live build/native；full **4060** exit0：860 tests/216708 assertions/174 suites无skip，`renderer-owner-full-math.log`；12专项全过，精确数见acceptance。原Renderer/CABI DLL/API tests提交 **a08e9723**。247 active modules包含folia.math、不含旧Context/native_document/render_session等对象层；DLL仅9个Cexports。下一步Root review/promote worker及现有build_app/vcxproj候选→setup.ps1→单parallel4 WinUI build→真实worker probe/平台测试。
+当前无live build/test；tracked worker probe runner **57717 exit0**（WinPS5.1实际返回0，stop join4575ms/total8.91s），`worker-reproducible-probe.log`；worker接入 **ba9ee591**。WinUI Debug **24161 exit0**；实际app对象worker probe exit0（mathbb/frac/Unicode/noundefined/Formula/recovery/cache/Clear/disable-reenable；stop join4454ms）；平台 **78599 exit0**，80/3429/17 suites；core **95496 exit0**，455/40840/50 suites，均无skip。部署DLL SHA与core一致0FB98CA1ADD2BB9D1BEA9315A03F31917C6FA40CDA73F173D0B990B5762CFFFC。下一步提交probe/验收，再审退休候选；生产/测试只读清单在ignored `retirement-{production,test}-inventory.md`，Root尚未批准删除。
+
+- 原生API full **4060** exit0：860 tests/216708 assertions/174 suites无skip，`renderer-owner-full-math.log`；12专项全过，精确数见acceptance。原Renderer/CABI DLL/API tests **a08e9723**，验收/worker架构锁 **12b62b30**；247 active modules无旧对象层，DLL仅9个Cexports。
 
 - limits full **78558** exit0：848 tests/215119 assertions/171 suites无skip；Source包 **d688445e**、UT **73ae4eef**。Source24条1/97、原数值6/34、hosted1/1279通过，Root default/write-no-op/旧numeric过。新fixtureSHA bb52168574af0b70a7f63a6dcff0c5bff05f9c5ca6922cdb10f76527abafc636。
 
@@ -21,9 +23,9 @@
 
 架构已定：保留 MathJax 原 owner、算法和消费方边界；不模拟 JS 对象，不建平行 native/new/typed 实现，不加请求释放补丁。完整约束及各组件证据以架构和验收文档为准。组件通过不等于 Folia 集成。
 
-38包及专用family已有Source映射，不凭scope陈旧状态重复实现。Renderer lock在architecture末尾；已确认canonical75实际tag_side全空、em16/ex8、width四值，全部可直接用现API验原fixture，无新Source/隐藏选项。原math.cpp dirty已由Root读diff/account，旧callback/projection退休随退出Context图结束，resident诊断随旧probe退出；备份与原patch在ignored `build/math-port/renderer-owner-candidate/math.cpp-before-integration` / `math.cpp-prior-work.patch`。只有math.cpp经明确原owner重写授权退出保护名单，其余12条仍保护。API/CABI通过前不改WinUI；尚未接入/旧磁盘对象层退出。
+38包及专用family已有Source映射，不凭scope陈旧状态重复实现。Renderer lock在architecture末尾；已确认canonical75实际tag_side全空、em16/ex8、width四值，全部可直接用现API验原fixture，无新Source/隐藏选项。原math.cpp dirty已由Root读diff/account，旧callback/projection退休随退出Context图结束，resident诊断随旧probe退出；备份与原patch在ignored `build/math-port/renderer-owner-candidate/math.cpp-before-integration` / `math.cpp-prior-work.patch`。只有math.cpp经明确原owner重写授权退出保护名单，其余12条仍保护。API/CABI及WinUI build/worker probe已通过；磁盘旧对象层尚未退出。
 
-worker lock在architecture末尾；Luna已freeze ignored `build/math-port/worker-integration-candidate/MathJaxRenderer.cpp`、`Folia.vcxproj`、`build_app.ps1`。`common_rows_emission`正准备同目录真实 `winui-math-worker-probe.cpp`，只能编译链接实际app worker/parser对象，不替代实现；Root尚未运行/接入，继续保留全部protected parser改动。Debug复用build/core，Release build/core-release。
+worker lock在architecture末尾；全部Luna已freeze ignored `build/math-port/worker-integration-candidate/` 三份接线镜像和 `winui-math-worker-probe.cpp`(194行)。Root加stop已请求时跳过native初始化、格式化新增backend并保留原queue/cache；真实probe仅include实际class，必须链接app生成的MathJaxRenderer/MathJaxSvgParser对象及queue/std必要对象与CABI importlib，手动编译加windows_console_runtime.cpp。Debug复用build/core，Release build/core-release；实际app对象已生成并用于probe，含pch/std/queue对象；手动build成功日志worker-probe-build.log。
 
 ## 执行约束
 
