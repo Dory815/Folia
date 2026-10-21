@@ -1,50 +1,9 @@
 #include "pch.h"
 #include "media/MathJaxRenderer.h"
 #include "media/MathJaxSvgParser.h"
-#include "storage/AssetPaths.h"
+#include "folia/math/native_renderer_bridge.h"
 
 import folia.platform.editor_priority_work_queue;
-
-#pragma warning(push)
-#pragma warning(disable : 4100 4244)
-extern "C"
-{
-#include "third_party/quickjs/quickjs.h"
-}
-#pragma warning(pop)
-
-namespace
-{
-    std::string ReadUtf8File(std::wstring const& path)
-    {
-        std::ifstream stream(path, std::ios::binary);
-        if (!stream)
-        {
-            return {};
-        }
-        return { std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>() };
-    }
-
-    std::wstring MathJaxBundlePath()
-    {
-        return winrt::Folia::AssetPath(std::filesystem::path(L"mathjax") / L"mathjax-quickjs.js").wstring();
-    }
-
-    std::wstring MathJaxFontPath(std::string_view module)
-    {
-        auto separator = module.find_last_of('/');
-        auto name = module.substr(separator == std::string_view::npos ? 0 : separator + 1);
-        if (name.empty() || name.size() > 64) return {};
-        for (auto value : name)
-        {
-            if (!(std::isalnum(static_cast<unsigned char>(value)) || value == '-' || value == '.')) return {};
-        }
-        auto bundle = MathJaxBundlePath();
-        auto directory = bundle.substr(0, bundle.find_last_of(L"\\/"));
-        return directory + L"\\font\\" + std::wstring(name.begin(), name.end());
-    }
-
-}
 
 namespace winrt::Folia
 {
@@ -64,6 +23,19 @@ namespace winrt::Folia
             std::uint64_t generation = 0;
         };
 
+        struct RenderOutcome
+        {
+            MathJaxSvg result;
+            bool retryable = false;
+        };
+
+        using RendererHandle = std::unique_ptr<FoliaNativeMathRenderer,
+            decltype(&FoliaNativeMathRendererDestroy)>;
+        using CancellationHandle = std::unique_ptr<FoliaNativeMathCancellation,
+            decltype(&FoliaNativeMathCancellationDestroy)>;
+        using ResultHandle = std::unique_ptr<FoliaNativeMathResult,
+            decltype(&FoliaNativeMathResultDestroy)>;
+
         std::mutex mutex;
         std::condition_variable_any ready;
         EditorPriorityWorkQueue<Request> requestQueue;
@@ -75,170 +47,128 @@ namespace winrt::Folia
         std::uint64_t generation = 0;
         std::uint64_t nextCompletionRevision = 1;
         std::function<void()> completion;
-        JSRuntime* runtime = nullptr;
-        JSContext* context = nullptr;
-        std::chrono::steady_clock::time_point deadline{};
-        bool initializationAttempted = false;
         bool enabled = false;
-        std::atomic_bool interruptRequested = false;
         std::jthread worker;
+        RendererHandle nativeRenderer{nullptr, &FoliaNativeMathRendererDestroy};
 
-        static bool RetryableFailure(std::string_view error)
+        RenderOutcome RenderNow(Request const& request, std::stop_token stop)
         {
-            return error.find("interrupted") != std::string_view::npos
-                || error.find("out of memory") != std::string_view::npos
-                || error.find("stack overflow") != std::string_view::npos
-                || error.find("runtime could not be initialized") != std::string_view::npos
-                || error.find("font module is unavailable") != std::string_view::npos;
-        }
+            RenderOutcome outcome;
+            outcome.result.display = request.display;
+            if (stop.stop_requested())
+            {
+                outcome.result.error = "Math rendering cancelled";
+                outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
+                outcome.retryable = true;
+                return outcome;
+            }
+            try
+            {
 
-        static int Interrupt(JSRuntime*, void* opaque)
-        {
-            auto self = static_cast<State*>(opaque);
-            return self->interruptRequested.load(std::memory_order_relaxed)
-                || std::chrono::steady_clock::now() >= self->deadline;
-        }
-
-        static JSValue LoadFontModule(JSContext* context, JSValueConst, int count, JSValueConst* arguments)
-        {
-            if (count != 1) return JS_ThrowTypeError(context, "Expected one MathJax font module name");
-            auto name = JS_ToCString(context, arguments[0]);
-            if (!name) return JS_EXCEPTION;
-            auto path = MathJaxFontPath(name);
-            JS_FreeCString(context, name);
-            auto source = path.empty() ? std::string{} : ReadUtf8File(path);
-            if (source.empty()) return JS_ThrowReferenceError(context, "MathJax font module is unavailable");
-            auto result = JS_Eval(context, source.data(), source.size(), "mathjax-font.js", JS_EVAL_TYPE_GLOBAL);
-            if (JS_IsException(result)) return result;
-            JS_FreeValue(context, result);
-            return JS_UNDEFINED;
-        }
-
-        std::string ExceptionText()
-        {
-            auto exception = JS_GetException(context);
-            auto message = JS_ToCString(context, exception);
-            std::string text = message ? message : "MathJax evaluation failed";
-            if (message) JS_FreeCString(context, message);
-            JS_FreeValue(context, exception);
-            return text;
-        }
-
-        bool InitializeRuntime()
-        {
-            if (context) return true;
-            if (initializationAttempted) return false;
-            initializationAttempted = true;
-            auto bundle = ReadUtf8File(MathJaxBundlePath());
-            if (bundle.empty())
-            {
-                initializationAttempted = false;
-                return false;
-            }
-            runtime = JS_NewRuntime();
-            if (!runtime)
-            {
-                initializationAttempted = false;
-                return false;
-            }
-            JS_SetMemoryLimit(runtime, 24 * 1024 * 1024);
-            JS_SetMaxStackSize(runtime, 8 * 1024 * 1024);
-            JS_SetInterruptHandler(runtime, Interrupt, this);
-            context = JS_NewContext(runtime);
-            if (!context)
-            {
-                ShutdownRuntime();
-                initializationAttempted = false;
-                return false;
-            }
-            auto global = JS_GetGlobalObject(context);
-            JS_SetPropertyStr(context, global, "FoliaLoadMathJaxModule", JS_NewCFunction(context, LoadFontModule, "FoliaLoadMathJaxModule", 1));
-            JS_FreeValue(context, global);
-            deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-            auto result = JS_Eval(context, bundle.data(), bundle.size(), "mathjax-quickjs.js", JS_EVAL_TYPE_GLOBAL);
-            if (JS_IsException(result))
-            {
-                JS_FreeValue(context, result);
-                ShutdownRuntime();
-                initializationAttempted = false;
-                return false;
-            }
-            JS_FreeValue(context, result);
-            return true;
-        }
-
-        void ShutdownRuntime()
-        {
-            if (context)
-            {
-                JS_FreeContext(context);
-                context = nullptr;
-            }
-            if (runtime)
-            {
-                JS_FreeRuntime(runtime);
-                runtime = nullptr;
-            }
-            initializationAttempted = false;
-        }
-
-        MathJaxSvg RenderNow(Request const& request)
-        {
-            MathJaxSvg rendered;
-            rendered.display = request.display;
-            if (!InitializeRuntime())
-            {
-                rendered.error = "MathJax runtime could not be initialized";
-                rendered.errorKind = MathJaxErrorKind::Infrastructure;
-                return rendered;
-            }
-            auto global = JS_GetGlobalObject(context);
-            auto api = JS_GetPropertyStr(context, global, "FoliaMathJax");
-            auto function = JS_GetPropertyStr(context, api, "render");
-            JSValue arguments[] = {
-                JS_NewStringLen(context, request.tex.data(), request.tex.size()),
-                JS_NewBool(context, request.display),
-                JS_NewFloat64(context, request.em),
-                JS_NewFloat64(context, request.containerWidth),
-            };
-            deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
-            auto result = JS_Call(context, function, api, static_cast<int>(std::size(arguments)), arguments);
-            for (auto& argument : arguments) JS_FreeValue(context, argument);
-            JS_FreeValue(context, function);
-            JS_FreeValue(context, api);
-            JS_FreeValue(context, global);
-            if (JS_IsException(result))
-            {
-                rendered.error = ExceptionText();
-                rendered.errorKind = MathJaxErrorKind::Infrastructure;
-                JS_FreeValue(context, result);
-                if (RetryableFailure(rendered.error))
+                if (!nativeRenderer)
                 {
-                    ShutdownRuntime();
-                    initializationAttempted = false;
+                    FoliaNativeMathRenderer *created = nullptr;
+                    auto status = FoliaNativeMathRendererCreate(&created);
+                    nativeRenderer.reset(created);
+                    if (status != FOLIA_NATIVE_MATH_OK || !nativeRenderer)
+                    {
+                        nativeRenderer.reset();
+                        outcome.result.error = "Native math renderer could not be created";
+                        outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
+                        outcome.retryable = status == FOLIA_NATIVE_MATH_OUT_OF_MEMORY;
+                        return outcome;
+                    }
                 }
-                return rendered;
-            }
-            std::string output;
-            auto svg = JS_ToCString(context, result);
-            if (svg)
-            {
-                output = svg;
-                JS_FreeCString(context, svg);
-            }
-            JS_FreeValue(context, result);
 
-            return ParseMathJaxSvgOutput(output, request.display, request.em);
+                FoliaNativeMathCancellation *cancellationRaw = nullptr;
+                const auto cancellationStatus = FoliaNativeMathCancellationCreate(&cancellationRaw);
+                CancellationHandle cancellation{cancellationRaw, &FoliaNativeMathCancellationDestroy};
+                if (cancellationStatus != FOLIA_NATIVE_MATH_OK || !cancellation)
+                {
+                    outcome.result.error = "Native math cancellation handle could not be created";
+                    outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
+                    outcome.retryable = cancellationStatus == FOLIA_NATIVE_MATH_OUT_OF_MEMORY;
+                    if (outcome.retryable)
+                        nativeRenderer.reset();
+                    return outcome;
+                }
+
+                FoliaNativeMathResult *resultRaw = nullptr;
+                FoliaNativeMathStatus status = FOLIA_NATIVE_MATH_INFRASTRUCTURE_ERROR;
+                {
+                    std::stop_callback stopCallback(
+                        stop, [handle = cancellation.get()] { FoliaNativeMathCancellationRequestStop(handle); });
+                    const auto text = winrt::to_hstring(std::string_view(request.tex.data(), request.tex.size()));
+                    std::vector<std::uint16_t> utf16Units;
+                    utf16Units.reserve(text.size());
+                    for (wchar_t codeUnit : text)
+                        utf16Units.push_back(static_cast<std::uint16_t>(codeUnit));
+
+                    status = FoliaNativeMathRenderSvg(nativeRenderer.get(), utf16Units.data(), utf16Units.size(),
+                                                      request.display ? 1 : 0, request.em, request.containerWidth,
+                                                      cancellation.get(), 2000, &resultRaw);
+                    ResultHandle nativeResult{resultRaw, &FoliaNativeMathResultDestroy};
+
+                    if (status == FOLIA_NATIVE_MATH_OK)
+                    {
+                        std::size_t svgSize = 0;
+                        auto svgBytes = FoliaNativeMathResultSvg(nativeResult.get(), &svgSize);
+                        if (svgBytes || svgSize == 0)
+                        {
+                            std::string ownedSvg(svgBytes ? svgBytes : "", svgSize);
+                            nativeResult.reset();
+                            outcome.result = ParseMathJaxSvgOutput(ownedSvg, request.display, request.em);
+                        }
+                        else
+                        {
+                            outcome.result.error = "Native renderer returned an invalid SVG result";
+                            outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
+                        }
+                    }
+                    else
+                    {
+                        std::size_t errorSize = 0;
+                        auto errorBytes = FoliaNativeMathResultError(nativeResult.get(), &errorSize);
+                        outcome.result.error =
+                            errorBytes ? std::string(errorBytes, errorSize) : "Native math renderer failed";
+                        outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
+                        outcome.retryable = status == FOLIA_NATIVE_MATH_CANCELLED ||
+                                            status == FOLIA_NATIVE_MATH_SESSION_UNUSABLE ||
+                                            status == FOLIA_NATIVE_MATH_OUT_OF_MEMORY;
+                        if (outcome.retryable)
+                            nativeRenderer.reset();
+                    }
+                }
+            }
+            catch (std::bad_alloc const &)
+            {
+                nativeRenderer.reset();
+                outcome.result.error = "Native math renderer ran out of memory";
+                outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
+                outcome.retryable = true;
+            }
+            catch (std::exception const &error)
+            {
+                outcome.result.error = error.what();
+                outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
+            }
+            catch (...)
+            {
+                outcome.result.error = "Unknown native math renderer failure";
+                outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
+            }
+            return outcome;
         }
 
-        static std::size_t ResultBytes(MathJaxSvg const& result)
+        static std::size_t ResultBytes(MathJaxSvg const &result)
         {
             std::size_t bytes = sizeof(result);
-            for (auto const& fragment : result.fragments) bytes += sizeof(fragment) + (fragment.svg ? fragment.svg->size() : 0);
+            for (auto const &fragment : result.fragments)
+                bytes += sizeof(fragment) + (fragment.svg ? fragment.svg->size() : 0);
             return bytes + result.error.size();
         }
 
-        void Store(Request const& request, MathJaxSvg result)
+        void Store(Request const &request, MathJaxSvg result)
         {
             constexpr std::size_t budget = 16 * 1024 * 1024;
             auto shared = std::make_shared<MathJaxSvg const>(std::move(result));
@@ -278,14 +208,14 @@ namespace winrt::Folia
                     request = std::move(queued->work);
                     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
                 }
-                auto result = RenderNow(request);
+                auto outcome = RenderNow(request, stop);
                 std::function<void()> notify;
                 {
                     std::scoped_lock lock(mutex);
                     requestQueue.Complete(request.key, ticket);
                     if (request.generation == generation)
                     {
-                        auto retryable = RetryableFailure(result.error);
+                        auto retryable = outcome.retryable;
                         bool store = true;
                         if (retryable)
                         {
@@ -297,14 +227,14 @@ namespace winrt::Folia
                         {
                             transientFailures.erase(request.key);
                         }
-                        if (store) Store(request, std::move(result));
+                        if (store) Store(request, std::move(outcome.result));
                         completionRevisions[request.key] = nextCompletionRevision++;
                         notify = completion;
                     }
                 }
                 if (notify) notify();
             }
-            ShutdownRuntime();
+            nativeRenderer.reset();
         }
     };
 
@@ -325,7 +255,6 @@ namespace winrt::Folia
             std::scoped_lock lock(state->mutex);
             if (state->enabled) return;
             state->enabled = true;
-            state->interruptRequested = false;
             auto current = state.get();
             state->worker = std::jthread([current](std::stop_token stop) { current->Run(stop); });
             return;
@@ -343,13 +272,11 @@ namespace winrt::Folia
             state->cacheOrder.clear();
             state->transientFailures.clear();
             state->cacheBytes = 0;
-            state->interruptRequested = true;
             state->worker.request_stop();
             state->ready.notify_all();
             worker = std::move(state->worker);
         }
         if (worker.joinable()) worker.join();
-        state->interruptRequested = false;
     }
 
     bool MathJaxRenderer::Enabled() const
