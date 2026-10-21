@@ -517,6 +517,7 @@ file(GLOB_RECURSE FOLIA_TEST_SRC CONFIGURE_DEPENDS
 list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/platform/")
 list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/encoding/")
 list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/math/")
+list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/mermaid_cpp/")
 target_sources(FoliaTests PRIVATE
     ${FOLIA_TEST_SRC})
 target_include_directories(FoliaTests PRIVATE
@@ -744,3 +745,6 @@ if(WIN32 AND MSVC)
         endif()
     endforeach()
 endif()
+
+# Official Mermaid C++ dependency and its isolated native test target.
+add_subdirectory(tools/mermaid-cpp)
