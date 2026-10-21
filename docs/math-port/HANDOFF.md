@@ -5,9 +5,8 @@
 ## 当前状态与下一步
 
 - 当前代码/清单快照 `311766cb`：648源/644代码、162未配置cpp/ixx、561配置源、接口/map248一致、active unresolved imports0；File API `index-2026-10-21T10-07-55-0680.json`。未配置不等于可删除。
-- 两项真实行为已补进原测试：唯一inferred-row虚复制（真实TextNode、独立属性、源树不变），以及跨inferred-row的逻辑childPosition。先后parallel4 build通过，11测试/1989断言（含完整Source SVG），再1测试/12断言通过。既有WinUI worker已接入原生SVG，数学QuickJS退出；本轮未重跑full math/full字体/worker，未验Release/GUI。
-- Lite对象门面/store/反射textContent及消费者12路径已分6批退出，G227也已单独退出；数学算法、原typed DOM、Source oracle保留。原9个dirty文件及patch在 `build/math-port/context-dirty-backup-20261021/`，已校验。候选已吸收进三个既有测试，不要用旧镜像覆盖。
-- **精确停点**：61个class_binding消费者按8组完成静态初审（2901名字），报告 `build/math-port/class-review-GROUP.json/.md`。Root已退回泛指coverage并获更正。7补测分4提交：mo角色修复/3测试 `93544b62`、spacing/reverification `4b7c7bcf`、script pairs `26921683`、MathChoice `311766cb`。修复前accent-role 1/12失败，修复后parallel4 build exit0、8测试/1299断言通过（含完整Source SVG）；独立锁定Source CJS的17重音观测也exit0、stderr空。证据 `class-coverage-check.json`/`class-accent-source-observations-fixed.json`；477活动源不变、唯一改动原mo_classes.cpp身份比较，6保护路径不变。无live build/native/agent。6个已退消费者勿重审。
+- WinUI worker已接入原生SVG，数学QuickJS退出；既有完整验证见acceptance。Lite层及此前6个MML消费者已小批退出，勿重审。原9个dirty字节与patch备份 `build/math-port/context-dirty-backup-20261021/` 已验。
+- **精确停点**：文档至 `88392404`，代码至 `311766cb`。61个class_binding消费者的8组静态报告 `build/math-port/class-review-GROUP.json/.md` 已经Root退回补证；它们仍未删。7补测分4提交，含原mo_classes.cpp的munderover角色身份修复 `93544b62`。修复前1/12断言失败，修复后parallel4 build exit0、8测试/1299断言通过（含完整Source SVG）；独立锁定Source CJS的17重音观测exit0、stderr空。证据 `class-coverage-check.json`/`class-accent-source-observations-fixed.json`；477活动源及6保护路径不变。无live build/native/agent；本轮未重跑full math/font/worker，未验Release/GUI。
 - **精确下一包**：提升/窄测既有owner的inheritAttributesFrom三种mathsize来源、NodeUtil值/slot/lookup及detached childPosition候选。候选与basehash见 `class-review-{inheritance,positions}.json` 和 `class-candidates/{inheritance,positions}/`；其余组候选未验收，61消费者一律未删。多镜像基于旧base，禁止整份覆盖已新增canonical测试。Source Attributes.ts176的isSet=own OR inherited，先前explicit-only推断已撤销。operations的512/513真实MML walk边界单独待审，预算镜像deferred、不恢复旧对象机制。旧fields/values/methods仍有ContextBindings/ParserRuntime完整owner链，不能孤删/stub；两处旧initializeFreshProperties不恢复。
 - 搜索被忽略的交付候选时用 `rg --no-ignore`。不要按旧 agent 的完成消息推断当前状态，也不要重做已接受的广审。保护 dirty 不是永久保留理由，但处置前必须读 diff、备份并归责。
 
