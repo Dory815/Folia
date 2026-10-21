@@ -291,8 +291,6 @@ void append_transform(std::string &out, scene::Transform const &transform,
         detail::append_attribute(out, "transform", serialized);
 }
 
-using Cache = std::vector<std::pair<std::string, std::string>>;
-
 std::string codepoint(std::uint32_t value) {
     std::array<char, 16> buffer{};
     auto [end, ec] = std::to_chars(buffer.data(), buffer.data() + buffer.size(), value, 16);
@@ -319,38 +317,28 @@ std::string path_data(scene::Glyph const &glyph, SvgWriteOptions const &options)
     return source->path_data;
 }
 
-std::string cache_id(scene::Glyph const &glyph, SvgWriteOptions const &options) {
-    return "MJX-" + (options.local_id.empty() ? std::string{} : options.local_id + "-") +
-           glyph.key.variant_cache_id + "-" + codepoint(glyph.key.codepoint);
-}
-
-void add_glyph_cache(scene::Glyph const &glyph, SvgWriteOptions const &options, Cache &cache) {
-    auto id = cache_id(glyph, options);
-    if (std::ranges::find(cache, id, &Cache::value_type::first) != cache.end())
-        return;
-    cache.emplace_back(std::move(id), path_data(glyph, options));
-}
-
-void collect_cache(scene::Group const &group, SvgWriteOptions const &options, Cache &cache) {
+bool has_glyphs(scene::Group const &group) {
     for (auto const &entry : group.entries) {
-        std::visit(
-            [&](auto const &value) {
-                using T = std::decay_t<decltype(value)>;
-                if constexpr (std::is_same_v<T, std::shared_ptr<scene::Group const>>) {
-                    if (value)
-                        collect_cache(*value, options, cache);
-                } else if constexpr (std::is_same_v<T, scene::Primitive>) {
-                    if (auto run = std::get_if<scene::GlyphRun>(&value))
-                        for (auto const &glyph : run->glyphs)
-                            add_glyph_cache(glyph, options, cache);
-                } else if constexpr (std::is_same_v<T, scene::ActionRegion>) {
-                    if (value.tooltip && options.font_cache == FontCacheMode::local)
-                        throw UnsupportedError("math tooltip SVG emission with local font caching "
-                                               "requires shared cache-state projection");
-                }
-            },
-            entry);
+        if (auto const *primitive = std::get_if<scene::Primitive>(&entry)) {
+            if (auto const *run = std::get_if<scene::GlyphRun>(primitive);
+                run && !run->glyphs.empty())
+                return true;
+        } else if (auto const *child = std::get_if<std::shared_ptr<scene::Group const>>(&entry)) {
+            if (*child && has_glyphs(**child))
+                return true;
+        } else {
+            auto const &region = std::get<scene::ActionRegion>(entry);
+            if (region.tooltip && has_glyphs(region.tooltip->root()))
+                return true;
+        }
     }
+    return false;
+}
+
+std::string cache_id(scene::Glyph const &glyph, FontCachePlan const *plan, CacheScopeId scope) {
+    if (!plan)
+        throw std::logic_error("local glyph reference has no FontCachePlan");
+    return plan->scope(scope).references.at(&glyph);
 }
 
 void validate_metadata(scene::SemanticMetadata const &metadata) {
@@ -376,7 +364,8 @@ void validate_scene(scene::Group const &group) {
     }
 }
 
-void append_glyphs(std::string &out, scene::GlyphRun const &run, SvgWriteOptions const &options) {
+void append_glyphs(std::string &out, scene::GlyphRun const &run, SvgWriteOptions const &options,
+                   FontCachePlan const *plan, CacheScopeId scope) {
     for (auto const &glyph : run.glyphs) {
         out += options.font_cache == FontCacheMode::none ? "<path" : "<use";
         detail::append_attribute(out, "data-c", codepoint(glyph.key.codepoint));
@@ -384,7 +373,7 @@ void append_glyphs(std::string &out, scene::GlyphRun const &run, SvgWriteOptions
             detail::append_attribute(out, "d", path_data(glyph, options));
         else
             detail::append_attribute(out, options.use_xlink ? "xlink:href" : "href",
-                                     "#" + cache_id(glyph, options));
+                                     "#" + cache_id(glyph, plan, scope));
         std::string transform;
         if (glyph.origin.x || glyph.origin.y)
             transform = "translate(" + number(glyph.origin.x * 1000) + "," +
@@ -803,12 +792,13 @@ void append_text_run(std::string &out, scene::TextRun const &run) {
 }
 
 void append_primitive(std::string &out, scene::Primitive const &primitive,
-                      SvgWriteOptions const &options) {
+                      SvgWriteOptions const &options, FontCachePlan const *plan,
+                      CacheScopeId scope) {
     std::visit(
         [&](auto const &value) {
             using T = std::decay_t<decltype(value)>;
             if constexpr (std::is_same_v<T, scene::GlyphRun>)
-                append_glyphs(out, value, options);
+                append_glyphs(out, value, options, plan, scope);
             else if constexpr (std::is_same_v<T, scene::Rule>)
                 append_rule(out, value);
             else if constexpr (std::is_same_v<T, scene::Path>)
@@ -828,25 +818,29 @@ void append_primitive(std::string &out, scene::Primitive const &primitive,
         primitive);
 }
 
-void open_group(std::string &out, scene::Group const &group, SvgWriteOptions const &options);
+void open_group(std::string &out, scene::Group const &group, SvgWriteOptions const &options,
+                FontCachePlan const *plan, CacheScopeId scope);
 void append_action_region(std::string &out, scene::ActionRegion const &region,
-                          SvgWriteOptions const &options);
+                          SvgWriteOptions const &options, FontCachePlan const *plan,
+                          CacheScopeId scope);
 
 void append_group_entries(std::string &out, scene::Group const &group,
-                          SvgWriteOptions const &options) {
+                          SvgWriteOptions const &options, FontCachePlan const *plan,
+                          CacheScopeId scope) {
     for (auto const &entry : group.entries) {
         if (auto child = std::get_if<std::shared_ptr<scene::Group const>>(&entry)) {
             if (*child)
-                open_group(out, **child, options);
+                open_group(out, **child, options, plan, scope);
         } else if (auto primitive = std::get_if<scene::Primitive>(&entry)) {
-            append_primitive(out, *primitive, options);
+            append_primitive(out, *primitive, options, plan, scope);
         } else {
-            append_action_region(out, std::get<scene::ActionRegion>(entry), options);
+            append_action_region(out, std::get<scene::ActionRegion>(entry), options, plan, scope);
         }
     }
 }
 
-void open_group(std::string &out, scene::Group const &group, SvgWriteOptions const &options) {
+void open_group(std::string &out, scene::Group const &group, SvgWriteOptions const &options,
+                FontCachePlan const *plan, CacheScopeId scope) {
     if (group.foreign_content) {
         auto const &foreign = *group.foreign_content;
         auto const &geometry = foreign.geometry;
@@ -1020,7 +1014,7 @@ void open_group(std::string &out, scene::Group const &group, SvgWriteOptions con
                 detail::append_attribute(out, "clip-rule", "evenodd");
             out += "/></clipPath></defs>";
         }
-        append_group_entries(out, group, options);
+        append_group_entries(out, group, options, plan, scope);
     }
     if (!sentinel && !self_closing)
         out += is_viewport ? "</svg>" : "</g>";
@@ -1028,14 +1022,20 @@ void open_group(std::string &out, scene::Group const &group, SvgWriteOptions con
         out += "</a>";
 }
 
-void append_font_cache(std::string &out, Cache const &cache) {
-    if (cache.empty())
+void append_font_cache(std::string &out, FontCachePlan const &plan, CacheScopeId scope,
+                       SvgWriteOptions const &options) {
+    auto const &cache = plan.scope(scope).definitions;
+    if (cache.empty()) {
+        out += "<defs/>";
         return;
+    }
     out += "<defs>";
-    for (auto const &[id, path] : cache) {
+    for (auto const &definition : cache) {
+        if (!definition.glyph)
+            throw std::logic_error("FontCachePlan definition has no glyph");
         out += "<path";
-        detail::append_attribute(out, "id", id);
-        detail::append_attribute(out, "d", path);
+        detail::append_attribute(out, "id", definition.id);
+        detail::append_attribute(out, "d", path_data(*definition.glyph, options));
         out += "/>";
     }
     out += "</defs>";
@@ -1044,8 +1044,8 @@ void append_font_cache(std::string &out, Cache const &cache) {
 void append_svg_start(std::string &out, scene::Metrics const &metrics,
                       scene::FontMetrics const &font, SvgWriteOptions const &options,
                       scene::DisplayLayout const &layout, double minimum_extent,
-                      bool apply_inline_layout, Cache const *cache = nullptr,
-                      bool cache_before_group = false,
+                      bool apply_inline_layout, FontCachePlan const *plan = nullptr,
+                      CacheScopeId scope = 0, bool cache_before_group = false,
                       scene::PercentageFrame const *percentage = nullptr) {
     const double width = std::max(metrics.width, minimum_extent);
     const double height = std::max(metrics.height + metrics.depth, minimum_extent);
@@ -1072,8 +1072,8 @@ void append_svg_start(std::string &out, scene::Metrics const &metrics,
                                  "0 " + number(-metrics.height * 1000) + " " +
                                      number(width * 1000) + " " + number(height * 1000));
         out += ">";
-        if (cache_before_group && cache)
-            append_font_cache(out, *cache);
+        if (cache_before_group && plan)
+            append_font_cache(out, *plan, scope, options);
         out += "<g stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" "
                "transform=\"scale(";
         out += number(percentage->scale, 6);
@@ -1107,16 +1107,20 @@ void append_svg_start(std::string &out, scene::Metrics const &metrics,
     if (options.font_cache != FontCacheMode::none && options.use_xlink)
         detail::append_attribute(out, "xmlns:xlink", "http://www.w3.org/1999/xlink");
     out += ">";
-    if (cache_before_group && cache)
-        append_font_cache(out, *cache);
+    if (cache_before_group && plan)
+        append_font_cache(out, *plan, scope, options);
     out += "<g stroke=\"currentColor\" fill=\"currentColor\" stroke-width=\"0\" "
            "transform=\"scale(1,-1)\">";
 }
 
-void append_svg_end(std::string &out, Cache const *trailing_cache = nullptr) {
+void append_svg_end(std::string &out, FontCachePlan const *plan = nullptr, CacheScopeId scope = 0,
+                    bool append_trailing_cache = false, SvgWriteOptions const *options = nullptr) {
     out += "</g>";
-    if (trailing_cache)
-        append_font_cache(out, *trailing_cache);
+    if (append_trailing_cache && plan) {
+        if (!options)
+            throw std::logic_error("FontCachePlan defs require SVG write options");
+        append_font_cache(out, *plan, scope, *options);
+    }
     out += "</svg>";
 }
 
@@ -1132,15 +1136,16 @@ scene::Group const &frame_group(scene::Group const &root, scene::NodeId id) {
 void append_inline_break(std::string &out, scene::InlineBreak const &value);
 
 void append_nested_scene_svgs(std::string &out, scene::Scene const &nested,
-                              SvgWriteOptions const &options) {
+                              SvgWriteOptions const &options, FontCachePlan const *plan,
+                              CacheScopeId scope) {
     auto const &metrics = nested.metrics();
     auto const &font = nested.font_metrics();
     auto const &layout = nested.display_layout();
     auto const &frames = nested.frame_layout();
     if (frames.inline_fragments.empty()) {
-        append_svg_start(out, metrics, font, options, layout, frames.minimum_extent, false, nullptr,
-                         false, frames.percentage ? &*frames.percentage : nullptr);
-        open_group(out, nested.root(), options);
+        append_svg_start(out, metrics, font, options, layout, frames.minimum_extent, false, plan,
+                         scope, true, frames.percentage ? &*frames.percentage : nullptr);
+        open_group(out, nested.root(), options, plan, scope);
         append_svg_end(out);
         return;
     }
@@ -1149,18 +1154,16 @@ void append_nested_scene_svgs(std::string &out, scene::Scene const &nested,
         if (fragment.before)
             append_inline_break(out, *fragment.before);
         append_svg_start(out, fragment.metrics, font, options, layout, frames.minimum_extent, false,
-                         nullptr, false,
+                         plan, scope, false,
                          i == 0 && frames.percentage ? &*frames.percentage : nullptr);
-        open_group(out, frame_group(nested.root(), fragment.root), options);
-        append_svg_end(out);
+        open_group(out, frame_group(nested.root(), fragment.root), options, plan, scope);
+        append_svg_end(out, plan, scope, i == 0, &options);
     }
 }
 
 void append_action_region(std::string &out, scene::ActionRegion const &region,
-                          SvgWriteOptions const &options) {
-    if (region.tooltip && options.font_cache == FontCacheMode::local)
-        throw UnsupportedError("math tooltip SVG emission with local font caching requires shared "
-                               "cache-state projection");
+                          SvgWriteOptions const &options, FontCachePlan const *plan,
+                          CacheScopeId scope) {
     if (region.tooltip && options.font_cache == FontCacheMode::global)
         throw UnsupportedError(
             "global SVG font caching requires the owning document cache serializer");
@@ -1194,8 +1197,14 @@ void append_action_region(std::string &out, scene::ActionRegion const &region,
         out += "/>";
         return;
     }
+    CacheScopeId nested_scope = 0;
+    if (options.font_cache == FontCacheMode::local) {
+        if (!plan)
+            throw std::logic_error("math tooltip cache scope has no FontCachePlan");
+        nested_scope = plan->scope(scope).tooltips.at(&region);
+    }
     out += "><foreignObject style=\"display: none;\"><mjx-tool><mjx-tip>";
-    append_nested_scene_svgs(out, *region.tooltip, options);
+    append_nested_scene_svgs(out, *region.tooltip, options, plan, nested_scope);
     out += "</mjx-tip></mjx-tool></foreignObject>";
     out += "</rect>";
 }
@@ -1237,13 +1246,10 @@ std::string write(scene::Scene const &scene_value, SvgWriteOptions const &option
         !std::isfinite(metrics.depth))
         throw std::invalid_argument("Scene metrics must be finite");
     auto const &layout = scene_value.display_layout();
-    Cache cache;
-    if (options.font_cache != FontCacheMode::none)
-        collect_cache(scene_value.root(), options, cache);
-    if (!cache.empty() && options.font_cache == FontCacheMode::local && options.local_id.empty())
-        throw std::invalid_argument(
-            "local SVG font caching requires the resolved MathJax local ID");
-    if (!cache.empty() && options.font_cache == FontCacheMode::global)
+    std::optional<FontCachePlan> cache_plan;
+    if (options.font_cache == FontCacheMode::local)
+        cache_plan.emplace(scene_value, options.local_cache_prefixes);
+    if (options.font_cache == FontCacheMode::global && has_glyphs(scene_value.root()))
         throw UnsupportedError(
             "global SVG font caching requires the owning document cache serializer");
 
@@ -1302,10 +1308,10 @@ std::string write(scene::Scene const &scene_value, SvgWriteOptions const &option
     }
     auto const &frames = scene_value.frame_layout();
     if (frames.inline_fragments.empty()) {
-        auto const *local_cache = options.font_cache == FontCacheMode::local ? &cache : nullptr;
         append_svg_start(out, metrics, font, options, layout, frames.minimum_extent, true,
-                         local_cache, true, frames.percentage ? &*frames.percentage : nullptr);
-        open_group(out, scene_value.root(), options);
+                         cache_plan ? &*cache_plan : nullptr, 0, true,
+                         frames.percentage ? &*frames.percentage : nullptr);
+        open_group(out, scene_value.root(), options, cache_plan ? &*cache_plan : nullptr, 0);
         append_svg_end(out);
     } else {
         for (std::size_t i = 0; i < frames.inline_fragments.size(); ++i) {
@@ -1314,9 +1320,9 @@ std::string write(scene::Scene const &scene_value, SvgWriteOptions const &option
                 append_inline_break(out, *fragment.before);
             append_svg_start(out, fragment.metrics, font, options, layout, frames.minimum_extent,
                              false);
-            open_group(out, frame_group(scene_value.root(), fragment.root), options);
-            append_svg_end(out,
-                           i == 0 && options.font_cache == FontCacheMode::local ? &cache : nullptr);
+            open_group(out, frame_group(scene_value.root(), fragment.root), options,
+                       cache_plan ? &*cache_plan : nullptr, 0);
+            append_svg_end(out, cache_plan ? &*cache_plan : nullptr, 0, i == 0, &options);
         }
     }
     if (options.include_math_container)

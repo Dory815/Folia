@@ -124,8 +124,6 @@ void collectActions(scene::Group const &group, ActionCounts &counts) {
 struct Captured {
     scene::Scene value;
     std::string before;
-    bool unsupported{};
-    std::string unsupported_message;
     ActionCounts actions;
     bool wrapper_values_match{};
     struct RootBox {
@@ -140,12 +138,9 @@ std::string writeScene(scene::Scene const &value,
     options.font_resources = &bundle.svg_resources;
     options.font_cache =
         source.font_cache == "local" ? svg::FontCacheMode::local : svg::FontCacheMode::none;
-    options.local_id = std::string(source.local_id);
-    // The current local cases assert the explicit pending boundary only. Supply
-    // the writer's required resolved root cache identity; no local SVG parity
-    // is asserted until recursive cache allocation is implemented.
-    if (options.font_cache == svg::FontCacheMode::local && options.local_id.empty())
-        options.local_id = "pending-root";
+    options.local_cache_prefixes.reserve(source.local_cache_prefixes.size());
+    for (const auto prefix : source.local_cache_prefixes)
+        options.local_cache_prefixes.emplace_back(prefix);
     return svg::write(value, options);
 }
 
@@ -153,8 +148,6 @@ Captured capture(MactionSourceCase const &source,
                  folia::math::fonts::NewcmFontDataBundle const &bundle) {
     std::optional<scene::Scene> completed;
     std::string before;
-    std::string unsupportedMessage;
-    bool unsupported = false;
     ActionCounts actionCounts;
     bool wrappersMatch = true;
     Captured::RootBox rootBox;
@@ -222,16 +215,10 @@ Captured capture(MactionSourceCase const &source,
 
         auto value = job.jax().buildScene(commonRoot);
         collectActions(value.root(), actionCounts);
-        try {
-            before = writeScene(value, bundle, source);
-        } catch (svg::UnsupportedError const &error) {
-            unsupported = true;
-            unsupportedMessage = error.what();
-        }
+        before = writeScene(value, bundle, source);
         completed.emplace(std::move(value));
     }
-    return {std::move(*completed), std::move(before), unsupported, std::move(unsupportedMessage),
-            actionCounts,          wrappersMatch,     rootBox};
+    return {std::move(*completed), std::move(before), actionCounts, wrappersMatch, rootBox};
 }
 
 void reportDifference(std::string_view name, std::string_view expected, std::string_view actual) {
@@ -280,7 +267,6 @@ suite native_svg_maction_source = [] {
 
         for (auto const &source : sourceMactionCases) {
             const auto captured = capture(source, bundle);
-            const bool localPending = source.font_cache == "local";
             const bool sourceListenersValid = sourceListenerShapeValid(source);
             expect(bool(sourceListenersValid))
                 << "Source listener descriptor shape case=" << source.name;
@@ -298,6 +284,12 @@ suite native_svg_maction_source = [] {
                         close(captured.root_bbox.h, source.root_h) &&
                         close(captured.root_bbox.d, source.root_d)))
                 << "root Math BBox is compared separately from maction BBox case=" << source.name;
+            if (source.font_cache == "local")
+                expect(!source.local_cache_prefixes.empty())
+                    << "local Source case carries actual resolved prefixes case=" << source.name;
+            else
+                expect(source.local_cache_prefixes.empty())
+                    << "none Source case has no local cache prefixes case=" << source.name;
 
             const std::size_t expectedClick = [&] {
                 std::size_t count = 0;
@@ -319,41 +311,17 @@ suite native_svg_maction_source = [] {
                 << "passive tooltip/status registrations correspond to typed actions case="
                 << source.name;
 
-            if (localPending) {
-                expect(bool(captured.unsupported))
-                    << "local-cache tooltip remains explicitly Unsupported pending writer cache "
-                       "projection case="
-                    << source.name;
-                expect(captured.unsupported_message.find("local font caching") != std::string::npos)
-                    << "local pending case reports the specific Unsupported boundary "
-                    << source.name;
-                bool retiredUnsupported = false;
-                std::string retiredMessage;
-                try {
-                    (void)writeScene(captured.value, bundle, source);
-                } catch (svg::UnsupportedError const &error) {
-                    retiredUnsupported = true;
-                    retiredMessage = error.what();
-                }
-                expect(bool(retiredUnsupported && retiredMessage == captured.unsupported_message))
-                    << "retired local Scene retains the same explicit Unsupported result case="
-                    << source.name;
-                std::cout << source.name << ": explicit Unsupported (local cache pending)\n";
-            } else {
-                expect(bool(!captured.unsupported))
-                    << "no-cache case serializes successfully " << source.name;
-                const auto after = writeScene(captured.value, bundle, source);
-                if (captured.before != source.svg)
-                    reportDifference(source.name, source.svg, captured.before);
-                expect(bool(captured.before == source.svg))
-                    << "pinned Source SVG bytes match case=" << source.name;
-                expect(bool(after == source.svg))
-                    << "Scene serializes to pinned SVG after MML document/job retirement case="
-                    << source.name;
-                std::cout << source.name << ": "
-                          << (captured.before == source.svg ? "SVG byte-equal" : "SVG mismatch")
-                          << '\n';
-            }
+            const auto after = writeScene(captured.value, bundle, source);
+            if (captured.before != source.svg)
+                reportDifference(source.name, source.svg, captured.before);
+            expect(bool(captured.before == source.svg))
+                << "pinned Source SVG bytes match case=" << source.name;
+            expect(bool(after == source.svg))
+                << "Scene serializes to pinned SVG after MML document/job retirement case="
+                << source.name;
+            std::cout << source.name << ": "
+                      << (captured.before == source.svg ? "SVG byte-equal" : "SVG mismatch")
+                      << '\n';
         }
     };
 };

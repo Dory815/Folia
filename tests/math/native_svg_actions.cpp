@@ -19,6 +19,16 @@ scene::Scene tooltip_scene() {
     return std::move(builder).freeze();
 }
 
+scene::Scene glyph_scene(std::uint32_t codepoint) {
+    scene::Builder builder;
+    builder.set_metrics({0.4, 0.3, 0.1});
+    builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+    auto resource = scene::GlyphResource::make("NewCM-Roman", scene::GlyphOutline{});
+    builder.add_primitive(
+        0, scene::GlyphRun{{scene::Glyph{resource, {"normal", "NCM-N", codepoint}, {}, 0.5, {}}}});
+    return std::move(builder).freeze();
+}
+
 scene::Scene action_scene(std::shared_ptr<scene::Scene const> tooltip) {
     scene::Builder builder;
     builder.set_metrics({0.572, 0.442, 0.011});
@@ -55,16 +65,51 @@ suite native_svg_actions = [] {
         expect(output.find("</rect><g data-mml-node=\"mi\"/>") != output.npos);
     };
 
-    "local mode rejects math tooltip until shared cache state is available"_test = [] {
+    "local mode writes source self-closing empty defs in root and tooltip scopes"_test = [] {
         auto nested = std::make_shared<scene::Scene const>(tooltip_scene());
-        bool rejected = false;
-        try {
-            (void)svg::write(action_scene(std::move(nested)),
-                             {.font_cache = svg::FontCacheMode::local});
-        } catch (svg::UnsupportedError const &) {
-            rejected = true;
-        }
-        expect(rejected);
+        auto output =
+            svg::write(action_scene(std::move(nested)), {.font_cache = svg::FontCacheMode::local});
+        const auto first = output.find("<defs/>");
+        const auto second = first == output.npos ? output.npos : output.find("<defs/>", first + 1);
+        expect(first != output.npos && second != output.npos);
+        expect(output.find("<defs></defs>") == output.npos);
+    };
+
+    "local mode projects nested tooltip and following glyph through shared cache plan"_test = [] {
+        scene::Builder builder;
+        builder.set_metrics({1.5, 0.5, 0.1});
+        builder.set_font_metrics({1, 0.5, 0.5, 0.7});
+        auto resource = scene::GlyphResource::make("NewCM-Roman", scene::GlyphOutline{});
+        auto glyph = [&](std::uint32_t codepoint) {
+            return scene::Glyph{resource, {"normal", "NCM-N", codepoint}, {}, 0.5, {}};
+        };
+        builder.add_primitive(0, scene::GlyphRun{{glyph(0x78)}});
+        const auto action = builder.add_group();
+        auto metadata = builder.metadata(action);
+        metadata.source_tag = "maction";
+        builder.set_metadata(action, std::move(metadata));
+        scene::Rule hitbox;
+        hitbox.bounds = {0, -0.1, 1, 0.6};
+        auto nested = std::make_shared<scene::Scene const>(glyph_scene(0x79));
+        (void)builder.add_action_region(action, {std::move(hitbox), std::move(nested)});
+        (void)builder.add_group(action);
+        (void)builder.add_primitive(0, scene::GlyphRun{{glyph(0x7a)}});
+        auto source = std::move(builder).freeze();
+        svg::SvgFontResourcesBuilder fonts;
+        fonts.add({"normal", 0x78}, {true, "M1 0L2 2Z", {}});
+        fonts.add({"normal", 0x79}, {true, "M3 0L4 2Z", {}});
+        fonts.add({"normal", 0x7a}, {true, "M5 0L6 2Z", {}});
+        auto font_resources = std::move(fonts).freeze();
+        auto output = svg::write(source, {.font_cache = svg::FontCacheMode::local,
+                                          .font_resources = &font_resources,
+                                          .local_cache_prefixes = {"1-", ""}});
+        expect(output.find("<defs><path id=\"MJX-1-NCM-N-78\" d=\"M1 0L2 2Z\"/></defs>") !=
+               output.npos);
+        expect(output.find("<defs><path id=\"MJX-NCM-N-79\" d=\"M3 0L4 2Z\"/>"
+                           "<path id=\"MJX-NCM-N-7A\" d=\"M5 0L6 2Z\"/></defs>") != output.npos);
+        expect(output.find("xlink:href=\"#MJX-1-NCM-N-78\"") != output.npos);
+        expect(output.find("xlink:href=\"#MJX-NCM-N-79\"") != output.npos);
+        expect(output.find("xlink:href=\"#MJX-NCM-N-7A\"") != output.npos);
     };
 
     "local mode retains text tooltip toggle and statusline actions"_test = [] {
@@ -95,6 +140,8 @@ suite native_svg_actions = [] {
 
         auto output =
             svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::local});
+        expect(output.find("<defs/>") != output.npos);
+        expect(output.find("<defs></defs>") == output.npos);
         expect(output.find("<g data-mml-node=\"maction\"><title>Tip & < \" '</title>"
                            "<rect width=\"572\" height=\"453\" x=\"0\" y=\"-11\" "
                            "fill=\"none\" pointer-events=\"all\"/></g>") != output.npos);

@@ -1,6 +1,7 @@
 export module folia.math.output.svg.writer;
 export import folia.math.output.scene;
 export import folia.math.output.svg.font_data;
+export import folia.math.output.svg.font_cache;
 import std;
 
 export namespace folia::math::output::svg {
@@ -20,9 +21,9 @@ struct SvgWriteOptions {
     // Immutable Source path data for the Scene GlyphKey values. The catalog is
     // supplied by the owner; this serializer neither loads nor caches fonts.
     folia::math::output::svg::SvgFontResources const* font_resources{};
-    // Already-resolved MathJax local cache ID. The renderer owns the monotonic
-    // source counter; this pure writer cannot allocate cache identities.
-    std::string local_id;
+    // Complete resolved Source prefixes in root/nested processMath order.
+    // The renderer allocates these identities; the writer only projects them.
+    std::vector<std::string> local_cache_prefixes;
 };
 
 // Serializes completed geometry and metadata. All values that affect placement

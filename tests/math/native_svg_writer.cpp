@@ -688,7 +688,7 @@ suite native_svg_writer = [] {
         auto output =
             svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::local,
                                                      .font_resources = &font_resources,
-                                                     .local_id = "1"});
+                                                     .local_cache_prefixes = {"1-"}});
         auto const first_svg = output.find("<svg");
         auto const second_svg = output.find("<svg", first_svg + 4);
         auto const cache = output.find("<defs><path id=\"MJX-1-NCM-N-5F\"");
@@ -719,7 +719,7 @@ suite native_svg_writer = [] {
         auto font_resources = std::move(font_builder).freeze();
         auto output = svg::write(source, {.font_cache = svg::FontCacheMode::local,
                                           .font_resources = &font_resources,
-                                          .local_id = "1"});
+                                          .local_cache_prefixes = {"1-"}});
         expect(
             output.find(
                 "<defs><path id=\"MJX-1-NCM-N-5F\" d=\"M0-140L333-140L333-100L0-100Z\"/></defs>") !=
@@ -971,12 +971,16 @@ suite native_svg_writer = [] {
                 expect(output.find("<use data-c=\"21\" xlink:href=\"#MJX-1-shared-21\"",
                                    second_use + 1) == output.npos);
         };
-        auto local_ab = svg::write(
-            make_scene(std::string(first_variant), std::string(second_variant)),
-            {.font_cache = svg::FontCacheMode::local, .font_resources = &catalog, .local_id = "1"});
-        auto local_ba = svg::write(
-            make_scene(std::string(second_variant), std::string(first_variant)),
-            {.font_cache = svg::FontCacheMode::local, .font_resources = &catalog, .local_id = "1"});
+        auto local_ab =
+            svg::write(make_scene(std::string(first_variant), std::string(second_variant)),
+                       {.font_cache = svg::FontCacheMode::local,
+                        .font_resources = &catalog,
+                        .local_cache_prefixes = {"1-"}});
+        auto local_ba =
+            svg::write(make_scene(std::string(second_variant), std::string(first_variant)),
+                       {.font_cache = svg::FontCacheMode::local,
+                        .font_resources = &catalog,
+                        .local_cache_prefixes = {"1-"}});
         check_local(local_ab, first_path, second_path);
         check_local(local_ba, second_path, first_path);
     };
