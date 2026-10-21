@@ -8,6 +8,7 @@
 #include "support/folia_test.hpp"
 #include "fixtures/common_scene.inc"
 import folia.math.core.math_item;
+import folia.math.adaptors.lite_adaptor;
 import folia.math.fonts.newcm_font_module_provider;
 import folia.math.handlers.html.html_dom_strings;
 import folia.math.input.tex.action.configuration;
@@ -73,12 +74,36 @@ struct NoUnexpectedMeasurement final : common::MeasurementTarget {
     }
 };
 
+class LiteUnknownTextMeasurement final : public common::MeasurementTarget {
+    folia::math::adaptors::lite::LiteAdaptor &adaptor_;
+
+  public:
+    explicit LiteUnknownTextMeasurement(folia::math::adaptors::lite::LiteAdaptor &adaptor) noexcept
+        : adaptor_(adaptor) {}
+
+    common::ExtendedMetrics measureMetrics(common::MetricRequest const &) override {
+        throw std::logic_error(
+            "canonical Common-to-Scene cases must use the pinned NewCM font metrics");
+    }
+
+    common::UnknownBBox measureUnknownText(common::UnknownTextRequest const &request) override {
+        const std::array<folia::math::DOMNodeRef, 1> children{adaptor_.text(request.text)};
+        const auto textElement = adaptor_.node(
+            u"text", std::span<folia::math::AttributeData const>{},
+            std::span<folia::math::DOMNodeRef const>{children}, u"http://www.w3.org/2000/svg");
+        const auto [width, height] = adaptor_.nodeSize(textElement, 1000, true);
+        (void)height;
+        return {width, .75, .2};
+    }
+};
+
 std::unique_ptr<common::Linebreaks> makeLinebreakVisitor(common::CommonWrapperFactory &factory) {
     return std::make_unique<common::LinebreakVisitor>(factory);
 }
 
 struct InputOwner {
     folia::math::fonts::NewcmFontDataBundle fonts{folia::math::fonts::makeNewcmFontData()};
+    folia::math::adaptors::lite::LiteAdaptor adaptor;
     tex::ConfigurationHandler configurations;
     tex::MapHandler maps;
     tex::MacroCallbacks callbacks{{}, {}};
@@ -88,6 +113,7 @@ struct InputOwner {
     struct Warnings final : tex::WarningSink {
         void warn(std::u16string_view) override {}
     } warnings;
+    std::unique_ptr<tex::TeX> canonicalInput;
     InputOwner() {
         // Match the native configuration registration sequence in the pinned
         // tools/mathjax-bundle/entry.cjs, including the colliding font packages.
@@ -158,7 +184,7 @@ common::CommonOutputJaxConfig commonConfig(CommonSceneCase const &item, InputOwn
 }
 
 scene::Scene buildSceneFromDocument(mml::MmlDocument &document, CommonSceneCase const &item,
-                                    InputOwner &owner, NoUnexpectedMeasurement &measurement) {
+                                    InputOwner &owner, common::MeasurementTarget &measurement) {
     common::LayoutJob job(document, commonConfig(item, owner), measurement,
                           common::CommonWrapperFactory::standardNodes(svg::mencloseNotations()),
                           makeLinebreakVisitor);
@@ -168,11 +194,11 @@ scene::Scene buildSceneFromDocument(mml::MmlDocument &document, CommonSceneCase 
 class NativeOutput final : public folia::math::core::MathOutputJaxService {
     CommonSceneCase const &item_;
     InputOwner &owner_;
-    NoUnexpectedMeasurement &measurement_;
+    common::MeasurementTarget &measurement_;
 
   public:
     NativeOutput(CommonSceneCase const &item, InputOwner &owner,
-                 NoUnexpectedMeasurement &measurement) noexcept
+                 common::MeasurementTarget &measurement) noexcept
         : item_(item), owner_(owner), measurement_(measurement) {}
 
     scene::Scene typeset(folia::math::core::MathItem &math, mml::MmlDocument &document) override {
@@ -202,21 +228,38 @@ class NativeOutput final : public folia::math::core::MathOutputJaxService {
 };
 
 scene::Scene buildScene(CommonSceneCase const &item, InputOwner &owner,
-                        NoUnexpectedMeasurement &measurement) {
+                        common::MeasurementTarget &measurement,
+                        bool persistentInputSession = false) {
     mml::MmlDocument document;
     owner.texOptions.tagSide =
         item.tag_side.empty()
             ? std::optional<std::u16string>{u"right"}
             : std::optional<std::u16string>{folia::math::utf16::decode(item.tag_side).text};
-    tex::TeX input(owner.configurations, owner.maps, owner.callbacks, owner.warnings,
-                   document.factory(), owner.texOptions);
+    std::unique_ptr<tex::TeX> transientInput;
+    tex::TeX *input = nullptr;
+    if (persistentInputSession) {
+        if (!owner.canonicalInput)
+            owner.canonicalInput =
+                std::make_unique<tex::TeX>(owner.configurations, owner.maps, owner.callbacks,
+                                           owner.warnings, document.factory(), owner.texOptions);
+        input = owner.canonicalInput.get();
+    } else {
+        transientInput =
+            std::make_unique<tex::TeX>(owner.configurations, owner.maps, owner.callbacks,
+                                       owner.warnings, document.factory(), owner.texOptions);
+        input = transientInput.get();
+    }
+    // The canonical Source capture reuses one input jax but supplies each
+    // request's configured tag side. The input's parse options refer to this
+    // same live option record.
+    input->options.tagSide = owner.texOptions.tagSide;
     NativeOutput output(item, owner, measurement);
     folia::math::core::AbstractMathItem expression(
-        folia::math::utf16::decode(item.tex).text, &input,
+        folia::math::utf16::decode(item.tex).text, input,
         item.display ? folia::math::core::MathDisplay::display_math
                      : folia::math::core::MathDisplay::inline_math);
     expression.setMetrics(item.em, item.ex, item.width, 1);
-    expression.compile(document, {&output, nullptr});
+    expression.compile(document, {&output, &owner.adaptor});
     if (!expression.root)
         throw std::logic_error("TeX input produced no MathItem root");
     document.setRoot(*expression.root);
@@ -547,6 +590,7 @@ suite common_scene_source = [] {
     "real_TeX_to_MML_to_standard_Common_to_frozen_Scene_matches_pinned_Source_SVG"_test = [] {
         InputOwner owner;
         NoUnexpectedMeasurement measurement;
+        LiteUnknownTextMeasurement canonicalMeasurement(owner.adaptor);
         // Stage coverage is deliberately limited to focused currently emitted
         // Common families, table branches, and isolated script-family probes.
         // Other pinned Source cases remain outstanding until their families
@@ -677,7 +721,11 @@ suite common_scene_source = [] {
                         continue;
                     }
                 }
-                auto completed = buildScene(source, owner, measurement);
+                auto &caseMeasurement =
+                    canonicalProfile
+                        ? static_cast<common::MeasurementTarget &>(canonicalMeasurement)
+                        : static_cast<common::MeasurementTarget &>(measurement);
+                auto completed = buildScene(source, owner, caseMeasurement, canonicalProfile);
                 if (!sourceOk) {
                     const auto actual = serialize(completed, owner);
                     (void)actual;
