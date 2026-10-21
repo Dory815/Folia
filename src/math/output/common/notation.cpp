@@ -58,10 +58,8 @@ void line(scene::PathGeometry &path, double x, double y) {
     path.segments.emplace_back(scene::LineTo{scenePoint(x, y)});
 }
 
-void relative(scene::PathGeometry &path, double &x, double &y, double dx, double dy) {
-    x += dx;
-    y += dy;
-    line(path, x, y);
+void relativeLine(scene::PathGeometry &path, double dx, double dy) {
+    path.segments.emplace_back(scene::LineTo{scenePoint(dx, dy), scene::CoordinateMode::relative});
 }
 } // namespace
 
@@ -289,24 +287,23 @@ scene::PathGeometry lineGeometry(LineName kind, BBox const &box, double thicknes
 }
 
 namespace {
-scene::PathGeometry polygon(std::span<scene::Point const> points) {
-    scene::PathGeometry path;
-    if (points.empty())
-        return path;
-    path.segments.emplace_back(scene::MoveTo{points.front()});
-    for (std::size_t i = 1; i < points.size(); ++i)
-        path.segments.emplace_back(scene::LineTo{points[i]});
-    path.segments.emplace_back(scene::ClosePath{});
-    return path;
-}
-
-NotationGeometry styled(scene::PathGeometry path, double thickness, bool filled = false) {
+scene::Paint styled(double thickness, bool filled = false) {
     scene::Paint paint;
     paint.fill =
         filled ? scene::PaintColor{scene::InheritedPaint{}} : scene::PaintColor{scene::NoPaint{}};
     paint.stroke = scene::InheritedPaint{};
     paint.stroke_width = filled ? 0 : thickness;
-    return {std::move(path), scene::Transform{}, std::move(paint)};
+    return paint;
+}
+
+scene::Path styledPath(scene::PathGeometry geometry, double thickness, bool filled = false,
+                       scene::PathElement element = scene::PathElement::path) {
+    scene::Path path;
+    path.geometry = std::move(geometry);
+    path.paint = styled(thickness, filled);
+    path.role = scene::ElementRole::enclosure_mark;
+    path.element = element;
+    return path;
 }
 } // namespace
 
@@ -333,15 +330,17 @@ std::vector<NotationGeometry> notationGeometry(NotationSpec const &spec, BBox co
                     segment);
             }
         }
-        auto value = styled(std::move(geometry), thickness);
+        auto value = styledPath(std::move(geometry), thickness, false, scene::PathElement::line);
         value.paint.fill = scene::InheritedPaint{}; // Source line inherits the common root fill.
-        result.push_back(std::move(value));
+        result.emplace_back(std::move(value));
     };
     auto addArrow = [&](double width, double angle, bool both, std::string_view offset = {},
                         double distance = 0) {
         auto value = arrowGeometry(width, angle, both, offset, distance, thickness, head, box);
-        result.push_back(styled(std::move(value.path), thickness, true));
-        result.back().transform = std::move(value.transform);
+        auto path = styledPath(std::move(value.path), thickness, true);
+        path.transform = std::move(value.transform);
+        path.syntax = scene::PathSyntax::spaced;
+        result.emplace_back(std::move(path));
     };
     switch (spec.paint) {
     case PaintRecipe::side_line:
@@ -374,37 +373,21 @@ std::vector<NotationGeometry> notationGeometry(NotationSpec const &spec, BBox co
     case PaintRecipe::box:
     case PaintRecipe::rounded_box: {
         const double t = thickness / 2;
-        const double x0 = t, x1 = box.w - t, y0 = t - box.d, y1 = box.h - t;
         const double radius = spec.paint == PaintRecipe::rounded_box ? thickness + padding : 0;
-        scene::PathGeometry path;
-        if (radius <= 0) {
-            const std::array<scene::Point, 4> pts{{{x0, y0}, {x1, y0}, {x1, y1}, {x0, y1}}};
-            path = polygon(pts);
-        } else {
-            const double r = std::min({radius, (x1 - x0) / 2, (y1 - y0) / 2});
-            path.segments.emplace_back(scene::MoveTo{{x0 + r, y0}});
-            path.segments.emplace_back(scene::LineTo{{x1 - r, y0}});
-            path.segments.emplace_back(scene::ArcTo{r, r, 0, false, true, {x1, y0 + r}});
-            path.segments.emplace_back(scene::LineTo{{x1, y1 - r}});
-            path.segments.emplace_back(scene::ArcTo{r, r, 0, false, true, {x1 - r, y1}});
-            path.segments.emplace_back(scene::LineTo{{x0 + r, y1}});
-            path.segments.emplace_back(scene::ArcTo{r, r, 0, false, true, {x0, y1 - r}});
-            path.segments.emplace_back(scene::LineTo{{x0, y0 + r}});
-            path.segments.emplace_back(scene::ArcTo{r, r, 0, false, true, {x0 + r, y0}});
-            path.segments.emplace_back(scene::ClosePath{});
-        }
-        result.push_back(styled(std::move(path), thickness));
+        scene::Rule rule{{t, t - box.d, box.w - thickness, box.h + box.d - thickness},
+                         styled(thickness),
+                         {},
+                         scene::ElementRole::enclosure_mark};
+        if (radius != 0)
+            rule.corner_radius = radius;
+        result.emplace_back(std::move(rule));
         break;
     }
     case PaintRecipe::circle: {
         const double rx = (box.w - thickness) / 2, ry = (box.h + box.d - thickness) / 2;
         const double cx = box.w / 2, cy = (box.h - box.d) / 2;
-        scene::PathGeometry path;
-        path.segments.emplace_back(scene::MoveTo{{cx + rx, cy}});
-        path.segments.emplace_back(scene::ArcTo{rx, ry, 0, false, true, {cx - rx, cy}});
-        path.segments.emplace_back(scene::ArcTo{rx, ry, 0, false, true, {cx + rx, cy}});
-        path.segments.emplace_back(scene::ClosePath{});
-        result.push_back(styled(std::move(path), thickness));
+        result.emplace_back(scene::Ellipse{
+            {cx, cy}, rx, ry, styled(thickness), {}, scene::ElementRole::enclosure_mark});
         break;
     }
     case PaintRecipe::phasor_angle: {
@@ -414,9 +397,12 @@ std::vector<NotationGeometry> notationGeometry(NotationSpec const &spec, BBox co
         move(path, box.w, t - box.d);
         line(path, t + c * t, t - box.d);
         line(path, c * height + t, height - box.d - t);
-        auto angle = styled(std::move(path), thickness);
+        auto angle = styledPath(std::move(path), thickness);
         angle.paint.line_cap = scene::StrokeCap::round;
         angle.paint.line_join = scene::StrokeJoin::miter;
+        angle.syntax = scene::PathSyntax::spaced;
+        angle.paint_encoding = scene::PathPaintEncoding::stroke_width_style;
+        angle.join_spelling = scene::StrokeJoinSpelling::mitre;
         result.push_back(std::move(angle));
         break;
     }
@@ -511,12 +497,20 @@ std::vector<NotationGeometry> notationGeometry(NotationSpec const &spec, BBox co
         const double rx = padding - t / 2, ry = (h + d) / 2 - 4 * t;
         scene::PathGeometry path;
         move(path, t, t - d);
-        path.segments.emplace_back(
-            scene::ArcTo{rx, ry, 0, false, true, {t, t - d + (h + d - 2 * t)}});
+        path.segments.emplace_back(scene::ArcTo{rx,
+                                                ry,
+                                                0,
+                                                false,
+                                                true,
+                                                {0, h + d - 2 * t},
+                                                scene::CoordinateMode::relative,
+                                                scene::ArcFlagSeparator::comma});
         line(path, w - t, h - t);
-        auto longDivision = styled(std::move(path), thickness);
+        auto longDivision = styledPath(std::move(path), thickness);
         longDivision.paint.line_cap = scene::StrokeCap::round;
         longDivision.paint.line_join = scene::StrokeJoin::round;
+        longDivision.syntax = scene::PathSyntax::spaced;
+        longDivision.paint_encoding = scene::PathPaintEncoding::stroke_width_style;
         result.push_back(std::move(longDivision));
         break;
     }
@@ -538,42 +532,35 @@ ArrowGeometry arrowGeometry(double width, double angle, bool doubleHeaded, std::
     const double dx = thickness * head.dx;
     const double t2 = thickness / 2;
     scene::PathGeometry path;
-    double px = content.w + dw, py = mid;
-    move(path, px, py);
+    move(path, content.w + dw, mid);
     if (doubleHeaded) {
-        relative(path, px, py, -(x + dx), y);
-        relative(path, px, py, dx, t2 - y);
-        px = x - dw;
-        py = mid + t2;
-        line(path, px, py);
-        relative(path, px, py, dx, y - t2);
-        relative(path, px, py, -(x + dx), -y);
-        relative(path, px, py, x + dx, -y);
-        relative(path, px, py, -dx, y - t2);
-        px = content.w + dw - x;
-        py = mid - t2;
-        line(path, px, py);
-        relative(path, px, py, -dx, t2 - y);
+        relativeLine(path, -(x + dx), y);
+        relativeLine(path, dx, t2 - y);
+        line(path, x - dw, mid + t2);
+        relativeLine(path, dx, y - t2);
+        relativeLine(path, -(x + dx), -y);
+        relativeLine(path, x + dx, -y);
+        relativeLine(path, -dx, y - t2);
+        line(path, content.w + dw - x, mid - t2);
+        relativeLine(path, -dx, t2 - y);
     } else {
-        relative(path, px, py, -(x + dx), y);
-        relative(path, px, py, dx, t2 - y);
-        px = -dw;
-        py = mid + t2;
-        line(path, px, py);
-        relative(path, px, py, 0, -thickness);
-        px = content.w + dw - x;
-        py = mid - t2;
-        line(path, px, py);
-        relative(path, px, py, -dx, t2 - y);
+        relativeLine(path, -(x + dx), y);
+        relativeLine(path, dx, t2 - y);
+        line(path, -dw, mid + t2);
+        relativeLine(path, 0, -thickness);
+        line(path, content.w + dw - x, mid - t2);
+        relativeLine(path, -dx, t2 - y);
     }
     path.segments.emplace_back(scene::ClosePath{});
 
     std::vector<scene::TransformOperation> operations;
     if (distance != 0) {
         if (offset == "X")
-            operations.emplace_back(scene::Translation{-distance, 0});
+            operations.emplace_back(
+                scene::Translation{-distance, 0, scene::TranslationSeparator::space});
         else if (offset == "Y")
-            operations.emplace_back(scene::Translation{0, distance});
+            operations.emplace_back(
+                scene::Translation{0, distance, scene::TranslationSeparator::space});
     }
     if (angle != 0) {
         operations.emplace_back(scene::Rotation{-angle * 180 / pi, {content.w / 2, mid}});

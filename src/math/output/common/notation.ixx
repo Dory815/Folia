@@ -93,11 +93,7 @@ struct ArrowGeometry {
     scene::Transform transform;
 };
 
-struct NotationGeometry {
-    scene::PathGeometry path;
-    scene::Transform transform;
-    scene::Paint paint;
-};
+using NotationGeometry = std::variant<scene::Rule, scene::Ellipse, scene::Path>;
 
 [[nodiscard]] std::optional<NotationKind> findNotation(std::span<NotationSpec const>,
                                                        std::u16string_view source_name);

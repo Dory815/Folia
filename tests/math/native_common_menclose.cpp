@@ -117,15 +117,9 @@ common::CommonWrapperCatalog geometryCatalog(std::span<common::NotationSpec cons
 std::string serializeGeometry(std::span<common::NotationGeometry const> geometry) {
     scene::Group root;
     root.metadata.source_tag = "mrow";
-    scene::NodeId id = 1;
-    for (const auto &item : geometry) {
-        scene::Group placed;
-        placed.id = id++;
-        placed.transform = item.transform;
-        placed.metadata.source_tag = "mrow";
-        placed.entries.emplace_back(scene::Primitive{scene::Path{item.path, item.paint}});
-        root.entries.emplace_back(std::make_shared<scene::Group const>(std::move(placed)));
-    }
+    for (const auto &item : geometry)
+        root.entries.emplace_back(
+            std::visit([](auto const &primitive) { return scene::Primitive{primitive}; }, item));
     const scene::Scene completed(std::move(root), {3, 1, .5}, {1, .5, .4, .7});
     folia::math::output::svg::SvgWriteOptions options;
     options.font_cache = folia::math::output::svg::FontCacheMode::none;
@@ -257,21 +251,33 @@ suite native_common_menclose = [] {
             content, .067, .2, {4, 2, 1}, {.1, .4, .1, .2});
         expect(fillArrow.size() == 1_u);
         if (!fillArrow.empty()) {
-            expect(fillArrow[0].paint.fill == folia::math::output::scene::PaintColor{
-                                                  folia::math::output::scene::InheritedPaint{}});
-            expect(fillArrow[0].paint.stroke == folia::math::output::scene::PaintColor{
-                                                    folia::math::output::scene::InheritedPaint{}});
-            const auto operations = fillArrow[0].transform.operations();
-            expect(operations.size() == 2_u);
-            if (operations.size() == 2) {
-                // Source arrow() emits translation before rotation about the box center.
-                const auto *translation = std::get_if<scene::Translation>(&operations[0]);
-                const auto *rotation = std::get_if<scene::Rotation>(&operations[1]);
-                expect(translation != nullptr && rotation != nullptr);
-                if (translation && rotation) {
-                    expect((*translation == scene::Translation{-.1, 0}));
-                    expect((*rotation == scene::Rotation{90, {1.5, .25}}));
+            const auto *arrow = std::get_if<scene::Path>(&fillArrow.front());
+            expect(arrow != nullptr);
+            if (arrow) {
+                expect(arrow->paint.fill == scene::PaintColor{scene::InheritedPaint{}});
+                expect(arrow->paint.stroke == scene::PaintColor{scene::InheritedPaint{}});
+                expect(arrow->role == scene::ElementRole::enclosure_mark);
+                expect(arrow->syntax == scene::PathSyntax::spaced);
+                const auto operations = arrow->transform.operations();
+                expect(operations.size() == 2_u);
+                if (operations.size() == 2) {
+                    // Source arrow() emits translation before rotation about the box center.
+                    const auto *translation = std::get_if<scene::Translation>(&operations[0]);
+                    const auto *rotation = std::get_if<scene::Rotation>(&operations[1]);
+                    expect(translation != nullptr && rotation != nullptr);
+                    if (translation && rotation) {
+                        expect((*translation ==
+                                scene::Translation{-.1, 0, scene::TranslationSeparator::space}));
+                        expect((*rotation == scene::Rotation{90, {1.5, .25}}));
+                    }
                 }
+                const bool hasRelativeLine = std::any_of(
+                    arrow->geometry.segments.begin(), arrow->geometry.segments.end(),
+                    [](scene::PathSegment const &segment) {
+                        const auto *lineTo = std::get_if<scene::LineTo>(&segment);
+                        return lineTo && lineTo->mode == scene::CoordinateMode::relative;
+                    });
+                expect(hasRelativeLine);
             }
         }
         const auto phasorPaths = common::notationGeometry(
@@ -284,15 +290,71 @@ suite native_common_menclose = [] {
             *std::find_if(specs.begin(), specs.end(),
                           [](auto const &s) { return s.kind == common::NotationKind::circle; }),
             content, .067, .2, {4, 2, 1}, {.1, .2, .1, .2});
-        expect(circlePaths.size() == 1_u && circlePaths[0].path.segments.size() == 4_u);
+        expect(circlePaths.size() == 1_u);
+        if (!circlePaths.empty()) {
+            const auto *ellipse = std::get_if<scene::Ellipse>(&circlePaths.front());
+            expect(ellipse != nullptr);
+            if (ellipse) {
+                expect(ellipse->center == scene::Point{1.5, .25});
+                expect(ellipse->radius_x == 1.4665);
+                expect(ellipse->radius_y == .7165);
+                expect(ellipse->role == scene::ElementRole::enclosure_mark);
+            }
+        }
+        const auto boxGeometry = common::notationGeometry(
+            *std::find_if(specs.begin(), specs.end(),
+                          [](auto const &s) { return s.kind == common::NotationKind::box; }),
+            content, .067, .2, {4, 2, 1}, {.1, .2, .1, .2});
+        expect(boxGeometry.size() == 1_u);
+        if (!boxGeometry.empty()) {
+            const auto *rule = std::get_if<scene::Rule>(&boxGeometry.front());
+            expect(rule != nullptr);
+            if (rule) {
+                expect(rule->bounds == scene::Rect{.0335, -.4665, 2.933, 1.433});
+                expect(!rule->corner_radius);
+                expect(rule->role == scene::ElementRole::enclosure_mark);
+            }
+        }
+        const auto roundedBox = common::notationGeometry(
+            *std::find_if(
+                specs.begin(), specs.end(),
+                [](auto const &s) { return s.kind == common::NotationKind::rounded_box; }),
+            content, .067, .2, {4, 2, 1}, {.1, .2, .1, .2});
+        expect(roundedBox.size() == 1_u);
+        if (!roundedBox.empty()) {
+            const auto *rule = std::get_if<scene::Rule>(&roundedBox.front());
+            expect(rule != nullptr);
+            if (rule) {
+                expect(rule->bounds == scene::Rect{.0335, -.4665, 2.933, 1.433});
+                expect(rule->corner_radius == .267);
+                expect(rule->role == scene::ElementRole::enclosure_mark);
+            }
+        }
         const auto longdivPaths = common::notationGeometry(
             *std::find_if(specs.begin(), specs.end(),
                           [](auto const &s) { return s.kind == common::NotationKind::long_div; }),
             content, .067, .2, {4, 2, 1}, {.1, .2, .1, .2});
         expect(longdivPaths.size() == 1_u);
-        if (!longdivPaths.empty())
-            expect(std::holds_alternative<folia::math::output::scene::ArcTo>(
-                longdivPaths[0].path.segments[1]));
+        if (!longdivPaths.empty()) {
+            const auto *path = std::get_if<scene::Path>(&longdivPaths.front());
+            expect(path != nullptr);
+            if (path && path->geometry.segments.size() > 1) {
+                const auto *arc = std::get_if<scene::ArcTo>(&path->geometry.segments[1]);
+                expect(arc != nullptr);
+                if (arc) {
+                    expect(arc->mode == scene::CoordinateMode::relative);
+                    expect(arc->flags_separator == scene::ArcFlagSeparator::comma);
+                    expect(arc->to == scene::Point{0, 1.433});
+                    // Source evaluates p - t / 2, with t = thickness / 2.
+                    expect(arc->radius_x == .18325000000000002)
+                        << "longdiv Source radius_x" << std::format("{:.17g}", arc->radius_x);
+                    expect(arc->radius_y == .616);
+                }
+                expect(path->syntax == scene::PathSyntax::spaced);
+                expect(path->paint_encoding == scene::PathPaintEncoding::stroke_width_style);
+                expect(path->role == scene::ElementRole::enclosure_mark);
+            }
+        }
     };
 
     "explicit_source_cap_join_values_are_preserved_and_absence_stays_absent"_test = [] {
@@ -313,11 +375,17 @@ suite native_common_menclose = [] {
                                                       .067, .2, {4, 2, 1}, {.267, .2, .2, .4335});
         const auto top = common::notationGeometry(lookup(common::NotationKind::top), box, .067, .2,
                                                   {4, 2, 1}, {.267, 0, 0, 0});
-        expect(phasor.size() == 1_u && phasor.front().paint.line_cap == StrokeCap::round);
-        expect(phasor.size() == 1_u && phasor.front().paint.line_join == StrokeJoin::miter);
-        expect(longdiv.size() == 1_u && longdiv.front().paint.line_cap == StrokeCap::round);
-        expect(longdiv.size() == 1_u && longdiv.front().paint.line_join == StrokeJoin::round);
-        expect(top.size() == 1_u && !top.front().paint.line_cap && !top.front().paint.line_join);
+        const auto *phasorPath = phasor.empty() ? nullptr : std::get_if<Path>(&phasor.front());
+        const auto *longdivPath = longdiv.empty() ? nullptr : std::get_if<Path>(&longdiv.front());
+        const auto *topPath = top.empty() ? nullptr : std::get_if<Path>(&top.front());
+        expect(phasorPath && phasorPath->paint.line_cap == StrokeCap::round);
+        expect(phasorPath && phasorPath->paint.line_join == StrokeJoin::miter);
+        expect(phasorPath && phasorPath->paint_encoding == PathPaintEncoding::stroke_width_style);
+        expect(phasorPath && phasorPath->join_spelling == StrokeJoinSpelling::mitre);
+        expect(longdivPath && longdivPath->paint.line_cap == StrokeCap::round);
+        expect(longdivPath && longdivPath->paint.line_join == StrokeJoin::round);
+        expect(longdivPath && longdivPath->paint_encoding == PathPaintEncoding::stroke_width_style);
+        expect(topPath && !topPath->paint.line_cap && !topPath->paint.line_join);
     };
 
     "source_bbox_and_extenders_match_exact_raw_values_for_positive_and_negative_height"_test = [] {

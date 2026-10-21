@@ -272,21 +272,6 @@ std::vector<NotationGeometry> CommonMenclose::sceneGeometry() {
 
 SceneNodes CommonMenclose::emitScene(scene::Builder &builder,
                                      std::span<scene::NodeId const> parents) {
-    for (const auto *spec : notations_) {
-        if (spec->render_child && spec->kind == NotationKind::radical)
-            continue;
-        switch (spec->paint) {
-        case PaintRecipe::side_line:
-        case PaintRecipe::diagonal_line:
-        case PaintRecipe::horizontal_line:
-        case PaintRecipe::vertical_line:
-            break;
-        default:
-            throw std::logic_error("CommonMenclose Scene emission does not support notation: " +
-                                   std::string(spec->source_name));
-        }
-    }
-
     auto containers = standardSceneNodes(builder, parents);
     auto &nodes = containers.nodes;
     if (nodes.empty() || !nodes.front())
@@ -314,14 +299,11 @@ SceneNodes CommonMenclose::emitScene(scene::Builder &builder,
     }
 
     for (auto geometry : sceneGeometry()) {
-        if (!geometry.transform.operations().empty())
-            throw std::logic_error("CommonMenclose line notation unexpectedly needs a transform");
-        scene::Path path;
-        path.geometry = std::move(geometry.path);
-        path.paint = std::move(geometry.paint);
-        path.role = scene::ElementRole::enclosure_mark;
-        path.element = scene::PathElement::line;
-        builder.add_primitive(*nodes.front(), std::move(path));
+        std::visit(
+            [&](auto &&primitive) {
+                builder.add_primitive(*nodes.front(), scene::Primitive{std::move(primitive)});
+            },
+            std::move(geometry));
     }
     return nodes;
 }
