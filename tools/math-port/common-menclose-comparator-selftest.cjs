@@ -111,6 +111,44 @@ assert.equal(sourceGeometry([{tag:'path',attrs:{d:'M 0 0 L 1 1',style:{'stroke-w
 assert.deepEqual(sourcePath('M 0 0 l -30.1 408.5 l 67 100.5'),
   sourcePath('M 0 0 L -30.1 408.5 L 36.9 509'),
   'relative and absolute base-ten paths normalize to identical exact coordinates');
+const primitiveSvg = '<svg style="x" xmlns="http://www.w3.org/2000/svg" width="1" height="1" role="img" focusable="false" viewBox="0 0 1 1">' +
+  '<g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="mrow">' +
+  '<line x1="1" y1="2" x2="5" y2="7" stroke-width="2" />' +
+  '<rect x="0" y="0" width="10" height="8" rx="8" fill="none" stroke-width="1" />' +
+  '<ellipse rx="3" ry="4" cx="10" cy="11" fill="none" stroke-width="2" />' +
+  '<path style="stroke-width: 3;" d="M 0 0 l 2 3 a 4 5 0 0,1 2 3 L 9 9" fill="none" ' +
+  'stroke-linecap="round" stroke-linejoin="mitre" transform="rotate(20,0,0)" />' +
+  '</g></g></svg>';
+const primitiveExpected = sourceGeometry([
+  {tag:'line',attrs:{x1:'1',y1:'2',x2:'5',y2:'7','stroke-width':'2'}},
+  {tag:'rect',attrs:{x:'0',y:'0',width:'10',height:'8',rx:'8',fill:'none','stroke-width':'1'}},
+  {tag:'ellipse',attrs:{rx:'3',ry:'4',cx:'10',cy:'11',fill:'none','stroke-width':'2'}},
+  {tag:'path',attrs:{d:'M 0 0 l 2 3 a 4 5 0 0,1 2 3 L 9 9',
+    style:{'stroke-width':'3'},fill:'none','stroke-linecap':'round','stroke-linejoin':'mitre',transform:'rotate(20,0,0)'}},
+]);
+const primitiveParsed = parseSvg(primitiveSvg);
+assert.deepEqual(primitiveParsed, primitiveExpected,
+  'native line, clipped rounded rect, ellipse, relative path/style width, and mitre normalize to Source geometry');
+assert.deepEqual(primitiveParsed[1].segments[0], ['M','1/250','0/1'],
+  'rounded rectangle radius is clamped to half of its shortest side');
+assert.notDeepEqual(parseSvg(primitiveSvg.replace('width="10"','width="11"')), primitiveParsed,
+  'native primitive geometry changes remain observable');
+assert.notDeepEqual(parseSvg(primitiveSvg.replace('fill="none"','fill="red"')), primitiveParsed,
+  'explicit primitive paint changes remain observable');
+assert.notDeepEqual(parseSvg(primitiveSvg.replace('rotate(20,0,0)','rotate(21,0,0)')), primitiveParsed,
+  'primitive path transform changes remain observable');
+assert.throws(() => parseSvg(primitiveSvg.replace('<line ', '<line data-extra="x" ')), /unsupported attribute/,
+  'unknown primitive attributes are rejected');
+assert.throws(() => parseSvg(primitiveSvg.replace('stroke-width: 3;', 'stroke-width: 3; fill: red;')), /only supports/,
+  'unmodeled style declarations are rejected');
+assert.throws(() => parseSvg(primitiveSvg.replace('x1="1"', 'x1="1e999"')), /finite SVG number range/,
+  'primitive coordinates must fit the finite SVG number range');
+assert.throws(() => parseSvg(primitiveSvg.replace('width="10"', 'width="-10"')), /rect width must be nonnegative/,
+  'negative rectangle width is rejected');
+assert.throws(() => parseSvg(primitiveSvg.replace('rx="8"', 'rx="-1"')), /rect rx must be nonnegative/,
+  'negative rectangle radius is rejected');
+assert.throws(() => parseSvg(primitiveSvg.replace('rx="3"', 'rx="-3"')), /ellipse rx must be nonnegative/,
+  'negative ellipse radius is rejected');
 const baseline = expected.rows.map(row => structuredClone(row));
 const baselineResult = run('equivalent-baseline', baseline, true);
 const positional = spawnSync(process.execPath,

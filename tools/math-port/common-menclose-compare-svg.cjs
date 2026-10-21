@@ -121,54 +121,18 @@ function tokenizePath(data) {
 }
 
 function parsePath(data) {
-  const tokens = tokenizePath(data);
-  const result = [];
-  let index = 0, command = '', x = ZERO, y = ZERO, first = true;
-  while (index < tokens.length) {
-    if (/^[A-Za-z]$/.test(tokens[index])) command = tokens[index++];
-    else if (!command) throw new Error(`path data starts a parameter group without a command: ${data}`);
-    if (!['M', 'L', 'A', 'Z'].includes(command))
-      throw new Error(`unsupported native path command ${command}: ${data}`);
-    if (first && command !== 'M') throw new Error(`path must start with M: ${data}`);
-    first = false;
-    if (command === 'Z') {
-      result.push(['Z']);
-      command = '';
-      continue;
-    }
-    const upper = command;
-    if (upper === 'M' || upper === 'L') {
-      const start = index;
-      while (index < tokens.length && !/^[A-Za-z]$/.test(tokens[index])) {
-        if (index + 1 >= tokens.length || /^[A-Za-z]$/.test(tokens[index + 1]))
-          throw new Error(`${upper} requires coordinate pairs: ${data}`);
-        const a = finiteNumber(tokens[index++], upper);
-        const b = finiteNumber(tokens[index++], upper);
-        x = a; y = b;
-        result.push([upper === 'M' && index - start === 2 ? 'M' : 'L', key(div(x, THOUSAND)), key(div(y, THOUSAND))]);
-        if (upper === 'M') command = 'L';
-      }
-      if (index === start) throw new Error(`${upper} requires at least one coordinate pair: ${data}`);
-      continue;
-    }
-    const start = index;
-    while (index < tokens.length && !/^[A-Za-z]$/.test(tokens[index])) {
-      if (index + 7 > tokens.length || tokens.slice(index, index + 7).some(token => /^[A-Za-z]$/.test(token)))
-        throw new Error(`A requires seven parameters: ${data}`);
-      const rx = finiteNumber(tokens[index++], 'A radius-x');
-      const ry = finiteNumber(tokens[index++], 'A radius-y');
-      const rotation = finiteNumber(tokens[index++], 'A rotation');
-      const largeToken = tokens[index++], sweepToken = tokens[index++];
-      if (!/^[01]$/.test(largeToken) || !/^[01]$/.test(sweepToken))
-        throw new Error(`A arc flags must be literal 0 or 1: ${largeToken},${sweepToken}`);
-      const a = finiteNumber(tokens[index++], 'A x');
-      const b = finiteNumber(tokens[index++], 'A y');
-      if (cmp(rx, ZERO) < 0 || cmp(ry, ZERO) < 0) throw new Error('A arc radii must be nonnegative');
-      x = a; y = b;
-      result.push(['A', key(div(rx, THOUSAND)), key(div(ry, THOUSAND)), key(rotation),
-        largeToken === '1', sweepToken === '1', key(div(x, THOUSAND)), key(div(y, THOUSAND))]);
-    }
-    if (index === start) throw new Error(`A requires at least one seven-value tuple: ${data}`);
+  // Share exact relative/absolute normalization with the pinned Source path
+  // observer. The native side still gates every number to finite SVG doubles.
+  for (const token of tokenizePath(data))
+    if (!/^[A-Za-z]$/.test(token)) finiteNumber(token, 'native path');
+  const result = sourcePath(data);
+  const rational = value => {
+    const [numerator, denominator] = value.split('/').map(BigInt);
+    return rat(numerator, denominator);
+  };
+  for (const segment of result) {
+    if (segment[0] === 'A' && (cmp(rational(segment[1]), ZERO) < 0 || cmp(rational(segment[2]), ZERO) < 0))
+      throw new Error('A arc radii must be nonnegative');
   }
   return result;
 }
@@ -263,6 +227,80 @@ function sourceGeometry(elements) {
   });
 }
 
+const SVG_PAINT_ATTRIBUTES = ['fill', 'stroke', 'opacity', 'fill-rule', 'fill-opacity', 'stroke-opacity',
+  'stroke-linecap', 'stroke-linejoin', 'transform'];
+const SVG_SHAPE_SCHEMA = {
+  path: { geometry: ['d', 'style', 'stroke-width'], required: ['d'] },
+  line: { geometry: ['x1', 'y1', 'x2', 'y2', 'stroke-width'], required: ['x1', 'y1', 'x2', 'y2'] },
+  rect: { geometry: ['x', 'y', 'width', 'height', 'rx', 'stroke-width'], required: ['x', 'y', 'width', 'height'] },
+  ellipse: { geometry: ['rx', 'ry', 'cx', 'cy', 'stroke-width'], required: ['rx', 'ry', 'cx', 'cy'] },
+};
+
+function nativeShape(tag, attrs, nestedTransforms) {
+  const schema = SVG_SHAPE_SCHEMA[tag];
+  if (!schema) throw new Error(`unsupported SVG element <${tag}>`);
+  const { geometry } = schema;
+  const allowed = new Set([...geometry, ...SVG_PAINT_ATTRIBUTES]);
+  for (const name of Object.keys(attrs))
+    if (!allowed.has(name)) throw new Error(`${tag}: unsupported attribute ${name}`);
+  const values = new Map();
+  for (const name of geometry) {
+    if (name === 'd' || name === 'style' || !Object.hasOwn(attrs, name)) continue;
+    values.set(name, finiteNumber(attrs[name], `${tag} ${name}`));
+  }
+  const nonnegative = names => {
+    for (const name of names)
+      if (values.has(name) && cmp(values.get(name), ZERO) < 0)
+        throw new Error(`${tag} ${name} must be nonnegative`);
+  };
+  if (tag === 'rect') nonnegative(['width', 'height', 'rx']);
+  if (tag === 'ellipse') nonnegative(['rx', 'ry']);
+  let styleWidth, styleWidthText;
+  if (attrs.style !== undefined) {
+    const match = /^\s*stroke-width\s*:\s*([^;]+?)\s*;?\s*$/.exec(attrs.style);
+    if (!match) throw new Error('path style only supports one stroke-width declaration');
+    styleWidthText = match[1];
+    styleWidth = finiteNumber(match[1], 'path style stroke-width');
+  }
+
+  const sourceAttrs = {};
+  for (const name of geometry) {
+    if (name === 'style' || name === 'stroke-width') continue;
+    if (Object.hasOwn(attrs, name)) sourceAttrs[name] = attrs[name];
+  }
+  const width = styleWidth ?? values.get('stroke-width');
+  if (tag === 'path' && width !== undefined)
+    sourceAttrs.style = { 'stroke-width': styleWidthText ?? attrs['stroke-width'] };
+  else if (tag !== 'path' && width !== undefined) sourceAttrs['stroke-width'] = attrs['stroke-width'];
+  if (tag === 'path') {
+    for (const name of ['stroke-linecap', 'stroke-linejoin'])
+      if (Object.hasOwn(attrs, name)) sourceAttrs[name] = attrs[name];
+    if (Object.hasOwn(attrs, 'fill')) sourceAttrs.fill = attrs.fill;
+  }
+  const normalized = sourceGeometry([{ tag, attrs: sourceAttrs }])[0];
+  const cap = attrs['stroke-linecap'] ?? null;
+  const join = attrs['stroke-linejoin'] ?? null;
+  if (cap !== null && !['butt', 'round', 'square'].includes(cap)) throw new Error(`unsupported stroke-linecap ${cap}`);
+  if (join !== null && !['miter', 'mitre', 'round', 'bevel'].includes(join)) throw new Error(`unsupported stroke-linejoin ${join}`);
+  const numeric = (name, fallback) => Object.hasOwn(attrs, name)
+    ? finiteNumber(attrs[name], `${tag} ${name}`) : fallback;
+  return {
+    segments: tag === 'path' ? parsePath(attrs.d) : normalized.segments,
+    transform: nestedTransforms.concat(transformOps(attrs.transform)),
+    paint: {
+      fill: attrs.fill ?? 'inherited',
+      stroke: attrs.stroke ?? 'inherited',
+      stroke_width: normalized.paint.stroke_width,
+      opacity: key(numeric('opacity', ONE)),
+      fill_rule: attrs['fill-rule'] ?? 'nonzero',
+      fill_opacity: Object.hasOwn(attrs, 'fill-opacity') ? key(numeric('fill-opacity', ONE)) : null,
+      stroke_opacity: Object.hasOwn(attrs, 'stroke-opacity') ? key(numeric('stroke-opacity', ONE)) : null,
+      line_cap: cap,
+      line_join: join === 'mitre' ? 'miter' : join,
+    },
+  };
+}
+
 function parseSvg(svg) {
   const shapes = [];
   const stack = [];
@@ -322,38 +360,16 @@ function parseSvg(svg) {
       }
       continue;
     }
-    if (name === 'path') {
+    if (Object.hasOwn(SVG_SHAPE_SCHEMA, name)) {
       if (!selfClose || stack.length < 3 || stack.at(-1)?.name !== 'g' || !stack.some(item => item.coordinateRoot))
-        throw new Error('paths must be self-closing descendants of the coordinate group');
-      const attrs = parseAttributes(attrSource, new Set([
-        'd', 'transform', 'fill', 'stroke', 'stroke-width', 'opacity', 'fill-rule',
-        'fill-opacity', 'stroke-opacity', 'stroke-linecap', 'stroke-linejoin',
-      ]), 'path');
-      if (!Object.hasOwn(attrs, 'd')) throw new Error('path is missing d');
+        throw new Error(`${name} elements must be self-closing descendants of the coordinate group`);
+      const attrs = parseAttributes(attrSource,
+        new Set([...SVG_SHAPE_SCHEMA[name].geometry, ...SVG_PAINT_ATTRIBUTES]), name);
+      for (const field of SVG_SHAPE_SCHEMA[name].required)
+        if (!Object.hasOwn(attrs, field)) throw new Error(`${name} is missing ${field}`);
       const nestedTransforms = stack.filter(item => item.name === 'g' && !item.coordinateRoot)
         .flatMap(item => item.transforms);
-      const transform = nestedTransforms.concat(transformOps(attrs.transform));
-      const numeric = (name, fallback) => Object.hasOwn(attrs, name)
-        ? finiteNumber(attrs[name], `path ${name}`) : fallback;
-      const cap = attrs['stroke-linecap'] ?? null;
-      const join = attrs['stroke-linejoin'] ?? null;
-      if (cap !== null && !['butt', 'round', 'square'].includes(cap)) throw new Error(`unsupported stroke-linecap ${cap}`);
-      if (join !== null && !['miter', 'round', 'bevel'].includes(join)) throw new Error(`unsupported stroke-linejoin ${join}`);
-      shapes.push({
-        segments: parsePath(attrs.d),
-        transform,
-        paint: {
-          fill: attrs.fill ?? 'inherited',
-          stroke: attrs.stroke ?? 'inherited',
-          stroke_width: key(div(numeric('stroke-width', ZERO), THOUSAND)),
-          opacity: key(numeric('opacity', ONE)),
-          fill_rule: attrs['fill-rule'] ?? 'nonzero',
-          fill_opacity: Object.hasOwn(attrs, 'fill-opacity') ? key(numeric('fill-opacity', ONE)) : null,
-          stroke_opacity: Object.hasOwn(attrs, 'stroke-opacity') ? key(numeric('stroke-opacity', ONE)) : null,
-          line_cap: cap,
-          line_join: join,
-        },
-      });
+      shapes.push(nativeShape(name, attrs, nestedTransforms));
       continue;
     }
     throw new Error(`unsupported SVG element <${name}>`);
