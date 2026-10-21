@@ -1270,6 +1270,31 @@ Evidence: class-followup-coverage-check.json and its three Source observation
 files. All 478 active production files and six protected paths remain byte-equal.
 No new full math/font, worker, Release, GUI or D2D pixel gate is claimed.
 
+### Three further legacy MML consumers retired (2026-10-21)
+
+Constructor descriptor identity tests retire separately in 83cedbf5: all six
+cases concern descriptor lifetime, rebinding, initialization timing or saved
+creator protocol, without mathematical results. The independent constructor
+identity Source oracle and frozen evidence remain unchanged.
+
+The mfenced boundary and string-error consumers retire after the native
+delimiter, typed-family and pinned Scene coverage above. Their two oracles keep
+the original locked Source execution and exact frozen JSON checks, now without
+C++ fixture emission. Both checks pass, 11 plus 9 observations, in a0c2890b.
+The legacy gate drops only those two fixture/count entries; it was not run.
+The separate callback-mutation/class-length consumer and its evidence remain.
+
+The removal build passes with parallel4 (session1051). All 478 active source
+files, six protected paths, seventeen target source lists, nine verified
+test/binary inputs, and ten retained profile/loader/consumer files stay
+byte-equal. The preceding 3/477 and 7/141 runtime gates are retained without a
+duplicate run. Class-binding test consumers decrease from 57 to 54; no math
+provider or algorithm is removed. Evidence:
+mfenced-identity-retirement-before.json / mfenced-identity-retirement-final-check.json.
+The class-state and registry oracles still compare only their C++ fixtures;
+neither has independent SourceJSON, so those consumers/tools remain pending a
+deliberate expectation-preservation decision. No new broad runtime gate is claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
