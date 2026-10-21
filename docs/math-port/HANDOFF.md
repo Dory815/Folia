@@ -4,7 +4,7 @@
 
 ## 当前 checkpoint
 
-当前无 live build/test/agent。Full session **53985** exit0：`parse-request-full-math.log`，847 tests / 215022 assertions / 170 suites，无skip。请求所有权迁移及调用方已提交 **af9a8891**；生命周期测试/CMake提交 **2a8b888a**。下一步按下述具体 Source 对照包推进，不重跑已过全套。
+当前无 live build/test。Full **53985** exit0：`parse-request-full-math.log`，847 tests / 215022 assertions / 170 suites，无skip。请求迁移 **af9a8891**、生命周期 **2a8b888a**、验收/精简交接 **0a087d83**。当前Luna：`common_mo_emission`仅limits Source generator/新fixture；`common_limits_emission`仅原limits UT，架构末尾锁定12×2 contract；`common_base_emission`只读Renderer既有行为与dirty意图。下一步Root收候选→review/Source验证→单parallel4build/focused/full，不重复旧审计。
 
 - 2f76e389 锁定、af9a8891 实施 ParseRequest/TeXRequest：保留 ParseOptions 配置/session；请求数据进入 caller-owned frame。CompileScope 恢复 MathItem/adaptor 借用，新增生产文件为 0。physics 两个 creator probe 的局部借用先结束再换文档；build-physics exit0、专项8/5373过。
 - 稳定构建 parse-request-build-fixed2.log exit 0；formatter 已完成。
@@ -45,4 +45,3 @@
 - tests/math/lite_array_view_request_retirement_g259.cpp
 - tests/math/mml_private_renderer_allocation_domain_g227.cpp
 - tools/math-port/native-raii-inventory.cjs
-

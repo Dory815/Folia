@@ -2267,3 +2267,36 @@ meaning; canonical75/150 + default86 + strict73/two-errors unchanged; real
 after final changes. Macro/label persistence and C ABI cancellation remain
 separate gates. Root reviews all changes by responsibility and commits in small
 packets; agents do not build, run native tests, modify CMake or mutate Git.
+
+### Direct MathML limits witness lock (2026-10-21)
+
+This batch extends evidence only, at the existing limits owners; it does not
+replace accepted CommonMunder/CommonMover/CommonMunderover algorithms. Extend
+`common-limits-source-witness.cjs` with a separate `--scene` mode, retaining the
+existing numeric witness and fixture byte-for-byte. New data belongs in
+`tests/math/fixtures/common-source/limits-mathml-scene.inc`; add one compact
+table-driven test to the already registered `native_common_limits.cpp`.
+No new production file/module, copied layout pipeline or CMake registration.
+
+The fixed matrix is munder/mover/munderover times four conditions: inline
+movable integral, display sum limits, explicit accents on x, and horizontally
+stretchy accents over/under a wider row. Capture all twelve real MathML inputs
+in none/local cache modes through the pinned full38 profile and NewCM. Record
+actual compiled MML, root and selected limits-wrapper BBox, resolved local
+prefixes and complete SVG; do not synthesize cache IDs or expected geometry.
+The fixture owns named static arrays, not temporary spans or generated asserts.
+
+Shared fixture contract: LimitsSceneBBox {w,h,d,scale,rscale,L,R};
+LimitsSceneSourceCase {name,font_cache,display,em,ex,width,nodes,attributes,
+root_bbox,limits_node_index,limits_bbox,local_cache_prefixes,svg}, with the
+existing mathml_scene_test::Node/Attribute spans. The test reconstructs the
+captured tree via the existing helper, invokes LayoutJob/defaultNodes once,
+compares both BBoxes and final Scene metrics, and writes complete SVG before
+and after document/job teardown. Each of 24 records must complete. Known-glyph
+inputs reject unexpected text measurement; no result is skipped or replaced.
+
+Source owner: common_mo_emission (generator and fixture only); native-test
+owner: common_limits_emission (original test file only). Root reviews Source
+write/default/no-op provenance and unchanged numeric fixture, then owns one
+parallel4 build, focused limits, hosted canonical and the required final full.
+Any mismatch is diagnosed at its original owner, never by adjusting expected.
