@@ -707,6 +707,15 @@ terminal ETIMEDOUT/SIGTERM result are retained as retire-svg-full-timeout180.*.
 The existing accepted full-run harness uses 600 seconds; a new full run with
 that bound and cleared diagnostic environment is pending, not yet acceptance.
 
+Legacy native-only font extension observers/comparers retire with their Context
+Jax/Map dependency. The dynamic-map observer checks no glyph mathematics. The
+instance observer's supported font data is retained in the canonical typed
+NewCM repository, active native_raii_fonts/BBM/BBoldx/Dsfont tests and the already
+accepted complete Source font-data comparison. Independent font-data, dynamic
+Map and instance-extension Source oracles/records remain. No font tables,
+provider inputs, generated glyphs, licenses or Source locks are removed here;
+retirement does not claim a newly rerun full font-data comparison.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
