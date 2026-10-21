@@ -1247,6 +1247,29 @@ counts 57 remaining class_binding test consumers and preserves the complete
 Fields/ContextBindings/ParserRuntime chain; inactive providers are not inferred
 removable. No new full math/font, worker, Release or GUI gate is claimed.
 
+### MML value and tree verification coverage (2026-10-21)
+
+The mfenced delimiter type boundary now retains all three fields crossed with
+null, boolean and numeric inputs: rejection precedes auxiliary-node creation,
+and the original children, physical parents and arena size remain unchanged.
+All 43 registry kinds also have independent initial flag/previous-getter
+expectations, with unique, complete registry coverage. A parallel4 build and
+three focused cases pass 477 assertions, including the existing fenced Scene
+case. Both independent locked Source probes pass. Commits d6360942/0a352237;
+evidence: fenced-flags-coverage-check.json.
+
+The followup parallel4 build and seven focused cases pass 141 assertions:
+menclose/mpadded class transfer, nested Math short errors at the actual inferred
+parent, both fixMmultiscripts branches, HTML verification, and direct/inferred
+replaceChild. Three independent Source probes pass. In particular, Source HTML
+dispatches mError to the empty-node no-op; the earlier static expectations of
+a TypeError or replacement error node were rejected, without a production fix.
+Math and merror's negative-arity inferred rows are explicitly retained in the
+tests. The multiscript flag suppresses diagnostics without repairing children.
+Evidence: class-followup-coverage-check.json and its three Source observation
+files. All 478 active production files and six protected paths remain byte-equal.
+No new full math/font, worker, Release, GUI or D2D pixel gate is claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

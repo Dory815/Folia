@@ -246,5 +246,52 @@ suite native_mml_row_tokens = [] {
         mglyph.attributes().set(u"src", u"icon.svg");
         mglyph.verifyTree();
     };
+    "mml_replace_child_updates_direct_parent_and_detaches_old_child"_test = [] {
+        mml::MmlDocument document;
+        auto &factory = document.factory();
+        auto &row = factory.make(mml::NodeKind::mrow);
+        auto &oldChild = factory.make(mml::NodeKind::mi);
+        auto &newChild = factory.make(mml::NodeKind::mn);
+        document.append(row, oldChild);
+
+        auto &returned = row.replaceChild(newChild, oldChild);
+        expect(&returned == &newChild);
+        expect(row.children().size() == 1u);
+        if (!row.children().empty())
+            expect(row.children().front() == &newChild);
+        expect(oldChild.parent() == nullptr);
+        expect(newChild.parent() == &row);
+    };
+
+    "mtd_replace_child_delegates_through_inferred_row_and_keeps_logical_parent"_test = [] {
+        mml::MmlDocument document;
+        auto &factory = document.factory();
+        auto &cell = factory.make(mml::NodeKind::mtd);
+        expect(cell.arity() < 0.0);
+        expect(cell.children().size() == 1u);
+        if (cell.children().size() != 1u)
+            return;
+        auto *inferred = cell.children().front();
+        expect(inferred->kind() == mml::NodeKind::inferred_mrow);
+
+        auto &oldChild = factory.make(mml::NodeKind::mi);
+        auto &newChild = factory.make(mml::NodeKind::mo);
+        cell.appendChild(oldChild);
+        expect(oldChild.parent() == inferred);
+        expect(oldChild.Parent() == &cell);
+
+        auto &returned = cell.replaceChild(newChild, oldChild);
+        expect(&returned == &newChild);
+        expect(cell.children().size() == 1u);
+        if (cell.children().size() == 1u)
+            expect(cell.children().front() == inferred);
+        expect(inferred->children().size() == 1u);
+        if (!inferred->children().empty())
+            expect(inferred->children().front() == &newChild);
+        expect(oldChild.parent() == nullptr);
+        expect(newChild.parent() == inferred);
+        expect(newChild.Parent() == &cell);
+    };
+
 };
 } // namespace
