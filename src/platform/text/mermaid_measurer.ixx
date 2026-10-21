@@ -1,4 +1,7 @@
 module;
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <dwrite.h>
 #include <wrl/client.h>
 
