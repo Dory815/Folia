@@ -2,7 +2,10 @@
 
 恢复/压缩后先实际读本文。架构、职责和详细验收见 [architecture](native-raii-architecture.md)、[files](native-raii-files.json)、[acceptance](native-raii-acceptance.md)。只复查新变化；ignored候选用 `rg --no-ignore`。
 
-## 当前 checkpoint：通用数学异步流程（2026-10-22，Debug验收完成）
+## 当前 checkpoint：通用数学异步流程及0.2.3 MSI（2026-10-22，已完成）
+
+- 用户要求的0.2.3 Release自包含MSI已完成：`build/installer/bin/Folia-0.2.3-x64.msi`，53,350,054 bytes，SHA256 `39645DCE4ABE67D2DEB16B857E48C28DBA786FA3CF467E2F2B623E3F8CE5B416`；旁存`.sha256`。版本提交`71dbd654`，数学生产/验收提交`1c98e559`/`ad96dae5`。无live agent/build/test；下一步用户安装及实际文档试用，不自行继续旧迁移。未安装/推送/发布Release。
+- Release验收：含setup的`math-scoped-async-release-msi.log`成功；自包含worker `math-scoped-async-release-worker.log`3.19s、layout `math-scoped-async-release-layout.log`2.68s均PASS，覆盖异步内存预览、SVG后台读回、普通编辑新增公式及稳定断行。MSI解包148文件SHA256全部匹配，native DLL匹配core-release，排除probe EXE/旧JS且probe后payload不变；记录`math-scoped-async-release-deployment.json`及`math-scoped-async-release-package-check.log`。
 
 - **用户边界**：普通内容维持原视口排版；打开只提前异步算数学公式，文档SVG存临时文件。滚动不在UI做缓存文件IO；实时编辑预览异步计算、只存内存。任何文档都可后来写公式，禁止HasMath预扫描/文档分类/开关；之前错误的全内存方向已撤回。旧迁移清理与Mermaid仍暂停。
 - 接入：统一扫描已解析的render节点，遇到数学才请求工作；零数学自然零请求/线程/文件。删除全文PrepareAll/离屏renderer准备，结果只含math cache，不携带全文块几何。原viewport、普通文本/图片/Mermaid流程保留。CST/source/selection/history/core/math均未改；尺寸/断行仍属布局，不写CST。
@@ -10,8 +13,8 @@
 - 文件职责：`EditorSurfaceRenderer.Math.cpp`仅数学扫描/采用，`EditorMathPreparation.h`仅数学结果/context，`EditorContentGeometry.h`共用既有宽度计算（保持原浮点运算次序）。`MathJaxRenderer.cpp`为facade，`.State.h`仅内部声明，`.Cache.cpp`为请求/owner/取消/LRU引用，`.Worker.cpp`为native+normalize+文件读写/整理；所有文件IO与native会话都在worker。Normalizer共享Runtime lease，DLL懒加载；工作结束前保留lease，避免静态析构与detached任务重叠。零公式不创建数学worker/normalizer/store。
 - **已通过**：WinUI Debug `math-scoped-async-debug-build-complete.log`（parallel≤4）；最终worker `math-scoped-async-worker-accepted.log`25.62s（mathbb/分式/Unicode/诊断/owner/连续预览替换/取消/Clear/跨线程转移/文件关闭）。8个实际SVG共8,968,637 bytes，resident 7,847,770 bytes；淘汰后后台读回逐字节相等、renderId/指标不变，IO线程不同于调用线程，GetSvg调用2us。Preview缓存读写均0且无文件，Clear后旧文件后台关闭。
 - **布局已过**：`math-scoped-async-layout-accepted.log`16.95s；普通段落用正常InsertText现场输入公式→不完整→修复→离开，内存预览更新、随后Document写文件；长公式15行反复重建断点/基线/坐标稳定；4100数学段落预计算、重复公式native仅1次，4100普通段落0数学工作（扫描60ms，无全文排版）；宽窄各6数学表达式，取消/context验证及source/model身份保持。私有内存/peak日志来自同时保留多个synthetic session的Debug测试，**不是用户文档前后性能比较，不能据此宣称运行内存已降低**。
-- 最终legacy缓存回收专项 `math-scoped-async-cache-accepted.log`0.14s已过（多实例/并发/残缺文件/junction保留）。文件symlink权限1314仍跳过；目录junction实际覆盖。最新IndexOnly `math-scoped-async-index-accepted.log`29.01s已过，4100不同公式首尾ID/geometry保留。所有检查是当前最终代码；无live build/test。
-- 限制：8MiB仅ready SVG缓存预算，metadata/可见绘制资源/preview另外持有；单个SVG大于8MiB时允许一次交付的临时超额。尚无新Release/MSI、安装或GUI目视试用；可试`build/app-winui/bin/x64/Debug/Folia.exe`。旧0.2.2 MSI不含本轮修改。无live agent；Root独占build/Git，一次一个build、parallel≤4。生产提交`1c98e559`；probe及本checkpoint为第二批提交。下一步用户GUI试用；实际大文档性能尚未做同输入前后比较。
+- 最终Debug缓存回收专项 `math-scoped-async-cache-accepted.log`0.14s已过（多实例/并发/残缺文件/junction保留）。文件symlink权限1314仍跳过；目录junction实际覆盖。Debug IndexOnly `math-scoped-async-index-accepted.log`29.01s已过，4100不同公式首尾ID/geometry保留。本次Release未重跑这两项。
+- 限制：8MiB仅ready SVG缓存预算，metadata/可见绘制资源/preview另外持有；单个SVG大于8MiB时允许一次交付的临时超额。尚未安装或GUI目视试用，亦未对用户实际大文档做同输入前后性能比较；不能据probe宣称整体内存已降低。可运行`build/app-winui/bin/x64/Release/Folia.exe`。Root独占build/Git，一次一个build、parallel≤4。
 
 ## 历史：0.2.2安装包（已被当前源码替代）
 
