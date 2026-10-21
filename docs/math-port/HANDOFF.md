@@ -2,7 +2,15 @@
 
 恢复/压缩后先实际读本文。架构、职责和详细验收见 [architecture](native-raii-architecture.md)、[files](native-raii-files.json)、[acceptance](native-raii-acceptance.md)。只复查新变化；ignored候选用 `rg --no-ignore`。
 
-## 当前 checkpoint：通用数学异步流程及0.2.3 MSI（2026-10-22，已完成）
+## 当前 checkpoint：视口修复验收完成，转字体按需资源（2026-10-22，进行中）
+
+- 最新用户澄清：字体按需单位为**一次请求/一批请求**，不是跨请求缓存；正文/轮廓/解码对象完成即释放。**只有一个批量接口，单个传1项**；批量去重、集中读取/解码以加速打开。数学线程及轻量解析器可持续驻留，字体正文不可跟着驻留。不使用SQLite；保留小索引和文件支持的只读源表，UI零同步IO。下一步在原font provider职责内明确request RAII与Common/SVG消费接口，再实现；尚未修改字体生产代码。用户再次强调滚走公式必须取消，不能因字体工作丢掉视口验收。
+- 已修视口：删除layout命中隐式Read；GetSvg只查内存；绘制先裁剪，再按本帧可见fragment替换需求。移除离屏排队读、已开始读过期后丢弃/不回调；待渲染的离屏owner也取消，保留完成指标。**移除8MiB历史LRU**，只保留可见Document SVG，显式后台Prepare的临时读随调用释放。打开扫描16块一批等待worker，避免全文TeX队列；结束在worker销毁native引擎/字体，阅读缓存不重建引擎，编辑仍异步创建同一实现、Preview内存不写文件。
+- 验收：Release自包含`math-viewport-release-build.log`与`math-viewport-release-msi.log`已成；最终worker `math-viewport-release-worker-final.log`3.43s PASS（100次视口替换取消107 Read，仅1实际Read+1当前nativeRender，离屏resident=0、Preview文件IO=0、读回逐字节/ID相同）；layout `math-viewport-release-layout.log`2.86s PASS（原普通编辑新增公式/4100数学与plain/稳定断行，另断言开头结束无nativeSession/SVG常驻）。生产`b8ded311`、测试`8b7a8028`已提交。无live build/agent。
+- 内存调查：独立Release probe `build/math-port/native-font-memory-probe.cpp`（console runtime链接、`compile-native-font-memory.cmd`复现，先前CRT不匹配仅链接失败，已用MD runtime修正）显示字体单独构造private 1,970,176→118,718,464 bytes；整个Renderer 1,961,984→119,435,264，几乎全是字体。24,307 glyph/24,305资源，642,872段，PathSegment64 bytes、capacity49,486,912 bytes，SVG path capacity10,743,373。数据在`native-font-memory-{font,engine}.log`。最终worker释放引擎260,403,200→142,204,928；较早独立运行270,659,584→139,771,904。**这不是用户128→218MB同文档对照，不能声称已定位全部差额或回到128MB。** 用户明确基线是首次native运行时渲染（`2d58ded9`），并非后来的预计算版本；该基线也保留nativeRenderer，`src/math`/字体生成配置与HEAD无变更。此前以预计算生命周期解释用户差额不成立。已通过async工具询问实际文档路径及内存列，待回复。
+- 用户已安装0.2.3，**固定版本为0.2.3，不能回退或擅自递增**；MSI已启用`AllowSameVersionUpgrades=yes`，解包也已核该项。新版同名MSI已覆盖旧本地文件：53,362,342 bytes，SHA256 `6E5475BEC3F45A47AD38659E9B3E52FCD5C84D03E1878604E68C105C51147D15`；148文件hash通过（`math-viewport-release-package-check.log`/`math-viewport-release-deployment.json`），含视口修复但尚不含字体按需。WiX仅ICE61同版本升级预期warning，未安装/GUI测试/发布/推送。Root独占Git/build，parallel≤4。下面旧checksum仅历史，勿混淆。
+
+## 历史：0.2.3通用数学异步流程及MSI（被当前修复替代）
 
 - 用户要求的0.2.3 Release自包含MSI已完成：`build/installer/bin/Folia-0.2.3-x64.msi`，53,350,054 bytes，SHA256 `39645DCE4ABE67D2DEB16B857E48C28DBA786FA3CF467E2F2B623E3F8CE5B416`；旁存`.sha256`。版本提交`71dbd654`，数学生产/验收提交`1c98e559`/`ad96dae5`。无live agent/build/test；下一步用户安装及实际文档试用，不自行继续旧迁移。未安装/推送/发布Release。
 - Release验收：含setup的`math-scoped-async-release-msi.log`成功；自包含worker `math-scoped-async-release-worker.log`3.19s、layout `math-scoped-async-release-layout.log`2.68s均PASS，覆盖异步内存预览、SVG后台读回、普通编辑新增公式及稳定断行。MSI解包148文件SHA256全部匹配，native DLL匹配core-release，排除probe EXE/旧JS且probe后payload不变；记录`math-scoped-async-release-deployment.json`及`math-scoped-async-release-package-check.log`。
