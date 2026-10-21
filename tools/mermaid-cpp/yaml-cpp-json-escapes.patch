@@ -23,7 +23,7 @@ diff --git a/src/exp.cpp b/src/exp.cpp
 diff --git a/src/singledocparser.cpp b/src/singledocparser.cpp
 --- a/src/singledocparser.cpp
 +++ b/src/singledocparser.cpp
-@@ -150,6 +150,12 @@ void SingleDocParser::HandleNode(EventHandler& eventHandler) {
+@@ -144,5 +144,12 @@ void SingleDocParser::HandleNode(EventHandler& eventHandler) {
    if (tag == "?")
      eventHandler.OnNull(mark, anchor);
 +  else if (tag == "tag:yaml.org,2002:seq") {

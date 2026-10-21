@@ -166,7 +166,7 @@ tests consume the same UTF-16 fixture and separately check large adversarial
 inputs and owned results. It does not claim YAML/config or sanitizer coverage.
 
 The frontmatter oracle executes the original extractor with the exact locked
-js-yaml schema on 409 cases. Typed snapshots preserve negative zero, non-finite
+js-yaml schema on 421 cases. Typed snapshots preserve negative zero, non-finite
 numbers and UTF-16 text. It checks metadata coercion, block/flow YAML, aliases,
 empty explicit tags, duplicate keys, Unicode/escape boundaries and large-number
 rounding. Native tests also check resource budgets, cycles, independent alias
