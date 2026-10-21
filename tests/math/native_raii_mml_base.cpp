@@ -236,5 +236,86 @@ suite native_mml_base = [] {
             << "reverification keeps the repaired error subtree stable";
         expect(error->parent() == &row);
     };
+    "inheritAttributesFrom uses own mathsize over inherited and copies source style values without mutation"_test = [] {
+        m::MmlDocument document;
+        auto &factory = document.factory();
+        auto &source = factory.make(m::NodeKind::mrow);
+        auto &destination = factory.make(m::NodeKind::mrow);
+        source.attributes().set(u"mathsize", u"own-size");
+        source.attributes().setInherited(u"mathsize", u"inherited-size");
+        source.attributes().set(u"displaystyle", true);
+        source.attributes().set(u"scriptlevel", 3.0);
+        source.properties().tex.prime_style = true;
+
+        destination.inheritAttributesFrom(source);
+
+        const auto *size = destination.attributes().inherited(u"mathsize");
+        expect(size && std::get_if<std::u16string>(size) && *std::get_if<std::u16string>(size) == u"own-size");
+        const auto *display = destination.attributes().inherited(u"displaystyle");
+        expect(display && std::get_if<bool>(display) && *std::get_if<bool>(display));
+        const auto *level = destination.attributes().inherited(u"scriptlevel");
+        expect(level && std::get_if<double>(level) && *std::get_if<double>(level) == 3.0);
+        expect(destination.properties().tex.prime_style.value_or(false));
+
+        expect(std::get<std::u16string>(*source.attributes().own(u"mathsize")) == u"own-size");
+        expect(std::get<std::u16string>(*source.attributes().inherited(u"mathsize")) == u"inherited-size");
+        expect(std::get<bool>(*source.attributes().own(u"displaystyle")));
+        expect(std::get<double>(*source.attributes().own(u"scriptlevel")) == 3.0);
+        expect(source.properties().tex.prime_style.value_or(false));
+    };
+
+    "inheritAttributesFrom copies inherited-only mathsize and source style values without mutation"_test = [] {
+        m::MmlDocument document;
+        auto &factory = document.factory();
+        auto &source = factory.make(m::NodeKind::mrow);
+        auto &destination = factory.make(m::NodeKind::mrow);
+        source.attributes().setInherited(u"mathsize", u"inherited-size");
+        source.attributes().set(u"displaystyle", false);
+        source.attributes().set(u"scriptlevel", 2.0);
+        source.properties().tex.prime_style = false;
+
+        destination.inheritAttributesFrom(source);
+
+        const auto *size = destination.attributes().inherited(u"mathsize");
+        expect(size && std::get_if<std::u16string>(size) && *std::get_if<std::u16string>(size) == u"inherited-size");
+        const auto *display = destination.attributes().inherited(u"displaystyle");
+        expect(display && std::get_if<bool>(display) && !*std::get_if<bool>(display));
+        const auto *level = destination.attributes().inherited(u"scriptlevel");
+        expect(level && std::get_if<double>(level) && *std::get_if<double>(level) == 2.0);
+        expect(!destination.properties().tex.prime_style.value_or(false));
+
+        expect(source.attributes().own(u"mathsize") == nullptr);
+        expect(std::get<std::u16string>(*source.attributes().inherited(u"mathsize")) == u"inherited-size");
+        expect(!std::get<bool>(*source.attributes().own(u"displaystyle")));
+        expect(std::get<double>(*source.attributes().own(u"scriptlevel")) == 2.0);
+        expect(!source.properties().tex.prime_style.value_or(false));
+    };
+
+    "inheritAttributesFrom does not copy default-only mathsize"_test = [] {
+        m::MmlDocument document;
+        auto &factory = document.factory();
+        auto &source = factory.make(m::NodeKind::mrow);
+        auto &destination = factory.make(m::NodeKind::mrow);
+        source.attributes().setDefault(u"mathsize", u"default-size");
+        source.attributes().set(u"displaystyle", true);
+        source.attributes().set(u"scriptlevel", 1.0);
+        source.properties().tex.prime_style = true;
+
+        destination.inheritAttributesFrom(source);
+
+        expect(source.attributes().own(u"mathsize") == nullptr);
+        expect(source.attributes().inherited(u"mathsize") == nullptr);
+        expect(source.attributes().defaultValue(u"mathsize") != nullptr);
+        expect(destination.attributes().inherited(u"mathsize") == nullptr);
+        const auto *display = destination.attributes().inherited(u"displaystyle");
+        expect(display && std::get_if<bool>(display) && *std::get_if<bool>(display));
+        const auto *level = destination.attributes().inherited(u"scriptlevel");
+        expect(level && std::get_if<double>(level) && *std::get_if<double>(level) == 1.0);
+        expect(destination.properties().tex.prime_style.value_or(false));
+
+        expect(std::get<bool>(*source.attributes().own(u"displaystyle")));
+        expect(std::get<double>(*source.attributes().own(u"scriptlevel")) == 1.0);
+        expect(source.properties().tex.prime_style.value_or(false));
+    };
 };
 } // namespace
