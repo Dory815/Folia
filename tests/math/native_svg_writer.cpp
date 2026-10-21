@@ -146,11 +146,24 @@ suite native_svg_writer = [] {
         run.metadata.math_role = "unknown";
         run.role = scene::ElementRole::unknown_text;
         builder.add_primitive(0, run);
+        scene::TextRun empty_family{"fallback", {}, {1, 0.5, 0.1}, {}, {}};
+        empty_family.font = scene::TextFont{"", 0.75, false, false, "normal"};
+        empty_family.role = scene::ElementRole::unknown_text;
+        builder.add_primitive(0, empty_family);
+        scene::TextRun explicit_font{"explicit", {}, {1, 0.5, 0.1}, {}, {}};
+        explicit_font.font = scene::TextFont{"serif", 0.75, true, true, "-explicitFont"};
+        explicit_font.role = scene::ElementRole::unknown_text;
+        builder.add_primitive(0, explicit_font);
         auto output =
             svg::write(std::move(builder).freeze(), {.font_cache = svg::FontCacheMode::none});
-        expect(output.find("transform=\"translate(200 300) scale(1,-1)\" "
-                           "font-family=\"MathJax_AMS\" font-size=\"750px\" font-style=\"italic\" "
-                           "font-weight=\"bold\" data-variant=\"normal\"") != output.npos);
+        expect(output.find("data-variant=\"normal\" "
+                           "transform=\"translate(200,300) scale(1,-1)\" "
+                           "font-size=\"750px\" font-family=\"MathJax_AMS\" "
+                           "font-style=\"italic\" font-weight=\"bold\"") != output.npos);
+        expect(output.find("<text data-variant=\"normal\" transform=\"scale(1,-1)\" "
+                           "font-size=\"750px\">fallback</text>") != output.npos);
+        expect(output.find("<text data-variant=\"-explicitFont\" transform=\"scale(1,-1)\" "
+                           "font-size=\"750px\">explicit</text>") != output.npos);
         expect(output.find("data-math-role=\"unknown\"") != output.npos);
     };
 

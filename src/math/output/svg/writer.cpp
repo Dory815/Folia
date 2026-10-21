@@ -721,22 +721,37 @@ void append_text_run(std::string &out, scene::TextRun const &run) {
         detail::append_attribute(out, "data-id-align", "true");
     bool const empty_alignment_marker =
         run.role == scene::ElementRole::id_alignment_marker && run.utf8.empty();
+    const bool source_unknown_text = run.role == scene::ElementRole::unknown_text;
+    if (source_unknown_text && run.font)
+        detail::append_attribute(out, "data-variant", run.font->variant);
     if (!empty_alignment_marker) {
         std::string transform = "scale(1,-1)";
         if (run.origin.x || run.origin.y)
-            transform = "translate(" + number(run.origin.x * 1000) + " " +
+            transform = "translate(" + number(run.origin.x * 1000) +
+                        (source_unknown_text ? "," : " ") +
                         number(run.origin.y * 1000) + ") " + transform;
         detail::append_attribute(out, "transform", transform);
     }
     if (run.font) {
-        detail::append_attribute(out, "font-family", run.font->family);
-        detail::append_attribute(out, "font-size", number(run.font->size * 1000) + "px");
-        if (run.font->italic)
-            detail::append_attribute(out, "font-style", "italic");
-        if (run.font->bold)
-            detail::append_attribute(out, "font-weight", "bold");
-        if (!run.font->variant.empty())
-            detail::append_attribute(out, "data-variant", run.font->variant);
+        if (source_unknown_text) {
+            detail::append_attribute(out, "font-size", number(run.font->size * 1000) + "px");
+            if (run.font->variant != "-explicitFont" && !run.font->family.empty()) {
+                detail::append_attribute(out, "font-family", run.font->family);
+                if (run.font->italic)
+                    detail::append_attribute(out, "font-style", "italic");
+                if (run.font->bold)
+                    detail::append_attribute(out, "font-weight", "bold");
+            }
+        } else {
+            detail::append_attribute(out, "font-family", run.font->family);
+            detail::append_attribute(out, "font-size", number(run.font->size * 1000) + "px");
+            if (run.font->italic)
+                detail::append_attribute(out, "font-style", "italic");
+            if (run.font->bold)
+                detail::append_attribute(out, "font-weight", "bold");
+            if (!run.font->variant.empty())
+                detail::append_attribute(out, "data-variant", run.font->variant);
+        }
     }
     append_paint(out, run.paint);
     static constexpr std::array<std::string_view, 17> reserved{
