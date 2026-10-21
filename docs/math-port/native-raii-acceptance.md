@@ -407,6 +407,37 @@ without skips. No production code changed. `table-profile-results.json` retains
 the strict-Lite canonical73 equality and two explicit Source event-registration
 errors; it does not establish the full75/150 gate or application integration.
 
+The canonical two-mode batch shares the unchanged original18 + profile57 input
+table (`8ce3d53b`) and the existing native TeX-to-Scene test pipeline
+(`060bd58d`). Independent pinned Source runs none/local in separate 512 MB
+Node processes, preserving the full38 package order and persistent TeX session.
+Real passive EventTarget registration on actual Lite receivers supports the
+toggle/tooltip captures without dispatch or changing their DOM serialization.
+Actual root outer BBox, display, local cache prefixes and complete SVG are
+captured; the fixture SHA-256 is
+`5c970e41dc36f7717f1dbf31c576a6c875f445068284fc8c2cd7042e9a17985c`.
+Source write/default/no-op and Root independent checks pass (`7f83584a`).
+
+Two exposed assumptions are fixed at their original owners: absent mspace
+leading retains the .2 default rather than scaling it again (`5743e3fc`), and
+font instance cache IDs are captured without assigning constructor static IDs
+after extension registration (`71e4abe5`). Empty SVG suffixes are valid; outline
+resource provenance remains face/originating-variant and inherited resources
+stay shared. The development generator streams its complete Source witness,
+preserving integer-key order and eager lookup side effects. Generation succeeds
+at 512 MB, retains the 40-module/80-event/24646-profile locks, and a second run
+leaves all 88 output modification times unchanged.
+
+The native hosted test (`af8c5ede`) passes 1/1279: 75 layout pairs, 150 completed
+Scene metric comparisons and 150 complete byte-equal SVGs after request teardown.
+Default86 passes 1/1021, focused leading 1/20 and fonts 1/73. Final parallel4
+build `canonical-modes-build-fixed2.log` exits0; full
+`canonical-modes-full-math.log` exits0 with 845 tests / 214872 assertions /
+170 suites, no skips. Strict Lite `canonical-modes-results.json` separately
+retains 73 equal SVGs and two Source event-API errors; its original fixture hash
+is unchanged. Hosted parity does not establish browser event dispatch, the
+192-request lifetime gate, complete profile coverage or Folia integration.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,

@@ -2133,3 +2133,22 @@ Freeze all owners before one parallel4 build. Acceptance: strict Source unchange
 default/hash; hosted default/write/no-op, independent two-process Source150;
 native75 layout pairs/150 SVG bytes; default86 and strict75 unchanged; full math.
 This proves no browser dispatch, request192 lifetime run or Folia integration.
+
+Canonical execution exposed two concrete assumptions to correct in their
+original owners. CommonMspace::computeLineBBox must pass an absent authored
+length through the existing empty-length/default-size rule; feeding the default
+as a numeric length scales it twice (.2 becomes .04). Fix that method and add a
+focused absent/empty/explicit/zero leading regression, retaining Source output.
+
+The actual profile constructs its font before addExtension; extension instance
+cacheID can therefore be absent even though the constructor's static cache-ID
+map contains entries. The generator must not assign static IDs back to those
+Source instances. Capture effective SVG suffix as instance.cacheID||'', permit
+that empty suffix in FontRepository::resolveGlyph and generated aliases, and
+keep missing variants/glyphs distinct from valid empty IDs. GlyphResource.font_id
+denotes outline provenance, independently of the SVG cache suffix: generated
+resources use face.name + "/" + originating variantName, and aliases share that
+same immutable resource. This replaces the previous conflation, adds no runtime
+metadata fallback and retains both font metrics/outlines and Source cache bytes.
+common_base_emission owns the generator/resolver/focused-font UT; Root reviews
+and regenerates the locked ignored provider output before the single build.

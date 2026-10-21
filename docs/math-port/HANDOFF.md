@@ -4,15 +4,14 @@
 [native-raii-architecture.md](native-raii-architecture.md)，总验收门槛见
 [native-raii-acceptance.md](native-raii-acceptance.md)。实质状态变化后更新本文件；不另建交接笔记。
 
-## 当前 checkpoint：table 新矩阵已验收，准备完整双模式 Source gate
+## 当前 checkpoint：canonical 75/150 已验，下一步请求生命周期
 
-- 本批提交：架构 `51d9e344`、独立Source/fixture `037e543f`、原生UT/CMake `5923227e`；生产代码未改。
-- 最新 `build/math-port/table-profile-build.log` exit0，parallel4；full `table-profile-full-math.log` exit0：843 tests / 213573 assertions / 169 suites，无skip。聚焦Source14 UT1/669、table-regression42/4701、default86 UT1/1021过。所有build/native终止，无live handles。
-- 真实MathML7场景×none/local：labels左右/含宽度、percentage/nested、ragged/align、horizontal stretch、break exact SVG。每张表最终BBox/TableData/形状/flags/pWidth及完整SVG在请求退出前后均对齐；原direct-MML8、SVG14、数值branch8不变。
-- Source default/write/no-op和Root独立default（`table-profile-source-root.log`）过，fixture SHA `b23150d14cb8cdeb08e429428c87b6820f16bffb14eb87613165dad7209c12f8`。实际分支：nested pWidth3.9/父列6；ragged2/1cells+override；stretchy mo/table W3；break各2linebox/逐字符mi。不要退回TeX默认stretchy=false或多字符mi替代断行内容。
-- `table-profile-results.json` / `table-profile-native.log`：canonical75正常exit1，73 byte-equal、2 `source_error_native_success`（action-toggle/action-tooltip，严格Lite缺addEventListener），无SVG mismatch/native exception；不算完整75/150通过。
-- common_base_emission已交付只读候选`build/math-port/canonical-mode-witness-plan.md`，Root已读；所有Luna freeze，无live handles。保留旧严格Lite证据，拟额外同75输入的none/local150对照，host仅复用已验maction14真实EventTarget注册、不dispatch。尚未授权实现/改变gate。
-- 下一具体动作：按计划核对common_scene.cpp现有TeX→Scene helper职责与共享方式，避免复制pipeline或继续堆大测试文件；锁新增Source/fixture/test职责后派Luna。canonical75是原18+profile57，两个独立cache session要同顺序，不把57误称75或重复执行改变session。不要重做已验table/mglyph或改原75输入/expected。可复用common_scene_source_tests（Source）、common_scene_entry（UT）、common_base_emission（writer/plan）、common_rows_emission（table）、scene_values_writer（Scene）；Root独占CMake/build/native/Git。
+- 最新parallel4 build `canonical-modes-build-fixed2.log` exit0；full `canonical-modes-full-math.log` exit0：845 tests / 214872 assertions / 170 suites，无skip。无live build/process；全部owner已freeze。
+- hosted 75 layout pairs、150最终Scene metrics、150完整SVG byte-equal：1/1279；default86：1/1021；leading：1/20；fonts：1/73。独立Source两child各75零异常，实际EventTarget只注册不dispatch。fixture SHA `5c970e41dc36f7717f1dbf31c576a6c875f445068284fc8c2cd7042e9a17985c`，write/default/no-op过。
+- strict `canonical-modes-results.json`仍73equal+2 `source_error_native_success`（Lite缺addEventListener），strict原fixture SHA `31761f077a57e92177b38c44dba0808b78e6616e99e1242f50058aafbe8de8ba`不变。hosted通过不改变strict事实，也不证明浏览器事件行为。
+- 本批提交：`c8e53353`架构、`8ce3d53b`共享输入、`060bd58d`共享测试管线、`5743e3fc`mspace默认leading、`71e4abe5`Source cacheID/outline来源、`7f83584a`Source/fixture、`af8c5ede`UT/CMake。独立空cache后缀与缺失glyph不同；bbm-bold感叹号outline来源为MathJaxNewcm/bold。
+- generator512MB有界写出完整证据，保留整数键顺序与eager lookup副作用；40shards/80events/24646profile锁过，第二次88outputs mtime不变。旧OOM/初次hosted失败均已被上述结果取代，不要重复诊断。
+- 下一动作：Root划定request192观测架构后再分工；common_scene_entry只读结论：新管线没有真实live节点/分配计数，旧Context Renderer计数不适用。需要实际节点/Wrapper/DOM生命周期与allocator证据；每请求size()/wrapperCount()仅peak，不能当零增长证明。先不改所有权、不加手动释放。后续192+更长混合请求、保留Scene、异常恢复与持久宏/label语义分别验收。额度不再受限。
 
 ## 已接受的近期证据
 
@@ -39,12 +38,11 @@
 - Mglyph 保留 `CommonMglyph::getParameters/computeBBox` 和 legacy index `charWrapper`
   的现有布局与所有权。Source image 用一个 Image Scene 值，不加载/解码 URI，不从图像内在尺寸推导布局；图像追加到第一个 standard content
   root。Source 矩阵、属性顺序及空值边界以架构文档 mglyph lock 为准。
-- 尚未完成：完整Source profile与剩余专用 family覆盖；canonical 75 layout /
-  双模式 150 SVG byte comparison；request ownership 长跑；Folia
+- 尚未完成：完整Source profile与剩余专用 family覆盖；request ownership 长跑；Folia
   integration；旧对象层完整退出。组件通过不代表这些总门槛通过。
 - 已接受组件批次包括 XML/HTML、merror、table direct-MML 8 例、semantics/fenced 11 例、enclosure 86
   例、maction/cache、Unicode/Entities、mhchem、texhtml/Lite 及相关 TeX package。其精确 Source
-  hash、聚焦断言、构建日志和限制留在 `native-raii-acceptance.md`；不得仅凭批次验收宣称完整 75/150 或应用集成。
+  hash、聚焦断言、构建日志和限制留在 `native-raii-acceptance.md`；不得仅凭组件验收宣称应用集成。
 
 ## 工作规则
 
