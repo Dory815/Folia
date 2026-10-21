@@ -9,7 +9,8 @@
 - 最新完整math **96710 exit0：870 tests/217144 assertions/176 suites/0 skips**；真实WinUI Debug worker **64450 exit0**，stop join4599ms/total9.07s/empty stderr。日志 `retire-scene-{full-math,worker-verify}.log`、`retire-scene-full-results.json`。未验Release/GUI视觉。最新小批后parallel4 build **69747 exit0**：两个unconfigured tests退出触发CMake再生成，MathTests.exe/DLL前后hash相同、保护11字节不变，`factory-retirement-build{.log,-results.json}`。未重复full/worker。
 - factory binding已提交 **45f03d9a**。canonical清单现已刷新至该HEAD与 **index-2026-10-21T08-28-56-0446.json**，Root断言668文件/664代码、183未配置cpp/ixx（MML64、TeX36、Core+tree/util58、font/common/svg15、Lite/html10）、560配置源/247map exact、保护11不变。mapping_data.inc/license另计且保留。
 - 剩余图/owner报告均在ignored `build/math-port/remaining-*.{md,json}`。Root已读六初稿、修订稿、consumer queue及Common factory/Lite/MML leaf/font-BBox小包。TeX两版误认未配置runtime/test为active，已纠正；不直接接受旧ledger为当前gap，不按空membership或agent结论判删。旧图有被上述提交移除的路径，仅作历史依赖证据。
-- **下一动作**：两个Luna的既有UT镜像已由Root核对Source并晋升（未改生产算法）。固定3处显式owned-key转换后parallel4 build exit0；Source display probe六观察exit0/empty stderr，含math.ts锁与额外deps hashes。6聚焦 **6 tests/78 assertions**通过（mml-leaf-focused-results.json），不是新full run。先提交这两个测试与记录，再按mml-leaf-retirement-review退出reference_leaf旧混合测试；真实数学分支已保留，动态callback/无效raw tree/tuple身份不迁回typed owner。当前无build/native或Luna运行。
+- **下一动作**：两个既有UT改动已提交 **5cf687cb**，Source探针6观察exit0，聚焦 **6 tests/78 assertions**通过，无生产改动。现退reference_leaf及旧native driver，Source oracle输出改ignored，语法检查通过；末次parallel4 **85509 exit0**、focused后test/DLL hash不变、保护11不变（mml-leaf-retirement-build*）。提交该小批，再刷新canonical；接着逐体读font-bbox报告建议的10旧工具+font_data_source混合测试，不能恢复旧FontDataClass/tuple/ListPatch API。
+- 当前无build/native运行。Luna **remaining_font_common_owners**只在纠正font-BBox报告：active是immutable FontRepository/FontGlyph/generated NewCM，旧charOptions tuple身份与静态array append不应当成当前typed API要求。Root已读原font报告和真实active接口；尚未删该组消费者/providers。Lite/MML binding仍有保护旧消费者，不能按未配置/无显式import直接退源。候选与报告仍在ignored build/math-port，先rg --no-ignore再判文件是否缺失。
 
 ## 已接受决策
 

@@ -157,7 +157,8 @@ function text(f,s){return f.create('text').setText(s);}function input(f,k,s,a={}
 }
 // Native resource capacity is frozen literally; these do not probe VM stack size.
 cases++;assertions+=6;emit('"math_port_leaf_native_recursive_budget_recovery"_test=[] {F f(classes());auto*root=f.create("mrow");auto*tail=root;for(int i=1;i<512;++i){auto*next=f.create("mrow");tail->childNodes=children({next});tail=next;}expect(root->isSpacelike());tail->childNodes=children({f.create("mrow")});bool caught=false;try{(void)root->isSpacelike();}catch(const tr::FactoryError&e){caught=e.name=="RangeError";}expect(caught);expect(f.create("mrow")->isSpacelike());root=f.create("inferredMrow");tail=root;for(int i=1;i<512;++i){auto*next=f.create("inferredMrow");tail->childNodes=children({next});tail=next;}expect(bool(root->toString().size()==1024));tail->childNodes=children({f.create("inferredMrow")});caught=false;try{(void)root->toString();}catch(const tr::FactoryError&e){caught=e.name=="RangeError";}expect(caught);expect(bool(f.create("inferredMrow")->toString()=="[]"));};');
-out.push('};');const target=path.join(root,'tests/math/reference_leaf.cpp'),output=out.join('\n')+'\n';
-if(process.argv.includes('--check'))assert.equal(fs.readFileSync(target,'utf8').replaceAll('\r\n','\n'),output,'Frozen leaf fixture changed');else fs.writeFileSync(target,output);
+out.push('};');const target=path.join(root,'build/math-port/leaf-source-reference.cpp'),output=out.join('\n')+'\n';
+// Historical Source observations must not recreate the retired Context test.
+if(process.argv.includes('--check'))assert.equal(fs.readFileSync(target,'utf8').replaceAll('\r\n','\n'),output,'Frozen leaf fixture changed');else {fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,output);}
 console.log(JSON.stringify({sources:lock.files.length,assertions,cases,mode:process.argv.includes('--check')?'check':'generate'}));
 

@@ -889,6 +889,17 @@ executing exactly one test: **78 assertions total**, recorded in
 mml-leaf-focused-results.json and mml-leaf-*.log. This is new focused test
 acceptance, not a repeated full math/worker run or replay of old Context traces.
 
+After that focused acceptance, reference_leaf.cpp and its obsolete standalone
+native driver leaf-mutation-test.cjs retire. The leaf Source oracle and p9 lock
+remain; its generated historical C++ observation now goes to ignored
+build/math-port/leaf-source-reference.cpp, so running it cannot recreate the
+retired tracked Context test. Only the output destination changes; node --check
+passes, and the broad Source generator is not rerun. The old test/driver have
+no configured membership (scene-leafReference-before-removal.json).
+The final parallel4 build exits0 (session85509,
+mml-leaf-retirement-build.log/results.json), with unchanged test/DLL hashes
+relative to the focused-test build and all eleven protected paths byte-identical.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
