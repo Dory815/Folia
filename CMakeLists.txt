@@ -762,6 +762,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_common_table.cpp
     tests/math/native_common_semantics.cpp
     tests/math/native_svg_merror.cpp
+    tests/math/native_svg_actions.cpp
     tests/math/native_xml_dom_export.cpp
     tests/math/native_common_xml.cpp
     tests/math/native_svg_xml_wrapper.cpp

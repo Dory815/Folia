@@ -343,6 +343,10 @@ void collect_cache(scene::Group const &group, SvgWriteOptions const &options, Ca
                     if (auto run = std::get_if<scene::GlyphRun>(&value))
                         for (auto const &glyph : run->glyphs)
                             add_glyph_cache(glyph, options, cache);
+                } else if constexpr (std::is_same_v<T, scene::ActionRegion>) {
+                    if (value.tooltip && options.font_cache == FontCacheMode::local)
+                        throw UnsupportedError("math tooltip SVG emission with local font caching "
+                                               "requires shared cache-state projection");
                 }
             },
             entry);
@@ -363,6 +367,9 @@ void validate_scene(scene::Group const &group) {
                 if constexpr (std::is_same_v<T, std::shared_ptr<scene::Group const>>) {
                     if (value)
                         validate_scene(*value);
+                } else if constexpr (std::is_same_v<T, scene::ActionRegion>) {
+                    if (value.tooltip)
+                        validate_scene(value.tooltip->root());
                 }
             },
             entry);
@@ -822,6 +829,8 @@ void append_primitive(std::string &out, scene::Primitive const &primitive,
 }
 
 void open_group(std::string &out, scene::Group const &group, SvgWriteOptions const &options);
+void append_action_region(std::string &out, scene::ActionRegion const &region,
+                          SvgWriteOptions const &options);
 
 void append_group_entries(std::string &out, scene::Group const &group,
                           SvgWriteOptions const &options) {
@@ -829,8 +838,10 @@ void append_group_entries(std::string &out, scene::Group const &group,
         if (auto child = std::get_if<std::shared_ptr<scene::Group const>>(&entry)) {
             if (*child)
                 open_group(out, **child, options);
+        } else if (auto primitive = std::get_if<scene::Primitive>(&entry)) {
+            append_primitive(out, *primitive, options);
         } else {
-            append_primitive(out, std::get<scene::Primitive>(entry), options);
+            append_action_region(out, std::get<scene::ActionRegion>(entry), options);
         }
     }
 }
@@ -1116,6 +1127,77 @@ scene::Group const &frame_group(scene::Group const &root, scene::NodeId id) {
             return **child;
     }
     throw std::logic_error("validated Scene frame root is missing");
+}
+
+void append_inline_break(std::string &out, scene::InlineBreak const &value);
+
+void append_nested_scene_svgs(std::string &out, scene::Scene const &nested,
+                              SvgWriteOptions const &options) {
+    auto const &metrics = nested.metrics();
+    auto const &font = nested.font_metrics();
+    auto const &layout = nested.display_layout();
+    auto const &frames = nested.frame_layout();
+    if (frames.inline_fragments.empty()) {
+        append_svg_start(out, metrics, font, options, layout, frames.minimum_extent, false, nullptr,
+                         false, frames.percentage ? &*frames.percentage : nullptr);
+        open_group(out, nested.root(), options);
+        append_svg_end(out);
+        return;
+    }
+    for (std::size_t i = 0; i < frames.inline_fragments.size(); ++i) {
+        auto const &fragment = frames.inline_fragments[i];
+        if (fragment.before)
+            append_inline_break(out, *fragment.before);
+        append_svg_start(out, fragment.metrics, font, options, layout, frames.minimum_extent, false,
+                         nullptr, false,
+                         i == 0 && frames.percentage ? &*frames.percentage : nullptr);
+        open_group(out, frame_group(nested.root(), fragment.root), options);
+        append_svg_end(out);
+    }
+}
+
+void append_action_region(std::string &out, scene::ActionRegion const &region,
+                          SvgWriteOptions const &options) {
+    if (region.tooltip && options.font_cache == FontCacheMode::local)
+        throw UnsupportedError("math tooltip SVG emission with local font caching requires shared "
+                               "cache-state projection");
+    if (region.tooltip && options.font_cache == FontCacheMode::global)
+        throw UnsupportedError(
+            "global SVG font caching requires the owning document cache serializer");
+
+    out += "<rect";
+    detail::append_attribute(out, "width", number(region.hitbox.bounds.width * 1000));
+    detail::append_attribute(out, "height", number(region.hitbox.bounds.height * 1000));
+    detail::append_attribute(out, "x", number(region.hitbox.bounds.x * 1000));
+    detail::append_attribute(out, "y", number(region.hitbox.bounds.y * 1000));
+    detail::append_attribute(out, "fill", "none");
+    detail::append_attribute(out, "pointer-events", "all");
+    static constexpr std::array<std::string_view, 17> reserved{"x",
+                                                               "y",
+                                                               "width",
+                                                               "height",
+                                                               "fill",
+                                                               "stroke",
+                                                               "fill-rule",
+                                                               "fill-opacity",
+                                                               "stroke-opacity",
+                                                               "stroke-width",
+                                                               "opacity",
+                                                               "stroke-linecap",
+                                                               "stroke-linejoin",
+                                                               "stroke-dasharray",
+                                                               "pointer-events",
+                                                               "rx",
+                                                               "ry"};
+    detail::append_metadata(out, region.hitbox.metadata, reserved);
+    if (!region.tooltip) {
+        out += "/>";
+        return;
+    }
+    out += "><foreignObject style=\"display: none;\"><mjx-tool><mjx-tip>";
+    append_nested_scene_svgs(out, *region.tooltip, options);
+    out += "</mjx-tip></mjx-tool></foreignObject>";
+    out += "</rect>";
 }
 
 void append_inline_break(std::string &out, scene::InlineBreak const &value) {
