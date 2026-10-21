@@ -220,6 +220,92 @@ suite typed_mml_containers = [] {
         expect(action.attributes().own(u"selection") == nullptr);
     };
 
+    "maction rejects non-string actiontype before child inheritance"_test = [] {
+        const std::array<m::AttributeValue, 3> malformed{
+            m::AttributeNull{}, false, 0.0};
+        for (const auto &actionType : malformed) {
+            m::MmlDocument document;
+            m::AttributeSet attributes;
+            attributes.set(u"actiontype", actionType);
+            auto &first = document.factory().make(m::NodeKind::mi);
+            auto &second = document.factory().make(m::NodeKind::mi);
+            const std::array<m::MmlNode *, 2> children{&first, &second};
+            auto &action = static_cast<m::MmlMaction &>(
+                document.factory().make(m::NodeKind::maction, std::move(attributes), children));
+
+            expect(throws<std::invalid_argument>([&] {
+                action.setInheritedAttributes({}, true, 2.0, true);
+            })) << "native typed adapter rejects a non-string actiontype";
+            for (auto *child : children) {
+                expect(child->attributes().inherited(u"displaystyle") == nullptr);
+                expect(child->attributes().inherited(u"scriptlevel") == nullptr);
+                expect(!child->properties().tex.prime_style.value_or(false));
+            }
+            action.attributes().set(u"actiontype", u"toggle");
+            action.setInheritedAttributes({}, false, 4.0, false);
+            for (auto *child : children) {
+                const auto *display = child->attributes().inherited(u"displaystyle");
+                const auto *level = child->attributes().inherited(u"scriptlevel");
+                expect(display && std::get_if<bool>(display) && !*std::get_if<bool>(display));
+                expect(level && std::get_if<double>(level) && *std::get_if<double>(level) == 4.0);
+            }
+        }
+    };
+
+    "maction tooltip lowercases strings and isolates tooltip child style"_test = [] {
+        m::MmlDocument document;
+        auto &factory = document.factory();
+        m::AttributeSet attributes;
+        attributes.set(u"actiontype", u"TOOLTIP");
+        auto &first = factory.make(m::NodeKind::mi);
+        auto &second = factory.make(m::NodeKind::mi);
+        const std::array<m::MmlNode *, 2> children{&first, &second};
+        auto &action = static_cast<m::MmlMaction &>(
+            factory.make(m::NodeKind::maction, std::move(attributes), children));
+        action.setInheritedAttributes({}, true, 2.0, true);
+
+        expect(first.properties().tex.prime_style.value_or(false));
+        expect(!second.properties().tex.prime_style.value_or(false));
+        const auto *firstDisplay = first.attributes().inherited(u"displaystyle");
+        const auto *firstLevel = first.attributes().inherited(u"scriptlevel");
+        const auto *secondDisplay = second.attributes().inherited(u"displaystyle");
+        const auto *secondLevel = second.attributes().inherited(u"scriptlevel");
+        expect(firstDisplay && std::get_if<bool>(firstDisplay) && *std::get_if<bool>(firstDisplay));
+        expect(firstLevel && std::get_if<double>(firstLevel) && *std::get_if<double>(firstLevel) == 2.0);
+        expect(secondDisplay && std::get_if<bool>(secondDisplay) && !*std::get_if<bool>(secondDisplay));
+        expect(secondLevel && std::get_if<double>(secondLevel) && *std::get_if<double>(secondLevel) == 1.0);
+    };
+
+    "maction default and explicit toggle inherit the same style to each child"_test = [] {
+        const auto checkToggle = [](bool explicitActionType, bool display, double level, bool prime) {
+            m::MmlDocument document;
+            auto &factory = document.factory();
+            m::AttributeSet attributes;
+            if (explicitActionType)
+                attributes.set(u"actiontype", u"toggle");
+            auto &first = factory.make(m::NodeKind::mi);
+            auto &second = factory.make(m::NodeKind::mi);
+            const std::array<m::MmlNode *, 2> children{&first, &second};
+            auto &action = static_cast<m::MmlMaction &>(
+                factory.make(m::NodeKind::maction, std::move(attributes), children));
+            const auto *actionType = action.attributes().lookup(u"actiontype");
+            expect(actionType && std::get_if<std::u16string>(actionType) &&
+                   *std::get_if<std::u16string>(actionType) == u"toggle");
+            action.setInheritedAttributes({}, display, level, prime);
+            for (auto *child : children) {
+                const auto *childDisplay = child->attributes().inherited(u"displaystyle");
+                const auto *childLevel = child->attributes().inherited(u"scriptlevel");
+                expect(childDisplay && std::get_if<bool>(childDisplay) &&
+                       *std::get_if<bool>(childDisplay) == display);
+                expect(childLevel && std::get_if<double>(childLevel) &&
+                       *std::get_if<double>(childLevel) == level);
+                expect(child->properties().tex.prime_style.value_or(false) == prime);
+            }
+        };
+        checkToggle(false, true, 3.0, true);
+        checkToggle(true, false, 4.0, false);
+    };
+
     "semantics and annotation retain typed defaults and character data state"_test = [] {
         m::MmlDocument document;
         auto &factory = document.factory();

@@ -1,20 +1,12 @@
 module folia.math.core.mml_tree.mml_nodes.maction;
 import folia.math.core.mml_tree.node_defaults;
+import folia.math.util.js_case;
 import folia.math.util.js_numeric_input;
 import folia.math.util.js_number;
 import std;
 
 namespace folia::math::mml {
 namespace {
-std::u16string lowerAscii(std::u16string_view value) {
-    std::u16string result(value);
-    for (auto &character : result) {
-        if (character >= u'A' && character <= u'Z')
-            character += (u'a' - u'A');
-    }
-    return result;
-}
-
 std::u16string sourceString(const AttributeValue &value) {
     if (const auto *text = std::get_if<std::u16string>(&value))
         return *text;
@@ -80,7 +72,9 @@ void MmlMaction::setChildInheritedAttributes(AttributeList const &inherited, boo
                                              double level, bool prime) {
     const auto *action = attributes().lookup(u"actiontype");
     const auto *value = action ? std::get_if<std::u16string>(action) : nullptr;
-    if (!value || lowerAscii(*value) != u"tooltip") {
+    if (!value)
+        throw std::invalid_argument("maction actiontype must be a UTF-16 string");
+    if (js_case::lowerCase(*value) != u"tooltip") {
         AbstractMmlNode::setChildInheritedAttributes(inherited, display, level, prime);
         return;
     }
