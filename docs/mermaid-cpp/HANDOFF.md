@@ -6,8 +6,9 @@
   original official Mermaid JS/TS. Do not port the Rust rewrite. Website and
   release tooling are excluded; this is unrelated to the MathJax migration.
 - Upstream base: `water2004/Folia` master `72e2d7c7`. Fork: `zhao0349/Folia`.
-  Current branch: `codex/mermaid-cpp-pie`; Packet stage branch remains
-  `codex/mermaid-cpp-official`. Remotes: origin=fork, upstream=author.
+  Current branch: `codex/mermaid-cpp-measurement`, based on the merged fork
+  master. Completed branches `codex/mermaid-cpp-official` and
+  `codex/mermaid-cpp-pie` are preserved. Remotes: origin=fork, upstream=author.
 - Source pin: Mermaid 12.2.0, commit
   `1fb7869866dd619168d840291c9c54b4f129758b`, ignored checkout at
   `.reference/mermaid-js`. `source-lock.json` records file hashes.
@@ -28,18 +29,43 @@
   required regression check. Commit `8ece2acf` passed Debug/Release regression
   CI `39544334238`.
 - Pie raw parser/DB `09ad39f6`, D3 geometry `733a3295` and parser tests
-  `3675ec45` are pushed. Native CI `39544894952` is still running; older
-  in-progress Pie runs were superseded by later commits.
+  `3675ec45` are pushed; native CI `39544894952` passed Debug/Release.
 - Geometry has 86 official-runtime cases / 618 sectors, exact paths and
   1e-12 centroid tolerance for platform libm. Parser oracle has 291 cases.
-- Root added Pie layout with explicit measurement inputs and 40 official
-  renderer observations. This tests arithmetic only; real text measurement,
-  final themed SVG output and host integration remain pending.
+- Pie layout `337e41d4` adds explicit measurement inputs and 40 official
+  renderer observations. Push CI `39545148134` and PR CI `39545380450` both
+  passed Debug/Release, including Packet regression tests. This tests
+  arithmetic only; real text measurement, final themed SVG output and host
+  integration remain pending.
+- Second fork PR https://github.com/zhao0349/Folia/pull/2 merged at
+  `df9753da2a46aae851724397fce7acdbb98e7548`, preserving five small commits.
 - All three prior agents have delivered their assigned files and are idle.
   No background local build is running. All active verification is in Actions.
-- Next concrete action: run all Pie native tests, resolve any failures, then
-  open a second fork PR for the Pie core stage. After that, implement measured
-  text and themed SVG integration; do not claim a completed Pie renderer yet.
+- Next concrete action: implement the real text-measurement boundary and Pie
+  SVG output on the measurement branch. First establish a browser/native
+  measurement comparison using exact resolved fonts and UTF-16 display text.
+  Do not claim a completed Pie renderer or application replacement yet.
+
+## Next-stage measurement evidence
+
+- Pie's official renderer measures both every legend and the title using
+  `getBoundingClientRect().width`; title width can make viewBox X negative.
+- `src/platform/text/dwrite_measurer.ixx` currently returns end hit-test
+  advance and estimates with character counts on failures. Do not reuse that
+  fallback for Mermaid. Keep Windows/DirectWrite code in the platform layer
+  and return an explicit error if measurement fails.
+- `pie_legend_text()` supplies the exact strings to measure after first-label
+  deduplication, including showData suffixes. `PieMeasurements` requires one
+  width per populated section and a title width, in SVG user units.
+- Local browser executables verified on 2026-10-21: Edge at
+  `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe` (157.0.4341.10),
+  Chrome at `C:/Program Files/Google/Chrome/Application/chrome.exe`
+  (155.0.8059.81). No browser measurement probe has been run yet. Use an
+  isolated ignored test profile; do not touch the user's browser profile.
+- Existing oracle packages include a browser-loadable Mermaid distribution
+  at `tools/mermaid-cpp/oracle/node_modules/mermaid/dist/mermaid.esm.mjs`.
+- There are no uncommitted implementation candidates or live local build
+  processes at this handoff. Prior agents have completed their assignments.
 
 ## User's incremental persistence instruction — 2026-10-21
 
