@@ -1,361 +1,306 @@
 #include "pch.h"
-#include "media/MathJaxRenderer.h"
-#include "media/MathJaxSvgParser.h"
-#include "folia/math/native_renderer_bridge.h"
 
-import folia.platform.editor_priority_work_queue;
+import std;
+#include "media/MathJaxRenderer.h"
+#include "media/MathSvgStore.h"
+#include "media/NativeMathSession.h"
+#include "media/SvgNormalizer.h"
 
 namespace winrt::Folia
 {
-    using folia::platform::editor::EditorPriorityWorkQueue;
-    using folia::platform::editor::EditorQueueChange;
-    using folia::platform::editor::EditorWorkPriority;
-
     struct MathJaxRenderer::State
     {
-        struct Request
+        struct Entry
         {
-            std::string key;
-            std::string tex;
-            bool display = false;
-            float em = 0.0f;
-            float containerWidth = 0.0f;
-            std::uint64_t generation = 0;
+            std::uint64_t id = 0;
+            std::string const* cacheKey = nullptr;
+            MathJaxSvg geometry;
+            std::vector<MathSvgStore::Range> fragments;
+            std::unordered_set<std::uint64_t> owners;
+            bool unowned = false;
         };
 
-        struct RenderOutcome
+        MathSvgStore store;
+        std::unordered_map<std::string, Entry> index;
+        std::unordered_map<std::uint64_t, Entry*> entriesById;
+        std::unordered_map<std::uint64_t, std::unordered_set<std::uint64_t>> ownerEntries;
+        std::optional<std::uint64_t> activeOwner;
+        std::unordered_set<std::uint64_t> blockEntries;
+        std::stop_token preparationStop;
+        std::uint64_t writtenBytes = 0;
+        std::uint64_t deadBytes = 0;
+        std::uint64_t nextEntryId = 1;
+
+        std::shared_ptr<MathJaxSvg const> Read(Entry const& entry) const
         {
-            MathJaxSvg result;
-            bool retryable = false;
-        };
+            auto result = std::make_shared<MathJaxSvg>(entry.geometry);
+            for (std::size_t i = 0; i < result->fragments.size(); ++i)
+                result->fragments[i].svg = store.Read(entry.fragments[i]);
+            return result;
+        }
 
-        using RendererHandle = std::unique_ptr<FoliaNativeMathRenderer,
-            decltype(&FoliaNativeMathRendererDestroy)>;
-        using CancellationHandle = std::unique_ptr<FoliaNativeMathCancellation,
-            decltype(&FoliaNativeMathCancellationDestroy)>;
-        using ResultHandle = std::unique_ptr<FoliaNativeMathResult,
-            decltype(&FoliaNativeMathResultDestroy)>;
-
-        std::mutex mutex;
-        std::condition_variable_any ready;
-        EditorPriorityWorkQueue<Request> requestQueue;
-        std::unordered_map<std::string, std::shared_ptr<MathJaxSvg const>> cache;
-        std::unordered_map<std::string, std::uint64_t> completionRevisions;
-        std::unordered_map<std::string, std::size_t> transientFailures;
-        std::deque<std::string> cacheOrder;
-        std::size_t cacheBytes = 0;
-        std::uint64_t generation = 0;
-        std::uint64_t nextCompletionRevision = 1;
-        std::function<void()> completion;
-        bool enabled = false;
-        std::jthread worker;
-        RendererHandle nativeRenderer{nullptr, &FoliaNativeMathRendererDestroy};
-
-        RenderOutcome RenderNow(Request const& request, std::stop_token stop)
+        void AddDeadBytes(std::uint64_t bytes) noexcept
         {
-            RenderOutcome outcome;
-            outcome.result.display = request.display;
-            if (stop.stop_requested())
+            auto const maximum = (std::numeric_limits<std::uint64_t>::max)();
+            deadBytes = bytes > maximum - deadBytes ? maximum : deadBytes + bytes;
+        }
+
+        void MaybeCompact()
+        {
+            constexpr std::uint64_t minimumDeadBytes = 8ull * 1024 * 1024;
+            if (deadBytes < minimumDeadBytes || deadBytes <= writtenBytes / 2)
+                return;
+
+            MathSvgStore replacement;
+            std::vector<std::pair<Entry*, std::vector<MathSvgStore::Range>>> replacementRanges;
+            replacementRanges.reserve(index.size());
+            std::uint64_t liveBytes = 0;
+            for (auto& item : index)
             {
-                outcome.result.error = "Math rendering cancelled";
-                outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
-                outcome.retryable = true;
-                return outcome;
+                auto& entry = item.second;
+                std::vector<MathSvgStore::Range> ranges;
+                ranges.reserve(entry.fragments.size());
+                for (auto const& range : entry.fragments)
+                {
+                    auto svg = store.Read(range);
+                    ranges.push_back(replacement.Append(*svg));
+                    liveBytes += range.size;
+                }
+                replacementRanges.emplace_back(&entry, std::move(ranges));
             }
+
+            // All reads and writes succeeded. Range vectors are committed by
+            // no-throw swaps before replacing the old delete-on-close store.
+            for (auto& [entry, ranges] : replacementRanges)
+                entry->fragments.swap(ranges);
+            store = std::move(replacement);
+            writtenBytes = liveBytes;
+            deadBytes = 0;
+        }
+
+        void CollectOrphans(std::unordered_set<std::uint64_t> const& candidates)
+        {
+            for (auto entryId : candidates)
+            {
+                auto found = entriesById.find(entryId);
+                if (found == entriesById.end()) continue;
+                auto& entry = *found->second;
+                if (entry.unowned || !entry.owners.empty()) continue;
+                for (auto const& range : entry.fragments) AddDeadBytes(range.size);
+                auto cacheEntry = index.find(*entry.cacheKey);
+                entriesById.erase(found);
+                index.erase(cacheEntry);
+            }
+            MaybeCompact();
+        }
+
+        void FinishBlock()
+        {
+            if (!activeOwner)
+                throw std::logic_error("EndBlock called without BeginBlock");
+
+            auto const owner = *activeOwner;
+            std::erase_if(blockEntries, [&](std::uint64_t entryId)
+            {
+                return !entriesById.contains(entryId);
+            });
+            auto ownerIt = ownerEntries.try_emplace(owner).first;
+            auto affected = ownerIt->second;
+            affected.insert(blockEntries.begin(), blockEntries.end());
+
+            // Stage only new memberships, not copies of every other block
+            // sharing this formula. A repeated formula in a large document
+            // must take constant work per owner rather than quadratic work.
+            std::vector<Entry*> added;
+            added.reserve(blockEntries.size());
             try
             {
-
-                if (!nativeRenderer)
+                for (auto entryId : blockEntries)
                 {
-                    FoliaNativeMathRenderer *created = nullptr;
-                    auto status = FoliaNativeMathRendererCreate(&created);
-                    nativeRenderer.reset(created);
-                    if (status != FOLIA_NATIVE_MATH_OK || !nativeRenderer)
-                    {
-                        nativeRenderer.reset();
-                        outcome.result.error = "Native math renderer could not be created";
-                        outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
-                        outcome.retryable = status == FOLIA_NATIVE_MATH_OUT_OF_MEMORY;
-                        return outcome;
-                    }
+                    auto entry = entriesById.at(entryId);
+                    if (entry->owners.insert(owner).second) added.push_back(entry);
                 }
-
-                FoliaNativeMathCancellation *cancellationRaw = nullptr;
-                const auto cancellationStatus = FoliaNativeMathCancellationCreate(&cancellationRaw);
-                CancellationHandle cancellation{cancellationRaw, &FoliaNativeMathCancellationDestroy};
-                if (cancellationStatus != FOLIA_NATIVE_MATH_OK || !cancellation)
-                {
-                    outcome.result.error = "Native math cancellation handle could not be created";
-                    outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
-                    outcome.retryable = cancellationStatus == FOLIA_NATIVE_MATH_OUT_OF_MEMORY;
-                    if (outcome.retryable)
-                        nativeRenderer.reset();
-                    return outcome;
-                }
-
-                FoliaNativeMathResult *resultRaw = nullptr;
-                FoliaNativeMathStatus status = FOLIA_NATIVE_MATH_INFRASTRUCTURE_ERROR;
-                {
-                    std::stop_callback stopCallback(
-                        stop, [handle = cancellation.get()] { FoliaNativeMathCancellationRequestStop(handle); });
-                    const auto text = winrt::to_hstring(std::string_view(request.tex.data(), request.tex.size()));
-                    std::vector<std::uint16_t> utf16Units;
-                    utf16Units.reserve(text.size());
-                    for (wchar_t codeUnit : text)
-                        utf16Units.push_back(static_cast<std::uint16_t>(codeUnit));
-
-                    status = FoliaNativeMathRenderSvg(nativeRenderer.get(), utf16Units.data(), utf16Units.size(),
-                                                      request.display ? 1 : 0, request.em, request.containerWidth,
-                                                      cancellation.get(), 2000, &resultRaw);
-                    ResultHandle nativeResult{resultRaw, &FoliaNativeMathResultDestroy};
-
-                    if (status == FOLIA_NATIVE_MATH_OK)
-                    {
-                        std::size_t svgSize = 0;
-                        auto svgBytes = FoliaNativeMathResultSvg(nativeResult.get(), &svgSize);
-                        if (svgBytes || svgSize == 0)
-                        {
-                            std::string ownedSvg(svgBytes ? svgBytes : "", svgSize);
-                            nativeResult.reset();
-                            outcome.result = ParseMathJaxSvgOutput(ownedSvg, request.display, request.em);
-                        }
-                        else
-                        {
-                            outcome.result.error = "Native renderer returned an invalid SVG result";
-                            outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
-                        }
-                    }
-                    else
-                    {
-                        std::size_t errorSize = 0;
-                        auto errorBytes = FoliaNativeMathResultError(nativeResult.get(), &errorSize);
-                        outcome.result.error =
-                            errorBytes ? std::string(errorBytes, errorSize) : "Native math renderer failed";
-                        outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
-                        outcome.retryable = status == FOLIA_NATIVE_MATH_CANCELLED ||
-                                            status == FOLIA_NATIVE_MATH_SESSION_UNUSABLE ||
-                                            status == FOLIA_NATIVE_MATH_OUT_OF_MEMORY;
-                        if (outcome.retryable)
-                            nativeRenderer.reset();
-                    }
-                }
-            }
-            catch (std::bad_alloc const &)
-            {
-                nativeRenderer.reset();
-                outcome.result.error = "Native math renderer ran out of memory";
-                outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
-                outcome.retryable = true;
-            }
-            catch (std::exception const &error)
-            {
-                outcome.result.error = error.what();
-                outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
             }
             catch (...)
             {
-                outcome.result.error = "Unknown native math renderer failure";
-                outcome.result.errorKind = MathJaxErrorKind::Infrastructure;
+                for (auto entry : added) entry->owners.erase(owner);
+                throw;
             }
-            return outcome;
+            for (auto entryId : ownerIt->second)
+                if (!blockEntries.contains(entryId))
+                    if (auto entry = entriesById.find(entryId); entry != entriesById.end())
+                        entry->second->owners.erase(owner);
+            ownerIt->second.swap(blockEntries);
+            blockEntries.clear();
+            if (ownerIt->second.empty()) ownerEntries.erase(ownerIt);
+            activeOwner.reset();
+            CollectOrphans(affected);
         }
 
-        static std::size_t ResultBytes(MathJaxSvg const &result)
+        void Retain(std::span<std::uint64_t const> owners)
         {
-            std::size_t bytes = sizeof(result);
-            for (auto const &fragment : result.fragments)
-                bytes += sizeof(fragment) + (fragment.svg ? fragment.svg->size() : 0);
-            return bytes + result.error.size();
-        }
-
-        void Store(Request const &request, MathJaxSvg result)
-        {
-            constexpr std::size_t budget = 16 * 1024 * 1024;
-            auto shared = std::make_shared<MathJaxSvg const>(std::move(result));
-            auto bytes = request.key.size() + ResultBytes(*shared);
-            while ((!cacheOrder.empty()) && (cacheBytes + bytes > budget || cache.size() >= 4096))
+            std::unordered_set<std::uint64_t> retained(owners.begin(), owners.end());
+            std::unordered_set<std::uint64_t> affected;
+            for (auto it = ownerEntries.begin(); it != ownerEntries.end();)
             {
-                auto oldest = std::move(cacheOrder.front());
-                cacheOrder.pop_front();
-                auto found = cache.find(oldest);
-                if (found == cache.end()) continue;
-                cacheBytes -= found->first.size() + ResultBytes(*found->second);
-                cache.erase(found);
-                completionRevisions.erase(oldest);
-            }
-            if (bytes <= budget)
-            {
-                cacheBytes += bytes;
-                cacheOrder.push_back(request.key);
-                cache.emplace(request.key, std::move(shared));
-            }
-        }
-
-        void Run(std::stop_token stop)
-        {
-            while (!stop.stop_requested())
-            {
-                Request request;
-                std::uint64_t ticket = 0;
+                if (retained.contains(it->first))
                 {
-                    std::unique_lock lock(mutex);
-                    if (!ready.wait(lock, stop, [&] {
-                            return requestQueue.Ready(true);
-                        })) break;
-                    auto queued = requestQueue.Pop(true);
-                    if (!queued) continue;
-                    ticket = queued->ticket;
-                    request = std::move(queued->work);
-                    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+                    ++it;
+                    continue;
                 }
-                auto outcome = RenderNow(request, stop);
-                std::function<void()> notify;
+                for (auto entryId : it->second)
                 {
-                    std::scoped_lock lock(mutex);
-                    requestQueue.Complete(request.key, ticket);
-                    if (request.generation == generation)
-                    {
-                        auto retryable = outcome.retryable;
-                        bool store = true;
-                        if (retryable)
-                        {
-                            auto [failure, first] = transientFailures.try_emplace(request.key, 1);
-                            if (first) store = false;
-                            else transientFailures.erase(failure);
-                        }
-                        else
-                        {
-                            transientFailures.erase(request.key);
-                        }
-                        if (store) Store(request, std::move(outcome.result));
-                        completionRevisions[request.key] = nextCompletionRevision++;
-                        notify = completion;
-                    }
+                    affected.insert(entryId);
+                    if (auto entry = entriesById.find(entryId); entry != entriesById.end())
+                        entry->second->owners.erase(it->first);
                 }
-                if (notify) notify();
+                it = ownerEntries.erase(it);
             }
-            nativeRenderer.reset();
+            CollectOrphans(affected);
         }
     };
 
     MathJaxRenderer::MathJaxRenderer() : state(std::make_unique<State>()) {}
+    MathJaxRenderer::~MathJaxRenderer() = default;
+    MathJaxRenderer::MathJaxRenderer(MathJaxRenderer&& other) noexcept
+        : state(std::move(other.state)) {}
 
-    MathJaxRenderer::~MathJaxRenderer()
+    MathJaxRenderer& MathJaxRenderer::operator=(MathJaxRenderer&& other) noexcept
     {
-        if (!state) return;
-        SetCompletionCallback({});
-        SetEnabled(false);
-    }
-
-    void MathJaxRenderer::SetEnabled(bool enabled)
-    {
-        if (!state) return;
-        if (enabled)
+        if (this != &other)
         {
-            std::scoped_lock lock(state->mutex);
-            if (state->enabled) return;
-            state->enabled = true;
-            auto current = state.get();
-            state->worker = std::jthread([current](std::stop_token stop) { current->Run(stop); });
-            return;
+            session.reset();
+            state = std::move(other.state);
         }
-
-        std::jthread worker;
-        {
-            std::scoped_lock lock(state->mutex);
-            if (!state->enabled && !state->worker.joinable()) return;
-            state->enabled = false;
-            ++state->generation;
-            state->requestQueue.Clear();
-            state->cache.clear();
-            state->completionRevisions.clear();
-            state->cacheOrder.clear();
-            state->transientFailures.clear();
-            state->cacheBytes = 0;
-            state->worker.request_stop();
-            state->ready.notify_all();
-            worker = std::move(state->worker);
-        }
-        if (worker.joinable()) worker.join();
-    }
-
-    bool MathJaxRenderer::Enabled() const
-    {
-        if (!state) return false;
-        std::scoped_lock lock(state->mutex);
-        return state->enabled;
+        return *this;
     }
 
     void MathJaxRenderer::Clear()
     {
-        if (!state) return;
-        std::scoped_lock lock(state->mutex);
-        ++state->generation;
-        state->requestQueue.Clear();
-        state->cache.clear();
-        state->completionRevisions.clear();
-        state->cacheOrder.clear();
-        state->transientFailures.clear();
-        state->cacheBytes = 0;
+        state = std::make_unique<State>();
+        session.reset();
     }
 
-    void MathJaxRenderer::SetCompletionCallback(std::function<void()> callback)
+    void MathJaxRenderer::SetPreparationStopToken(std::stop_token stop)
     {
-        std::scoped_lock lock(state->mutex);
-        state->completion = std::move(callback);
+        state->preparationStop = stop;
     }
 
-    std::shared_ptr<MathJaxSvg const> MathJaxRenderer::GetOrQueue(
-        std::string_view tex,
-        bool display,
-        float em,
-        float containerWidth,
-        bool allowQueue,
-        bool highPriority,
-        AsyncWorkDependency* pendingDependency)
+    void MathJaxRenderer::BeginBlock(std::uint64_t owner)
     {
-        auto key = std::string(tex) + '\x1f' + (display ? "1" : "0") + '\x1f' + std::to_string(em) + '\x1f' + std::to_string(containerWidth);
-        std::scoped_lock lock(state->mutex);
-        if (!state->enabled) return {};
-        if (auto found = state->cache.find(key); found != state->cache.end()) return found->second;
-        if (pendingDependency)
+        state->CollectOrphans(state->blockEntries);
+        state->activeOwner = owner;
+        state->blockEntries.clear();
+    }
+
+    void MathJaxRenderer::EndBlock()
+    {
+        state->FinishBlock();
+    }
+
+    void MathJaxRenderer::RetainBlocks(std::span<std::uint64_t const> owners)
+    {
+        state->Retain(owners);
+    }
+
+    std::shared_ptr<MathJaxSvg const> MathJaxRenderer::Render(
+        std::string_view tex, bool display, float em, float containerWidth,
+        SvgNormalizer& normalizer, std::string_view color, std::stop_token stop)
+    {
+        if (!stop.stop_possible()) stop = state->preparationStop;
+        if (stop.stop_requested()) throw winrt::hresult_canceled();
+        // Exact float bytes avoid rounding two distinct layout contexts to
+        // the same key. The length prefix also permits any TeX character.
+        auto key = std::to_string(tex.size()) + ':' + std::string(tex);
+        key.push_back(display ? '1' : '0');
+        key.append(reinterpret_cast<char const*>(&em), sizeof(em));
+        key.append(reinterpret_cast<char const*>(&containerWidth), sizeof(containerWidth));
+        key.append(color);
+        if (auto found = state->index.find(key); found != state->index.end())
         {
-            pendingDependency->key = key;
-            if (auto completed = state->completionRevisions.find(key);
-                completed != state->completionRevisions.end())
-                pendingDependency->observedCompletion = completed->second;
+            if (state->activeOwner)
+                state->blockEntries.insert(found->second.id);
+            return state->Read(found->second);
         }
-        if (!allowQueue) return {};
-        auto change = state->requestQueue.Enqueue(
-            State::Request{
-                key,
-                std::string(tex),
-                display,
-                em,
-                containerWidth,
-                state->generation,
-            },
-            highPriority
-                ? EditorWorkPriority::Visible
-                : EditorWorkPriority::Background,
-            256);
-        if (change != EditorQueueChange::Unchanged) state->ready.notify_one();
-        return {};
-    }
 
-    bool MathJaxRenderer::AnyCompletedAfter(
-        std::span<AsyncWorkDependency const> dependencies) const
-    {
-        if (!state || dependencies.empty()) return false;
-        std::scoped_lock lock(state->mutex);
-        return std::ranges::any_of(
-            dependencies,
-            [&](AsyncWorkDependency const& dependency)
+        // Reuse the native execution context on this host thread. Moves only
+        // transfer document data; this session stays with its original host.
+        if (!session) session = std::make_unique<NativeMathSession>();
+        auto result = session->Render(tex, display, em, containerWidth, stop);
+        for (auto& fragment : result.fragments)
+        {
+            if (!fragment.svg) throw std::runtime_error("Math fragment has no SVG payload");
+            auto colored = *fragment.svg;
+            constexpr std::string_view marker = "currentColor";
+            for (std::size_t at = 0; (at = colored.find(marker, at)) != std::string::npos;)
             {
-                if (dependency.key.empty()) return false;
-                auto completed = state->completionRevisions.find(dependency.key);
-                return completed != state->completionRevisions.end()
-                    && completed->second > dependency.observedCompletion;
-            });
+                colored.replace(at, marker.size(), color);
+                at += color.size();
+            }
+            if (stop.stop_requested()) throw winrt::hresult_canceled();
+            auto normalized = normalizer.NormalizeNow(colored, em);
+            if (!normalized)
+            {
+                result.fragments.clear();
+                result.error = normalized.error;
+                result.errorKind = MathJaxErrorKind::Infrastructure;
+                break;
+            }
+            fragment.renderId = normalized.id;
+            fragment.svg = std::move(normalized.svg);
+        }
+        if (stop.stop_requested()) throw winrt::hresult_canceled();
+        auto rendered = std::make_shared<MathJaxSvg const>(result);
+        State::Entry entry;
+        entry.id = state->nextEntryId++;
+        auto const entryId = entry.id;
+        entry.geometry = *rendered;
+        entry.fragments.reserve(entry.geometry.fragments.size());
+        entry.unowned = !state->activeOwner.has_value();
+        std::uint64_t appendedBytes = 0;
+        try
+        {
+            if (state->activeOwner)
+                state->blockEntries.insert(entry.id);
+            for (auto& fragment : entry.geometry.fragments)
+            {
+                auto range = state->store.Append(*fragment.svg);
+                state->writtenBytes += range.size;
+                appendedBytes += range.size;
+                entry.fragments.push_back(range);
+                fragment.svg.reset();
+            }
+            auto [inserted, success] = state->index.emplace(key, std::move(entry));
+            if (!success)
+            {
+                state->AddDeadBytes(appendedBytes);
+                appendedBytes = 0;
+                if (state->activeOwner)
+                {
+                    state->blockEntries.erase(entryId);
+                    state->blockEntries.insert(inserted->second.id);
+                }
+                state->MaybeCompact();
+                if (!state->activeOwner) inserted->second.unowned = true;
+                return state->Read(inserted->second);
+            }
+            inserted->second.cacheKey = &inserted->first;
+            try
+            {
+                if (!state->entriesById.emplace(entryId, &inserted->second).second)
+                    throw std::logic_error("Duplicate MathJax cache entry id");
+            }
+            catch (...)
+            {
+                state->index.erase(inserted);
+                throw;
+            }
+            return rendered;
+        }
+        catch (...)
+        {
+            state->AddDeadBytes(appendedBytes);
+            throw;
+        }
     }
 }

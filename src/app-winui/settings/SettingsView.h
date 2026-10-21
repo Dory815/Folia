@@ -40,7 +40,6 @@ namespace winrt::Folia
         void LoadSelectedLicense();
         void RefreshThemeList();
         void UpdateThemePreview();
-        void ApplyMathSetting();
         void ApplyLatexSetting();
         void ApplyLanguageSetting();
         bool ApplyShortcutSettings();
@@ -85,7 +84,6 @@ namespace winrt::Folia
         winrt::Microsoft::UI::Xaml::UIElement themesPage_{ nullptr };
         winrt::Microsoft::UI::Xaml::UIElement licensesPage_{ nullptr };
         winrt::Microsoft::UI::Xaml::UIElement aboutPage_{ nullptr };
-        winrt::Microsoft::UI::Xaml::Controls::ToggleSwitch mathToggle_;
         winrt::Microsoft::UI::Xaml::Controls::ToggleSwitch latexSuggestionsToggle_;
         winrt::Microsoft::UI::Xaml::Controls::ComboBox languageCombo_;
         winrt::Microsoft::UI::Xaml::Controls::ListView themeList_;

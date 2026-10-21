@@ -219,8 +219,7 @@ namespace winrt::Folia
                 {
                     ready = false;
                 }
-                else if (block.pendingMath
-                    || block.pendingImage
+                else if (block.pendingImage
                     || block.pendingMermaid
                     || (imagesPending && block.containsImage && imageStillLoading(block)))
                 {

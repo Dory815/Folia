@@ -313,17 +313,6 @@ namespace winrt::Folia
             overlay.displayStart += offset;
             target.footnoteOverlays.push_back(std::move(overlay));
         }
-        target.pendingMathJaxDependencies.insert(
-            target.pendingMathJaxDependencies.end(),
-            std::make_move_iterator(source.pendingMathJaxDependencies.begin()),
-            std::make_move_iterator(source.pendingMathJaxDependencies.end()));
-        target.pendingSvgDependencyGroups.insert(
-            target.pendingSvgDependencyGroups.end(),
-            std::make_move_iterator(
-                source.pendingSvgDependencyGroups.begin()),
-            std::make_move_iterator(
-                source.pendingSvgDependencyGroups.end()));
-        target.pendingMath = target.pendingMath || source.pendingMath;
         target.pendingMermaid = target.pendingMermaid || source.pendingMermaid;
     }
 
@@ -510,27 +499,9 @@ namespace winrt::Folia
                     continue;
                 }
                 auto displayMath = item.special().display == folia::MathDisplayMode::Block;
-                AsyncWorkDependency mathJaxDependency;
-                auto rawMath = mathJax.GetOrQueue(
-                    folia::cps_to_utf8(item.text),
-                    displayMath,
-                    fontSize,
-                    containerWidth,
-                    requestMath,
-                    highPriority,
-                    &mathJaxDependency);
-                if (!rawMath && mathJaxDependency)
-                    display.pendingMathJaxDependencies.push_back(
-                        std::move(mathJaxDependency));
-                auto math = rawMath ? NormalizeMathJaxSvg(
-                    *rawMath,
-                    svgNormalizer,
-                    svgColor,
-                    fontSize,
-                    requestMath,
-                    highPriority,
-                    &display.pendingSvgDependencyGroups) : std::nullopt;
-                display.pendingMath = display.pendingMath || !rawMath || !math;
+                auto math = mathJax.Render(
+                    folia::cps_to_utf8(item.text), displayMath, fontSize,
+                    containerWidth, svgNormalizer, SvgColor(svgColor));
                 auto editing = CaretTouchesSpan(caret, item.source_span);
                 auto delimiterLength = item.special().display == folia::MathDisplayMode::Block
                     ? std::size_t{0}

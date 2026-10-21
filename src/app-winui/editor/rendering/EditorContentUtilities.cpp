@@ -34,19 +34,6 @@ namespace winrt::Folia
         return result;
     }
 
-    std::string ResolveSvgColor(std::string svg, D2D1_COLOR_F color)
-    {
-        auto replacement = SvgColor(color);
-        constexpr std::string_view needle = "currentColor";
-        std::size_t offset = 0;
-        while ((offset = svg.find(needle, offset)) != std::string::npos)
-        {
-            svg.replace(offset, needle.size(), replacement);
-            offset += replacement.size();
-        }
-        return svg;
-    }
-
     std::optional<std::vector<std::uint8_t>> DecodeBase64(std::string_view source)
     {
         static constexpr std::string_view alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -69,55 +56,6 @@ namespace winrt::Folia
                 result.push_back(static_cast<std::uint8_t>((accumulator >> bits) & 0xff));
                 if (result.size() > 16 * 1024 * 1024) return std::nullopt;
             }
-        }
-        return result;
-    }
-
-    std::optional<MathJaxSvg> NormalizeMathJaxSvg(
-        MathJaxSvg const& source,
-        SvgNormalizer& normalizer,
-        D2D1_COLOR_F color,
-        float fontSize,
-        bool allowQueue,
-        bool highPriority,
-        std::vector<AsyncWorkDependencyGroup>* pendingDependencyGroups)
-    {
-        MathJaxSvg result = source;
-        auto pending = false;
-        AsyncWorkDependencyGroup pendingDependencies;
-        for (auto& fragment : result.fragments)
-        {
-            if (!fragment.svg) return std::nullopt;
-            AsyncWorkDependency dependency;
-            auto normalized = normalizer.GetOrQueue(
-                ResolveSvgColor(*fragment.svg, color),
-                fontSize,
-                allowQueue,
-                highPriority,
-                &dependency);
-            if (!normalized)
-            {
-                pending = true;
-                if (dependency)
-                    pendingDependencies.push_back(std::move(dependency));
-                continue;
-            }
-            if (!static_cast<bool>(*normalized))
-            {
-                result.fragments.clear();
-                result.error = normalized->error;
-                result.errorKind = MathJaxErrorKind::Infrastructure;
-                return result;
-            }
-            fragment.renderId = normalized->id;
-            fragment.svg = normalized->svg;
-        }
-        if (pending)
-        {
-            if (pendingDependencyGroups && !pendingDependencies.empty())
-                pendingDependencyGroups->push_back(
-                    std::move(pendingDependencies));
-            return std::nullopt;
         }
         return result;
     }

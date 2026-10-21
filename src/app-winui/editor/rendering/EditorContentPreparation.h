@@ -122,22 +122,12 @@ namespace winrt::Folia
         std::vector<BlockSpacingOverlay> blockSpacingOverlays;
         std::vector<TaskCheckboxOverlay> taskCheckboxOverlays;
         std::vector<FootnoteOverlay> footnoteOverlays;
-        std::vector<AsyncWorkDependency> pendingMathJaxDependencies;
-        std::vector<AsyncWorkDependencyGroup> pendingSvgDependencyGroups;
-        bool pendingMath = false;
         bool pendingMermaid = false;
     };
 
     std::wstring ToWide(std::u32string_view text);
+    std::string SvgColor(D2D1_COLOR_F color);
     std::optional<std::vector<std::uint8_t>> DecodeBase64(std::string_view source);
-    std::optional<MathJaxSvg> NormalizeMathJaxSvg(
-        MathJaxSvg const& source,
-        SvgNormalizer& normalizer,
-        D2D1_COLOR_F color,
-        float fontSize,
-        bool allowQueue,
-        bool highPriority,
-        std::vector<AsyncWorkDependencyGroup>* pendingDependencyGroups = nullptr);
     std::optional<MermaidSvg> NormalizeMermaidSvg(MermaidSvg const& source, SvgNormalizer& normalizer, bool allowQueue);
     std::u32string InlineText(std::vector<folia::InlineRenderItem> const& items);
     folia::TextPosition InlineItemsEndPosition(std::vector<folia::InlineRenderItem> const& items, folia::TextPosition fallback);

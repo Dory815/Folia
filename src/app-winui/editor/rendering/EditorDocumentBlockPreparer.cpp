@@ -523,12 +523,12 @@ namespace winrt::Folia
         bool requestEmbedded,
         bool highPriority)
     {
+        mathJax.BeginBlock(block.id.v);
         EditorPreparedDocument::Block prepared;
         InitializeMetadata(prepared, block);
         InitializeContentMetadata(prepared, block);
         prepared.embeddedRequested = requestEmbedded;
         prepared.embeddedGeneration = embeddedGeneration;
-        prepared.dependencyCheckGeneration = embeddedGeneration;
         prepared.remoteImageGeneration = remoteImageGeneration;
         std::unordered_set<std::uint64_t> owners;
         for (auto owner : prepared.owners) owners.insert(owner.v);
@@ -557,14 +557,10 @@ namespace winrt::Folia
             {
                 for (auto const& span : block.special().table_cell_spans)
                     addOwner(span.container_id);
-                prepared.pendingMath = prepared.table->pendingMath;
-                prepared.pendingMathJaxDependencies =
-                    prepared.table->pendingMathJaxDependencies;
-                prepared.pendingSvgDependencyGroups =
-                    prepared.table->pendingSvgDependencyGroups;
                 prepared.pendingImage = prepared.table->pendingImage;
                 prepared.height = prepared.table->height;
                 prepared.valid = true;
+                mathJax.EndBlock();
                 return prepared;
             }
         }
@@ -625,11 +621,6 @@ namespace winrt::Folia
             }
         }
         documentPainter.ApplyNestedCodeHighlights(prepared.display, block);
-        prepared.pendingMath = prepared.display.pendingMath;
-        prepared.pendingMathJaxDependencies =
-            prepared.display.pendingMathJaxDependencies;
-        prepared.pendingSvgDependencyGroups =
-            prepared.display.pendingSvgDependencyGroups;
         prepared.pendingMermaid = prepared.display.pendingMermaid;
         auto format = textLayoutEngine.FormatFor(
             prepared.code || prepared.sourceMode,
@@ -766,6 +757,7 @@ namespace winrt::Folia
         for (auto const& position : prepared.display.displayToSource)
             addOwner(position.container_id);
         prepared.valid = true;
+        mathJax.EndBlock();
         return prepared;
     }
 

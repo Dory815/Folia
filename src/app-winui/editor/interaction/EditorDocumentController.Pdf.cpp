@@ -12,6 +12,11 @@ namespace winrt::Folia
 
     void EditorDocumentController::CancelOperation()
     {
+        if (state_->documentLoading.load(std::memory_order_acquire))
+        {
+            state_->loadStop.request_stop();
+            return;
+        }
         if (!state_->pdfExporting) return;
         state_->cancelRequested = true;
         if (state_->pdfWork)
@@ -95,7 +100,6 @@ namespace winrt::Folia
             auto title = std::filesystem::path(displayName.c_str()).stem().wstring();
             auto outputPath = state->pdfOutputPath;
             auto theme = state->renderer->Theme();
-            auto mathEnabled = state->renderer->MathRenderingEnabled();
             if (state->cancelRequested)
             {
                 state->pdfExporting = false;
@@ -115,8 +119,7 @@ namespace winrt::Folia
                 title = std::move(title),
                 baseDirectory = std::move(baseDirectory),
                 renderModel = std::move(renderModel),
-                theme = std::move(theme),
-                mathEnabled](std::stop_token threadStop) mutable
+                theme = std::move(theme)](std::stop_token threadStop) mutable
             {
                 struct ApartmentScope
                 {
@@ -138,7 +141,7 @@ namespace winrt::Folia
                     {
                         EditorSurfaceRenderer renderer;
                         renderer.SetTheme(theme);
-                        renderer.SetMathRenderingEnabled(mathEnabled);
+                        renderer.SetMathPreparationStopToken(work->stop.get_token());
                         renderer.InitializeForPdf();
                         detail::EditorRenderFrame frame{
                             renderModel,
@@ -152,7 +155,6 @@ namespace winrt::Folia
                         {
                             if (threadStop.stop_requested() || work->stop.stop_requested())
                             {
-                                renderer.SetMathRenderingEnabled(false);
                                 renderer.CancelPdfExport();
                                 work->cancelled = true;
                                 std::error_code ignored;

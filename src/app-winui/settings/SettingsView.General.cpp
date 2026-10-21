@@ -21,22 +21,6 @@ namespace winrt::Folia
         panel.Children().Append(PageHeading(Localize(L"General")));
         panel.Children().Append(Text(Localize(L"GeneralDescription")));
 
-        StackPanel mathCard;
-        mathCard.Spacing(8);
-        mathToggle_.Header(box_value(Localize(L"RenderMath")));
-        mathToggle_.OnContent(box_value(Localize(L"MathJaxOn")));
-        mathToggle_.OffContent(box_value(Localize(L"ShowMarkdownSource")));
-        mathToggle_.IsOn(settings_.mathRenderingEnabled);
-        mathToggle_.Toggled([this](auto const&, auto const&)
-        {
-            if (refreshing_) return;
-            settings_.mathRenderingEnabled = mathToggle_.IsOn();
-            ApplyMathSetting();
-        });
-        mathCard.Children().Append(mathToggle_);
-        mathCard.Children().Append(Text(Localize(L"MathServiceDescription")));
-        panel.Children().Append(Card(mathCard));
-
         StackPanel languageCard;
         languageCard.Spacing(8);
         auto languageHeading = Text(Localize(L"Language"), 18);
@@ -59,13 +43,6 @@ namespace winrt::Folia
         languageCard.Children().Append(Text(Localize(L"LanguageRestartDescription")));
         panel.Children().Append(Card(languageCard));
 
-        InfoBar note;
-        note.IsOpen(true);
-        note.IsClosable(false);
-        note.Severity(InfoBarSeverity::Informational);
-        note.Title(Localize(L"ChangesApplyImmediately"));
-        note.Message(Localize(L"MathChangesDescription"));
-        panel.Children().Append(note);
         generalStatus_.TextWrapping(TextWrapping::Wrap);
         panel.Children().Append(generalStatus_);
         ScrollViewer scroller;
@@ -77,24 +54,6 @@ namespace winrt::Folia
     {
         generalStatus_.Text(message);
         generalStatus_.Foreground(error ? Brush({196, 43, 28, 255}) : nullptr);
-    }
-
-    void SettingsView::ApplyMathSetting()
-    {
-        if (detached_ || !applySettings_) return;
-        auto proposed = appliedSettings_;
-        proposed.mathRenderingEnabled = settings_.mathRenderingEnabled;
-        if (auto error = applySettings_(proposed))
-        {
-            SetGeneralStatus(*error, true);
-            refreshing_ = true;
-            settings_.mathRenderingEnabled = appliedSettings_.mathRenderingEnabled;
-            mathToggle_.IsOn(settings_.mathRenderingEnabled);
-            refreshing_ = false;
-            return;
-        }
-        appliedSettings_.mathRenderingEnabled = proposed.mathRenderingEnabled;
-        SetGeneralStatus({});
     }
 
     void SettingsView::ApplyLanguageSetting()

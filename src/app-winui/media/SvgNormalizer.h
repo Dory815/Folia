@@ -8,7 +8,6 @@
 #include <string>
 #include <string_view>
 
-#include "media/AsyncWorkDependency.h"
 
 namespace winrt::Folia
 {
@@ -35,14 +34,15 @@ namespace winrt::Folia
         SvgNormalizer(SvgNormalizer const&) = delete;
         SvgNormalizer& operator=(SvgNormalizer const&) = delete;
 
+        // Complete normalization on the caller's preparation thread. Math
+        // layout never waits for an asynchronous SVG completion notification.
+        NormalizedSvg NormalizeNow(std::string_view source, float fontSize);
+
         std::optional<NormalizedSvg> GetOrQueue(
             std::string_view source,
             float fontSize,
             bool allowQueue = true,
-            bool highPriority = false,
-            AsyncWorkDependency* pendingDependency = nullptr);
-        bool AnyGroupCompletedAfter(
-            std::span<AsyncWorkDependencyGroup const> groups) const;
+            bool highPriority = false);
         void SetCompletionCallback(std::function<void()> callback);
 
     private:

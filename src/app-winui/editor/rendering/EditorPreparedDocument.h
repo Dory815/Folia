@@ -44,8 +44,6 @@ namespace winrt::Folia
             std::vector<MathPreview> mathPreviews;
             std::vector<MermaidDraw> mermaids;
             std::vector<MermaidPreview> mermaidPreviews;
-            std::vector<AsyncWorkDependency> pendingMathJaxDependencies;
-            std::vector<AsyncWorkDependencyGroup> pendingSvgDependencyGroups;
             std::optional<EditorTableBlockRenderer::PreparedTable> table;
             std::vector<folia::NodeId> owners;
             float textHeight = 0.0f;
@@ -58,12 +56,10 @@ namespace winrt::Folia
             bool containsImage = false;
             bool containsMermaid = false;
             bool embeddedRequested = false;
-            bool pendingMath = false;
             bool pendingImage = false;
             bool pendingMermaid = false;
             bool valid = false;
             std::uint64_t embeddedGeneration = 0;
-            std::uint64_t dependencyCheckGeneration = 0;
             std::uint64_t remoteImageGeneration = 0;
 
             // Drop heavyweight DirectWrite/D2D/image state while retaining

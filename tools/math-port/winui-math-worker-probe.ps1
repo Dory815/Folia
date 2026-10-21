@@ -7,7 +7,11 @@ param(
     # Assets build properties, as required after building an MSI.
     [switch]$SkipBuild,
 
-    [switch]$SelfContained
+    [switch]$SelfContained,
+
+    [switch]$CancelOnly,
+
+    [switch]$IndexOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,6 +47,7 @@ $runtimeSource = Join-Path $root 'tools\test-support\windows_console_runtime.cpp
 $appSource = Join-Path $root 'src\app-winui'
 $platformSource = Join-Path $root 'src\platform'
 $configurationDirectory = Join-Path $root "build\app-winui\obj\x64\$Configuration"
+$generatedFilesDirectory = Join-Path $configurationDirectory 'Generated Files'
 $applicationDirectory = Join-Path $root "build\app-winui\bin\x64\$Configuration"
 $scratchDirectory = Join-Path $root "build\math-port\worker-probe\$Configuration"
 $nativeBuildDirectory = if ($Configuration -eq 'Debug') {
@@ -70,7 +75,11 @@ if (-not $SkipBuild) {
 Require-File $probeSource 'worker probe source'
 Require-File $runtimeSource 'console test runtime source'
 Require-File (Join-Path $configurationDirectory 'pch.obj') 'WinUI PCH object'
+Require-File (Join-Path $generatedFilesDirectory 'winrt\base.h') 'app-matched C++/WinRT base header'
 Require-File (Join-Path $configurationDirectory 'MathJaxRenderer.obj') 'MathJaxRenderer object'
+Require-File (Join-Path $configurationDirectory 'NativeMathSession.obj') 'NativeMathSession object'
+Require-File (Join-Path $configurationDirectory 'MathSvgStore.obj') 'MathSvgStore object'
+Require-File (Join-Path $configurationDirectory 'SvgNormalizer.obj') 'SVG normalizer object'
 Require-File (Join-Path $configurationDirectory 'MathJaxSvgParser.obj') 'MathJaxSvgParser object'
 Require-File (Join-Path $configurationDirectory 'editor_priority_work_queue.ixx.obj') 'priority queue module object'
 Require-File (Join-Path $configurationDirectory 'Microsoft\STL\std.ixx.obj') 'MSVC std module object'
@@ -100,6 +109,7 @@ $runtimeFlag = if ($SelfContained) {
 $debugFlag = if ($Configuration -eq 'Debug') { '/Zi' } else { '' }
 $compileFlags = @(
     '/nologo', '/std:c++latest', '/EHsc', $runtimeFlag, $debugFlag, '/utf-8',
+    ('/I' + (Quote-CmdArgument $generatedFilesDirectory)),
     '/DWIN32_LEAN_AND_MEAN', ('/I' + (Quote-CmdArgument $appSource)),
     ('/I' + (Quote-CmdArgument $platformSource))
 ) | Where-Object { $_ }
@@ -119,6 +129,9 @@ $linkInputs = @(
     (Quote-CmdArgument $runtimeObject),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'pch.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'MathJaxRenderer.obj')),
+    (Quote-CmdArgument (Join-Path $configurationDirectory 'NativeMathSession.obj')),
+    (Quote-CmdArgument (Join-Path $configurationDirectory 'MathSvgStore.obj')),
+    (Quote-CmdArgument (Join-Path $configurationDirectory 'SvgNormalizer.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'MathJaxSvgParser.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'editor_priority_work_queue.ixx.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'Microsoft\STL\std.ixx.obj')),
@@ -137,21 +150,33 @@ if ($SelfContained) {
     $dynamicUcrt = if ($Configuration -eq 'Debug') { 'ucrtd.lib' } else { 'ucrt.lib' }
     $linkCommand += " /NODEFAULTLIB:$staticUcrt /DEFAULTLIB:$dynamicUcrt"
 }
-$linkCommand += ' ' + ($linkInputs -join ' ') + ' windowsapp.lib runtimeobject.lib'
+$linkCommand += ' ' + ($linkInputs -join ' ') + ' windowsapp.lib runtimeobject.lib ole32.lib'
 
 $cmdLine = 'call ' + (Quote-CmdArgument $vcvars64) + ' >nul && ' +
     $compileProbe + ' && ' + $compileRuntime + ' && ' + $linkCommand
-Write-Host 'Compiling and linking the direct MathJaxRenderer worker probe...'
+Write-Host 'Compiling and linking the synchronous MathJaxRenderer and MathSvgStore probe...'
 & $env:ComSpec /d /s /c $cmdLine
 if ($LASTEXITCODE -ne 0) {
-    throw "Worker probe compilation/link failed with exit code $LASTEXITCODE"
+    throw "Synchronous math probe compilation/link failed with exit code $LASTEXITCODE"
 }
 
 Require-File $probeExecutable 'worker probe executable'
 Require-File (Join-Path $applicationDirectory 'FoliaNativeMath.dll') 'deployed native math DLL'
 $started = Get-Date
-$process = Start-Process -FilePath $probeExecutable -WorkingDirectory $applicationDirectory `
-    -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+$startArguments = @{
+    FilePath = $probeExecutable
+    WorkingDirectory = $applicationDirectory
+    WindowStyle = 'Hidden'
+    PassThru = $true
+    RedirectStandardOutput = $stdoutPath
+    RedirectStandardError = $stderrPath
+}
+if ($CancelOnly -and $IndexOnly) {
+    throw 'Choose either -CancelOnly or -IndexOnly for one focused probe run.'
+}
+if ($CancelOnly) { $startArguments.ArgumentList = @('--cancel-only') }
+if ($IndexOnly) { $startArguments.ArgumentList = @('--index-only') }
+$process = Start-Process @startArguments
 # Retain the process handle before waiting, including on Windows PowerShell 5.1.
 $processHandle = $process.Handle
 if (-not $process.WaitForExit(60000)) {
@@ -166,7 +191,7 @@ if (-not $process.WaitForExit(60000)) {
         Get-Content -LiteralPath $stderrPath -Raw
     }
     Write-Host 'probe exit code: timeout (probe process terminated)'
-    throw 'Worker probe exceeded the 60-second deadline; only the probe process was terminated.'
+    throw 'Synchronous math probe exceeded the 60-second deadline; only the probe process was terminated.'
 }
 $process.Refresh()
 $exitCode = $process.ExitCode
@@ -177,5 +202,5 @@ Write-Host 'probe stderr:'
 if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw }
 Write-Host "probe exit code: $exitCode; elapsed: $([math]::Round($elapsed.TotalSeconds, 2))s"
 if ($exitCode -ne 0) {
-    throw "Worker probe failed with exit code $exitCode"
+    throw "Synchronous math probe failed with exit code $exitCode"
 }

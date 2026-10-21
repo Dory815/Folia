@@ -34,8 +34,6 @@ namespace winrt::Folia
             EditorRenderResources& resources,
             EditorStyleSheet const& styleSheet,
             EditorInlineImageRenderer& inlineImages,
-            MathJaxRenderer& mathJax,
-            SvgNormalizer& svgNormalizer,
             EditorDocumentBlockPreparer& blockPreparer,
             folia::platform::editor::EditorScrollState& scrollState,
             std::unique_ptr<EditorPreparedDocument>& preparedDocument,
@@ -48,6 +46,11 @@ namespace winrt::Folia
             bool printMode);
 
         EditorDocumentPreparationResult Prepare();
+        void PrepareAll(
+            detail::EditorRenderFrame const& frame,
+            EditorDocumentBlockPreparer& blockPreparer,
+            std::stop_token stop,
+            std::function<void(std::size_t, std::size_t)> const& progress);
 
     private:
         EditorPreparedDocumentCache cache;

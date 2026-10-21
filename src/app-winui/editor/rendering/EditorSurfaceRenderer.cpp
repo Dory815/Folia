@@ -9,7 +9,6 @@ namespace winrt::Folia
     EditorSurfaceRenderer::~EditorSurfaceRenderer()
     {
         renderCache.Detach();
-        mathJax.SetCompletionCallback({});
         svgNormalizer.SetCompletionCallback({});
         mermaid.SetCompletionCallback({});
         std::scoped_lock lock(invalidationState->mutex);
@@ -34,24 +33,10 @@ namespace winrt::Folia
         return themeProfile;
     }
 
-    void EditorSurfaceRenderer::SetMathRenderingEnabled(bool enabled)
-    {
-        if (mathJax.Enabled() == enabled) return;
-        mathJax.SetEnabled(enabled);
-        ++embeddedGeneration;
-        renderCache.ClearSvgDrawings();
-        ClearPreparedDocument();
-        Invalidate();
-    }
-
-    bool EditorSurfaceRenderer::MathRenderingEnabled() const
-    {
-        return mathJax.Enabled();
-    }
-
     void EditorSurfaceRenderer::ResetDocumentCaches()
     {
         mathJax.Clear();
+        mathModelRevision.reset();
         treeSitter.Clear();
         renderCache.ClearTextLayouts();
         renderCache.ClearSvgDrawings();
@@ -96,7 +81,6 @@ namespace winrt::Folia
                     Invalidate();
                 })) embeddedCompletionPending = false;
         };
-        mathJax.SetCompletionCallback(completion);
         svgNormalizer.SetCompletionCallback(completion);
         mermaid.SetCompletionCallback(std::move(completion));
     }
@@ -138,8 +122,8 @@ namespace winrt::Folia
         if (!resources.Ready()) return;
         if (resizing || rendering)
         {
-            // A source edit may request a frame while an asynchronous math or
-            // SVG invalidation is painting. Never drop that newer frame: the
+            // A source edit may request a frame while an embedded-content
+            // invalidation is painting. Never drop that newer frame: the
             // deferred callback obtains the latest session model after this
             // render completes.
             deferredInvalidate = true;
@@ -150,7 +134,17 @@ namespace winrt::Folia
         resources.EnsureFrameResources(styleSheet);
         resources.d2dContext->BeginDraw();
         resources.d2dContext->Clear(styleSheet.canvasColor);
-        DrawDocument(frame);
+        try
+        {
+            DrawDocument(frame);
+        }
+        catch (...)
+        {
+            // Synchronous native/file preparation can report an error. Close
+            // the drawing transaction so the next frame can still render.
+            resources.d2dContext->EndDraw();
+            throw;
+        }
         auto ended = resources.d2dContext->EndDraw();
         if (ended == D2DERR_RECREATE_TARGET) { resources.ResetTargets(); return; }
         if (FAILED(ended)) return;

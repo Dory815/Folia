@@ -40,6 +40,7 @@ namespace winrt::Folia
         std::atomic_uint64_t reloadDebounceSerial = 0;
         std::atomic_uint64_t loadSerial = 0;
         std::atomic_bool documentLoading = false;
+        std::stop_source loadStop;
         std::atomic_bool cancelRequested = false;
         std::atomic_bool pdfExporting = false;
         std::filesystem::path pdfOutputPath;

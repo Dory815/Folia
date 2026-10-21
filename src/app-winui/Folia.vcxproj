@@ -193,10 +193,12 @@
     <ClInclude Include="export\EditorPdfExportTypes.h" />
     <ClInclude Include="editor\interaction\EditorSidebarController.h" />
     <ClInclude Include="editor\rendering\EditorSurfaceRenderer.h" />
+      <ClInclude Include="editor\rendering\EditorDocumentPreparation.h" />
+      <ClInclude Include="media\NativeMathSession.h" />
+      <ClInclude Include="media\MathSvgStore.h" />
       <ClInclude Include="editor\rendering\EditorPreparedDocument.h" />
       <ClInclude Include="editor\rendering\EditorPreparedDocumentCache.h" />
       <ClInclude Include="editor\rendering\EditorPreparedDocumentRetention.h" />
-    <ClInclude Include="media\AsyncWorkDependency.h" />
     <ClInclude Include="media\MathJaxRenderer.h" />
     <ClInclude Include="media\MathJaxSvgParser.h" />
     <ClInclude Include="media\MermaidRenderer.h" />
@@ -568,6 +570,9 @@
     <ClCompile Include="editor\rendering\EditorSurfaceRenderer.Interaction.cpp" />
     <ClCompile Include="editor\rendering\EditorSurfaceRenderer.Pdf.cpp" />
     <ClCompile Include="media\MathJaxRenderer.cpp" />
+    <ClCompile Include="media\NativeMathSession.cpp" />
+    <ClCompile Include="media\MathSvgStore.cpp" />
+    <ClCompile Include="editor\rendering\EditorSurfaceRenderer.Preparation.cpp" />
     <ClCompile Include="media\MathJaxSvgParser.cpp" />
     <ClCompile Include="media\MermaidRenderer.cpp" />
     <ClCompile Include="media\SvgNormalizer.cpp" />

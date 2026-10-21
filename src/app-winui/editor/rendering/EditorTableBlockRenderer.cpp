@@ -60,15 +60,6 @@ namespace winrt::Folia
                     AppendGeneratedText(display, U"\u200B", {sourceSpan.container_id, sourceSpan.source_range.start, folia::TextAffinity::Downstream}, folia::InlineStyle::plain());
                     display.displayToSource.push_back({sourceSpan.container_id, sourceSpan.source_range.end, folia::TextAffinity::Downstream});
                 }
-                prepared.pendingMath = prepared.pendingMath || display.pendingMath;
-                prepared.pendingMathJaxDependencies.insert(
-                    prepared.pendingMathJaxDependencies.end(),
-                    display.pendingMathJaxDependencies.begin(),
-                    display.pendingMathJaxDependencies.end());
-                prepared.pendingSvgDependencyGroups.insert(
-                    prepared.pendingSvgDependencyGroups.end(),
-                    display.pendingSvgDependencyGroups.begin(),
-                    display.pendingSvgDependencyGroups.end());
                 auto wide = ToWide(display.text);
                 auto layout = textLayoutEngine.Create(wide, resources.textFormat.Get(), (std::max)(1.0f, columnWidth - 20.0f));
                 auto cellTextHeight = styleSheet.body.lineHeight;

@@ -9,6 +9,7 @@ import folia.platform.editor_scroll_state;
 #include "media/SvgNormalizer.h"
 #include "media/TreeSitterHighlighter.h"
 #include "editor/rendering/EditorStyleSheet.h"
+#include "editor/rendering/EditorDocumentPreparation.h"
 #include "editor/rendering/EditorRenderCache.h"
 #include "editor/rendering/EditorRenderResources.h"
 #include "export/EditorPdfExportTypes.h"
@@ -45,8 +46,15 @@ namespace winrt::Folia
         void CancelPdfExport();
         void SetTheme(folia::ThemeProfile const& value);
         folia::ThemeProfile Theme() const;
-        void SetMathRenderingEnabled(bool enabled);
-        bool MathRenderingEnabled() const;
+        EditorDocumentPreparationContext CapturePreparationContext() const;
+        bool MatchesPreparationContext(EditorDocumentPreparationContext const& context) const;
+        static std::unique_ptr<EditorDocumentPreparation> PrepareDocument(
+            detail::EditorRenderFrame const& frame,
+            EditorDocumentPreparationContext const& context,
+            std::stop_token stop,
+            std::function<void(std::size_t, std::size_t)> progress);
+        void AdoptDocumentPreparation(std::unique_ptr<EditorDocumentPreparation> preparation);
+        void SetMathPreparationStopToken(std::stop_token stop);
         void ResetDocumentCaches();
         void SetInvalidateCallback(std::function<void()> callback);
 
@@ -112,6 +120,7 @@ namespace winrt::Folia
         std::unique_ptr<EditorPreparedDocument> preparedDocument;
         std::shared_ptr<PdfExportState> pdfExportState;
         std::uint64_t embeddedGeneration = 0;
+        std::optional<std::uint64_t> mathModelRevision;
         std::optional<D2D1_POINT_2F> pointerPosition;
         std::optional<EditorTableAction> draggedTableAction;
         std::optional<std::size_t> tableDropIndex;
@@ -120,6 +129,9 @@ namespace winrt::Folia
         bool resizing = false;
         bool rendering = false;
         bool printMode = false;
+        bool preparingDocument = false;
+        std::stop_token preparationStop;
+        std::function<void(std::size_t, std::size_t)> preparationProgress;
         bool exporting = false;
         std::atomic_bool deferredInvalidate = false;
     };

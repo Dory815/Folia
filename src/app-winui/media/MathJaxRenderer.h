@@ -7,9 +7,8 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <stop_token>
 #include <vector>
-
-#include "media/AsyncWorkDependency.h"
 
 namespace winrt::Folia
 {
@@ -48,6 +47,11 @@ namespace winrt::Folia
         }
     };
 
+    class SvgNormalizer;
+    class NativeMathSession;
+
+    // A document-owned index. Live layout metrics are not evicted for cache
+    // capacity; SVG bytes live in its delete-on-close temporary store.
     class MathJaxRenderer
     {
     public:
@@ -56,24 +60,29 @@ namespace winrt::Folia
         MathJaxRenderer(MathJaxRenderer const&) = delete;
         MathJaxRenderer& operator=(MathJaxRenderer const&) = delete;
 
-        void SetEnabled(bool enabled);
-        bool Enabled() const;
-        std::shared_ptr<MathJaxSvg const> GetOrQueue(
+        MathJaxRenderer(MathJaxRenderer&&) noexcept;
+        MathJaxRenderer& operator=(MathJaxRenderer&&) noexcept;
+
+        std::shared_ptr<MathJaxSvg const> Render(
             std::string_view tex,
             bool display,
             float em,
             float containerWidth,
-            bool allowQueue = true,
-            bool highPriority = false,
-            AsyncWorkDependency* pendingDependency = nullptr);
-        bool AnyCompletedAfter(
-            std::span<AsyncWorkDependency const> dependencies) const;
-        void SetCompletionCallback(std::function<void()> callback);
+            SvgNormalizer& normalizer,
+            std::string_view color,
+            std::stop_token stop = {});
+        void SetPreparationStopToken(std::stop_token stop);
+        void BeginBlock(std::uint64_t owner);
+        void EndBlock();
+        void RetainBlocks(std::span<std::uint64_t const> owners);
         void Clear();
 
     private:
         struct State;
 
         std::unique_ptr<State> state;
+        // Thread-confined execution state is never moved with the document
+        // cache. The preparation host destroys it on its creating thread.
+        std::unique_ptr<NativeMathSession> session;
     };
 }

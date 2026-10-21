@@ -5,6 +5,7 @@ import folia.platform.editor_priority_work_queue;
 
 namespace
 {
+    std::atomic_uint64_t nextSvgId{1};
     std::wstring ModuleDirectory()
     {
         std::wstring path(32768, L'\0');
@@ -63,9 +64,12 @@ namespace
                 &outputLength,
                 &result.width,
                 &result.height);
+            auto release = [this, outputLength](std::uint8_t* bytes) {
+                if (bytes) freeBuffer(bytes, outputLength);
+            };
+            std::unique_ptr<std::uint8_t, decltype(release)> ownedOutput(output, release);
             std::string value;
             if (output && outputLength > 0) value.assign(reinterpret_cast<char const*>(output), outputLength);
-            if (output) freeBuffer(output, outputLength);
             if (status == 0) result.svg = std::make_shared<std::string const>(std::move(value));
             else result.error = value.empty() ? "SVG normalization failed" : std::move(value);
             return result;
@@ -85,6 +89,18 @@ namespace
         FreeBuffer freeBuffer = nullptr;
         std::string error;
     };
+
+    winrt::Folia::NormalizedSvg NormalizeSvg(std::string const& source, float fontSize)
+    {
+        // usvg's font database is application-wide. Serial access lets a
+        // document preparation and later edits reuse it across calling
+        // threads without rescanning system fonts for every opened document.
+        static std::mutex mutex;
+        static std::unique_ptr<Runtime> runtime;
+        std::scoped_lock lock(mutex);
+        if (!runtime) runtime = std::make_unique<Runtime>();
+        return runtime->Process(source, fontSize);
+    }
 }
 
 namespace winrt::Folia
@@ -117,7 +133,6 @@ namespace winrt::Folia
 
         void Run()
         {
-            std::unique_ptr<Runtime> runtime;
             for (;;)
             {
                 Request request;
@@ -134,14 +149,12 @@ namespace winrt::Folia
                     request = std::move(queued->work);
                     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
                 }
-                if (!runtime) runtime = std::make_unique<Runtime>();
-                auto result = runtime->Process(request.source, request.fontSize);
+                auto result = NormalizeSvg(request.source, request.fontSize);
                 std::function<void()> callback;
                 {
                     std::scoped_lock lock(mutex);
                     requestQueue.Complete(request.key, ticket);
                     Store(request.key, std::move(result));
-                    completionRevisions[request.key] = nextCompletionRevision++;
                     if (!stopping) callback = completion;
                 }
                 if (callback) callback();
@@ -161,11 +174,10 @@ namespace winrt::Folia
                 if (found == cache.end()) continue;
                 cacheBytes -= oldest.size() + (found->second.svg ? found->second.svg->size() : 0) + found->second.error.size();
                 cache.erase(found);
-                completionRevisions.erase(oldest);
             }
             if (bytes <= budget)
             {
-                result.id = nextId++;
+                result.id = nextSvgId.fetch_add(1);
                 cacheBytes += bytes;
                 cacheOrder.push_back(key);
                 cache.emplace(key, std::move(result));
@@ -178,23 +190,26 @@ namespace winrt::Folia
         std::thread worker;
         EditorPriorityWorkQueue<Request> requestQueue;
         std::unordered_map<std::string, NormalizedSvg> cache;
-        std::unordered_map<std::string, std::uint64_t> completionRevisions;
         std::deque<std::string> cacheOrder;
         std::size_t cacheBytes = 0;
-        std::uint64_t nextId = 1;
-        std::uint64_t nextCompletionRevision = 1;
         std::function<void()> completion;
     };
 
     SvgNormalizer::SvgNormalizer() : state(std::make_unique<State>()) {}
     SvgNormalizer::~SvgNormalizer() = default;
 
+    NormalizedSvg SvgNormalizer::NormalizeNow(std::string_view source, float fontSize)
+    {
+        auto result = NormalizeSvg(std::string(source), fontSize);
+        if (result.error.empty()) result.id = nextSvgId.fetch_add(1);
+        return result;
+    }
+
     std::optional<NormalizedSvg> SvgNormalizer::GetOrQueue(
         std::string_view source,
         float fontSize,
         bool allowQueue,
-        bool highPriority,
-        AsyncWorkDependency* pendingDependency)
+        bool highPriority)
     {
         if (source.empty()) return std::nullopt;
         std::scoped_lock lock(state->mutex);
@@ -202,13 +217,6 @@ namespace winrt::Folia
         key.push_back('\0');
         key.append(reinterpret_cast<char const*>(&fontSize), sizeof(fontSize));
         if (auto found = state->cache.find(key); found != state->cache.end()) return found->second;
-        if (pendingDependency)
-        {
-            pendingDependency->key = key;
-            if (auto completed = state->completionRevisions.find(key);
-                completed != state->completionRevisions.end())
-                pendingDependency->observedCompletion = completed->second;
-        }
         if (!allowQueue) return std::nullopt;
         auto change = state->requestQueue.Enqueue(
             State::Request{key, std::string(source), fontSize},
@@ -218,29 +226,6 @@ namespace winrt::Folia
             512);
         if (change != EditorQueueChange::Unchanged) state->wake.notify_one();
         return std::nullopt;
-    }
-
-    bool SvgNormalizer::AnyGroupCompletedAfter(
-        std::span<AsyncWorkDependencyGroup const> groups) const
-    {
-        if (groups.empty()) return false;
-        std::scoped_lock lock(state->mutex);
-        return std::ranges::any_of(
-            groups,
-            [&](AsyncWorkDependencyGroup const& group)
-            {
-                return !group.empty() && std::ranges::all_of(
-                    group,
-                    [&](AsyncWorkDependency const& dependency)
-                    {
-                        if (dependency.key.empty()) return false;
-                        auto completed = state->completionRevisions.find(
-                            dependency.key);
-                        return completed != state->completionRevisions.end()
-                            && completed->second
-                                > dependency.observedCompletion;
-                    });
-            });
     }
 
     void SvgNormalizer::SetCompletionCallback(std::function<void()> callback)

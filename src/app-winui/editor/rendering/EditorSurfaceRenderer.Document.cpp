@@ -21,6 +21,14 @@ namespace winrt::Folia
         detail::EditorRenderFrame const& frame,
         std::optional<float> sourceTopOverride)
     {
+        if (!mathModelRevision || *mathModelRevision != frame.renderModel.revision)
+        {
+            std::vector<std::uint64_t> owners;
+            owners.reserve(frame.renderModel.blocks.size());
+            for (auto const& block : frame.renderModel.blocks) owners.push_back(block.id.v);
+            mathJax.RetainBlocks(owners);
+            mathModelRevision = frame.renderModel.revision;
+        }
         interactionMap.Clear();
         nonInteractiveRegions.clear();
         auto padding = (std::min)(styleSheet.horizontalPadding, (std::max)(12.0f, resources.surfaceWidthDip * 0.06f));
@@ -55,7 +63,7 @@ namespace winrt::Folia
 
         EditorSvgPainter svgPainter(resources, renderCache);
         auto svgSupported = svgPainter.Supported();
-        auto mathSvgSupported = svgSupported && mathJax.Enabled();
+        auto mathSvgSupported = svgSupported;
         EditorTextLayoutEngine textLayoutEngine(resources, styleSheet);
         EditorInlineImageRenderer inlineImages(
             resources,
@@ -105,7 +113,7 @@ namespace winrt::Folia
             printMode ? std::span<const detail::EditorSearchHighlight>{} : frame.searchHighlights,
             frame.renderModel.editable_index);
 
-        if (frame.renderModel.blocks.empty() && !printMode)
+        if (frame.renderModel.blocks.empty() && !printMode && !preparingDocument)
         {
             auto message = Localize(L"EmptyDocumentHint");
             resources.d2dContext->DrawTextW(
@@ -141,8 +149,6 @@ namespace winrt::Folia
             resources,
             styleSheet,
             inlineImages,
-            mathJax,
-            svgNormalizer,
             blockPreparer,
             scrollState,
             preparedDocument,
@@ -153,6 +159,12 @@ namespace winrt::Folia
             remoteImageGeneration,
             scrollOffset,
             printMode);
+        if (preparingDocument)
+        {
+            preparationPass.PrepareAll(frame, blockPreparer, preparationStop, preparationProgress);
+            totalDocumentHeight = preparedDocument->totalHeight;
+            return;
+        }
         auto preparation = preparationPass.Prepare();
         scrollOffset = preparation.scrollOffset;
         if (preparation.invalidateRequested) Invalidate();
