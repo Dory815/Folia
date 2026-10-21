@@ -1391,6 +1391,34 @@ position-rebind-source-check.log and position-rebind-final-check.json.
 No provider, mathematical algorithm or frozen Source profile changed; prior
 runtime gates are retained without repeating them.
 
+### HTML observer/consumer retirement (2026-10-21)
+
+The HTML Source-only oracle replaces the existing owner in 6d0459f7; no parallel
+oracle or C++ emitter is introduced. Its one-time ignored bridge first checks
+the original oracle and complete 52,398-byte frozen C++ fixture, then proves
+all 75 ordered scenario inputs and observations equal the clean profile.
+All 87 legacy p()/Property calls match direct deep expectations in order:
+29 distinct top-level expectations recursively contain 52 distinct values.
+The earlier candidate incorrectly treated 52 as a top-level count; that check
+failed before any profile/canonical write and was corrected before promotion.
+Nineteen Source pins remain checked. The compact independent JSON profile and
+canonical check pass 75 cases/434 assertions. The old p23m observer profile
+also passed its original 434/75/570-record check and remains byte-equal as
+historical evidence; its emitter-anchor tool retires with two fixture-only
+tools. The shared legacy gate drops only HTML's 434/75 and its dedicated edit,
+leaving 5,309 assertions/162 tests; it was not run.
+
+The legacy HTML C++ consumer retires after the previously accepted native
+HTML token/serialization, Text/Comment wrapping, clone and verify coverage.
+HtmlNode inherits the empty-node mError no-op; the accepted test preserves
+that behavior for explicit/null options under token and row parents. Removal
+build74847 passes with parallel4. All 478 active sources, six protected paths,
+nine verified input/binary paths, seven retained paths and seventeen target
+source lists remain byte-equal. Class-binding cpp/ixx consumers decrease
+47 to 46. Evidence: html-source-bridge-v3.log, html-source-promoted.json,
+html-retirement-before.json and html-retirement-final-check.json. No production
+algorithm or repeated broad runtime gate is involved.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
