@@ -947,6 +947,15 @@ the active generated typed data, font lookup/resource algorithms and Common
 layout owners remain. Root's tracked direct-API search finds no outside caller,
 and the current all-target/module-map check finds no configured source/importer.
 
+The support batch removes the unused svg_extensions, font_data_bindings,
+font_data_options and bbox_bindings pairs (eight sources,
+font-fontSupport-before-removal.json). The old extension builders only served
+the retired mutable class surface; their final glyph/variant/resource content
+already lives in the current generated typed data. BBox/LineBBox arithmetic
+stays in util/bbox and common/line_bbox. Source generators, observations, locks,
+licenses and the active typed include are retained; the 18-file byte baseline
+is font-retained-before.json. Direction is kept for its real shared type owner.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
