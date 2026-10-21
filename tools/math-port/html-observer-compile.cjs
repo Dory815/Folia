@@ -1,3 +1,0 @@
-// Root compiles the repaired observer over the entire actual math graph.
-'use strict';
-const fs=require('node:fs'),path=require('node:path');const root=path.resolve(__dirname,'../..'),cmake=fs.readFileSync(path.join(root,'CMakeLists.txt'),'utf8');const modules=[...cmake.match(/target_sources\(folia_math PUBLIC FILE_SET CXX_MODULES FILES([\s\S]*?)\)/)[1].matchAll(/src\/math\/(\S+\.ixx)/g)].map(x=>x[1]),units=[...cmake.match(/target_sources\(folia_math PRIVATE([\s\S]*?)\)/)[1].matchAll(/src\/math\/(\S+\.cpp)/g)].map(x=>x[1]);require('./native-mutation-runner.cjs')({name:'math-port-html-observer-compile',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_html_node.cpp',pattern:'*math_port_html*',mutants:[],baselineOutcome:'compile'});
