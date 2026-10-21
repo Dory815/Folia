@@ -4,7 +4,9 @@
 
 ## 当前 checkpoint
 
-当前无live build/test；tracked worker probe runner **57717 exit0**（WinPS5.1实际返回0，stop join4575ms/total8.91s），`worker-reproducible-probe.log`；worker接入 **ba9ee591**。WinUI Debug **24161 exit0**；实际app对象worker probe exit0（mathbb/frac/Unicode/noundefined/Formula/recovery/cache/Clear/disable-reenable；stop join4454ms）；平台 **78599 exit0**，80/3429/17 suites；core **95496 exit0**，455/40840/50 suites，均无skip。部署DLL SHA与core一致0FB98CA1ADD2BB9D1BEA9315A03F31917C6FA40CDA73F173D0B990B5762CFFFC。probe/验收已提交 **7f38e4d9**。已review并删除3个inactive纯Context字符串协议测试（trim/match/split，24 cases），不减active数学/owner覆盖；下一步提交该批→review退休production inventory首批；生产/测试只读清单在ignored `retirement-{production,test}-inventory.md`，Root尚未批准删除。
+当前无live build/test；33093 build exit0。默认worker接入 **ba9ee591**，可复验probe/验收 **7f38e4d9**；WinUI Debug、真实worker、平台80/3429/17 suites、core455/40840/50 suites均exit0无skip。tracked runner 57717 exit0，日志worker-reproducible-probe.log，stop join4575ms/total8.91s。部署DLL与core哈希一致，详细证据见acceptance。纯Context字符串协议3测试/24 cases已退休 **2e09ac91**，不减active数学/owner覆盖。
+
+Root已review/promote tex_jax的a><b真实compile/结构断言：focused1/9、原TeXjax5/551均exit0，retirement-{combine,tex-jax}-test.log；旧tex_combine_relations.cpp已删除，待提交。下一步提交该测试批，再复核旧SVG18文件+测试/probe退休。Luna `/root/retired_production_inventory` 修ignored `retirement-production-inventory.md` 的active承接误报（textmacros_filter_record_roundtrip其实inactive）；该表不能直接作为删除批准。12文件旧SVG核心需连18文件wrapper图及测试/probe一起account，尚未批准生产删除。Root已读typeset-helper identity：覆写JS helper/投影属性，属撤销契约，不是兼容缺口。
 
 - 原生API full **4060** exit0：860 tests/216708 assertions/174 suites无skip，`renderer-owner-full-math.log`；12专项全过，精确数见acceptance。原Renderer/CABI DLL/API tests **a08e9723**，验收/worker架构锁 **12b62b30**；247 active modules无旧对象层，DLL仅9个Cexports。
 

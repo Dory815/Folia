@@ -617,6 +617,16 @@ patches are records, not build inputs. This removes no active test coverage and
 does not establish retirement of other mixed mathematical/object-protocol tests.
 The protected dirty files remain untouched.
 
+The mathematical assertion formerly in inactive `tex_combine_relations.cpp`
+is preserved in the existing active `tex_jax.cpp` owner. It compiles `a><b`
+through the actual base configuration and caller-owned TeXRequest, then checks
+one inferred row with exactly `mi(a), mo(><), mi(b)` in order. No node is
+manufactured or merged by the test. `retirement-combine-build.log` exits0
+(parallel4); focused case exits0 with 1 test / 9 assertions, existing
+`*TeX input jax*` exits0 with 5 tests / 551 assertions. Unrelated cases are
+filtered/skipped by these focused runs. The obsolete Context/document harness
+file is removed after this replacement passes; no production algorithm changed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

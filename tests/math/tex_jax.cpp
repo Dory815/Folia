@@ -271,6 +271,35 @@ suite tex_jax = [] {
         expect(!f.jax->parseOptions().request().error);
         expect(f.jax->parseOptions().request().parsers.empty());
     };
+    "TeX postfilter combines adjacent relation tokens in the inferred row"_test = [] {
+        JaxFixture f;
+        f.configure();
+        auto &root = f.compile(u"a><b");
+
+        auto rows = findNodes(root, NodeKind::inferred_mrow);
+        expect(rows.size() == 1_u) << "base configuration compiles into one inferred row";
+        if (rows.size() != 1)
+            return;
+
+        auto children = rows.front()->children();
+        expect(children.size() == 3_u)
+            << "the inferred row contains left operand, combined relation, and right operand";
+        if (children.size() != 3)
+            return;
+        const bool hasAllChildren = children[0] && children[1] && children[2];
+        expect(hasAllChildren) << "all three inferred-row children are present";
+        if (!hasAllChildren)
+            return;
+
+        expect(children[0]->kind() == NodeKind::mi);
+        expect(NodeUtil::getText(*children[0]) == u"a");
+        expect(children[1]->kind() == NodeKind::mo)
+            << "the two source relations compile to one operator node";
+        expect(NodeUtil::getText(*children[1]) == u"><")
+            << "the combined operator preserves both relation characters in order";
+        expect(children[2]->kind() == NodeKind::mi);
+        expect(NodeUtil::getText(*children[2]) == u"b");
+    };
     "TeX input jax preserves supplied config and package filter registration order"_test = [] {
         JaxFixture f;
         ConfigurationDefinition package;
