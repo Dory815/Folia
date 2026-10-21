@@ -85,6 +85,37 @@ namespace winrt::Folia
         return current ? current->GetSvg(renderId) : std::shared_ptr<std::string const>{};
     }
 
+    void MathJaxRenderer::SetVisibleSvgIds(std::span<std::uint64_t const> ids)
+    {
+        auto current = CurrentState();
+        if (current) current->SetVisibleSvgIds(ids);
+    }
+
+    void MathJaxRenderer::CancelOffscreenRenders(std::span<std::uint64_t const> visibleBlocks)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::unordered_set<std::uint64_t> visible(visibleBlocks.begin(), visibleBlocks.end());
+        std::vector<std::shared_ptr<State::Entry>> canceled;
+        {
+            std::scoped_lock lock(current->mutex);
+            std::vector<std::shared_ptr<State::Entry>> obsolete;
+            auto consider = [&](auto const& entry)
+            {
+                if (!entry) return;
+                if (entry->pending && !entry->unowned
+                    && std::ranges::none_of(entry->owners,
+                        [&](auto owner) { return visible.contains(owner); }))
+                    obsolete.push_back(entry);
+            };
+            consider(current->activeRender);
+            for (auto const& job : current->jobs)
+                if (job.kind == State::Job::Kind::Render) consider(job.entry);
+            for (auto const& entry : obsolete) current->RemoveEntryLocked(entry, canceled);
+        }
+        for (auto const& entry : canceled) entry->cancel.request_stop();
+    }
+
     void MathJaxRenderer::WaitForIdle(std::stop_token stop)
     {
         auto current = CurrentState();
@@ -95,6 +126,22 @@ namespace winrt::Folia
             throw winrt::hresult_canceled();
         if (stop.stop_requested()) throw winrt::hresult_canceled();
         if (current->workerFailure) std::rethrow_exception(current->workerFailure);
+    }
+
+    void MathJaxRenderer::FinishPreparation(std::stop_token stop)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        {
+            std::scoped_lock lock(current->mutex);
+            if (!current->workerStarted || current->stopping || current->workerFinished) return;
+            State::Job release;
+            release.kind = State::Job::Kind::ReleaseSession;
+            current->jobs.push_back(std::move(release));
+            ++current->pending;
+            current->wake.notify_one();
+        }
+        WaitForIdle(stop);
     }
 
     void MathJaxRenderer::SetCompletionCallback(std::function<void()> callback)
@@ -120,6 +167,11 @@ namespace winrt::Folia
         result.fileWrites = current->fileWrites;
         result.residentSvgBytes = current->residentSvgBytes;
         result.previewSvgBytes = current->previewSvgBytes;
+        result.queuedReads = static_cast<std::size_t>(std::ranges::count_if(current->jobs,
+            [](auto const& job) { return job.kind == State::Job::Kind::Read; }));
+        result.canceledReads = current->canceledReads;
+        result.discardedReads = current->discardedReads;
+        result.nativeSessionActive = current->nativeSessionActive;
         result.backingPath = current->backingPath;
         result.lastIoThread = current->lastIoThread;
         return result;

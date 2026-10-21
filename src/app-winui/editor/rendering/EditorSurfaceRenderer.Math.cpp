@@ -80,8 +80,11 @@ namespace winrt::Folia
                 if (progress) progress(index + 1, count);
             }
             if (frame.releaseBlocksOutside) frame.releaseBlocksOutside(end, end);
+            // Do not retain a document-sized backlog of TeX/source jobs while
+            // the native worker is slower than the existing render-model walk.
+            result->math.WaitForIdle(stop);
         }
-        result->math.WaitForIdle(stop);
+        result->math.FinishPreparation(stop);
         if (stop.stop_requested()) throw winrt::hresult_canceled();
         return result;
     }

@@ -2,7 +2,6 @@
 
 #include "media/MathJaxRenderer.h"
 #include "media/MathSvgStore.h"
-#include <list>
 
 namespace winrt::Folia
 {
@@ -11,8 +10,6 @@ namespace winrt::Folia
 
     struct MathJaxRenderer::State : std::enable_shared_from_this<State>
     {
-        static constexpr std::size_t ResidentLimit = 8 * 1024 * 1024;
-
         struct Entry
         {
             std::uint64_t id = 0;
@@ -34,17 +31,14 @@ namespace winrt::Folia
             MathSvgStore::Range range{};
             std::shared_ptr<std::string const> resident;
             std::shared_ptr<std::string const> preview;
-            std::list<std::uint64_t>::iterator lruPosition;
-            std::uint64_t lastUse = 0;
+            std::size_t fullReaders = 0;
             bool readQueued = false;
             bool failed = false;
-            bool oneShotOversize = false;
-            bool inLru = false;
         };
 
         struct Job
         {
-            enum class Kind { Render, Read } kind = Kind::Render;
+            enum class Kind { Render, Read, ReleaseSession } kind = Kind::Render;
             std::shared_ptr<Entry> entry;
             std::uint64_t renderId = 0;
             std::uint64_t generation = 0;
@@ -67,6 +61,9 @@ namespace winrt::Folia
 
         void CacheDocumentSvgLocked(std::uint64_t id,
             std::shared_ptr<std::string const> bytes);
+        bool NeedsSvgLocked(std::uint64_t id, SvgRef const& ref) const;
+        void ReleaseUnusedSvgLocked();
+        void SetVisibleSvgIds(std::span<std::uint64_t const> ids);
         void RemoveSvgRefLocked(std::uint64_t id, std::uint64_t ownerEntry);
         void RemoveEntryLocked(std::shared_ptr<Entry> const& entry,
             std::vector<std::shared_ptr<Entry>>& cancelAfterUnlock);
@@ -99,11 +96,13 @@ namespace winrt::Folia
         std::unordered_map<std::string, std::shared_ptr<Entry>> index;
         std::unordered_map<std::uint64_t, std::shared_ptr<Entry>> entriesById;
         std::unordered_map<std::uint64_t, SvgRef> svgRefs;
-        std::list<std::uint64_t> readyLru;
+        std::unordered_set<std::uint64_t> visibleSvgIds;
+        std::unordered_set<std::uint64_t> residentSvgIds;
         std::unordered_map<std::uint64_t, std::unordered_set<std::uint64_t>> ownerEntries;
         std::optional<std::uint64_t> activeOwner;
         std::unordered_set<std::uint64_t> blockEntries;
         std::deque<Job> jobs;
+        std::shared_ptr<Entry> activeRender;
         std::function<void()> completion;
         std::shared_ptr<SvgNormalizer> normalizerLease;
         std::stop_token preparationStop;
@@ -115,16 +114,18 @@ namespace winrt::Folia
         std::size_t nativeRenders = 0;
         std::uint64_t fileReads = 0;
         std::uint64_t fileWrites = 0;
+        std::uint64_t canceledReads = 0;
+        std::uint64_t discardedReads = 0;
         std::size_t pending = 0;
         std::uint64_t writtenBytes = 0;
         std::uint64_t deadBytes = 0;
         std::uint64_t nextEntryId = 1;
         std::uint64_t nextSvgGeneration = 1;
-        std::uint64_t useClock = 0;
         bool stopping = false;
         bool workerFinished = false;
         bool workerBusy = false;
         bool workerStarted = false;
         bool compactionRequested = false;
+        bool nativeSessionActive = false;
     };
 }

@@ -13,57 +13,11 @@ namespace winrt::Folia
         auto found = svgRefs.find(id);
         if (found == svgRefs.end()) return;
         auto& ref = found->second;
-        if (ref.resident)
-        {
-            residentSvgBytes -= ref.resident->size();
-            ref.resident.reset();
-            if (ref.inLru) readyLru.erase(ref.lruPosition);
-            ref.inLru = false;
-        }
-        if (!bytes) return;
-        if (bytes->size() > ResidentLimit)
-        {
-            // Keep one oversized SVG until its invalidation is consumed once.
-            for (auto it = readyLru.begin(); it != readyLru.end();)
-            {
-                auto refIt = svgRefs.find(*it);
-                if (refIt == svgRefs.end()) { it = readyLru.erase(it); continue; }
-                if (refIt->first == id) { ++it; continue; }
-                residentSvgBytes -= refIt->second.resident->size();
-                refIt->second.resident.reset();
-                refIt->second.oneShotOversize = false;
-                refIt->second.inLru = false;
-                it = readyLru.erase(it);
-            }
-            residentSvgBytes += bytes->size();
-            ref.resident = std::move(bytes);
-            ref.oneShotOversize = true;
-            ref.lastUse = ++useClock;
-            readyLru.push_back(id);
-            ref.lruPosition = std::prev(readyLru.end());
-            ref.inLru = true;
-            return;
-        }
-        while (residentSvgBytes + bytes->size() > ResidentLimit)
-        {
-            if (readyLru.empty()) break;
-            auto oldestId = readyLru.front();
-            readyLru.pop_front();
-            auto oldest = svgRefs.find(oldestId);
-            if (oldest == svgRefs.end()) continue;
-            oldest->second.inLru = false;
-            if (oldest->second.resident)
-                residentSvgBytes -= oldest->second.resident->size();
-            oldest->second.resident.reset();
-            oldest->second.oneShotOversize = false;
-        }
-        residentSvgBytes += bytes->size();
+        if (!NeedsSvgLocked(id, ref)) return;
+        residentSvgIds.insert(id);
+        if (ref.resident) residentSvgBytes -= ref.resident->size();
         ref.resident = std::move(bytes);
-        ref.oneShotOversize = false;
-        ref.lastUse = ++useClock;
-        readyLru.push_back(id);
-        ref.lruPosition = std::prev(readyLru.end());
-        ref.inLru = true;
+        if (ref.resident) residentSvgBytes += ref.resident->size();
     }
 
     void MathJaxRenderer::State::Run()
@@ -87,16 +41,6 @@ namespace winrt::Folia
             FailQueuedInitialization();
             return;
         }
-        try
-        {
-            session = std::make_unique<NativeMathSession>();
-        }
-        catch (...)
-        {
-            FailQueuedInitialization();
-            return;
-        }
-
         for (;;)
         {
             Job job;
@@ -123,12 +67,16 @@ namespace winrt::Folia
                     if (selected == jobs.end()) selected = jobs.begin();
                     job = std::move(*selected);
                     jobs.erase(selected);
+                    if (job.kind == Job::Kind::Render) activeRender = job.entry;
                     if (job.kind == Job::Kind::Read)
                     {
                         auto ref = svgRefs.find(job.renderId);
                         if (ref == svgRefs.end() || ref->second.generation != job.generation
-                            || ref->second.entryId != job.entry->id)
+                            || ref->second.entryId != job.entry->id
+                            || !NeedsSvgLocked(job.renderId, ref->second))
                         {
+                            if (ref != svgRefs.end()) ref->second.readQueued = false;
+                            ++canceledReads;
                             if (pending) --pending;
                             ready.notify_all();
                             idle.notify_all();
@@ -149,6 +97,16 @@ namespace winrt::Folia
                 }
                 continue;
             }
+            if (job.kind == Job::Kind::ReleaseSession)
+            {
+                session.reset(); // Native ownership is thread-confined.
+                std::scoped_lock lock(mutex);
+                nativeSessionActive = false;
+                workerBusy = false;
+                if (pending) --pending;
+                idle.notify_all();
+                continue;
+            }
 
             std::function<void()> callback;
             try
@@ -156,7 +114,15 @@ namespace winrt::Folia
                 if (job.kind == Job::Kind::Read)
                     CompleteRead(job, readRange, store.get(), callback);
                 else
+                {
+                    if (!session)
+                    {
+                        session = std::make_unique<NativeMathSession>();
+                        std::scoped_lock lock(mutex);
+                        nativeSessionActive = true;
+                    }
                     CompleteRender(job, *session, *normalizer, store, callback);
+                }
             }
             catch (...)
             {
@@ -178,6 +144,7 @@ namespace winrt::Folia
         {
             std::scoped_lock lock(mutex);
             workerFinished = true;
+            nativeSessionActive = false;
             workerBusy = false;
             ready.notify_all();
             idle.notify_all();
@@ -341,6 +308,7 @@ namespace winrt::Folia
                 if (!stopping) callback = completion;
             }
             if (pending) --pending;
+            activeRender.reset();
             workerBusy = false;
             ready.notify_all();
             idle.notify_all();
@@ -373,7 +341,17 @@ namespace winrt::Folia
                 && ref->second.entryId == job.entry->id)
             {
                 ref->second.readQueued = false;
-                if (bytes) CacheDocumentSvgLocked(job.renderId, std::move(bytes));
+                if (!NeedsSvgLocked(job.renderId, ref->second))
+                {
+                    // An already-started file read can finish after a scroll.
+                    // Drop it without retaining bytes or scheduling a repaint.
+                    ++discardedReads;
+                }
+                else if (bytes)
+                {
+                    CacheDocumentSvgLocked(job.renderId, std::move(bytes));
+                    callback = completion;
+                }
                 else
                 {
                     ref->second.failed = true;
@@ -381,8 +359,8 @@ namespace winrt::Folia
                         entry->second->result = std::make_shared<MathJaxSvg const>(
                             InfrastructureFailure("Cached math SVG read failed", entry->second->result
                                 ? entry->second->result->display : false));
+                    callback = completion;
                 }
-                callback = completion;
             }
             if (pending) --pending;
             workerBusy = false;
@@ -511,6 +489,8 @@ namespace winrt::Folia
             index.clear();
             entriesById.clear();
             svgRefs.clear();
+            visibleSvgIds.clear();
+            residentSvgIds.clear();
             jobs.clear();
             residentSvgBytes = 0;
             previewSvgBytes = 0;

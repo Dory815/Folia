@@ -46,12 +46,6 @@ namespace winrt::Folia
         {
             auto entry = found->second;
             if (activeOwner) blockEntries.insert(entry->id);
-            // Viewport materialization also warms SVG bytes in the background.
-            // Geometry remains available immediately, including on a cold hit.
-            if (purpose == MathRenderPurpose::Document && entry->result)
-                for (auto id : entry->fragmentIds)
-                    if (auto ref = svgRefs.find(id); ref != svgRefs.end() && !ref->second.resident)
-                        QueueReadLocked(id, ref->second);
             return entry;
         }
 
@@ -140,7 +134,8 @@ namespace winrt::Folia
             AddSaturated(deadBytes, ref.range.size);
             compactionRequested = true;
         }
-        if (ref.inLru) readyLru.erase(ref.lruPosition);
+        visibleSvgIds.erase(id);
+        residentSvgIds.erase(id);
         if (ref.resident) residentSvgBytes -= ref.resident->size();
         if (ref.preview) previewSvgBytes -= ref.preview->size();
         svgRefs.erase(found);
@@ -154,6 +149,13 @@ namespace winrt::Folia
         auto found = index.find(entry->key);
         if (found != index.end() && found->second->id == entry->id) index.erase(found);
         entriesById.erase(entry->id);
+        for (auto owner : entry->owners)
+            if (auto membership = ownerEntries.find(owner); membership != ownerEntries.end())
+            {
+                membership->second.erase(entry->id);
+                if (membership->second.empty()) ownerEntries.erase(membership);
+            }
+        entry->owners.clear();
         for (auto id : entry->fragmentIds) RemoveSvgRefLocked(id, entry->id);
         entry->fragmentIds.clear();
         entry->result.reset();
@@ -233,7 +235,7 @@ namespace winrt::Folia
 
     void MathJaxRenderer::State::QueueReadLocked(std::uint64_t id, SvgRef& ref)
     {
-        if (ref.readQueued || ref.failed || stopping) return;
+        if (ref.readQueued || ref.failed || stopping || !NeedsSvgLocked(id, ref)) return;
         auto entry = entriesById.find(ref.entryId);
         if (entry == entriesById.end()) return;
         Job job;
@@ -256,24 +258,64 @@ namespace winrt::Folia
         if (ref.preview) return ref.preview;
         if (ref.resident)
         {
-            auto value = ref.resident;
-            if (ref.oneShotOversize)
-            {
-                residentSvgBytes -= ref.resident->size();
-                ref.resident.reset();
-                ref.oneShotOversize = false;
-                if (ref.inLru) readyLru.erase(ref.lruPosition);
-                ref.inLru = false;
-            }
-            else if (ref.inLru)
-            {
-                ref.lastUse = ++useClock;
-                readyLru.splice(readyLru.end(), readyLru, ref.lruPosition);
-            }
-            return value;
+            return ref.resident;
         }
-        QueueReadLocked(id, ref);
         return {};
+    }
+
+    bool MathJaxRenderer::State::NeedsSvgLocked(std::uint64_t id, SvgRef const& ref) const
+    {
+        return ref.fullReaders != 0 || visibleSvgIds.contains(id);
+    }
+
+    void MathJaxRenderer::State::ReleaseUnusedSvgLocked()
+    {
+        for (auto it = jobs.begin(); it != jobs.end();)
+        {
+            if (it->kind != Job::Kind::Read) { ++it; continue; }
+            auto ref = svgRefs.find(it->renderId);
+            if (ref != svgRefs.end() && NeedsSvgLocked(it->renderId, ref->second))
+            {
+                ++it;
+                continue;
+            }
+            if (ref != svgRefs.end()) ref->second.readQueued = false;
+            it = jobs.erase(it);
+            if (pending) --pending;
+            ++canceledReads;
+        }
+        for (auto it = residentSvgIds.begin(); it != residentSvgIds.end();)
+        {
+            auto ref = svgRefs.find(*it);
+            if (ref != svgRefs.end() && NeedsSvgLocked(*it, ref->second))
+            {
+                ++it;
+                continue;
+            }
+            if (ref != svgRefs.end() && ref->second.resident)
+            {
+                residentSvgBytes -= ref->second.resident->size();
+                ref->second.resident.reset();
+            }
+            it = residentSvgIds.erase(it);
+        }
+        idle.notify_all();
+    }
+
+    void MathJaxRenderer::State::SetVisibleSvgIds(std::span<std::uint64_t const> ids)
+    {
+        std::scoped_lock lock(mutex);
+        if (stopping) return;
+        std::unordered_set<std::uint64_t> wanted;
+        wanted.reserve(ids.size());
+        for (auto id : ids)
+            if (auto ref = svgRefs.find(id); ref != svgRefs.end() && !ref->second.preview)
+                wanted.insert(id);
+        visibleSvgIds.swap(wanted);
+        ReleaseUnusedSvgLocked();
+        for (auto id : visibleSvgIds)
+            if (auto ref = svgRefs.find(id); ref != svgRefs.end() && !ref->second.resident)
+                QueueReadLocked(id, ref->second);
     }
 
     bool MathJaxRenderer::State::HasReadyChangeLocked(Entry const& entry,
@@ -294,6 +336,17 @@ namespace winrt::Folia
     {
         std::unique_lock lock(mutex);
         std::vector<std::shared_ptr<std::string const>> payloads;
+        std::vector<std::uint64_t> readers;
+        // Prepare is an explicit background consumer, independent of viewport
+        // cancellation. Its temporary payload ownership ends with this call.
+        auto release = [&](void*)
+        {
+            for (auto id : readers)
+                if (auto ref = svgRefs.find(id); ref != svgRefs.end())
+                    --ref->second.fullReaders;
+            ReleaseUnusedSvgLocked();
+        };
+        std::unique_ptr<void, decltype(release)> lease(this, release);
         bool initialized = false;
         for (;;)
         {
@@ -314,6 +367,13 @@ namespace winrt::Folia
             if (!initialized)
             {
                 payloads.resize(entry->result->fragments.size());
+                readers.reserve(entry->fragmentIds.size());
+                for (auto id : entry->fragmentIds)
+                    if (auto ref = svgRefs.find(id); ref != svgRefs.end())
+                    {
+                        readers.push_back(id);
+                        ++ref->second.fullReaders;
+                    }
                 initialized = true;
             }
 
@@ -332,13 +392,6 @@ namespace winrt::Folia
                 if (ref->second.resident)
                 {
                     payloads[i] = ref->second.resident;
-                    ref->second.lastUse = ++useClock;
-                    if (ref->second.oneShotOversize)
-                    {
-                        residentSvgBytes -= ref->second.resident->size();
-                        ref->second.resident.reset();
-                        ref->second.oneShotOversize = false;
-                    }
                 }
                 else
                 {
@@ -383,7 +436,8 @@ namespace winrt::Folia
             oldEntries.swap(index);
             entriesById.clear();
             svgRefs.clear();
-            readyLru.clear();
+            visibleSvgIds.clear();
+            residentSvgIds.clear();
             jobs.clear();
             pending = 0;
             residentSvgBytes = 0;

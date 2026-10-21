@@ -88,8 +88,14 @@ namespace winrt::Folia
             std::string_view color,
             std::stop_token stop = {},
             MathRenderPurpose purpose = MathRenderPurpose::Document);
+        // Lookup only: geometry/layout never implicitly schedules disk reads.
         std::shared_ptr<std::string const> GetSvg(std::uint64_t renderId);
+        // Replace the viewport's demand, canceling queued reads that left it.
+        void SetVisibleSvgIds(std::span<std::uint64_t const> ids);
+        void CancelOffscreenRenders(std::span<std::uint64_t const> visibleBlocks);
         void WaitForIdle(std::stop_token stop = {});
+        // End the opening batch on the worker, releasing its native font/session data.
+        void FinishPreparation(std::stop_token stop = {});
         void SetCompletionCallback(std::function<void()> callback);
 
         struct Statistics
@@ -102,6 +108,10 @@ namespace winrt::Folia
             std::uint64_t fileWrites = 0;
             std::size_t residentSvgBytes = 0;
             std::size_t previewSvgBytes = 0;
+            std::size_t queuedReads = 0;
+            std::uint64_t canceledReads = 0;
+            std::uint64_t discardedReads = 0;
+            bool nativeSessionActive = false;
             std::filesystem::path backingPath;
             std::thread::id lastIoThread;
         };
