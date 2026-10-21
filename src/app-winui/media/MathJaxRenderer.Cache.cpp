@@ -30,7 +30,7 @@ namespace winrt::Folia
 
     std::shared_ptr<MathJaxRenderer::State::Entry> MathJaxRenderer::State::Request(
         std::string_view tex, bool display, float em, float width,
-        std::string_view color, std::stop_token stop, MathRenderPurpose purpose)
+        std::string_view color, std::stop_token stop, MathRenderPurpose purpose, std::vector<Job>* batch)
     {
         if (stop.stop_requested()) throw winrt::hresult_canceled();
         if (purpose != MathRenderPurpose::Document && purpose != MathRenderPurpose::Preview)
@@ -83,7 +83,8 @@ namespace winrt::Folia
             job.em = em;
             job.containerWidth = width;
             job.callerStop = stop;
-            jobs.push_back(std::move(job));
+            if (batch) batch->push_back(std::move(job));
+            else jobs.push_back(std::move(job));
         }
         catch (...)
         {
@@ -93,6 +94,7 @@ namespace winrt::Folia
             throw;
         }
         ++pending;
+        if (batch) return entry;
         bool startWorker = !workerStarted;
         if (startWorker) workerStarted = true;
         wake.notify_one();

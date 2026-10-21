@@ -29,12 +29,20 @@ namespace winrt::Folia
         auto sheet = CreateEditorStyleSheet(context.theme);
         auto width = EditorDocumentContentWidth(context.surfaceWidth, sheet.horizontalPadding);
         auto color = SvgColor(sheet.textColor);
+        auto batch = result->math.BeginBatch();
+        std::size_t batchSize = 0;
         auto formula = [&](std::u32string_view tex, bool display, float available)
         {
             if (stop.stop_requested()) throw winrt::hresult_canceled();
-            result->math.Render(folia::cps_to_utf8(tex), display, sheet.body.size,
+            batch.Render(folia::cps_to_utf8(tex), display, sheet.body.size,
                 available, color, stop);
             ++result->formulaCount;
+            if (++batchSize == 32)
+            {
+                batch.Submit();
+                result->math.WaitForIdle(stop);
+                batchSize = 0;
+            }
         };
         auto inlines = [&](auto const& self, std::vector<folia::InlineRenderItem> const& items, float available) -> void
         {
@@ -64,12 +72,12 @@ namespace winrt::Folia
                 for (auto const& child : source.child_blocks) self(self, child, contentWidth);
         };
         auto count = frame.renderModel.blocks.size();
-        constexpr std::size_t batchSize = 16;
+        constexpr std::size_t blockBatchSize = 16;
         if (progress) progress(0, count);
-        for (std::size_t begin = 0; begin < count; begin += batchSize)
+        for (std::size_t begin = 0; begin < count; begin += blockBatchSize)
         {
             if (stop.stop_requested()) throw winrt::hresult_canceled();
-            auto end = (std::min)(count, begin + batchSize);
+            auto end = (std::min)(count, begin + blockBatchSize);
             if (frame.materializeBlocks) frame.materializeBlocks(begin, end);
             for (auto index = begin; index < end; ++index)
             {
@@ -82,9 +90,12 @@ namespace winrt::Folia
             if (frame.releaseBlocksOutside) frame.releaseBlocksOutside(end, end);
             // Do not retain a document-sized backlog of TeX/source jobs while
             // the native worker is slower than the existing render-model walk.
+            batch.Submit();
             result->math.WaitForIdle(stop);
+            batchSize = 0;
         }
-        result->math.FinishPreparation(stop);
+        batch.Submit();
+        result->math.WaitForIdle(stop);
         if (stop.stop_requested()) throw winrt::hresult_canceled();
         return result;
     }

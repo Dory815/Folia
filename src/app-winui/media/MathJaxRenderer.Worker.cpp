@@ -97,16 +97,6 @@ namespace winrt::Folia
                 }
                 continue;
             }
-            if (job.kind == Job::Kind::ReleaseSession)
-            {
-                session.reset(); // Native ownership is thread-confined.
-                std::scoped_lock lock(mutex);
-                nativeSessionActive = false;
-                workerBusy = false;
-                if (pending) --pending;
-                idle.notify_all();
-                continue;
-            }
 
             std::function<void()> callback;
             try
@@ -121,7 +111,13 @@ namespace winrt::Folia
                         std::scoped_lock lock(mutex);
                         nativeSessionActive = true;
                     }
-                    CompleteRender(job, *session, *normalizer, store, callback);
+                    if (job.kind == Job::Kind::Batch)
+                        CompleteBatch(job, *session, *normalizer, store, callback);
+                    else
+                    {
+                        { std::scoped_lock lock(mutex); ++nativeBatches; }
+                        CompleteRender(job, *session, *normalizer, store, callback);
+                    }
                 }
             }
             catch (...)
@@ -153,7 +149,7 @@ namespace winrt::Folia
 
     void MathJaxRenderer::State::CompleteRender(Job const& job,
         NativeMathSession& session, SvgNormalizer& normalizer,
-        std::unique_ptr<MathSvgStore>& store, std::function<void()>& callback)
+        std::unique_ptr<MathSvgStore>& store, std::function<void()>& callback, MathJaxSvg* prepared)
     {
         auto const& entry = job.entry;
         std::vector<std::shared_ptr<Entry>> cancelAfterUnlock;
@@ -166,7 +162,9 @@ namespace winrt::Folia
             std::stop_callback externalStop(job.callerStop, [entry]
                 { entry->cancel.request_stop(); });
             auto stop = entry->cancel.get_token();
-            auto result = session.Render(job.tex, job.display, job.em, job.containerWidth, stop);
+            if (stop.stop_requested()) throw winrt::hresult_canceled();
+            auto result = prepared ? std::move(*prepared)
+                : session.Render(job.tex, job.display, job.em, job.containerWidth, stop);
             {
                 std::scoped_lock lock(mutex);
                 ++nativeRenders;

@@ -63,7 +63,22 @@ namespace winrt::Folia
     // and SVG normalization run on its private worker.
     class MathJaxRenderer
     {
+        struct State;
     public:
+        class Batch
+        {
+            struct Impl;
+            std::unique_ptr<Impl> impl;
+            explicit Batch(std::shared_ptr<State> state);
+            friend class MathJaxRenderer;
+        public:
+            ~Batch();
+            Batch(Batch&&) noexcept;
+            Batch& operator=(Batch&&) noexcept;
+            void Render(std::string_view tex, bool display, float em, float containerWidth,
+                std::string_view color, std::stop_token stop = {});
+            void Submit();
+        };
         MathJaxRenderer();
         ~MathJaxRenderer();
         MathJaxRenderer(MathJaxRenderer const&) = delete;
@@ -71,6 +86,7 @@ namespace winrt::Folia
 
         MathJaxRenderer(MathJaxRenderer&&) noexcept;
         MathJaxRenderer& operator=(MathJaxRenderer&&) noexcept;
+        Batch BeginBatch();
 
         std::shared_ptr<MathJaxSvg const> Render(
             std::string_view tex,
@@ -94,8 +110,6 @@ namespace winrt::Folia
         void SetVisibleSvgIds(std::span<std::uint64_t const> ids);
         void CancelOffscreenRenders(std::span<std::uint64_t const> visibleBlocks);
         void WaitForIdle(std::stop_token stop = {});
-        // End the opening batch on the worker, releasing its native font/session data.
-        void FinishPreparation(std::stop_token stop = {});
         void SetCompletionCallback(std::function<void()> callback);
 
         struct Statistics
@@ -103,6 +117,7 @@ namespace winrt::Folia
             std::size_t entries = 0;
             std::size_t svgBytes = 0;
             std::size_t nativeRenders = 0;
+            std::size_t nativeBatches = 0;
             std::size_t pending = 0;
             std::uint64_t fileReads = 0;
             std::uint64_t fileWrites = 0;
@@ -124,7 +139,6 @@ namespace winrt::Folia
         void Clear();
 
     private:
-        struct State;
         std::shared_ptr<State> CurrentState() const;
 
         mutable std::mutex stateMutex;

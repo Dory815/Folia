@@ -128,22 +128,6 @@ namespace winrt::Folia
         if (current->workerFailure) std::rethrow_exception(current->workerFailure);
     }
 
-    void MathJaxRenderer::FinishPreparation(std::stop_token stop)
-    {
-        auto current = CurrentState();
-        if (!current) return;
-        {
-            std::scoped_lock lock(current->mutex);
-            if (!current->workerStarted || current->stopping || current->workerFinished) return;
-            State::Job release;
-            release.kind = State::Job::Kind::ReleaseSession;
-            current->jobs.push_back(std::move(release));
-            ++current->pending;
-            current->wake.notify_one();
-        }
-        WaitForIdle(stop);
-    }
-
     void MathJaxRenderer::SetCompletionCallback(std::function<void()> callback)
     {
         auto current = CurrentState();
@@ -162,6 +146,7 @@ namespace winrt::Folia
         result.entries = current->index.size();
         result.svgBytes = current->residentSvgBytes + current->previewSvgBytes;
         result.nativeRenders = current->nativeRenders;
+        result.nativeBatches = current->nativeBatches;
         result.pending = current->pending;
         result.fileReads = current->fileReads;
         result.fileWrites = current->fileWrites;

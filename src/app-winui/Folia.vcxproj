@@ -573,6 +573,7 @@
     <ClCompile Include="editor\rendering\EditorSurfaceRenderer.Pdf.cpp" />
     <ClCompile Include="media\MathJaxRenderer.cpp" />
     <ClCompile Include="media\MathJaxRenderer.Cache.cpp" />
+    <ClCompile Include="media\MathJaxRenderer.Batch.cpp" />
     <ClCompile Include="media\MathJaxRenderer.Worker.cpp" />
     <ClCompile Include="media\NativeMathSession.cpp" />
     <ClCompile Include="media\MathSvgStore.cpp" />

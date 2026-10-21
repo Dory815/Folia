@@ -8,6 +8,13 @@
 
 namespace winrt::Folia
 {
+    struct NativeMathInput
+    {
+        std::string_view tex;
+        bool display = false;
+        float em = 0.0f;
+        float containerWidth = 0.0f;
+    };
     class NativeMathSession
     {
     public:
@@ -24,6 +31,8 @@ namespace winrt::Folia
             bool display,
             float em,
             float containerWidth,
+            std::stop_token stop = {});
+        std::vector<MathJaxSvg> RenderBatch(std::span<NativeMathInput const> inputs,
             std::stop_token stop = {});
 
     private:

@@ -38,7 +38,8 @@ namespace winrt::Folia
 
         struct Job
         {
-            enum class Kind { Render, Read, ReleaseSession } kind = Kind::Render;
+            enum class Kind { Render, Read, Batch } kind = Kind::Render;
+            std::vector<Job> items;
             std::shared_ptr<Entry> entry;
             std::uint64_t renderId = 0;
             std::uint64_t generation = 0;
@@ -55,7 +56,11 @@ namespace winrt::Folia
             float width, std::string_view color, MathRenderPurpose purpose);
         std::shared_ptr<Entry> Request(std::string_view tex, bool display, float em,
             float width, std::string_view color, std::stop_token stop,
-            MathRenderPurpose purpose);
+            MathRenderPurpose purpose, std::vector<Job>* batch = nullptr);
+        void SubmitBatch(std::vector<Job>& items);
+        void CompleteBatch(Job const& job, NativeMathSession& session,
+            SvgNormalizer& normalizer, std::unique_ptr<MathSvgStore>& store,
+            std::function<void()>& callback);
         static MathJaxSvg InfrastructureFailure(std::string message, bool display);
         static void AddSaturated(std::uint64_t& value, std::uint64_t add) noexcept;
 
@@ -81,7 +86,7 @@ namespace winrt::Folia
         void Run();
         void CompleteRender(Job const& job, NativeMathSession& session,
             SvgNormalizer& normalizer, std::unique_ptr<MathSvgStore>& store,
-            std::function<void()>& callback);
+            std::function<void()>& callback, MathJaxSvg* prepared = nullptr);
         void CompleteRead(Job const& job, MathSvgStore::Range range,
             MathSvgStore* store, std::function<void()>& callback);
         void MaybeCompact(MathSvgStore& store) noexcept;
@@ -112,6 +117,7 @@ namespace winrt::Folia
         std::size_t residentSvgBytes = 0;
         std::size_t previewSvgBytes = 0;
         std::size_t nativeRenders = 0;
+        std::size_t nativeBatches = 0;
         std::uint64_t fileReads = 0;
         std::uint64_t fileWrites = 0;
         std::uint64_t canceledReads = 0;
