@@ -1950,3 +1950,56 @@ prefix observations and multi-segment math-tooltip cases, preserving previous
 inputs/SVG bytes. Acceptance covers auto/fixed/empty prefixes, nested/following
 glyphs, multi-segment scopes, empty defs, immutable sharing/retirement and full
 regression; no per-case production special cases or simulated JS objects.
+
+### 2026-10-21 Root lock: mglyph image owner and Scene value
+
+Keep CommonMglyph getParameters/computeBBox, charWrapper and document/factory
+ownership. Do not create a second image layout or reparse its attributes in the
+writer. The existing abstract Common registration remains a shared-layout owner.
+Add native svg/mglyph.ixx/.cpp corresponding to Source SVG/Wrappers/mglyph.ts:
+SvgMglyph final : CommonMglyph, emitScene and mglyphRegistration(). SVG catalog
+replaces the mglyph registration. standardSceneNodes returns own/content roots;
+the index branch calls the existing charWrapper.emitScene with content parents,
+without adding another math tree child or extra placement. The image branch
+appends exactly one image to content[0] and returns own nodes, matching Source.
+
+Scene types adds Image {Size size; string href; string alt; Transform transform;}
+to Primitive. These are owned values; sizes are authored mathematical em extents
+and may be finite signed or zero, because Source length2em does not clamp them.
+Snapshot validates finite width/height and the existing finite Transform rules,
+deep-owns the strings and retains no DOM/adaptor/loader/Context. Images are not
+font-cache glyph events and have no resource_order. Existing Size/Transform and
+ElementRole::image_glyph express geometry; no prebuilt SVG/HTML or opaque handles.
+SvgMglyph resolves size from existing width/height, copies src/alt, and supplies
+ordered Translation{0,height+(valign||0),space}, Affine{1,0,0,-1,0,0}. Do not
+invert BBox or multiply dimensions by SVG's 1000 in Common/Scene.
+
+Writer serializes Image directly and self-closes: width,height,transform,
+preserveAspectRatio="none",aria-label,href in exactly this Source order. Use
+existing fixed numeric/transform/attribute projection, including 1000 conversion
+and empty alt; no x/y, extra g, image decoding, intrinsic-size inference or URI
+fetching. All image data belongs in the existing primitive/Scene path. Retire
+the old inactive scene/wrappers/mglyph pair and its placement registration; do
+not keep two implementations or adapt Property/NodeRef to the new value.
+
+Luna files: scene_values_writer owns types.ixx/scene.cpp and native_scene_images
+UT; common_scene_entry owns svg/mglyph pair, SVG catalog and native_svg_mglyph
+owner UT; common_base_emission owns writer.cpp and native_svg_images UT;
+common_scene_source_tests owns source-mglyph-scene.cjs, generated flat named
+fixture arrays and native_svg_mglyph_source UT. Root owns CMake, old placement
+retirement, current Scene inspection helper, review/build/tests/Git.
+
+Independent Source witnesses use the pinned full38/NewCM profile, real MathML
+compile and actual MathItem.display, root/mglyph BBoxes, ordered image attrs and
+SVG. Use embedded data URIs only, without external network loads. Cover auto,
+explicit and non-em sizes, positive/negative valign, signed/zero extents, empty
+and escaped alt/href, images after preceding math, style/scale/placement, none
+and local cache (actual useLocalID prefixes), legacy ASCII/supplementary index,
+and separate invalid verification observations. Observe actual Source text
+measurement requests/results for legacy font branches; native tests must use
+that measurement contract, not hardcode case-specific geometry. Preserve Source
+inputs/expected SVG independently of C++. Verify exact SVG before/after complete
+request retirement, owned Image values and legacy wrapper parent/ownership, then
+default86/canonical75/full math. Unknown/error observations remain explicit;
+do not classify successful rendering of Source-produced merror as mglyph-image
+output or silently omit legacy cases.
