@@ -1518,6 +1518,33 @@ byte-equal. Class-binding cpp/ixx test consumers decrease 41 to 40. Evidence:
 simple-consumer-before.json and simple-consumer-final-check.json. No repeated
 native/broad runtime gate is claimed.
 
+### Script observer independent Source profile (2026-10-21)
+
+The original P10 oracle and instrumented observer each pass the complete
+185,969-byte legacy fixture check. The bridge matches all 17 Source scenarios,
+their lossless input witnesses and all 1,683 expected values in order to
+continuous C++ expectation ordinals 1..1,683. The clean replacement owner
+passes the independent profile at the original script-oracle.cjs path, with
+no C++ emitter/actual expressions, slot table or bridge-writing mode.
+
+The first candidate confused scopes: the fixture has 1,686 static expect
+sites, while the original reported count is 1,689. Its final native-only
+two-kind loop has three static sites executed six times; Source contributes
+1,683, not 1,680. The bridge failed before writing data, and Root corrected
+the scope/count checks and the fixture-name pattern before promotion. The
+native-only host budget has no Source expectations and retires under the
+already accepted budget disposition. Existing string, script MML and Common
+layout tests remain accepted without duplicate runtime runs.
+
+Two fixture-only/historical compile tools retire. The operator/script main
+and red groups remove only script's 1,689/18, leaving 31,034/142 and 31,005/139.
+A stale reference_leaf.cpp entry was discovered in the consumer group:
+that fixture already retired in 6f7cc0e7. Only that missing fixture and its
+669/27 counts are removed, leaving 4,640/135. These legacy native tools were
+not run. Evidence: script-source-bridge-v2.log, script-source-promoted.json
+and script-consumer-before.json. The script C++ consumer awaits its separate
+removal/build batch; no production algorithm changed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
