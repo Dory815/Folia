@@ -15,3 +15,4 @@ tools/math-port/table-mathml-cases.json text eol=lf
 tests/math/fixtures/common-source/table-mathml-scene.inc text eol=lf
 tools/math-port/common-semantics-fenced-mathml-cases.json text eol=lf
 tests/math/fixtures/common-source/semantics-fenced-mathml-scene.inc text eol=lf
+tests/math/fixtures/common-source/merror-mathml-scene.inc text eol=lf
