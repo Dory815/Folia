@@ -42,15 +42,15 @@ suite source_text = [] {
             }
             expect(fatal(fields.size() == 7_u)) << "malformed fixture row";
             const auto text = decode(fields[1]);
-            expect(strip_any_comments(text) == decode(fields[2])) << fields[0] << " strip";
-            expect(cleanup_comments(text) == decode(fields[3])) << fields[0] << " cleanup";
+            expect(bool(strip_any_comments(text) == decode(fields[2]))) << fields[0] << " strip";
+            expect(bool(cleanup_comments(text) == decode(fields[3]))) << fields[0] << " cleanup";
             const auto front = match_front_matter(text);
             expect(bool(front) == (fields[4] != "-")) << fields[0] << " match presence";
             if (front && fields[4] != "-") {
                 const auto length = std::stoull(std::string{fields[4]});
                 expect(front->length == length) << fields[0] << " UTF-16 length";
-                expect(front->indent == decode(fields[5])) << fields[0] << " indent";
-                expect(front->body == decode(fields[6])) << fields[0] << " body";
+                expect(bool(front->indent == decode(fields[5]))) << fields[0] << " indent";
+                expect(bool(front->body == decode(fields[6]))) << fields[0] << " body";
             }
             ++count;
         }
@@ -60,13 +60,13 @@ suite source_text = [] {
     "mermaid_source_text_handles_large_adversarial_documents"_test = [] {
         std::u16string whitespace;
         for (int i = 0; i < 100000; ++i) whitespace += u" \n";
-        expect(strip_any_comments(whitespace) == whitespace);
+        expect(bool(strip_any_comments(whitespace) == whitespace));
         expect(cleanup_comments(whitespace).empty());
         expect(!match_front_matter(u"---\n" + whitespace));
         std::u16string markers = u"%%";
         for (int i = 0; i < 100000; ++i) markers += u"x%%";
-        expect(strip_any_comments(markers) == markers);
-        expect(strip_any_comments(markers + u"\n") == u"\n");
+        expect(bool(strip_any_comments(markers) == markers));
+        expect(bool(strip_any_comments(markers + u"\n") == u"\n"));
     };
 
     "mermaid_source_text_returns_owned_results"_test = [] {
@@ -76,7 +76,7 @@ suite source_text = [] {
             match = match_front_matter(input);
         }
         expect(fatal(match.has_value()));
-        expect(match->body == u"title: owned");
+        expect(bool(match->body == u"title: owned"));
     };
 };
 }
