@@ -103,6 +103,8 @@ jobs:
 
       - name: Check the Packet parser and SVG oracles
         run: |
+          node tools/mermaid-cpp/preprocess-text-oracle.mjs --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/number-oracle.mjs --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/packet-oracle.mjs --check 2>&1 |

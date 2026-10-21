@@ -30,4 +30,13 @@ match_front_matter(std::u16string_view text);
 // then trims leading ECMAScript whitespace. Bare %% and %% followed by LF stay.
 [[nodiscard]] std::u16string cleanup_comments(std::u16string_view text);
 
+// preprocess.ts cleanupText: CR/CRLF -> LF, then single-quote attributes in
+// lexical tag matches. NOT an HTML parser, sanitizer, or XML encoder.
+[[nodiscard]] std::u16string cleanup_text(std::u16string_view text);
+
+// utils.ts removeDirectives: remove directiveRegex matches, including unclosed
+// matches. No config interpretation or comment removal. Extract configuration
+// before this step; this function alone is not a complete Mermaid frontend.
+[[nodiscard]] std::u16string remove_directives(std::u16string_view text);
+
 } // namespace folia::mermaid
