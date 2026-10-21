@@ -368,6 +368,26 @@ and two strict-Lite source_error_native_success observations, not a passed75/150
 gate. Mglyph images, full profile coverage, request ownership, integration and
 the remaining old object layer are still unfinished.
 
+The mglyph batch keeps CommonMglyph's existing dimensions, baseline and legacy
+character wrapper in its request-owned factory. The original SVG mglyph owner
+emits an owned Image Scene value; the writer only projects its dimensions,
+transform, alt and href. The inactive MglyphPlacement pair and registration are
+removed. Independent pinned MathML Source captures 13 cases: eight images,
+three legacy ASCII/supplementary indices with actual explicit-font measurement
+requests/results, and two invalid-input merror verification observations. The
+last two are not image successes. The fixture SHA-256 is
+`ef8fe550e9d54839050ffa896556f7d8adc555b02f184ed827a476d05d31e1ab`;
+Source write/default/no-op and Root independent default checks pass.
+
+Scene image checks pass 3/17, writer 3/5, owner/catalog 4/26, and Source13
+1/222. All 13 complete SVG strings match before and after request retirement;
+the image owner uses only the first standard content root. The final parallel4
+build (`mglyph-build-final.log`) and full math run (`mglyph-full-math.log`)
+pass: 842 tests / 212904 assertions / 168 suites, without skips. Canonical75
+(`mglyph-results.json`) remains 73 byte-equal SVGs and two strict-Lite
+source_error_native_success observations. Full profile coverage, 75/150 gate,
+request ownership, integration and final old-layer retirement remain open.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,
