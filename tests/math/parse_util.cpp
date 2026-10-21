@@ -411,4 +411,90 @@ suite parse_util_tests = [] {
         expect(nodes[0] == &ordinaryAtom);
         expect(nodes[1] == &relationAtom);
     };
+    "NodeUtil copies attribute values and merged native properties"_test = [] {
+        Fixture fixture;
+        auto &source = fixture.node(NodeKind::mi);
+        auto &destination = fixture.node(NodeKind::mrow);
+        source.attributes().set(u"data-copy", u"source");
+        source.attributes().setInherited(u"mathcolor", u"purple");
+        source.properties().tex.auto_operator = true;
+        source.properties().table.use_height = false;
+        destination.properties().tex.move_sup_sub = true;
+
+        NodeUtil::copyAttributes(source, destination);
+
+        const auto *own = destination.attributes().own(u"data-copy");
+        const auto *inherited = destination.attributes().inherited(u"mathcolor");
+        expect(own != nullptr);
+        if (own) expect(std::get<std::u16string>(*own) == u"source");
+        expect(inherited != nullptr);
+        if (inherited) expect(std::get<std::u16string>(*inherited) == u"purple");
+        expect(destination.properties().tex.auto_operator == true);
+        expect(destination.properties().table.use_height == false);
+        expect(destination.properties().tex.move_sup_sub == true);
+        destination.attributes().set(u"data-copy", u"changed");
+        const auto *sourceValue = source.attributes().own(u"data-copy");
+        expect(sourceValue != nullptr);
+        const auto *sourceText = sourceValue ? std::get_if<std::u16string>(sourceValue) : nullptr;
+        expect(sourceText && *sourceText == u"source");
+    };
+
+    "NodeUtil selects operator forms and postfix attribute fallback"_test = [] {
+        Fixture fixture;
+        auto &plus = fixture.token(NodeKind::mo, u"+");
+        const auto *infix = NodeUtil::getOp(plus, u"infix");
+        const auto *prefix = NodeUtil::getOp(plus, u"prefix");
+        expect(infix != nullptr);
+        expect(prefix != nullptr);
+        if (infix) expect(infix->left == 4.0);
+        if (prefix) expect(prefix->left == 0.0);
+
+        auto &bang = fixture.token(NodeKind::mo, u"!");
+        const auto *fence = NodeUtil::getMoAttribute(bang, u"fence");
+        expect(fence != nullptr);
+        if (fence) {
+            const auto *value = std::get_if<bool>(fence);
+            expect(value != nullptr);
+            if (value) expect(*value);
+        }
+        bang.attributes().set(u"fence", false);
+        const auto *explicitFence = NodeUtil::getMoAttribute(bang, u"fence");
+        const auto *explicitValue = explicitFence ? std::get_if<bool>(explicitFence) : nullptr;
+        expect(explicitValue && !*explicitValue);
+        bang.attributes().erase(u"fence");
+        bang.attributes().setInherited(u"fence", false);
+        const auto *inheritedFence = NodeUtil::getMoAttribute(bang, u"fence");
+        const auto *inheritedValue = inheritedFence ? std::get_if<bool>(inheritedFence) : nullptr;
+        expect(inheritedValue && !*inheritedValue);
+    };
+
+    "NodeUtil setChild updates child slot and parent links"_test = [] {
+        Fixture fixture;
+        auto &parent = fixture.node(NodeKind::msubsup);
+        auto &other = fixture.node(NodeKind::mrow);
+        auto &child = fixture.token(NodeKind::mi, u"n");
+
+        NodeUtil::setChild(parent, 2, child);
+        expect(parent.children().size() == 3_u);
+        if (parent.children().size() != 3)
+            return;
+        expect(parent.children()[0] == nullptr);
+        expect(parent.children()[1] == nullptr);
+        expect(parent.children()[2] == &child);
+        expect(child.parent() == &parent);
+
+        NodeUtil::setChild(other, 1, child);
+        expect(parent.children().size() == 2_u);
+        if (parent.children().size() != 2)
+            return;
+        expect(parent.children()[0] == nullptr);
+        expect(parent.children()[1] == nullptr);
+        expect(other.children().size() == 2_u);
+        if (other.children().size() != 2)
+            return;
+        expect(other.children()[0] == nullptr);
+        expect(other.children()[1] == &child);
+        expect(child.parent() == &other);
+    };
+
 };
