@@ -1642,3 +1642,64 @@ within-session definitions and the existing repeated-initialization contract.
 Font remap precedence belongs to FontData's existing resolver; direct glyphs
 must prevent inherited remaps from overriding Source character ownership.
 Neither issue belongs in Common row traversal or fixture special cases.
+
+### SVG merror owner and immutable values (2026-10-21 Root lock)
+
+Source has no Common Merror mixin: SvgMerror directly extends SvgWrapper.
+Port the existing legacy scene/wrappers/merror pair to svg/merror, replacing
+MerrorPlacement with SvgMerror : CommonWrapper and emitScene. Remove the old
+placement registration; do not retain two merror implementations. The original
+svg/wrapper_factory pair becomes a native thin CommonWrapperFactory subclass;
+its defaultNodes() supplies the concrete Common catalog plus SVG notation and
+merror registration/class metadata. Common must not import SVG or gain an
+merror source-text branch. Test composition consumes this SVG catalog.
+
+Scene additions are narrowly scoped owned values:
+
+- Title { std::string text; } is ordered semantic content in Primitive. It has
+  no geometry and is not a TextRun or Group; freeze copies its string. Existing
+  Group.tooltip behavior stays unchanged.
+- ElementRole::error_background identifies the Source merror rect encoding:
+  data-background, width, height, y; x is zero and omitted. Geometry is the
+  completed em rectangle {0,-d,w,h+d}; the writer does not calculate layout.
+- PaintColors { PaintColor fill, stroke; } and trailing optional
+  Paint::stylesheet preserve class-rule color declarations separately from
+  authored presentation fill/stroke. Both are owned typed values; a blue
+  authored color is not lost when the merror class declares red. SVG serializes
+  authored paint and retains Source class styles, not extra inline class-rule
+  attributes. This does not introduce a general CSS engine or a second layout.
+  Class-style cascade outside these merror declarations remains in its separate
+  profile acceptance work.
+
+SvgMerror uses standardSceneNodes once. Append background then a truthy title
+to its first own node, then call the existing addSceneChildren on the content
+parents. Preserve source own/content split, bbox, child order, scale and links.
+Attach the Source yellow/none class paint to the error background and red/red
+class paint to directly contained g children. Reuse child_groups and paint
+accessors; add read-only Builder::link(NodeId) and viewport(NodeId) value
+accessors so the owner can exclude children serialized through an outer anchor
+or as nested svg, which do not match the Source direct-g selector. Do not
+recursively repaint descendants or overwrite authored paint.
+The two Source CSS selectors and their color spellings belong only to this
+SVG owner and its class registration; derive native declarations from those
+same constants rather than scattering another palette in Common or Scene.
+
+Writer support adds only Source Title text/order and error rect encoding. Scene
+freeze must retain Title and stylesheet strings independently of request owners;
+other primitives, tooltips and paint encodings keep their accepted behavior.
+Root owns rename/retired registration/CMake/build/Git. Scene, SVG writer,
+merror/factory and Source/UT owners have disjoint files. Acceptance requires
+independent pinned MathML witnesses (normal/empty title, special-character title,
+multiple/nested children and authored color), exact SVG, class metadata,
+stylesheet-vs-authored paint, retirement, canonical75 and one full math run.
+The two Source action errors and HTML remain outstanding, not merror passes.
+
+Source observation during implementation corrects the planned Title escaping:
+pinned LiteParser.PCDATA explicitly includes title, and serializeInner joins its
+text values verbatim even for serializeXML. The observed title containing &,
+quotes and <tag> is therefore unescaped in the raw Source SVG. New Title.text
+preserves semantic text as an owned string; the SVG writer reproduces that
+specific Source title serialization rather than changing the independent
+fixture. It is not stored or interpreted as a prebuilt SVG fragment. Existing
+Group.tooltip serialization and other text escaping are not changed by this
+observation. The direct Source special-character witness is required evidence.
