@@ -162,7 +162,7 @@ class CommonWrapper : public tree::AbstractWrapper<CommonWrapper, mml::MmlNode> 
     virtual SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents);
     void placeScene(scene::Builder &, std::span<SceneNode const> nodes, double x, double y,
                     std::optional<scene::NodeId> target = {});
-    double sceneDx() const;
+    virtual double sceneDx();
 
   protected:
     virtual SceneContainers createSceneNodes(scene::Builder &,

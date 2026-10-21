@@ -749,6 +749,25 @@ Clear and disable/re-enable pass; stop join4423ms, probe total8.72s. No Release
 or GUI visual inspection is claimed. Removed draft paths no longer have ignore
 exceptions that could accidentally reintroduce them as current verification code.
 
+### CommonMrow styled inferred fast path
+
+`common-mrow-style-source.cjs` runs the pinned TeX compiler and real Source SVG
+wrappers, then observes ordinary own CSS attributes on the compiled inferred MML
+row. The unbroken row keeps dx zero; the broken control retains its styled
+line-stack translation of 1.125em. This is a programmatic MML attribute state,
+not a claim that the base TeX mmlToken command can author an inferred mrow.
+The oracle records the Source commit, profile and five TS/compiled-module hashes;
+Root's run exits0 (`common-mrow-style-source.jsonl` and `.stderr` in build/math-port).
+
+CommonMrow now owns the corresponding virtual sceneDx query without retaining
+render-state flags. Parallel4 builds pass. The new actual-factory/immutable-Scene
+test passes 1 test / 10 assertions, the existing explicit-break test 1 / 14,
+and the existing selected family Source-SVG comparison 1 / 1021
+(`retire-scene-focused-results.json`). The test reuses math's seeded inferred
+child, and its broken control includes an operand so it actually creates a line
+stack rather than the distinct embellished-operator path. Full math and worker
+verification after the pending old Scene removal remain to be run.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

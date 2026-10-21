@@ -23,6 +23,7 @@ class CommonMrow : public CommonWrapper {
     bool setChildPWidths(bool, std::optional<double> width = {}, bool clear = true) override;
     void breakToWidth(double) override;
     SceneNodes emitScene(scene::Builder &, std::span<scene::NodeId const> parents) override;
+    double sceneDx() override;
 
   protected:
     SceneContainers createSceneNodes(scene::Builder &, std::span<scene::NodeId const>) override;

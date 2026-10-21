@@ -49,9 +49,10 @@ Common and Scene family implementations. Duplicate family arithmetic has now
 been consolidated. The former scalar APIs were replaced in place by actual
 CommonMfrac/CommonMsqrt/CommonMroot classes in `95a119b1`; they now participate
 in the native factory, MML, font, BBox and recursive linebreak collaboration.
-The renderer facade and complete TeX input remain outside the active graph;
-it cannot render TeX end to end. A successful component build does not resolve
-that integration gap.
+The native Renderer now drives these families through the complete typed TeX,
+MML, Common and Scene graph and the application worker consumes its SVG output.
+The earlier component-only integration gap is closed; current acceptance and
+remaining inactive-source cleanup are recorded in HANDOFF.md.
 
 | Pinned upstream responsibility | Native owning files | Required boundary |
 |---|---|---|
@@ -715,6 +716,16 @@ and multiline rows/text. Existing 75 Common/150 byte-exact SVG/full-profile
 gates remain required. During implementation report unsupported families and
 writer gaps explicitly. After focused tests, one full math run; no D2D pixel
 gate and no Folia switch before the complete SVG gate passes.
+
+The existing `CommonWrapper::sceneDx` is a virtual native layout query.
+`CommonMrow` returns zero when an inferred row emits directly into its parents
+(stack or no line break), because Source skips that row's styled SVG shell.
+An explicit or broken inferred row retains the ordinary padding/border offset.
+This is computed from the existing row state; no output-state flag is retained.
+The pinned development oracle `common-mrow-style-source.cjs` observes own CSS
+attributes on actual compiled MML: zero for the unbroken inferred path and
+1.125em for its broken control. That programmatic MML state is not claimed as
+a naturally authored TeX case.
 
 ### Script-family Scene emission (2026-10-21 Root lock)
 

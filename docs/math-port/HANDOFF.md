@@ -4,10 +4,11 @@
 
 ## 当前状态与下一步
 
-- 无 live agent、build 或 test handles。用户已确认额度问题解除；旧 errored agents 属于历史任务，不重启旧审计。
+- 无live agent/build/test。71657 build exit0，后续仅test TU重编也通过parallel4。新mrow-origin **1/10**、原explicit break **1/14**、family Source-SVG **1/1021**，`retire-scene-focused-results.json`及对应日志。11保护文件/2binary旧hash在`scene-batch-before.json`。Luna报告均完成，Root已读。
 - 工具修正 **b38c7627**、快照版本/生成器hash **a074b59f** 已提交：保留既有生成字体 resolver/13项自测，新增隔离 File API fixtures，总55 assertions通过；Root与独立Luna复验，包括从 C:\Windows 运行。缺失/坏配置、缺生成文件、stale inputs、module map差异不会被当成权威配置；默认输出 ignored，canonical manifest须显式指定。Root最终manifest断言通过，snapshotRevision=a074b59f且generator hash匹配当前工具；HEAD标记不等于宣称dirty工作树与HEAD相同。
 - 清单已用该工具刷新，随本 checkpoint 提交。当前 `src/math` 728文件/724代码源；最新 File API index **2026-10-21T06-50-21-0412**：folia_math **560=313cpp+247ixx**，含83生成字体cpp；247模块声明与map完全一致，活跃未解析imports=0；bridge另属FoliaNativeMath；配置数学测试源157。File API只证明配置成员，mtime gate不证明全部源码未变。清单不再按文件名自动 remove/rewrite；Source注释仅索引，不是正确性或完整映射验收。
-- 下一动作：核实旧Scene首批 **placements.{ixx,cpp}+13组wrappers配对，共28文件** 的职责/断言与tracked消费者后，小批退出。旧Scene50文件可按 importer-first 分为28/10/3/2/7，不能先删foundation留下悬空imports。保留8个配置Scene源及全部Source fixtures。Core旧Context层另有消费者；`core/tree/factory_types.ixx`是活跃typed服务，只import std，不能当Context绑定删除。
+- Mrow窄差异已由Source+native聚焦收口：own CSS的unbroken inferred dx=0，broken stack局部origin=1.125；仅程序化MML状态。新Source oracle exit0，JSONL/stderr在ignored build/math-port。sceneDx改virtual非const，CommonMrow覆写fast path为0，无新状态/helper。最终测试复用math预置inferred子项；broken控制加入真实operand以避免被识别成embellished operator。早期不匹配fixture的日志保留retire-scene-mrow-style-{initial-fixture,world-control,embellished-fixture}.log，均不是通过结果。
+- 下一步：提交Mrow小修正后退出首批 **placements+13 wrappers配对=28源**；图证明无configured/外部tracked consumers。50源按28/10/3/2/7退出，保留8 active源/全部fixtures，随后一次完整math及worker验证/清单刷新。两个tracked旧Transform候选工具尚需account（scene-support-owner-review.md末节）；其dashed/dotted border断言是否缺现有active对应需Root核实，不能依据Luna泛称缺口重新立门槛。Core factory_types仍活跃。
 - ignored报告：`build/math-port/{inventory-reader-review,core-binding-retirement-review,old-scene-retirement-review,old-scene-menclose-review}.md`。Root已读。Menclose全部内置分支有Common实现与专门Source证据；动态Map/回调/对象投影语义已撤销。其他报告仅审阅材料，不等于已核实每个方法或可以自动删除。
 
 ## 已接受的实现和验收

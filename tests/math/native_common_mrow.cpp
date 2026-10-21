@@ -1,4 +1,9 @@
-// Candidate UT for the Source-mapped CommonMrow lifecycle and explicit breaks.
+// Source-mapped CommonMrow lifecycle, explicit breaks and completed origins.
+#include <cmath>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 #include "support/folia_test.hpp"
 import folia.math.output.common;
 import folia.math.core.mml_tree.mml_nodes.math;
@@ -9,6 +14,7 @@ namespace {
 using namespace boost::ut;
 namespace mml = folia::math::mml;
 namespace common = folia::math::output::common;
+namespace scene = folia::math::output::scene;
 
 struct RejectUnexpectedMeasurement final : common::MeasurementTarget {
     common::ExtendedMetrics measureMetrics(common::MetricRequest const &) override {
@@ -66,6 +72,16 @@ common::FontRepository makeRepository() {
     common::FontVariant normal;
     normal.name = "normal";
     normal.cache_id = "row-cache";
+    scene::PathGeometry plusOutline;
+    plusOutline.segments = {scene::MoveTo{{0, 0}}, scene::LineTo{{.5, .5}},
+                            scene::LineTo{{0, .5}}, scene::ClosePath{}};
+    common::FontGlyph plusGlyph;
+    plusGlyph.metrics = {.7, .2, .5};
+    plusGlyph.path_defined = true;
+    plusGlyph.resource = scene::GlyphResource::make(
+        "row-fixture", scene::GlyphOutline{std::move(plusOutline)});
+    normal.glyphs.emplace(0x78, plusGlyph);
+    normal.glyphs.emplace(0x2B, std::move(plusGlyph));
     face.variants.emplace("normal", std::move(normal));
     builder.addFace(std::move(face));
     return std::move(builder).freeze();
@@ -162,5 +178,94 @@ suite native_common_mrow = [] {
         }
         // Width-driven line creation is witnessed separately. The supplied
         // line boxes isolate repeated indentation of an existing broken row.
+    };
+};
+
+namespace {
+struct RowSceneOrigins {
+    std::vector<double> spaces;
+    std::vector<double> line_stacks;
+};
+
+void collectWorldOrigins(scene::Group const &group, scene::Affine parent,
+                         RowSceneOrigins &origins) {
+    const auto world = scene::compose(parent, group.transform.matrix());
+    if (group.metadata.source_tag == "mspace")
+        origins.spaces.push_back(world.e);
+    for (auto const &attribute : group.metadata.ordered_attributes)
+        if (attribute.name == "data-mjx-linestack" && attribute.value == "true")
+            origins.line_stacks.push_back(group.transform.matrix().e);
+    for (auto const &entry : group.entries) {
+        if (const auto *child = std::get_if<std::shared_ptr<scene::Group const>>(&entry))
+            collectWorldOrigins(**child, world, origins);
+    }
+}
+
+RowSceneOrigins mspaceWorldOrigins(bool inferred, bool broken = false) {
+    auto fonts = makeRepository();
+    RejectUnexpectedMeasurement measurement;
+    mml::MmlDocument document;
+    auto &math = document.factory().make(mml::NodeKind::math);
+    auto &row = inferred ? *math.children().front()
+                         : document.factory().make(mml::NodeKind::mrow);
+    if (!inferred)
+        math.appendChild(row);
+    row.attributes().set(u"style", u"padding-left: 1em; border-left: .125em solid red");
+    auto &space = document.factory().make(mml::NodeKind::mspace);
+    space.attributes().set(u"width", u"1em");
+    row.appendChild(space);
+    if (broken) {
+        // A real operand prevents this row becoming an embellished operator;
+        // that separate Source protocol delegates its break to an outer owner.
+        auto &operand = document.factory().make(mml::NodeKind::mi);
+        operand.attributes().set(u"mathvariant", u"normal");
+        auto &text = dynamic_cast<mml::TextNode &>(document.factory().make(mml::NodeKind::text));
+        text.setText(u"x");
+        operand.appendChild(text);
+        row.appendChild(operand);
+        (void)appendMo(document, row, u"+", true);
+        auto &secondSpace = document.factory().make(mml::NodeKind::mspace);
+        secondSpace.attributes().set(u"width", u"1em");
+        row.appendChild(secondSpace);
+    }
+    document.setRoot(math);
+    math.setInheritedAttributes();
+    expect(math.children().size() == 1_u);
+
+    common::CommonOptions options;
+    common::ExtendedMetrics metrics;
+    common::CommonOutputJax jax(document, {metrics, options, fonts, "row-fixture"}, measurement,
+                                common::CommonWrapperFactory::standardNodes(), &makeLinebreaks);
+    auto &root = jax.factory().wrap(math);
+    (void)root.getBBox();
+    auto completed = jax.buildScene(root);
+    RowSceneOrigins origins;
+    collectWorldOrigins(completed.root(), {}, origins);
+    return origins;
+}
+} // namespace
+
+suite common_mrow_scene_origins = [] {
+    "styled_inferred_mrow_scene_origin_matches_source_zero_dx"_test = [] {
+        const auto inferred = mspaceWorldOrigins(true);
+        const auto explicitRow = mspaceWorldOrigins(false);
+        const auto brokenInferred = mspaceWorldOrigins(true, true);
+        expect(inferred.spaces.size() == 1_u);
+        expect(explicitRow.spaces.size() == 1_u);
+        if (inferred.spaces.size() != 1 || explicitRow.spaces.size() != 1)
+            return;
+        // tools/math-port/common-mrow-style-source.cjs observes real pinned Source.
+        // Source getSvgNodes omits standard nodes/styles for an unbroken
+        // inferred row, leaving its child origin at zero. An explicit mrow
+        // keeps the own style and contributes 1em padding + .125em border.
+        expect(std::abs(inferred.spaces.front()) < 1e-12);
+        expect(std::abs(explicitRow.spaces.front() - 1.125) < 1e-12);
+        expect(brokenInferred.spaces.size() == 2_u);
+        expect(brokenInferred.line_stacks.size() == 1_u);
+        // The Source control observes the styled stack's local translation;
+        // line indentation and frame extraction determine each child's world origin.
+        if (brokenInferred.line_stacks.size() == 1)
+            expect(std::abs(brokenInferred.line_stacks.front() - 1.125) < 1e-12)
+                << "broken inferred rows retain the styled line-stack origin";
     };
 };
