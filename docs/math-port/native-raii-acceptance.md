@@ -1071,6 +1071,31 @@ cpp/ixx, 561 configured sources, 248 exact interfaces and zero unresolved active
 imports. Evidence: mml-request-retirement-check.json / mml-request-final-check.json.
 No additional runtime, full math/font, worker, Release or GUI run is claimed.
 
+### MML factory consumer copy coverage (2026-10-21)
+
+The allocator, factory-field and node-field consumers were reviewed by test,
+with the long factory-field consumer split at a complete test boundary. The
+values/shared-module/token-walk consumers and the methods draft were reviewed
+separately. Context descriptor/getter/prototype/identity/iterator traces are
+withdrawn protocols; actual MML attributes, token text, row/core, tree operations,
+copy and Scene lifetime remain with their existing typed owners.
+
+One real gap was retained in the existing mml_native_factory.cpp: virtual copy
+unwraps a sole inferred row, copies a token with a real TextNode child and its
+own attributes, leaves independent attributes, and leaves source links/content
+unchanged. Root corrected the candidate's initial direct text-on-mi setup to
+the proper TextNode-child representation before promotion. No production
+implementation or module responsibility changed.
+
+Parallel4 build mml-copy-consumer-build.log exits0. Eleven bounded focused tests
+pass **11 tests / 1989 assertions**, including the new copy case (25 assertions),
+existing constructor/negative arity/inferred-row conversion, virtual versus
+exact clone, parent links, row core, all 43 Source default tables, token walk
+and full pinned Source SVG (mml-copy-consumer-focused-results.json).
+mml-copy-consumer-check.json records verified test/binary hashes. The six
+protected paths and all 478 active math source bytes remain unchanged.
+No new full math/font comparison, worker, Release or GUI run is claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

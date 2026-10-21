@@ -144,6 +144,64 @@ suite math_native_mml_factory = [] {
         expect(fraction.children()[1] == &denominator);
     };
 
+    "copy_unwraps_single_inferred_child_and_copies_native_attributes"_test = [] {
+        mml::MmlDocument document;
+        auto& source = document.make(mml::NodeKind::mrow);
+        source.attributes().set(u"data-copy", std::u16string(u"source"));
+        auto& inferred = document.make(mml::NodeKind::inferred_mrow);
+        auto& identifier = document.make(mml::NodeKind::mi);
+        identifier.attributes().set(u"mathvariant", std::u16string(u"bold"));
+        auto& text = document.make(mml::NodeKind::text);
+        text.setText(u"x");
+        document.append(identifier, text);
+        document.append(inferred, identifier);
+        document.append(source, inferred);
+
+        auto& copied = source.copy();
+        expect(copied.kind() == mml::NodeKind::mrow);
+        expect(&copied != &source);
+        const auto* copiedRootAttribute = copied.attributes().own(u"data-copy");
+        expect(copiedRootAttribute != nullptr);
+        if (copiedRootAttribute)
+            expect(std::get<std::u16string>(*copiedRootAttribute) == u"source");
+        expect(copied.children().size() == 1u);
+        auto* copiedIdentifier = copied.children().empty() ? nullptr : copied.children()[0];
+        expect(copiedIdentifier != nullptr);
+        if (copiedIdentifier) {
+            expect(copiedIdentifier->kind() == mml::NodeKind::mi);
+            expect(copiedIdentifier != &identifier);
+            expect(copiedIdentifier->children().size() == 1u);
+            auto* copiedText = copiedIdentifier->children().empty()
+                                   ? nullptr
+                                   : copiedIdentifier->children()[0];
+            expect(copiedText != nullptr);
+            if (copiedText) {
+                expect(copiedText->kind() == mml::NodeKind::text);
+                expect(copiedText != &text);
+                auto* copiedTextNode = dynamic_cast<mml::TextNode*>(copiedText);
+                expect(copiedTextNode != nullptr);
+                if (copiedTextNode)
+                    expect(copiedTextNode->getText() == u"x");
+            }
+            const auto* copiedVariant = copiedIdentifier->attributes().own(u"mathvariant");
+            expect(copiedVariant != nullptr);
+            if (copiedVariant)
+                expect(std::get<std::u16string>(*copiedVariant) == u"bold");
+            copiedIdentifier->attributes().set(u"mathvariant", std::u16string(u"italic"));
+            const auto* sourceVariant = identifier.attributes().own(u"mathvariant");
+            expect(sourceVariant != nullptr);
+            if (sourceVariant)
+                expect(std::get<std::u16string>(*sourceVariant) == u"bold");
+        }
+        expect(source.children().size() == 1u);
+        expect(source.children()[0] == &inferred);
+        expect(inferred.children().size() == 1u);
+        expect(inferred.children()[0] == &identifier);
+        expect(identifier.children().size() == 1u);
+        expect(identifier.children()[0] == &text);
+        expect(text.parent() == &identifier);
+    };
+
     "invalid_factory_arguments_leave_existing_tree_unchanged"_test = [] {
         mml::MmlDocument first;
         mml::MmlDocument second;
