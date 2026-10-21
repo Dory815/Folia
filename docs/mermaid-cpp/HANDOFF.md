@@ -3,25 +3,28 @@
 ## Current checkpoint — 2026-10-21
 
 - PR #3: https://github.com/zhao0349/Folia/pull/3 (draft).
-- Pushed batches: 1b830273 real-font probe; 61d146b9 shared XML encoder and
-  CMake base fix; 7f01112c Pie SVG + 80 official DOM cases; 60e2125c Windows
-  NOMINMAX fix. Native font/SVG validation is still pending.
-- Local Edge measured 60 cases successfully outside the sandbox (sandbox
-  launch exited 0xc0000005). Node Pie SVG oracle 80 and Packet SVG oracle 55
-  pass. These do not establish native C++ correctness.
-- CI 39547025762 compiled and passed native tests in Debug/Release, but SVG
-  comparison exposed commonDb title sanitization vs raw renderer input. The
-  oracle now supplies identical raw titles at the family boundary. Downloaded
-  Release native tests pass 330 focused assertions; 78 finite SVG DOMs match
-  official output, and 2 non-finite empty-left cases are explicitly rejected.
-  Local DirectWrite advance vs browser bounds differs by up to 2.14892578125.
-- The next committed batch tightens the DirectWrite layout box before reading
-  ink overhangs, records union bounds, and reuses the root platform target.
-  No live local process or agent. Files are in src/platform/text and
-  tools/mermaid-cpp; build/mermaid-cpp contains the ignored local probe output.
-- Next action: inspect native/browser evidence from CI, establish an explicit
-  measurement error bound, wire measured widths to Pie, then validate and merge
-  PR #3. Advance alone is NOT accepted as SVG bounds.
+- 89b09c47 passes Debug/Release CI 39547466588: native regressions, 78 finite
+  Pie SVG DOM comparisons and 2 explicit non-finite rejections, real browser
+  and DirectWrite probes. Earlier compile/config and oracle-phase failures
+  are fixed in separate small commits; do not reopen without new evidence.
+- Native release tests downloaded to build/mermaid-cpp/tests-60 also passed
+  330 focused Pie SVG assertions and the corrected official DOM comparison.
+- Local real-font corpus expanded to 96 cases: Arial, Segoe UI, Times New Roman
+  at 17/25 SVG units, Unicode, whitespace, NBSP, bidi and long title strings.
+  Browser transport now preserves input text exactly (percent-encoded JSON).
+  Native advance maximum error 0.03076171875; bounds error 2.14892578125.
+  Regression ceilings are 0.0625 / 2.5 for this corpus ONLY. Native outline
+  bounds are not pixel-identical to Chromium hinted bounds; no compensation
+  or character-count fallback. System glyph fallback remains OS-dependent.
+- New batch wires the same resolved font/theme to measured Pie SVG, adds
+  platform tests and enforces the comparison ceilings in CI. No application
+  renderer switch. Root build reuses its existing platform module target.
+- No live local process or agent. build/mermaid-cpp holds isolated browser
+  profile, downloaded CI executables, native SVGs and measurement evidence.
+- Next action: push/verify the measured-Pie bridge batch, inspect its output,
+  review final diff, then merge PR #3 preserving small commits. Full shared
+  preprocessing/themes, other families and application replacement remain out
+  of this stage; no upstream PR yet.
 
 ## Established scope and historical stage results
 

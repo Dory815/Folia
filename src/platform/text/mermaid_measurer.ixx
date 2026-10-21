@@ -18,6 +18,9 @@ struct MermaidFont {
 struct MermaidTextMetrics {
     double advance{};
     double ink_width{};
+    // Union of the advance interval with native glyph ink bounds, not
+    // Chromium's raster-hinted SVG bounding box. See compare-text-probe.mjs
+    // for measured corpus-specific error ceilings; no per-string correction.
     double bounds_width{};
 };
 

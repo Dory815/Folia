@@ -12,7 +12,8 @@ mkdirSync(directory, { recursive: true });
 const cases = [];
 for (const family of ['Arial', 'Segoe UI', 'Times New Roman']) {
   for (const size of [17, 25]) {
-    for (const text of ['', 'Mermaid', 'AV fi ffi', '  A   B  ', 'A\tB\nC', 'Cafe\u0301', '\u4e2d\u6587', '\u{1f600}', '\u0645\u0631\u062d\u0628\u0627', 'italic fj']) {
+    for (const text of ['', 'Mermaid', 'AV fi ffi', '  A   B  ', 'A\tB\nC', 'Cafe\u0301', '\u4e2d\u6587', '\u{1f600}', '\u0645\u0631\u062d\u0628\u0627', 'italic fj',
+      'Long title '.repeat(30), 'A\r\nB', 'A\u00a0 B', 'abc \u0645\u0631\u062d\u0628\u0627 123', '  \t\r\n  ', 'A & B < C > D']) {
       cases.push({ family, size, text });
     }
   }
@@ -31,7 +32,8 @@ const result=cases.map(item=>{
  text.remove();
  return {...item,width,advance};
 });
-document.body.innerHTML='<pre id="result">'+JSON.stringify(result)+'</pre>';
+document.body.replaceChildren(Object.assign(document.createElement('pre'),
+ {id:'result',textContent:encodeURIComponent(JSON.stringify(result))}));
 </script>`;
 const file = resolve(directory, 'browser-text-probe.html');
 writeFileSync(file, html);
@@ -41,8 +43,10 @@ const run = spawnSync(browser, ['--headless', '--disable-gpu', '--no-first-run',
 assert.equal(run.status, 0, run.error?.message ?? run.stderr);
 const match = run.stdout.match(/<pre id="result">(.*?)<\/pre>/s);
 assert(match, `Browser did not return measurements: ${run.stderr}`);
-const rows = JSON.parse(match[1]);
+const rows = JSON.parse(decodeURIComponent(match[1]));
 assert.equal(rows.length, cases.length);
+assert.deepEqual(rows.map(({family,size,text})=>({family,size,text})),cases,
+  'Browser transport changed a measured display string');
 const hex = text => Array.from({length:text.length},(_,i)=>text.charCodeAt(i).toString(16).padStart(4,'0')).join('') || '-';
 writeFileSync(resolve(directory, 'browser-text.tsv'), rows.map(row =>
   [row.family,row.size,hex(row.text),row.width,row.advance].join('\t')).join('\n')+'\n');
