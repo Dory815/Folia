@@ -1,6 +1,25 @@
 # Mermaid C++ continuity
 
-## Current checkpoint — 2026-10-21
+## Current checkpoint - 2026-10-21, stage 4b in progress
+
+- Branch codex/mermaid-cpp-frontmatter; clean starting base was 90b1f4cd.
+  Fork master verified at merged stage 4a, 4ec7eea49d260656f737672d87df905be6da4da2.
+- First batch adds 315 original extractFrontMatter runtime observations using
+  js-yaml 4.3.0, matching the pinned upstream lockfile. Local write/check pass.
+  Source hashes and the oracle are wired into Windows CI. No native YAML claim yet.
+- Native boundary selected: pinned yaml-cpp 0.9.0 event parser at
+  56e3bb550c91fd7005566f19c079cb7a503223cf, with a separate js-yaml JSON_SCHEMA
+  resolver and owned UTF-16 config tree. No yaml-cpp default scalar conversions.
+  Depth/size/alias expansion limits and cyclic aliases must fail explicitly.
+- Next: implement typed YAML/config values and frontmatter extraction, consume
+  the oracle in native tests, then run Debug/Release CI and review a stage PR.
+  Directive interpretation, config precedence and themes remain subsequent work;
+  do not wire shared preprocessing to family renderers before those are ready.
+- No live agent/build handles. Reference yaml-cpp checkout is ignored at
+  .reference/yaml-cpp. Local MSVC is still unavailable; native verification uses CI.
+  No application switch or upstream PR.
+
+## Stage 4a checkpoint (historical; superseded above) — 2026-10-21
 
 - Stage 4a is merged: https://github.com/zhao0349/Folia/pull/4, merge commit
   4ec7eea49d260656f737672d87df905be6da4da2 on fork master. Four commits
@@ -192,3 +211,4 @@ oracle passing is distinct from native C++ tests passing.
   Negative coordinates in an empty diagram can be legitimate.
 - Number formatting must use JavaScript shortest significant digits; exact
   fixed integer formatting differs for values above the safe integer range.
+
