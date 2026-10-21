@@ -118,6 +118,46 @@ suite native_mml_base = [] {
         expect(sourceInferred.children().empty());
         expect(first.parent() == &arbitrary && second.parent() == &arbitrary);
     };
+    "mml_base_tex_spacing_complete_class_matrix_and_script_suppression"_test = [] {
+        constexpr std::array<m::TexClass, 8> classes{
+            m::TexClass::ord, m::TexClass::op, m::TexClass::bin, m::TexClass::rel,
+            m::TexClass::open, m::TexClass::close, m::TexClass::punct, m::TexClass::inner};
+        constexpr std::array<std::array<int, 8>, 8> spacing{{
+            {{0, -1, 2, 3, 0, 0, 0, 1}}, {{-1, -1, 0, 3, 0, 0, 0, 1}},
+            {{2, 2, 0, 0, 2, 0, 0, 2}}, {{3, 3, 0, 0, 3, 0, 0, 3}},
+            {{0, 0, 0, 0, 0, 0, 0, 0}}, {{0, -1, 2, 3, 0, 0, 0, 1}},
+            {{1, 1, 0, 1, 1, 1, 1, 1}}, {{1, -1, 2, 3, 1, 0, 1, 1}}}};
+        constexpr std::array<std::string_view, 4> lengths{
+            "", "thinmathspace", "mediummathspace", "thickmathspace"};
+        for (std::size_t previous = 0; previous < classes.size(); ++previous) {
+            for (std::size_t currentClass = 0; currentClass < classes.size(); ++currentClass) {
+                m::MmlDocument document;
+                auto &current = document.factory().make(m::NodeKind::mo);
+                current.setPrevClass(classes[previous]);
+                current.setTexClass(classes[currentClass]);
+                current.attributes().set(u"scriptlevel", 0.0);
+                const int cell = spacing[previous][currentClass];
+                expect(current.texSpacing() == lengths[static_cast<std::size_t>(std::abs(cell))]);
+
+                current.setPrevLevel(1.0);
+                expect(current.texSpacing() == (cell < 0
+                    ? lengths[static_cast<std::size_t>(std::abs(cell))] : std::string_view{}));
+                current.setPrevLevel(0.0);
+                current.attributes().set(u"scriptlevel", 1.0);
+                expect(current.texSpacing() == (cell < 0
+                    ? lengths[static_cast<std::size_t>(std::abs(cell))] : std::string_view{}));
+            }
+        }
+        m::MmlDocument document;
+        auto &none = document.factory().make(m::NodeKind::mo);
+        none.setPrevClass(m::TexClass::none);
+        none.setTexClass(m::TexClass::rel);
+        expect(none.texSpacing().empty());
+        none.setPrevClass(m::TexClass::ord);
+        none.setTexClass(m::TexClass::none);
+        expect(none.texSpacing().empty());
+    };
+
     "mml_base_variant_validation_preserves_source_truthiness_and_value_text"_test = [] {
         m::MmlDocument document;
         auto &row = document.factory().make(m::NodeKind::mrow);
@@ -164,6 +204,37 @@ suite native_mml_base = [] {
         auto &booleanLevel = document.factory().make(m::NodeKind::mi, std::move(boolean));
         current.setTeXclass(&booleanLevel);
         expect(current.prevLevel() == 1.0) << "boolean values retain numeric conversion semantics";
+    };
+    "mml_base_mathvariant_error_replacement_is_stable_on_reverification"_test = [] {
+        m::MmlDocument document;
+        auto &row = document.factory().make(m::NodeKind::mrow);
+        m::AttributeSet invalidAttributes;
+        invalidAttributes.set(u"mathvariant", 5.0);
+        auto &invalid = document.factory().make(m::NodeKind::mi, std::move(invalidAttributes));
+        row.appendChild(invalid);
+
+        m::VerifyOptions options;
+        options.checkArity = false;
+        options.checkAttributes = false;
+        options.checkMathvariants = true;
+        invalid.verifyTree(options);
+        expect(row.children().size() == 1_u);
+        if (row.children().size() != 1)
+            return;
+        auto *error = row.children().front();
+        expect(error != &invalid);
+        expect(error->kind() == m::NodeKind::merror);
+        expect(error->parent() == &row);
+        expect(invalid.parent() == nullptr);
+        expect(error->attributes().own(u"data-mjx-message") != nullptr);
+
+        row.verifyTree(options);
+        expect(row.children().size() == 1_u);
+        if (row.children().size() != 1)
+            return;
+        expect(row.children().front() == error)
+            << "reverification keeps the repaired error subtree stable";
+        expect(error->parent() == &row);
     };
 };
 } // namespace
