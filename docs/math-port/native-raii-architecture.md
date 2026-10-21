@@ -2058,3 +2058,78 @@ mismatch and stay in its responsible original method. Acceptance includes
 independent Source default/write/no-op, final native layout/SVG in both modes
 before/after request retirement, unchanged existing table regression evidence,
 default86/canonical75 and full math. All builds remain single and parallel4.
+
+### 2026-10-21 Root lock: canonical hosted none/local witnesses
+
+Keep strict common_scene.inc, its 75 outcomes and default86 behavior. Hosted
+Source is additional evidence, using the same canonical18+profile57 input
+objects in exactly their existing order. Do not copy/shorten/reorder the corpus
+or replace the two strict Lite event-API errors with fabricated expected SVG.
+
+Source input owner extracts only the canonical75 definitions/default mapping
+from common-scene-source.cjs into tools/math-port/common-scene-cases.cjs,
+exporting canonicalSceneCases(profileCases). The strict generator imports it;
+all appended witnesses, capture semantics, scope/dependency checks and default
+fixture output stay unchanged. Prove strict default bytecheck/hash unchanged.
+This file replaces the existing input table and has two real Source consumers.
+
+Source-mode owner creates tools/math-port/source-canonical-scene-modes.cjs and
+tests/math/fixtures/canonical_scene_modes_source.hpp. Parent generation runs
+none/local in separate bounded child Node processes, each with heap512 MB,
+cwd C:/Windows and one createReference. Each child evaluates canonical75 once
+in order with one persistent input jax, original metrics/display/tagSide and
+full38/NewCM configuration. Set fontCache once for that process; keep localID
+default null and observe actual useLocalID prefixes, including nested calls.
+Do not add a per-case cache reset: pinned Svg.typesetSvg already clears local
+cache, calls useLocalID, emits and then clearLocalID. Keep failures explicit.
+
+Reuse the accepted Source14 passive host behavior: the actual Lite receiver
+registers its actual callback on a real EventTarget; retain receiver, target
+and callback through full serialization, verify listener registration leaves
+the receiver's serialization unchanged, then unregister. No dispatch or
+replacement SVG/DOM behavior. This is Source host support only, never native
+production event logic. Capture actual MathItem.display, initialAllowTexHTML
+(the existing precedence), final root.getOuterBBox w/h/d after processMath,
+complete SVG, errors, listener shape/DOM invariance and ordered cache prefixes.
+Preserve raw diagnostics and input/session/provenance hashes in ignored JSON.
+
+Fixture contract: CanonicalSceneMetrics {double width,height,depth};
+CanonicalSceneMode {bool display,initial_allow_tex_html; CanonicalSceneMetrics
+metrics; string_view error_name,error_message,svg;
+span<string_view const> local_cache_prefixes; size_t listener_count;
+bool listener_dom_unchanged;}; CanonicalSceneCase
+{string_view name,tex,tag_side; bool requested_display; double em,ex,width;
+array<CanonicalSceneMode,2> modes;}; modes[0]=none, modes[1]=local.
+constexpr sourceCanonicalSceneCases[] has exactly75 records. Named static
+arrays back every span; split raw strings below compiler literal limits.
+
+Native helper owner extracts the existing InputOwner, Lite text measurement,
+configuration/measurement services, NativeOutput and buildScene into test-only
+support/tex_scene.hpp. Keep its registration order, package list, metrics,
+request document, compile services and persistent/transient session semantics.
+Use namespace tex_scene_test and TexSceneInput {string_view tex; bool display;
+double em,ex,width; string_view tag_side;}. Header definitions are inline.
+common_scene.cpp maps CommonSceneCase fields into this input through one thin
+test adapter and keeps its strict/default selection, serialization, diagnostics
+and stats. Do not duplicate a TeX pipeline or expand the large test body with
+the hosted evaluator. All production files remain outside this extraction.
+
+Native hosted owner creates tests/math/native_canonical_scene_source.cpp,
+consuming that same helper and the new independent fixture. Use two fresh
+InputOwners and persistent TeX sessions, one per cache mode; one document per
+input. For each case compare completed Scene.metrics with Source outer w/h/d,
+write with the actual mode/prefix list and compare full bytes after request
+destruction. Count 75 layout pairs and150 SVG comparisons, with per-case first
+byte diagnostics; require unique ordered inputs, zero Source/native errors and
+all required listener invariance. Do not infer IDs, source measurements, actual
+display or SVG bytes from native outcomes. Unknown-text measurement continues
+through the existing real Lite adaptor, not a fixture-specific replacement.
+
+Owners: common_base_emission owns shared JS inputs/strict generator refactor;
+common_scene_source_tests owns hosted Source driver/fixture; common_rows_emission
+owns test helper extraction/common_scene.cpp; common_scene_entry owns hosted UT.
+Root owns CMake, review, builds/native runs, mismatch triage, commits/checkpoint.
+Freeze all owners before one parallel4 build. Acceptance: strict Source unchanged
+default/hash; hosted default/write/no-op, independent two-process Source150;
+native75 layout pairs/150 SVG bytes; default86 and strict75 unchanged; full math.
+This proves no browser dispatch, request192 lifetime run or Folia integration.
