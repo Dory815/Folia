@@ -7,6 +7,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const cp = require('node:child_process');
 
 function discoverRoot(start=__dirname) {
   let candidate=path.resolve(start);
@@ -577,9 +578,12 @@ const tests = {
     {category:'single-target',rule:'Root replaces the current folia_math source graph once with the reviewed graph. Retire old target inputs and tests as batches; add no adapter, alternate target, native2 option, or legacy fallback.'}
   ]
 };
-const revision = null;
+let revision = null;
+try { revision = cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim(); } catch {}
+const generator = {path:norm(path.relative(root,__filename)),sha256:sha(fs.readFileSync(__filename)),
+  revisionNote:'Revision identifies HEAD only; file hashes describe the observed working tree, which may contain uncommitted changes.'};
 const report = {
-  schema:'folia.math.native-raii.inventory.v1',generatedAt:new Date().toISOString(),root:'.',baseRevision:revision,
+  schema:'folia.math.native-raii.inventory.v1',generatedAt:new Date().toISOString(),root:'.',baseRevision:revision,generator,
   scope:{allSrcMathFiles:textFiles.length,codeSources:sourceFiles.length,moduleUnits:sourceFiles.filter(p=>p.endsWith('.ixx')).length,
     implementationUnits:sourceFiles.filter(p=>p.endsWith('.cpp')).length,otherSourceFiles:sourceFiles.filter(p=>! /\.(ixx|cpp)$/.test(p)).length,
     currentCMakeLiteralFoliaMathReferences:mathRefs.size,existingCMakeDirectFoliaMathFiles:existingMathRefs.length,
@@ -633,7 +637,7 @@ const report = {
   sourceProvenanceGate:{status:'note-index-only',indexedSourceFiles:indexedSourceFiles.length,totalSourceFiles:sourceFiles.length,unindexedSourceFiles:files.filter(f=>sourceFiles.includes(f.path)&&f.sourceAnnotationIndexStatus==='no-exact-note-index-entry').map(f=>f.path),
     limitation:'No completeness or algorithm-equivalence claim; this is not an acceptance gate.'}
 };
-const compact={schema:'folia.math.native-raii.decision-manifest.v1',snapshotRevision:revision,
+const compact={schema:'folia.math.native-raii.decision-manifest.v1',snapshotRevision:revision,generator,
   scope:report.scope,limitations:[...report.limitations,'The inventory reader did not configure or build; it reads existing File API and module-map replies.'],sourceProvenanceGate:{...report.sourceProvenanceGate,unindexedSourceFiles:undefined},
   cmakeModuleMapEvidence:cmakeModuleMap,interfaceMapCheck,generatedSourceUnits:generatedSourceRows,
   configuredCodemodel:report.graph.configuredCodemodel,
