@@ -137,12 +137,10 @@ std::vector<NodeRef> MoPlacement::build(common::CommonWrapper& base,Builder& bui
         }
     }
 
-    // Cache ownership remains in SvgOutputJax::FontCache. The placement only
-    // asks that owner for an ID; it never keeps a competing glyph cache.
     const auto cache=wrapper->jax().optionsContext().get(wrapper->jax().options,options::Key(u"fontCache"));
     const auto* cacheName=std::get_if<std::u16string>(&cache.data);
-    if(!cacheName||(*cacheName!=u"none"&&*cacheName!=u"local"))
-        throw options::Exception("Unimplemented",u"SVG global fontCache requires the document-level cache owner");
+    if(!cacheName||*cacheName!=u"none")
+        throw options::Exception("Unimplemented",u"SVG font caches require the completed Scene writer");
 
     if(stretchy&&wrapper->size&&*wrapper->size<0){
         stretchAssembly(*wrapper,builder,placements,roots);

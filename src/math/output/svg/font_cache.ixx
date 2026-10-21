@@ -1,24 +1,32 @@
 /*************************************************************
- * MathJax 4.1.3 output/svg/FontCache.ts scene-backed cache owner.
+ * Read-only generation-order plan for MathJax SVG local glyph caches.
  *************************************************************/
 export module folia.math.output.svg.font_cache;
 export import folia.math.output.scene;
 import std;
 
 export namespace folia::math::output::svg {
-class FontCache {
-    std::unordered_map<std::string,std::string> cache_;
-    std::u16string localID_;
-    std::uint64_t nextID_=0;
-    folia::math::output::scene::NodeRef defs_;
-public:
-    folia::math::output::scene::NodeRef clearCache(folia::math::output::scene::Builder&);
-    folia::math::output::scene::NodeRef getCache()const{return defs_;}
-    void clearLocalID(){localID_.clear();}
-    void useLocalID(const folia::math::Property& id=folia::math::Property(folia::math::PropertyNull{}));
-    std::string cachePath(std::string_view variant,std::string_view cacheID,
-                          std::string_view code,std::string path,
-                          folia::math::output::scene::Builder&);
-    std::size_t size()const noexcept{return cache_.size();}
+using CacheScopeId = std::size_t;
+
+struct CacheDefinition {
+    std::string id;
+    scene::Glyph const *glyph{};
 };
-}
+
+struct CacheScope {
+    std::vector<CacheDefinition> definitions;
+    std::unordered_map<scene::Glyph const *, std::string> references;
+    std::unordered_map<scene::ActionRegion const *, CacheScopeId> tooltips;
+};
+
+class FontCachePlan final {
+    // Glyph and ActionRegion pointers borrow from the input Scene. Keep this
+    // plan shorter-lived than that Scene; do not retain it in a session.
+    std::vector<CacheScope> scopes_;
+
+  public:
+    FontCachePlan(scene::Scene const &, std::span<std::string const> prefixes);
+    [[nodiscard]] static std::size_t scopeCount(scene::Scene const &);
+    [[nodiscard]] CacheScope const &scope(CacheScopeId) const;
+};
+} // namespace folia::math::output::svg

@@ -4,7 +4,6 @@
 export module folia.math.output.svg.output_jax;
 export import folia.math.output.common;
 export import folia.math.output.svg.serializer;
-export import folia.math.output.svg.font_cache;
 export import folia.math.output.scene;
 import folia.math.output.svg.menclose_surface;
 import folia.math.output.svg.scene_context_nodes;
@@ -23,7 +22,6 @@ public:
         std::shared_ptr<const scene::Scene>,DOMNodeRef)>;
 private:
     scene::WrapperFactory placements_;
-    std::unique_ptr<FontCache> fontCache_;
     ContextPropertyBindings* propertyBindings_=nullptr;
     std::shared_ptr<scene::Scene> completedScene_;
     DOMNodeRef svgStyles_;
@@ -76,10 +74,6 @@ public:
     TextMeasurementProvider exchangeTextMeasurementProvider(TextMeasurementProvider provider){
         return std::exchange(textMeasurementProvider_,std::move(provider));
     }
-    FontCache& fontCache();
-    void initialize()override;
-    void reset(FunctionArgs args={})override;
-    void clearFontCache();
     core::MathOutput escaped(core::MathItem&,core::MathDocumentReference)override;
     core::MathOutput styleSheet(core::MathDocumentReference)override;
     core::MathOutput pageElements(core::MathDocumentReference)override;

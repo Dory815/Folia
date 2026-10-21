@@ -113,20 +113,12 @@ GlyphResult emitGlyph(common::CommonWrapper& wrapper,Builder& builder,WrapperFac
         std::string path;
         if(truthy(rawPath))path="M"+property_host::debugText(property_host::string(rawPath))+"Z";
         const auto outline=decodeGlyphOutline(path);
-        NodeRef node;
-        auto* mo=dynamic_cast<common::CommonMo*>(&wrapper);
-        const auto cached=mo?placements.cacheGlyph(*mo,codepoint,variant,path,builder):std::nullopt;
-        if(cached){
-            node=builder.node(u"use",PropertyList{{"data-c",Property(hexCode(codepoint))}});
-            node->geometry=UseGeometry{"#"+*cached,0,0,placements.useXlink()};
-        }else{
-            // Source pathNode passes both fields to svg() at creation.
-            node=builder.node(u"path",PropertyList{{"data-c",Property(hexCode(codepoint))},
-                {"d",Property(path)}});
-            node->attributes.erase("d");
-            node->geometry=PathGeometry{outline};
-            builder.retain(outline);
-        }
+        // Font cache projection belongs to the completed Scene writer.
+        auto node=builder.node(u"path",PropertyList{{"data-c",Property(hexCode(codepoint))},
+            {"d",Property(path)}});
+        node->attributes.erase("d");
+        node->geometry=PathGeometry{outline};
+        builder.retain(outline);
         node->semantic=GlyphPrimitive{codepoint,std::string(variant),wrapper.font->CLASS().NAME,outline};
         node->attributes.set("data-c",Property(hexCode(codepoint)));
         builder.append(parent,node);

@@ -290,6 +290,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/scene/scene.ixx
     src/math/output/scene/builder.ixx
     src/math/output/svg/writer.ixx
+    src/math/output/svg/font_cache.ixx
     src/math/output/svg/menclose_notations.ixx
     src/math/output/svg/merror.ixx
     src/math/output/svg/maction.ixx
@@ -444,6 +445,7 @@ target_sources(folia_math PRIVATE
     src/math/output/scene/builder.cpp
     src/math/output/scene/html_snapshot.cpp
     src/math/output/svg/writer.cpp
+    src/math/output/svg/font_cache.cpp
     src/math/output/svg/menclose_notations.cpp
     src/math/output/svg/merror.cpp
     src/math/output/svg/maction.cpp
@@ -663,6 +665,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/function_list.cpp
     tests/math/native_raii_tex_environment.cpp
     tests/math/native_svg_writer.cpp
+    tests/math/native_svg_font_cache_plan.cpp
     tests/math/native_tex_error_source.cpp
     tests/math/native_tex_error_utf8.cpp
     tests/math/native_tex_scanner.cpp

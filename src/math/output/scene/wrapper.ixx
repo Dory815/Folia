@@ -32,9 +32,6 @@ class WrapperFactory {
     std::map<std::string,std::shared_ptr<Placement>,std::less<>> placements_;
     LayoutEventObserverRef observer_;
     std::function<void(common::CommonMath&)> displayHandler_;
-    std::function<std::optional<std::string>(common::CommonMo&,std::uint32_t,
-        std::string_view,std::string,Builder&)> glyphCache_;
-    bool useXlink_=false;
     std::function<common::UnknownBBox(const NodeRef&,std::u16string_view,std::string_view)> textMeasurement_;
 public:
     void setLayoutObserver(LayoutEventObserverRef observer){observer_=std::move(observer);}
@@ -47,16 +44,6 @@ public:
         displayHandler_(wrapper);
     }
     void registerKind(std::string kind,std::shared_ptr<Placement> placement);
-    void setGlyphCache(std::function<std::optional<std::string>(common::CommonMo&,
-        std::uint32_t,std::string_view,std::string,Builder&)> callback,bool useXlink){
-        glyphCache_=std::move(callback);useXlink_=useXlink;
-    }
-    std::optional<std::string> cacheGlyph(common::CommonMo& wrapper,std::uint32_t cp,
-        std::string_view variant,std::string path,Builder& builder){
-        if(!glyphCache_)return {};
-        return glyphCache_(wrapper,cp,variant,std::move(path),builder);
-    }
-    bool useXlink()const noexcept{return useXlink_;}
     void setTextMeasurement(std::function<common::UnknownBBox(const NodeRef&,
         std::u16string_view,std::string_view)> callback){textMeasurement_=std::move(callback);}
     common::UnknownBBox measureTextNode(const NodeRef& node,std::u16string_view chars,std::string_view variant){

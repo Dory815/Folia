@@ -43,16 +43,6 @@ std::string trim(std::string value){
 }
 std::u16string stringValue(const Property& value){return property_host::string(value);}
 Property metric(const Property& value,std::string_view key){return property_host::get(value,key);}
-std::string glyphCode(std::uint32_t value){
-    std::array<char,8> data{};
-    const auto [end,error]=std::to_chars(data.data(),data.data()+data.size(),value,16);
-    if(error!=std::errc{})throw Exception("RangeError",u"Invalid glyph code point");
-    std::string result(data.data(),end);
-    std::transform(result.begin(),result.end(),result.begin(),[](unsigned char c){
-        return static_cast<char>(std::toupper(c));
-    });
-    return result;
-}
 void setSceneStyle(const scene::NodeRef& node,std::u16string_view name,std::string value){
     const auto previous=node->attributes.get("style");
     styles::Styles style(std::holds_alternative<Missing>(previous.value)
@@ -93,7 +83,6 @@ void SvgOutputJax::initializeSvg(Value supplied,ObjectRef defaultFactory,
             scene::registerMenclosePlacement(placements_,*mencloseSurface_);
         placementsReady_=true;
     }
-    fontCache_=std::make_unique<FontCache>();
     auto& context=optionsContext();
     context.set(options,Key(u"matchFontHeight"),Value(true));
 }
@@ -119,34 +108,12 @@ void SvgOutputJax::handleMathDisplay(common::CommonMath& wrapper){
     }
 }
 
-FontCache& SvgOutputJax::fontCache(){
-    if(!fontCache_)throw Exception("TypeError",u"Cannot read properties of null (reading 'clearCache')");
-    return *fontCache_;
-}
 
 bool SvgOutputJax::forceInlineBreaks()const{
     auto& context=const_cast<SvgOutputJax*>(this)->optionsContext();
     return options::truthy(context.get(context.get(options,Key(u"linebreaks")),Key(u"inline")));
 }
 
-void SvgOutputJax::initialize(){
-    CommonOutputJax::initialize();
-    if(!fontCache_)fontCache_=std::make_unique<FontCache>();
-    auto& context=optionsContext();
-    if(context.get(options,Key(u"fontCache"))==Value(u"global")){
-        scene::Builder builder;(void)fontCache_->clearCache(builder);
-    }
-}
-
-void SvgOutputJax::reset(FunctionArgs args){
-    CommonOutputJax::reset(args);
-    clearFontCache();
-}
-
-void SvgOutputJax::clearFontCache(){
-    if(!fontCache_)fontCache_=std::make_unique<FontCache>();
-    scene::Builder builder;(void)fontCache_->clearCache(builder);
-}
 
 core::MathOutput SvgOutputJax::escaped(core::MathItem& item,core::MathDocumentReference documentValue){
     setDocument(documentValue);
@@ -339,9 +306,8 @@ std::vector<scene::NodeRef> SvgOutputJax::buildScene(
     common::CommonWrapper& wrapper,DOMNodeRef parent,scene::Builder& builder,
     bool appendToProjectedParent){
     const auto mode=optionsContext().get(options,Key(u"fontCache"));
-    const bool local=mode==Value(u"local");
-    if(mode!=Value(u"none")&&!local)
-        throw Exception("Unimplemented",u"SVG global fontCache requires the document-level cache owner");
+    if(mode!=Value(u"none"))
+        throw Exception("Unimplemented",u"SVG font caches require the completed Scene writer");
     struct ContainerScope {
         DOMNodeRef& target;DOMNodeRef previous;
         ContainerScope(DOMNodeRef& target,DOMNodeRef current)
@@ -373,29 +339,10 @@ std::vector<scene::NodeRef> SvgOutputJax::buildScene(
             flip->transformAttributeIndex=flip->attributes.keys().size();
     }
     minwidth=shift=0;
-    if(local){
-        auto defs=fontCache().clearCache(builder);
-        if(!propertyBindings_)throw Exception("Unimplemented",u"SVG options property bridge is unavailable");
-        const auto localID=optionsContext().get(options,Key(u"localID"));
-        fontCache().useLocalID(propertyBindings_->from(localID));
-        // Source adaptor.insert(cache,g) inserts before the flipped group.
-        root->children.insert(0,defs);
-        const bool xlink=options::truthy(optionsContext().get(options,Key(u"useXlink")));
-        placements_.setGlyphCache([this](common::CommonMo& glyph,std::uint32_t cp,
-            std::string_view variant,std::string path,scene::Builder& target)->std::optional<std::string>{
-                const auto record=glyph.font->getVariant(variant);
-                if(!record)return {};
-                return fontCache().cachePath(variant,record->get().cacheID.value_or(""),glyphCode(cp),
-                    std::move(path),target);
-            },xlink);
-    }else{
-        placements_.setGlyphCache({},false);
-    }
     const std::array<scene::NodeRef,1> parents{flip};
     cancellation::checkpoint(cancellation::CheckpointStage::Layout);
     (void)placements_.build(wrapper,builder,parents);
     cancellation::checkpoint(cancellation::CheckpointStage::Layout);
-    if(local)fontCache().clearLocalID();
     if(minwidth){
         setSceneStyle(root,u"minWidth",ex(minwidth));
         domAdaptor().setStyle(parent,u"min-width",property_host::text(ex(minwidth)));
