@@ -34,23 +34,44 @@ std::optional<GlyphLookup> resolveSourceGlyph(FontFaceData const& face,
     };
     return resolve(resolve,start,codepoint,0);
 }
-std::optional<GlyphReference> resolveSourceRemap(FontFaceData const& face,
-        FontVariant const& start,std::uint32_t codepoint) {
-    auto resolve=[&](auto&& self,FontVariant const& current,std::uint32_t cp,
-                     unsigned depth)->std::optional<GlyphReference>{
-        if(depth>face.variants.size())return{};
-        if(auto found=current.remap.find(cp);found!=current.remap.end())return found->second;
-        if(current.link_overlay_variant){auto link=face.variants.find(*current.link_overlay_variant);if(link!=face.variants.end())if(auto found=link->second.remap.find(cp);found!=link->second.remap.end())return found->second;}
-        if(current.inherit_variant){auto parent=face.variants.find(*current.inherit_variant);if(parent!=face.variants.end())return self(self,parent->second,cp,depth+1);}
-        return{};
+std::optional<GlyphReference> resolveSourceRemap(FontFaceData const &face, FontVariant const &start,
+                                                 std::uint32_t codepoint) {
+    auto resolve = [&](auto &&self, FontVariant const &current, std::uint32_t cp,
+                       unsigned depth) -> std::optional<GlyphReference> {
+        if (depth > face.variants.size())
+            return {};
+        if (auto found = current.remap.find(cp); found != current.remap.end())
+            return found->second;
+        // Source reads the resolved character entry, not just its SMP marker.
+        // An explicit glyph at this level owns the codepoint and therefore
+        // prevents a remap inherited from a lower-priority variant.
+        if (current.glyphs.find(cp) != current.glyphs.end())
+            return {};
+        if (current.link_overlay_variant) {
+            auto link = face.variants.find(*current.link_overlay_variant);
+            if (link != face.variants.end()) {
+                if (auto found = link->second.remap.find(cp); found != link->second.remap.end())
+                    return found->second;
+                // The linked variant is Source's shallow character overlay. Its
+                // glyph entry owns the slot before the requested variant's inherit.
+                if (link->second.glyphs.find(cp) != link->second.glyphs.end())
+                    return {};
+            }
+        }
+        if (current.inherit_variant) {
+            auto parent = face.variants.find(*current.inherit_variant);
+            if (parent != face.variants.end())
+                return self(self, parent->second, cp, depth + 1);
+        }
+        return {};
     };
-    return resolve(resolve,start,codepoint,0);
+    return resolve(resolve, start, codepoint, 0);
 }
-}
+} // namespace
 
 std::size_t FontFaceData::glyphCount() const noexcept {
     std::size_t count = 0;
-    for (const auto& [name, variant] : variants) {
+    for (const auto &[name, variant] : variants) {
         count += variant.glyphs.size();
         count += variant.remap.size();
     }

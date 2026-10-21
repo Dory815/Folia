@@ -200,6 +200,53 @@ suite font_repository_contract = [] {
         expect(repository.glyph("Inheritance", "derived", 0x42)->metrics.w == .8);
     };
 
+    "Source direct glyph ownership blocks inherited remap while overlay wins first"_test = [] {
+        FontRepositoryBuilder builder;
+        FontFaceData face;
+        face.name = "RemapPrecedence";
+        builder.addFace(std::move(face));
+
+        FontGlyph baseGlyph;
+        baseGlyph.metrics.w = .3;
+        FontGlyph ownGlyph;
+        ownGlyph.metrics.w = .4;
+        FontGlyph overlayGlyph;
+        overlayGlyph.metrics.w = .5;
+        FontGlyph explicitGlyph;
+        explicitGlyph.metrics.w = .6;
+        builder.addGlyph("RemapPrecedence", "base", 0x69, baseGlyph);
+        builder.addGlyph("RemapPrecedence", "direct", 0x69, ownGlyph);
+        builder.addGlyph("RemapPrecedence", "linked", 0x6A, overlayGlyph);
+        builder.addGlyph("RemapPrecedence", "explicit", 0x69, explicitGlyph);
+
+        // The inherited base mapping models a generated SMP entry. A concrete
+        // character record in the requested variant must own the slot.
+        builder.addRemap("RemapPrecedence", "base", 0x69, GlyphReference{"base", 0x1D456});
+        // Preserve an explicitly declared mapping at the requested level.
+        builder.addRemap("RemapPrecedence", "explicit", 0x69, GlyphReference{"explicit", 0x1D456});
+        // A linked overlay's own mapping/glyph is consulted before the
+        // requested variant's inherited chain, matching Source's shallow link.
+        builder.addRemap("RemapPrecedence", "requested", 0x6A,
+                         GlyphReference{"requested", 0x1D457});
+        builder.addRemap("RemapPrecedence", "requested", 0x6B,
+                         GlyphReference{"requested", 0x1D458});
+        builder.addRemap("RemapPrecedence", "linked", 0x6B, GlyphReference{"linked", 0x1D458});
+        builder.setVariantInheritance("RemapPrecedence", "direct", "base");
+        builder.setVariantInheritance("RemapPrecedence", "explicit", "base");
+        builder.setVariantInheritance("RemapPrecedence", "overlay-glyph", "requested", "linked");
+        builder.setVariantInheritance("RemapPrecedence", "overlay-remap", "requested", "linked");
+
+        auto repository = std::move(builder).freeze();
+        expect(repository.glyph("RemapPrecedence", "direct", 0x69)->metrics.w == .4);
+        expect(!repository.remap("RemapPrecedence", "direct", 0x69).has_value());
+        expect(repository.remap("RemapPrecedence", "explicit", 0x69) ==
+               GlyphReference{"explicit", 0x1D456});
+        expect(repository.glyph("RemapPrecedence", "overlay-glyph", 0x6A)->metrics.w == .5);
+        expect(!repository.remap("RemapPrecedence", "overlay-glyph", 0x6A).has_value());
+        expect(repository.remap("RemapPrecedence", "overlay-remap", 0x6B) ==
+               GlyphReference{"linked", 0x1D458});
+    };
+
     "duplicate faces are rejected before publication"_test = [] {
         FontRepositoryBuilder builder;
         FontFaceData first; first.name="Probe"; builder.addFace(first);
