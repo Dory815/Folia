@@ -727,6 +727,17 @@ public routes, and request ownership. Experimental tracked C++ copies that
 still imported the same old graph have also been reviewed and retired in
 separate batches; directory names were never used as evidence of inactivity.
 
+The nine old SVG module pairs now retire: native_document, render_session,
+scene_context_nodes, output_jax, output_jax_bindings, menclose_surface,
+wrapper_classes, wrapper_constructors and wrapper_source_methods. Before removal,
+the configured File API sources of every target referenced none of these 18
+files, the 247-name active module map contained none of their modules, and a
+scan of tracked C++ module imports found no remaining external production,
+test or tool importer after the reviewed consumer batches. The portable C ABI,
+original Common family algorithms/catalog, immutable Scene, SVG writer/XML
+serializer and Source oracles remain. This is retirement of an unused service
+graph, not removal of the active mathematical owners or all other inactive files.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
