@@ -2152,3 +2152,43 @@ same immutable resource. This replaces the previous conflation, adds no runtime
 metadata fallback and retains both font metrics/outlines and Source cache bytes.
 common_base_emission owns the generator/resolver/focused-font UT; Root reviews
 and regenerates the locked ignored provider output before the single build.
+
+### Request lifetime observation lock
+
+The next batch observes the accepted pipeline without changing its ownership.
+MmlDocument still owns its node arena, CommonWrapperFactory still owns wrappers,
+and Lite DOM parent links remain weak. No retire/reset registry or alternate
+renderer is introduced. `buildScene` is already the Scene-only entry; full
+render requests call the same entry and then SVG::write. Do not copy the compile
+pipeline or add a second compile-only helper for this gate.
+
+One small `util/instance_count.ixx` module may provide an allocation-free typed
+InstanceCount<T> member. It counts actual construction/destruction (including
+copies/moves), with relaxed atomic numeric totals and no addresses, callbacks,
+resets or owned objects. Its actual consumers are the original MmlNode,
+MmlDocument, CommonWrapper, DOMNode, DOMDocument and DOMWindow owners. Empty
+counter members use no_unique_address; existing object semantics remain intact.
+These are observation totals, not an allocator or lifetime-management service.
+
+One focused request-lifetime UT reuses tests/math/support/tex_scene.hpp unchanged.
+Warm a fixed semantic session across every input, retain a completed Scene and
+an immutable SVG font catalog separately, then measure 192 and a longer 768
+mixed Scene-only/full-SVG requests. Compare actual live counts at every request
+boundary and verify construction/destruction totals advanced. A Windows Debug
+test-support heap snapshot reads real CRT normal/client block counts and bytes;
+compare warmed request boundaries before making UT assertions or logging.
+This domain is explicit: it does not measure OS/GPU allocations or replace
+object ownership review, and peak arena size is not a zero-growth proof.
+
+Use actual unknown-text measurement exceptions, malformed TeX/merror, and a real
+writer error followed by successful requests. Retained Scene SVG must survive
+later requests and destruction of InputOwner, using only its separately retained
+immutable font catalog. Persistent macro/label semantics and cancellation at the
+future C ABI remain separate gates. Report request and cleanup time; RSS is only
+supporting evidence. Any growth is diagnosed at its original owner, never hidden
+by changing counters or adding manual releases.
+
+Owners: common_base_emission implements the counter and three MML/Common owner
+members; common_rows_emission owns only DOM base members; common_scene_entry
+owns the focused UT and CRT-only test helper. Root reviews, registers sources,
+formats, runs the single parallel4 build and tests, then commits small batches.

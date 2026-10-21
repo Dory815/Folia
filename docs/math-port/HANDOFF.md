@@ -11,7 +11,7 @@
 - strict `canonical-modes-results.json`仍73equal+2 `source_error_native_success`（Lite缺addEventListener），strict原fixture SHA `31761f077a57e92177b38c44dba0808b78e6616e99e1242f50058aafbe8de8ba`不变。hosted通过不改变strict事实，也不证明浏览器事件行为。
 - 本批提交：`c8e53353`架构、`8ce3d53b`共享输入、`060bd58d`共享测试管线、`5743e3fc`mspace默认leading、`71e4abe5`Source cacheID/outline来源、`7f83584a`Source/fixture、`af8c5ede`UT/CMake。独立空cache后缀与缺失glyph不同；bbm-bold感叹号outline来源为MathJaxNewcm/bold。
 - generator512MB有界写出完整证据，保留整数键顺序与eager lookup副作用；40shards/80events/24646profile锁过，第二次88outputs mtime不变。旧OOM/初次hosted失败均已被上述结果取代，不要重复诊断。
-- 下一动作：Root划定request192观测架构后再分工；common_scene_entry只读结论：新管线没有真实live节点/分配计数，旧Context Renderer计数不适用。需要实际节点/Wrapper/DOM生命周期与allocator证据；每请求size()/wrapperCount()仅peak，不能当零增长证明。先不改所有权、不加手动释放。后续192+更长混合请求、保留Scene、异常恢复与持久宏/label语义分别验收。额度不再受限。
+- 下一批已由Root在architecture末尾锁定：原owner中的无分配typed InstanceCount成员+Windows Debug CRT真实normal/client blocks/bytes观测，复用既有buildScene（本来就是scene-only入口），不复制compile管线/不改所有权/不加释放补丁。common_base_emission负责counter与MML/Common成员，common_rows_emission仅DOM base成员，common_scene_entry仅192+768混合请求UT/CRT test helper。Root等freeze→review→注册CMake→parallel4 build→聚焦→必要full。旧Context计数不可代替新管线；持久宏/label及C ABI取消另验。无live进程；额度不再受限。
 
 ## 已接受的近期证据
 
