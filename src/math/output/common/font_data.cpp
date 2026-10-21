@@ -113,7 +113,6 @@ std::optional<ResolvedFontGlyph> FontRepository::resolveGlyph(std::string_view f
     if (f == faces_.end()) return {};
     const auto v = f->second->variants.find(variantName);
     if (v == f->second->variants.end()) return {};
-    if (v->second.cache_id.empty()) return {};
     const auto resolved = resolveSourceGlyph(*f->second,v->second,codepoint);
     if (!resolved) return {};
     return ResolvedFontGlyph{resolved->data,

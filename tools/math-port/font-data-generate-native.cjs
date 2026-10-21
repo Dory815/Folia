@@ -24,6 +24,121 @@ function writeIfChanged(file, value) {
   fs.writeFileSync(file, bytes);
   return true;
 }
+const jsonEntries = Symbol('streaming JSON object entries');
+const jsonItems = Symbol('streaming JSON array items');
+const lazyJsonObject = entries => ({[jsonEntries]:entries});
+const lazyJsonArray = items => ({[jsonItems]:items});
+function sortCodepointKeyList(keys) {
+  for (const key of keys) {
+    if (!/^(0|[1-9][0-9]*)$/.test(key)) throw new Error(`non-codepoint key in Source character map: ${key}`);
+    const codepoint = Number(key);
+    if (!Number.isInteger(codepoint) || codepoint > 0x10FFFF)
+      throw new Error(`invalid Source codepoint key: ${key}`);
+  }
+  return [...keys].sort((left,right) => Number(left) - Number(right));
+}
+function sortedCodepointKeys(chars) {
+  const keys = [];
+  for (const key in chars) keys.push(key);
+  return sortCodepointKeyList(keys);
+}
+function* jsonChunks(value, depth = 0, arrayItem = false) {
+  if (value === null || typeof value !== 'object') {
+    const encoded = JSON.stringify(value);
+    yield encoded === undefined && arrayItem ? 'null' : encoded;
+    return;
+  }
+  if (Array.isArray(value) || value[jsonItems]) {
+    const values = Array.isArray(value) ? value : value[jsonItems]();
+    const iterator = values[Symbol.iterator]();
+    const first = iterator.next();
+    if (first.done) { yield '[]'; return; }
+    yield '[';
+    let item = first.value;
+    let index = 0;
+    while (true) {
+      yield index ? ',\n' : '\n';
+      yield '  '.repeat(depth + 1);
+      yield* jsonChunks(item, depth + 1, true);
+      index++;
+      const next = iterator.next();
+      if (next.done) break;
+      item = next.value;
+    }
+    yield '\n'; yield '  '.repeat(depth); yield ']';
+    return;
+  }
+  const entries = value[jsonEntries] ? value[jsonEntries]() : (function*(){
+    for (const key of Object.keys(value)) yield [key,value[key]];
+  })();
+  const iterator = entries[Symbol.iterator]();
+  let next;
+  do { next = iterator.next(); } while (!next.done && next.value[1] === undefined);
+  if (next.done) { yield '{}'; return; }
+  yield '{';
+  let entry = next.value;
+  let first = true;
+  while (true) {
+    if (entry[1] !== undefined) {
+      yield first ? '\n' : ',\n';
+      yield '  '.repeat(depth + 1);
+      yield JSON.stringify(entry[0]); yield ': ';
+      yield* jsonChunks(entry[1], depth + 1);
+      first = false;
+    }
+    next = iterator.next();
+    if (next.done) break;
+    entry = next.value;
+  }
+  yield '\n'; yield '  '.repeat(depth); yield '}';
+}
+function writeJsonIfChanged(file, value) {
+  fs.mkdirSync(path.dirname(file), {recursive:true});
+  const temporary = `${file}.stream-tmp`;
+  const fd = fs.openSync(temporary, 'w');
+  let pending = '';
+  let byteCount = 0;
+  const flush = () => {
+    if (!pending) return;
+    const bytes = Buffer.from(pending, 'utf8');
+    let offset = 0;
+    while (offset < bytes.length) offset += fs.writeSync(fd, bytes, offset, bytes.length - offset);
+    byteCount += bytes.length;
+    pending = '';
+  };
+  try {
+    for (const chunk of jsonChunks(value)) {
+      pending += chunk;
+      if (pending.length >= 64 * 1024) flush();
+    }
+    pending += '\n'; flush(); fs.closeSync(fd);
+    let identical = false;
+    try {
+      if (fs.statSync(file).size === byteCount) {
+        const oldFd = fs.openSync(file, 'r');
+        const newFd = fs.openSync(temporary, 'r');
+        try {
+          const left = Buffer.allocUnsafe(64 * 1024), right = Buffer.allocUnsafe(64 * 1024);
+          let position = 0; identical = true;
+          while (position < byteCount) {
+            const length = Math.min(left.length, byteCount - position);
+            const readLeft = fs.readSync(oldFd, left, 0, length, position);
+            const readRight = fs.readSync(newFd, right, 0, length, position);
+            if (readLeft !== length || readRight !== length ||
+                !left.subarray(0, length).equals(right.subarray(0, length))) { identical = false; break; }
+            position += length;
+          }
+        } finally { fs.closeSync(oldFd); fs.closeSync(newFd); }
+      }
+    } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (identical) { fs.unlinkSync(temporary); return false; }
+    fs.copyFileSync(temporary, file); fs.unlinkSync(temporary); return true;
+  } catch (error) {
+    try { fs.closeSync(fd); } catch {}
+    try { fs.unlinkSync(temporary); } catch {}
+    throw error;
+  }
+}
 if (sourceLock.source !== 'MathJax 4.1.3, commit fb987178c2d279a99b0db5ea02e751691703955e') throw new Error('wrong pinned source lock');
 const lockHashes = new Map();
 for (const entry of sourceLock.inputs) {
@@ -223,8 +338,6 @@ for (const name of extensionPackageNames) {
   const {source, hash} = verifyPackage(name);
   const data = Object.values(require(source))[0];
   sourceFont.addExtension(data);
-  for (const [variant, cacheId] of Object.entries(data.cacheIds || {}))
-    if (sourceFont.variant[variant]) sourceFont.variant[variant].cacheID = `NCM-${cacheId}`;
   extensions.push({name, hash, data});
 }
 const expectedCssFontMapSha256 = 'db47e065c8d2a277c6268c1420cfa36bc1f02d1a424c66949baf402624d021e9';
@@ -251,7 +364,6 @@ for (const registration of registrations.values()) rememberRows(registration.var
 for (const extension of extensions) rememberRows(extension.data.chars);
 const svgAliasVariants = Object.keys(sourceFont.variant).filter(name => {
   const variant = sourceFont.variant[name];
-  if (!variant.cacheID) return false;
   for (const _cp in variant.chars) return true;
   return false;
 });
@@ -265,8 +377,8 @@ const lines = [
   'static void addGlyph(FontFaceData& face, SvgFontResourcesBuilder& svg, std::string_view variantName, std::uint32_t code, double h, double d, double w, double ic, double sk, double dx, double oc, bool pathDefined, std::vector<std::uint32_t> composition, std::string_view path, std::string_view serializedPath, std::optional<std::string> content) {',
   '  auto& variant=face.variants[std::string(variantName)]; variant.name=variantName;',
   '  FontGlyph glyph; glyph.metrics={h,d,w,ic,sk,dx,oc}; glyph.path_defined=pathDefined; glyph.composition=std::move(composition);',
-  '  if(pathDefined) { if(variant.cache_id.empty()) throw std::logic_error("missing Source variant cache id"); auto decoded=path.empty()?FontOutlineDecodeResult{output::scene::GlyphOutline{},std::nullopt}:decodeFontOutlinePrefix(std::string("M")+std::string(path)+"Z",1000.0); glyph.outline_error=decoded.error; glyph.resource=output::scene::GlyphResource::make(variant.cache_id, std::move(decoded.outline)); }',
-  '  if(variant.cache_id.empty()) throw std::logic_error("missing Source variant cache id"); svg.add({std::string(variantName),code},SvgFontGlyphSource{pathDefined,std::string(serializedPath),std::move(content)});',
+  '  if(pathDefined) { auto decoded=path.empty()?FontOutlineDecodeResult{output::scene::GlyphOutline{},std::nullopt}:decodeFontOutlinePrefix(std::string("M")+std::string(path)+"Z",1000.0); glyph.outline_error=decoded.error; glyph.resource=output::scene::GlyphResource::make(std::string(face.name)+"/"+std::string(variantName), std::move(decoded.outline)); }',
+  '  svg.add({std::string(variantName),code},SvgFontGlyphSource{pathDefined,std::string(serializedPath),std::move(content)});',
   '  variant.glyphs.insert_or_assign(code,std::move(glyph));',
   '}',
   'struct NewcmFontGlyphRow { char const* variant; std::uint32_t code; double metrics[7]; bool path_defined; std::uint32_t composition[2]; std::uint8_t composition_size; char const* path; char const* serialized_path; bool content_defined; char const* content; };',
@@ -286,7 +398,7 @@ for (const name of sourceFont.sizeVariants || []) lines.push(`  face.size_varian
 for (const name of sourceFont.stretchVariants || []) lines.push(`  face.stretch_variants.push_back(${quote(name)});`);
 for (const [key, value] of Object.entries(sourceFont.params || {})) lines.push(`  face.parameters.values.emplace(${quote(key)},${num(value)});`);
 for (const [name, variant] of Object.entries(sourceBaseVariants))
-  lines.push(`  face.variants[${quote(name)}].cache_id=${quote(variant.cacheID)};`);
+  lines.push(`  face.variants[${quote(name)}].cache_id=${quote(variant.cacheID || '')};`);
 glyphTargetFile.set(lines,'newcm_font_data_typed.inc');
 for (const [variant, glyphs] of Object.entries(Font.defaultChars)) tupleRows(lines, variant, glyphs);
 flushGlyphRows(lines);
@@ -318,8 +430,8 @@ for (const [file, registration] of registrations) {
     'static void addGlyph(FontFaceData& face, SvgFontResourcesBuilder& svg, std::string_view variantName, std::uint32_t code, double h, double d, double w, double ic, double sk, double dx, double oc, bool pathDefined, std::vector<std::uint32_t> composition, std::string_view path, std::string_view serializedPath, std::optional<std::string> content) {',
     '  auto& variant=face.variants[std::string(variantName)]; variant.name=variantName;',
     '  FontGlyph glyph; glyph.metrics={h,d,w,ic,sk,dx,oc}; glyph.path_defined=pathDefined; glyph.composition=std::move(composition);',
-    '  if(pathDefined) { if(variant.cache_id.empty()) throw std::logic_error("missing Source variant cache id"); auto decoded=path.empty()?FontOutlineDecodeResult{output::scene::GlyphOutline{},std::nullopt}:decodeFontOutlinePrefix(std::string("M")+std::string(path)+"Z",1000.0); glyph.outline_error=decoded.error; glyph.resource=output::scene::GlyphResource::make(variant.cache_id, std::move(decoded.outline)); }',
-    '  if(variant.cache_id.empty()) throw std::logic_error("missing Source variant cache id"); svg.add({std::string(variantName),code},SvgFontGlyphSource{pathDefined,std::string(serializedPath),std::move(content)});',
+    '  if(pathDefined) { auto decoded=path.empty()?FontOutlineDecodeResult{output::scene::GlyphOutline{},std::nullopt}:decodeFontOutlinePrefix(std::string("M")+std::string(path)+"Z",1000.0); glyph.outline_error=decoded.error; glyph.resource=output::scene::GlyphResource::make(std::string(face.name)+"/"+std::string(variantName), std::move(decoded.outline)); }',
+    '  svg.add({std::string(variantName),code},SvgFontGlyphSource{pathDefined,std::string(serializedPath),std::move(content)});',
     '  variant.glyphs.insert_or_assign(code,std::move(glyph));',
     '}',
     'struct NewcmFontGlyphRow { char const* variant; std::uint32_t code; double metrics[7]; bool path_defined; std::uint32_t composition[2]; std::uint8_t composition_size; char const* path; char const* serialized_path; bool content_defined; char const* content; };',
@@ -340,8 +452,6 @@ lines.push(`  face.source_provider_trace_events=${sourceProviderTraceEvents};`);
 for (const {name,hash,data} of extensions) {
   const extensionLabel = name.replace('mathjax-','').replace('-font-extension','');
   lines.push(`  auto merge_${extensionLabel} = [&](FontFaceData& face, SvgFontResourcesBuilder& svg) {`);
-  for (const [variant, cacheId] of Object.entries(data.cacheIds || {}))
-    lines.push(`  face.variants[${quote(variant)}].cache_id=${quote(`NCM-${cacheId}`)};`);
   for (const [variant, parent] of data.variants?.['[+]'] || [])
     lines.push(`  face.variants[${quote(variant)}].inherit_variant=${quote(parent)};`);
   for (const [variant, glyphs] of Object.entries(data.chars || {})) tupleRows(lines, variant, glyphs);
@@ -380,7 +490,7 @@ for (const [name, helper] of svgAliasHelpers) {
     if (Number.isInteger(tuple?.[3]?.smp)) continue;
     if (!owner) throw new Error(`Source visible glyph has no locked owner ${name}/U+${Number(cpText).toString(16)}`);
     const sourceVariant = sourceFont.variant[owner.variant];
-    if (!sourceVariant?.cacheID) throw new Error(`missing Source cache ID for glyph owner ${owner.variant}`);
+    if (!sourceVariant) throw new Error(`missing Source variant for glyph owner ${owner.variant}`);
     const key = [name,Number(cpText)];
     const target = [owner.variant,owner.codepoint];
     if (JSON.stringify(key)!==JSON.stringify(target)) {
@@ -402,36 +512,53 @@ for (const {file, body} of shardDefinitions) {
   writeIfChanged(shardPath, body.join('\n')+'\n');
   generatedFiles.push(shardPath);
 }
-const expectedSvgAliases=[];
-for(const name of svgAliasVariants){
-  const variant=sourceFont.variant[name];
-  for(const cpText in variant.chars){
-    const tuple=variant.chars[cpText], owner=sourceTupleOwner.get(tuple);
-    if(!Array.isArray(tuple))throw new Error(`unresolved Source character row ${name}/U+${Number(cpText).toString(16)}`);
-    if(Number.isInteger(tuple?.[3]?.smp))continue;
-    if(!owner)throw new Error(`Source visible glyph has no locked owner ${name}/U+${Number(cpText).toString(16)}`);
-    const sourceVariant=sourceFont.variant[owner.variant];
-    if(!sourceVariant?.cacheID)throw new Error(`missing Source cache ID for glyph owner ${owner.variant}`);
-    const key=[name,Number(cpText)], target=[owner.variant,owner.codepoint];
-    if(JSON.stringify(key)!==JSON.stringify(target))expectedSvgAliases.push([key,target]);
+const expectedSvgAliases=lazyJsonArray(function*(){
+  for(const name of svgAliasVariants){
+    const variant=sourceFont.variant[name];
+    for(const cpText in variant.chars){
+      const tuple=variant.chars[cpText], owner=sourceTupleOwner.get(tuple);
+      if(!Array.isArray(tuple))throw new Error(`unresolved Source character row ${name}/U+${Number(cpText).toString(16)}`);
+      if(Number.isInteger(tuple?.[3]?.smp))continue;
+      if(!owner)throw new Error(`Source visible glyph has no locked owner ${name}/U+${Number(cpText).toString(16)}`);
+      const sourceVariant=sourceFont.variant[owner.variant];
+      if(!sourceVariant)throw new Error(`missing Source variant for glyph owner ${owner.variant}`);
+      const key=[name,Number(cpText)], target=[owner.variant,owner.codepoint];
+      if(JSON.stringify(key)!==JSON.stringify(target))yield [key,target];
+    }
   }
-}
+});
 // Capture the Source lookup result for every visible variant/key. This is the
 // oracle for inheritance, link overlays, and SMP resolution; the comparator
 // must not approximate FontData.getChar with its own table walk.
-const sourceResolvedVisible = Object.fromEntries(Object.entries(sourceFont.variant).map(([name,variant]) => {
-  const resolved = {};
+const sourceResolvedVisible = lazyJsonObject(function*(){
+  for (const [name,variant] of Object.entries(sourceFont.variant)) {
+    yield [name,lazyJsonObject(function*(){
+      for (const cpText of sourceResolvedKeys.get(name)) {
+        const requested = Number(cpText);
+        const target = variant.chars[cpText]?.[3]?.smp || requested;
+        // Wrapper.placeChar resolves SMP before calling getChar; retain both
+        // keys and the resulting tuple so comparison reflects that exact Source flow.
+        const glyph = sourceFont.getChar(name, target);
+        if (!Array.isArray(glyph)) throw new Error(`Source visible glyph lookup failed ${name}/U+${Number(cpText).toString(16)}`);
+        yield [cpText,{requested_codepoint:requested,target_codepoint:target,tuple:glyph}];
+      }
+    })];
+  }
+});
+// Preserve the original eager lookup phase before the loadedVariants snapshot.
+// FontData.getChar deletes dynamic placeholders and loads their glyph tables.
+const sourceResolvedKeys = new Map();
+for (const [name,variant] of Object.entries(sourceFont.variant)) {
+  const keys = [];
   for (const cpText in variant.chars) {
+    keys.push(cpText);
     const requested = Number(cpText);
     const target = variant.chars[cpText]?.[3]?.smp || requested;
-    // Wrapper.placeChar resolves SMP before calling getChar; retain both keys
-    // and the resulting tuple so comparison reflects that exact Source flow.
-    const glyph = sourceFont.getChar(name, target);
+    const glyph = sourceFont.getChar(name,target);
     if (!Array.isArray(glyph)) throw new Error(`Source visible glyph lookup failed ${name}/U+${Number(cpText).toString(16)}`);
-    resolved[cpText] = {requested_codepoint:requested,target_codepoint:target,tuple:glyph};
   }
-  return [name,resolved];
-}));
+  sourceResolvedKeys.set(name,sortCodepointKeyList(keys));
+}
 const sourceSnapshot = {
   source_lock: 'docs/math-port/evidence/font-data-source-lock.json',
   sourceProfile:{newcm_variant_glyph_keys:sourceProfileGlyphCount,dynamic_modules:registrations.size,
@@ -444,12 +571,14 @@ const sourceSnapshot = {
     variantSmp: Font.VariantSmp, smpRanges: Font.SmpRanges,
     smpRemap: Font.SmpRemap, smpRemapGreekU: Font.SmpRemapGreekU,
     smpRemapGreekL: Font.SmpRemapGreekL, defaultChars: Font.defaultChars,
-    loadedVariants: Object.fromEntries(Object.entries(sourceFont.variant).map(([name,v]) => {
-      const visibleChars = {};
-      for (const cp in v.chars) visibleChars[cp] = v.chars[cp];
-      return [name,{cacheID:v.cacheID,inherit:v.inherit,linked:v.linked?.length || 0,
-        ownChars:v.chars,visibleChars}];
-    })),
+    loadedVariants: lazyJsonObject(function*(){
+      for (const [name,v] of Object.entries(sourceFont.variant)) {
+        yield [name,{cacheID:v.cacheID,inherit:v.inherit,linked:v.linked?.length || 0,
+          ownChars:v.chars,visibleChars:lazyJsonObject(function*(){
+            for (const cp of sortedCodepointKeys(v.chars)) yield [cp,v.chars[cp]];
+          })}];
+      }
+    }),
     effectiveSizeVariants: sourceFont.sizeVariants,
     effectiveStretchVariants: sourceFont.stretchVariants,
     effectiveParameters: sourceFont.params,
@@ -463,7 +592,7 @@ const sourceSnapshot = {
   svgAliases:expectedSvgAliases
 };
 const expectedPath = path.join(outputDir,'font-source-expected.json');
-writeIfChanged(expectedPath, JSON.stringify(sourceSnapshot,null,2)+'\n');
+writeJsonIfChanged(expectedPath, sourceSnapshot);
 const auditFiles = fs.readdirSync(outputDir).filter(file=>glyphAudit.has(file));
 const auditRows = auditFiles.flatMap(file => glyphAudit.get(file).map(row=>[file,JSON.stringify(row.args)]));
 const auditFinal = new Map();
@@ -493,7 +622,7 @@ const sourceGlyph = (variant, codepoint) => {
   const mapping = sourceFont.variant[variant].chars[codepoint]?.[3]?.smp || codepoint;
   const glyph = sourceFont.getChar(variant, mapping);
   if (!Array.isArray(glyph)) throw new Error(`Source glyph missing: ${variant}/${codepoint}`);
-  return {variant, cache_id:sourceFont.variant[variant].cacheID, codepoint, target_codepoint:mapping, metrics:glyph.slice(0,3)};
+  return {variant, cache_id:sourceFont.variant[variant].cacheID || '', codepoint, target_codepoint:mapping, metrics:glyph.slice(0,3)};
 };
 const metricWitnesses=[sourceGlyph('normal',0x41),sourceGlyph('bold',0x3B1),sourceGlyph('bold',0x1D400),
   sourceGlyph('bold-fraktur',0x20),sourceGlyph('-ds-rm',0x41),sourceGlyph('-bbm-normal',0x41)];
@@ -504,8 +633,8 @@ if (!metricEquals(metricWitnesses[0].metrics,[.716,0,.75]) ||
     metricWitnesses[3].metrics[2] !== .383 ||
     metricWitnesses[4].target_codepoint !== 0x1D538 ||
     metricWitnesses[5].target_codepoint !== 0x1D538 ||
-    metricWitnesses[4].cache_id !== 'NCM-MD-DR' ||
-    metricWitnesses[5].cache_id !== 'NCM-MB-BN')
+    metricWitnesses[4].cache_id !== '' ||
+    metricWitnesses[5].cache_id !== '')
   throw new Error(`pinned Source metric witnesses changed: ${JSON.stringify(metricWitnesses)}`);
 const extensionRecords = extensions.map(x=>({name:x.name,count:Object.values(x.data.chars||{}).reduce((sum,map)=>sum+Object.keys(map).length,0)}));
 if (extensionRecords.some((item,index)=>item.count !== [290,391,60][index])) throw new Error(`pinned extension glyph profile changed: ${JSON.stringify(extensionRecords)}`);

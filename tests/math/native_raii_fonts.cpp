@@ -274,7 +274,7 @@ suite font_repository_contract = [] {
         expect(svgA->path_defined);
         expect(svgA->path_data.starts_with("M"));
         expect(svgA->path_data.ends_with("Z"));
-        expect(capitalA->resource->font_id() == "NCM-N");
+        expect(capitalA->resource->font_id() == "MathJaxNewcm/normal");
         expect(!capitalA->resource->outline().outline.segments.empty());
         const auto normalExclamation=repository.resolveGlyph("MathJaxNewcm","normal",0x21);
         const auto boldExclamation=repository.resolveGlyph("MathJaxNewcm","bold",0x21);
@@ -297,8 +297,8 @@ suite font_repository_contract = [] {
         expect(bboldx->key.variant == "-bboldx");
         expect(bbmBold->key.codepoint == 0x21);
         expect(bboldx->key.codepoint == 0x21);
-        expect(bbmBold->key.variant_cache_id == "NCM-MB-BB");
-        expect(bboldx->key.variant_cache_id == "NCM-MB-BB");
+        expect(bbmBold->key.variant_cache_id.empty());
+        expect(bboldx->key.variant_cache_id.empty());
         expect(repository.face("MathJaxNewcm").variants.at("-bbm-bold").cache_id ==
                repository.face("MathJaxNewcm").variants.at("-bboldx").cache_id);
         const auto* bbmBoldPath = bundle.svg_resources.find({"-bbm-bold", 0x21});
@@ -312,8 +312,8 @@ suite font_repository_contract = [] {
         expect(bboldxPath->path_data.starts_with("M292 647C292 680 288 683"));
         expect(bbmBoldPath->path_data != bboldxPath->path_data);
         expect(bbmBold->data->resource != bboldx->data->resource);
-        expect(bbmBold->data->resource->font_id() == "NCM-B");
-        expect(bboldx->data->resource->font_id() == "NCM-MB-BB");
+        expect(bbmBold->data->resource->font_id() == "MathJaxNewcm/bold");
+        expect(bboldx->data->resource->font_id() == "MathJaxNewcm/-bboldx");
         expect(!bbmBold->data->resource->outline().outline.segments.empty());
         expect(!bboldx->data->resource->outline().outline.segments.empty());
         const auto* boldSourceA = repository.glyph("MathJaxNewcm", "bold", 0x41);
@@ -324,7 +324,7 @@ suite font_repository_contract = [] {
         expect(boldCapitalA->metrics.h == .698);
         expect(boldCapitalA->metrics.w == .869);
         // Requested cache key and shared outline provenance are distinct.
-        expect(boldCapitalA->resource->font_id() == "NCM-N");
+        expect(boldCapitalA->resource->font_id() == "MathJaxNewcm/normal");
         expect(boldCapitalA->resource != capitalA->resource);
         const auto* normalAStart = std::get_if<output::scene::MoveTo>(
             &capitalA->resource->outline().outline.segments.front());
@@ -352,7 +352,8 @@ suite font_repository_contract = [] {
         expect(face.extension_glyph_counts.at("mathjax-bboldx-font-extension") == 391_u);
         expect(face.extension_glyph_counts.at("mathjax-dsfont-font-extension") == 60_u);
         expect(repository.glyph("MathJaxNewcm", "-bbm-normal", 0x41) != nullptr);
-        expect(repository.glyph("MathJaxNewcm", "-bbm-normal", 0x41)->resource->font_id() == "NCM-MB-BN");
+        expect(repository.glyph("MathJaxNewcm", "-bbm-normal", 0x41)->resource->font_id() ==
+               "MathJaxNewcm/-bbm-normal");
         expect(repository.remap("MathJaxNewcm", "-ds-rm", 0x41) ==
                GlyphReference{"-ds-rm", 0x1D538});
     };
