@@ -2,6 +2,7 @@
 import folia.math.fonts.newcm_font_module_provider;
 import folia.math.output.common;
 import folia.math.output.svg.writer;
+#include "support/mathml_scene.hpp"
 
 using namespace boost::ut;
 namespace mml = folia::math::mml;
@@ -89,25 +90,10 @@ mml::MmlNode &mathTableRoot(mml::MmlDocument &doc, mml::MmlNode &table,
     return doc.factory().make(mml::NodeKind::math, std::move(attrs), children);
 }
 
-enum class MathmlAttributeKind { text, boolean, number };
-struct MathmlSceneAttribute {
-    std::u16string_view name;
-    MathmlAttributeKind kind{};
-    std::u16string_view text;
-    double number{};
-    bool boolean{};
-};
-struct MathmlSceneNode {
-    std::string_view kind;
-    bool is_inferred{};
-    std::size_t parent{};
-    std::size_t attribute_first{};
-    std::size_t attribute_count{};
-};
-struct MathmlSceneMetrics {
-    double em{}, ex{}, container_width{};
-    bool display{};
-};
+using MathmlAttributeKind = mathml_scene_test::AttributeKind;
+using MathmlSceneAttribute = mathml_scene_test::Attribute;
+using MathmlSceneNode = mathml_scene_test::Node;
+using MathmlSceneMetrics = mathml_scene_test::Metrics;
 struct MathmlSceneBBox {
     double w{}, h{}, d{}, L{}, R{};
 };
@@ -126,89 +112,23 @@ struct MathmlTableSceneCase {
 };
 #include "fixtures/common-source/table-mathml-scene.inc"
 
-mml::NodeKind sourceMathmlKind(std::string_view kind, bool inferred) {
-    if (kind == "math")
-        return mml::NodeKind::math;
-    if (kind == "inferredMrow") {
-        if (!inferred)
-            throw std::logic_error("Source inferred MML node lost its inferred marker");
-        return mml::NodeKind::inferred_mrow;
-    }
-    if (inferred)
-        throw std::logic_error("Source ordinary MML node marked inferred");
-    if (kind == "mtable")
-        return mml::NodeKind::mtable;
-    if (kind == "mtr")
-        return mml::NodeKind::mtr;
-    if (kind == "mtd")
-        return mml::NodeKind::mtd;
-    if (kind == "mspace")
-        return mml::NodeKind::mspace;
-    if (kind == "mstyle")
-        return mml::NodeKind::mstyle;
-    if (kind == "text")
-        throw std::logic_error("text nodes are deliberately outside this fixture");
-    throw std::logic_error("unmapped pinned Source MML kind");
-}
-
 mml::MmlNode &constructSourceMathml(mml::MmlDocument &doc, MathmlTableSceneCase const &source,
                                     mml::MmlNode **tableOut) {
-    constexpr auto noParent = static_cast<std::size_t>(-1);
-    if (source.nodes.empty())
-        throw std::logic_error("Source fixture has no MML nodes");
-    std::vector<mml::MmlNode *> built(source.nodes.size());
-    std::size_t rootIndex = noParent;
-    for (std::size_t i = source.nodes.size(); i-- > 0;) {
-        const auto &sourceNode = source.nodes[i];
-        if (sourceNode.parent == noParent) {
-            if (rootIndex != noParent)
-                throw std::logic_error("Source fixture has multiple MML roots");
-            rootIndex = i;
-        } else if (sourceNode.parent >= i) {
-            throw std::logic_error("Source fixture nodes must be in parent-before-child order");
-        }
-        if (sourceNode.attribute_first > source.attributes.size() ||
-            sourceNode.attribute_count > source.attributes.size() - sourceNode.attribute_first)
-            throw std::logic_error("Source fixture attribute range is invalid");
-
-        mml::AttributeSet attrs;
-        const auto ownAttributes =
-            source.attributes.subspan(sourceNode.attribute_first, sourceNode.attribute_count);
-        for (const auto &attribute : ownAttributes) {
-            const std::u16string name(attribute.name);
-            switch (attribute.kind) {
-            case MathmlAttributeKind::text:
-                attrs.set(name, std::u16string(attribute.text));
-                break;
-            case MathmlAttributeKind::boolean:
-                attrs.set(name, attribute.boolean);
-                break;
-            case MathmlAttributeKind::number:
-                attrs.set(name, attribute.number);
-                break;
-            }
-        }
-
-        std::vector<mml::MmlNode *> children;
-        for (std::size_t childIndex = i + 1; childIndex < source.nodes.size(); ++childIndex) {
-            if (source.nodes[childIndex].parent == i) {
-                if (!built[childIndex])
-                    throw std::logic_error("Source fixture child was not constructed");
-                children.push_back(built[childIndex]);
-            }
-        }
-        auto &node = doc.factory().make(sourceMathmlKind(sourceNode.kind, sourceNode.is_inferred),
-                                        std::move(attrs), children);
-        built[i] = &node;
-        if (sourceNode.kind == "mtable") {
+    auto &root = mathml_scene_test::constructRoot(doc, source.nodes, source.attributes);
+    *tableOut = nullptr;
+    std::vector<mml::MmlNode *> pending{&root};
+    while (!pending.empty()) {
+        auto *node = pending.back();
+        pending.pop_back();
+        if (node->kind() == mml::NodeKind::mtable) {
             if (*tableOut)
                 throw std::logic_error("Source fixture must contain one mtable");
-            *tableOut = &node;
+            *tableOut = node;
         }
+        for (auto *child : node->children())
+            pending.push_back(child);
     }
-    if (rootIndex == noParent)
-        throw std::logic_error("Source fixture has no MML root");
-    return *built[rootIndex];
+    return root;
 }
 
 std::vector<scene::Primitive const *> tableScenePrimitives(scene::Scene const &value) {
