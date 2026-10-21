@@ -93,6 +93,13 @@ suite native_mml_base = [] {
             expect(child->kind() == m::NodeKind::mrow)
                 << "finite-arity repair creates mrow children";
 
+        auto &emptyFraction = document.factory().make(m::NodeKind::mfrac);
+        emptyFraction.setInheritedAttributes();
+        expect(emptyFraction.children().size() == 2) << "empty fraction repairs both child slots";
+        for (auto const *child : emptyFraction.children())
+            expect(child->kind() == m::NodeKind::mrow)
+                << "each missing fraction child is a native mrow";
+
         auto &inferred = document.factory().make(m::NodeKind::inferred_mrow);
         auto &child = document.factory().make(m::NodeKind::mi);
         inferred.appendChild(child);

@@ -339,7 +339,7 @@ suite native_renderer_bridge = [] {
             expect(renderer.render("x").svg == baseline.svg)
                 << "Renderer recovers with identical SVG after malformed TeX";
 
-            retained.emplace(renderer.render("x+1"));
+            retained.emplace(renderer.render(R"(\mathtip{x+1}{y^2})"));
             retainedSvg = retained->svg;
             retainedCodepoints = codepoints(retained->scene);
             svg::SvgWriteOptions options;

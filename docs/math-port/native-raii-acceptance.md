@@ -1019,6 +1019,36 @@ All ten remaining protected paths match their original byte baseline;
 lite-coverage-check.json records inputs and output hashes. No new full math,
 full font comparison, worker, Release or GUI run is claimed.
 
+### Lite object facade and consumer retirement (2026-10-21)
+
+The four obsolete Lite/XML/Renderer/TeXHTML tool consumers and the protected
+G259 request-retirement suite now retire before their providers. The original
+LiteModule pair then retires, followed by node_store and reflected
+source_text_content (including its native-only Array.reduce test consumer).
+These twelve paths were removed in six reviewable commits through f35c4f98.
+The per-batch lite-*-before-removal.json records exact hashes, no surviving
+tracked imports, zero current target membership and the unchanged module map.
+The independent Source oracles, locks, fixtures and actual typed Lite parser,
+tree/adaptor, XML snapshot and HTMLDomStrings owners remain.
+
+After removal, the parallel4 build exits0 (session66222,
+lite-retirement-build.log). All 478 active math source files remain byte-equal;
+all seventeen target source lists and the 248-interface module map are unchanged.
+The test inputs and both binaries match the preceding 15-test/1733-assertion
+gate exactly, so that gate is retained without a duplicate test run. Seven
+remaining protected paths match their original bytes. Inventory at f35c4f98
+records 648 src/math files / 644 code sources, 561 configured math sources,
+162 unconfigured cpp/ixx and zero unresolved active imports. Evidence:
+lite-retirement-input-check.json and lite-retirement-final-check.json.
+
+Root's final mixed-assertion review also preserves the zero-child fraction
+case: inheritance repairs both missing slots to mrows. The existing public
+Renderer lifetime test now retains a real math tooltip, verifying its complete
+SVG after Renderer destruction as well as the outer Scene glyphs. The bounded
+follow-up build and both changed tests pass **2 tests / 40 assertions**
+(mml-consumer-coverage-build.log / mml-consumer-coverage-focused-results.json).
+This complements the earlier gate; it is not a new full math or worker run.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
