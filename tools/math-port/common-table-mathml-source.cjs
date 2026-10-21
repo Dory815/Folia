@@ -17,48 +17,15 @@ const casesPath = path.join(__dirname, 'table-mathml-cases.json');
 const scope = JSON.parse(fs.readFileSync(scopePath, 'utf8'));
 const cases = JSON.parse(fs.readFileSync(casesPath, 'utf8'));
 assert.equal(cases.source.commit, scope.upstream.commit);
-const {createReference} = require('./reference-profile.cjs');
-const ref = createReference();
-assert.deepEqual(ref.provenance.packages, scope.profile.tex_packages);
-const packageRoot = path.join(root, 'tools/mathjax-bundle/node_modules/@mathjax/src');
-const cjsRoot = path.join(packageRoot, 'cjs');
-const {MathML} = require(path.join(cjsRoot, 'input/mathml.js'));
-const document = ref.mathjax.document('', {InputJax: new MathML(), OutputJax: ref.output});
-const fields = ['w', 'h', 'd', 'scale', 'rscale', 'L', 'R', 'pwidth'];
-
-function captureMml(node) {
-  assert.notEqual(node.kind, 'text', 'This table corpus contains no text nodes');
-  return {
-    kind: node.kind,
-    isInferred: node.isKind('inferredMrow'),
-    attributes: node.attributes?.getAllAttributes() ?? {},
-    children: node.childNodes.map(captureMml)
-  };
-}
-
-function captureWrapper(wrapper) {
-  const box = wrapper.getBBox();
-  const result = {
-    kind: wrapper.node.kind,
-    bbox: Object.fromEntries(fields.map(key => [key, box[key]]))
-  };
-  if (wrapper.node.kind === 'mtable') {
+const {createMathmlSourceRuntime} = require('./common-mathml-source-runtime.cjs');
+const runtime = createMathmlSourceRuntime({root, scope, scopePath,
+  observeWrapper(wrapper, result) {
+    if (wrapper.node.kind !== 'mtable') return;
     const {H, D, W, L} = wrapper.getTableData();
     Object.assign(result, {tableData: {H, D, W, L},
       rowRscales: wrapper.childNodes.map(row => row.getBBox().rscale)});
   }
-  return result;
-}
-
-let active = null;
-const processMath = ref.output.processMath;
-ref.output.processMath = function(wrapper, node) {
-  const result = processMath.apply(this, arguments);
-  assert.ok(active, 'Source capture must have an active input');
-  active.mml = captureMml(wrapper.node);
-  active.wrappers = Array.from(this.nodeMap.values(), captureWrapper);
-  return result;
-};
+});
 
 function findNode(node, kind) {
   if (node.kind === kind) return node;
@@ -130,24 +97,10 @@ function cppCase(record, index) {
 async function main() {
   const records = [];
   for (const entry of cases.cases) {
-    active = {};
-    const node = await document.convertPromise(entry.mathml, cases.metrics);
-    const svg = ref.adaptor.serializeXML(node);
-    assert.ok(active.mml && active.wrappers && svg, `${entry.name}: incomplete Source output`);
-    records.push({name: entry.name, mathml: entry.mathml, ...active, svg});
-    active = null;
+    const captured = await runtime.convert(entry, cases.metrics);
+    records.push({name: entry.name, mathml: entry.mathml, ...captured});
   }
-  const prefix = path.join(cjsRoot, 'input/mathml');
-  const modules = Object.keys(require.cache).filter(file => file.startsWith(prefix)).sort()
-    .map(file => {
-      const compiled = path.relative(cjsRoot, file).replaceAll(path.sep, '/');
-      const source = compiled.replace(/\.js$/, '.ts');
-      const sourcePath = path.join(root, '.reference/MathJax-src/ts', source);
-      return {compiled, compiledSha256: hash(file), source, sourceSha256: hash(sourcePath)};
-    });
-  const provenance = {upstream: scope.upstream, input: 'MathML', inputJaxInCurrentScope: false,
-    scopeSha256: hash(scopePath), casesSha256: hash(casesPath), outputProfile: ref.provenance,
-    mathmlModules: modules};
+  const {provenance, modules} = runtime.provenance('MathML', casesPath);
   const header = [
     `// Source MathJax ${scope.upstream.version} ${scope.upstream.commit}`,
     '// Input: pinned MathML compiler; output: shared SVG/Common/NewCM; not TeX profile coverage.',
