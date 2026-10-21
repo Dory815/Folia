@@ -58,6 +58,7 @@ class CommonOutputJax {
     CommonWrapperFactory const &factory() const noexcept;
     FontRepository const &fonts() const noexcept;
     FontFaceData const &face() const noexcept;
+    [[nodiscard]] scene::Scene buildScene(CommonWrapper &root);
     ExtendedMetrics const &currentMetrics() const noexcept;
     CommonOptions const &options() const noexcept;
     HtmlMeasurement const &htmlMeasurement() const;

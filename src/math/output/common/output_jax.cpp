@@ -88,6 +88,23 @@ FontFaceData const &CommonOutputJax::face() const noexcept {
     return face_;
 }
 
+scene::Scene CommonOutputJax::buildScene(CommonWrapper &root) {
+    if (&root.factory() != factory_.get() || &root.node->document() != &document_) {
+        throw std::invalid_argument("Cannot build a Scene for a wrapper outside this request");
+    }
+    (void)root.getOuterBBox(); // Complete the same Source-aligned root box before traversal.
+    const auto &parameters = face_.parameters;
+    scene::Builder builder;
+    const std::array<scene::NodeId, 1> rootParent{scene::NodeId{0}};
+    const auto rootNodes = root.emitScene(builder, rootParent);
+    finishScene(builder, root, rootNodes);
+    const BBox outer = root.getOuterBBox();
+    builder.set_metrics({outer.w, outer.h, outer.d});
+    builder.set_font_metrics({metrics_.em, metrics_.ex, parameters.required("x_height"),
+                              parameters.find("cap_height").value_or(0.0)});
+    return std::move(builder).freeze();
+}
+
 ExtendedMetrics const &CommonOutputJax::currentMetrics() const noexcept {
     return metrics_;
 }
@@ -204,20 +221,7 @@ CommonWrapper &LayoutJob::build() {
 
 scene::Scene LayoutJob::buildScene() {
     auto &root = build();
-    // getOuterBBox completes the same Source-aligned width/height/depth
-    // quantities used by SVG, including root margins and display overflow.
-    (void)root.getOuterBBox(); // force Common's completed root layout before traversal
-    const auto &parameters = jax_.face().parameters;
-    scene::Builder builder;
-    const std::array<scene::NodeId, 1> rootParent{scene::NodeId{0}};
-    const auto rootNodes = root.emitScene(builder, rootParent);
-    jax_.finishScene(builder, root, rootNodes);
-    const BBox outer = root.getOuterBBox();
-    builder.set_metrics({outer.w, outer.h, outer.d});
-    builder.set_font_metrics({jax_.currentMetrics().em, jax_.currentMetrics().ex,
-                              parameters.required("x_height"),
-                              parameters.find("cap_height").value_or(0.0)});
-    return std::move(builder).freeze();
+    return jax_.buildScene(root);
 }
 
 void CommonOutputJax::finishInlineFrames(scene::Builder &builder, CommonWrapper &root,
