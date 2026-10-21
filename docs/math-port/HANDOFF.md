@@ -1,28 +1,33 @@
 # MathJax 原生移植：当前交接
 
-恢复时先读本文件，再只检查可能推翻下列状态的新变化。架构、验收与文件职责分别见 [native-raii-architecture.md](native-raii-architecture.md)、[native-raii-acceptance.md](native-raii-acceptance.md)、[native-raii-files.json](native-raii-files.json)；已接受的细节和历史验证留在那里，不在此重复。这里只保留一个当前 checkpoint。
+恢复/压缩后先实际读本文件。架构、完整历史验收和文件职责分别见 [architecture](native-raii-architecture.md)、[acceptance](native-raii-acceptance.md)、[files](native-raii-files.json)。只检查能推翻当前结论的新变化，不重复已完成广审；搜索 ignored 候选用 `rg --no-ignore`。
 
-## 当前状态与下一步
+## 当前 checkpoint
 
-- 代码/清单快照 `2b547b6d`：648源/644代码、162未配置cpp/ixx、561配置源、接口/map248一致、active unresolved imports0；File API `index-2026-10-21T11-41-32-0150.json`。窄图已刷新，class_binding直接importer为生产2+测试50。未配置不等于可删除。
-- WinUI worker已接入原生SVG，数学QuickJS退出；完整既有验证及历史提交见acceptance，勿重复广审。原9个dirty备份 `build/math-port/context-dirty-backup-20261021/` 已验；下列6路径仍保护。
-- **最新已验**：class-state Source-only `cd959200` 194观测通过、52旧有限outcomes保留；registry `f13b3e4f` 桥核实旧期待值尾段后转存JSON，43keys/172构造/1849关系/35协议观测通过；verification `1b01ff26` 原profiles72+18 exact通过。证据 `class-source-only-check.json`。这些JS协议观测仅为Source来源记录，不重建native对象协议。
-- 历史清理验收：`d40acdef`/`8ec3261c`/`2b547b6d`与build63913、`class-source-retirement-final-check.json`已接受，native3/477及7/141保留。base legacy gate仍保留required primary boundary fixture；旧runner均未跑。勿把历史的二进制hash用于新测试build。
-- **最新停点**：BaseNode `5acd4e70` native **1/55通过**；constructor/container `39ab4396`/`d3bfe3ce`/`f9b95497`（88/6480 Source exact；build57997）；positions rebind `c2391d3b`（2160 Source exact；build42085）；HTML `6d0459f7`/`5ce152c2`（75/434 Source exact及完整旧fixture映射证明；build74847）。mfenced class_length4行原check/Source-only exact通过，consumer退场随本提交；build28779通过、`mfenced-length-final-check.json`确认478活动源、6保护、17targets、9已验输入/二进制、7保留路径不变，class_binding测试46→45。无生产算法改动；legacy runner均未跑。
-- **精确下一动作**：remaining_object_graph Luna正在刷新窄图（已含5个consumer退场），收到后Root核对/记录。operations Luna只审 token_walk/replaceChild512/513资源边界，报告 `walk-resource-decision/` 待交；不能重建对象预算。下一批按原八组既有报告继续归责，不按未配置membership直接删provider，Context完整owner链仍有consumers。HTML bridge已锁旧owner且拒绝已有staging，勿重复跑。无live build/native。
-- HTML最终替换现有html-node-oracle.cjs，不能新增并列owner；带emitCpp的observer仅ignored迁移证明。replaceChild/512边界仍保留。positions建议/覆盖见 `positions-retirement-next/positions-retirement-next.json`，不按旧agent消息推断已执行。
-- **仍待单独归责**：512/513 walk边界；Fields/values/methods仍有完整ContextBindings/ParserRuntime owner链（见窄图），不能孤删/stub。mfenced callback数组协议已归责退场，不要再开已决问题。其余候选按既有八组报告推进。
-- 搜索被忽略的交付候选时用 `rg --no-ignore`。不要按旧 agent 的完成消息推断当前状态，也不要重做已接受的广审。保护 dirty 不是永久保留理由，但处置前必须读 diff、备份并归责。
+- 最新代码提交 `3d359392`。WinUI worker 已走原生 SVG，数学 QuickJS 已退出；对象模拟层的剩余源码/consumer 清理尚未完成，不能宣布整个移植完成。Mermaid 暂停。
+- 当前源树仍为648源/644代码、162未配置cpp/ixx；478活动源+83生成源=561配置源，248接口/map一致、active unresolved0、17targets。最新FileAPI `index-2026-10-21T12-19-27-0154.json`。未配置不等于可删除。
+- 本轮新增BaseNode四分支测试 `5acd4e70` **1/55通过**；constructor/container、parent rebind、HTML、mfenced class_length5旧Cpp+7专用工具已提交。另walk/replace两consumer+两专用gate已删除待分批提交，780/1504原Source及Source-only exact通过，build57382通过，`walk-protocols-final-check.json`核478活动/保护6/17targets/9已验输入/8保留不变。class_binding测试现43（生产2，inc另计）；生产算法未改。
+- Source exact：constructor88、container6480、parent rebind2160、HTML75/434、mfenced length4通过；旧profiles保留。HTML原owner换Source-only，桥先匹配完整旧52398byte fixture，再核75场景/87期待调用顺序、29顶层/52递归值、19pins；不要重跑锁旧owner且拒绝已有staging的bridge。详见 `html-source-promoted.json`。
+- 本轮parallel4 builds57997/42085/74847/28779均exit0。最新 `build/math-port/mfenced-length-final-check.json` 确认478活动源、保护6、17targets、9已验输入/二进制、7保留路径不变。当前二进制hash基线 `script-base-final-check.json`；早期build的二进制hash已过时。此前完整SVG1047、字体、RAII、worker等验证见acceptance，本轮未重跑full math/font/worker/Release/GUI；legacy native runners均未跑。
+- 最新窄图 `build/math-port/mml-current-consumer-graph.json/.md` 已包含上述退场（标注5ce152c2+dirty mfenced删除，现已提交3d359392，源内容未再改）。Fields→ContextBindings→ParserRuntime owner链完整，values唯一调用在fields.cpp:439；不能孤删/stub provider。
 
-## 固定架构与执行边界
+## 精确下一动作与 live handles
 
-保留原 MathJax 的模块职责和数学算法：TeX → request-owned MML → 原 Common 共享布局与 placement → immutable Scene → SVG → Folia 现有 SVG 路径。移除 JS 对象身份、反射和投影语义，不等于删除数学算法。禁止平行布局/Scene 层、重复实现或无依据删算法；新模块须有明确职责、消费者及被替代的原 owner。Mermaid 移植暂停，勿碰其 normalizer/Rust 依赖。
+没有live build/native。三个Luna仅写ignored候选，Root须读报告/diff、验Source/必要native、提升并小批提交：
 
-Root 独占 Git、CMake/configure、build 和 native 测试；同一时间仅一个 build，parallel 不超过 4。Windows console probe 链接 `folia_console_test_runtime`。异常进程退出后停止扩大测试，只做有界诊断。小批提交，不 reset，不覆盖无关改动；生成物和日志留在 ignored build 目录。详细架构和验收标准见上述文档。
+1. walk/replace已验收，先分批提交工具/consumer。512/513是旧host预算，不重建；现有typed遍历/parent/return及RAII恢复保留，不声称任意深树有界。operations已完成，无live handle。
+2. `/root/class_scripts`：`build/math-port/scripts-retirement-next/`，仅reference_script/reference_simple_mml两consumer。此前paired scripts、wrapper classes、BaseNode缺口均已验收，勿按旧报告重复开问题。
+3. accent Luna已完成：`build/math-port/accent-retirement-next/`，Root已读manifest/bridge/diff但未执行；仅raw_accent72/math_accent33，原profiles保留。下一步原oracle/bridge检查→Source-only提升→canonical exact→gate仅减105/2→退两Cpp/build。候选loader须改回 `./mo-pattern-reference.cjs`，去profile writer。forms/accent真实缺口已在原owner修正并验收，勿重开。
 
-## 保护中的 6 个 dirty 路径
+收到候选先检查实际文件和当前hash，不按旧agent完成消息推断状态。后续沿 `class-review-*.json` 八组既有结论推进，不另做广审。新Source profile须有完整旧期待值迁移证明，canonical不得保留Cpp emitter或新增并列oracle。
 
-处置前必须逐 diff 阅读、备份原字节与 patch 并明确归责；不得顺手覆盖或暂存。
+## 固定执行边界
+
+TeX → request-owned MML → 原Common共享布局/placement → immutable Scene → SVG → Folia。保留MathJax模块职责/算法；去掉JS身份、反射和投影协议，不增平行布局/Scene或解释器。Root独占Git/CMake/build/native，一次一个build、parallel≤4；console链接 `folia_console_test_runtime`，异常退出后只做有界诊断。小批提交，不reset，不覆盖无关改动；生成物留ignored build。
+
+## 保护中的6个dirty路径
+
+备份 `build/math-port/context-dirty-backup-20261021/` 已验。处置前必须读diff、核备份并归责；不得顺手覆盖或暂存，保护不等于永久保留。
 
 - `src/app-winui/media/MathJaxSvgParser.cpp`
 - `src/app-winui/media/SvgNormalizer.cpp`

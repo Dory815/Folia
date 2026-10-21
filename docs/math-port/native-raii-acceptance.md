@@ -1440,6 +1440,31 @@ mfenced-length-original-source.log, mfenced-length-source-only.log,
 mfenced-length-promoted.json and mfenced-length-final-check.json. No production
 algorithm changed and no broad runtime gate was repeated.
 
+### Walk/replacement resource boundary disposition (2026-10-21)
+
+The two still-retained legacy depth tests exercise real recursive token walk
+and negative-arity replacement, but their 512/513 RangeError condition comes
+from the old P7 host adaptation, not the MathJax algorithms. Root accepts
+withdrawing that host budget and shared std::any identity protocol from the
+native consumer contract. Existing typed preorder/Text/HTML skip, direct and
+inferred replacement parent/return tests and request-level RAII failure
+recovery remain the accepted behavior. This disposition does not introduce
+a general depth policy or claim bounded behavior for arbitrary deep trees.
+Their complete original fixture/profile checks pass, followed by exact checks
+of all 780 token-walk and 1,504 replacement rows after the original oracles
+become read-only Source-only checkers. The complete Source input/algorithm
+prefixes remain byte-equal; profiles remain unchanged. The two fixture-only
+native gates and two old C++ consumers retire. The previously rejected ignored
+gate which substitutes an active owner is not promoted.
+
+Removal build57382 passes with parallel4. All 478 active sources, six protected
+paths, nine verified input/binary paths, eight retained paths and seventeen
+target source lists remain byte-equal. Class-binding cpp/ixx test consumers
+decrease 45 to 43. Evidence: walk-resource-decision/decision.md,
+walk-protocols-before.json, walk-protocols-promoted.json and
+walk-protocols-final-check.json. No new runtime gate or production recursion
+change is claimed.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
