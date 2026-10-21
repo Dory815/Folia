@@ -26,8 +26,11 @@
   public API. CMake discovers the new module; existing Packet fixtures are the
   required regression check. Commit `8ece2acf` passed Debug/Release regression
   CI `39544334238`.
-- Pie raw parser and DB semantics are ready as a separate small commit;
-  native verification and independent oracle tests are still pending.
+- Pie raw parser and DB semantics are pushed as `09ad39f6`; native verification
+  and independent oracle tests are still pending.
+- D3 Pie geometry is ready with 86 official-runtime cases / 618 sectors,
+  exact path comparisons and a 1e-12 centroid tolerance for platform libm.
+  Source hashes and ISC notices are recorded. Native verification is pending.
 - Active agents: `official_parser` owns shared lexer/Pie parsing and Packet
   lexer extraction; `build_audit` owns Pie oracle/tests; `renderer_audit` owns
   source-derived D3 Pie geometry and its oracle/tests. These are next-stage
