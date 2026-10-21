@@ -98,6 +98,7 @@ Require-File (Join-Path $generatedFilesDirectory 'winrt\base.h') 'app-matched C+
 Require-File (Join-Path $configurationDirectory 'MathJaxRenderer.obj') 'MathJaxRenderer object'
 Require-File (Join-Path $configurationDirectory 'MathJaxRenderer.Cache.obj') 'MathJaxRenderer cache object'
 Require-File (Join-Path $configurationDirectory 'MathJaxRenderer.Worker.obj') 'MathJaxRenderer worker object'
+Require-File (Join-Path $configurationDirectory 'MathJaxRenderer.Batch.obj') 'MathJaxRenderer batch object'
 Require-File (Join-Path $configurationDirectory 'NativeMathSession.obj') 'NativeMathSession object'
 Require-File (Join-Path $configurationDirectory 'MathSvgStore.obj') 'MathSvgStore object'
 Require-File (Join-Path $configurationDirectory 'SvgNormalizer.obj') 'SVG normalizer object'
@@ -152,6 +153,7 @@ $linkInputs = @(
     (Quote-CmdArgument (Join-Path $configurationDirectory 'MathJaxRenderer.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'MathJaxRenderer.Cache.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'MathJaxRenderer.Worker.obj')),
+    (Quote-CmdArgument (Join-Path $configurationDirectory 'MathJaxRenderer.Batch.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'NativeMathSession.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'MathSvgStore.obj')),
     (Quote-CmdArgument (Join-Path $configurationDirectory 'SvgNormalizer.obj')),

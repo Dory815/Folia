@@ -784,13 +784,9 @@ void testDocumentSvgEviction() {
                 "read process private memory");
         return counters.PrivateUsage;
     };
-    const auto beforeRelease = privateBytes();
-    renderer.FinishPreparation();
-    const auto afterRelease = privateBytes();
-    require(!renderer.Snapshot().nativeSessionActive,
-            "opening preparation releases the native engine and its font data on its owner thread");
-    std::cout << "opening-engine-private-before=" << beforeRelease
-              << " after=" << afterRelease << " native-session=released\n";
+    require(renderer.Snapshot().nativeSessionActive,
+            "the lightweight engine remains on its worker after the request releases font bodies");
+    std::cout << "opening-engine-private=" << privateBytes() << " native-session=retained\n";
 
     auto geometry = renderer.Render(firstFormula, false, 16.0f, 640.0f, "#000000", {},
                                     MathRenderPurpose::Document);
@@ -819,8 +815,8 @@ void testDocumentSvgEviction() {
                 "worker SVG reload preserves exact complete formula bytes");
     }
     auto afterReadStats = renderer.Snapshot();
-    require(!afterReadStats.nativeSessionActive,
-            "reading cached SVG does not recreate the native engine");
+    require(afterReadStats.nativeBatches == pressureStats.nativeBatches,
+            "reading cached SVG performs no native rendering batch");
     require(afterReadStats.lastIoThread != std::this_thread::get_id()
                 && afterReadStats.lastIoThread != std::thread::id{},
             "SVG file operations run on the cache worker, not the calling scroll thread");
@@ -917,6 +913,30 @@ void testDocumentSvgEviction() {
     require(!FileExists(previousPath), "Clear closes the previous document cache on its worker");
     require(renderer.Snapshot().backingPath.empty(), "fresh state creates no file before its first formula");
     std::cout << "document-cache-clear worker-close=success fresh-state=no-file\n";
+}
+
+void testAbandonedBatch() {
+    MathJaxRenderer renderer;
+    {
+        auto batch = renderer.BeginBatch();
+        renderer.BeginBlock(12001);
+        batch.Render(R"(\mathbb{R})", false, 16.0f, 640.0f, "#000000");
+        renderer.EndBlock();
+        auto staged = renderer.Snapshot();
+        require(staged.pending == 1 && staged.nativeRenders == 0 && staged.fileWrites == 0,
+                "staged math has no native work or document file before submission");
+    }
+    WaitForIdleBounded(renderer);
+    auto abandoned = renderer.Snapshot();
+    require(abandoned.pending == 0 && abandoned.entries == 0 && abandoned.fileWrites == 0
+                && abandoned.backingPath.empty(),
+            "abandoning a batch removes its requests without leaving pending work or files");
+    auto preview = Ready(renderer, R"(\mathbb{R})", false, 16.0f, 640.0f, "#000000", {},
+                         MathRenderPurpose::Preview);
+    checkFragments(*preview, "preview after abandoned opening batch");
+    require(renderer.Snapshot().nativeRenders == 1 && renderer.Snapshot().fileWrites == 0,
+            "the same cache remains usable for an asynchronous memory-only preview");
+    std::cout << "abandoned-batch requests=released pending=0 file-writes=0 preview=recovered\n";
 }
 
 void runCancellationProbe() {
@@ -1083,6 +1103,7 @@ void runProbe() {
     testOwnership();
     testAsyncEditsAndClear();
     testCrossThreadRendererMove();
+    testAbandonedBatch();
     testDocumentSvgEviction();
 
 }

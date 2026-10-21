@@ -412,9 +412,9 @@ namespace
         stageStart = std::chrono::steady_clock::now();
         auto narrow = EditorSurfaceRenderer::PrepareMath(frame, narrowContext, {}, {});
         Require(narrow->formulaCount > 0, "narrow math scan finds formulas across rich block types");
-        Require(!narrow->math.Snapshot().nativeSessionActive
+        Require(narrow->math.Snapshot().nativeSessionActive
                 && narrow->math.Snapshot().residentSvgBytes == 0,
-            "opening retains geometry and file ranges, not its native engine or offscreen SVG bytes");
+            "opening retains the lightweight engine and geometry without offscreen SVG bytes");
         WaitForIdleBounded(narrow->math);
         ReportStage("rich-narrow-math", std::chrono::steady_clock::now() - stageStart);
         Require(session.TextUtf8() == originalText && Stamp(frame) == originalStamps,
@@ -488,6 +488,34 @@ namespace
         auto largeStats = large->math.Snapshot();
         Require(largeStats.pending == 0 && largeStats.nativeRenders > 0,
             "large virtualized math prewarm finishes its asynchronous native work");
+
+        EditorSession distinctSession;
+        std::wstring distinctSource;
+        for (int i = 0; i < 512; ++i)
+            distinctSource += L"Formula $x+" + std::to_wstring(i) + L"$\n\n";
+        distinctSession.SetText(winrt::hstring(distinctSource));
+        auto distinctFrame = distinctSession.RenderFrame();
+        auto distinct = EditorSurfaceRenderer::PrepareMath(distinctFrame, narrowContext, {}, {});
+        auto distinctStats = distinct->math.Snapshot();
+        Require(distinct->formulaCount == 512 && distinctStats.nativeRenders == 512
+                && distinctStats.nativeBatches == 32 && distinctStats.pending == 0
+                && distinctStats.residentSvgBytes == 0 && distinctStats.nativeSessionActive,
+            "opening distinct formulas uses real bounded native batches and retains only the lightweight engine");
+
+        EditorSession oneBlockSession;
+        std::wstring oneBlockSource;
+        for (int i = 0; i < 80; ++i) oneBlockSource += L"$y+" + std::to_wstring(i) + L"$ ";
+        oneBlockSession.SetText(winrt::hstring(oneBlockSource));
+        auto oneBlockFrame = oneBlockSession.RenderFrame();
+        auto oneBlock = EditorSurfaceRenderer::PrepareMath(oneBlockFrame, narrowContext, {}, {});
+        auto oneBlockStats = oneBlock->math.Snapshot();
+        Require(oneBlock->formulaCount == 80 && oneBlockStats.entries == 80
+                && oneBlockStats.nativeRenders == 80 && oneBlockStats.nativeBatches == 3
+                && oneBlockStats.residentSvgBytes == 0,
+            "batch boundaries inside one owner preserve all formula metadata without a large queue");
+        std::cout << "opening-native-batch distinct=512 calls=" << distinctStats.nativeBatches
+                  << " one-owner=80 calls=" << oneBlockStats.nativeBatches
+                  << " document-resident-svg=0 engine=retained\n";
 
         Require(session.TextUtf8() == originalText && Stamp(frame) == originalStamps,
             "all math preparation paths preserve exact source and render model identities");
