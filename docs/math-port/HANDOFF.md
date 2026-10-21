@@ -4,18 +4,19 @@
 [native-raii-architecture.md](native-raii-architecture.md)，总验收门槛见
 [native-raii-acceptance.md](native-raii-acceptance.md)。实质状态变化后更新本文件；不另建交接笔记。
 
-## 当前 checkpoint：mglyph 已验收，下一批 table profile
+## 当前 checkpoint：table 新矩阵已验收，准备完整双模式 Source gate
 
-- 本批提交：架构 `ca8ce3ef`、Scene/writer `0f6fa2e0`、原 SVG owner 与旧 placement 清退 `ed6fd605`、独立 Source/UT `b0bd1b5d`。
-- 最新 build `build/math-port/mglyph-build-final.log` exit0，parallel4；full `mglyph-full-math.log` exit0：842 tests / 212904 assertions / 168 suites，无skip，包含既有default86与组件回归。
-- 聚焦 Scene3/17、writer3/5、owner+catalog4/26、Source13 UT1/222均过。13例为8 images、3 legacy index、2 invalid verification merror，后两者不计image成功；完整SVG在请求退出前后均byte-equal。
-- Source13 default/write/no-op及Root独立default（`mglyph-source-root.log`）通过；fixture SHA `ef8fe550e9d54839050ffa896556f7d8adc555b02f184ed827a476d05d31e1ab`。BBox namespace与测试parent role假设已修，生产/fixture未迎合修改。Image属于标准mglyph metadata group，不能要求其父Group为image_glyph role。
-- `mglyph-results.json` / `mglyph-native.log`：canonical75正常exit1，73 byte-equal、2 `source_error_native_success`（action-toggle/action-tooltip，严格Lite缺addEventListener），无SVG mismatch/native exception；不算完整75/150通过。
-- 所有build/native结束，无live handles；Luna均freeze。可复用owner：scene_values_writer（Scene）、common_scene_entry（SVG owner）、common_base_emission（writer）、common_scene_source_tests（独立Source/UT）、common_rows_emission（table）。Root独占CMake/build/native/Git。
-- 下一具体动作：读 ignored `build/math-port/table-profile-next.md`，只核对新增table覆盖，再锁定职责/独立Source矩阵后分给Luna。已有direct-MML8、table SVG14和数值branch8保持原样；新覆盖重点labels左右/含宽度、percentage/nested、ragged/align、horizontal stretch、break exact SVG。不据旧完成消息重开已验调查。
+- 本批提交：架构 `51d9e344`、独立Source/fixture `037e543f`、原生UT/CMake `5923227e`；生产代码未改。
+- 最新 `build/math-port/table-profile-build.log` exit0，parallel4；full `table-profile-full-math.log` exit0：843 tests / 213573 assertions / 169 suites，无skip。聚焦Source14 UT1/669、table-regression42/4701、default86 UT1/1021过。所有build/native终止，无live handles。
+- 真实MathML7场景×none/local：labels左右/含宽度、percentage/nested、ragged/align、horizontal stretch、break exact SVG。每张表最终BBox/TableData/形状/flags/pWidth及完整SVG在请求退出前后均对齐；原direct-MML8、SVG14、数值branch8不变。
+- Source default/write/no-op和Root独立default（`table-profile-source-root.log`）过，fixture SHA `b23150d14cb8cdeb08e429428c87b6820f16bffb14eb87613165dad7209c12f8`。实际分支：nested pWidth3.9/父列6；ragged2/1cells+override；stretchy mo/table W3；break各2linebox/逐字符mi。不要退回TeX默认stretchy=false或多字符mi替代断行内容。
+- `table-profile-results.json` / `table-profile-native.log`：canonical75正常exit1，73 byte-equal、2 `source_error_native_success`（action-toggle/action-tooltip，严格Lite缺addEventListener），无SVG mismatch/native exception；不算完整75/150通过。
+- common_base_emission已交付只读候选`build/math-port/canonical-mode-witness-plan.md`，Root已读；所有Luna freeze，无live handles。保留旧严格Lite证据，拟额外同75输入的none/local150对照，host仅复用已验maction14真实EventTarget注册、不dispatch。尚未授权实现/改变gate。
+- 下一具体动作：按计划核对common_scene.cpp现有TeX→Scene helper职责与共享方式，避免复制pipeline或继续堆大测试文件；锁新增Source/fixture/test职责后派Luna。canonical75是原18+profile57，两个独立cache session要同顺序，不把57误称75或重复执行改变session。不要重做已验table/mglyph或改原75输入/expected。可复用common_scene_source_tests（Source）、common_scene_entry（UT）、common_base_emission（writer/plan）、common_rows_emission（table）、scene_values_writer（Scene）；Root独占CMake/build/native/Git。
 
 ## 已接受的近期证据
 
+- mglyph已验提交 `0f6fa2e0`/`ed6fd605`/`b0bd1b5d`，原Common算法/charWrapper保留，旧placement移除；13独立Source例退出请求后仍byte-equal。精确hash/计数见acceptance，完整math已被本批full覆盖。
 - maction/cache已验提交 `897a0f50`（前序见Git/acceptance）。Resource order 由 Builder 实际生成次序决定；FontCachePlan 临时借用 Scene 并按 scope/Glyph
   地址索引，writer 只消费完整 prefix 列表，不分配 ID。
 - Source cache witness
@@ -38,7 +39,7 @@
 - Mglyph 保留 `CommonMglyph::getParameters/computeBBox` 和 legacy index `charWrapper`
   的现有布局与所有权。Source image 用一个 Image Scene 值，不加载/解码 URI，不从图像内在尺寸推导布局；图像追加到第一个 standard content
   root。Source 矩阵、属性顺序及空值边界以架构文档 mglyph lock 为准。
-- 尚未完成：table 完整 profile；剩余专用 family；canonical 75 layout /
+- 尚未完成：完整Source profile与剩余专用 family覆盖；canonical 75 layout /
   双模式 150 SVG byte comparison；request ownership 长跑；Folia
   integration；旧对象层完整退出。组件通过不代表这些总门槛通过。
 - 已接受组件批次包括 XML/HTML、merror、table direct-MML 8 例、semantics/fenced 11 例、enclosure 86

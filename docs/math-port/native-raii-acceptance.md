@@ -388,6 +388,25 @@ pass: 842 tests / 212904 assertions / 168 suites, without skips. Canonical75
 source_error_native_success observations. Full profile coverage, 75/150 gate,
 request ownership, integration and final old-layer retirement remain open.
 
+The additional table-profile witnesses at `037e543f` / `5923227e` preserve the
+existing table algorithms and earlier corpora. Seven actual MathML inputs run
+in none/local modes: contrasting left/right labels and width ownership, nested
+percentage width, ragged alignment with a cell override, horizontal stretching,
+and text/operator column breaks. Source predicates confirm the branches are
+exercised; the operator break retains the original per-character identifiers.
+The Source fixture SHA-256 is
+`b23150d14cb8cdeb08e429428c87b6820f16bffb14eb87613165dad7209c12f8`.
+Source default/write/no-op and Root independent default pass.
+
+Native Source14 passes 1 test / 669 assertions: final root and every table's
+BBox, TableData, shape, flags and percentage width match; all complete SVGs are
+byte-equal before/after request retirement. Table-related regression checks
+pass 42/4701, default86 passes 1/1021, and the parallel4 build passes. Full
+`table-profile-full-math.log` passes 843 tests / 213573 assertions / 169 suites
+without skips. No production code changed. `table-profile-results.json` retains
+the strict-Lite canonical73 equality and two explicit Source event-registration
+errors; it does not establish the full75/150 gate or application integration.
+
 ## D. Application integration
 
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,
