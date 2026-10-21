@@ -6,8 +6,7 @@ import std;
 namespace folia::math::tex {
 void NewcommandConfig(ParserConfiguration &config, TeX &jax) {
     auto &options = jax.parseOptions();
-    auto current = std::dynamic_pointer_cast<MacroMap>(config.maps().getMap(NEW_COMMAND));
-    if (current && current->sessionOwner() == &options.packageData)
+    if (options.packageData.newcommandConfigurationInitialized())
         return;
     config.maps().registerMap(std::make_shared<DelimiterMap>(SessionDelimiterMapInit{
         {std::u16string(NEW_DELIMITER), TokenMapParser{&ParseMethods::delimiter}},
@@ -36,6 +35,7 @@ void NewcommandConfig(ParserConfiguration &config, TeX &jax) {
                             nullptr,
                             NEWCOMMAND_PRIORITY}};
     options.handlers.add(handlers);
+    options.packageData.markNewcommandConfigurationInitialized();
 }
 ConfigurationRef NewcommandConfiguration::initializeModule(ConfigurationHandler &registry,
                                                            MapHandler &maps) {

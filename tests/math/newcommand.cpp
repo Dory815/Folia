@@ -100,6 +100,89 @@ suite newcommand = [] {
                               u"renewenvironment", u"def", u"let"})
                 expect(f.maps.getMap(u"Newcommand-macros")->contains(name));
         };
+    "newcommand initialization follows fresh TeX sessions at a reused address"_test = [] {
+        NewcommandFixture f;
+        std::optional<MmlDocument> document;
+        std::optional<TeX> jax;
+        const auto createJax = [&] {
+            document.emplace();
+            TexOptionValues options;
+            options.packages = std::vector<PackageSelection>{{u"base", {}}, {u"newcommand", {}}};
+            jax.emplace(f.registry, f.maps, f.callbacks, f.warnings, document->factory(),
+                        std::move(options));
+        };
+        const auto compile = [&](std::u16string source) {
+            folia::math::core::AbstractMathItem math(std::move(source), &*jax);
+            math.setDisplay(false);
+            return &jax->compile(math, *document);
+        };
+        const auto handlerState = [&] {
+            const std::array kinds{HandlerKind::character, HandlerKind::delimiter,
+                                   HandlerKind::macro, HandlerKind::environment};
+            std::array<std::u16string, 4> state;
+            for (std::size_t i = 0; i < kinds.size(); ++i)
+                state[i] = jax->parseOptions().handlers.get(kinds[i])->toString();
+            return state;
+        };
+        createJax();
+        auto *firstSession = &jax->session();
+        auto firstCommand = std::dynamic_pointer_cast<MacroMap>(f.maps.getMap(NEW_COMMAND));
+        auto firstDelimiter = std::dynamic_pointer_cast<DelimiterMap>(f.maps.getMap(NEW_DELIMITER));
+        auto firstEnvironment =
+            std::dynamic_pointer_cast<EnvironmentMap>(f.maps.getMap(NEW_ENVIRONMENT));
+        expect(firstCommand && firstCommand->sessionOwner() == firstSession);
+        expect(firstDelimiter && firstDelimiter->sessionOwner() == firstSession);
+        expect(bool(firstEnvironment)) << "first session installs its environment map";
+        compile(u"\\newcommand{\\fresh}{x}\\newenvironment{freshenv}{a}{b}"
+                u"\\let\\freshangle(");
+        expect(jax->session().findCommand(u"fresh") != nullptr);
+        expect(jax->session().findEnvironment(u"freshenv") != nullptr);
+        expect(firstEnvironment->contains(u"freshenv"))
+            << "environment map reads the first session's definitions";
+        expect(jax->session().findDelimiter(u"\\freshangle") != nullptr)
+            << "first session registers its literal delimiter alias";
+        const auto firstHandlers = handlerState();
+        NewcommandConfig(jax->configuration(), *jax);
+        expect(f.maps.getMap(NEW_COMMAND) == firstCommand);
+        expect(f.maps.getMap(NEW_DELIMITER) == firstDelimiter);
+        expect(f.maps.getMap(NEW_ENVIRONMENT) == firstEnvironment);
+        expect(handlerState() == firstHandlers);
+
+        jax.reset();
+        document.reset();
+        createJax();
+        expect(&jax->session() == firstSession);
+        auto secondCommand = std::dynamic_pointer_cast<MacroMap>(f.maps.getMap(NEW_COMMAND));
+        auto secondDelimiter =
+            std::dynamic_pointer_cast<DelimiterMap>(f.maps.getMap(NEW_DELIMITER));
+        auto secondEnvironment =
+            std::dynamic_pointer_cast<EnvironmentMap>(f.maps.getMap(NEW_ENVIRONMENT));
+        expect(secondCommand && secondCommand != firstCommand &&
+               secondCommand->sessionOwner() == &jax->session());
+        expect(secondDelimiter && secondDelimiter != firstDelimiter &&
+               secondDelimiter->sessionOwner() == &jax->session());
+        expect(bool(secondEnvironment && secondEnvironment != firstEnvironment))
+            << "fresh session installs a new environment map";
+        expect(jax->session().findCommand(u"fresh") == nullptr);
+        expect(jax->session().findEnvironment(u"freshenv") == nullptr);
+        expect(!secondEnvironment->contains(u"freshenv"))
+            << "environment map does not retain the previous session's definitions";
+        expect(jax->session().findDelimiter(u"\\freshangle") == nullptr);
+        compile(u"\\newcommand{\\freshagain}{y}\\newenvironment{freshagainenv}{c}{d}"
+                u"\\let\\freshagainangle(");
+        expect(jax->session().findCommand(u"freshagain") != nullptr);
+        expect(jax->session().findEnvironment(u"freshagainenv") != nullptr);
+        expect(secondEnvironment->contains(u"freshagainenv"))
+            << "environment map reads the second session's definitions";
+        expect(jax->session().findDelimiter(u"\\freshagainangle") != nullptr)
+            << "second session registers its literal delimiter alias";
+        const auto secondHandlers = handlerState();
+        NewcommandConfig(jax->configuration(), *jax);
+        expect(f.maps.getMap(NEW_COMMAND) == secondCommand);
+        expect(f.maps.getMap(NEW_DELIMITER) == secondDelimiter);
+        expect(f.maps.getMap(NEW_ENVIRONMENT) == secondEnvironment);
+        expect(handlerState() == secondHandlers);
+    };
     "newcommand optional parameters renewals and more than nine arguments use actual parser"_test =
         [] {
             NewcommandFixture f;

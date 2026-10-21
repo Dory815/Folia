@@ -157,6 +157,7 @@ class TexSessionState final {
     // It survives individual equations and tag resets without retaining nodes.
     std::optional<ColorModel> color_;
     ColumnMacroDefinitions column_definitions_;
+    bool newcommand_configuration_initialized_{};
 
   public:
     TexSessionState() = default;
@@ -196,6 +197,12 @@ class TexSessionState final {
     }
     ColumnMacroDefinitions const &columnDefinitions() const noexcept {
         return column_definitions_;
+    }
+    bool newcommandConfigurationInitialized() const noexcept {
+        return newcommand_configuration_initialized_;
+    }
+    void markNewcommandConfigurationInitialized() noexcept {
+        newcommand_configuration_initialized_ = true;
     }
 
     LabelRecord const *findLabel(std::u16string_view name) const;
