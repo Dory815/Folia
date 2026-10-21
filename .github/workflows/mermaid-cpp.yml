@@ -111,6 +111,9 @@ jobs:
           node tools/mermaid-cpp/pie-oracle.mjs --check 2>&1 |
             Tee-Object -FilePath build/mermaid-cpp/pie-oracle.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/pie-layout-oracle.mjs --check 2>&1 |
+            Tee-Object -FilePath build/mermaid-cpp/pie-layout-oracle.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Initialize the x64 MSVC environment
         uses: ilammy/msvc-dev-cmd@v1

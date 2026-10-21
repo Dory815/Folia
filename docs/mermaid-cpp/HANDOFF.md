@@ -20,23 +20,26 @@
   cases, 55 SVG cases. Native CI `39544210209` passed Debug and Release.
   Earlier run `39544084249` failed on the missing CSS fixture header, now fixed.
 - Fork stage PR: https://github.com/zhao0349/Folia/pull/1, head `535e5ab5`.
-  PR-event CI `39544508181` is still running; merge after its checks pass.
+  PR-event CI `39544508181` passed. PR merged with preserved small commits at
+  `396d814f2d6e03b3767560cab97f8cec794b3a0c`. Upstream has no PR yet.
 - Shared lexer extraction is the first Pie-stage batch: common metadata,
   hidden tokens and string conversion move out of Packet without changing its
   public API. CMake discovers the new module; existing Packet fixtures are the
   required regression check. Commit `8ece2acf` passed Debug/Release regression
   CI `39544334238`.
-- Pie raw parser and DB semantics are pushed as `09ad39f6`; native verification
-  and independent oracle tests are still pending.
-- D3 Pie geometry is ready with 86 official-runtime cases / 618 sectors,
-  exact path comparisons and a 1e-12 centroid tolerance for platform libm.
-  Source hashes and ISC notices are recorded. Native verification is pending.
-- Active agents: `official_parser` owns shared lexer/Pie parsing and Packet
-  lexer extraction; `build_audit` owns Pie oracle/tests; `renderer_audit` owns
-  source-derived D3 Pie geometry and its oracle/tests. These are next-stage
-  changes and must not be mixed into the Packet stage PR.
-- Next concrete action: finish Packet native CI and independent review, create
-  the first PR into the user's fork, merge if verified, then branch for Pie.
+- Pie raw parser/DB `09ad39f6`, D3 geometry `733a3295` and parser tests
+  `3675ec45` are pushed. Native CI `39544894952` is still running; older
+  in-progress Pie runs were superseded by later commits.
+- Geometry has 86 official-runtime cases / 618 sectors, exact paths and
+  1e-12 centroid tolerance for platform libm. Parser oracle has 291 cases.
+- Root added Pie layout with explicit measurement inputs and 40 official
+  renderer observations. This tests arithmetic only; real text measurement,
+  final themed SVG output and host integration remain pending.
+- All three prior agents have delivered their assigned files and are idle.
+  No background local build is running. All active verification is in Actions.
+- Next concrete action: run all Pie native tests, resolve any failures, then
+  open a second fork PR for the Pie core stage. After that, implement measured
+  text and themed SVG integration; do not claim a completed Pie renderer yet.
 
 ## User's incremental persistence instruction — 2026-10-21
 
