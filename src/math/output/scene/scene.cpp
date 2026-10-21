@@ -81,6 +81,17 @@ void validate(ForeignContent const &foreign) {
         throw std::invalid_argument("Scene foreignObject geometry is invalid");
     validate(foreign.metadata);
 }
+void validate(Action const &action) {
+    std::visit(
+        [](auto const &value) {
+            using T = std::remove_cvref_t<decltype(value)>;
+            if constexpr (std::same_as<T, MathTooltipAction>) {
+                if (!finite(value.dx) || !finite(value.dy))
+                    throw std::invalid_argument("Scene math tooltip offsets must be finite");
+            }
+        },
+        action);
+}
 FrameLayout validate_frames(Group const &root, FrameLayout frames) {
     if (!finite(frames.minimum_extent) || frames.minimum_extent <= 0)
         throw std::invalid_argument("Scene frame minimum extent must be finite and positive");
@@ -271,6 +282,8 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
     validate(source.transform);
     validate(source.paint);
     validate(source.metadata);
+    if (source.action)
+        validate(*source.action);
     if (source.clip)
         validate(*source.clip);
     if (source.viewport)
@@ -278,9 +291,9 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
     if (source.foreign_content) {
         validate(*source.foreign_content);
         if (!source.entries.empty() || source.viewport || source.clip || source.tooltip ||
-            source.link)
-            throw std::invalid_argument(
-                "Scene foreignObject group cannot have entries, viewport, clip, tooltip or link");
+            source.link || source.action)
+            throw std::invalid_argument("Scene foreignObject group cannot have entries, viewport, "
+                                        "clip, tooltip, link or action");
     }
     Group copy;
     copy.id = source.id;
@@ -293,12 +306,13 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
     copy.paint = source.paint;
     copy.viewport = source.viewport;
     copy.foreign_content = source.foreign_content;
+    copy.action = source.action;
     copy.entries.reserve(source.entries.size());
     for (auto const &entry : source.entries) {
         if (auto const *primitive = std::get_if<Primitive>(&entry))
             copy.entries.emplace_back(clone_primitive(*primitive));
-        else {
-            auto const &child = std::get<std::shared_ptr<Group const>>(entry);
+        else if (auto const *child_group = std::get_if<std::shared_ptr<Group const>>(&entry)) {
+            auto const &child = *child_group;
             if (!child)
                 throw std::invalid_argument("Scene group entries cannot contain null groups");
             if (!active.insert(child.get()).second)
@@ -306,6 +320,12 @@ Group clone_group(Group const &source, std::unordered_set<Group const *> &active
             auto cloned = clone_group(*child, active, ids);
             active.erase(child.get());
             copy.entries.emplace_back(std::make_shared<Group const>(std::move(cloned)));
+        } else {
+            auto region = std::get<ActionRegion>(entry);
+            region.hitbox = std::get<Rule>(clone_primitive(Primitive{region.hitbox}));
+            if (region.tooltip)
+                region.tooltip = std::make_shared<Scene const>(*region.tooltip);
+            copy.entries.emplace_back(std::move(region));
         }
     }
     return copy;

@@ -25,6 +25,10 @@ class Builder {
                                    std::optional<Viewport> viewport = {},
                                    std::optional<ForeignContent> foreign_content = {});
     void add_primitive(NodeId group, Primitive primitive);
+    std::size_t add_action_region(NodeId group, ActionRegion region);
+    void set_action_region_tooltip(NodeId group, std::size_t index,
+                                   std::shared_ptr<Scene const> tooltip);
+    void set_action(NodeId group, Action action);
     void discard_group(NodeId group);
     [[nodiscard]] std::optional<Rect> background_bounds(NodeId group) const;
     bool set_background_bounds(NodeId group, Rect bounds);

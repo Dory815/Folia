@@ -3,6 +3,25 @@ export import folia.math.output.scene.types;
 import std;
 
 export namespace folia::math::output::scene {
+class Scene;
+struct ActionRegion {
+    Rule hitbox;
+    std::shared_ptr<Scene const> tooltip;
+};
+struct ToggleAction {
+    double selection{};
+    std::size_t child_count{};
+    bool enriched{};
+};
+struct MathTooltipAction {
+    Unit dx{}, dy{};
+    std::uint32_t post_delay_ms{600}, clear_delay_ms{100};
+};
+struct StatuslineAction {
+    std::string text;
+};
+using Action = std::variant<ToggleAction, MathTooltipAction, StatuslineAction>;
+
 struct Group {
     NodeId id{};
     Transform transform{};
@@ -10,11 +29,12 @@ struct Group {
     std::optional<Link> link;
     std::optional<Tooltip> tooltip;
     SemanticMetadata metadata;
-    std::vector<std::variant<Primitive, std::shared_ptr<Group const>>> entries;
+    std::vector<std::variant<Primitive, std::shared_ptr<Group const>, ActionRegion>> entries;
     ElementRole role{ElementRole::math_wrapper};
     Paint paint{};
     std::optional<Viewport> viewport;
     std::optional<ForeignContent> foreign_content;
+    std::optional<Action> action;
 };
 
 // A Scene is a completed immutable value. All content is owned by value;

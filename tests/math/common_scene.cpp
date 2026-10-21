@@ -442,6 +442,11 @@ void inspect(scene::Group const &group, SceneStats &stats, bool insidePhantom = 
                 inspect(**child, stats, isPhantom);
             continue;
         }
+        if (std::holds_alternative<scene::ActionRegion>(entry)) {
+            ++stats.rules;
+            ++stats.typed_paints;
+            continue;
+        }
         auto const &primitive = std::get<scene::Primitive>(entry);
         std::visit(
             [&](auto const &value) {

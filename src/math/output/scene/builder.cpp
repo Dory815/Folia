@@ -15,7 +15,7 @@ bool has_attribute(SemanticMetadata const &metadata, std::string_view name) noex
 
 struct Builder::State {
     struct Entry {
-        std::variant<Primitive, NodeId> value;
+        std::variant<Primitive, NodeId, ActionRegion> value;
     };
     struct MutableGroup {
         NodeId id{};
@@ -29,6 +29,7 @@ struct Builder::State {
         Paint paint{};
         std::optional<Viewport> viewport;
         std::optional<ForeignContent> foreign_content;
+        std::optional<Action> action;
     };
     std::vector<MutableGroup> groups;
     Metrics metrics{};
@@ -66,14 +67,15 @@ struct Builder::State {
         out.paint = std::move(source->paint);
         out.viewport = std::move(source->viewport);
         out.foreign_content = std::move(source->foreign_content);
+        out.action = std::move(source->action);
         for (auto &entry : source->entries) {
             if (auto *primitive = std::get_if<Primitive>(&entry.value))
                 out.entries.emplace_back(std::move(*primitive));
-            else {
-                auto child = std::make_shared<Group>(
-                    std::move(*this).freeze_group(std::get<NodeId>(entry.value)));
+            else if (auto *child_id = std::get_if<NodeId>(&entry.value)) {
+                auto child = std::make_shared<Group>(std::move(*this).freeze_group(*child_id));
                 out.entries.emplace_back(std::shared_ptr<Group const>{std::move(child)});
-            }
+            } else
+                out.entries.emplace_back(std::move(std::get<ActionRegion>(entry.value)));
         }
         return out;
     }
@@ -496,7 +498,8 @@ std::vector<NodeId> Builder::split_group_contents(NodeId shell_id,
                                  .role = shell->role,
                                  .paint = shell->paint,
                                  .viewport = shell->viewport,
-                                 .foreign_content = shell->foreign_content};
+                                 .foreign_content = shell->foreign_content,
+                                 .action = shell->action};
         copy.entries.reserve(source.entries.size());
         prepared.push_back(std::move(copy));
         result.push_back(id);
@@ -560,6 +563,38 @@ void Builder::add_primitive(NodeId group, Primitive primitive) {
     if (owner->foreign_content)
         throw std::invalid_argument("ForeignObject group cannot contain ordinary entries");
     owner->entries.push_back(State::Entry{std::move(primitive)});
+}
+std::size_t Builder::add_action_region(NodeId group_id, ActionRegion region) {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    auto &group = state_->require(group_id);
+    if (group.foreign_content)
+        throw std::invalid_argument("ForeignObject group cannot contain action regions");
+    auto const index = group.entries.size();
+    group.entries.push_back(State::Entry{std::move(region)});
+    return index;
+}
+void Builder::set_action_region_tooltip(NodeId group_id, std::size_t index,
+                                        std::shared_ptr<Scene const> tooltip) {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    auto &group = state_->require(group_id);
+    if (group.foreign_content)
+        throw std::invalid_argument("ForeignObject group cannot contain action regions");
+    if (index >= group.entries.size())
+        throw std::out_of_range("Scene action region entry index");
+    auto *region = std::get_if<ActionRegion>(&group.entries[index].value);
+    if (!region)
+        throw std::invalid_argument("Scene entry is not an action region");
+    region->tooltip = std::move(tooltip);
+}
+void Builder::set_action(NodeId group_id, Action action) {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    auto &group = state_->require(group_id);
+    if (group.foreign_content)
+        throw std::invalid_argument("ForeignObject group cannot have an action");
+    group.action = std::move(action);
 }
 
 void Builder::set_metrics(Metrics metrics) {
