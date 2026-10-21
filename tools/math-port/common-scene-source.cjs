@@ -107,6 +107,32 @@ for (const [name, tex, display, em, ex, width] of [
   ['scene-enclose-radical-top', String.raw`\enclose{radical top}{x}`, false, 16, 8, 1280],
 ]) cases.push({name, tex, display, em, ex, width, features: ['enclose']});
 
+// Complete pinned SVG menclose notation inventory and four Source boundaries,
+// appended after the byte-locked original 115 records.
+const enclosureNotationNames = [
+  'top', 'right', 'bottom', 'left', 'actuarial', 'madruwb', 'updiagonalstrike',
+  'downdiagonalstrike', 'horizontalstrike', 'verticalstrike', 'box', 'roundedbox',
+  'circle', 'phasorangle', 'uparrow', 'downarrow', 'leftarrow', 'rightarrow',
+  'updownarrow', 'leftrightarrow', 'updiagonalarrow', 'northeastarrow', 'southeastarrow',
+  'northwestarrow', 'southwestarrow', 'northeastsouthwestarrow',
+  'northwestsoutheastarrow', 'longdiv', 'radical'
+];
+for (const notation of enclosureNotationNames)
+  cases.push({name: `scene-enclose-notation-${notation}`,
+    tex: String.raw`\enclose{${notation}}{x}`, display: false, em: 16, ex: 8,
+    width: 1280, features: ['enclose']});
+for (const item of [
+  {name: 'scene-enclose-boundary-roundedbox-empty',
+    tex: String.raw`\enclose{roundedbox}{}`, notation: 'roundedbox'},
+  {name: 'scene-enclose-boundary-uparrow-left',
+    tex: String.raw`\enclose{uparrow left}{x}`, notation: 'uparrow left'},
+  {name: 'scene-enclose-boundary-rightarrow-top',
+    tex: String.raw`\enclose{rightarrow top}{x}`, notation: 'rightarrow top'},
+  {name: 'scene-enclose-boundary-arrow-custom-parameters',
+    tex: String.raw`\enclose{rightarrow}[data-thickness=2px,data-padding=3px,data-arrowhead={2 3 4}]{x}`,
+    notation: 'rightarrow'}
+]) cases.push({...item, display: false, em: 16, ex: 8, width: 1280, features: ['enclose']});
+
 function cpp(value) {
   // MSVC rejects a single string literal token beyond 16K; keep each emitted
   // raw token well below the compiler limit. Iterate JS code points so a
@@ -133,8 +159,11 @@ function cpp(value) {
 }
 function attr(svg, name) {
   const rootTag = svg.match(/<svg\b[^>]*>/)?.[0] || '';
+  return tagAttr(rootTag, name);
+}
+function tagAttr(tag, name) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return rootTag.match(new RegExp('\\b' + escaped + '="([^"]*)"'))?.[1] ?? '';
+  return tag.match(new RegExp('\\b' + escaped + '="([^"]*)"'))?.[1] ?? '';
 }
 function nestedAssemblyPieces(svg, axis) {
   const openings = [...svg.matchAll(/<svg\b[^>]*>/g)];
@@ -213,24 +242,117 @@ async function capture() {
   requireSourceMarkup('scene-table-array-column-rules', ['data-mml-node="mtable"', 'data-line="v"', 'mjx-solid']);
   requireSourceMarkup('scene-table-row-dashed', ['data-mml-node="mtable"', 'data-frame-styles="dashed', 'data-line="h"', 'mjx-dashed', 'stroke-dasharray=']);
   requireSourceMarkup('scene-table-column-dashed', ['data-mml-node="mtable"', 'data-line="v"', 'mjx-dashed']);
-  const sourceEnclosureLines = (name, count) => {
+  const enclosureData = name => {
     const record = byName.get(name);
     assert.ok(record && !record.error, `${name} must convert in pinned Source`);
     assert.ok(record.svg.includes('data-mml-node="menclose"'), `${name} must contain Source menclose`);
-    assert.equal((record.svg.match(/<line\b/g) || []).length, count,
-      `${name} Source enclosure line count`);
+    const start = record.svg.indexOf('data-mml-node="menclose"');
+    const subtree = record.svg.slice(start);
+    const viewBox = attr(record.svg, 'viewBox').split(/\s+/).map(Number);
+    assert.equal(viewBox.length, 4, `${name} Source viewBox must have four values`);
+    assert.ok(viewBox.every(Number.isFinite) && viewBox[2] > 0 && viewBox[3] > 0,
+      `${name} Source root geometry must be finite and nonzero`);
+    const tags = [...subtree.matchAll(/<(?:path|rect|line|ellipse|polygon)\b[^>]*>/g)]
+      .map(match => match[0]);
+    return {record, subtree, viewBox, tags};
   };
-  sourceEnclosureLines('scene-enclose-all-lines', 8);
-  sourceEnclosureLines('scene-enclose-paired-sides', 4);
-  const radicalEnclosure = byName.get('scene-enclose-radical-top');
-  assert.ok(radicalEnclosure && !radicalEnclosure.error,
-    'scene-enclose-radical-top must convert in pinned Source');
-  assert.ok(radicalEnclosure.svg.includes('data-mml-node="menclose"') &&
-    radicalEnclosure.svg.includes('data-mml-node="msqrt"') &&
-    radicalEnclosure.svg.includes('data-c="221A"') &&
-    radicalEnclosure.svg.includes('translate(853,0)') &&
-    (radicalEnclosure.svg.match(/<line\b/g) || []).length === 1,
-    'radical+top Source must retain nested sqrt, left offset and top line');
+  for (const notation of enclosureNotationNames) {
+    const {tags} = enclosureData(`scene-enclose-notation-${notation}`);
+    assert.ok(tags.length > 0, `${notation} Source notation must emit a drawable primitive`);
+  }
+  const sourceLineCount = (name, expected) => {
+    const {tags} = enclosureData(name);
+    assert.equal(tags.filter(tag => tag.startsWith('<line')).length, expected,
+      `${name} Source line primitive count`);
+  };
+  sourceLineCount('scene-enclose-notation-top', 1);
+  sourceLineCount('scene-enclose-notation-actuarial', 2);
+  sourceLineCount('scene-enclose-notation-madruwb', 2);
+  sourceLineCount('scene-enclose-notation-updiagonalstrike', 1);
+  sourceLineCount('scene-enclose-notation-downdiagonalstrike', 1);
+  sourceLineCount('scene-enclose-notation-horizontalstrike', 1);
+  sourceLineCount('scene-enclose-notation-verticalstrike', 1);
+  assert.ok(enclosureData('scene-enclose-notation-box').tags.some(tag => tag.startsWith('<rect')),
+    'box must preserve Source rect geometry');
+  assert.ok(enclosureData('scene-enclose-notation-roundedbox').tags.some(tag => tag.startsWith('<rect')),
+    'roundedbox must preserve Source rect geometry');
+  assert.ok(enclosureData('scene-enclose-notation-circle').tags.some(tag => tag.startsWith('<ellipse')),
+    'circle must preserve Source ellipse geometry');
+  const roundedEmpty = enclosureData('scene-enclose-boundary-roundedbox-empty');
+  assert.ok(!roundedEmpty.subtree.includes('data-c='), 'empty roundedbox must have no child glyph');
+  const roundedRect = roundedEmpty.tags.find(tag => tag.startsWith('<rect'));
+  assert.ok(roundedRect, 'empty roundedbox must emit a Source rect');
+  const roundedWidth = Number(tagAttr(roundedRect, 'width'));
+  const roundedRadius = Number(tagAttr(roundedRect, 'rx'));
+  assert.ok(Number.isFinite(roundedWidth) && Number.isFinite(roundedRadius) &&
+    roundedWidth > 0 && roundedRadius > roundedWidth / 2,
+    'empty roundedbox must preserve Source rx greater than half-width');
+  const phasor = enclosureData('scene-enclose-notation-phasorangle').tags
+    .filter(tag => tag.startsWith('<path')).at(-1);
+  const longdiv = enclosureData('scene-enclose-notation-longdiv').tags
+    .filter(tag => tag.startsWith('<path')).at(-1);
+  for (const [name, tag, join] of [
+    ['phasorangle', phasor, 'mitre'], ['longdiv', longdiv, 'round']
+  ]) {
+    assert.ok(tag && /^<path style="stroke-width: [^"]+;"/.test(tag),
+      `${name} Source stroke-width must be sole first style property`);
+    assert.ok(tagAttr(tag, 'stroke-linejoin') === join && tagAttr(tag, 'stroke-linecap') === 'round' &&
+      tagAttr(tag, 'fill') === 'none' && tagAttr(tag, 'd'),
+      `${name} Source path paint attributes and join spelling`);
+  }
+  assert.match(tagAttr(longdiv, 'd'), /\ba\s+[^ ]+\s+[^ ]+\s+0\s+0,1\s+0\s+853/,
+    'longdiv must preserve its Source relative arc command and delta');
+  for (const notation of ['uparrow', 'downarrow', 'leftarrow', 'rightarrow', 'updownarrow',
+    'leftrightarrow', 'updiagonalarrow', 'northeastarrow', 'southeastarrow', 'northwestarrow',
+    'southwestarrow', 'northeastsouthwestarrow', 'northwestsoutheastarrow']) {
+    const arrow = enclosureData(`scene-enclose-notation-${notation}`).tags
+      .filter(tag => tag.startsWith('<path') && !tag.includes('data-c=')).at(-1);
+    assert.ok(arrow && /\bl\s/.test(tagAttr(arrow, 'd') || ''),
+      `${notation} must preserve relative Source arrow path commands`);
+  }
+  for (const [notation, transform] of [
+    ['uparrow', 'rotate(90 '], ['downarrow', 'rotate(-90 '], ['leftarrow', 'rotate(-180 '],
+    ['updownarrow', 'rotate(-90 '], ['updiagonalarrow', 'rotate(38.378 '],
+    ['northeastarrow', 'rotate(38.378 '], ['southeastarrow', 'rotate(-38.378 '],
+    ['northwestarrow', 'rotate(141.622 '], ['southwestarrow', 'rotate(-141.622 '],
+    ['northeastsouthwestarrow', 'rotate(38.378 '], ['northwestsoutheastarrow', 'rotate(-38.378 ']
+  ]) {
+    const arrow = enclosureData(`scene-enclose-notation-${notation}`).tags
+      .filter(tag => tag.startsWith('<path') && !tag.includes('data-c=')).at(-1);
+    assert.ok(tagAttr(arrow, 'transform')?.includes(transform),
+      `${notation} must preserve its Source arrow transform`);
+  }
+  const leftArrow = enclosureData('scene-enclose-boundary-uparrow-left').tags
+    .filter(tag => tag.startsWith('<path') && !tag.includes('data-c=')).at(-1);
+  const topArrow = enclosureData('scene-enclose-boundary-rightarrow-top').tags
+    .filter(tag => tag.startsWith('<path') && !tag.includes('data-c=')).at(-1);
+  assert.ok(tagAttr(leftArrow, 'transform')?.includes('translate(133.5 0)'),
+    'uparrow+left must preserve nonzero Source x translation');
+  assert.ok(tagAttr(topArrow, 'transform')?.includes('translate(0 -133.5)'),
+    'rightarrow+top must preserve nonzero Source y translation');
+  sourceLineCount('scene-enclose-boundary-rightarrow-top', 1);
+  const customArrow = enclosureData('scene-enclose-boundary-arrow-custom-parameters');
+  const customPath = customArrow.tags.filter(tag => tag.startsWith('<path') && !tag.includes('data-c=')).at(-1);
+  const defaultRightArrow = enclosureData('scene-enclose-notation-rightarrow').tags
+    .filter(tag => tag.startsWith('<path') && !tag.includes('data-c=')).at(-1);
+  assert.ok(customArrow.subtree.includes('data-thickness="2px"') &&
+    customArrow.subtree.includes('data-padding="3px"') &&
+    customArrow.subtree.includes('data-arrowhead="2 3 4"') &&
+    customArrow.subtree.includes('data-arrowhead={2 3 4}') &&
+    tagAttr(customPath, 'd') !== tagAttr(defaultRightArrow, 'd'),
+    'custom arrowhead/padding/thickness Source input must alter its completed path');
+  const radicalEnclosure = enclosureData('scene-enclose-notation-radical');
+  assert.ok(radicalEnclosure.subtree.includes('data-mml-node="msqrt"') &&
+    radicalEnclosure.subtree.includes('data-c="221A"'),
+    'radical notation must render a nested msqrt root glyph');
+  sourceLineCount('scene-enclose-all-lines', 8);
+  sourceLineCount('scene-enclose-paired-sides', 4);
+  const radicalTop = enclosureData('scene-enclose-radical-top');
+  assert.ok(radicalTop.subtree.includes('data-mml-node="msqrt"') &&
+    radicalTop.subtree.includes('data-c="221A"') &&
+    radicalTop.subtree.includes('translate(853,0)') &&
+    radicalTop.tags.filter(tag => tag.startsWith('<line')).length === 1,
+    'radical+top must keep the independent Source root glyph and top-rule geometry');
   for (const [name, side] of [['scene-table-label-right', 'right'],
                               ['scene-table-label-left-metric', 'left'],
                               ['scene-table-nested-label', 'right']]) {

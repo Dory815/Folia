@@ -264,6 +264,8 @@ struct SceneStats {
     std::size_t glyphs{};
     std::size_t paths{};
     std::size_t rules{};
+    std::size_t ellipses{};
+    std::size_t invalid_ellipses{};
     std::size_t text_runs{};
     std::size_t typed_fonts{};
     std::size_t typed_paints{};
@@ -430,6 +432,21 @@ void inspect(scene::Group const &group, SceneStats &stats, bool insidePhantom = 
                             ++stats.table_invalid_backgrounds;
                     }
                     ++stats.typed_paints;
+                } else if constexpr (std::same_as<T, scene::Ellipse>) {
+                    ++stats.ellipses;
+                    inspectTableMetadata(value.metadata, stats);
+                    inspectTableRole(value.role, stats);
+                    const bool validGeometry =
+                        std::isfinite(value.center.x) && std::isfinite(value.center.y) &&
+                        std::isfinite(value.radius_x) && std::isfinite(value.radius_y) &&
+                        value.radius_x >= 0 && value.radius_y >= 0;
+                    const bool validPaint = std::isfinite(value.paint.stroke_width) &&
+                                            std::isfinite(value.paint.opacity) &&
+                                            value.paint.stroke_width >= 0 &&
+                                            value.paint.opacity >= 0 && value.paint.opacity <= 1;
+                    if (!validGeometry || !validPaint)
+                        ++stats.invalid_ellipses;
+                    ++stats.typed_paints;
                 } else if constexpr (std::same_as<T, scene::TextRun>) {
                     ++stats.text_runs;
                     if (value.font && !value.font->family.empty())
@@ -531,57 +548,93 @@ suite common_scene_source = [] {
         // Common families, table branches, and isolated script-family probes.
         // Other pinned Source cases remain outstanding until their families
         // emit Scene nodes. This is not the required 75/150 full-profile gate.
-        constexpr std::array<std::string_view, 51> selected{"plain",
-                                                            "mathbb",
-                                                            "fraction-inline",
-                                                            "fraction-display",
-                                                            "root",
-                                                            "indexed-root",
-                                                            "scene-identifiers-numbers",
-                                                            "scene-fixed-operator",
-                                                            "scene-assembled-operator",
-                                                            "scene-script-sub",
-                                                            "scene-script-sup",
-                                                            "scene-script-subsup",
-                                                            "scene-script-nested",
-                                                            "scene-sum-limits-inline",
-                                                            "scene-sum-limits-display",
-                                                            "scene-overline-single",
-                                                            "scene-widehat-single",
-                                                            "scene-prescript-sup-slot",
-                                                            "scene-prescript-sub-slot",
-                                                            "scene-prescript-both-slots",
-                                                            "text",
-                                                            "inline-linebreak-narrow",
-                                                            "scene-inline-break-before",
-                                                            "scene-inline-break-after",
-                                                            "scene-text-wordbreak",
-                                                            "scene-zero-size-frame",
-                                                            "scene-vertical-extender-assembly",
-                                                            "scene-horizontal-extender-assembly",
-                                                            "bbox",
-                                                            "phantom",
-                                                            "base-smash-raise",
-                                                            "base-phantom-sides",
-                                                            "scene-simple-phantom",
-                                                            "scene-padding-negative-dw-center",
-                                                            "scene-padding-negative-dw-right",
-                                                            "matrix",
-                                                            "colortbl-row-cell",
-                                                            "display-linebreak-table",
-                                                            "scene-table-array-basic",
-                                                            "scene-table-array-column-rules",
-                                                            "scene-table-array-row-rules",
-                                                            "scene-table-array-cell-padding",
-                                                            "scene-table-array-paragraph-column",
-                                                            "scene-table-row-dashed",
-                                                            "scene-table-column-dashed",
-                                                            "scene-table-label-right",
-                                                            "scene-table-label-left-metric",
-                                                            "scene-table-nested-label",
-                                                            "scene-enclose-all-lines",
-                                                            "scene-enclose-paired-sides",
-                                                            "scene-enclose-radical-top"};
+        constexpr std::array<std::string_view, 86> selected{
+            "plain",
+            "mathbb",
+            "fraction-inline",
+            "fraction-display",
+            "root",
+            "indexed-root",
+            "scene-identifiers-numbers",
+            "scene-fixed-operator",
+            "scene-assembled-operator",
+            "scene-script-sub",
+            "scene-script-sup",
+            "scene-script-subsup",
+            "scene-script-nested",
+            "scene-sum-limits-inline",
+            "scene-sum-limits-display",
+            "scene-overline-single",
+            "scene-widehat-single",
+            "scene-prescript-sup-slot",
+            "scene-prescript-sub-slot",
+            "scene-prescript-both-slots",
+            "text",
+            "inline-linebreak-narrow",
+            "scene-inline-break-before",
+            "scene-inline-break-after",
+            "scene-text-wordbreak",
+            "scene-zero-size-frame",
+            "scene-vertical-extender-assembly",
+            "scene-horizontal-extender-assembly",
+            "bbox",
+            "phantom",
+            "base-smash-raise",
+            "base-phantom-sides",
+            "scene-simple-phantom",
+            "scene-padding-negative-dw-center",
+            "scene-padding-negative-dw-right",
+            "matrix",
+            "colortbl-row-cell",
+            "display-linebreak-table",
+            "scene-table-array-basic",
+            "scene-table-array-column-rules",
+            "scene-table-array-row-rules",
+            "scene-table-array-cell-padding",
+            "scene-table-array-paragraph-column",
+            "scene-table-row-dashed",
+            "scene-table-column-dashed",
+            "scene-table-label-right",
+            "scene-table-label-left-metric",
+            "scene-table-nested-label",
+            "scene-enclose-all-lines",
+            "scene-enclose-paired-sides",
+            "scene-enclose-radical-top",
+            "cancel-lines",
+            "enclose-notations",
+            "scene-enclose-notation-top",
+            "scene-enclose-notation-right",
+            "scene-enclose-notation-bottom",
+            "scene-enclose-notation-left",
+            "scene-enclose-notation-actuarial",
+            "scene-enclose-notation-madruwb",
+            "scene-enclose-notation-updiagonalstrike",
+            "scene-enclose-notation-downdiagonalstrike",
+            "scene-enclose-notation-horizontalstrike",
+            "scene-enclose-notation-verticalstrike",
+            "scene-enclose-notation-box",
+            "scene-enclose-notation-roundedbox",
+            "scene-enclose-notation-circle",
+            "scene-enclose-notation-phasorangle",
+            "scene-enclose-notation-uparrow",
+            "scene-enclose-notation-downarrow",
+            "scene-enclose-notation-leftarrow",
+            "scene-enclose-notation-rightarrow",
+            "scene-enclose-notation-updownarrow",
+            "scene-enclose-notation-leftrightarrow",
+            "scene-enclose-notation-updiagonalarrow",
+            "scene-enclose-notation-northeastarrow",
+            "scene-enclose-notation-southeastarrow",
+            "scene-enclose-notation-northwestarrow",
+            "scene-enclose-notation-southwestarrow",
+            "scene-enclose-notation-northeastsouthwestarrow",
+            "scene-enclose-notation-northwestsoutheastarrow",
+            "scene-enclose-notation-longdiv",
+            "scene-enclose-notation-radical",
+            "scene-enclose-boundary-roundedbox-empty",
+            "scene-enclose-boundary-uparrow-left",
+            "scene-enclose-boundary-rightarrow-top",
+            "scene-enclose-boundary-arrow-custom-parameters"};
         for (auto name : selected) {
             try {
                 const auto &source = sourceCase(name);
@@ -597,10 +650,12 @@ suite common_scene_source = [] {
                 SceneStats stats;
                 inspect(completed.root(), stats);
                 const bool sourceHasGlyphs = source.svg.find("data-c=") != std::string_view::npos;
-                const bool sourceHasDrawing = sourceHasGlyphs ||
-                                              source.svg.find("<rect") != std::string_view::npos ||
-                                              source.svg.find("<line") != std::string_view::npos ||
-                                              source.svg.find("<polygon") != std::string_view::npos;
+                const bool sourceHasDrawing =
+                    sourceHasGlyphs || source.svg.find("<path") != std::string_view::npos ||
+                    source.svg.find("<rect") != std::string_view::npos ||
+                    source.svg.find("<line") != std::string_view::npos ||
+                    source.svg.find("<ellipse") != std::string_view::npos ||
+                    source.svg.find("<polygon") != std::string_view::npos;
                 const bool sourceHasTable =
                     source.svg.find("data-mml-node=\"mtable\"") != std::string_view::npos;
                 const bool sourceHasVerticalTableLine =
@@ -684,6 +739,7 @@ suite common_scene_source = [] {
                 const bool typedSceneOk =
                     stats.groups > 0 && completedMetrics && frameMetrics && fragmentRootsOwned &&
                     frameFragmentsMatchSource && extenderRolesMatchSource &&
+                    stats.invalid_ellipses == 0 &&
                     (!sourceHasGlyphs || (stats.glyphs > 0 && stats.typed_fonts > 0)) &&
                     (!sourceHasDrawing || stats.typed_paints > 0);
                 bool phantomEmissionOk = true;
@@ -733,6 +789,8 @@ suite common_scene_source = [] {
                     << "invalid completed frame or fragment metrics for " << name;
                 expect(bool(frameFragmentsMatchSource))
                     << "Scene frame fragment count differs from Source SVG segments for " << name;
+                expect(bool(stats.invalid_ellipses == 0))
+                    << "Scene ellipse has invalid geometry or paint for " << name;
                 expect(bool(fragmentRootsOwned))
                     << "inline fragments are not owned by the Scene root for " << name;
                 expect(bool(extenderRolesMatchSource))
@@ -807,14 +865,19 @@ suite common_scene_source = [] {
     "frozen_Scene_serializes_after_job_and_document_retirement_and_repeat_request"_test = [] {
         InputOwner owner;
         NoUnexpectedMeasurement measurement;
-        constexpr std::array<std::string_view, 8> repeatedCases{"fraction-inline",
-                                                                "plain",
-                                                                "scene-inline-break-before",
-                                                                "scene-inline-break-after",
-                                                                "scene-table-array-row-rules",
-                                                                "scene-table-label-right",
-                                                                "scene-table-label-left-metric",
-                                                                "scene-enclose-radical-top"};
+        constexpr std::array<std::string_view, 12> repeatedCases{
+            "fraction-inline",
+            "plain",
+            "scene-inline-break-before",
+            "scene-inline-break-after",
+            "scene-table-array-row-rules",
+            "scene-table-label-right",
+            "scene-table-label-left-metric",
+            "scene-enclose-radical-top",
+            "scene-enclose-boundary-roundedbox-empty",
+            "scene-enclose-notation-circle",
+            "scene-enclose-notation-longdiv",
+            "scene-enclose-notation-northeastsouthwestarrow"};
         for (auto name : repeatedCases) {
             const auto &source = sourceCase(name);
             auto first = buildScene(source, owner, measurement);
