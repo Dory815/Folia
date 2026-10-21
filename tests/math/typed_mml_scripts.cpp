@@ -133,5 +133,80 @@ suite typed_mml_script_inheritance = [] {
         expect(node.children().back()->kind() == NodeKind::none);
         expect(eq(inheritedScriptLevel(*node.children().back()), 2.0));
     };
+    "fixMmultiscripts_true_suppresses_diagnostic_without_repairing_children"_test = [] {
+        MmlDocument document;
+        auto &factory = document.factory();
+        auto &base = factory.make(NodeKind::mi);
+        auto &subscript = factory.make(NodeKind::none);
+        const std::array<MmlNode *, 2> originalChildren{&base, &subscript};
+        auto &multi = factory.make(NodeKind::mmultiscripts, {}, originalChildren);
+        auto &row = factory.make(NodeKind::mrow);
+        row.appendChild(multi);
+
+        VerifyOptions options;
+        options.checkArity = false;
+        options.checkMathvariants = false;
+        options.fixMmultiscripts = true;
+        row.verifyTree(options);
+
+        expect(row.children().size() == 1_u);
+        if (row.children().empty()) return;
+        expect(row.children().front() == &multi);
+        expect(multi.parent() == &row);
+        expect(multi.children().size() == 2_u);
+        if (multi.children().size() != 2_u) return;
+        expect(multi.children()[0] == &base);
+        expect(multi.children()[1] == &subscript);
+        expect(base.parent() == &multi);
+        expect(subscript.parent() == &multi);
+    };
+
+    "fixMmultiscripts_false_wraps_original_node_with_parity_message"_test = [] {
+        MmlDocument document;
+        auto &factory = document.factory();
+        auto &base = factory.make(NodeKind::mi);
+        auto &subscript = factory.make(NodeKind::none);
+        const std::array<MmlNode *, 2> originalChildren{&base, &subscript};
+        auto &multi = factory.make(NodeKind::mmultiscripts, {}, originalChildren);
+        auto &row = factory.make(NodeKind::mrow);
+        row.appendChild(multi);
+
+        VerifyOptions options;
+        options.checkArity = false;
+        options.checkMathvariants = false;
+        options.fixMmultiscripts = false;
+        row.verifyTree(options);
+
+        expect(row.children().size() == 1_u);
+        if (row.children().empty()) return;
+        auto *error = row.children().front();
+        expect(error != nullptr);
+        if (!error) return;
+        expect(error->kind() == NodeKind::merror);
+        expect(error->parent() == &row);
+        const auto *message = error->attributes().own(u"data-mjx-message");
+        expect(message && std::get_if<std::u16string>(message) &&
+               *std::get_if<std::u16string>(message) ==
+                   u"There must be an equal number of scripts of each type");
+        expect(error->attributes().own(u"title") == nullptr);
+
+        expect(error->children().size() == 1_u);
+        if (error->children().empty()) return;
+        auto *errorBody = error->children().front();
+        expect(errorBody->kind() == NodeKind::inferred_mrow);
+        expect(errorBody->isInferred());
+        expect(errorBody->parent() == error);
+        expect(errorBody->children().size() == 1_u);
+        if (errorBody->children().empty()) return;
+        expect(errorBody->children().front() == &multi);
+        expect(multi.parent() == errorBody);
+        expect(multi.children().size() == 2_u);
+        if (multi.children().size() != 2_u) return;
+        expect(multi.children()[0] == &base);
+        expect(multi.children()[1] == &subscript);
+        expect(base.parent() == &multi);
+        expect(subscript.parent() == &multi);
+    };
+
 };
 } // namespace

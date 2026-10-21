@@ -92,6 +92,75 @@ suite typed_mml_containers = [] {
         checkInheritance(false, std::u16string{u"block"}, true, true);
     };
 
+    "nested_math_verification_replaces_inner_at_its_physical_inferred_parent"_test = [] {
+        m::MmlDocument document;
+        auto &factory = document.factory();
+        auto &root = factory.make(m::NodeKind::mrow);
+        auto &outer = static_cast<m::MmlMath &>(factory.make(m::NodeKind::math));
+        auto &inner = static_cast<m::MmlMath &>(factory.make(m::NodeKind::math));
+        root.appendChild(outer);
+        outer.appendChild(inner);
+
+        expect(root.children().size() == 1_u);
+        expect(root.children()[0] == &outer);
+        expect(outer.children().size() == 1_u);
+        if (outer.children().empty()) return;
+        auto *outerBody = outer.children().front();
+        expect(outerBody->kind() == m::NodeKind::inferred_mrow);
+        expect(outerBody->isInferred());
+        expect(outerBody->children().size() == 1_u);
+        expect(outerBody->children().front() == &inner);
+        expect(inner.parent() == outerBody);
+
+        m::VerifyOptions options;
+        options.checkArity = false;
+        options.checkAttributes = false;
+        options.checkMathvariants = false;
+        options.fullErrors = false;
+        inner.verifyTree(options);
+
+        expect(root.children().size() == 1_u);
+        if (root.children().empty()) return;
+        expect(root.children().front() == &outer);
+        expect(outer.parent() == &root);
+        expect(outer.children().size() == 1_u);
+        if (outer.children().empty()) return;
+        expect(outer.children().front() == outerBody);
+        expect(outerBody->kind() == m::NodeKind::inferred_mrow);
+        expect(outerBody->children().size() == 1_u);
+        if (outerBody->children().empty()) return;
+        auto *error = outerBody->children().front();
+        expect(error != nullptr);
+        if (!error) return;
+        expect(error->kind() == m::NodeKind::merror);
+        expect(error->parent() == outerBody);
+        expect(inner.parent() == nullptr);
+
+        const auto *message = error->attributes().own(u"data-mjx-message");
+        expect(message && std::get_if<std::u16string>(message) &&
+               *std::get_if<std::u16string>(message) == u"Improper nesting of math tags");
+        const auto *title = error->attributes().own(u"title");
+        expect(title && std::get_if<std::u16string>(title) &&
+               *std::get_if<std::u16string>(title) == u"Improper nesting of math tags");
+        expect(error->children().size() == 1_u);
+        if (error->children().empty()) return;
+        auto *errorBody = error->children().front();
+        expect(errorBody->kind() == m::NodeKind::inferred_mrow);
+        expect(errorBody->isInferred());
+        expect(errorBody->parent() == error);
+        expect(errorBody->children().size() == 1_u);
+        if (errorBody->children().empty()) return;
+        auto *messageNode = errorBody->children().front();
+        expect(messageNode->kind() == m::NodeKind::mtext);
+        expect(messageNode->parent() == errorBody);
+        expect(messageNode->children().size() == 1_u);
+        if (messageNode->children().empty()) return;
+        auto *textNode = messageNode->children().front();
+        expect(textNode->kind() == m::NodeKind::text);
+        expect(textNode->parent() == messageNode);
+        expect(textNode->text() == u"math");
+    };
+
     "mathchoice selects branch by display and script level"_test = [] {
         m::MmlDocument document;
         auto &factory = document.factory();
