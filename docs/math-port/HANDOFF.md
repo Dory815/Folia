@@ -4,7 +4,7 @@
 
 ## 当前 checkpoint
 
-- 上个代码HEAD `8632e901`；本次accent两oracle/gate及两consumer已改，待分批提交。WinUI worker已接原生SVG、数学QuickJS已退出；剩余对象模拟源码/consumer清理未完，不能宣布移植完成。Mermaid暂停。
+- 最新工具提交 `56b227f5`，accent两Cpp退场随本提交。WinUI worker已接原生SVG、数学QuickJS已退出；剩余对象模拟源码/consumer清理未完，不能宣布移植完成。Mermaid暂停。
 - 源树未改：648源、162未配置cpp/ixx；478活动+83生成=561配置、248接口/map一致、active unresolved0、17targets。最新FileAPI `index-2026-10-21T12-31-24-0772.json`；未配置不等于可删。
 - BaseNode四分支测试 `5acd4e70` **1/55通过**。本轮已归责退9旧Cpp consumer、9专用工具；class_binding直接cpp/ixx importer生产2+测试41（inc另计）。生产算法未改。
 - Source exact均通过：constructor88、container6480、parent rebind2160、HTML75/434、mfenced length4、token walk780、replaceChild1504、raw/math accent72/33；旧profiles保留。HTML新profile有完整旧fixture/全部Source期待迁移证明，见 `html-source-promoted.json`，勿重复跑锁旧owner/已有staging的bridge。
@@ -13,9 +13,9 @@
 
 ## 精确下一动作
 
-先分批提交accent工具/consumer，再刷新窄图和此checkpoint。无live build/native。
+accent已验收/提交；先刷新窄图的两旧边43→41。无live agent/build/native。
 
-唯一live Luna `/root/class_scripts`，仅写ignored `build/math-port/scripts-retirement-next/simple-source-migration/`：Root已拒绝仅保留kinds/pins而丢掉simple_mml的原期待值。新要求与HTML相同：ignored observer先完整匹配旧Cpp，再证明全部Source输入/期待顺序，生成被证明的独立JSON；clean Source-only原owner不得有Cpp模板/槽表/并列oracle。尚未交付/执行。原 `run-retirement-gates.cjs`只静态交付，勿运行来重复已接受Common/string广测；reference_script/simple_mml均未删。
+**下一具体工作由Root接手**：读 `tools/math-port/simple-mml-oracle.cjs`，设计与HTML相同的一次性Source observer：先完整匹配旧Cpp，再捕获并证明全部Source输入/期待顺序，存独立JSON；clean Source-only替换原owner，不留Cpp模板/槽表/并列oracle。Luna只交了 `build/math-port/scripts-retirement-next/simple-source-migration/STATUS.md` 静态未完成报告（106场景/732期待/357deep/1605矩阵行/296递归值及pins），未实现可靠迁移；紧耦合不等于无法做。Root拒绝只留kinds/pins替代全部期待。原 `run-retirement-gates.cjs`未执行，勿重跑已接受Common/string广测；reference_script/simple_mml均保留。
 
 已决事项勿重开：paired scripts、wrapper classes、BaseNode、forms/accent缺口均已修/验；512/513是旧host预算而非MathJax算法，walk/replace consumer已退，不重建；现有typed遍历/parent/return与RAII恢复保留，不声称任意深树有界。后续沿八组 `class-review-*.json` 既有报告推进。
 
