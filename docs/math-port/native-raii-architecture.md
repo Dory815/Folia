@@ -1882,3 +1882,71 @@ is implemented and compared to the retained local witnesses. They are not
 passing SVG cases. A per-Group tooltip deferral is insufficient for multiple own
 segments: Source emits all selected segments before processing all tooltips.
 Do not serialize each nested Scene independently and claim cache parity.
+
+### 2026-10-21 Root lock: resource emission order and recursive local cache
+
+Generation order and drawing-tree order are distinct Source facts. Record one
+trailing uint64_t resource_order on GlyphRun and ActionRegion (0 means unspecified
+input). Builder owns a request-local monotonic counter starting at 1. Assign an
+order when adding/inserting a nonempty GlyphRun; assign an ActionRegion's order
+when a mathematical tooltip is present at creation or attached later. Clearing
+that tooltip resets its order. Ignore caller order on Builder insertion, retain
+orders through moves/splits/freeze, and reject counter exhaustion before mutation.
+This changes no geometry, drawing order, MML ownership or backend selection.
+
+Scene snapshot validates resource orders per Scene, excluding nested Scenes'
+independent scopes: all resource-bearing entries must either specify unique
+nonzero orders or all omit them. A direct Group-based Scene whose entries all
+omit them receives deterministic tree-traversal orders during its snapshot;
+mixed specified/unspecified and duplicate explicit orders are invalid. Existing
+completed nested Scene values are copied immutably as before. Non-resource
+entries and empty GlyphRuns need no order. This is one finalized resource order,
+not a second mutable output tree or retained callback program.
+
+Port the original svg/font_cache pair to native FontCachePlan, retiring its old
+Property/NodeRef bridge. API in that owner:
+  CacheScopeId = size_t;
+  CacheDefinition {string id; scene::Glyph const* glyph;};
+  CacheScope {vector<CacheDefinition> definitions;
+              unordered_map<scene::Glyph const*,string> references;
+              unordered_map<scene::ActionRegion const*,CacheScopeId> tooltips;};
+  FontCachePlan(Scene const&, span<string const> prefixes);
+  static size_t FontCachePlan::scopeCount(Scene const&);
+  CacheScope const& FontCachePlan::scope(CacheScopeId) const;
+Pointers are strictly temporary borrows into the write() input Scene; the plan
+cannot outlive it and never enters Scene/session caches. Root scope is 0. A
+nested occurrence gets its own scope even when immutable Scene data is shared.
+
+Replace SvgWriteOptions.local_id with vector<string> local_cache_prefixes,
+containing the complete resolved Source prefix for root then nested processMath
+calls in generation order (including trailing '-' or empty fixed prefix). The
+renderer/session, not this pure serializer, allocates automatic IDs. Repeated
+fixed prefixes are valid. Prefix count must equal scopeCount when glyph references
+exist; if the entire Scene has no glyphs, an empty list can omit unobservable
+identities. Expose scopeCount for the eventual renderer allocator; do not infer
+automatic/fixed mode by parsing an ID string, retain a second ID option, or mutate
+external counters in write(). Update all existing callers in this same batch.
+
+FontCachePlan collects each Scene's GlyphRun/tooltip events and sorts by finalized
+resource_order. Entering processMath creates a defs bucket, clears the active
+cache, and consumes its supplied prefix. Each glyph records its href in the
+current invocation's references and adds its first ID definition to the currently
+active bucket. Recursing through a tooltip replaces that active bucket/cache;
+return clears the prefix and deliberately leaves the nested bucket active, as
+Source does. Later outer glyphs may therefore have definitions in nested defs.
+Per-invocation reference maps avoid alias collisions when data is shared. Writer
+emits the original drawing tree, looking up hrefs by scope and glyph address;
+each SVG receives its planned defs at existing Source single/inline placement.
+Local empty caches serialize as <defs/>. None mode retains inline paths; global
+keeps its current explicit document-owner requirement. Remove local math-tooltip
+Unsupported once its real cache path passes independent Source byte comparisons.
+
+Luna ownership: scene_values_writer owns types/Scene/Builder + its order tests;
+common_scene_entry owns original font_cache pair + plan tests; common_base_emission
+owns writer + existing writer caller migration; common_scene_source_tests owns
+the Source observer/fixture/maction Source UT. Root owns CMake, inactive old
+FontCache callers, review, builds and commits. Source adds actual useLocalID
+prefix observations and multi-segment math-tooltip cases, preserving previous
+inputs/SVG bytes. Acceptance covers auto/fixed/empty prefixes, nested/following
+glyphs, multi-segment scopes, empty defs, immutable sharing/retirement and full
+regression; no per-case production special cases or simulated JS objects.
