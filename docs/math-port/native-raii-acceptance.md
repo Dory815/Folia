@@ -336,9 +336,9 @@ The maction batch at `e389abf5` / `e07b3b16` / `0fe4fb0c` / `51ada53b` /
 `970cff98` retains Common selection/layout, owns nested completed Scenes and
 typed interaction descriptions, and replaces the old maction Surface/placement
 bridge in its original SVG owner. Independent pinned Source uses real EventTarget
-registration on Lite nodes without dispatch. Seven fontCache=none MathML cases
-match exact SVG bytes, including serialization after request retirement; three
-local-cache math-tooltip cases remain explicitly Unsupported, not parity passes.
+registration on Lite nodes without dispatch. The initial batch compared seven
+fontCache=none cases and kept three local-cache tips explicitly pending. The
+subsequent cache batch described below supersedes that temporary boundary.
 Typed Source class styles, actual wrapper/root metrics, listener shape, parent
 restoration on success/exception and Scene alias independence are checked.
 MathML input compilation can override the requested display flag; the fixture
@@ -348,8 +348,25 @@ The full math run passes 818 tests / 212525 assertions / 162 suites without skip
 (`maction-full-math.log`). Canonical75 retains 73 byte-equal normal Source SVGs;
 both strict-Lite action cases now return native Scenes while Source fails event
 registration. This is recorded as source_error_native_success and does not pass
-the 75/150 gate. Local recursive cache order, browser interaction, complete
-request ownership and application integration are still open.
+the 75/150 gate. Complete request ownership and application integration remain
+open; static SVG parity does not claim browser event dispatch support.
+
+The recursive local-cache batch at `e72c7576` / `dd48c4d9` / `fa409846` /
+`897a0f50` records actual Builder resource order independently of drawing order
+and restores the original FontCache responsibility as a native temporary plan.
+It retains no JS objects or callbacks and allocates no global cache IDs in the
+writer. All 14 independent Source MathML cases match exact SVG before/after
+request retirement, including nested and segmented tips, following outer glyph
+definitions in nested defs, automatic/fixed/empty prefixes and empty defs.
+The earlier ten SVG byte strings are unchanged against Git `175ecabf`; Source
+prefixes are observed from actual FontCache.useLocalID calls. Scene order checks
+pass 5/26, FontCachePlan 7/39, writer local 3/12 and Source14 1/128.
+
+Full `cache-full-math.log` passes 831 tests / 212634 assertions / 164 suites,
+without skips. `cache-results.json` still records 73 canonical byte-equal SVGs
+and two strict-Lite source_error_native_success observations, not a passed75/150
+gate. Mglyph images, full profile coverage, request ownership, integration and
+the remaining old object layer are still unfinished.
 
 ## D. Application integration
 

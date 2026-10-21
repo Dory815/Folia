@@ -1875,11 +1875,11 @@ action, offsets, line segments and nested tips; test owner retirement and parent
 restoration. Root reviews evidence and interfaces before SVG implementation;
 Root alone runs native/build, owns CMake/legacy cleanup and small commits.
 
-Incremental writer gate: initial ActionRegion projection accepts fontCache=none,
-and local caching for actions with no mathematical tooltip. Local math tooltips
-explicitly report UnsupportedError until the Source generation-order cache plan
-is implemented and compared to the retained local witnesses. They are not
-passing SVG cases. A per-Group tooltip deferral is insufficient for multiple own
+Historical initial gate, superseded by the accepted resource-order batch below:
+ActionRegion first accepted fontCache=none and local actions without math tips;
+local math tooltips initially reported UnsupportedError. All retained local
+witnesses now pass after implementing the complete generation-order cache plan.
+A per-Group tooltip deferral is insufficient for multiple own
 segments: Source emits all selected segments before processing all tooltips.
 Do not serialize each nested Scene independently and claim cache parity.
 
