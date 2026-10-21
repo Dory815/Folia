@@ -1465,6 +1465,26 @@ walk-protocols-before.json, walk-protocols-promoted.json and
 walk-protocols-final-check.json. No new runtime gate or production recursion
 change is claimed.
 
+### Accent protocol consumers (2026-10-21)
+
+Both original accent fixture/profile checks pass (raw accent72, math accent33).
+The bounded bridge additionally matches every C++ aggregate input/expected
+field to its existing frozen Source JSON row with both fixture/profile hashes
+locked. The original Source input/algorithm prefixes remain byte-equal after
+the two oracles become read-only Source-only checks; the same 72/33 rows pass
+again, with unchanged profiles. Native role/explicit-attribute and math-accent
+width/base behavior retain their previously accepted tests and Source SVG
+comparison. The shared legacy gate drops only the two fixtures and 105/2
+counts, leaving 32,723 assertions/160 tests; it was not run.
+
+Removal build97637 passes with parallel4. All 478 active sources, six protected
+paths, nine verified input/binary paths, seven retained paths and seventeen
+target source lists remain byte-equal. Class-binding cpp/ixx test consumers
+decrease 43 to 41. Evidence: accent-protocols-before.json,
+accent-expectations-bridge.log, accent-protocols-promoted.json and
+accent-protocols-final-check.json. No production algorithm or new native
+runtime/broad gate is involved.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.

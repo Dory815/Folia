@@ -1,33 +1,31 @@
 # MathJax 原生移植：当前交接
 
-恢复/压缩后先实际读本文件。架构、完整历史验收和文件职责分别见 [architecture](native-raii-architecture.md)、[acceptance](native-raii-acceptance.md)、[files](native-raii-files.json)。只检查能推翻当前结论的新变化，不重复已完成广审；搜索 ignored 候选用 `rg --no-ignore`。
+恢复/压缩后先实际读本文件。完整架构、历史验收、职责见 [architecture](native-raii-architecture.md)、[acceptance](native-raii-acceptance.md)、[files](native-raii-files.json)。只检查能推翻记录的新变化；ignored候选用 `rg --no-ignore`。
 
 ## 当前 checkpoint
 
-- 最新工具提交 `8f9ba4b6`，walk/replace两Cpp退场随本提交。WinUI worker 已走原生 SVG，数学 QuickJS 已退出；剩余源码/consumer清理尚未完成，不能宣布整个移植完成。Mermaid 暂停。
-- 当前源树仍为648源/644代码、162未配置cpp/ixx；478活动源+83生成源=561配置源，248接口/map一致、active unresolved0、17targets。最新FileAPI `index-2026-10-21T12-19-27-0154.json`。未配置不等于可删除。
-- BaseNode四分支 `5acd4e70` **1/55通过**；7旧Cpp+9专用工具已分批退场。walk/replace780/1504原Source及Source-only exact、build57382通过；`walk-protocols-final-check.json`核478活动/保护6/17targets/9已验输入/8保留不变。class_binding测试现43（生产2，inc另计）；生产算法未改。
-- Source exact：constructor88、container6480、parent rebind2160、HTML75/434、mfenced length4通过；旧profiles保留。HTML原owner换Source-only，桥先匹配完整旧52398byte fixture，再核75场景/87期待调用顺序、29顶层/52递归值、19pins；不要重跑锁旧owner且拒绝已有staging的bridge。详见 `html-source-promoted.json`。
-- 本轮parallel4 builds57997/42085/74847/28779均exit0。最新 `build/math-port/mfenced-length-final-check.json` 确认478活动源、保护6、17targets、9已验输入/二进制、7保留路径不变。当前二进制hash基线 `script-base-final-check.json`；早期build的二进制hash已过时。此前完整SVG1047、字体、RAII、worker等验证见acceptance，本轮未重跑full math/font/worker/Release/GUI；legacy native runners均未跑。
-- 最新窄图 `build/math-port/mml-current-consumer-graph.json/.md` 已包含上述退场（标注5ce152c2+dirty mfenced删除，现已提交3d359392，源内容未再改）。Fields→ContextBindings→ParserRuntime owner链完整，values唯一调用在fields.cpp:439；不能孤删/stub provider。
+- 上个代码HEAD `8632e901`；本次accent两oracle/gate及两consumer已改，待分批提交。WinUI worker已接原生SVG、数学QuickJS已退出；剩余对象模拟源码/consumer清理未完，不能宣布移植完成。Mermaid暂停。
+- 源树未改：648源、162未配置cpp/ixx；478活动+83生成=561配置、248接口/map一致、active unresolved0、17targets。最新FileAPI `index-2026-10-21T12-31-24-0772.json`；未配置不等于可删。
+- BaseNode四分支测试 `5acd4e70` **1/55通过**。本轮已归责退9旧Cpp consumer、9专用工具；class_binding直接cpp/ixx importer生产2+测试41（inc另计）。生产算法未改。
+- Source exact均通过：constructor88、container6480、parent rebind2160、HTML75/434、mfenced length4、token walk780、replaceChild1504、raw/math accent72/33；旧profiles保留。HTML新profile有完整旧fixture/全部Source期待迁移证明，见 `html-source-promoted.json`，勿重复跑锁旧owner/已有staging的bridge。
+- 最新removal build97637 parallel4 exit0；`build/math-port/accent-protocols-final-check.json`确认478活动、保护6、17targets、9已验输入/二进制、7保留不变。当前二进制基线 `script-base-final-check.json`。此前SVG1047/完整math/font/RAII/worker见acceptance；本轮不重复广测，legacy native runners均未跑。
+- 窄图 `build/math-port/mml-current-consumer-graph.json/.md`目前到8632e901/43测试；提交accent后只需减两旧边至41并刷新FileAPI。Fields→ContextBindings→ParserRuntime owner链仍完整，values唯一调用fields.cpp:439；不能孤删/stub。
 
-## 精确下一动作与 live handles
+## 精确下一动作
 
-没有live build/native。三个Luna仅写ignored候选，Root须读报告/diff、验Source/必要native、提升并小批提交：
+先分批提交accent工具/consumer，再刷新窄图和此checkpoint。无live build/native。
 
-1. walk/replace已验收退场。512/513是旧host预算，不重建；现有typed遍历/parent/return及RAII恢复保留，不声称任意深树有界。operations已完成，无live handle。
-2. `/root/class_scripts`：`build/math-port/scripts-retirement-next/`，仅reference_script/reference_simple_mml两consumer。此前paired scripts、wrapper classes、BaseNode缺口均已验收，勿按旧报告重复开问题。
-3. accent Luna已完成：`build/math-port/accent-retirement-next/`，Root已读manifest/bridge/diff但未执行；仅raw_accent72/math_accent33，原profiles保留。下一步原oracle/bridge检查→Source-only提升→canonical exact→gate仅减105/2→退两Cpp/build。候选loader须改回 `./mo-pattern-reference.cjs`，去profile writer。forms/accent真实缺口已在原owner修正并验收，勿重开。
+唯一live Luna `/root/class_scripts`，仅写ignored `build/math-port/scripts-retirement-next/simple-source-migration/`：Root已拒绝仅保留kinds/pins而丢掉simple_mml的原期待值。新要求与HTML相同：ignored observer先完整匹配旧Cpp，再证明全部Source输入/期待顺序，生成被证明的独立JSON；clean Source-only原owner不得有Cpp模板/槽表/并列oracle。尚未交付/执行。原 `run-retirement-gates.cjs`只静态交付，勿运行来重复已接受Common/string广测；reference_script/simple_mml均未删。
 
-收到候选先检查实际文件和当前hash，不按旧agent完成消息推断状态。后续沿 `class-review-*.json` 八组既有结论推进，不另做广审。新Source profile须有完整旧期待值迁移证明，canonical不得保留Cpp emitter或新增并列oracle。
+已决事项勿重开：paired scripts、wrapper classes、BaseNode、forms/accent缺口均已修/验；512/513是旧host预算而非MathJax算法，walk/replace consumer已退，不重建；现有typed遍历/parent/return与RAII恢复保留，不声称任意深树有界。后续沿八组 `class-review-*.json` 既有报告推进。
 
-## 固定执行边界
+## 固定边界
 
-TeX → request-owned MML → 原Common共享布局/placement → immutable Scene → SVG → Folia。保留MathJax模块职责/算法；去掉JS身份、反射和投影协议，不增平行布局/Scene或解释器。Root独占Git/CMake/build/native，一次一个build、parallel≤4；console链接 `folia_console_test_runtime`，异常退出后只做有界诊断。小批提交，不reset，不覆盖无关改动；生成物留ignored build。
+TeX → request-owned MML → 原Common共享布局/placement → immutable Scene → SVG → Folia。保留MathJax职责/算法，去JS身份/反射/投影协议；不增平行布局/Scene或解释器。Root独占Git/CMake/build/native，一次一个build、parallel≤4；console链接 `folia_console_test_runtime`，异常退出后只做有界诊断。小批提交，不reset，不覆盖无关工作；生成物留ignored build。
 
 ## 保护中的6个dirty路径
 
-备份 `build/math-port/context-dirty-backup-20261021/` 已验。处置前必须读diff、核备份并归责；不得顺手覆盖或暂存，保护不等于永久保留。
+备份 `build/math-port/context-dirty-backup-20261021/` 已验。处置前读diff/核备份/归责；不得顺手覆盖或暂存，保护不等于永久保留。
 
 - `src/app-winui/media/MathJaxSvgParser.cpp`
 - `src/app-winui/media/SvgNormalizer.cpp`
