@@ -12,6 +12,10 @@ struct Xml final : XmlObject {
 
 class Adaptor final : public HtmlAdaptor {
   public:
+    folia::math::DOMNodeRef cloneDOM(XmlRef) const override {
+        throw std::logic_error("DOM export unavailable in opaque test adaptor");
+    }
+
     XmlRef clone(XmlRef value) const override {
         auto x = std::make_shared<Xml>();
         x->payload = as(value).payload;
@@ -105,6 +109,7 @@ suite typed_mml_branches = [] {
         auto value = std::make_shared<Xml>();
         value->payload = "<b/>";
         auto adaptor = std::make_shared<Adaptor>();
+        expect(throws<std::logic_error>([&] { (void)adaptor->cloneDOM(value); }));
         node.setHTML(value, adaptor);
         expect(node.getSerializedHTML() == "<span><b/></span>");
         expect(node.textContent() == u"html text");

@@ -75,6 +75,10 @@ XmlRef XmlDomAdaptor::clone(XmlRef object) const {
     return fromDOM(payload(object)->node);
 }
 
+folia::math::DOMNodeRef XmlDomAdaptor::cloneDOM(XmlRef object) const {
+    return cloneLiteNode(*state_->lite, payload(object)->node);
+}
+
 std::string XmlDomAdaptor::serializeXML(XmlRef object) const {
     auto const& node = payload(object)->node;
     (void)element(node);

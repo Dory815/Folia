@@ -17,6 +17,10 @@ class TestAdaptor final : public HtmlAdaptor {
   public:
     mutable std::size_t cloneCalls{};
 
+    folia::math::DOMNodeRef cloneDOM(XmlRef) const override {
+        throw std::logic_error("DOM export unavailable in opaque test adaptor");
+    }
+
     XmlRef clone(XmlRef value) const override {
         ++cloneCalls;
         return std::make_shared<Markup>(read(value));
@@ -69,8 +73,10 @@ suite mml_exact_clone_xml = [] {
             payloadLifetime = payload;
             adaptorLifetime = adaptor;
             node.setXML(payload, adaptor);
+            expect(throws<std::logic_error>([&] { (void)adaptor->cloneDOM(payload); }));
             copy = &dynamic_cast<XMLNode &>(destination.cloneSubtree(node));
             expect(copy->getXML() == node.getXML());
+            expect(copy->xmlAdaptor() == adaptor);
             expect(copy->getSerializedXML() == "<math><mi>x</mi></math>");
             expect(adaptor->cloneCalls == 0_u);
         }
@@ -79,6 +85,7 @@ suite mml_exact_clone_xml = [] {
         expect(!adaptorLifetime.expired());
         expect(copy != nullptr);
         expect(copy->getSerializedXML() == "<math><mi>x</mi></math>");
+        expect(copy->xmlAdaptor() != nullptr);
         auto retainedAdaptor = std::dynamic_pointer_cast<TestAdaptor const>(adaptorLifetime.lock());
         expect(retainedAdaptor != nullptr);
         if (retainedAdaptor)

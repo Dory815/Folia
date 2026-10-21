@@ -19,6 +19,7 @@ public:
     XmlDomAdaptor& operator=(XmlDomAdaptor&&) = delete;
 
     XmlRef fromDOM(folia::math::DOMNodeRef const& node) const;
+    folia::math::DOMNodeRef cloneDOM(XmlRef object) const override;
 
     XmlRef clone(XmlRef object) const override;
     std::string serializeXML(XmlRef object) const override;

@@ -290,6 +290,7 @@ class XMLNode : public AbstractMmlEmptyNode {
     explicit XMLNode(MmlDocument &);
     NodeKind kind() const noexcept override; // NodeKind::xml; nodeKindName supplies "XML"
     virtual XmlRef getXML() const;
+    std::shared_ptr<XmlAdaptor const> xmlAdaptor() const noexcept;
     virtual XMLNode *setXML(XmlRef, std::shared_ptr<XmlAdaptor const> adaptor = {});
     virtual std::string getSerializedXML() const;
     MmlNode &copy(bool keepIds = false) const override;

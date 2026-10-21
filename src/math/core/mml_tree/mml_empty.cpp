@@ -156,6 +156,10 @@ XmlRef XMLNode::getXML() const {
     return xml_;
 }
 
+std::shared_ptr<XmlAdaptor const> XMLNode::xmlAdaptor() const noexcept {
+    return adaptor_;
+}
+
 XMLNode *XMLNode::setXML(XmlRef value, std::shared_ptr<XmlAdaptor const> adaptor) {
     xml_ = std::move(value);
     adaptor_ = std::move(adaptor);
