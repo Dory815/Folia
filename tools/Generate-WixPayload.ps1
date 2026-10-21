@@ -90,7 +90,7 @@ function Get-PayloadRecords {
             if ($Kind -eq 'Program') {
                 if ($_.FullName.StartsWith($assetPrefix, [System.StringComparison]::OrdinalIgnoreCase)) { return }
                 if ($buildOnlyExtensions -contains $_.Extension.ToLowerInvariant()) { return }
-                if ($relative -ieq 'FoliaMathWorkerProbe.exe') { return }
+                if ($relative -in @('FoliaMathWorkerProbe.exe', 'FoliaMathLayoutProbe.exe')) { return }
                 $topDirectory = $relative.Split('/')[0]
                 if ($relative.Contains('/') -and (Test-CultureDirectory -Name $topDirectory) -and
                     -not $programLanguageLookup.Contains($topDirectory)) { return }

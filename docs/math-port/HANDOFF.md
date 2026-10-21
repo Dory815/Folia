@@ -10,9 +10,9 @@
 - `EditorSurfaceRenderer.Preparation.cpp`负责后台准备/采用边界；`EditorDocumentPreparationPass::PrepareAll`复用既有block preparer、DirectWrite行内对象与虚拟化批次，转移前释放设备/可视资源，仅保留块几何及完整数学索引。**CST/source/selection/history未改；尺寸/基线/断行属于布局，不写入CST。** MathJax提供可断行SVG片段，DirectWrite决定段落断行；宽窄窗口片段数可以相同（本例均81），不能期待片段数就是行数。
 - 文件位于系统临时目录`FoliaMath/{GUID}.svgstore`，非继承/独占/CREATE_NEW，TEMPORARY + DELETE_ON_CLOSE；普通关闭/进程结束由句柄关闭删除，断电不保证清理。缓存不存源文档。渲染层补了同步异常的EndDraw/错误显示边界。
 - **验证通过**：setup；WinUI Debug `math-preparation-app-build-final.log`（parallel≤4）；同步native/store `math-preparation-probe-final.log`（mathbb/分式/Unicode/公式诊断/块归属回收/跨线程缓存移动/16,781,312字节4097范围/析构及子进程结束删除，11.07s）；真实4100不同公式索引 `math-preparation-index-probe-final.log`（首尾ID和指标不淘汰，28.31s）。所有日志在ignored `build/math-port/`。
-- **布局验证通过**：`math-preparation-layout-probe-final-v2.log`（15.1s）：7块富文档宽窄1266.01/671.563 DIP；长公式15行，反复视口内/外重建时逐行断点/基线/高度及公式坐标完全相同；4101虚拟化块中4100数学段落均测量（另1尾空块）；提前/中途取消不返回部分结果；匹配context采用、宽度失配拒绝；源码/模型标识保持。无GUI目视验收、无新Release/MSI；旧安装包不含本轮更改。
+- **布局验证通过**：`math-preparation-layout-probe-final-v2.log`（15.1s）：7块富文档宽窄1266.01/671.563 DIP；长公式15行，反复视口内/外重建时逐行断点/基线/高度及公式坐标完全相同；4101虚拟化块中4100数学段落均测量（另1尾空块）；提前/中途取消不返回部分结果；匹配context采用、宽度失配拒绝；源码/模型标识保持。WiX清单生成检查也通过：两个数学测试exe均排除。无GUI目视验收、无新Release/MSI；旧安装包不含本轮更改。
 - 可运行 `build/app-winui/bin/x64/Debug/Folia.exe`；复验脚本 `tools/math-port/winui-math-worker-probe.ps1 -SkipBuild`（另`-IndexOnly`）、`winui-math-layout-probe.ps1`。布局脚本复用当前app工具链/PCH/IFC/CRT，禁止与app编译并行。console runtime已链接，CRT失败无桌面弹窗。
-- 本轮准备分两批本地提交：接入/同步缓存与对应运行检查；完整布局检查及打包排除测试exe。无live agent/build/native。**下一步是用户实际GUI试用**（打开进度、取消/连续打开、窗口变化、滚动/编辑），按用户安排再决定Release MSI；不擅自恢复35个旧测试清理。
+- 本轮两批本地提交：接入/同步缓存及运行检查 `25165f62`；本checkpoint所在提交补齐完整布局检查和打包排除测试exe。尚未推送。无live agent/build/native。**下一步是用户实际GUI试用**（打开进度、取消/连续打开、窗口变化、滚动/编辑），按用户安排再决定Release MSI；不擅自恢复35个旧测试清理。
 
 ## 历史：上一版MSI与推送（2026-10-21）
 
