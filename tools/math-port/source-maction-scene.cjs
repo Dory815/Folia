@@ -25,6 +25,10 @@ const cases = [
   {name:'toggle-line-segments', mathml:'<math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><maction actiontype="toggle" selection="1"><mrow><mi>aaaaaaaa</mi><mo linebreak="newline" linebreakstyle="after">+</mo><mi>bbbbbbbb</mi></mrow><mi>c</mi></maction><mi>d</mi></mrow></math>', display:true, em:16, ex:8, width:120, fontCache:'none'},
   {name:'nested-tooltip-local', mathml:'<math xmlns="http://www.w3.org/1998/Math/MathML"><maction actiontype="tooltip"><mi>x</mi><mrow><maction actiontype="tooltip"><mi>y</mi><mrow><mi>z</mi><mo>+</mo><mi>q</mi></mrow></maction><mi>w</mi></mrow></maction><mi>r</mi></math>', display:false, em:16, ex:8, width:1280, fontCache:'local'},
   {name:'nested-tooltip-local-fixed-id', mathml:'<math xmlns="http://www.w3.org/1998/Math/MathML"><maction actiontype="tooltip"><mi>x</mi><mrow><mi>x</mi><mo>+</mo><mi>y</mi></mrow></maction><mi>x</mi></math>', display:false, em:16, ex:8, width:1280, fontCache:'local', localID:'FoliaAction'},
+  {name:'tooltip-math-local-multisegment', mathml:'<math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><maction actiontype="tooltip"><mrow><mi>aaaaaaaa</mi><mo linebreak="newline" linebreakstyle="after">+</mo><mi>bbbbbbbb</mi></mrow><mrow><mi>y</mi><mo>+</mo><mi>z</mi></mrow></maction><mi>d</mi></mrow></math>', display:false, em:16, ex:8, width:120, fontCache:'local'},
+  {name:'tooltip-math-local-empty-fixed-id', mathml:'<math xmlns="http://www.w3.org/1998/Math/MathML"><maction actiontype="tooltip"><mi>x</mi><mrow><mi>y</mi><mo>+</mo><mi>z</mi></mrow></maction><mi>w</mi></math>', display:false, em:16, ex:8, width:1280, fontCache:'local', localID:''},
+  {name:'tooltip-math-local-empty-glyph', mathml:'<math xmlns="http://www.w3.org/1998/Math/MathML"><maction actiontype="tooltip"><mspace width="1em"/><mspace width="1em"/></maction></math>', display:false, em:16, ex:8, width:1280, fontCache:'local'},
+  {name:'nested-tooltip-none', mathml:'<math xmlns="http://www.w3.org/1998/Math/MathML"><maction actiontype="tooltip"><mi>x</mi><mrow><maction actiontype="tooltip"><mi>y</mi><mrow><mi>z</mi><mo>+</mo><mi>q</mi></mrow></maction><mi>w</mi></mrow></maction><mi>r</mi></math>', display:false, em:16, ex:8, width:1280, fontCache:'none'},
 ];
 
 function cppRaw(value, prefix) {
@@ -62,7 +66,8 @@ function cppRecord(record, index) {
   });
   const mml = `sourceMactionNodes${index}`;
   const attrs = `sourceMactionAttributes${index}`;
-  return `  {${cppRaw(record.name, `N${index}`)}, ${cppRaw(record.mathml, `M${index}`)}, ${record.display}, ${record.em}, ${record.ex}, ${record.width}, ${cppRaw(record.fontCache, `C${index}`)}, ${cppRaw(record.localID ?? '', `I${index}`)}, ${record.rootBBox.w}, ${record.rootBBox.h}, ${record.rootBBox.d}, ${record.rootBBox.scale}, ${record.rootBBox.rscale}, ${record.rootBBox.L}, ${record.rootBBox.R}, ${cppRaw(String(record.rootBBox.pwidth ?? ''), `B${index}`)}, ${cppRaw(JSON.stringify(record.cacheObservation), `O${index}`)}, ${cppRaw(record.svg, `V${index}`)}, {${listenerItems.join(', ')}}, ${listeners.length}, {${wrapperItems.join(', ')}}, ${wrappers.length}, ${mml}, ${attrs}}`;
+  const prefixes = `sourceMactionPrefixes${index}`;
+  return `  {${cppRaw(record.name, `N${index}`)}, ${cppRaw(record.mathml, `M${index}`)}, ${record.display}, ${record.em}, ${record.ex}, ${record.width}, ${cppRaw(record.fontCache, `C${index}`)}, ${cppRaw(record.localID ?? '', `I${index}`)}, ${record.rootBBox.w}, ${record.rootBBox.h}, ${record.rootBBox.d}, ${record.rootBBox.scale}, ${record.rootBBox.rscale}, ${record.rootBBox.L}, ${record.rootBBox.R}, ${cppRaw(String(record.rootBBox.pwidth ?? ''), `B${index}`)}, ${prefixes}, ${cppRaw(JSON.stringify(record.cacheObservation), `O${index}`)}, ${cppRaw(record.svg, `V${index}`)}, {${listenerItems.join(', ')}}, ${listeners.length}, {${wrapperItems.join(', ')}}, ${wrappers.length}, ${mml}, ${attrs}}`;
 }
 
 function cppU16(value) {
@@ -130,7 +135,8 @@ function cppMmlArrays(record, index) {
     const kind = a.kind === 'boolean' ? 'boolean' : a.kind === 'number' ? 'number' : 'text';
     return `{${cppU16(a.name)}, mathml_scene_test::AttributeKind::${kind}, ${cppU16(a.text ?? '')}, ${a.number ?? 0}, ${a.boolean ?? false}}`;
   });
-  return `constexpr std::array<mathml_scene_test::Node, ${nodeItems.length}> sourceMactionNodes${index}{{\n    ${nodeItems.join(',\n    ')}\n}};\nconstexpr std::array<mathml_scene_test::Attribute, ${attrItems.length}> sourceMactionAttributes${index}{{\n    ${attrItems.join(',\n    ')}\n}};\n`;
+  const prefixes = record.localCachePrefixes.map((prefix, i) => cppRaw(prefix, `CP${index}${i}`));
+  return `constexpr std::array<std::string_view, ${prefixes.length}> sourceMactionPrefixes${index}{{${prefixes.length ? `\n    ${prefixes.join(',\n    ')}\n` : ''}}};\nconstexpr std::array<mathml_scene_test::Node, ${nodeItems.length}> sourceMactionNodes${index}{{\n    ${nodeItems.join(',\n    ')}\n}};\nconstexpr std::array<mathml_scene_test::Attribute, ${attrItems.length}> sourceMactionAttributes${index}{{\n    ${attrItems.join(',\n    ')}\n}};\n`;
 }
 
 async function main() {
@@ -161,6 +167,14 @@ async function main() {
   const styleEntries = flattenStyles(SvgMaction.styles);
   const prototype = Object.getPrototypeOf(ref.adaptor.node('svg', {}));
   const originalAddEventListener = prototype.addEventListener;
+  const fontCachePrototype = Object.getPrototypeOf(ref.output.fontCache);
+  const originalUseLocalID = fontCachePrototype.useLocalID;
+  let activePrefixes = null;
+  fontCachePrototype.useLocalID = function(...args) {
+    const result = originalUseLocalID.apply(this, args);
+    if (activePrefixes) activePrefixes.push(this.localID);
+    return result;
+  };
   const receiverIds = new WeakMap();
   const eventHosts = new WeakMap();
   let nextReceiverId = 1;
@@ -231,6 +245,7 @@ async function main() {
       ref.output.options.fontCache = entry.fontCache;
       ref.output.options.localID = entry.localID ?? null;
       activeListeners = [];
+      activePrefixes = [];
       activeWrappers = [];
       activeMml = null;
       activeRootBBox = null;
@@ -255,10 +270,25 @@ async function main() {
         assert.equal(listeners.length, 0, 'mtext tooltip uses title without event registrations');
       } else if (entry.name.startsWith('tooltip-math-')) {
         assert.ok(svg.includes('<foreignObject'), 'mathematical tooltip must include its hidden nested host');
-        assert.deepEqual(listeners.map(item=>item.type), ['mouseover','mouseout']);
+        const expectedEvents = entry.name === 'tooltip-math-local-multisegment'
+          ? ['mouseover','mouseout','mouseover','mouseout'] : ['mouseover','mouseout'];
+        assert.deepEqual(listeners.map(item=>item.type), expectedEvents);
         if (entry.name === 'tooltip-math-local-following') {
           assert.equal(activeWrappers[0]?.tipDx, 1, 'data-offsets x must be one em');
           assert.equal(activeWrappers[0]?.tipDy, 0.862, 'data-offsets 2ex must use Source length2em/font metrics');
+        }
+        if (entry.name === 'tooltip-math-local-multisegment') {
+          assert.ok((svg.match(/data-mjx-linebox="true"/g) || []).length >= 2,
+            'Source selected mrow contains multiple line segments');
+          assert.equal((svg.match(/<foreignObject/g) || []).length, 2,
+            'Source emits one tooltip host for each own maction segment');
+        }
+        if (entry.name === 'tooltip-math-local-empty-fixed-id')
+          assert.ok(svg.includes('MJX-NCM-'), 'empty explicit localID keeps Source empty-prefix glyph IDs');
+        if (entry.name === 'tooltip-math-local-empty-glyph') {
+          const foreign = svg.slice(svg.indexOf('<foreignObject'), svg.indexOf('</foreignObject>') + 16);
+          assert.ok(foreign.includes('<defs/>'), 'empty tooltip cache serializes Source empty defs');
+          assert.ok(!foreign.includes('<path id='), 'empty tooltip introduces no glyph definitions');
         }
       } else if (entry.name === 'statusline') {
         assert.ok(svg.includes('data-statusline="Status &amp; details"'));
@@ -274,6 +304,10 @@ async function main() {
       } else if (entry.name === 'nested-tooltip-local-fixed-id') {
         assert.ok(svg.includes('MJX-FoliaAction-'), 'explicit localID prefix must appear in Source cache IDs');
         assert.equal((svg.match(/<foreignObject/g) || []).length, 1);
+      } else if (entry.name === 'nested-tooltip-none') {
+        assert.equal((svg.match(/<foreignObject/g) || []).length, 2);
+        assert.equal((svg.match(/<defs>/g) || []).length, 0,
+          'none cache mode emits inline paths without defs, including nested math');
       }
       for (const item of listeners) assert.equal(item.before, item.after,
         `${entry.name}: addEventListener must not mutate serialized receiver DOM`);
@@ -287,12 +321,17 @@ async function main() {
           'fixed localID must retain Source duplicate glyph ID across nested SVG caches');
       const cacheObservation = {ids,hrefs,duplicateIds,
         defs:(svg.match(/<defs>/g)||[]).length,foreignObjects:(svg.match(/<foreignObject/g)||[]).length};
+      assert.ok(activePrefixes.every(prefix=>typeof prefix === 'string'), 'all actual cache prefixes are strings');
+      if (entry.fontCache === 'local') assert.ok(activePrefixes.length > 0, `${entry.name}: local mode uses LocalID`);
+      else assert.equal(activePrefixes.length, 0, `${entry.name}: none mode does not use LocalID`);
       records.push({...entry, requestedDisplay:entry.display, display:activeSourceDisplay,
-        mactionBBox:bbox, rootBBox, mml:activeMml, styles, styleEntries, svg, listeners, cacheObservation,
+        mactionBBox:bbox, rootBBox, mml:activeMml, styles, styleEntries, svg, listeners,
+        localCachePrefixes:activePrefixes.slice(), cacheObservation,
         maction:activeWrappers});
       process.stdout.write(`${entry.name}: svg=${Buffer.byteLength(svg)}B listeners=${listeners.map(x=>x.type).join(',') || 'none'}\n`);
       removeListeners(activeListeners);
       activeListeners = null;
+      activePrefixes = null;
       activeWrappers = null;
       seenMactionNodes = null;
       activeMml = null;
@@ -302,12 +341,14 @@ async function main() {
   } finally {
     if (activeListeners) removeListeners(activeListeners);
     activeListeners = null;
+    activePrefixes = null;
     activeWrappers = null;
     seenMactionNodes = null;
     activeMml = null;
     activeRootBBox = null;
     activeSourceDisplay = null;
     prototype.addEventListener = originalAddEventListener;
+    fontCachePrototype.useLocalID = originalUseLocalID;
   }
   assert.equal(prototype.addEventListener, originalAddEventListener,
     'Source Lite event prototype must be restored after capture');
@@ -322,7 +363,7 @@ async function main() {
 `struct MactionSourceListener { std::string_view type; unsigned target; unsigned host; std::string_view before; std::string_view after; };\n`+
 `struct MactionSourceWrapper { std::size_t node_index; std::string_view action_type; std::string_view selection; std::string_view selected_kind; double tip_dx,tip_dy,w,h,d,scale,rscale,L,R; std::string_view pwidth; };\n`+
 `struct MactionSourceStyleEntry { std::u16string_view selector; std::u16string_view property; bool numeric; std::u16string_view text; double number; };\n`+
-`struct MactionSourceCase { std::string_view name; std::string_view mathml; bool display; double em; double ex; double width; std::string_view font_cache; std::string_view local_id; double root_w,root_h,root_d,root_scale,root_rscale,root_L,root_R; std::string_view root_pwidth; std::string_view cache_summary; std::string_view svg; MactionSourceListener listeners[4]; unsigned listener_count; MactionSourceWrapper wrappers[4]; unsigned wrapper_count; std::span<mathml_scene_test::Node const> nodes; std::span<mathml_scene_test::Attribute const> attributes; };\n`;
+`struct MactionSourceCase { std::string_view name; std::string_view mathml; bool display; double em; double ex; double width; std::string_view font_cache; std::string_view local_id; double root_w,root_h,root_d,root_scale,root_rscale,root_L,root_R; std::string_view root_pwidth; std::span<std::string_view const> local_cache_prefixes; std::string_view cache_summary; std::string_view svg; MactionSourceListener listeners[4]; unsigned listener_count; MactionSourceWrapper wrappers[4]; unsigned wrapper_count; std::span<mathml_scene_test::Node const> nodes; std::span<mathml_scene_test::Attribute const> attributes; };\n`;
   const styleItems = styleEntries.map(x=>`{${cppU16(x.selector)}, ${cppU16(x.property)}, ${x.kind==='number'}, ${cppU16(x.text)}, ${x.number}}`).join(',\n  ');
   const fixture = header+`constexpr MactionSourceStyleEntry sourceMactionStyles[]{\n  ${styleItems}\n};\n`+records.map(cppMmlArrays).join('')+`constexpr MactionSourceCase sourceMactionCases[]{\n`+
     records.map(cppRecord).join(',\n')+`\n};\n`;
