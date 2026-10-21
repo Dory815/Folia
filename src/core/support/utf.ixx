@@ -6,6 +6,40 @@ import std;
 
 export namespace folia {
 
+namespace unicode_property_detail {
+#include "unicode_properties.inc"
+
+template<std::size_t N>
+inline bool contains(Range const (&ranges)[N], char32_t codepoint) {
+    auto found = std::lower_bound(std::begin(ranges), std::end(ranges), codepoint,
+        [](Range const& range, char32_t value) { return range.last < value; });
+    return found != std::end(ranges) && found->first <= codepoint;
+}
+}
+
+inline bool unicode_punctuation_or_symbol(char32_t codepoint) {
+    return unicode_property_detail::contains(unicode_property_detail::punctuation_or_symbol, codepoint);
+}
+
+inline bool is_commonmark_whitespace(char32_t codepoint) {
+    // CommonMark: Unicode Zs plus TAB, LF, FF and CR; no locale dependency.
+    return codepoint == U'\t' || codepoint == U'\n' || codepoint == U'\f' || codepoint == U'\r'
+        || unicode_property_detail::contains(unicode_property_detail::space_separators, codepoint);
+}
+
+inline std::u32string unicode_casefold(std::u32string_view input) {
+    std::u32string output;
+    output.reserve(input.size());
+    auto const& table = unicode_property_detail::case_folding;
+    for (auto codepoint : input) {
+        auto found = std::lower_bound(std::begin(table), std::end(table), codepoint,
+            [](auto const& entry, char32_t value) { return entry.from < value; });
+        if (found == std::end(table) || found->from != codepoint) output.push_back(codepoint);
+        else output.append(found->to.data(), found->size);
+    }
+    return output;
+}
+
 // ---------------------------------------------------------------------------
 // UTF-16 helpers (work on char32 codepoint stream).
 // ---------------------------------------------------------------------------

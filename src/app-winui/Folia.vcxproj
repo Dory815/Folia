@@ -433,6 +433,12 @@
     <ClCompile Include="..\core\model\inline_document.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\core\parsing\link_label.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\core\support\html_entities.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\core\parsing\inline_parser.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
