@@ -823,6 +823,23 @@ imports/API callers (scene-svgFinal-before-removal.json). The timer draft is
 ignored historical material, not a tracked consumer. The parallel4 native
 math/DLL build exits0 after removal; no active code or test body changes.
 
+Three pure legacy protocol consumers retire after Root's complete body review:
+tests/math/common_factory_live_fields.cpp,
+tests/math/mml_factory_context_methods_bad_kind_order.cpp and
+tools/math-port/mml-node-context-methods-native-tests.cpp. The first two assert
+Context Map/descriptors, creator receiver/getter observation and call-error
+ordering; they contain no layout or mathematical output result. The last
+asserts method/prototype identity, reflected parent mutation independent of
+children and post-runtime errors. Its token kind/text subjects do not add an
+algorithm beyond the typed family/tree tests; native_mml_families retains
+concrete family isKind and exact token-text copies, and native_mml_row_tokens
+retains actual mtext contents/spacing. No configured test or Source record is
+removed. The all-target/import check confirms zero configured memberships and
+no external module consumers for these three files
+(scene-factoryProtocol-before-removal.json). Their providers remain pending
+other old-consumer and protected-diff accounting. Independent factory/node
+Source observers, locks and records remain; this is not reflective-trace parity.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
