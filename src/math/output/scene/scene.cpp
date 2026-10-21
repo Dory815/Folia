@@ -213,6 +213,8 @@ Primitive clone_primitive(Primitive const &source) {
                 if (value.corner_radius &&
                     (!finite(*value.corner_radius) || *value.corner_radius < 0))
                     throw std::invalid_argument("Scene rule corner radius is invalid");
+                if (value.role == ElementRole::error_background && value.bounds.x != 0)
+                    throw std::invalid_argument("Scene error background must start at x=0");
                 validate(value.paint);
                 validate(value.metadata);
             } else if constexpr (std::same_as<T, Path>) {

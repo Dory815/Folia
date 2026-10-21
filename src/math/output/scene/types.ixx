@@ -33,6 +33,7 @@ enum class ElementRole {
     table_frame,
     table_vertical_line,
     table_horizontal_line,
+    error_background,
 };
 
 struct Point {
@@ -159,6 +160,11 @@ struct CssColor {
     friend bool operator==(CssColor const &, CssColor const &) = default;
 };
 using PaintColor = std::variant<InheritedPaint, NoPaint, CurrentColorPaint, Color, CssColor>;
+struct PaintColors {
+    PaintColor fill{InheritedPaint{}};
+    PaintColor stroke{InheritedPaint{}};
+    friend bool operator==(PaintColors const &, PaintColors const &) = default;
+};
 enum class StrokeCap { butt, round, square };
 enum class StrokeJoin { miter, round, bevel };
 struct Paint {
@@ -176,6 +182,8 @@ struct Paint {
     // Absence inherits; an empty list explicitly selects a solid stroke.
     // Values are completed em lengths and are serialized without layout math.
     std::optional<std::vector<Unit>> dash_array;
+    // Stylesheet declarations are retained separately from authored paint.
+    std::optional<PaintColors> stylesheet;
     friend bool operator==(Paint const &, Paint const &) = default;
 };
 
@@ -361,6 +369,9 @@ struct ForeignContent {
     Metrics metrics{};
     SemanticMetadata metadata{};
 };
+struct Title {
+    std::string text;
+};
 struct DisplayLayout {
     bool display{};
     std::string alignment{"center"};
@@ -388,5 +399,5 @@ struct FrameLayout {
     std::vector<InlineFragment> inline_fragments;
     std::optional<PercentageFrame> percentage;
 };
-using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, ForeignContent, Ellipse>;
+using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, ForeignContent, Ellipse, Title>;
 } // namespace folia::math::output::scene

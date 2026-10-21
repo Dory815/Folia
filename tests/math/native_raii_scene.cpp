@@ -884,5 +884,75 @@ suite scene_freeze = [] {
         expect(threw);
         cycle->entries.clear(); // break the deliberately constructed shared_ptr cycle
     };
+
+    "title primitives preserve order and freeze owned text"_test = [] {
+        Group root;
+        root.entries.emplace_back(Primitive{Title{"before"}});
+        root.entries.emplace_back(Primitive{TextRun{"middle", {}, {}, {}, {}}});
+        root.entries.emplace_back(Primitive{Title{"after"}});
+        Scene scene{root, {}, {}};
+
+        std::get<Title>(std::get<Primitive>(root.entries[0])).text = "mutated";
+        std::get<Title>(std::get<Primitive>(root.entries[2])).text.clear();
+        auto const &entries = scene.root().entries;
+        expect(entries.size() == 3_u);
+        expect(std::get<Title>(std::get<Primitive>(entries[0])).text == "before");
+        expect(std::get<TextRun>(std::get<Primitive>(entries[1])).utf8 == "middle");
+        expect(std::get<Title>(std::get<Primitive>(entries[2])).text == "after");
+    };
+
+    "stylesheet colors stay separate and owned beside authored paint"_test = [] {
+        Group root;
+        Paint paint;
+        paint.fill = CssColor{"blue"};
+        paint.stylesheet = PaintColors{CssColor{"yellow"}, NoPaint{}};
+        Rule error{{0, -0.2, 1, 0.8}, paint, {}, ElementRole::error_background};
+        root.entries.emplace_back(Primitive{error});
+        Scene scene{root, {}, {}};
+
+        auto &saved_source = std::get<Rule>(std::get<Primitive>(root.entries.front()));
+        std::get<CssColor>(saved_source.paint.fill).value = "changed-authored";
+        std::get<CssColor>(saved_source.paint.stylesheet->fill).value = "changed-class";
+        auto const &frozen = std::get<Rule>(std::get<Primitive>(scene.root().entries.front()));
+        expect(std::get<CssColor>(frozen.paint.fill).value == "blue");
+        expect(frozen.paint.stylesheet.has_value());
+        expect(std::get<CssColor>(frozen.paint.stylesheet->fill).value == "yellow");
+        expect(std::holds_alternative<NoPaint>(frozen.paint.stylesheet->stroke));
+
+        Rule invalid{{0.001, -0.2, 1, 0.8}, {}, {}, ElementRole::error_background};
+        Group invalid_root;
+        invalid_root.entries.emplace_back(Primitive{invalid});
+        bool rejected = false;
+        try {
+            Scene bad{invalid_root, {}, {}};
+        } catch (std::invalid_argument const &) {
+            rejected = true;
+        }
+        expect(rejected);
+    };
+
+    "builder link and viewport getters return owned values"_test = [] {
+        Builder builder;
+        Viewport viewport{{0.1, -0.2, 0.8, 0.7}, {-0.3, -0.4, 2, 3}, {}};
+        auto id = builder.add_group(0, {}, {}, Link{"https://example.test", "_blank", "safe"}, {},
+                                    {}, ElementRole::math_wrapper, {}, viewport);
+        auto link = builder.link(id);
+        auto view = builder.viewport(id);
+        expect(link && link->href == "https://example.test");
+        expect(view && view->bounds == viewport.bounds);
+        link->href = "changed";
+        view->bounds.x = 42;
+        expect(builder.link(id)->href == "https://example.test");
+        expect(builder.viewport(id)->bounds == viewport.bounds);
+        expect(!builder.link(0));
+        expect(!builder.viewport(0));
+        bool rejected = false;
+        try {
+            (void)builder.link(999);
+        } catch (std::out_of_range const &) {
+            rejected = true;
+        }
+        expect(rejected);
+    };
 };
 } // namespace

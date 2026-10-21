@@ -36,6 +36,8 @@ class Builder {
     void set_metadata(NodeId id, SemanticMetadata value);
     [[nodiscard]] Paint paint(NodeId id) const;
     void set_paint(NodeId id, Paint value);
+    [[nodiscard]] std::optional<Link> link(NodeId id) const;
+    [[nodiscard]] std::optional<Viewport> viewport(NodeId id) const;
     [[nodiscard]] std::size_t entry_count(NodeId id) const;
     [[nodiscard]] std::vector<NodeId> child_groups(NodeId id) const;
     void insert_primitive(NodeId id, std::size_t index, Primitive primitive);

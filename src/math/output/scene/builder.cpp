@@ -262,6 +262,16 @@ void Builder::set_paint(NodeId id, Paint value) {
         throw std::logic_error("Scene builder is moved from");
     state_->require(id).paint = std::move(value);
 }
+std::optional<Link> Builder::link(NodeId id) const {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    return state_->require(id).link;
+}
+std::optional<Viewport> Builder::viewport(NodeId id) const {
+    if (!state_)
+        throw std::logic_error("Scene builder is moved from");
+    return state_->require(id).viewport;
+}
 std::size_t Builder::entry_count(NodeId id) const {
     if (!state_)
         throw std::logic_error("Scene builder is moved from");
