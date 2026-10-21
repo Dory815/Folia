@@ -4,11 +4,12 @@
 
 ## 当前状态与下一步
 
-- 代码/清单快照 `9bb90408`：648源/644代码、162未配置cpp/ixx、561配置源、接口/map248一致、active unresolved imports0；File API `index-2026-10-21T11-19-15-0988.json`。窄图已刷新，class_binding直接importer为生产2+测试54；未配置不等于可删除。
+- 代码/清单快照 `2b547b6d`：648源/644代码、162未配置cpp/ixx、561配置源、接口/map248一致、active unresolved imports0；File API `index-2026-10-21T11-41-32-0150.json`。窄图已刷新，class_binding直接importer为生产2+测试50。未配置不等于可删除。
 - WinUI worker已接入原生SVG，数学QuickJS退出；完整既有验证及历史提交见acceptance，勿重复广审。原9个dirty备份 `build/math-port/context-dirty-backup-20261021/` 已验；下列6路径仍保护。
-- **最新已验**：两包focused 3测试/477断言、7测试/141断言通过（mfenced类型、43 flags、wrapper分类、nested Math、multiscript、HTML、replaceChild），均已小批提交。HTML虚派发empty-node mError noop，旧TypeError/merror推断已撤销；Math/merror实际含inferred row，旧错误镜像勿提升。证据 `fenced-flags-coverage-check.json`/`class-followup-coverage-check.json`。未重跑full math/font/worker，未验Release/GUI。
-- **精确停点**：三旧consumer已退（constructor identity `83cedbf5`、mfenced boundaries/string_errors `9bb90408`）；两Source oracle已解耦 `a0c2890b`，冻结11+9观测exact check通过。清理build1051 exit0，478活动源、6保护路径、17target、9已验输入/二进制及10保留文件不变，见 `mfenced-identity-retirement-final-check.json`。清单/窄图已更新，文档随本次提交；无live agent/build/native。工作区仅余保护6路径。
-- **下一步**：只处理class_state/registry工具及两consumer；静态候选 `class-retirement-tools/` 未提升。两oracle没有独立SourceJSON，不能丢掉exact核验或盲造golden。原class-state --check已通过（29值、1682/2523行，旧值缺4/5/6，不是完整8×8；active测试覆盖8×8）。registry原--check因CPP wrapper的Key/creator slot适配而失败；有界诊断证明387 Source值+175生成cases的137776-byte期待值尾段逐字一致，见 `registry-original-check-diagnosis.json`，未修旧wrapper、未改golden。下一动作是据此解耦CPP wrapper、保留Source期待值核验，再退consumer/纯fixture工具；不用重跑上述调查。
+- **最新已验**：class-state Source-only `cd959200` 194观测通过、52旧有限outcomes保留；registry `f13b3e4f` 桥核实旧期待值尾段后转存JSON，43keys/172构造/1849关系/35协议观测通过；verification `1b01ff26` 原profiles72+18 exact通过。证据 `class-source-only-check.json`。这些JS协议观测仅为Source来源记录，不重建native对象协议。
+- **精确停点**：两专用runner退 `d40acdef`；四consumer分 `8ec3261c`/`2b547b6d` 退出。清理build63913 exit0，`class-source-retirement-final-check.json`确认478活动源、6保护路径、17targets、9已验输入/二进制、9新Source工具/profile、11保留文件不变；保留前包native 3/477及7/141，不重复运行。base legacy gate保留required primary boundary fixture，旧runner均未跑。文档随本次提交，工作区仅保护6路径。未重跑full math/font/worker，未验Release/GUI。
+- **精确下一动作**：审 `class-candidates/scripts-base-v2/typed_mml_scripts.cpp`（canonical raw SHA bdb7eed3…bb0820，v2 dc66f1c7…46a0ee），单表测试 `subsup_set_texclass_routes_each_base_branch_and_isolates_scripts`，再提升到现有typed_mml_scripts.cpp、parallel4 build+唯一filter验收。四Source分支actual `script-base-class-source-observations.json` 已exit0/空stderr；v2只静态交付、尚未Root审/native验收。v1曾将text child错当base/core、parent错判self，已要求修正并删未Source观测的额外core断言，勿提升v1。无live agent/build/native。
+- **随后候选**：`class-consumers-final/` constructor/container包有独立p23(88)/p25(6480) profiles，先验BaseNode再退container（layout-wrapper测试不能替代）。HTML clean `class-retirement-source/tools/math-port/html-node-source-oracle.cjs` + `html-node-source-bridge.cjs` 已静态交付，尚未Root审/执行；最终替换现有html-node-oracle.cjs，不能新增并列owner。带emitCpp的旧observer仅ignored迁移证明，不得提升canonical双路径；先读迁移报告再执行bridge，不能盲造golden。replaceChild/512边界仍保留。
 - **仍待单独归责**：mfenced class_length的自定义callback数组变更及512/513 walk边界均保留待审；现有原生family未显示classification期间改变所属mfenced children。Fields/values/methods仍有完整ContextBindings/ParserRuntime owner链（见窄图），不能孤删/stub。其余候选按既有八组报告推进。
 - 搜索被忽略的交付候选时用 `rg --no-ignore`。不要按旧 agent 的完成消息推断当前状态，也不要重做已接受的广审。保护 dirty 不是永久保留理由，但处置前必须读 diff、备份并归责。
 

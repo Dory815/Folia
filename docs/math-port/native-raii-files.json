@@ -1,6 +1,6 @@
 {
   "schema": "folia.math.native-raii.decision-manifest.v1",
-  "snapshotRevision": "9bb904081acc8ae701c2f15f1a1402f92c52aa05",
+  "snapshotRevision": "2b547b6d43c3e31e57d790046cf0308bab4bdf47",
   "generator": {
     "path": "tools/math-port/native-raii-inventory.cjs",
     "sha256": "dd7a35814f11a56305c3b109d112b6dffd152396c83c1626fd6d322cecf6a61c",
@@ -34,7 +34,7 @@
     "Forward-declaration flags are conservative textual name checks against imported module units, not compiler visibility diagnostics.",
     "Source annotations are a note index harvested from Markdown/header text by path/module and TS path/hash patterns. They do not establish algorithm equivalence, complete Source mapping, or a pass/fail provenance gate.",
     "Responsibilities are narrow filename/location group labels. All non-license file decisions remain unreviewed; active membership does not prove behavioral coverage and inactive membership does not mean dead code.",
-    "The 69 JavaScript-named scripts are review candidates only; names do not establish their assertions or disposition.",
+    "The 67 JavaScript-named scripts are review candidates only; names do not establish their assertions or disposition.",
     "The inventory reader did not configure or build; it reads existing File API and module-map replies."
   ],
   "sourceProvenanceGate": {
@@ -1560,8 +1560,8 @@
     "status": "ready",
     "authoritative": true,
     "reason": null,
-    "indexFile": "index-2026-10-21T11-19-15-0988.json",
-    "codemodelFile": "codemodel-v2-bf14a977e39c9670693a.json",
+    "indexFile": "index-2026-10-21T11-41-32-0150.json",
+    "codemodelFile": "codemodel-v2-6e122917448209ed8fca.json",
     "generatedModuleMapPath": "build/core/CMakeFiles/folia_math.dir/CXXModules.json",
     "moduleMapCheck": {
       "moduleMapCount": 248,
@@ -1575,51 +1575,51 @@
     },
     "evidence": {
       "index": {
-        "path": "build/core/.cmake/api/v1/reply/index-2026-10-21T11-19-15-0988.json",
-        "sha256": "5e75f24c0d409c6f481d3cde6dc7f6f6a8811e8fa76b2ab7f23e0a8ef98f26eb",
-        "mtimeUtc": "2026-10-21T11:19:15.988Z"
+        "path": "build/core/.cmake/api/v1/reply/index-2026-10-21T11-41-32-0150.json",
+        "sha256": "0d8d0c54960972acf92ea4d5e970db3dd3cd35ff71fcde1d6b5a23bc220c1642",
+        "mtimeUtc": "2026-10-21T11:41:32.149Z"
       },
       "codemodel": {
-        "path": "build/core/.cmake/api/v1/reply/codemodel-v2-bf14a977e39c9670693a.json",
-        "sha256": "53ed0a997416471ee2b4786eb00d7db309e5f891aaaae1a577aeb49e8d09e4bd",
-        "mtimeUtc": "2026-10-21T11:19:15.986Z"
+        "path": "build/core/.cmake/api/v1/reply/codemodel-v2-6e122917448209ed8fca.json",
+        "sha256": "46730967cb876bed64b39e633f3c33962d766fcf075778fa185983987f4b2332",
+        "mtimeUtc": "2026-10-21T11:41:32.148Z"
       },
       "targets": [
         {
           "name": "FoliaEncodingTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaEncodingTests-Debug-3ce7abd9b5e0df06159f.json",
-          "sha256": "1718a71e445874fc636a40b6bdd40045b3cac2ff3d34df194b48220f9373ad21",
-          "mtimeUtc": "2026-10-21T11:19:15.942Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaEncodingTests-Debug-fd84d4ba10e723a89c15.json",
+          "sha256": "c8ec90daf932e028fd364513f19bcbde2ebaa75a0581fe4bfecf2b292779a109",
+          "mtimeUtc": "2026-10-21T11:41:32.107Z"
         },
         {
           "name": "FoliaMathFontDump",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathFontDump-Debug-427caa70614b54390335.json",
-          "sha256": "96fe3ef7f536a507cfb1bbc12597f38bd51127c9426f9d6dec6ae7fc99a182b3",
-          "mtimeUtc": "2026-10-21T11:19:15.944Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathFontDump-Debug-a1ba4c3900f662edcee3.json",
+          "sha256": "17a22a7df22cd239ed114828b9a47f2525b596cf6d32c0468a85297e6c2d7f89",
+          "mtimeUtc": "2026-10-21T11:41:32.109Z"
         },
         {
           "name": "FoliaMathTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathTests-Debug-d46ae171e0a4831fcf61.json",
-          "sha256": "3798a006006d5c99a388b83f4e1465919aca87d2461cf1dc8fa9459434e2e9e1",
-          "mtimeUtc": "2026-10-21T11:19:15.947Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathTests-Debug-d8318a7562265469f0d6.json",
+          "sha256": "81ac527de6125dd7c96eea2d62de302e4d3b461f94d57340b49971cc430ea626",
+          "mtimeUtc": "2026-10-21T11:41:32.112Z"
         },
         {
           "name": "FoliaNativeMath",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaNativeMath-Debug-2239eeed8aa423682e96.json",
-          "sha256": "5708d0029bfb3935d4719c2fb697cd790828730c62684afc911aa0acfe24578f",
-          "mtimeUtc": "2026-10-21T11:19:15.950Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaNativeMath-Debug-287527bdea435d0b89d7.json",
+          "sha256": "7486931ef4d39e725281b8368e6956777b417ac19b33addac94c73bef4e25ba4",
+          "mtimeUtc": "2026-10-21T11:41:32.114Z"
         },
         {
           "name": "FoliaTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaTests-Debug-c87727ef7ceb0c1f7ad9.json",
-          "sha256": "1e3d5b20bb0a5cd8c3fe4ca4c8a5f5dfe3a16a43ddcbecc32932cfddb5c0a7dd",
-          "mtimeUtc": "2026-10-21T11:19:15.952Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaTests-Debug-f3755e9f4038be5238e9.json",
+          "sha256": "94f26afe0f407ad15004d6ac7a3eb62a31c86685fe3fc350a8c30c1623871fc1",
+          "mtimeUtc": "2026-10-21T11:41:32.115Z"
         },
         {
           "name": "FoliaWindowsEditorTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaWindowsEditorTests-Debug-21c43727b82a55eea5a4.json",
-          "sha256": "4efbae27bad9055817ab42bf14f6d4a74fd73ce85edbab83cdffca21a3fe1b86",
-          "mtimeUtc": "2026-10-21T11:19:15.954Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaWindowsEditorTests-Debug-ad4ec82c8320fd8d8b4d.json",
+          "sha256": "5045e0f6629cd7aeaa6f376cca84ea45ade28f5ff70c0c89a0791501210cd901",
+          "mtimeUtc": "2026-10-21T11:41:32.117Z"
         },
         {
           "name": "folia_console_test_runtime",
@@ -1629,39 +1629,39 @@
         },
         {
           "name": "folia_core",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_core-Debug-e144581654a6bf1eb703.json",
-          "sha256": "ac0d7109ca22638fcbac9212b76d35325d421e55f5a96017e8b3f0f24281a65f",
-          "mtimeUtc": "2026-10-21T10:48:30.959Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_core-Debug-81521af21db688e376aa.json",
+          "sha256": "fa2edbe7833eaacc57904d09dadf81c35682b2a7b6868f3bf9bfd7817ee6e7d8",
+          "mtimeUtc": "2026-10-21T11:41:32.120Z"
         },
         {
           "name": "folia_core@synth_cdc4dcefe43e",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_core@synth_cdc4dcefe43e-Debug-dd5fe24d9e65c1a23be0.json",
-          "sha256": "96ae9641f0719acfd48295c6b02b04b824e6fe401f4c408beaac92c5cd02837a",
-          "mtimeUtc": "2026-10-21T10:48:30.962Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_core@synth_cdc4dcefe43e-Debug-762f9baa449e81b0f9d1.json",
+          "sha256": "66b1a4c37582d1096e4de3fd02ea04a641b451611dd6017f3823f575bc3acb35",
+          "mtimeUtc": "2026-10-21T11:41:32.122Z"
         },
         {
           "name": "folia_math",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_math-Debug-ac0b96dd4a10170b70a5.json",
-          "sha256": "e42e0461d77685758c23d1128ac893641086446760caf53b7eb95fe8e17ac24b",
-          "mtimeUtc": "2026-10-21T10:48:30.968Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_math-Debug-3bb28d262e762ea90011.json",
+          "sha256": "a60ddfb9e4b681f067be7eeb4c8d337609c6212e5a35890086018bf410004510",
+          "mtimeUtc": "2026-10-21T11:41:32.130Z"
         },
         {
           "name": "folia_math@synth_cdc4dcefe43e",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_math@synth_cdc4dcefe43e-Debug-de749375082a566dd477.json",
-          "sha256": "4f1da319a3bb53519cc9532d03a6bc4dec15f5996c9492475d160f43f6a96828",
-          "mtimeUtc": "2026-10-21T10:48:30.973Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_math@synth_cdc4dcefe43e-Debug-1c4d096557a1d79f4ede.json",
+          "sha256": "764cfddf3b2445b4188e2e933eb5fd757af850ffc4650ff85e0f89d643f1c0bf",
+          "mtimeUtc": "2026-10-21T11:41:32.135Z"
         },
         {
           "name": "folia_platform",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_platform-Debug-d8976f873213ada24a19.json",
-          "sha256": "053bcaf790493a3b1b7139a3d28962428879e9e7a99c41063785f1edc7972360",
-          "mtimeUtc": "2026-10-21T11:19:15.975Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_platform-Debug-4b9ce1fae0a8cfbe479b.json",
+          "sha256": "2592036aa0cedca364dc3119fd74b207fb264415a796462f4ca8a216b782ee38",
+          "mtimeUtc": "2026-10-21T11:41:32.138Z"
         },
         {
           "name": "folia_platform@synth_cdc4dcefe43e",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_platform@synth_cdc4dcefe43e-Debug-e36ef142f2a306bca07c.json",
-          "sha256": "be632faef4f8817aae586c94398014018834374a8b906a9045d06dacc23058ee",
-          "mtimeUtc": "2026-10-21T11:19:15.978Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_platform@synth_cdc4dcefe43e-Debug-871e0b4d602e95fce9fa.json",
+          "sha256": "9936fff150137f0bbe8b626d2e713b9117a40599174dec7ebf1432d113039c79",
+          "mtimeUtc": "2026-10-21T11:41:32.140Z"
         },
         {
           "name": "folia_tree_sitter_html",
@@ -1677,15 +1677,15 @@
         },
         {
           "name": "ut_module",
-          "path": "build/core/.cmake/api/v1/reply/target-ut_module-Debug-a3fc5db58b6f2687f49d.json",
-          "sha256": "c00ef1f909a28bd647f4d3b10472a4a99501a74a24b9e8369bfcb783f0750e0f",
-          "mtimeUtc": "2026-10-21T10:48:30.980Z"
+          "path": "build/core/.cmake/api/v1/reply/target-ut_module-Debug-e5b8fc2ef68293f56fd4.json",
+          "sha256": "1b1f7343798939a7fadf982d40bc6664731e706daf580678c5666f5c1aa78b0b",
+          "mtimeUtc": "2026-10-21T11:41:32.144Z"
         },
         {
           "name": "ut_module@synth_fa07998319df",
-          "path": "build/core/.cmake/api/v1/reply/target-ut_module@synth_fa07998319df-Debug-82717d8cc7a3b5c2c1bd.json",
-          "sha256": "2d5031f64b791c5ba41de194f38c1a35404bed53cdf663c83466995385fee9a1",
-          "mtimeUtc": "2026-10-21T10:48:30.982Z"
+          "path": "build/core/.cmake/api/v1/reply/target-ut_module@synth_fa07998319df-Debug-05b76d9f47908932ace7.json",
+          "sha256": "ea52ad21ad1ec890bf1dfcddc9578060407eddac1928aaaab04b3339d08946ac",
+          "mtimeUtc": "2026-10-21T11:41:32.145Z"
         }
       ],
       "generatedModuleMap": {
@@ -1696,7 +1696,7 @@
     },
     "freshness": {
       "status": "mtime-current-at-read",
-      "indexMtimeUtc": "2026-10-21T11:19:15.988Z",
+      "indexMtimeUtc": "2026-10-21T11:41:32.149Z",
       "checkedCMakeInputs": [
         "CMakeLists.txt",
         "third_party/ut/CMakeLists.txt",

@@ -1291,9 +1291,8 @@ byte-equal. The preceding 3/477 and 7/141 runtime gates are retained without a
 duplicate run. Class-binding test consumers decrease from 57 to 54; no math
 provider or algorithm is removed. Evidence:
 mfenced-identity-retirement-before.json / mfenced-identity-retirement-final-check.json.
-The class-state and registry oracles still compare only their C++ fixtures;
-neither has independent SourceJSON, so those consumers/tools remain pending a
-deliberate expectation-preservation decision. The original class-state Source
+At that checkpoint, the class-state and registry oracles compared only their
+C++ fixtures and were pending the preservation step completed below. The original class-state Source
 check passes (29 raw values, 1,682 spacing rows and 2,523 level rows; the raw
 inputs omit numeric classes 4/5/6, so this is not a full 8×8 enumeration).
 The registry's original whole-fixture check fails on its manually adapted C++
@@ -1302,6 +1301,44 @@ all 387 serialized Source values and 175 generated cases remain byte-identical
 to the frozen expectation tail (137,776 bytes); no golden or old wrapper was
 rewritten. Evidence: class-state-original-frozen-check.log and
 registry-original-check-diagnosis.json. No new broad runtime gate is claimed.
+
+### Class-state, registry and verification consumer retirement (2026-10-21)
+
+The class-state oracle now checks the finite mathematical domain directly:
+the independent literal is compared to pinned TS TEXSPACE/TEXSPACELENGTH,
+then actual locked MmlFactory mo nodes pass all 194 normal/script/NONE results.
+The old fixture's 52 representative finite results agree; the active native
+8x8 table and previously passed spacing test body remain unchanged. Arbitrary
+JS object coercion, getter traces and boxed/prototype protocols are withdrawn.
+No new native runtime or golden data is built for those protocols. Commit cd959200.
+
+Registry migration preserves every original Source expectation. The bridge
+checks the original tool/fixture hashes, re-executes the original emitter,
+requires the 137,776-byte expectation tail to match, and allows only the
+known C++ wrapper Key/creator-slot adaptations in its prefix. It captures 176
+top-level Source values into a lossless, independent JSON profile. The new
+check-only oracle passes 43 keys, 172 construction cases, 1,849 type relations
+and 35 protocol observations against that profile, without native input or
+C++ emission. The protocol observations remain Source provenance, not native
+API requirements. Commit f13b3e4f.
+
+The Math verification and repair-option oracles retain their original Source
+inputs and frozen profiles byte-for-byte; both Source-only checks pass, 72 and
+18 cases. Their legacy gate lists drop only the matching consumers/counts.
+Commit 1b01ff26. The two fixture-only class/registry runners retire in d40acdef;
+the remaining base gate retains a required primary fixture and its other suite.
+No legacy native runner was executed or claimed valid.
+
+The four C++ consumers retire in two batches: class-state/registry in 8ec3261c,
+then Math verification/repair options in 2b547b6d. The parallel4 removal build
+passes (session63913). All 478 active sources, six protected paths, seventeen
+target source lists, nine verified input/binary files, nine new tool/profile
+files and eleven other retained files remain byte-equal to the verified inputs.
+The preceding native 3/477 and 7/141 gates are retained without duplicate runs;
+class_binding test consumers decrease 54 to 50. No math provider or algorithm
+is deleted. Evidence: class-source-oracles-promoted.json,
+class-source-only-check.json and class-source-retirement-final-check.json.
+No new full math/font, worker, Release, GUI or walk-resource gate is claimed.
 
 ## Evidence and failure handling
 
