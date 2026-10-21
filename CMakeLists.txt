@@ -652,6 +652,8 @@ file(GLOB_RECURSE FOLIA_TEST_SRC CONFIGURE_DEPENDS
 list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/platform/")
 list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/encoding/")
 list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/math/")
+list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/parsing/test_commonmark\\.cpp$")
+list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/parsing/test_md4c_reference\\.cpp$")
 target_sources(FoliaTests PRIVATE
     ${FOLIA_TEST_SRC})
 target_include_directories(FoliaTests PRIVATE
@@ -901,6 +903,57 @@ if(WIN32)
 endif()
 
 # These CMake executables are console tests/probes; the WinUI app uses MSBuild.
+# Official specification tests are separate because the current parser is not
+# conformant yet. They fail normally; they are not a snapshot/probe baseline.
+set(FOLIA_COMMONMARK_CASES "${CMAKE_CURRENT_BINARY_DIR}/commonmark/commonmark_cases.inc")
+add_custom_command(OUTPUT "${FOLIA_COMMONMARK_CASES}"
+    COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/tools/markdown-conformance/prepare.py"
+        --output "${FOLIA_COMMONMARK_CASES}"
+    DEPENDS tools/markdown-conformance/prepare.py
+        tools/markdown-conformance/canonical_html.py tools/markdown-conformance/sources.lock.json
+    VERBATIM)
+add_custom_target(FoliaCommonMarkFixtures DEPENDS "${FOLIA_COMMONMARK_CASES}")
+add_executable(FoliaCommonMarkTests EXCLUDE_FROM_ALL
+    tests/main.cpp tests/parsing/test_commonmark.cpp)
+add_dependencies(FoliaCommonMarkTests FoliaCommonMarkFixtures)
+target_compile_features(FoliaCommonMarkTests PRIVATE cxx_std_23)
+set_target_properties(FoliaCommonMarkTests PROPERTIES CXX_MODULE_STD ON)
+target_include_directories(FoliaCommonMarkTests PRIVATE tests "${CMAKE_CURRENT_BINARY_DIR}/commonmark")
+target_link_libraries(FoliaCommonMarkTests PRIVATE folia_core Boost::ut_module)
+add_test(NAME FoliaCommonMarkTests COMMAND FoliaCommonMarkTests)
+set_tests_properties(FoliaCommonMarkTests PROPERTIES LABELS "commonmark;conformance")
+
+option(FOLIA_BUILD_MD4C_REFERENCE_TESTS "Build md4c controls for failing official CommonMark cases" OFF)
+if(FOLIA_BUILD_MD4C_REFERENCE_TESTS)
+    set(FOLIA_MD_REFERENCE "${CMAKE_CURRENT_SOURCE_DIR}/build/dependencies/markdown-conformance")
+    if(NOT EXISTS "${FOLIA_MD_REFERENCE}/md4c.c")
+        message(FATAL_ERROR "Run python tools/markdown-conformance/prepare.py --fetch --reference first")
+    endif()
+    add_library(folia_md4c_reference STATIC
+        "${FOLIA_MD_REFERENCE}/md4c.c"
+        "${FOLIA_MD_REFERENCE}/md4c-html.c"
+        "${FOLIA_MD_REFERENCE}/entity.c")
+    target_include_directories(folia_md4c_reference PUBLIC "${FOLIA_MD_REFERENCE}")
+    target_compile_definitions(folia_md4c_reference PRIVATE _CRT_SECURE_NO_WARNINGS)
+    set(FOLIA_MD4C_FAILED_CASES "${CMAKE_CURRENT_BINARY_DIR}/commonmark/md4c_failed_examples.inc")
+    add_custom_command(OUTPUT "${FOLIA_MD4C_FAILED_CASES}"
+        COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/tools/markdown-conformance/reference.py"
+            --generate "${FOLIA_MD4C_FAILED_CASES}"
+        DEPENDS tools/markdown-conformance/reference.py
+            "${CMAKE_CURRENT_SOURCE_DIR}/build/markdown-conformance/results.json"
+        VERBATIM)
+    add_custom_target(FoliaMd4cFailureFixtures DEPENDS "${FOLIA_MD4C_FAILED_CASES}")
+    add_executable(FoliaMd4cReferenceTests EXCLUDE_FROM_ALL
+        tests/main.cpp tests/parsing/test_md4c_reference.cpp)
+    add_dependencies(FoliaMd4cReferenceTests FoliaCommonMarkFixtures FoliaMd4cFailureFixtures)
+    target_compile_features(FoliaMd4cReferenceTests PRIVATE cxx_std_23)
+    set_target_properties(FoliaMd4cReferenceTests PROPERTIES CXX_MODULE_STD ON)
+    target_include_directories(FoliaMd4cReferenceTests PRIVATE tests "${CMAKE_CURRENT_BINARY_DIR}/commonmark")
+    target_link_libraries(FoliaMd4cReferenceTests PRIVATE folia_md4c_reference Boost::ut_module)
+    add_test(NAME FoliaMd4cReferenceTests COMMAND FoliaMd4cReferenceTests)
+    set_tests_properties(FoliaMd4cReferenceTests PROPERTIES LABELS "commonmark;reference")
+endif()
+
 # Keep CRT reports on stderr, including failures before main().
 if(WIN32 AND MSVC)
     add_library(folia_console_test_runtime OBJECT tools/test-support/windows_console_runtime.cpp)

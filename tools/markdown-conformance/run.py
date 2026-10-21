@@ -1,0 +1,399 @@
+"""Run Folia's formal CommonMark 0.31.2 conformance tests and report results."""
+import argparse
+from collections import Counter, defaultdict
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import time
+
+ROOT = Path(__file__).resolve().parents[2]
+HERE = Path(__file__).resolve().parent
+DEFAULT_OUTPUT = ROOT / 'build' / 'markdown-conformance'
+
+
+def load_fixtures():
+    sys.path.insert(0, str(HERE))
+    from prepare import prepare
+    return prepare(fetch=True)
+
+
+def normalize_tree(value):
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except (ValueError, TypeError):
+            return value
+    return value
+
+
+def first_diff(expected, actual, path='$'):
+    if type(expected) is not type(actual):
+        return {'path': path, 'expected': expected, 'actual': actual}
+    if isinstance(expected, dict):
+        for key in sorted(set(expected) | set(actual), key=str):
+            child = f'{path}.{key}'
+            if key not in expected:
+                return {'path': child, 'expected': '<missing>', 'actual': actual[key]}
+            if key not in actual:
+                return {'path': child, 'expected': expected[key], 'actual': '<missing>'}
+            mismatch = first_diff(expected[key], actual[key], child)
+            if mismatch:
+                return mismatch
+        return None
+    if isinstance(expected, list):
+        for index, (left, right) in enumerate(zip(expected, actual)):
+            mismatch = first_diff(left, right, f'{path}[{index}]')
+            if mismatch:
+                return mismatch
+        if len(expected) != len(actual):
+            index = min(len(expected), len(actual))
+            return {
+                'path': f'{path}[{index}]',
+                'expected': expected[index] if index < len(expected) else '<missing>',
+                'actual': actual[index] if index < len(actual) else '<missing>',
+            }
+        return None
+    if expected != actual:
+        return {'path': path, 'expected': expected, 'actual': actual}
+    return None
+
+
+def read_results(path):
+    results = []
+    malformed = []
+    if not path.exists():
+        return results, [{'line': 0, 'error': 'test runner did not create JSONL report'}]
+    for line_number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            item = json.loads(line)
+            if not isinstance(item, dict) or 'example' not in item:
+                raise ValueError('record must be an object with an example field')
+            item['example'] = int(item['example'])
+            item['expected'] = normalize_tree(item.get('expected'))
+            item['actual'] = normalize_tree(item.get('actual'))
+            item['first_tree_difference'] = first_diff(item['expected'], item['actual'])
+            item['limitations'] = item.get('limitations') or []
+            if isinstance(item['limitations'], str):
+                item['limitations'] = [item['limitations']]
+            results.append(item)
+        except (ValueError, TypeError, json.JSONDecodeError) as error:
+            malformed.append({'line': line_number, 'error': str(error), 'raw': line})
+    return results, malformed
+
+
+def case_result(example, fixture, result):
+    row = dict(result or {})
+    row.setdefault('example', example)
+    row.setdefault('section', fixture['section'])
+    row.setdefault('markdown', fixture['markdown'])
+    row.setdefault('expected_html', fixture['html'])
+    row.setdefault('expected', None)
+    row.setdefault('actual', None)
+    row.setdefault('serialized', None)
+    row.setdefault('semantic_match', None)
+    row.setdefault('relaxed_list_match', None)
+    row.setdefault('inline_lossless', None)
+    if 'exact_serialization' not in row:
+        row['exact_serialization'] = row.pop('roundtrip', None)
+    row.setdefault('limitations', [])
+    row.setdefault('error', None)
+    row.setdefault('first_tree_difference', None)
+    row['reported'] = result is not None
+    if row.get('semantic_match') is False or (
+            row.get('semantic_match') is None and row['first_tree_difference']):
+        row['first_tree_difference'] = row.get('first_tree_difference') or first_diff(
+            row.get('expected'), row.get('actual'))
+    else:
+        row['first_tree_difference'] = None
+    return row
+
+
+def summarize(cases):
+    by_section = defaultdict(list)
+    for case in cases:
+        by_section[str(case['section'])].append(case)
+    section_counts = {}
+    for section, items in sorted(by_section.items()):
+        section_counts[section] = {
+            'total': len(items),
+            'reported': sum(item.get('reported', False) for item in items),
+            'strict_pass': sum(item.get('semantic_match') is True for item in items),
+            'strict_diff': sum(item.get('semantic_match') is False for item in items),
+            'unreported': sum(item.get('semantic_match') is None for item in items),
+            'relaxed_list_only': sum(item.get('semantic_match') is False and
+                                     item.get('relaxed_list_match') is True for item in items),
+            'inline_lossless': sum(item.get('inline_lossless') is True for item in items),
+            'inline_lossless_fail': sum(item.get('inline_lossless') is False for item in items),
+            'exact_serialization': sum(item.get('exact_serialization') is True for item in items),
+            'exact_serialization_fail': sum(item.get('exact_serialization') is False for item in items),
+        }
+    all_results = [case for items in by_section.values() for case in items]
+    limitations = Counter(limit for case in all_results for limit in case.get('limitations', []))
+    strict_diffs = [case for case in all_results if case.get('semantic_match') is False]
+    difference_categories = {
+        'only_list_tightness': [],
+        'html_policy_or_projection': [],
+        'other_reported_projection_limit': [],
+        'no_known_projection_limit': [],
+    }
+    for case in strict_diffs:
+        labels = [str(label).casefold() for label in case.get('limitations', [])]
+        has_html_policy_label = any('html-policy/projection' in label for label in labels)
+        other_labels = [label for label in labels if 'list-tightness' not in label]
+        if case.get('relaxed_list_match') is True and not has_html_policy_label and not other_labels:
+            category = 'only_list_tightness'
+        elif has_html_policy_label:
+            category = 'html_policy_or_projection'
+        elif labels:
+            category = 'other_reported_projection_limit'
+        else:
+            category = 'no_known_projection_limit'
+        case['difference_category'] = category
+        difference_categories[category].append(case['example'])
+    return {
+        'sections': section_counts,
+        'totals': {
+            'fixture_rows': len(all_results),
+            'reported': sum(case.get('reported', False) for case in all_results),
+            'strict_pass': sum(case.get('semantic_match') is True for case in all_results),
+            'strict_diff': len(strict_diffs),
+            'unreported': sum(case.get('semantic_match') is None for case in all_results),
+            'relaxed_list_only': sum(case.get('semantic_match') is False and
+                                     case.get('relaxed_list_match') is True for case in all_results),
+            'inline_lossless': sum(case.get('inline_lossless') is True for case in all_results),
+            'inline_lossless_fail': sum(case.get('inline_lossless') is False for case in all_results),
+            'exact_serialization': sum(case.get('exact_serialization') is True for case in all_results),
+            'exact_serialization_fail': sum(case.get('exact_serialization') is False for case in all_results),
+            'with_reported_limitations': sum(bool(case.get('limitations')) for case in all_results),
+        },
+        'limitations': dict(sorted(limitations.items())),
+        'difference_categories': {
+            category: {'count': len(examples), 'examples': examples}
+            for category, examples in difference_categories.items()
+        },
+        'worst_sections': sorted(section_counts.items(),
+                                 key=lambda entry: (-entry[1]['strict_diff'], entry[0]))[:10],
+        'strict_differences': strict_diffs,
+    }
+
+
+def fenced(value, language='json'):
+    value = str(value)
+    longest = max((len(run) for run in re.findall(r'`+', value)), default=0)
+    fence = '`' * max(3, longest + 1)
+    return f'{fence}{language}\n{value}\n{fence}'
+
+
+def markdown_report(report):
+    totals = report['summary']['totals']
+    lines = [
+        '# CommonMark 0.31.2 conformance results',
+        '',
+        f"Status: **{report['status']}**. Formal test exit code: **{report.get('exit_code')}**.",
+        f"Fixture source: [CommonMark 0.31.2 spec.json](https://spec.commonmark.org/0.31.2/spec.json), SHA-256 `{report['source']['spec_json_sha256']}`.",
+        f"License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Reference renderer pin: md4c commit `{report['source']['md4c_commit']}` (MIT), fetched only for later investigation.",
+        '',
+        'The official tests compare Folia’s normalized test-tree projection with the normalized expected HTML tree. This projection is not Folia’s WinUI HTML renderer. Tree shape differences and implementation limitations are reported separately; this suite does not use md4c as its standard.',
+        '',
+        '## Totals',
+        '',
+        f"- Official examples: {report['fixture_count']}; records: {totals['reported']}; missing: {len(report['missing_examples'])}; malformed JSONL lines: {len(report['malformed_records'])}.",
+        f"- Strict semantic matches: {totals['strict_pass']}; strict differences: {totals['strict_diff']}; unreported: {totals['unreported']}.",
+        f"- List tight/loose diagnostic only (strict fail, relaxed list comparison passes): {totals['relaxed_list_only']}.",
+        f"- Inline source lossless: {totals['inline_lossless']} pass, {totals['inline_lossless_fail']} fail; exact Markdown save serialization: {totals['exact_serialization']} pass, {totals['exact_serialization_fail']} fail.",
+        f"- Cases with one or more reported projection/implementation limitations: {totals['with_reported_limitations']}.",
+        '',
+        '## Sections',
+        '',
+        '| Section | Cases | Strict pass | Strict differences | Relaxed-list-only | Lossless fail | Exact serialization fail |',
+        '|---|---:|---:|---:|---:|---:|---:|',
+    ]
+    for section, counts in report['summary']['sections'].items():
+        lines.append(f"| {section} | {counts['total']} | {counts['strict_pass']} | {counts['strict_diff']} | {counts['relaxed_list_only']} | {counts['inline_lossless_fail']} | {counts['exact_serialization_fail']} |")
+    lines.extend(['', '## Difference categories', ''])
+    if report['summary']['limitations']:
+        lines.extend(['Reported limitations are counts of case-level limitation labels:'])
+        for label, count in report['summary']['limitations'].items():
+            lines.append(f'- `{label}`: {count}')
+    else:
+        lines.append('The formal test reported no per-case limitation labels.')
+    lines.extend(['', '## Sections with most strict differences', ''])
+    worst = report['summary']['worst_sections']
+    if worst:
+        for section, counts in worst:
+            lines.append(f"- **{section}**: {counts['strict_diff']} strict differences / {counts['total']} cases; {counts['relaxed_list_only']} pass only under the list diagnostic.")
+    else:
+        lines.append('No section results were reported.')
+    lines.extend(['', '## Mutually exclusive strict-difference categories', ''])
+    for category, details in report['summary']['difference_categories'].items():
+        lines.append(f"- **{category}**: {details['count']} — examples: {', '.join(map(str, details['examples'])) or 'none'}.")
+    lines.extend(['', '## Strict differences', ''])
+    diffs = report['summary']['strict_differences']
+    if not diffs:
+        lines.append('No strict differences were reported.')
+    for case in diffs:
+        diff = case.get('first_tree_difference') or {}
+        lines.extend([
+            f"### Example {case['example']} — {case['section']}",
+            '',
+            '**Markdown source:**',
+            '',
+            fenced(json.dumps(case.get('markdown'), ensure_ascii=False), 'json'),
+            '',
+            f"**First tree difference:** `{diff.get('path', 'unknown')}`",
+            '',
+            '**Expected:**',
+            '',
+            fenced(json.dumps(diff.get('expected', case.get('expected')), ensure_ascii=False)),
+            '',
+            '**Actual:**',
+            '',
+            fenced(json.dumps(diff.get('actual', case.get('actual')), ensure_ascii=False)),
+        ])
+        if case.get('limitations'):
+            lines.append('Reported limitations: ' + ', '.join(f'`{x}`' for x in case['limitations']))
+        lines.append('')
+    quality_failures = [case for case in report['results']
+                        if case.get('inline_lossless') is False or case.get('exact_serialization') is False]
+    incomplete = [case for case in report['results'] if case.get('error')]
+    lines.extend(['', '## Source-preservation failures and case errors', ''])
+    if not quality_failures and not incomplete:
+        lines.append('No source-preservation failures or per-case errors were reported.')
+    for case in quality_failures:
+        failed = []
+        if case.get('inline_lossless') is False:
+            failed.append('inline source lossless')
+        if case.get('exact_serialization') is False:
+            failed.append('exact Markdown save serialization')
+        lines.append(f"- Example {case['example']} ({case['section']}): {', '.join(failed)}.")
+    for case in incomplete:
+        lines.extend([
+            f"### Example {case['example']} — {case['section']} raised an error",
+            '',
+            f"Error: {case['error']}",
+            '',
+            '**Markdown source:**',
+            '',
+            fenced(json.dumps(case.get('markdown'), ensure_ascii=False), 'json'),
+            '',
+        ])
+    lines.extend(['Full per-example records are in `results.json`; raw test output is in `runner.log`.'])
+    return '\n'.join(lines) + '\n'
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--executable', type=Path, default=ROOT / 'build' / 'core' / 'FoliaCommonMarkTests.exe')
+    parser.add_argument('--output', type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument('--timeout', type=float, default=120.0)
+    args, filters = parser.parse_known_args()
+    if args.timeout <= 0:
+        parser.error('--timeout must be greater than zero')
+
+    fixtures = load_fixtures()
+    args.output.mkdir(parents=True, exist_ok=True)
+    jsonl_path = args.output / 'results.jsonl'
+    report_path = args.output / 'results.json'
+    markdown_path = args.output / 'results.md'
+    log_path = args.output / 'runner.log'
+    jsonl_path.unlink(missing_ok=True)
+
+    env = os.environ.copy()
+    env['FOLIA_COMMONMARK_REPORT'] = str(jsonl_path.resolve())
+    command = [str(args.executable.resolve()), *filters]
+    started = time.time()
+    stdout = stderr = ''
+    exit_code = None
+    timed_out = False
+    launch_error = None
+    try:
+        completed = subprocess.run(command, cwd=ROOT, env=env, text=True,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   timeout=args.timeout, check=False)
+        stdout, stderr = completed.stdout, completed.stderr
+        exit_code = completed.returncode
+    except subprocess.TimeoutExpired as error:
+        timed_out = True
+        stdout = error.stdout.decode(errors='replace') if isinstance(error.stdout, bytes) else (error.stdout or '')
+        stderr = error.stderr.decode(errors='replace') if isinstance(error.stderr, bytes) else (error.stderr or '')
+    except OSError as error:
+        launch_error = str(error)
+    elapsed = time.time() - started
+    log_path.write_text('COMMAND: ' + subprocess.list2cmdline(command) + '\n\nSTDOUT:\n' + stdout + '\nSTDERR:\n' + stderr, encoding='utf-8')
+    if stdout:
+        print(stdout, end='' if stdout.endswith('\n') else '\n')
+    if stderr:
+        print(stderr, file=sys.stderr, end='' if stderr.endswith('\n') else '\n')
+
+    raw, malformed = read_results(jsonl_path)
+    indexed = {}
+    duplicates = []
+    for item in raw:
+        number = item['example']
+        if number in indexed:
+            duplicates.append(number)
+        indexed[number] = item
+    all_cases = [case_result(case['example'], case, indexed.get(case['example'])) for case in fixtures]
+    present = set(indexed)
+    expected_ids = {case['example'] for case in fixtures}
+    missing = sorted(expected_ids - present)
+    unexpected = sorted(present - expected_ids)
+    status = ('completed' if exit_code in (0, 1) and not timed_out and not launch_error
+              else 'timed_out' if timed_out else 'abnormal_exit' if exit_code is not None
+              else 'launch_error')
+
+    lock = json.loads((HERE / 'sources.lock.json').read_text(encoding='utf-8'))
+    spec = next(item for item in lock['files'] if item['name'] == 'spec.json')
+    report = {
+        'status': status,
+        'exit_code': exit_code,
+        'elapsed_seconds': round(elapsed, 3),
+        'timeout_seconds': args.timeout,
+        'filtered': bool(filters),
+        'filters': filters,
+        'fixture_count': len(fixtures),
+        'jsonl_record_count': len(raw),
+        'source': {
+            'commonmark_version': lock['commonmark_version'],
+            'spec_json_url': spec['url'],
+            'spec_json_sha256': spec['sha256'],
+            'commonmark_license': lock['commonmark_license'],
+            'md4c_commit': lock['md4c_commit'],
+            'md4c_license': lock['md4c_license'],
+        },
+        'comparison_scope': 'Normalized semantic test-tree projection; not the Folia WinUI HTML renderer.',
+        'missing_examples': missing,
+        'unexpected_examples': unexpected,
+        'duplicate_examples': sorted(set(duplicates)),
+        'malformed_records': malformed,
+        'launch_error': launch_error,
+        'summary': summarize(all_cases),
+        'results': all_cases,
+    }
+    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    markdown_path.write_text(markdown_report(report), encoding='utf-8')
+    print(f"CommonMark report: {markdown_path}")
+    print(f"JSON report: {report_path}")
+
+    if timed_out:
+        print(f'Formal test timed out after {args.timeout:g}s; partial results are recorded.', file=sys.stderr)
+        return 124
+    if launch_error:
+        print(f'Could not launch formal test executable: {launch_error}', file=sys.stderr)
+        return 2
+    if exit_code not in (0, 1):
+        print(f'Formal test exited abnormally with code {exit_code}; partial results are recorded.', file=sys.stderr)
+        return exit_code if exit_code is not None else 2
+    if exit_code == 0 and not filters and (missing or unexpected or duplicates or malformed):
+        print('Formal test returned success but its per-example report is incomplete or malformed.', file=sys.stderr)
+        return 1
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

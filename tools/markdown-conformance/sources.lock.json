@@ -1,0 +1,68 @@
+{
+  "commonmark_version": "0.31.2",
+  "commonmark_license": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "md4c_commit": "f9e5eb232b95b737373ae706648cb75bd259ed1a",
+  "md4c_license": "MIT",
+  "files": [
+    {
+      "name": "spec.json",
+      "url": "https://spec.commonmark.org/0.31.2/spec.json",
+      "sha256": "d431b29d97b6f73e69d547109cf5081578fac931e72afe95639ebe766c1b2a20"
+    },
+    {
+      "name": "md4c.c",
+      "url": "https://raw.githubusercontent.com/mity/md4c/f9e5eb232b95b737373ae706648cb75bd259ed1a/src/md4c.c",
+      "sha256": "5b45d3d1d036c71d37cf149b0a1311a9e4d29366ad5555c0b5187b9d2b19aa86"
+    },
+    {
+      "name": "md4c.h",
+      "url": "https://raw.githubusercontent.com/mity/md4c/f9e5eb232b95b737373ae706648cb75bd259ed1a/src/md4c.h",
+      "sha256": "d0c14762f1eac3cd9d1c08c3a287b61d93ee2382e5a22ee48f5a6f3ad2c2349d"
+    },
+    {
+      "name": "md4c-html.c",
+      "url": "https://raw.githubusercontent.com/mity/md4c/f9e5eb232b95b737373ae706648cb75bd259ed1a/src/md4c-html.c",
+      "sha256": "bf6f4f856e7352526c08b22916d1a840054b027a28f2b2a89482f50bf23e55b0"
+    },
+    {
+      "name": "md4c-html.h",
+      "url": "https://raw.githubusercontent.com/mity/md4c/f9e5eb232b95b737373ae706648cb75bd259ed1a/src/md4c-html.h",
+      "sha256": "6a045ecec5d8cf17a771654a31af06641df195d7ea8486a140a121b6c6e0191f"
+    },
+    {
+      "name": "entity.c",
+      "url": "https://raw.githubusercontent.com/mity/md4c/f9e5eb232b95b737373ae706648cb75bd259ed1a/src/entity.c",
+      "sha256": "8b7fbaca3247ed223cd6689e7b72854ed1b99fb57ae9196bd91e2d830dba9fe2"
+    },
+    {
+      "name": "entity.h",
+      "url": "https://raw.githubusercontent.com/mity/md4c/f9e5eb232b95b737373ae706648cb75bd259ed1a/src/entity.h",
+      "sha256": "99a8952be6629e4114947cb61a901bf4f73b10d84d1ac5e17ad8299dfbad708e"
+    },
+    {
+      "name": "md4c-LICENSE.md",
+      "url": "https://raw.githubusercontent.com/mity/md4c/f9e5eb232b95b737373ae706648cb75bd259ed1a/LICENSE.md",
+      "sha256": "e547c9a66c120b19f9838a1f7c2f51137f5c71ba27b70c3611b673f2cdb4e02e"
+    }
+  ],
+  "unicode": {
+    "version": "15.1.0",
+    "files": [
+      {
+        "name": "UnicodeData.txt",
+        "url": "https://www.unicode.org/Public/15.1.0/ucd/UnicodeData.txt",
+        "sha256": "2fc713e6a31a87c4850a37fe2caffa4218180fadb5de86b43a143ddb4581fb86"
+      },
+      {
+        "name": "CaseFolding.txt",
+        "url": "https://www.unicode.org/Public/15.1.0/ucd/CaseFolding.txt",
+        "sha256": "4e55acfdc32825a22e87670e9056a3bf94ad7c5400065778e9e10f8314372bcf"
+      },
+      {
+        "name": "Unicode-LICENSE.txt",
+        "url": "https://www.unicode.org/license.txt",
+        "sha256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96"
+      }
+    ]
+  }
+}
