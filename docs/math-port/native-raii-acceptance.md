@@ -674,6 +674,20 @@ mathematical assertion is covered by the four typed tests above. Dynamic
 Source factory replacement, callbacks, property arrays and weak projection
 leases are withdrawn, with no replacement object-semantic mechanism introduced.
 
+Five inactive Scene projection test files also retire: maction_passive_host_g213,
+maction_tooltip_scene_projection_g219, scene_attribute_parity_g145,
+scene_parent_projection and scene_request_owner_retirement. Typed action kinds,
+nested tooltip snapshots, exact Source SVG, restoration after errors and request
+ownership remain in native_svg_maction_source, native_svg_maction,
+native_scene_actions, native_svg_actions and request_lifetime. Multi-line Maction
+delegation is checked by the new real selected-row test above. Old mutable
+Scene-to-Context arrays/parent links and dynamically replaced SVG helpers are
+withdrawn. In particular cloneSceneNode in the old scene/glyph_paint.cpp is
+inactive and uses the discarded mutable NodeRef model; its text/comment parent
+rule is not a missing immutable Scene requirement. The active Common
+finishInlineFrames performs inline split/placement, with complete canonical
+Source SVG coverage including inline-linebreak-narrow.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
