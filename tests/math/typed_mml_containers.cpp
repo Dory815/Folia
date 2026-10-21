@@ -124,6 +124,48 @@ suite typed_mml_containers = [] {
         expect(fractionalParent.children()[0]->kind() == m::NodeKind::mrow);
     };
 
+    "mathchoice display and clamped script levels select the typed branches"_test = [] {
+        const auto select = [](bool display, double level, std::size_t count) {
+            m::MmlDocument document;
+            auto &factory = document.factory();
+            auto &choice = static_cast<m::MathChoice &>(factory.make(m::NodeKind::math_choice));
+            std::array<m::MmlNode *, 4> branches{};
+            for (auto &branch : branches)
+                branch = &factory.make(m::NodeKind::mi);
+            choice.setChildren(branches);
+            auto &parent = factory.make(m::NodeKind::mrow);
+            parent.appendChild(choice);
+            choice.setInheritedAttributes({}, display, level, false);
+            expect(parent.children().size() == 1_u);
+            if (parent.children().empty())
+                return;
+            if (count < branches.size()) {
+                expect(parent.children()[0] == branches[count]);
+                expect(branches[count]->parent() == &parent);
+            } else {
+                expect(parent.children()[0]->kind() == m::NodeKind::mrow);
+                expect(parent.children()[0]->parent() == &parent);
+            }
+        };
+
+        select(true, 2.0, 0);   // display always selects branch zero
+        select(false, -4.0, 1); // script level clamps to zero
+        select(false, 2.0, 3);  // largest script level selects branch three
+        select(false, 20.0, 3); // script level clamps to two
+
+        m::MmlDocument emptyDocument;
+        auto &emptyChoice = static_cast<m::MathChoice &>(
+            emptyDocument.factory().make(m::NodeKind::math_choice));
+        auto &emptyParent = emptyDocument.factory().make(m::NodeKind::mrow);
+        emptyParent.appendChild(emptyChoice);
+        emptyChoice.setInheritedAttributes({}, true, 0.0, false);
+        expect(emptyParent.children().size() == 1_u);
+        if (!emptyParent.children().empty()) {
+            expect(emptyParent.children()[0]->kind() == m::NodeKind::mrow);
+            expect(emptyParent.children()[0]->parent() == &emptyParent);
+        }
+    };
+
     "maction selection clamps, toggles and delegates selected projections"_test = [] {
         m::MmlDocument document;
         auto &factory = document.factory();
