@@ -765,8 +765,8 @@ test passes 1 test / 10 assertions, the existing explicit-break test 1 / 14,
 and the existing selected family Source-SVG comparison 1 / 1021
 (`retire-scene-focused-results.json`). The test reuses math's seeded inferred
 child, and its broken control includes an operand so it actually creates a line
-stack rather than the distinct embellished-operator path. Full math and worker
-verification after the pending old Scene removal remain to be run.
+stack rather than the distinct embellished-operator path. The full math and
+worker checks after old Scene removal passed as recorded below.
 
 ### Retained CommonWrapper broken-border coverage
 
@@ -784,6 +784,33 @@ selected 88-case test passes 1 test / 1047 assertions (`border-coverage-native.l
 and `border-coverage-native-results.json`); parallel4 build passes. Source helper
 `common-border-dash-source.cjs`, its fixture, text-tip oracle and comparer remain.
 No production border algorithm was changed.
+
+### Old Scene retirement and current integration gate
+
+The 50 obsolete Scene source files retired in five importer-first batches
+(d9222851, 3d9a966d, 8ed96a4e, 9618536b, 57a153f3). Before each removal,
+Root checked exact file hashes, all-target configured membership and remaining
+tracked imports/direct consumers. The before-removal reports remain under
+ignored build/math-port/scene-*-before-removal.json and scene-batch-graph-review.json.
+The original Common family implementations and the eight active Scene sources
+remain. Two obsolete mutable-Scene test tools retired after preserving their
+supported mathematical assertions in existing typed tests, including the two
+border cases above (cad58dcd). Independent Source artifacts remain.
+
+After removal, the parallel4 FoliaMathTests/FoliaNativeMath build exits0 with
+no work required. The bounded full mathematical run exits0: **870 tests,
+217144 assertions, 176 suites, zero skips** (session96710,
+retire-scene-full-math.log and retire-scene-full-results.json). Diagnostic
+Scene environment variables were cleared for this run.
+
+The supported WinUI Debug build and real deployed worker probe also exit0
+(session64450, retire-scene-worker-verify.log). Mathbb, fractions, Unicode,
+noundefined output, Formula recovery, shared cache/dependencies, Clear and
+disable/re-enable pass; stop join4599ms, probe total9.07s, empty stderr.
+No Release or GUI visual inspection is claimed. The canonical inventory records
+678 src/math files / 674 code sources, with 560 configured folia_math sources,
+247 active interfaces matching the module map, and eight active Scene sources;
+the latest File API index is index-2026-10-21T08-13-34-0100.json.
 
 ## Evidence and failure handling
 

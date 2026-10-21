@@ -1,16 +1,16 @@
 {
   "schema": "folia.math.native-raii.decision-manifest.v1",
-  "snapshotRevision": "a074b59f95b6dcf880f359fa8a9664a676b1f667",
+  "snapshotRevision": "57a153f3d300b1ecaa26b06675b43ede40a854ac",
   "generator": {
     "path": "tools/math-port/native-raii-inventory.cjs",
     "sha256": "dd7a35814f11a56305c3b109d112b6dffd152396c83c1626fd6d322cecf6a61c",
     "revisionNote": "Revision identifies HEAD only; file hashes describe the observed working tree, which may contain uncommitted changes."
   },
   "scope": {
-    "allSrcMathFiles": 728,
-    "codeSources": 724,
-    "moduleUnits": 375,
-    "implementationUnits": 346,
+    "allSrcMathFiles": 678,
+    "codeSources": 674,
+    "moduleUnits": 349,
+    "implementationUnits": 322,
     "otherSourceFiles": 3,
     "currentCMakeLiteralFoliaMathReferences": 365,
     "existingCMakeDirectFoliaMathFiles": 477,
@@ -20,7 +20,7 @@
     "unresolvedCMakeDirectFoliaMathFiles": 0,
     "lexicalCandidateUnresolvedMathReferences": 0,
     "moduleImportClosureFiles": 560,
-    "filesOutsideFoliaMathModuleClosure": 251,
+    "filesOutsideFoliaMathModuleClosure": 201,
     "allTargetCMakeMentions": 523,
     "generatedFoliaMathFontSources": 83,
     "lockedButInactiveFontShardCandidates": 40,
@@ -40,7 +40,7 @@
   "sourceProvenanceGate": {
     "status": "note-index-only",
     "indexedSourceFiles": 60,
-    "totalSourceFiles": 724,
+    "totalSourceFiles": 674,
     "limitation": "No completeness or algorithm-equivalence claim; this is not an acceptance gate."
   },
   "cmakeModuleMapEvidence": {
@@ -1559,8 +1559,8 @@
     "status": "ready",
     "authoritative": true,
     "reason": null,
-    "indexFile": "index-2026-10-21T06-50-21-0412.json",
-    "codemodelFile": "codemodel-v2-04cc9dcd21b3697db400.json",
+    "indexFile": "index-2026-10-21T08-13-34-0100.json",
+    "codemodelFile": "codemodel-v2-304ebf0e6c74a2d57bea.json",
     "generatedModuleMapPath": "build/core/CMakeFiles/folia_math.dir/CXXModules.json",
     "moduleMapCheck": {
       "moduleMapCount": 247,
@@ -1574,51 +1574,51 @@
     },
     "evidence": {
       "index": {
-        "path": "build/core/.cmake/api/v1/reply/index-2026-10-21T06-50-21-0412.json",
-        "sha256": "e1f4f417b476f74deac814d0380c94ba4f426f493329b344dadd6dbee792440f",
-        "mtimeUtc": "2026-10-21T06:50:21.412Z"
+        "path": "build/core/.cmake/api/v1/reply/index-2026-10-21T08-13-34-0100.json",
+        "sha256": "425fe8e138667b0ab9abd0ad253bba687c7de66fc9b8829b73bccdb810be29a8",
+        "mtimeUtc": "2026-10-21T08:13:34.100Z"
       },
       "codemodel": {
-        "path": "build/core/.cmake/api/v1/reply/codemodel-v2-04cc9dcd21b3697db400.json",
-        "sha256": "abcac73db0fd1c289bdd1d8ce97ea5f80c47db04e27943955ef017a3f14b3c55",
-        "mtimeUtc": "2026-10-21T06:50:21.410Z"
+        "path": "build/core/.cmake/api/v1/reply/codemodel-v2-304ebf0e6c74a2d57bea.json",
+        "sha256": "ccddbf0901e8d255b0b4227773879cc11bec3f6087738c872d9a65249b95bf35",
+        "mtimeUtc": "2026-10-21T08:13:34.099Z"
       },
       "targets": [
         {
           "name": "FoliaEncodingTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaEncodingTests-Debug-20f0407b8a7e20f2aebe.json",
-          "sha256": "5f6d7f57f9b44c1733c339feaf406084a7c856429877a9b75485d5f929a102db",
-          "mtimeUtc": "2026-10-21T06:50:21.369Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaEncodingTests-Debug-41f2d9ff5c5f862d1f63.json",
+          "sha256": "be5325bb3cac3370b3e9de162617937fa64848594514fe1c07d9b13f14161260",
+          "mtimeUtc": "2026-10-21T08:13:34.062Z"
         },
         {
           "name": "FoliaMathFontDump",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathFontDump-Debug-da8a113daca9b9df4795.json",
-          "sha256": "5752abf8e41e34676e8ddef962212cfce2a6b85d50dac965124b31b2f4e166d4",
-          "mtimeUtc": "2026-10-21T06:50:21.371Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathFontDump-Debug-e86f9f79ca59cecea4fa.json",
+          "sha256": "a88fbfeaab5d608ac119ddc306668667ada58acdd93165490c2b9c2298e844a2",
+          "mtimeUtc": "2026-10-21T08:13:34.064Z"
         },
         {
           "name": "FoliaMathTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathTests-Debug-323698fb2de3a5ef52b9.json",
-          "sha256": "365a939c99134d2f445eb1ef3f0620bcad224d354d2308a8506d6bcedf69da07",
-          "mtimeUtc": "2026-10-21T06:50:21.373Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaMathTests-Debug-f8d286c761b0e72040b3.json",
+          "sha256": "10031a96b17a23a7110ddce73de1b9d1e3f457c32990de7b4cb1064d452f517a",
+          "mtimeUtc": "2026-10-21T08:13:34.066Z"
         },
         {
           "name": "FoliaNativeMath",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaNativeMath-Debug-0f65606e612618976f8d.json",
-          "sha256": "cad1659e63f4e6d2783151a42c51d160ea83733d44730c500927d1f348c9354f",
-          "mtimeUtc": "2026-10-21T06:50:21.375Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaNativeMath-Debug-be88b858d32cb53d51b5.json",
+          "sha256": "639124d4f23031bf67a48290f9247e5d7365d378f237e91ef242e55231b0f42f",
+          "mtimeUtc": "2026-10-21T08:13:34.068Z"
         },
         {
           "name": "FoliaTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaTests-Debug-f886b3a9640265e9adbd.json",
-          "sha256": "cd1e564ce8be79bbe5c4a79d795d21a5ffedaa33774f0370d3982fddfdaecbc8",
-          "mtimeUtc": "2026-10-21T06:50:21.377Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaTests-Debug-d4d8ac6f983746be4091.json",
+          "sha256": "7228cee9153251777d02075ee65e4c12faf5ad616914f3d9a83539ccbcb1e5cf",
+          "mtimeUtc": "2026-10-21T08:13:34.069Z"
         },
         {
           "name": "FoliaWindowsEditorTests",
-          "path": "build/core/.cmake/api/v1/reply/target-FoliaWindowsEditorTests-Debug-e59e6978a07218e774f3.json",
-          "sha256": "a4a4730f59be48b7d3167841ec1b98f3e340fe582ed3ea0377ca2b043ff8096e",
-          "mtimeUtc": "2026-10-21T06:50:21.379Z"
+          "path": "build/core/.cmake/api/v1/reply/target-FoliaWindowsEditorTests-Debug-44ff446e15203ef78b7b.json",
+          "sha256": "4a16dcdb3115a41b141c3f715952e135a8225a63a4b471a76278916f103b14e7",
+          "mtimeUtc": "2026-10-21T08:13:34.071Z"
         },
         {
           "name": "folia_console_test_runtime",
@@ -1652,15 +1652,15 @@
         },
         {
           "name": "folia_platform",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_platform-Debug-81e42f4bcf56276ab944.json",
-          "sha256": "a709c5a46c63116ffcaf06af56b3e0825c8b1d35ea4bf4403a95df83c202669b",
-          "mtimeUtc": "2026-10-21T06:50:21.399Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_platform-Debug-1971b475dd738f8ab3ef.json",
+          "sha256": "ad529141f1ad1d7e8eee0af2c4643c777afe3a472998075563175b75eca531f2",
+          "mtimeUtc": "2026-10-21T08:13:34.090Z"
         },
         {
           "name": "folia_platform@synth_cdc4dcefe43e",
-          "path": "build/core/.cmake/api/v1/reply/target-folia_platform@synth_cdc4dcefe43e-Debug-9fa7317cd02eb1d1d360.json",
-          "sha256": "9893d9d34e52a609fc0b0ef44703260f9a433c1a8dfe525b84632e0500767056",
-          "mtimeUtc": "2026-10-21T06:50:21.401Z"
+          "path": "build/core/.cmake/api/v1/reply/target-folia_platform@synth_cdc4dcefe43e-Debug-dfd2475a60ecae42ff90.json",
+          "sha256": "c4b2a8bc0a5ca8641d89048bc4405862e1312facff163b168ebdb263cf50781f",
+          "mtimeUtc": "2026-10-21T08:13:34.092Z"
         },
         {
           "name": "folia_tree_sitter_html",
@@ -1695,7 +1695,7 @@
     },
     "freshness": {
       "status": "mtime-current-at-read",
-      "indexMtimeUtc": "2026-10-21T06:50:21.411Z",
+      "indexMtimeUtc": "2026-10-21T08:13:34.100Z",
       "checkedCMakeInputs": [
         "CMakeLists.txt",
         "third_party/ut/CMakeLists.txt",
@@ -18594,56 +18594,6 @@
       "sourceAnnotationIndex": []
     },
     {
-      "path": "src/math/output/scene/foundation.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/glyph_outline.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/glyph_paint.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/glyph_paint.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/glyph_paint.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrapper.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
       "path": "src/math/output/scene/html_snapshot.cpp",
       "decisionStatus": "unreviewed",
       "responsibilityGroup": "math.scene",
@@ -18682,157 +18632,6 @@
       "sourceAnnotationIndex": []
     },
     {
-      "path": "src/math/output/scene/menclose.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/menclose.cpp",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/menclose.ts",
-            "Notation.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/menclose.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/menclose_source.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/mmultiscripts.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/mmultiscripts.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/mmultiscripts.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mmultiscripts.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/msubsup.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/msubsup.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/msubsup.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/msubsup.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/munderover.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/munderover.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/munderover.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/munderover.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/placements.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/placements.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
       "path": "src/math/output/scene/scene.cpp",
       "decisionStatus": "unreviewed",
       "responsibilityGroup": "math.scene",
@@ -18858,96 +18657,6 @@
       "sourceAnnotationIndex": []
     },
     {
-      "path": "src/math/output/scene/script_support.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/script_support.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/scriptbase.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/scriptbase.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/scriptbase.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/scriptbase.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/svg_paint.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/svg_paint.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/svg_paint.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrapper.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/transform_types.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
       "path": "src/math/output/scene/types.ixx",
       "decisionStatus": "unreviewed",
       "responsibilityGroup": "math.scene",
@@ -18959,468 +18668,6 @@
       "directlyListedByFoliaMath": true,
       "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
       "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrapper.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrapper.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrappers/inherited_svg_wrapper.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrappers/inherited_svg_wrapper.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrappers/math.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrappers/math.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/math.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/math.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mfenced.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mfenced.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mfenced.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mfenced.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mo.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mo.cpp",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mo.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mo.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mpadded.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mpadded.cpp",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mpadded.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mpadded.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mpadded.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mpadded.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mphantom.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mphantom.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mrow.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": []
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mrow.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mrow.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mrow.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mtable.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mtable.cpp",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mtable.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mtable.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mtable.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mtable.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mtd.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mtd.cpp",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mtd.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mtd.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mtd.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mtd.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mtr.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mtr.cpp",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mtr.ts",
-            "mlabeledtr.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/mtr.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/mtr.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/mtr.ts",
-            "mlabeledtr.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/semantics.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/semantics.cpp",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/semantics.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/semantics.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/semantics.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/semantics.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/tex_atom.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/tex_atom.cpp",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/TeXAtom.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/tex_atom.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/tex_atom.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/TeXAtom.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/text_node.cpp",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/text_node.cpp",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/TextNode.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
-    },
-    {
-      "path": "src/math/output/scene/wrappers/text_node.ixx",
-      "decisionStatus": "unreviewed",
-      "responsibilityGroup": "math.scene",
-      "namedOwner": "unassigned",
-      "configuredTargets": [],
-      "directlyListedByFoliaMath": false,
-      "sourceAnnotationIndexStatus": "no-exact-note-index-entry",
-      "sourceAnnotationIndex": [
-        {
-          "document": "src/math/output/scene/wrappers/text_node.ixx",
-          "line": 2,
-          "sourcePaths": [
-            "output/svg/Wrappers/TextNode.ts"
-          ],
-          "sourceSha256": null,
-          "status": "path-or-hash-incomplete"
-        }
-      ]
     },
     {
       "path": "src/math/output/svg/font_cache.cpp",

@@ -2448,3 +2448,20 @@ coverage remains in the typed family Source tests, full canonical SVG/metrics,
 75-case Scene-route geometry, package corpora and actual lifetime tests. Do not
 describe that as a replay of every old reflective trace field. Tracked draft
 copies are also source consumers; directory names do not make them ignored.
+
+### Scene responsibilities after retirement (2026-10-21)
+
+The obsolete Scene family placement hierarchy and its mutable object adapters
+have retired. The eight remaining Scene sources are builder.{ixx,cpp},
+scene.{ixx,cpp}, types.ixx, html_types.ixx and html_snapshot.{ixx,cpp}.
+They own value construction, immutable results and frozen foreign HTML content.
+Mathematical measurement, stretching, placement and line breaking remain in
+the original Common family owners. SVG serialization and resource planning
+remain in the SVG writer/cache owners; future Direct2D consumes the same Scene.
+
+CommonMrow::sceneDx owns the inferred-row origin exception observed in Source:
+unbroken inferred rows skip the styled row shell; broken line stacks retain
+the CommonWrapper style offset. It adds no request state or parallel layout
+helper. The old family, script, menclose, glyph-painter and support files are
+not alternative production implementations. Other inactive object-projection
+files still require per-owner consumer review before retirement.
