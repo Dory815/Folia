@@ -1703,3 +1703,98 @@ specific Source title serialization rather than changing the independent
 fixture. It is not stored or interpreted as a prebuilt SVG fragment. Existing
 Group.tooltip serialization and other text escaping are not changed by this
 observation. The direct Source special-character witness is required evidence.
+
+### XML/HTML native owner and request services (2026-10-21 Root lock)
+
+Migrate the existing Common XmlNode, SVG xml_wrapper, Scene html_types/snapshot,
+and SVG serializer owners. No second HTML tree implementation, Property/Context
+bridge, serialize-then-parse production path, alternate layout, or legacy fallback.
+The following interfaces are fixed before parallel implementation:
+
+- MML XMLNode adds a const `xmlAdaptor()` getter returning its existing shared
+  const XmlAdaptor owner. HtmlAdaptor imports core.dom_adaptor and adds pure
+  `DOMNodeRef cloneDOM(XmlRef) const`. XmlDomAdaptor implements it as an owned
+  deep clone of its existing frozen typed Lite subtree; never expose mutable
+  stored nodes. The two opaque test adaptors explicitly reject DOM export.
+- Common types adds `HtmlMeasurement { AbstractDOMAdaptor& adaptor; DOMNodeRef
+  parent; DOMNodeRef container; }`. Parent is the actual math-start parent,
+  container is the request-owned output measurement container. Add trailing
+  optional<HtmlMeasurement> CommonOutputJaxConfig::htmlMeasurement. CommonOutputJax
+  owns that optional for its request lifetime and exposes a checked
+  `HtmlMeasurement const& htmlMeasurement() const`. Missing services fail explicitly
+  only when XML output needs them. Resolve automatic htmlHDW once using the
+  real adaptor.canMeasureNodes: true -> ignore, false -> force. This is not a
+  general callback bag. Scene retains none of these services or DOM refs.
+- CommonXmlNode stays abstract (addHDW is backend-owned), derives CommonWrapper,
+  and overrides initializeSource, no-op getStyles/getScale/getVariant, computeBBox.
+  Keep Source method names and order: getHDW returns optional<u16string>,
+  splitHDW returns UnknownBBox, getFontStyles returns existing styles::StyleList,
+  getHTML returns DOMNodeRef, addHDW(DOMNodeRef, styles::StyleList&) is abstract,
+  measureXmlNode returns UnknownBBox; public rscale and protected cloneXML()
+  support the backend. cloneXML uses the XMLNode HtmlAdaptor owner.cloneDOM.
+  Font precedence remains parent styles, metrics.family, actual adaptor.fontFamily
+  of measurement.parent, then initial. Formatting uses accepted lengths/fixed
+  utilities; no per-case literals. Build and attach the real measurement DOM,
+  call actual nodeBBox, and RAII-remove request container/measurement even if
+  either measurement throws. Never substitute zero for a measurement call.
+- Scene html_types becomes standalone primary
+  folia.math.output.scene.html_types, without legacy foundation/Transform imports.
+  Keep HtmlNodePrimitive's existing owned ordered attributes/text/children and
+  namespaceHint. ForeignObjectGeometry becomes owned CSS-pixel x/y/width/height
+  plus `double em_per_pixel=1` (pixels -> math em); remove old transform and
+  synthesizeMissingAttributes. HTML is the explicit unit exception to em geometry.
+  html_snapshot becomes standalone primary folia.math.output.scene.html_snapshot;
+  snapshotHtmlNode uses only typed AbstractDOMAdaptor and typed comment text.
+- Replace ForeignContent raw markup/runs with `{HtmlNodePrimitive content;
+  ForeignObjectGeometry geometry; SemanticMetadata metadata;}`. Remove ForeignRun
+  and ForeignContent from Primitive. Add trailing optional<ForeignContent>
+  Group::foreign_content and matching trailing Builder::add_group argument with
+  default nullopt; mutable/frozen groups, copies and split operations retain it.
+  Builder::has_foreign_content(NodeId) const reports presence with normal handle
+  validation; merror excludes these foreignObject roots from its direct-g rule.
+  This is the single NodeId-bearing foreignObject, so normal placeScene can
+  prepend em translations without an extra g. Use existing
+  ElementRole::foreign_content_viewport. A foreign group has no ordinary entries,
+  viewport, clip, tooltip or link; reject invalid combinations. Validate finite
+  nonnegative CSS width/height, finite x/y and positive em_per_pixel. Freeze owns
+  the full HTML subtree and never retains a DOM/document/adaptor/wrapper.
+- SVG xml_wrapper exports native SvgXmlNode : CommonXmlNode and SvgHtmlNode
+  (no extra layout), original addHDW, emitScene and concrete registration functions
+  xmlRegistration()/htmlRegistration(). Source addHDW builds mjx-html-holder then
+  updates StyleList height/width/vertical-align and removes font-size/font-family.
+  emitScene uses parents[0] only, no standardSceneNodes or extra g. Get metrics,
+  getBBox, getHTML in Source order; snapshot once and add one foreign group with
+  geometry {0,-h*em,w*em,(h+d)*em,1/em}, em=metrics.em*metrics.scale*rscale.
+  Common catalog stays abstract; SVG factory replaces xml/html registrations and
+  retains actual Source class styles (including Common XML styles).
+- SVG serializer pair is migrated from the inactive Property scene serializer
+  to the narrow existing materializeHtml responsibility. Public
+  `std::string serializeHtml(scene::HtmlNodePrimitive const&)`; private typed
+  materialization into a local LiteAdaptor followed by serializeXML preserves
+  Source escaping, comments, PCDATA, namespaces, void and empty elements.
+  This is temporary serializer output only, never a second retained/layout tree.
+  It must not parse source text or do layout/measurement. Existing writer calls
+  it for the owned foreign content; do not duplicate the LiteParser rules.
+- Writer emits foreignObject directly for Group.foreign_content: data-mjx-xml,
+  optional nonzero x, y/width/height as fixed CSS px, transform then contents.
+  Combine normal group transform (em -> SVG translations) with Source
+  scale(1000*em_per_pixel) matrix(1 0 0 -1 0 0); this is unit projection only.
+  Do not put the SVG 1000 factor in Scene. No recomputed bbox/font layout.
+  Keep existing all other primitive/viewport/cache behavior and title rules.
+
+Root owns CMake, common_scene composition, old XML placement/callback removal,
+format/build/tests/commits. Old scene/xml_node pair and XmlSvgNodeCreator are
+retired, not adapted. The inactive SVG output_jax caller of that bridge is also
+removed in the same cleanup; no Context binding may be added to active code.
+
+Acceptance: independent pinned Source direct MathML XML/HTML witnesses cover
+unknown measurement, nonzero forced HDW, use/ignore/automatic policy, scale !=1,
+parent font precedence, escaped text/attributes, comments/empty/void/mixed
+namespace and placement after preceding math. Capture actual styles and bbox;
+fixtures are flat constexpr and default/no-op reproducible. Native tests compare
+exact SVG, real measurement calls, exception cleanup, payload cloning and Scene
+after all request owners retire. Shared test helper may accept an optional typed
+XML initializer callback (default rejects XML as before); do not add XML parsing
+to production Common. Then default86, canonical75 and a full math run. The two
+Source action event errors remain outstanding; no claim of complete75/150 or
+Folia integration follows from this batch.
