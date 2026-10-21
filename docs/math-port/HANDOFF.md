@@ -4,16 +4,16 @@
 
 ## 当前 checkpoint（2026-10-21）
 
-- HEAD `9f24ae80`（table Source），前一批 `6e7adb88`（multiscript Source）；script旧consumer删除 `6fdaf9f0`。simple/script既有验收不重复。
+- HEAD `031da185` 已退table/multiscript两旧Cpp/三工具；Source批为 `9f24ae80`/`6e7adb88`；script旧consumer删除 `6fdaf9f0`。既有验收不重复。
 - Root 已执行 inventory 与 `verify-consumer-removal script-consumer 39 92516`；全通过：478 活动源、保护6路径、已验证9输入/二进制、保留7文件、17 targets、248接口/map一致、active unresolved imports 0。build session 92516 exit 0；当前无 live build。
 - simple 迁移证据：106场景、7,667 Source assertions、1,605矩阵行、8,625有序 p/list 值、296递归值；原 fixture 339,824 bytes 完整核对。已完成的 staging bridge 勿重跑。其他既有验收见 acceptance。
-- ignored 窄 consumer 图已刷新至 `6fdaf9f0`/39测试、FileAPI `index-2026-10-21T13-04-07-0092.json`；保留 provider/importer/API 引用的全部 hash 均已核。
+- ignored 窄 consumer 图已刷新至 `031da185`/37测试、FileAPI `index-2026-10-21T13-23-38-0559.json`；保留 provider/importer/API 引用的全部 hash 均已核。Fields唯一调用仍fields.cpp:439。
 - multiscript canonical226/1304、table canonical135/4700 exact；完整旧Cpp/矩阵/operand证明见 `multiscript-source-bridge-v4.log`、`table-source-bridge-v3.log` 及各 `*-source-promoted.json`。本提交退两旧Cpp/三专用工具，共享gate只移引用/计数（未跑），保留88-case parent inc。
-- build5483 parallel4 exit0，`table-multiscript-consumers-final-check.json`核478活动/保护6/verified9/retained15/targets17/248接口/unresolved0，测试importer39→37。无live build/agent/native。BaseItem bridge v2已过85 exact；旧Cpp限定951385dc两适配后全文相等，见 `base-item-source-migration/executed-proof.json`，不能称原check直接通过；canonical未改。
+- build5483 parallel4 exit0，`table-multiscript-consumers-final-check.json`核478活动/保护6/verified9/retained15/targets17/248接口/unresolved0，测试importer39→37。无live build/agent/native。BaseItem本提交改实际Source owner，canonical85 exact；旧p42b JSON仅去cpp字段。桥限定951385dc两适配后全文相等，不能称原check直接通过，证据见acceptance。
 
 ## 精确下一动作
 
-Root 先窄刷新consumer图39→37，再提升BaseItem实际Source owner，旧p42b JSON仅移cpp字段保留全部85有序label/expected，canonical exact后提交；再独立清理旧consumer/专用工具。已有staging/执行proof勿重跑。
+Root 独立清理BaseItem旧consumer与专用工具（base-item-mutation-test不是typed runner，不运行），保留base_items/stack/tex_parser等实际数学覆盖；parallel4 build/inventory/hash核36测试importer后提交。已有staging/执行proof勿重跑。
 
 ## 固定边界
 

@@ -1603,6 +1603,25 @@ Evidence: table-multiscript-consumers-before.json, -removed.json and
 -final-check.json. Existing accepted native behavior remains byte-identical;
 no new runtime acceptance or production cleanup is claimed by this batch.
 
+### BaseItem Source owner representation (2026-10-21)
+
+The original BaseItem oracle still matches all 85 frozen JSON rows. Its C++
+comparison fails on precisely two historical type adaptations from 951385dc:
+the typed defaultKind accessor and factory creator-slot arguments. Applying
+only those two uniquely matched adaptations to its regenerated C++ reproduces
+the entire locked fixture. The proof records the original assertion failure;
+it does not claim direct old-fixture byte equality.
+
+The actual pinned Source replay, the clean candidate and all original ordered
+label/expected pairs agree exactly. The existing p42b JSON keeps every one of
+those pairs; only unused cpp replay fields are removed. The existing
+base-item-oracle.cjs now performs the real Source replay and checks that same
+profile, with no emitter, hash-only substitute or second owner file. The 85-case
+canonical check passes. Evidence: base-item-original-mismatch.json,
+base-item-source-migration/executed-proof.json and base-item-source-promoted.json.
+Existing native stack/frame/error/annotation owners remain unchanged; the
+legacy C++ consumer and its dedicated runner await separate removal.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
