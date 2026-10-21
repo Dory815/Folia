@@ -6,7 +6,7 @@
 
 ## 当前 checkpoint：请求期内存门槛诊断中（75/150 已验）
 
-- 无live build/process，所有owner freeze。下一动作：Root根据只读结论锁定原ParseOptions/TeX的调用者RAII request frame及核心compile接口；先划清配置/session/表达式状态，保留文档活着时的Source观测和原算法，再分工实施。禁止compile返回时随手clear/retire或放宽CRT判定。当前request UT未通过，不能接入Folia或写完成。
+- 无live build/process。Root已在architecture末尾锁定ParseRequest/TeXRequest：原ParseOptions/TeX owner内caller-owned栈上RAII frame，配置/session保留，NodeFactory及表达式数据进入frame；core compile接口不加通用payload/registry。下一动作按锁分派原owner/消费方/fixture迁移，freeze后Root review/build/原gate复验。禁止compile结束clear/retire或放宽CRT；当前request UT未通过，不能接入Folia或写完成。
 
 - 最近完整math基线（加入生命周期观测前）：`canonical-modes-full-math.log` exit0，845 tests / 214872 assertions / 170 suites，无skip。配套parallel4 build `canonical-modes-build-fixed2.log` exit0。
 - hosted 75 layout pairs、150最终Scene metrics、150完整SVG byte-equal：1/1279；default86：1/1021；leading：1/20；fonts：1/73。独立Source两child各75零异常，实际EventTarget只注册不dispatch。fixture SHA `5c970e41dc36f7717f1dbf31c576a6c875f445068284fc8c2cd7042e9a17985c`，write/default/no-op过。

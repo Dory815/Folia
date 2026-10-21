@@ -2192,3 +2192,73 @@ Owners: common_base_emission implements the counter and three MML/Common owner
 members; common_rows_emission owns only DOM base members; common_scene_entry
 owns the focused UT and CRT-only test helper. Root reviews, registers sources,
 formats, runs the single parallel4 build and tests, then commits small batches.
+
+### ParseOptions request ownership lock (2026-10-21)
+
+New evidence is the repeating CRT footprint and expired request borrows in
+TeX/ParseOptions, not growing MML/Common/DOM populations. Preserve every accepted
+parser, package, tag and layout algorithm. No end-of-compile clear/retire patch,
+counter relaxation, copied compile pipeline or second ParseOptions implementation.
+The original ParseOptions.ts and tex.ts C++ owners contain this change; add no
+production file or generic Core request payload. MathInputJaxService::compile
+and MathItem's existing mathematical service contract remain unchanged.
+
+`ParseOptions` retains configuration/session collaborators: handlers, effective
+options, StackItemFactory catalog, tag formatter product, BegingroupStack,
+ColumnParser, math-style resolver, packageData and TextMacrosData configuration.
+Store effective NodeCreators there as a finite typed value. Remove its MML
+factory argument: a configured input jax must not retain a request factory.
+
+In parse_options.ixx/.cpp, `ParseRequest(ParseOptions&, MmlFactory&)` is an
+explicit noncopyable/nonmovable caller-owned RAII object. It owns NodeFactory,
+TexEquationState equation, parsers, mathItem, texhtmlAdaptor, root, nodeLists,
+error and the text parser bridge pointer texParser. All names retain their
+Source roles. Its private binding saves the previous active ParseRequest and
+restores it on scope exit; this only bounds a temporary borrow and never clears
+or destroys another owner's data. Construct/validate factories before binding,
+so constructor failure cannot leave an active pointer. Destructor unbinds before
+normal member destruction. Request data never moves back into ParseOptions.
+
+ParseOptions exposes request() const/nonconst (logic_error outside a scope),
+hasRequest() noexcept, and setNodeCreators(NodeCreators const&). The setter merges
+configured creators and updates an active factory if configuration changes
+during a request. Existing NodeFactory creation algorithms remain unchanged;
+consumers access `options.request().nodeFactory`. Other expression fields use
+the same request() accessor; configuration-only fields remain on ParseOptions.
+clear() retains its Source meaning at the start of an expression, operating on
+the active request, not cleanup at request exit.
+
+In tex_jax.ixx/.cpp, `TeXRequest(TeX&, MmlFactory&)` owns one ParseRequest plus an
+optional text-macro ParseRequest, both bound for the caller's compile/typeset/
+observation lifetime. It restores nested scopes through member RAII, including
+partial constructor failure. TeX construction no longer receives a factory;
+remove AbstractInputJax's unused persistent factory pointer and setMmlFactory.
+compile checks that the active request factory matches its document, keeps
+latex as a local snapshot after prefilters, and returns the final request.root;
+remove persistent latex_/mathNode_. Configuration is still installed only once.
+No implicit request, compatibility path or retained default request is allowed.
+
+TextMacrosData keeps only textConf/ParseOptions configuration. Its texParser
+borrow moves into the text ParseRequest; internalMath retains its existing
+nested restoration and copyLists algorithms against that frame. Configure text
+options without a document factory, and prepare the already bound text frame.
+Tags' equation accesses move to request().equation; definitions/formatters and
+session counters/labels remain persistent. reset(offset) must also work with no
+active request: reset session semantics, and only reset expression fields when
+a frame exists. Remove noexcept where a now request-dependent accessor may throw.
+
+Caller scopes are explicit: the TeX scene helper creates TeXRequest after the
+input jax exists and before compile, and it ends before MmlDocument destruction.
+Single-document package fixtures own a frame beside their document/jax so all
+existing in-document observations remain valid. The 64-fresh-document TeX test
+creates one frame per loop and verifies absence of an active request afterwards.
+Standalone parser fixtures own ParseRequest directly. Do not migrate inactive
+Context tests/bindings or touch the thirteen protected dirty paths.
+
+Acceptance: invalid/missing/foreign request rejection, nested binding restoration
+and exception unwinding; existing parser/package Source tests unchanged in
+meaning; canonical75/150 + default86 + strict73/two-errors unchanged; real
+192+768 allocation/object/error/recovery/retained-Scene gate; one full math run
+after final changes. Macro/label persistence and C ABI cancellation remain
+separate gates. Root reviews all changes by responsibility and commits in small
+packets; agents do not build, run native tests, modify CMake or mutate Git.
