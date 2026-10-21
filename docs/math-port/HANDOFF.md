@@ -8,11 +8,12 @@
 - 最新build89489 parallel4 exit0；`base-item-consumer-final-check.json`核478活动、保护6、verified9、retained24、17targets、248接口/map一致、active unresolved0，测试importer37→36。无live build/native。此前SVG1047/完整math/font/RAII/worker验收见acceptance，不重复广测。
 - multiscript226/1304、table135/4700、BaseItem85 Source exact，全部旧期待已保留；证明见acceptance与各 `*-source-promoted.json`。BaseItem旧Cpp只限定951385dc两历史适配后全文相等，不能称原check直接通过。已有staging/执行proof勿重跑。
 - ignored窄图已到 `8ba6b468`/36测试、FileAPI `index-2026-10-21T13-27-41-0497.json`；保留引用hash均已核。Fields→ContextBindings→ParserRuntime owner链仍完整，唯一values调用fields.cpp:439，不能孤删/stub。
-- 两个Luna仅准备ignored候选：class_verification→`verification-source-migration/`（reference_mml_verification/p35现有72行profile）；class_operations→`copy-source-migration/`（copy/copy_boundary）。均待Root审与Source执行，未提升；只动ignored，不跑Source/native/build。
+- 本提交提升verification原owner，canonical p32主3176+flags576 exact，profiles原hash不变；原Cpp全文也通过。p35属于另一个consumer，不是此映射。4项native-only旧预算断言分开退，不新增深度规则。证据 `verification-source-promoted.json`。
+- copy两Source owner及完整旧Cpp映射已Root全过（299完整profile/108选中+6边界），`copy-source-executed-proof.json`；旧fixtures/tools待删。两Luna均完成，无live agent；候选仍在 `verification-source-migration/`、`copy-source-migration/`，勿按旧消息重跑已成功proof。
 
 ## 精确下一动作
 
-Root 审两Luna候选，保留原profile全部期待并运行实际Source exact后才提升；共享gate仅删对应引用/计数，专用旧runner退场，不运行旧对象协议native gates。按职责小批提交，别重复已验问题。
+Root 先独立退reference_mml_verification.cpp/专用gate并parallel4 build核35测试importer；再退copy/copy_boundary两Cpp、两mapper，shared gate仅删114/2，metadata工具收窄但不执行，保留metadata/profile。每批核活动/保护/已验二进制不变并提交。无live build/native。
 
 ## 固定边界
 

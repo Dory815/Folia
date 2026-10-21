@@ -1,7 +1,8 @@
 // Root pinned actual base verification/defaulting and live child iteration.
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
-const {root,MmlFactory,core}=require('./inheritance-reference.cjs');
+const candidateRoot=path.resolve(__dirname,'../..');
+const {root,MmlFactory,core,hashes:sourcePins}=require(path.join(candidateRoot,'tools/math-port/inheritance-reference.cjs'));
 const options=['omitted','U','N','false','true','0','7','empty','raw','NaN','object','array'],arities=['-Inf','-1','-0','0','1','2','Inf','NaN'],inputs=[];
 const base={op:'tree',options:'object',arity:'2',shape:'ab',check:'true',mode:''};
 for(const option of options)for(const arity of arities)for(const shape of ['','a','ab','null'])for(const check of ['U','false','true'])inputs.push({...base,options:option,arity,shape,check});
@@ -24,40 +25,27 @@ function run(i){let active=false,trace=[],n,a,b,c,original,opts;const ids=new Ma
  let error='ok';active=true;try{const method=i.op==='tree'?core.AbstractMmlNode.prototype.verifyTree:core.AbstractMmlNode.prototype.verifyChildren;if(i.options==='omitted')method.call(n);else method.call(n,opts);}catch(e){error=e.name+'|'+e.message;}active=false;
  return error+'|'+opt(opts)+'|'+snapshot(n.childNodes)+'|'+snapshot(original)+'|'+trace.join(',');
 }
-if(require.main!==module){module.exports={run};return;}
+const packageLock=require(path.join(root,'tools/math-port/mo-pattern-reference.cjs')).lock;
+assert.equal(packageLock.version,'4.1.3');assert.equal(packageLock.node,process.version);
+assert.deepEqual(packageLock.compiled_package,{files:424,sha256:'773bf3ae1c075baa36c02b6958f7e3bed5fb116d0818ecf99bb70c5337d9e537'});
+const nodeSource=sourcePins.find(pin=>pin.source==='ts/core/MmlTree/MmlNode.ts');
+assert.ok(nodeSource);assert.equal(nodeSource.sha256,'cc0594eb5782928412c4307637866d9f80ac147af577297edd48ee88b63b8656');
+const nodeRuntime=path.join(root,'tools/mathjax-bundle/node_modules/@mathjax/src/cjs/core/MmlTree/MmlNode.js');
+assert.equal(crypto.createHash('sha256').update(fs.readFileSync(nodeRuntime)).digest('hex'),'86c5eb572dcf2652c3c52a60b66c720d231e17f600cc9aeef3ace4aeafc81d45');
+const sourceFile=path.join(root,'docs/math-port/evidence/p32-verification-source.json');
+const flagsFile=path.join(root,'docs/math-port/evidence/p32-verification-flags-source.json');
+const sourceBytes=fs.readFileSync(sourceFile),flagsBytes=fs.readFileSync(flagsFile);
+assert.equal(crypto.createHash('sha256').update(sourceBytes).digest('hex'),'020e72f32331a16e1ac42d7da65491d958b7b5a6a90923f2a729b02904aa61b7');
+assert.equal(crypto.createHash('sha256').update(flagsBytes).digest('hex'),'60578d1cc08ed3b283d8d8c1080e782325ed391b6e467213c1d3f642b53308b0');
 const rows=inputs.map(input=>({input,expected:run(input)})),data=JSON.stringify(rows)+'\n';
-const supplemental=JSON.parse(fs.readFileSync(path.join(root,'docs/math-port/evidence/p32-verification-flags-source.json'),'utf8'));
-for(const row of supplemental)assert.equal(run(row.input),row.expected);
-const nativeRows=[...rows,...supplemental];
-const out=['// Generated from actual original base verification methods.','#include "support/folia_test.hpp"','import folia.math.core.mml_tree.mml_factory;','import folia.math.core.mml_tree.class_binding;','import folia.math.core.mml_tree.mml_node_host;',
-`namespace {using namespace boost::ut;using namespace folia::math;using namespace folia::math::mml;namespace h=host;
-bool active=false;std::string mode;std::vector<std::string>trace;std::unordered_map<MmlNode*,std::string>ids;MmlNode*rootNode=nullptr;MmlNode*nodeA=nullptr;MmlNode*nodeB=nullptr;MmlNode*nodeC=nullptr;Children original;Property options;double requestedArity=0;std::array<std::size_t,2>stubs{};
-void note(std::string s){if(active)trace.push_back(std::move(s));}void fail(){throw Error("WitnessError",u"witness");}
-std::string scalar(const Property&v){if(v.missing())return "U";if(std::holds_alternative<PropertyNull>(v.value))return "N";if(auto p=std::get_if<double>(&v.value)){if(*p==0&&std::signbit(*p))return "-0";return h::debugText(h::string(v));}if(std::holds_alternative<bool>(v.value))return h::truthy(v)?"true":"false";if(auto p=std::get_if<std::string>(&v.value))return "s:"+*p;return std::string(PropertyArray::array(v)?"a:":"o:")+h::debugText(h::string(h::get(v,"id")));}
-std::string opt(const Property&v){return scalar(v)+(PropertyList::record(v)?"/"+scalar(h::get(v,"checkArity"))+"/"+scalar(h::get(v,"seen")):"");}void set(const Property&v,std::string_view k,Property x){if(auto bag=PropertyList::record(v))bag->setOwn(k,std::move(x));}
-Property flag(std::string_view s){if(s=="U")return Missing{};if(s=="N")return PropertyNull{};if(s=="false")return false;if(s=="true")return true;if(s=="NaN")return std::numeric_limits<double>::quiet_NaN();if(s=="empty")return "";if(s=="raw")return "raw";if(s=="obj")return PropertyList{{"id","check"}};if(s=="array"){Property v=PropertyArray{};set(v,"id","check");return v;}return std::stod(std::string(s));}
-struct Record:AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::string kind()const override{return "verify-record";}void verifyTree(Property o=Missing{})override{note("verify:"+ids.at(this)+"/"+opt(o)+"@"+(o==options?"1":"0"));if(this==nodeA){if(mode=="child-throw")fail();if(mode=="child-grow"){original->push_back(nodeC);rootNode->childNodes=std::make_shared<tree::ChildArray<MmlNode>>();}if(mode=="child-delete")original->erase(1);if(mode=="child-shrink")original->resize(1);if(mode=="child-rebind")rootNode->childNodes=std::make_shared<tree::ChildArray<MmlNode>>(std::initializer_list<NodeValue>{nodeC});if(mode=="child-prototype"){auto p=std::make_shared<tree::ChildArray<MmlNode>>();p->set(1,nodeC);original->setPrototype(p);original->erase(1);}if(mode=="child-null-array")rootNode->childNodes.reset();if(mode=="child-seen")set(o,"seen",true);}}};
-struct Probe:Record{using Record::Record;std::string kind()const override{return "verify-probe";}double arity()const override{note("arity");if(active){if(mode=="arity-throw")fail();if(mode=="arity-null-array")rootNode->childNodes.reset();if(mode=="arity-rebind")rootNode->childNodes=std::make_shared<tree::ChildArray<MmlNode>>(std::initializer_list<NodeValue>{nodeB});return requestedArity;}return std::numeric_limits<double>::infinity();}
-void verifyAttributes(Property o)override{note("attributes:"+opt(o)+"@"+(o==options?"1":"0"));if(mode=="attrs-throw")fail();if(mode=="attrs-null-array")rootNode->childNodes.reset();if(mode=="attrs-rebind")rootNode->childNodes=std::make_shared<tree::ChildArray<MmlNode>>(std::initializer_list<NodeValue>{nodeB});if(mode=="attrs-enable")set(o,"checkArity",true);if(mode=="attrs-disable")set(o,"checkArity",false);}
-void verifyChildren(Property o)override{note("children:"+opt(o)+"@"+(o==options?"1":"0"));if(mode=="children-throw")fail();if(mode=="children-seen")set(o,"seen",true);}
-MmlNode*mError(std::string message,Property o,bool shortError=false)override{note("error:"+message+"/"+opt(o)+"@"+(o==options?"1":"0")+"/"+(shortError?"true":"false"));if(mode=="error-throw")fail();if(mode=="error-null-array")rootNode->childNodes.reset();if(mode=="error-disable")set(o,"checkArity",false);return nodeB;}
-void runChildren(Property o){AbstractMmlNode::verifyChildren(o);}};
-std::string tag(NodeValue v){return v.kind()==tree::ChildKind::Null?"N":v.kind()==tree::ChildKind::Undefined?"U":ids.at(v.requireNode());}std::string snapshot(Children v){if(!v)return "N";std::string own,has,values;for(std::size_t j=0;j<v->size();++j){own+=v->hasOwn(j)?'1':'0';has+=v->has(j)?'1':'0';if(j)values+=',';values+=tag(v->get(j));}return std::to_string(v->size())+":"+own+":"+has+":"+values;}
-struct Case{std::string_view op,options,arity,shape,check,mode,expected;};
-std::string run(const Case&i){active=false;mode=i.mode;trace.clear();ids.clear();MmlFactory f;f.setNodeClass("verify-probe",classBinding<Probe>());f.setNodeClass("verify-record",classBinding<Record>());auto*n=dynamic_cast<Probe*>(f.create("verify-probe"));auto*a=f.create("verify-record");auto*b=f.create("verify-record");auto*c=f.create("verify-record");rootNode=n;nodeA=a;nodeB=b;nodeC=c;ids={{n,"n"},{a,"a"},{b,"b"},{c,"c"}};requestedArity=i.arity=="-Inf"?-std::numeric_limits<double>::infinity():i.arity=="Inf"?std::numeric_limits<double>::infinity():i.arity=="NaN"?std::numeric_limits<double>::quiet_NaN():std::stod(std::string(i.arity));
-auto value=[&](char s){return s=='U'?NodeValue(Missing{}):s=='N'?NodeValue(PropertyNull{}):NodeValue(s=='a'?a:s=='b'?b:c);};auto array=[&](std::string_view s)->Children{if(s=="null")return {};auto v=std::make_shared<tree::ChildArray<MmlNode>>();if(s=="prototype"){v->resize(2);auto p=std::make_shared<tree::ChildArray<MmlNode>>(std::initializer_list<NodeValue>{a,b});v->setPrototype(p);}else{v->resize(s.size());for(std::size_t j=0;j<s.size();++j)if(s[j]!='H')v->set(j,value(s[j]));}return v;};original=n->childNodes=array(i.shape);
-if(i.options=="object")options=PropertyList{{"id","opts"}};else if(i.options=="array"){options=PropertyArray{};set(options,"id","opts");}else options=i.options=="omitted"||i.options=="U"?Property(Missing{}):i.options=="N"?Property(PropertyNull{}):i.options=="false"?Property(false):i.options=="true"?Property(true):i.options=="0"?Property(0):i.options=="7"?Property(7):i.options=="NaN"?Property(std::numeric_limits<double>::quiet_NaN()):i.options=="empty"?Property(""):Property("raw");if(PropertyList::record(options))set(options,"checkArity",flag(i.check));
-std::string error="ok";active=true;try{if(i.op=="tree"){if(i.options=="omitted")n->AbstractMmlNode::verifyTree();else n->AbstractMmlNode::verifyTree(options);}else n->runChildren(options);}catch(const Error&e){const auto index=i.op=="tree"?0:1;if(e.name=="Unimplemented"&&stubs[index]++<2)std::cout<<"Unimplemented verification real stub\\n";error=e.name+"|"+h::debugText(e.message);}active=false;std::string output=error+"|"+opt(options)+"|"+snapshot(n->childNodes)+"|"+snapshot(original)+"|";for(std::size_t j=0;j<trace.size();++j){if(j)output+=',';output+=trace[j];}original.reset();return output;}
-suite verification=[] {"math_port_verification_source"_test=[] {const Case cases[]={`];
-for(const r of nativeRows)out.push('{'+Object.values(r.input).concat(r.expected).map(JSON.stringify).join(',')+'},');
-out.push(`};for(const auto&i:cases)expect(eq(run(i),i.expected))<<i.op<<i.options<<i.arity<<i.shape<<i.mode;};
-"math_port_verification_native_depth_and_recovery"_test=[] {
- struct Chain:AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::size_t*visits;Property expected;bool*identical;std::string kind()const override{return "verification-chain";}void verifyAttributes(Property o)override{++*visits;*identical=*identical&&(o==expected);}};
- active=false;mode.clear();MmlFactory f;f.setNodeClass("verification-chain",classBinding<Chain>());std::size_t visits=0;bool identical=true;Property raw=PropertyList{{"checkArity",false}};
- auto create=[&]{auto*n=dynamic_cast<Chain*>(f.create("verification-chain"));n->visits=&visits;n->expected=raw;n->identical=&identical;return n;};
- auto*root=create();auto*tail=root;for(std::size_t j=1;j<256;++j){auto*next=create();tail->childNodes=std::make_shared<tree::ChildArray<MmlNode>>(std::initializer_list<NodeValue>{next});tail=next;}
- root->verifyTree(raw);expect(visits==256);expect(identical);tail->childNodes=std::make_shared<tree::ChildArray<MmlNode>>(std::initializer_list<NodeValue>{create()});bool caught=false;try{root->verifyTree(raw);}catch(const Error&e){caught=e.name=="RangeError";}expect(caught);
- tail->childNodes=std::make_shared<tree::ChildArray<MmlNode>>();visits=0;root->verifyTree(raw);expect(visits==256);
- };};}`);
-const profile=path.join(root,'docs/math-port/evidence/p32-verification-source.json'),fixture=path.join(root,'tests/math/reference_mml_verification.cpp'),output=out.join('\n')+'\n';
-if(process.argv.includes('--check')){assert.equal(fs.readFileSync(profile,'utf8').replaceAll('\r\n','\n'),data);assert.equal(fs.readFileSync(fixture,'utf8').replaceAll('\r\n','\n'),output);}else if(process.argv.includes('--refresh-native')){assert.equal(fs.readFileSync(profile,'utf8').replaceAll('\r\n','\n'),data);fs.writeFileSync(fixture,output);}else{assert.ok(!fs.existsSync(profile)&&!fs.existsSync(fixture));fs.writeFileSync(profile,data);fs.writeFileSync(fixture,output);}console.log(JSON.stringify({source_calls:rows.length,supplemental_calls:supplemental.length,native_assertions:nativeRows.length+4,source_errors:rows.filter(r=>!r.expected.startsWith('ok|')).length,tree:rows.filter(r=>r.input.op==='tree').length,children:rows.filter(r=>r.input.op==='children').length,sha256:crypto.createHash('sha256').update(data).digest('hex')}));
+assert.equal(rows.length,3176);assert.equal(rows.filter(row=>!row.expected.startsWith('ok|')).length,748);
+assert.equal(sourceBytes.toString('utf8').replaceAll('\r\n','\n'),data,'p32 Source profile differs from the complete ordered Source replay');
+const flags=JSON.parse(flagsBytes.toString('utf8'));
+assert.equal(flags.length,576);
+for(const row of flags)assert.equal(run(row.input),row.expected,`p32 flags Source replay mismatch: ${JSON.stringify(row.input)}`);
+assert.equal(flags.filter(row=>!row.expected.startsWith('ok|')).length,32);
+const result={sourceCases:rows.length,sourceErrors:748,flagCases:flags.length,flagErrors:32,totalSourceCases:rows.length+flags.length,totalSourceErrors:780,profileSha256:crypto.createHash('sha256').update(sourceBytes).digest('hex'),flagsSha256:crypto.createHash('sha256').update(flagsBytes).digest('hex'),mode:'check-only'};
+assert.equal(result.totalSourceCases,3752);assert.equal(result.totalSourceErrors,780);
+if(require.main===module){assert.ok(process.argv.includes('--check'),'Source owner is check-only; pass --check');console.log(JSON.stringify(result));}
+module.exports={run};
+

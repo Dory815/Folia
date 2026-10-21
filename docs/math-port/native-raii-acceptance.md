@@ -1631,6 +1631,26 @@ with zero unresolved imports; class-binding cpp/ixx test consumers decrease
 -final-check.json. Native base_items, stack, parser and source-annotation
 coverage remains byte-identical; no repeated runtime gate is claimed.
 
+### Base verification Source owner (2026-10-21)
+
+The original mml-verification-oracle.cjs passes the full 435,209-byte fixture
+and p32 JSON check. The separate flags owner reconstructs and checks all 576
+supplemental inputs. The replacement existing owner preserves the original
+Source input construction and run function, exact-checking all 3,176 main rows
+plus all 576 supplemental expected values. Both profile hashes remain unchanged.
+The canonical owner and flags consumer pass after promotion; exports retain
+the original run entry. p35 belongs to a different math-verification consumer
+and was not used as replacement evidence.
+
+The legacy fixture's four additional assertions concern callback/options
+identity and the old host traversal budget; they are separate from the 3,752
+Source expectations. They do not establish a MathJax depth rule and are not
+extracted into another old-protocol test. Existing native verification/error
+and RAII recovery coverage remains unchanged; no depth policy is added.
+Evidence: verification-source-executed-proof.json and
+verification-source-promoted.json. No new native runtime gate ran; the legacy
+C++ consumer and dedicated runner await their separate removal batch.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
