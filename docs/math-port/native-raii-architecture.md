@@ -2300,3 +2300,109 @@ owner: common_limits_emission (original test file only). Root reviews Source
 write/default/no-op provenance and unchanged numeric fixture, then owns one
 parallel4 build, focused limits, hosted canonical and the required final full.
 Any mismatch is diagnosed at its original owner, never by adjusting expected.
+
+### Application Renderer owner lock (2026-10-21)
+
+Replace the existing inactive `math.ixx/.cpp` implementation at its original
+owner, after accounting for its protected dirty diff. Do not introduce another
+renderer or re-enable NativeRenderSession/Context bindings. The old dirty
+callback/projection retirement hunks only served that withdrawn graph; their
+request cleanup requirement is satisfied by typed document/frame/job RAII.
+The resident-record diagnostic leaves with the object-layer diagnostic probe.
+No unrelated protected file changes in this packet. Candidate files remain
+ignored until Root reviews and deliberately promotes the original owner.
+
+Preserve RenderOptions/RenderResult/RenderError and every render/renderScene/
+toSvg UTF-8/UTF-16/stop-token signature and all C ABI signatures. Remove the
+obsolete RendererDiagnosticsProbe and its Context/identity-count API, rather
+than return invented zero counters. Native lifetime tests use actual owners.
+
+Renderer::State owns the immutable NewCM bundle, Lite adaptor, configuration/
+map/callback catalogs, HTML options, warning sink and one configured TeX input.
+Register the same 38 packages in the pinned order once; no per-call registry.
+Each call owns MmlDocument, TeXRequest and AbstractMathItem. A private narrowly
+scoped MathOutputJaxService adapter delegates typeset/getBBox to the existing
+LayoutJob/CommonOutputJax and SvgWrapperFactory catalog; it adds no mathematics.
+Use the same Lite text/HTML measurement and linebreak wiring as the accepted
+tex_scene helper, including the actual html parent for texhtml measurement.
+
+Metrics are display, em (default16), ex=em*.5, width(default1280), scale1;
+Common displayOverflow=linebreak, inline breaks enabled/forced. Completed Scene
+outlives document/frame/job. render serializes that Scene exactly once with
+SvgWriteOptions font_cache=none and the immutable NewCM catalog. renderScene
+does no SVG serialization; toSvg delegates to render. No DOM SVG intermediate,
+Node invocation, runtime object facade, release loop or duplicated layout.
+
+Retain cancellation::Request/Scope and real existing checkpoints. Check owner
+thread and session validity, then pre-cancellation before entering the pipeline;
+pre-cancel leaves the session usable. In-flight cancellation makes subsequent
+calls return SessionUnusable, including cancellation during serialization.
+Other errors unwind typed scopes; malformed TeX remains successful merror SVG.
+The C ABI continues enforcing finite positive metrics, UTF-16 units, opaque
+result ownership, thread/cancel/deadline/status/OOM rules without STL crossing.
+Root owns CMake promotion, console-runtime linkage and native execution.
+
+Acceptance before WinUI switch: production Renderer matches independent Source
+captures using its actual public options, covering the canonical75 TeX strings,
+UTF encodings and metrics. Per-case options absent from RenderOptions (such as
+tagSide) must be recorded as a distinct profile, not secretly set in the native
+runner or added only for fixtures; existing canonical/strict evidence stays
+unchanged. Also verify
+Scene-only/result ownership after renderer teardown; errors and next request;
+pre/in-flight cancel, deadline and wrong-thread cases; C ABI same SVG bytes,
+result destruction and invalid arguments. Root then locks the worker/DLL wiring
+separately, retaining priority/cache/generation behavior and the existing SVG
+parser. No D2D pixel gate or math QuickJS fallback. WinUI remains unchanged
+until this native application-facing gate passes.
+
+The actual locked canonical75 records have empty tag_side, em16, ex8 and
+widths 1280/100/80/120. Root inspected their generated evidence: every none-mode
+record is directly representable by the current public API. Reuse that existing
+independent fixture for all 75 UTF-8, 75 UTF-16 and 75 opaque-C render calls;
+no new oracle or expanded RenderOptions is needed for this batch.
+
+Root promotes math.ixx/.cpp into folia_math and builds the existing C ABI source
+as shared target FoliaNativeMath linked to that library. On Windows, generate
+the nine-function C export .def under the ignored build directory; do not
+export C++/STL symbols or add Windows headers to portable math. FoliaMathTests
+links the real DLL for its new opaque-ABI test; C++ public profile/cancellation
+tests replace their existing test owners. All console probes retain the test
+runtime and an adequate stack reserve. DLL build output stays in build/core.
+The worker switch, deployment and WinUI build remain the subsequent packet.
+
+### WinUI math worker integration lock (2026-10-21)
+
+Prepare this packet as ignored candidates while the native full gate runs;
+Root promotes only after that gate passes. MathJaxRenderer.h and its public
+queue/cache/dependency API remain unchanged. In MathJaxRenderer.cpp replace only
+the worker backend with the verified opaque C ABI. Create/use/destroy one
+native renderer on its worker thread. Convert queued UTF-8 explicitly to owned
+UTF-16 units; submit display/em/width with the existing two-second deadline.
+A per-call cancellation handle outlives its stop_callback and result copying;
+the worker stop token invokes only RequestStop across threads. Disabling stops
+and joins as before; Clear preserves its generation/drop behavior.
+
+Use RAII for all opaque handles; native statuses provide retry classification,
+not substring guesses from human messages. Keep the first-transient-failure
+retry policy, completion revisions/callbacks, priority queue bound256, cache
+budget16MiB/count4096, keys, generation checks and callback-outside-lock flow.
+Cancelled/unusable/OOM sessions are rebuilt on that worker. Native successful
+SVG goes directly to existing ParseMathJaxSvgOutput; its data-mjx-error mapping
+remains Formula. No SVG parser/normalizer edits, extra Scene ABI or D2D path.
+
+Current non-vendored app search finds QuickJS consumers only in this worker and
+its vcxproj build target. Remove those runtime calls, QuickJS link/build target
+and deployment of unused JS math/font assets; retain licenses and development
+Source oracle files. Do not touch Mermaid or its Rust normalizer dependency.
+No fallback or runtime selector. The app links only the nine-function C import
+library and deploys the verified DLL, with portable math headers as includes.
+
+Reuse build_app.ps1 to configure/build FoliaNativeMath with parallel4 before
+MSBuild (also capped4). Debug reuses build/core; Release uses build/core-release
+so the existing test tree is not silently reconfigured. vcxproj has matching
+build-dir defaults, early missing-library checks and an after-build DLL copy.
+No new scripts/projects, header-only std replacement, restored package commits
+or extra build tree for the Debug path. Existing app stack reserve32MiB remains.
+Root runs setup.ps1, supported WinUI build and relevant deterministic platform
+tests, then verifies a real queue->C ABI->SVG-parser worker run including cache,
+priority/dependencies, generation changes, formula errors and shutdown.

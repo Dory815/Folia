@@ -517,6 +517,44 @@ is unchanged. Hosted parity does not establish browser event dispatch, the
 
 ## D. Application integration
 
+### Native application-facing library checkpoint (2026-10-21)
+
+The direct MathML limits witness adds twelve inputs in none/local modes:
+inline movable integral, display sum limits, explicit accents and stretched
+accents for munder/mover/munderover. Source records actual compiled nodes,
+wrapper BBoxes, prefixes and complete SVG; fixture SHA-256 is
+`bb52168574af0b70a7f63a6dcff0c5bff05f9c5ca6922cdb10f76527abafc636`.
+Root Source default/write-no-op passes, old numeric fixture stays byte-identical.
+Source/fixture commit `d688445e`, existing limits UT `73ae4eef`; focused 1/97,
+numeric 6/34 and canonical 1/1279 pass. Full `limits-scene-full-math.log` passes
+848 tests / 215119 assertions / 171 suites, no skips. No math algorithm changed.
+
+The original Renderer owner now composes typed TeXRequest/MathItem/Common layout
+and immutable Scene, with no Context session or manual retirement. Its prior
+dirty callback/projection cleanup served only the withdrawn object graph;
+Root reviewed and retained that patch plus source snapshot under ignored
+`build/math-port/renderer-owner-candidate/` before deliberate owner replacement.
+The obsolete identity diagnostics and its native-session getter test are
+withdrawn, replaced by actual typed measurement cancellation/lifetime evidence.
+
+Stable parallel4 `renderer-owner-build-fixed.log` passes, including the real
+FoliaNativeMath DLL. `renderer-owner-exports.log` confirms exactly the nine C
+exports, without C++/STL exports. Public C++ renders all original 75 none-cache
+cases through UTF-8 and UTF-16: 1/1053 with complete SVG and Scene metrics.
+The fixture's actual options are directly representable (tag-side default,
+em16/ex8, widths1280/100/80/120); neither Source data nor hidden options change.
+Result/Unicode/merror recovery and ownership after Renderer teardown pass 1/7.
+
+Real opaque C calls match all 75 Source SVG records (1/460); arguments/null
+results pass 1/26, owning-thread and pre-cancel reuse 1/11, deadline and ensuing
+SessionUnusable 1/8. C++ pre-cancel passes 1/10, in-flight deadline 1/2, actual
+Lite measurement cancellation/recovery 1/2, nested thread-local scope 1/4,
+wrong-thread rejection 1/2 and normal result contract 1/4. OOM status mapping is
+reviewed, not induced by exhausting memory. Final `renderer-owner-full-math.log`
+passes 860 tests / 216708 assertions / 174 suites without skips. This proves
+the native application-facing boundary; the WinUI worker switch/deployment,
+real worker probe and remaining obsolete on-disk graph retirement are pending.
+
 - Validate opaque C ABI UTF-16 input, result ownership, thread contract,
   cancellation, deadlines and errors against the accepted native library.
 - Exercise the default real Folia worker through queue -> C ABI -> native math

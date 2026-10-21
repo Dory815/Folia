@@ -4,7 +4,9 @@
 
 ## 当前 checkpoint
 
-当前无 live build/test。Full **53985** exit0：`parse-request-full-math.log`，847 tests / 215022 assertions / 170 suites，无skip。请求迁移 **af9a8891**、生命周期 **2a8b888a**、验收/精简交接 **0a087d83**。当前Luna：`common_mo_emission`仅limits Source generator/新fixture；`common_limits_emission`仅原limits UT，架构末尾锁定12×2 contract；`common_base_emission`只读Renderer既有行为与dirty意图。下一步Root收候选→review/Source验证→单parallel4build/focused/full，不重复旧审计。
+当前无live build/native；full **4060** exit0：860 tests/216708 assertions/174 suites无skip，`renderer-owner-full-math.log`；12专项全过，精确数见acceptance。原Renderer/CABI DLL/API tests提交 **a08e9723**。247 active modules包含folia.math、不含旧Context/native_document/render_session等对象层；DLL仅9个Cexports。下一步Root review/promote worker及现有build_app/vcxproj候选→setup.ps1→单parallel4 WinUI build→真实worker probe/平台测试。
+
+- limits full **78558** exit0：848 tests/215119 assertions/171 suites无skip；Source包 **d688445e**、UT **73ae4eef**。Source24条1/97、原数值6/34、hosted1/1279通过，Root default/write-no-op/旧numeric过。新fixtureSHA bb52168574af0b70a7f63a6dcff0c5bff05f9c5ca6922cdb10f76527abafc636。
 
 - 2f76e389 锁定、af9a8891 实施 ParseRequest/TeXRequest：保留 ParseOptions 配置/session；请求数据进入 caller-owned frame。CompileScope 恢复 MathItem/adaptor 借用，新增生产文件为 0。physics 两个 creator probe 的局部借用先结束再换文档；build-physics exit0、专项8/5373过。
 - 稳定构建 parse-request-build-fixed2.log exit 0；formatter 已完成。
@@ -19,7 +21,9 @@
 
 架构已定：保留 MathJax 原 owner、算法和消费方边界；不模拟 JS 对象，不建平行 native/new/typed 实现，不加请求释放补丁。完整约束及各组件证据以架构和验收文档为准。组件通过不等于 Folia 集成。
 
-覆盖登记已核对：38个TeX包均有Source witness；tables/mglyph/maction/merror/XML/semantics/mfenced有专用完整SVG证据。下一具体包：在原 `common-limits-source-witness.cjs` / `native_common_limits.cpp` 职责内补 munder/mover/munderover 的直接MathML完整SVG与请求退出后对照（现有数值和canonical例不重写）。scope旧状态/锁定fixture不为改进度而改。其后仍需应用 Renderer/C ABI 原 owner 改造及 Folia 接入、旧对象层退出；75/150不代表集成。
+38包及专用family已有Source映射，不凭scope陈旧状态重复实现。Renderer lock在architecture末尾；已确认canonical75实际tag_side全空、em16/ex8、width四值，全部可直接用现API验原fixture，无新Source/隐藏选项。原math.cpp dirty已由Root读diff/account，旧callback/projection退休随退出Context图结束，resident诊断随旧probe退出；备份与原patch在ignored `build/math-port/renderer-owner-candidate/math.cpp-before-integration` / `math.cpp-prior-work.patch`。只有math.cpp经明确原owner重写授权退出保护名单，其余12条仍保护。API/CABI通过前不改WinUI；尚未接入/旧磁盘对象层退出。
+
+worker lock在architecture末尾；Luna已freeze ignored `build/math-port/worker-integration-candidate/MathJaxRenderer.cpp`、`Folia.vcxproj`、`build_app.ps1`。`common_rows_emission`正准备同目录真实 `winui-math-worker-probe.cpp`，只能编译链接实际app worker/parser对象，不替代实现；Root尚未运行/接入，继续保留全部protected parser改动。Debug复用build/core，Release build/core-release。
 
 ## 执行约束
 
@@ -30,7 +34,7 @@
 
 ## 保护的既有 dirty 路径
 
-以下 13 条路径必须完整保留，不得顺手修改、暂存或提交：
+以下 12 条路径必须完整保留，不得顺手修改、暂存或提交：
 
 - src/app-winui/media/MathJaxSvgParser.cpp
 - src/app-winui/media/SvgNormalizer.cpp
@@ -40,7 +44,6 @@
 - src/math/core/mml_tree/mml_context_bindings.ixx
 - src/math/core/mml_tree/mml_nodes/mtable_bindings.cpp
 - src/math/core/mml_tree/mml_nodes/semantics_bindings.cpp
-- src/math/math.cpp
 - tests/math/context_object_record_retirement.cpp
 - tests/math/lite_array_view_request_retirement_g259.cpp
 - tests/math/mml_private_renderer_allocation_domain_g227.cpp
