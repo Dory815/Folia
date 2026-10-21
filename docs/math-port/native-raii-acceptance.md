@@ -1340,6 +1340,19 @@ is deleted. Evidence: class-source-oracles-promoted.json,
 class-source-only-check.json and class-source-retirement-final-check.json.
 No new full math/font, worker, Release, GUI or walk-resource gate is claimed.
 
+### BaseNode script classification (2026-10-21)
+
+The existing typed_mml_scripts.cpp now checks actual msubsup nodes with mo,
+mi, mn and TeXAtom bases against four locked Source observations. The test
+preserves the factory's inferred TeXAtom row, parent links, returned node,
+wrapper/base class transfer, independent sub/sup classification and unchanged
+incoming previous node. This closes the AbstractMmlBaseNode coverage gap;
+the existing LayoutNode test is not substituted for it. No production module
+or algorithm changed. The parallel4 build passes, and the single focused
+native test passes 55 assertions. Evidence: script-base-class-source-observations.json,
+script-base-promoted.json, script-base-build.log and
+script-base-native-covered-results.json. No broad runtime gate was repeated.
+
 ## Evidence and failure handling
 
 Root owns builds, executions, target edits, registered source promotion and Git.
