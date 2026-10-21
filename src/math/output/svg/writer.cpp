@@ -813,6 +813,17 @@ void append_primitive(std::string &out, scene::Primitive const &primitive,
                     out += "<title/>";
                 else
                     out += "<title>" + value.text + "</title>";
+            } else if constexpr (std::is_same_v<T, scene::Image>) {
+                out += "<image";
+                detail::append_attribute(out, "width", number(value.size.width * 1000));
+                detail::append_attribute(out, "height", number(value.size.height * 1000));
+                detail::append_attribute(
+                    out, "transform",
+                    transform_value(value.transform, scene::ElementRole::image_glyph));
+                detail::append_attribute(out, "preserveAspectRatio", "none");
+                detail::append_attribute(out, "aria-label", value.alt);
+                detail::append_attribute(out, "href", value.href);
+                out += "/>";
             }
         },
         primitive);

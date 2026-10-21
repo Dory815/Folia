@@ -395,5 +395,11 @@ struct FrameLayout {
     std::vector<InlineFragment> inline_fragments;
     std::optional<PercentageFrame> percentage;
 };
-using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, Ellipse, Title>;
+struct Image {
+    Size size;
+    std::string href;
+    std::string alt;
+    Transform transform;
+};
+using Primitive = std::variant<GlyphRun, Rule, Path, TextRun, Ellipse, Title, Image>;
 } // namespace folia::math::output::scene

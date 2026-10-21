@@ -300,6 +300,10 @@ Primitive clone_primitive(Primitive const &source) {
                     throw std::invalid_argument("Scene text font size must be finite and positive");
                 validate(value.metadata);
                 copy.measured_glyphs = validate_and_clone(value.measured_glyphs);
+            } else if constexpr (std::same_as<T, Image>) {
+                if (!finite(value.size.width) || !finite(value.size.height))
+                    throw std::invalid_argument("Scene image dimensions must be finite");
+                validate(value.transform);
             }
             return copy;
         },
