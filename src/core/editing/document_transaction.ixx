@@ -5,6 +5,7 @@
 export module folia.core.document_transaction;
 import std;
 import folia.core.ast;
+import folia.core.block_source;
 import folia.core.document;
 import folia.core.text_edit;
 
@@ -15,6 +16,8 @@ enum class DocumentTransactionReason { InsertText, Delete, Paste, Replace, Forma
 struct DocumentTextOperation {
     TextEdit forward;
     TextEdit inverse;
+    std::optional<std::vector<BlockLineIndentation>> indentation_before;
+    std::optional<std::vector<BlockLineIndentation>> indentation_after;
 };
 
 enum class DocumentTreeEditKind { Insert, Remove, Move, UpdatePayload };
@@ -28,6 +31,12 @@ struct DocumentTreeEdit {
     std::size_t other_index = 0;
     BlockNode before;
     BlockNode after;
+};
+
+struct DocumentSourceEdit : AppliedSourceEdit {
+    std::vector<DocumentTreeEdit> metadata_edits;
+    std::optional<std::vector<BlockLineIndentation>> indentation_before;
+    std::optional<std::vector<BlockLineIndentation>> indentation_after;
 };
 
 using DocumentOperation = std::variant<DocumentTextOperation, DocumentTreeEdit>;

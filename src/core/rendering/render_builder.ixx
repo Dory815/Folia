@@ -101,6 +101,9 @@ inline void append(Hasher& hash, InlineDocument const& document) {
 inline void append(Hasher& hash, BlockNode const& block) {
     hash.scalar(block.id); hash.scalar(block.kind); append(hash, block.inline_content);
     hash.text(block.block_source.source());
+    for (const auto& indent : block.block_source.tree().generated_indentation) {
+        hash.scalar(indent.content_offset); hash.scalar(indent.source_offset); hash.scalar(indent.columns);
+    }
     auto const& text = block.text_special();
     hash.scalar(text.level); hash.text(text.slug); hash.text(text.opening_marker); hash.text(text.closing_marker);
     auto const& item = block.item_special();
@@ -319,6 +322,12 @@ struct Builder {
             const auto source_start = block_source_offset_for_content(
                 block.block_source,
                 display_range.start);
+            for (const auto& generated : block.block_source.tree().generated_indentation) {
+                if (generated.content_offset == display_range.start) {
+                    append_generated_indent(
+                        out, block.id, generated.source_offset, generated.columns);
+                }
+            }
             append_line_indent(source_start, first_line);
             const auto source_end = block_source_offset_for_content(
                 block.block_source,
@@ -1117,6 +1126,7 @@ struct Builder {
                 auto& special = rb.ensure_special();
                 special.raw_source = b.block_source.source();
                 special.content_to_source = b.block_source.tree().content_to_source;
+                special.generated_code_indentation = b.block_source.tree().generated_indentation;
                 special.language = b.block_source.tree().language;
                 special.code_text = block_source_content(b.block_source);
                 special.code_indented = b.atomic_special().code_indented;
