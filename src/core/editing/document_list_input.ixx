@@ -20,6 +20,7 @@ inline BlockNode list_shell_from(const BlockNode& source, NodeId id) {
     result.ensure_list_special().ordered = source.list_special().ordered;
     result.ensure_list_special().start = source.list_special().start;
     result.ensure_list_special().delimiter = source.list_special().delimiter;
+    result.ensure_list_special().tight = source.list_special().tight;
     return result;
 }
 

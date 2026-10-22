@@ -2507,12 +2507,42 @@ public:
         result.ensure_list_special().ordered = first->ordered;
         result.ensure_list_special().start = first->number;
         result.ensure_list_special().delimiter = first->delimiter;
+        result.ensure_list_special().tight = true;
+
+        auto line_ending_count = [](std::u32string_view source) {
+            std::size_t count = 0;
+            for (std::size_t index = 0; index < source.size(); ++index) {
+                const auto ch = source[index];
+                if (ch == U'\r' || ch == U'\n') {
+                    ++count;
+                    if (ch == U'\r' && index + 1 < source.size()
+                        && source[index + 1] == U'\n') ++index;
+                }
+            }
+            return count;
+        };
+        auto is_blank_separator = [&](std::u32string_view source, bool previous_owns_ending) {
+            for (const auto ch : source) {
+                if (ch != U' ' && ch != U'\t' && ch != U'\r' && ch != U'\n') return false;
+            }
+            const auto count = line_ending_count(source);
+            return count >= (previous_owns_ending ? 1u : 2u);
+        };
 
         std::optional<std::u32string> separator_before_next_item;
+        bool separator_before_next_item_has_blank_line = false;
         while (auto marker = inspect(pos)) {
             if (!same_list_kind(*first, *marker) || marker->indent >= sibling_indent_limit) break;
             auto separator_before_this_item = std::move(separator_before_next_item);
             separator_before_next_item.reset();
+            const bool has_blank_sibling_gap = separator_before_next_item_has_blank_line;
+            separator_before_next_item_has_blank_line = false;
+            // Set from the raw physical line scan below. This avoids inferring
+            // looseness from a serializer-normalized separator whose EOL may
+            // already belong to a code/quote block.
+            if (has_blank_sibling_gap) {
+                result.ensure_list_special().tight = false;
+            }
             NodeId item_id = next_node_id();
             const auto content_indent = marker->content_indent;
             const bool first_line_has_content = !marker->initial_prefix.empty()
@@ -2552,13 +2582,16 @@ public:
                                 std::u32string_view(cps).substr(
                                     last_nonblank_line_end,
                                     line_start - last_nonblank_line_end));
+                            separator_before_next_item_has_blank_line = true;
                             item_end = line_start;
                         } else {
                             separator_before_next_item.reset();
+                            separator_before_next_item_has_blank_line = false;
                             item_end = *trailing_blank_start;
                         }
                     } else {
                         separator_before_next_item.reset();
+                        separator_before_next_item_has_blank_line = false;
                         item_inner_end = item_end = line_start;
                     }
                     break;
@@ -2656,6 +2689,19 @@ public:
             nested.node_counter = node_counter;
             auto children = nested.parse_blocks(nullptr);
             node_counter = nested.node_counter;
+            for (std::size_t child_index = 1; child_index < children.size(); ++child_index) {
+                const auto& separator = children[child_index].separator_before;
+                const auto previous_serialized = serializer_detail::serialize_block(children[child_index - 1]);
+                const bool previous_owns_ending = !previous_serialized.text.empty()
+                    && is_line_ending_character(previous_serialized.text.back());
+                if (separator && is_blank_separator(*separator, previous_owns_ending)) {
+                    // Only direct block siblings of this item determine its
+                    // list's looseness. A nested list's internal gaps remain
+                    // owned by that nested list.
+                    result.ensure_list_special().tight = false;
+                    break;
+                }
+            }
             auto remap = [&](std::size_t value) {
                 return std::size_t(offset_map[(std::min)(value, offset_map.size() - 1)]);
             };

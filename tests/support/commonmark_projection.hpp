@@ -302,9 +302,24 @@ inline bool project_block(
             std::vector<std::pair<std::string, std::string>> attrs;
             if (list.ordered && list.start != 1) attrs.emplace_back("start", std::to_string(list.start));
             auto n = element(list.ordered ? "ol" : "ul", std::move(attrs));
-            add_children(n);
+            for (auto const& item : block.children) {
+                auto li = element("li");
+                for (auto const& child : item.children) {
+                    if (list.tight && child.kind == BlockKind::Paragraph) {
+                        if (!child.inline_content.source.empty()) {
+                            project_inline_nodes(
+                                li,
+                                child.inline_content,
+                                child.inline_content.tree.nodes,
+                                limitations);
+                        }
+                    } else {
+                        project_block(li, child, limitations);
+                    }
+                }
+                append_node(n, std::move(li));
+            }
             append_node(parent, std::move(n));
-            limitation(limitations, "list-tightness-not-exposed");
             return true;
         }
         case BlockKind::ListItem: {

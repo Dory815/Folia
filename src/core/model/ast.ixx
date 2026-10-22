@@ -57,6 +57,9 @@ struct BlockListSpecial {
     bool ordered = false;
     std::uint64_t start = 1;
     char32_t delimiter = U'.';
+    // CommonMark list looseness is syntax metadata. It does not affect the
+    // editor's list layout or source serialization.
+    bool tight = true;
 };
 
 struct BlockItemSpecial {

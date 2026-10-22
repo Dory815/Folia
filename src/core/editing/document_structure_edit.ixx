@@ -568,6 +568,7 @@ inline std::optional<DocumentTransaction> document_indent_list_item(EditorDocume
         created.ensure_list_special().ordered = list->list_special().ordered;
         created.ensure_list_special().start = list->list_special().start;
         created.ensure_list_special().delimiter = list->list_special().delimiter;
+        created.ensure_list_special().tight = list->list_special().tight;
         const auto nested_id = created.id;
         DocumentTreeEdit insert;
         insert.kind = DocumentTreeEditKind::Insert;
