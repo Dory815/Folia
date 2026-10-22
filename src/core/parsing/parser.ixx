@@ -2532,6 +2532,10 @@ public:
         std::optional<std::u32string> separator_before_next_item;
         bool separator_before_next_item_has_blank_line = false;
         while (auto marker = inspect(pos)) {
+            // A thematic break can look like a same-marker list item (for
+            // example, `* * *`). The item scanner leaves it at `pos`; keep
+            // the outer sibling loop from claiming it as another list item.
+            if (line_is_thematic_break(pos)) break;
             if (!same_list_kind(*first, *marker) || marker->indent >= sibling_indent_limit) break;
             auto separator_before_this_item = std::move(separator_before_next_item);
             separator_before_next_item.reset();

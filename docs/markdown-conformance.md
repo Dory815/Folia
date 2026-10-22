@@ -9,87 +9,75 @@ its existing Math handoff edits are separate.
 
 List separators and quote terminal-line fixes are committed in 72fe9247.
 List tightness is committed in e36af31e (core and all official cases verified).
-Whitespace semantics is verified and accompanies this checkpoint. No live
-native build. Luna commonmark_fixture_tests is preparing the focused #60 list
-thematic-boundary candidate, without production edits/builds.
+Whitespace semantics is committed in 7a804d73. The accompanying commit fixes
+#60 thematic-break precedence in the list sibling loop. All checks finished;
+no live agents or build handles. Next: container-prefix provenance and
+partial-Tab column semantics, then lazy continuations #93/#238/#312.
 Scalar diagnosis found #21/#344 are HTML boundaries too; notes are under
 candidates/remaining-scalars/.
 Emphasis #475–477 are inline HTML behavior/projection differences, not delimiter
 resolution errors; six-line notes are under candidates/remaining-emphasis/.
-The former render test expected an inter-item separator
-to belong to a synthetic empty paragraph; it now checks a generated boundary
-after the code row, retaining all code identity/content/indent assertions.
 Candidates remain under ignored build/markdown-conformance/candidates/.
 No candidate delivery counts as acceptance. Root owns
-integration/builds; maximum parallelism is **4**. Accepted batches:
-a6c11c20 (character/label utilities), 6c36adc5 (inline syntax), 11b85899
-(block recognition/source serialization), plus the followup accompanying this
-checkpoint: nested continuations, escapes, code endings and literal Tab source.
+integration/builds; maximum parallelism is **4**. Earlier verified syntax
+batches are recorded in Git through d5dfc16b.
 
 | Check | Initial baseline | Current |
 |---|---:|---:|
-| Strict official semantic matches | 292/652 | **572/652** |
+| Strict official semantic matches | 292/652 | **573/652** |
 | Inline source/CST losslessness | 652/652 | **652/652** |
 | Character-exact document serialization | 571/652 | **628/652** |
 
-All 652 cases ran in **0.668s**, with no skips or abnormal exit. There remain
-**80 semantic differences**, **24 exact-save differences**, and **100 combined
+All 652 cases ran in **0.604s**, with no skips or abnormal exit. There remain
+**79 semantic differences**, **24 exact-save differences**, and **99 combined
 failed cases**. No semantic, save or inline-CST regression against d5dfc16b.
 Source checks and correct syntax are independent assertions.
 
 ## Verification
 
-- Core: **511 tests / 41668 assertions**, exit 0. The 8074-assert structure
+- Core: **516 tests / 41723 assertions**, exit 0. The 8074-assert structure
   property test covers Enter/merge/undo/redo and zero full-document parsing,
   serialization or transaction-diff work during normal edits.
-- Windows editor: **80 tests / 3429 assertions**, exit 0 including whitespace
-  and tightness changes.
-- md4c on the prior 130 official differences: **130 semantic matches**;
-  109 exact HTML matches, 21 formatting-only newline differences. Its native
+- Windows editor: **80 tests / 3429 assertions**, exit 0.
+- md4c on the remaining 79 official semantic differences: **79 semantic matches**;
+  74 exact HTML matches, 5 formatting-only newline differences. Its native
   exact-byte assertions return the normal test-failure code 1.
 - Fixture/generator Python tests: 10 passed; fixture inputs are hash-verified.
 
-Reports/logs are in ignored build/markdown-conformance/: results.json,
-results.jsonl, results.md, core-tests.log, platform-tests.log,
-syntax-build-test.log, md4c-build-test.log and md4c/results.json.
-Initial reports remain in baseline/; phase-one/ and phase-two/ are historical.
+Reports/logs are in ignored build/markdown-conformance/: results.{json,jsonl,md},
+thematic-{core-tests,official,platform-tests,md4c-tests}.log and md4c/results.json.
+Initial reports remain in baseline/; phase-three-start/ is the d5dfc16b baseline.
+Earlier phase-one/, phase-two/ and intermediate batch logs are historical.
 Generated fixtures and downloaded third-party sources remain ignored.
 
 ## Remaining work and exact next action
 
-Of the 80 strict differences, none is list-tightness-only; 29 carry HTML
-policy/projection labels; 9 carry other limits; 42 have no such label.
+Of the 79 strict differences, none is list-tightness-only; 29 carry HTML
+policy/projection labels; 9 carry other limits; 41 have no such label.
 Several unlabeled cases also concern HTML boundaries (diagnoses above).
-They are not 80 independently established parser bugs. Diagnostic relaxed
+They are not 79 independently established parser bugs. Diagnostic relaxed
 comparison never passes a formal test; expectations were not changed or skipped.
 
-Immediate next action: review #60 candidate under candidates/list-thematic-boundary/
-once delivered, focused tests then official regression comparison. Whitespace
-reports: whitespace-{core-tests,official,platform-tests}.log. It uses shared
-source ranges as editable markers; source/CST stays untouched, code/HTML/entity/
-escape/nested whitespace is unaffected. Tightness reports:
-tightness-core-tests.log and tightness-official.log; 40 additional semantic
-matches, no semantic/source/CST regressions against d5dfc16b. Tests cover
-direct-block blank gaps, nested scope, code-owned EOL and split/undo payloads.
-The read-only Sol 6.1
-prefix_history_review is finished: owner/source prefix anchors also need
+Before implementing container-prefix provenance, finish its edit/history
+contract. Read-only Sol 6.1 prefix_history_review established that owner/source
+prefix anchors also need
 generated/blank-line anchors, split/join transfers, fresh-ID remapping and
 recorded payload updates after TextOps (never double-translate during replay).
 Absent lazy prefixes must be invalidated when an edit would change structure
 on reload. Freeze this contract before implementing prefix provenance.
 
-Following that: preserve container prefix provenance and partial-Tab visual columns in the
-existing parser/serializer/projection boundaries, then finish lazy continuations
-#93/#238/#312 and leading whitespace semantics. Do not rewrite raw source to
+Keep provenance and partial-Tab visual columns in existing parser/serializer/
+projection boundaries; do not rewrite raw source to
 improve rendered output. For #93, accepting a lazy === line while saving adds
 the missing quote prefix would turn a paragraph into a heading on reload;
 that incomplete change was rejected. Ordinary nested continuations #292/#293
 now preserve save/reload semantics. #117 was a duplicate test-projection newline,
 not a production parser defect; fenced empty/trailing blank lines remain tested.
 
-Structural-prefix normalization remains an explicit exact-save failure; the
-list separator batch fixed #273/#274/#311/#313 and related gaps without
-rewriting source. Overpadded list markers and continuation extraction
+The 24 exact-save failures are #4/#5/#6/#9/#93/#227/#229/#230/#232/#233/#240/
+#241/#247/#250/#251/#259/#260/#278/#279/#290/#291/#292/#293/#320.
+They concern container prefixes/indentation and blank-line spelling.
+Overpadded list markers and continuation extraction
 no longer invent spaces in child source from Tabs; unresolved column semantics
 remain reported. Candidate originals stay under ignored
 build/markdown-conformance/candidates/. Never reapply entire old candidates:
@@ -117,6 +105,9 @@ keeping atomic interaction. Code-span normalization retains original ranges,
 including CRLF and hidden padding. Existing terminal-line-break editing layout
 stays unchanged. Mixed bullet glyphs correctly create separate lists; the
 existing rendering test retains every original glyph/display assertion.
+List tightness belongs to BlockListSpecial; derived shells retain it. Whitespace
+display ranges belong to inline_document; render_builder keeps those characters
+as editable source-spanned markers. No source/CST normalization was added.
 
 ## Reproduction and provenance
 
