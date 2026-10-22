@@ -2508,8 +2508,11 @@ public:
         result.ensure_list_special().start = first->number;
         result.ensure_list_special().delimiter = first->delimiter;
 
+        std::optional<std::u32string> separator_before_next_item;
         while (auto marker = inspect(pos)) {
             if (!same_list_kind(*first, *marker) || marker->indent >= sibling_indent_limit) break;
+            auto separator_before_this_item = std::move(separator_before_next_item);
+            separator_before_next_item.reset();
             NodeId item_id = next_node_id();
             const auto content_indent = marker->content_indent;
             const bool first_line_has_content = !marker->initial_prefix.empty()
@@ -2519,6 +2522,8 @@ public:
                 && line_has_leaf_paragraph_content(
                     marker->content_start, marker->content_end);
             auto item_end = marker->source_end;
+            auto item_inner_end = item_end;
+            auto last_nonblank_line_end = marker->content_end;
             bool previous_blank = false;
             std::optional<std::size_t> trailing_blank_start;
             while (item_end < cps.size()) {
@@ -2538,7 +2543,26 @@ public:
                     break;
                 }
                 auto next_marker = inspect(line_start);
-                if (next_marker && next_marker->indent < content_indent) break;
+                if (next_marker && next_marker->indent < content_indent) {
+                    const bool same_list_sibling = same_list_kind(*first, *next_marker);
+                    if (previous_blank && trailing_blank_start) {
+                        item_inner_end = *trailing_blank_start;
+                        if (same_list_sibling) {
+                            separator_before_next_item = std::u32string(
+                                std::u32string_view(cps).substr(
+                                    last_nonblank_line_end,
+                                    line_start - last_nonblank_line_end));
+                            item_end = line_start;
+                        } else {
+                            separator_before_next_item.reset();
+                            item_end = *trailing_blank_start;
+                        }
+                    } else {
+                        separator_before_next_item.reset();
+                        item_inner_end = item_end = line_start;
+                    }
+                    break;
+                }
                 if (blank && !first_line_has_content) {
                     auto lookahead = next_line_start(line_end);
                     while (lookahead < cps.size()) {
@@ -2564,6 +2588,8 @@ public:
                     // item. Leave it for parse_blocks so separator_before can
                     // preserve the exact number of blank lines.
                     item_end = trailing_blank_start.value_or(item_end);
+                    item_inner_end = item_end;
+                    separator_before_next_item.reset();
                     break;
                 }
                 if (!blank && indentation < content_indent && !lazy_paragraph_open) break;
@@ -2582,9 +2608,11 @@ public:
                     lazy_paragraph_open = false;
                 } else {
                     trailing_blank_start.reset();
+                    last_nonblank_line_end = line_end;
                     lazy_paragraph_open = line_has_leaf_paragraph_content(indent.end, line_end);
                 }
                 item_end = next_line_start(line_end);
+                item_inner_end = item_end;
             }
 
             std::u32string inner;
@@ -2605,8 +2633,8 @@ public:
             const bool first_line_has_inner_content = !marker->initial_prefix.empty()
                 || marker->content_start < marker->content_end;
             auto line_start = marker->source_end;
-            while (line_start < item_end) {
-                const auto line_end = (std::min)(line_content_end(line_start), item_end);
+            while (line_start < item_inner_end) {
+                const auto line_end = (std::min)(line_content_end(line_start), item_inner_end);
                 const auto indent = scan_block_indentation(cps, line_start, content_indent);
                 auto content = (std::min)(indent.end, line_end);
                 if (!(line_start == marker->source_end
@@ -2658,7 +2686,20 @@ public:
             item.kind = marker->task ? BlockKind::TaskListItem : BlockKind::ListItem;
             item.ensure_item_special().checked = marker->checked;
             item.ensure_item_special().marker = marker->text;
+            item.separator_before = std::move(separator_before_this_item);
             item.children = std::move(children);
+            // The stored gap starts after the item's serialized source, just
+            // like separators between ordinary blocks. Code may already own
+            // the ending of its last content line.
+            if (separator_before_next_item) {
+                const auto serialized = serializer_detail::serialize_list_item_blocks(item.children);
+                if (!serialized.text.empty() && is_line_ending_character(serialized.text.back())) {
+                    auto& gap = *separator_before_next_item;
+                    const auto ending = gap.starts_with(U"\r\n") ? 2u
+                        : !gap.empty() && is_line_ending_character(gap.front()) ? 1u : 0u;
+                    gap.erase(0, ending);
+                }
+            }
             result.children.push_back(std::move(item));
             last_content = item_end;
             sibling_indent_limit = content_indent;
@@ -2775,6 +2816,24 @@ public:
             for (auto& marker : range.marker_ranges) marker = PhysicalRange(remap(marker.start), remap(marker.end));
             source_ranges.push_back(std::move(range));
         }
+        const auto trailing_blank_belongs_to_unclosed_fence = [&] {
+            if (!last_line_empty || children.empty()) return false;
+            const auto& final_child = children.back();
+            if (final_child.kind != BlockKind::CodeBlock
+                || final_child.block_source.tree().kind != BlockSourceKind::FencedCode
+                || final_child.block_source.tree().complete_closing) {
+                return false;
+            }
+
+            // An unclosed fence consumes through nested EOF.  Only suppress
+            // the synthetic quote-boundary paragraph when its lossless raw
+            // block source proves it owns the body's exact suffix, including
+            // the final quoted blank line.
+            const auto& raw = final_child.block_source.source();
+            return !raw.empty()
+                && raw.size() <= body.size()
+                && std::u32string_view(body).substr(body.size() - raw.size()) == raw;
+        }();
         if (children.empty()) {
             BlockNode paragraph;
             paragraph.id = next_node_id();
@@ -2785,6 +2844,7 @@ public:
                 PhysicalRange(std::size_t(content_start), std::size_t(content_start)));
             children.push_back(std::move(paragraph));
         } else if (last_line_empty
+            && !trailing_blank_belongs_to_unclosed_fence
             && !(children.back().kind == BlockKind::Paragraph
                 && std::ranges::all_of(children.back().inline_content.source, [](char32_t ch) {
                     return ch == U' ' || ch == U'\t' || ch == U'\r' || ch == U'\n';

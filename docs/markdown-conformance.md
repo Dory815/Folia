@@ -7,7 +7,13 @@ consulting md4c. Keep Folia's block tree, lossless inline CST, source positions
 and WYSIWYG editing. The earlier UI high-CPU investigation remains paused;
 its existing Math handoff edits are separate.
 
-Verification is finished. No live agents or native build handles. Root owns
+List separators and quote terminal-line fixes are verified and accompany this
+checkpoint. No live native build. The former render test expected an inter-item separator
+to belong to a synthetic empty paragraph; it now checks a generated boundary
+after the code row, retaining all code identity/content/indent assertions.
+Candidates remain under ignored build/markdown-conformance/candidates/.
+Luna list-tightness and whitespace-semantics candidates await integration;
+no candidate delivery counts as acceptance. Root owns
 integration/builds; maximum parallelism is **4**. Accepted batches:
 a6c11c20 (character/label utilities), 6c36adc5 (inline syntax), 11b85899
 (block recognition/source serialization), plus the followup accompanying this
@@ -17,16 +23,16 @@ checkpoint: nested continuations, escapes, code endings and literal Tab source.
 |---|---:|---:|
 | Strict official semantic matches | 292/652 | **522/652** |
 | Inline source/CST losslessness | 652/652 | **652/652** |
-| Character-exact document serialization | 571/652 | **591/652** |
+| Character-exact document serialization | 571/652 | **628/652** |
 
-All 652 cases ran in **0.608s**, with no skips or abnormal exit. There remain
-**130 semantic differences**, **61 exact-save differences**, and **172 combined
-failed cases**. No semantic or inline-CST regression against the initial baseline.
+All 652 cases ran in **0.609s**, with no skips or abnormal exit. There remain
+**130 semantic differences**, **24 exact-save differences**, and **145 combined
+failed cases**. No semantic, save or inline-CST regression against d5dfc16b.
 Source checks and correct syntax are independent assertions.
 
 ## Verification
 
-- Core: **474 tests / 41424 assertions**, exit 0. The 8074-assert structure
+- Core: **499 tests / 41556 assertions**, exit 0. The 8074-assert structure
   property test covers Enter/merge/undo/redo and zero full-document parsing,
   serialization or transaction-diff work during normal edits.
 - Windows editor: **80 tests / 3429 assertions**, exit 0.
@@ -49,7 +55,17 @@ unwrapping; 29 carry HTML policy/projection labels; 20 carry other limits
 They are not 130 independently established parser bugs. Diagnostic relaxed
 comparison never passes a formal test; expectations were not changed or skipped.
 
-Next: preserve container prefix provenance and partial-Tab visual columns in the
+Immediate next action: review list-tightness candidate (AST/parser/projection, list shell copies)
+and whitespace-semantics candidate (existing inline_document source ranges,
+render_builder editable markers, strict projection), merge by saved bases.
+The read-only Sol 6.1
+prefix_history_review is finished: owner/source prefix anchors also need
+generated/blank-line anchors, split/join transfers, fresh-ID remapping and
+recorded payload updates after TextOps (never double-translate during replay).
+Absent lazy prefixes must be invalidated when an edit would change structure
+on reload. Freeze this contract before implementing prefix provenance.
+
+Following that: preserve container prefix provenance and partial-Tab visual columns in the
 existing parser/serializer/projection boundaries, then finish lazy continuations
 #93/#238/#312 and leading whitespace semantics. Do not rewrite raw source to
 improve rendered output. For #93, accepting a lazy === line while saving adds
@@ -58,9 +74,9 @@ that incomplete change was rejected. Ordinary nested continuations #292/#293
 now preserve save/reload semantics. #117 was a duplicate test-projection newline,
 not a production parser defect; fenced empty/trailing blank lines remain tested.
 
-Thirteen cases newly expose structural-prefix normalization in exact saves:
-#93/#230/#232/#233/#241/#247/#250/#273/#274/#278/#292/#311/#313.
-They remain explicit failures. Overpadded list markers and continuation extraction
+Structural-prefix normalization remains an explicit exact-save failure; the
+list separator batch fixed #273/#274/#311/#313 and related gaps without
+rewriting source. Overpadded list markers and continuation extraction
 no longer invent spaces in child source from Tabs; unresolved column semantics
 remain reported. Candidate originals stay under ignored
 build/markdown-conformance/candidates/. Never reapply entire old candidates:

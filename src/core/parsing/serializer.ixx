@@ -391,9 +391,13 @@ inline ProjectedText serialize_list_item_blocks(const BlockVec& blocks) {
     ProjectedText result;
     for (std::size_t index = 0; index < blocks.size(); ++index) {
         if (index > 0) {
-            const auto nested = blocks[index].kind == BlockKind::List
-                || blocks[index].kind == BlockKind::TaskList;
-            result.append_generated(nested ? U"\n" : U"\n\n");
+            if (blocks[index].separator_before) {
+                result.append_generated(*blocks[index].separator_before);
+            } else {
+                const auto nested = blocks[index].kind == BlockKind::List
+                    || blocks[index].kind == BlockKind::TaskList;
+                result.append_generated(nested ? U"\n" : U"\n\n");
+            }
         }
         result.append(serialize_block(blocks[index]));
     }
@@ -401,8 +405,11 @@ inline ProjectedText serialize_list_item_blocks(const BlockVec& blocks) {
 }
 
 inline ProjectedText indent_continuation(ProjectedText value, std::size_t width) {
-    return prefix_lines(std::move(value), [width](std::size_t line, std::u32string_view) {
-        return line == 0 ? std::u32string{} : std::u32string(width, U' ');
+    return prefix_lines(std::move(value), [width](std::size_t line, std::u32string_view text) {
+        if (line == 0 || std::ranges::all_of(text, [](char32_t ch) {
+                return ch == U' ' || ch == U'\t';
+            })) return std::u32string{};
+        return std::u32string(width, U' ');
     });
 }
 
@@ -437,9 +444,12 @@ inline ProjectedText serialize_list(const BlockNode& block) {
         } else if (marker.empty()) {
             marker = U"- ";
         }
+        if (index > 0) {
+            if (item.separator_before) result.append_generated(*item.separator_before);
+            else result.append_generated(U"\n");
+        }
         result.append_generated(marker);
         result.append(indent_continuation(serialize_list_item_blocks(item.children), marker.size()));
-        if (index + 1 < block.children.size()) result.append_generated(U"\n");
     }
     return result;
 }
@@ -468,10 +478,25 @@ inline ProjectedText serialize_block(const BlockNode& block) {
             result.append_generated(special.closing_marker);
             return result;
         }
-        case BlockKind::BlockQuote:
-            return prefix_lines(serialize_blocks(block.children), [](std::size_t, std::u32string_view line) {
-                return line.empty() ? std::u32string(U">") : std::u32string(U"> ");
-            });
+        case BlockKind::BlockQuote: {
+            auto body = serialize_blocks(block.children);
+            const auto starts = line_starts(body.text);
+            const auto explicit_empty_paragraph = !block.children.empty()
+                && block.children.back().kind == BlockKind::Paragraph
+                && block.children.back().inline_content.source.empty();
+            const auto terminal_newline = !explicit_empty_paragraph
+                && !body.text.empty() && body.text.back() == U'\n';
+            const auto terminal_line = starts.size() - 1;
+            return prefix_lines(
+                std::move(body),
+                [terminal_newline, terminal_line](std::size_t line, std::u32string_view text) {
+                    // A final LF already terminates the last quoted content
+                    // line. Do not add a quote marker after it; preceding
+                    // empty lines still receive markers as genuine quote lines.
+                    if (terminal_newline && line == terminal_line && text.empty()) return std::u32string{};
+                    return text.empty() ? std::u32string(U">") : std::u32string(U"> ");
+                });
+        }
         case BlockKind::List:
         case BlockKind::TaskList:
             return serialize_list(block);
