@@ -6,7 +6,7 @@
 
 - 已完成copy/copy_boundary（`15809d75`）与metadata（`45b2d38d`）：旧Cpp/mapper及专用工具退出，全部Source profiles/owners保留。copy既有proof的12pins相符、未重复执行；metadata Source32行与完整Cpp映射通过。原factory owner新增8kind×keepIds值语义，472断言通过，不模拟JS身份/可空attributes。
 - 本轮math全测 **911测试/218824断言通过**，`build/math-port/copy-metadata-review/{final-build,all-math-tests}.log`；先前两个copy用例共50断言通过。仅新增测试，生产/应用/版本不变，parallel≤4。各批proof为`copy-consumer-retirement.json`、`copy-metadata-review/retirement-proof.json`。
-- return_prototype两行Source检查已通过，旧Cpp/mapper分支已退，普通155输入/profile/Cpp及生成字节完全保留。旧mapper原检查因历史optional→Property辅助类型漂移失败；完整Cpp经6类明确差异核对、全部输入/期待相符，见`return-prototype-review/{mapping-proof,retirement-proof}.json`，不是旧native执行。共享配置1303/10→1301/9；专用returns配置189/3→187/2并退对应2项原型mutation。最后构建`build.log`成功，沿用字节未变且全测通过的binary；无live build/agent，未重复全测。
+- return_prototype已提交`0b05c59b`：两行Source检查通过，旧Cpp/mapper分支退出，普通155输入/profile/Cpp及生成字节完全保留。旧mapper原检查因历史optional→Property辅助类型漂移失败；完整Cpp经6类明确差异核对、全部输入/期待相符，见`return-prototype-review/{mapping-proof,retirement-proof}.json`，不是旧native执行。共享配置1303/10→1301/9；专用returns配置189/3→187/2并退对应2项原型mutation。最后构建`build.log`成功，沿用字节未变且全测通过的binary；无live build/agent，未重复全测。三个功能批次均本地提交，未推送/打包。
 - 当前class_binding直接旧消费者 **32cpp/ixx+4inc**，未包括全部间接依赖；最新窄清单在return-prototype proof。下一步按`reference_mml_returns.cpp`32行和`reference_mml_return_probes.cpp`155行逐组审查，保留完整Source及现有native数学覆盖，不搬原型/getter/callback协议进native。Luna均完成。Root独占修改/build/Git；高CPU采样、Mermaid及生产owner链仍暂停。
 
 ## 历史：0.2.3运行高CPU，已捕获线程栈（2026-10-22）
