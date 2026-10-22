@@ -11,11 +11,18 @@ List separators and quote terminal-line fixes are committed in 72fe9247.
 List tightness is committed in e36af31e (core and all official cases verified).
 Whitespace semantics is committed in 7a804d73. The accompanying commit fixes
 #60 thematic-break precedence in the list sibling loop (c5d8da4c).
-Blank-line source and quote opening-marker fixes accompany this checkpoint.
-Core/platform/official checks finished, no live builds. Next integrate candidates
-markdown-html-scanner (shared lexical tag grammar), inline-html-scanner (thin
-inline adapters), html-type-seven/candidate-v2 (block boundary/fragment adapter).
-The first two are delivered; Luna commonmark_inline_scalars is finishing v2.
+Blank-line source and quote opening-marker fixes are committed in e94f5904.
+Shared markdown_html scanner + inline adapters accompany this checkpoint;
+core and all official cases passed regression comparison. No live build.
+The app project registers the new module. Windows tests passed before the final
+raw-tag delimiter-collection fix; rerun after the block/projection batch.
+Focused #536 showed complete unknown tags were scanned correctly but their
+attribute brackets were still parsed as links in the main inline loop. Root
+now emits existing Raw CST nodes for complete tags without derived presentation;
+their text/render policy is retained, their internals stay opaque Markdown syntax.
+Next integrate html-type-seven/candidate-v2 and
+html-semantic-projection (test-only projection of already parsed inline HTML).
+Both candidates are delivered, no live agents.
 Root reviews/merges/builds; no agent builds/Git.
 The initial html-type-seven candidate is rejected: duplicate tag grammar,
 all tags made unsupported, and duplicate raw body storage. Only v2 may be used.

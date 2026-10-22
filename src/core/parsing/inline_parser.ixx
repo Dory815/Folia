@@ -23,6 +23,7 @@ import folia.core.image_dimension;
 import folia.core.utf;
 import folia.core.html_entities;
 import folia.core.link_label;
+import folia.core.markdown_html;
 import folia.core.inline_cst;
 import folia.core.inline_document;
 import folia.core.instrumentation;
@@ -151,8 +152,9 @@ struct Parser {
                 const auto close = src.find(U"-->", at + 4);
                 return close != std::u32string_view::npos && close + 3 <= limit ? close + 3 : at + 1;
             }
-            if (const auto tag = html_tag_at(at, limit); tag && !tag->closing
-                && (tag->name == "img" || tag->name == "br" || safe_html_container(tag->name))) {
+            if (const auto tag = html_tag_at(at, limit)) {
+                if (tag->closing || (tag->name != "img" && tag->name != "br"
+                        && !safe_html_container(tag->name))) return tag->end;
                 if (tag->name == "img" || tag->name == "br" || tag->self_closing) return tag->end;
                 if (const auto closing = html_closing_tag(tag->name, tag->end)) return closing->second;
                 // parse_html_element emits an incomplete container through
@@ -362,24 +364,8 @@ struct Parser {
     }
 
     std::size_t html_tag_end(std::size_t at, std::size_t end) const {
-        if (at >= end || src[at] != U'<') return npos;
-        std::size_t cursor = at + 1;
-        if (cursor < end && src[cursor] == U'/') ++cursor;
-        if (cursor >= end || !ascii_alpha(src[cursor])) return npos;
-        char32_t quote = 0;
-        for (; cursor < end; ++cursor) {
-            const auto current = src[cursor];
-            if (quote) {
-                if (current == quote) quote = 0;
-            } else if (current == U'"' || current == U'\'') {
-                quote = current;
-            } else if (current == U'>') {
-                return cursor + 1;
-            } else if (current == U'<') {
-                return npos;
-            }
-        }
-        return npos;
+        const auto tag = scan_markdown_html_tag(src, at, end);
+        return tag ? tag->range.end : npos;
     }
 
     std::size_t matching_bracket(std::size_t open, std::size_t end) const {
@@ -1427,11 +1413,6 @@ struct Parser {
         bool self_closing = false;
     };
 
-    static bool html_name_char(char32_t value) {
-        return (value >= U'a' && value <= U'z') || (value >= U'A' && value <= U'Z')
-            || (value >= U'0' && value <= U'9') || value == U'-' || value == U'_';
-    }
-
     static std::string lower_ascii(std::string value) {
         std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
             return static_cast<char>(std::tolower(ch));
@@ -1440,57 +1421,21 @@ struct Parser {
     }
 
     std::optional<HtmlTag> html_tag_at(std::size_t at, std::size_t parse_limit) const {
-        if (at >= parse_limit || src[at] != U'<') return std::nullopt;
+        const auto scanned = scan_markdown_html_tag(src, at, parse_limit);
+        if (!scanned) return std::nullopt;
         HtmlTag tag;
-        tag.start = at;
-        auto cursor = at + 1;
-        if (cursor < parse_limit && src[cursor] == U'/') {
-            tag.closing = true;
-            ++cursor;
-        }
-        const auto name_start = cursor;
-        while (cursor < parse_limit && html_name_char(src[cursor])) ++cursor;
-        if (cursor == name_start) return std::nullopt;
-        tag.name = lower_ascii(cps_to_utf8(src.substr(name_start, cursor - name_start)));
-
-        while (cursor < parse_limit) {
-            while (cursor < parse_limit && (src[cursor] == U' ' || src[cursor] == U'\t')) ++cursor;
-            if (cursor >= parse_limit || src[cursor] == U'\n') return std::nullopt;
-            if (src[cursor] == U'>') {
-                tag.end = cursor + 1;
-                return tag;
-            }
-            if (src[cursor] == U'/' && cursor + 1 < parse_limit && src[cursor + 1] == U'>') {
-                tag.self_closing = true;
-                tag.end = cursor + 2;
-                return tag;
-            }
-            if (tag.closing) return std::nullopt;
-
-            const auto attribute_start = cursor;
-            while (cursor < parse_limit && html_name_char(src[cursor])) ++cursor;
-            if (cursor == attribute_start) return std::nullopt;
-            auto attribute = lower_ascii(cps_to_utf8(src.substr(attribute_start, cursor - attribute_start)));
-            while (cursor < parse_limit && (src[cursor] == U' ' || src[cursor] == U'\t')) ++cursor;
-
+        tag.start = scanned->range.start;
+        tag.end = scanned->range.end;
+        tag.name = scanned->name;
+        tag.closing = scanned->closing;
+        tag.self_closing = scanned->self_closing;
+        for (const auto& attribute_range : scanned->attributes) {
+            auto attribute = lower_ascii(cps_to_utf8(src.substr(
+                attribute_range.name.start, attribute_range.name.length())));
             std::string value;
-            if (cursor < parse_limit && src[cursor] == U'=') {
-                ++cursor;
-                while (cursor < parse_limit && (src[cursor] == U' ' || src[cursor] == U'\t')) ++cursor;
-                if (cursor >= parse_limit) return std::nullopt;
-                if (src[cursor] == U'"' || src[cursor] == U'\'') {
-                    const auto quote = src[cursor++];
-                    const auto value_start = cursor;
-                    while (cursor < parse_limit && src[cursor] != quote && src[cursor] != U'\n') ++cursor;
-                    if (cursor >= parse_limit || src[cursor] != quote) return std::nullopt;
-                    value = cps_to_utf8(src.substr(value_start, cursor - value_start));
-                    ++cursor;
-                } else {
-                    const auto value_start = cursor;
-                    while (cursor < parse_limit && src[cursor] != U' ' && src[cursor] != U'\t'
-                        && src[cursor] != U'\n' && src[cursor] != U'>') ++cursor;
-                    value = cps_to_utf8(src.substr(value_start, cursor - value_start));
-                }
+            if (attribute_range.value) {
+                const auto& range = *attribute_range.value;
+                value = cps_to_utf8(src.substr(range.start, range.length()));
             }
             // Event handlers never enter derived presentation state.  Safe
             // CSS declarations are filtered later by the HTML presentation
@@ -1499,7 +1444,7 @@ struct Parser {
                 tag.attributes[std::move(attribute)] = std::move(value);
             }
         }
-        return std::nullopt;
+        return tag;
     }
 
     std::optional<std::pair<std::size_t, std::size_t>> html_closing_tag(
@@ -1590,8 +1535,23 @@ struct Parser {
         if (peek() != U'<') return false;
         const auto start = pos;
         const auto tag = html_tag_at(start, limit);
-        if (!tag || tag->closing) return false;
-        if (tag->name != "img" && tag->name != "br" && !safe_html_container(tag->name)) return false;
+        if (!tag) return false;
+
+        // Complete tags remain opaque syntax even when they have no derived
+        // presentation. In particular, brackets and delimiters in attributes
+        // cannot become Markdown links or emphasis.
+        if (tag->closing || (tag->name != "img" && tag->name != "br"
+                && !safe_html_container(tag->name))) {
+            flush_text_to(out, run_start, start);
+            pos = tag->end;
+            InlineCstNode node;
+            node.id = next_id();
+            node.kind = InlineCstKind::Raw;
+            node.range = {start, pos};
+            out.push_back(std::move(node));
+            run_start = pos;
+            return true;
+        }
 
         flush_text_to(out, run_start, start);
         if (tag->name == "img" || tag->name == "br") {
