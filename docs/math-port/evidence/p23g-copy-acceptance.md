@@ -4,10 +4,12 @@ Historical object-protocol checkpoint. As of 2026-10-23, the 108-case copy and
 six-case boundary C++ observers and their freeze mappers are retired. Their
 complete Source profiles remain with `sparse-mml-oracle.cjs` (all 299 rows) and
 `mml-copy-boundary-oracle.cjs` (all six rows); the completed Source/mapping proof
-was checked by file hash before retirement, not rerun. Metadata's 32-case
-observer remains pending migration. The dedicated legacy copy tools now address
-metadata only (32/1, seven retained mutations); the legacy inheritance tool
-retains 1335/11. These old tool configurations are not current native gates.
+was checked by file hash before retirement, not rerun. The metadata observer
+then retired after its complete 32-row Source and full C++ mapping checks, plus
+472 assertions at the existing native factory owner. Its dedicated old tools
+also retired; the legacy inheritance configuration retains 1303/10. The
+configuration check is not a current native gate; the separate full native
+math test run passes 911 tests/218824 assertions.
 Current native copy tests belong to `mml_native_factory.cpp` and
 `native_mml_families.cpp`; see `native-raii-acceptance.md` for current evidence.
 All results below describe the earlier object-protocol implementation.

@@ -3,9 +3,10 @@
 Historical contract for the retired object-protocol implementation, not the
 current native ownership architecture. The 108-case and six-case C++ observers
 and their mappers retired on 2026-10-23; all original Source profiles remain.
-The 32-case metadata observer still awaits migration. The red tool now selects
-metadata only, with or without its historical `--metadata` argument. The old
-execution results below are historical, not current native verification.
+The 32-case metadata observer and the dedicated red/mutation tools subsequently
+retired after complete Source/mapping checks and retained native value-semantic
+coverage; see `native-raii-acceptance.md`. The old execution results below are
+historical, not current native verification.
 
 Root freezes this contract, expected inputs/results, APIs, build and acceptance. This packet restores `AbstractMmlNode::copy` within the real factory/registry graph. It does not accept all MML, TeX, layout, SVG or Folia.
 

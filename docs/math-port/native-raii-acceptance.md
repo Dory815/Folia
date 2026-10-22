@@ -1680,6 +1680,35 @@ this is not a complete mathematical test run. Logs are
 class_binding importer list: 35 to 33 cpp/ixx files, with four inc files unchanged.
 No production implementation or application integration changed in this batch.
 
+### Copy metadata observer retirement (2026-10-23)
+
+The existing `mml-copy-metadata-oracle.cjs --check` executes all 32 original
+inputs with their original pins and checks the entire profile unchanged:
+SHA256 `b9be470fecd1e2432639f036aebb41d9b91f986949890ec78baf0915dce8276b`.
+`freeze-mml-copy-metadata.cjs --check` verifies the entire old C++ consumer before
+retirement. All sixteen observation fields are accounted for; dynamic JS key
+ordering, nested identity/alias mutation and nullable attribute-object state
+remain Source evidence rather than requirements for a native object facade.
+
+The existing factory test owner adds one case across eight Source families and
+both keepIds states. It checks root-only ID retention, recursive child ID removal,
+own string/numeric/bool attributes, independent attribute/property mutation,
+new-node default mathsize instead of runtime inheritance, and unchanged source
+tree/parents. Native NodeProperties use existing typed fields and value ownership.
+The test uses the initialized factory entry, executes 472 assertions and passes.
+An earlier test draft used raw arena allocation for a negative-arity node and
+raised a caught logic_error; only the test setup was corrected, not production.
+
+The old metadata consumer, mapper and dedicated red/mutation tools then retire.
+The legacy shared configuration decreases exactly 32/1 to 1303/10; no copy fixture
+references remain in tools. Original metadata/sparse/boundary Source owners and
+profiles remain. Direct class_binding importers remain 33 cpp/ixx plus four inc
+because metadata was an indirect consumer. `copy-metadata-review/retirement-proof.json`
+records the pins, preserved hashes and limits. `final-build.log` succeeds at
+parallel4; `all-math-tests.log` passes all 911 tests/218824 assertions. These logs
+are under `build/math-port/copy-metadata-review/`, not tracked build products.
+No production, installer or application integration changes are included.
+
 ### Current Debug and self-contained Release MSI (2026-10-21)
 
 Dependency setup passes. The supported Debug application build and actual
