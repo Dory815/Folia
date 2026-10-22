@@ -959,12 +959,18 @@ public:
     void parse_blank_lines(
         std::vector<BlockNode>& blocks,
         std::optional<std::size_t>& preceding_source_end) {
-        std::vector<std::pair<std::size_t, std::size_t>> blank_ranges;
+        struct BlankLineRange {
+            std::size_t start{};
+            std::size_t content_end{};
+            std::size_t end{};
+        };
+        std::vector<BlankLineRange> blank_ranges;
         while (!eof() && is_blank_line()) {
             const auto start = cur();
             while (peek1() == ' ' || peek1() == '\t') advance();
+            const auto content_end = cur();
             consume_line_ending();
-            blank_ranges.emplace_back(start, cur());
+            blank_ranges.push_back({start, content_end, cur()});
         }
         // A blank physical line between two non-empty blocks is Markdown's
         // block separator, not a third editable block.  Keep its exact bytes
@@ -987,14 +993,17 @@ public:
                 paragraph.separator_before = std::u32string(
                     std::u32string_view(cps).substr(
                         *preceding_source_end,
-                        blank_ranges[index].first - *preceding_source_end));
+                        blank_ranges[index].start - *preceding_source_end));
             }
+            paragraph.inline_content = make_inline_document(
+                blank_ranges[index].start,
+                blank_ranges[index].content_end);
             push_range(
                 paragraph.id,
-                PhysicalRange(blank_ranges[index].first, blank_ranges[index].second),
-                PhysicalRange(blank_ranges[index].first, blank_ranges[index].first));
+                PhysicalRange(blank_ranges[index].start, blank_ranges[index].end),
+                PhysicalRange(blank_ranges[index].start, blank_ranges[index].content_end));
             blocks.push_back(std::move(paragraph));
-            preceding_source_end = blank_ranges[index].first;
+            preceding_source_end = blank_ranges[index].content_end;
         }
     }
 
@@ -2919,7 +2928,12 @@ public:
                 std::make_move_iterator(children.end()));
             return callout;
         }
-        BlockNode b; b.id = id; b.kind = BlockKind::BlockQuote; b.children = std::move(children);
+        BlockNode b;
+        b.id = id;
+        b.kind = BlockKind::BlockQuote;
+        b.ensure_text_special().opening_marker = std::u32string(
+            std::u32string_view(cps).substr(start, content_start - start));
+        b.children = std::move(children);
         return b;
     }
     std::optional<BlockNode> try_parse_callout_from_line(const std::u32string& line) {

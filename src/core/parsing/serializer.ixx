@@ -487,9 +487,11 @@ inline ProjectedText serialize_block(const BlockNode& block) {
             const auto terminal_newline = !explicit_empty_paragraph
                 && !body.text.empty() && body.text.back() == U'\n';
             const auto terminal_line = starts.size() - 1;
+            const auto& opening_marker = block.text_special().opening_marker;
             return prefix_lines(
                 std::move(body),
-                [terminal_newline, terminal_line](std::size_t line, std::u32string_view text) {
+                [terminal_newline, terminal_line, &opening_marker](std::size_t line, std::u32string_view text) {
+                    if (line == 0 && !opening_marker.empty()) return opening_marker;
                     // A final LF already terminates the last quoted content
                     // line. Do not add a quote marker after it; preceding
                     // empty lines still receive markers as genuine quote lines.

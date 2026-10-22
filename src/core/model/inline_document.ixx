@@ -65,6 +65,18 @@ inline std::vector<SourceRange> inline_block_semantic_whitespace_ranges(
     if (document.syntax_mode != InlineSyntaxMode::Markdown || document.source.empty()
         || document.tree.nodes.empty()) return ranges;
 
+    // A parser-owned editable blank physical line may contain its original
+    // spaces or tabs as source.  They have no CommonMark paragraph content,
+    // but remain in the CST and are exposed through one hidden editable
+    // marker spanning the exact source range.
+    if (policy == InlineBlockWhitespacePolicy::Paragraph
+        && std::ranges::all_of(document.source, [](char32_t ch) {
+            return ch == U' ' || ch == U'\t';
+        })) {
+        ranges.push_back({0, document.source.size()});
+        return ranges;
+    }
+
     const auto is_raw_text_leaf = [](const InlineCstNode& node) {
         return node.children.empty()
             && (node.kind == InlineCstKind::Text || node.kind == InlineCstKind::Whitespace);

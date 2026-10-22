@@ -10,9 +10,27 @@ its existing Math handoff edits are separate.
 List separators and quote terminal-line fixes are committed in 72fe9247.
 List tightness is committed in e36af31e (core and all official cases verified).
 Whitespace semantics is committed in 7a804d73. The accompanying commit fixes
-#60 thematic-break precedence in the list sibling loop. All checks finished;
-no live agents or build handles. Next: container-prefix provenance and
-partial-Tab column semantics, then lazy continuations #93/#238/#312.
+#60 thematic-break precedence in the list sibling loop (c5d8da4c).
+Blank-line source and quote opening-marker fixes accompany this checkpoint.
+Core/platform/official checks finished, no live builds. Next integrate candidates
+markdown-html-scanner (shared lexical tag grammar), inline-html-scanner (thin
+inline adapters), html-type-seven/candidate-v2 (block boundary/fragment adapter).
+The first two are delivered; Luna commonmark_inline_scalars is finishing v2.
+Root reviews/merges/builds; no agent builds/Git.
+The initial html-type-seven candidate is rejected: duplicate tag grammar,
+all tags made unsupported, and duplicate raw body storage. Only v2 may be used.
+
+Frozen HTML responsibilities: parsing/markdown_html.ixx scans complete open/close
+tag syntax to source ranges, without source copies/decoding/presentation policy.
+Block/inline parsers consume that single scanner. html_cst retains DOM/editing
+structure duties; complete supported HTML keeps existing semantic mapping.
+Type-7 starts only at a block boundary, never interrupts a paragraph, and ends
+at a blank line/EOF. Tests retain all strict failures from rendering policy.
+Blank-line source stays in InlineDocument; existing semantic whitespace ranges
+hide only literal spaces/tabs, retaining editable source spans.
+Quote opening_marker preserves only the first physical prefix, not a general
+multiline provenance implementation. Full prefix/history and Tab contracts
+remain pending before lazy continuations #93/#238/#312 can be completed.
 Scalar diagnosis found #21/#344 are HTML boundaries too; notes are under
 candidates/remaining-scalars/.
 Emphasis #475–477 are inline HTML behavior/projection differences, not delimiter
@@ -26,16 +44,16 @@ batches are recorded in Git through d5dfc16b.
 |---|---:|---:|
 | Strict official semantic matches | 292/652 | **573/652** |
 | Inline source/CST losslessness | 652/652 | **652/652** |
-| Character-exact document serialization | 571/652 | **628/652** |
+| Character-exact document serialization | 571/652 | **631/652** |
 
-All 652 cases ran in **0.604s**, with no skips or abnormal exit. There remain
-**79 semantic differences**, **24 exact-save differences**, and **99 combined
+All 652 cases ran in **0.612s**, with no skips or abnormal exit. There remain
+**79 semantic differences**, **21 exact-save differences**, and **97 combined
 failed cases**. No semantic, save or inline-CST regression against d5dfc16b.
 Source checks and correct syntax are independent assertions.
 
 ## Verification
 
-- Core: **516 tests / 41723 assertions**, exit 0. The 8074-assert structure
+- Core: **527 tests / 41935 assertions**, exit 0. The 8074-assert structure
   property test covers Enter/merge/undo/redo and zero full-document parsing,
   serialization or transaction-diff work during normal edits.
 - Windows editor: **80 tests / 3429 assertions**, exit 0.
@@ -45,7 +63,8 @@ Source checks and correct syntax are independent assertions.
 - Fixture/generator Python tests: 10 passed; fixture inputs are hash-verified.
 
 Reports/logs are in ignored build/markdown-conformance/: results.{json,jsonl,md},
-thematic-{core-tests,official,platform-tests,md4c-tests}.log and md4c/results.json.
+blank-prefix-{core,official,platform}.log and md4c/results.json (79 unchanged
+semantic failures; reference run from the preceding batch).
 Initial reports remain in baseline/; phase-three-start/ is the d5dfc16b baseline.
 Earlier phase-one/, phase-two/ and intermediate batch logs are historical.
 Generated fixtures and downloaded third-party sources remain ignored.
@@ -74,8 +93,8 @@ that incomplete change was rejected. Ordinary nested continuations #292/#293
 now preserve save/reload semantics. #117 was a duplicate test-projection newline,
 not a production parser defect; fenced empty/trailing blank lines remain tested.
 
-The 24 exact-save failures are #4/#5/#6/#9/#93/#227/#229/#230/#232/#233/#240/
-#241/#247/#250/#251/#259/#260/#278/#279/#290/#291/#292/#293/#320.
+The 21 exact-save failures are #4/#5/#9/#93/#229/#230/#232/#233/#240/
+#247/#250/#251/#259/#260/#278/#279/#290/#291/#292/#293/#320.
 They concern container prefixes/indentation and blank-line spelling.
 Overpadded list markers and continuation extraction
 no longer invent spaces in child source from Tabs; unresolved column semantics

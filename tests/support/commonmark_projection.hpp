@@ -296,7 +296,11 @@ inline bool project_block(
         case BlockKind::Paragraph: {
             // Empty editable paragraphs encode preserved blank source lines.
             // They are not Markdown paragraphs in the specification's HTML.
-            if (block.inline_content.source.empty()) return false;
+            if (block.inline_content.source.empty()
+                || (block.inline_content.syntax_mode == InlineSyntaxMode::Markdown
+                    && std::ranges::all_of(block.inline_content.source, [](char32_t ch) {
+                        return ch == U' ' || ch == U'\t';
+                    }))) return false;
             auto n = element("p");
             auto semantic_nodes = semantic_inline_nodes(
                 block.inline_content,
