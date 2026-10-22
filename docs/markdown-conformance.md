@@ -8,16 +8,19 @@ and WYSIWYG editing. The earlier UI high-CPU investigation remains paused;
 its existing Math handoff edits are separate.
 
 List separators and quote terminal-line fixes are committed in 72fe9247.
-List tightness is verified (core and all official cases) and accompanies this
-checkpoint. No live builds/agents. Whitespace candidate is not integrated.
+List tightness is committed in e36af31e (core and all official cases verified).
+Whitespace semantics is verified and accompanies this checkpoint. No live
+native build. Luna commonmark_fixture_tests is preparing the focused #60 list
+thematic-boundary candidate, without production edits/builds.
+Scalar diagnosis found #21/#344 are HTML boundaries too; notes are under
+candidates/remaining-scalars/.
 Emphasis #475–477 are inline HTML behavior/projection differences, not delimiter
 resolution errors; six-line notes are under candidates/remaining-emphasis/.
 The former render test expected an inter-item separator
 to belong to a synthetic empty paragraph; it now checks a generated boundary
 after the code row, retaining all code identity/content/indent assertions.
 Candidates remain under ignored build/markdown-conformance/candidates/.
-Luna list-tightness and whitespace-semantics candidates await integration;
-no candidate delivery counts as acceptance. Root owns
+No candidate delivery counts as acceptance. Root owns
 integration/builds; maximum parallelism is **4**. Accepted batches:
 a6c11c20 (character/label utilities), 6c36adc5 (inline syntax), 11b85899
 (block recognition/source serialization), plus the followup accompanying this
@@ -25,22 +28,22 @@ checkpoint: nested continuations, escapes, code endings and literal Tab source.
 
 | Check | Initial baseline | Current |
 |---|---:|---:|
-| Strict official semantic matches | 292/652 | **562/652** |
+| Strict official semantic matches | 292/652 | **572/652** |
 | Inline source/CST losslessness | 652/652 | **652/652** |
 | Character-exact document serialization | 571/652 | **628/652** |
 
-All 652 cases ran in **0.609s**, with no skips or abnormal exit. There remain
-**90 semantic differences**, **24 exact-save differences**, and **110 combined
+All 652 cases ran in **0.668s**, with no skips or abnormal exit. There remain
+**80 semantic differences**, **24 exact-save differences**, and **100 combined
 failed cases**. No semantic, save or inline-CST regression against d5dfc16b.
 Source checks and correct syntax are independent assertions.
 
 ## Verification
 
-- Core: **508 tests / 41621 assertions**, exit 0. The 8074-assert structure
+- Core: **511 tests / 41668 assertions**, exit 0. The 8074-assert structure
   property test covers Enter/merge/undo/redo and zero full-document parsing,
   serialization or transaction-diff work during normal edits.
-- Windows editor: **80 tests / 3429 assertions**, exit 0 after 72fe9247;
-  rerun after the pending whitespace batch.
+- Windows editor: **80 tests / 3429 assertions**, exit 0 including whitespace
+  and tightness changes.
 - md4c on the prior 130 official differences: **130 semantic matches**;
   109 exact HTML matches, 21 formatting-only newline differences. Its native
   exact-byte assertions return the normal test-failure code 1.
@@ -54,14 +57,17 @@ Generated fixtures and downloaded third-party sources remain ignored.
 
 ## Remaining work and exact next action
 
-Of the 90 strict differences, none is list-tightness-only; 29 carry HTML
-policy/projection labels; 9 carry other limits; 52 have no such label.
-They are not 90 independently established parser bugs. Diagnostic relaxed
+Of the 80 strict differences, none is list-tightness-only; 29 carry HTML
+policy/projection labels; 9 carry other limits; 42 have no such label.
+Several unlabeled cases also concern HTML boundaries (diagnoses above).
+They are not 80 independently established parser bugs. Diagnostic relaxed
 comparison never passes a formal test; expectations were not changed or skipped.
 
-Immediate next action: integrate whitespace-semantics candidate (existing inline_document source ranges,
-render_builder editable markers, strict projection), merge by saved bases.
-Use semantic_inline_nodes for tight list paragraphs too. Tightness reports:
+Immediate next action: review #60 candidate under candidates/list-thematic-boundary/
+once delivered, focused tests then official regression comparison. Whitespace
+reports: whitespace-{core-tests,official,platform-tests}.log. It uses shared
+source ranges as editable markers; source/CST stays untouched, code/HTML/entity/
+escape/nested whitespace is unaffected. Tightness reports:
 tightness-core-tests.log and tightness-official.log; 40 additional semantic
 matches, no semantic/source/CST regressions against d5dfc16b. Tests cover
 direct-block blank gaps, nested scope, code-owned EOL and split/undo payloads.

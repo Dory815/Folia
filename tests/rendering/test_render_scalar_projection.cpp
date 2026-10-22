@@ -108,4 +108,44 @@ suite render_scalar_projection_tests = [] {
     }
 };
 
+"block semantic whitespace remains an editable hidden marker"_test = [] {
+    auto paragraph = build_model("  aaa\n bbb\n");
+    expect(fatal(bool(paragraph.blocks.size() == 1u)));
+    if (paragraph.blocks.size() == 1u) {
+        auto const& items = paragraph.blocks.front().inline_items;
+        auto indent = std::find_if(items.begin(), items.end(), [](auto const& item) {
+            return item.kind == InlineRenderItem::Kind::Marker
+                && item.source_span.source_range == SourceRange{0, 2};
+        });
+        expect(fatal(bool(indent != items.end())));
+        if (indent != items.end()) {
+            expect(fatal(bool(indent->text == U"  ")));
+            expect(fatal(bool(indent->special().visibility == MarkerVisibility::HiddenButEditable)));
+            expect(fatal(bool(indent->source_span.container_id == paragraph.blocks.front().id)));
+        }
+        expect(fatal(bool(std::ranges::any_of(items, [](auto const& item) {
+            return item.kind == InlineRenderItem::Kind::Text && item.text == U"aaa";
+        }))));
+    }
+
+    auto heading = build_model("### foo \t\n");
+    expect(fatal(bool(heading.blocks.size() == 1u)));
+    if (heading.blocks.size() == 1u) {
+        auto const& items = heading.blocks.front().inline_items;
+        auto trailing = std::find_if(items.begin(), items.end(), [](auto const& item) {
+            return item.kind == InlineRenderItem::Kind::Marker
+                && item.source_span.source_range == SourceRange{3, 5};
+        });
+        expect(fatal(bool(trailing != items.end())));
+        if (trailing != items.end()) {
+            expect(fatal(bool(trailing->text == U" \t")));
+            expect(fatal(bool(trailing->special().visibility == MarkerVisibility::HiddenButEditable)));
+            expect(fatal(bool(trailing->source_span.container_id == heading.blocks.front().id)));
+        }
+        expect(fatal(bool(std::ranges::any_of(items, [](auto const& item) {
+            return item.kind == InlineRenderItem::Kind::Text && item.text == U"foo";
+        }))));
+    }
+};
+
 };

@@ -657,8 +657,10 @@ struct Builder {
         const InlineDocument& document,
         NodeId owner_id,
         const InlineStyle& base,
-        bool preserve_soft_breaks = false) {
+        bool preserve_soft_breaks = false,
+        InlineBlockWhitespacePolicy whitespace_policy = InlineBlockWhitespacePolicy::None) {
         std::vector<InlineRenderItem> output;
+        const auto semantic_whitespace = inline_block_semantic_whitespace_ranges(document, whitespace_policy);
         auto source_span = [&](SourceRange range) {
             return TextSpan{owner_id, range};
         };
@@ -691,6 +693,39 @@ struct Builder {
                     }
                     item.style = text_style;
                     target.push_back(std::move(item));
+                };
+                auto append_raw_text_leaf = [&] {
+                    if (node.kind != K::Text && node.kind != K::Whitespace) {
+                        append_text(inline_source_slice(document, node.range), node.range, style);
+                        return;
+                    }
+                    const auto found = std::find_if(semantic_whitespace.begin(), semantic_whitespace.end(), [&](const auto& range) {
+                        return range.start >= node.range.start && range.end <= node.range.end;
+                    });
+                    if (found == semantic_whitespace.end()) {
+                        append_text(inline_source_slice(document, node.range), node.range, style);
+                        return;
+                    }
+                    if (node.range.start < found->start) {
+                        const SourceRange prefix{node.range.start, found->start};
+                        append_text(inline_source_slice(document, prefix), prefix, style);
+                    }
+                    InlineRenderItem marker;
+                    marker.kind = InlineRenderItem::Kind::Marker;
+                    marker.id = node.id;
+                    marker.source_span = source_span(*found);
+                    marker.text = inline_source_slice(document, *found);
+                    marker.style = style;
+                    auto& marker_payload = marker.ensure_special();
+                    marker_payload.marker_owner = node.id;
+                    marker_payload.marker_role = MarkerRole::Syntax;
+                    marker_payload.marker_style = MarkerStyle{true, {}};
+                    marker_payload.visibility = MarkerVisibility::HiddenButEditable;
+                    target.push_back(std::move(marker));
+                    if (found->end < node.range.end) {
+                        const SourceRange suffix{found->end, node.range.end};
+                        append_text(inline_source_slice(document, suffix), suffix, style);
+                    }
                 };
                 auto append_code_span_text = [&](const InlineCstNode& code_node, const InlineStyle& text_style) {
                     struct ProjectedCharacter {
@@ -944,6 +979,10 @@ struct Builder {
                         append_marker(target, node, delim.opening);
                         if (!delim.content.empty()) append_text(inline_source_slice(document, delim.content), delim.content, style);
                         break;
+                    case K::Text:
+                    case K::Whitespace:
+                        append_raw_text_leaf();
+                        break;
                     default:
                         append_text(inline_source_slice(document, node.range), node.range, style);
                         break;
@@ -998,7 +1037,14 @@ struct Builder {
                         TextAffinity::Downstream);
                     rb.inline_items.back().ensure_special().marker_owner = b.id;
                 }
-                auto items = build_inline_document(b.inline_content, b.id, s);
+                auto items = build_inline_document(
+                    b.inline_content,
+                    b.id,
+                    s,
+                    false,
+                    b.kind == BK::Paragraph
+                        ? InlineBlockWhitespacePolicy::Paragraph
+                        : InlineBlockWhitespacePolicy::None);
                 for (auto& item : items) rb.inline_items.push_back(std::move(item));
                 if (!b.text_special().closing_marker.empty()) {
                     cursor = b.inline_content.source.size();
@@ -1034,7 +1080,12 @@ struct Builder {
                     rb.inline_items.push_back(std::move(marker));
                 };
                 append_heading_marker(b.text_special().opening_marker, 0, TextAffinity::Downstream);
-                auto items = build_inline_document(b.inline_content, b.id, s, true);
+                auto items = build_inline_document(
+                    b.inline_content,
+                    b.id,
+                    s,
+                    true,
+                    InlineBlockWhitespacePolicy::Heading);
                 for (auto& it : items) rb.inline_items.push_back(std::move(it));
                 append_heading_marker(
                     b.text_special().closing_marker,

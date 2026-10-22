@@ -264,6 +264,24 @@ inline void project_inline_nodes(
     }
 }
 
+inline InlineCstNodes semantic_inline_nodes(
+    InlineDocument const& document,
+    InlineBlockWhitespacePolicy policy) {
+    auto nodes = document.tree.nodes;
+    const auto hidden = inline_block_semantic_whitespace_ranges(document, policy);
+    for (const auto& range : hidden) {
+        for (auto& node : nodes) {
+            if (node.children.empty()
+                && (node.kind == InlineCstKind::Text || node.kind == InlineCstKind::Whitespace)
+                && range.start >= node.range.start && range.end <= node.range.end) {
+                if (range.start == node.range.start) node.range.start = range.end;
+                else if (range.end == node.range.end) node.range.end = range.start;
+            }
+        }
+    }
+    return nodes;
+}
+
 inline bool project_block(
     Node& parent,
     BlockNode const& block,
@@ -280,14 +298,20 @@ inline bool project_block(
             // They are not Markdown paragraphs in the specification's HTML.
             if (block.inline_content.source.empty()) return false;
             auto n = element("p");
-            project_inline_nodes(n, block.inline_content, block.inline_content.tree.nodes, limitations);
+            auto semantic_nodes = semantic_inline_nodes(
+                block.inline_content,
+                InlineBlockWhitespacePolicy::Paragraph);
+            project_inline_nodes(n, block.inline_content, semantic_nodes, limitations);
             append_node(parent, std::move(n));
             return true;
         }
         case BlockKind::Heading: {
             auto const level = static_cast<int>(block.text_special().level);
             auto n = element("h" + std::to_string(level));
-            project_inline_nodes(n, block.inline_content, block.inline_content.tree.nodes, limitations);
+            auto semantic_nodes = semantic_inline_nodes(
+                block.inline_content,
+                InlineBlockWhitespacePolicy::Heading);
+            project_inline_nodes(n, block.inline_content, semantic_nodes, limitations);
             append_node(parent, std::move(n));
             return true;
         }
@@ -307,10 +331,13 @@ inline bool project_block(
                 for (auto const& child : item.children) {
                     if (list.tight && child.kind == BlockKind::Paragraph) {
                         if (!child.inline_content.source.empty()) {
+                            auto semantic_nodes = semantic_inline_nodes(
+                                child.inline_content,
+                                InlineBlockWhitespacePolicy::Paragraph);
                             project_inline_nodes(
                                 li,
                                 child.inline_content,
-                                child.inline_content.tree.nodes,
+                                semantic_nodes,
                                 limitations);
                         }
                     } else {

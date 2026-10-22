@@ -48,6 +48,69 @@ struct InlineDocument {
     std::u32string serialize() const { return source; }
 };
 
+enum class InlineBlockWhitespacePolicy : std::uint8_t {
+    None,
+    Paragraph,
+    Heading,
+};
+
+// Return only source ranges whose outermost raw whitespace is omitted by the
+// block's CommonMark semantic projection. The ranges remain in source and CST;
+// callers use them as source-mapped structural markers rather than deleting
+// or normalizing editable text.
+inline std::vector<SourceRange> inline_block_semantic_whitespace_ranges(
+    const InlineDocument& document,
+    InlineBlockWhitespacePolicy policy) {
+    std::vector<SourceRange> ranges;
+    if (document.syntax_mode != InlineSyntaxMode::Markdown || document.source.empty()
+        || document.tree.nodes.empty()) return ranges;
+
+    const auto is_raw_text_leaf = [](const InlineCstNode& node) {
+        return node.children.empty()
+            && (node.kind == InlineCstKind::Text || node.kind == InlineCstKind::Whitespace);
+    };
+    if (policy == InlineBlockWhitespacePolicy::Paragraph) {
+        auto offset = std::size_t{0};
+        auto spaces = std::size_t{0};
+        for (const auto& node : document.tree.nodes) {
+            if (!is_raw_text_leaf(node) || node.range.start != offset) break;
+            const auto leaf_start = offset;
+            while (offset < node.range.end && document.source[offset] == U' ' && spaces < 4) {
+                ++offset;
+                ++spaces;
+            }
+            if (offset > leaf_start) ranges.push_back({leaf_start, offset});
+            if (spaces == 4) {
+                ranges.clear();
+                return ranges;
+            }
+            if (offset < node.range.end || spaces == 0) break;
+        }
+        // A four-space run begins an indented code block at a paragraph
+        // boundary, so don't hide any prefix if it appears in an editable
+        // paragraph node produced by a surrounding/container parser.
+        if (spaces == 0) ranges.clear();
+        return ranges;
+    }
+    if (policy == InlineBlockWhitespacePolicy::Heading) {
+        auto offset = document.source.size();
+        std::vector<SourceRange> reversed_ranges;
+        for (auto node = document.tree.nodes.rbegin(); node != document.tree.nodes.rend(); ++node) {
+            if (!is_raw_text_leaf(*node) || node->range.end != offset) break;
+            const auto leaf_end = offset;
+            while (offset > node->range.start
+                && (document.source[offset - 1] == U' ' || document.source[offset - 1] == U'\t')) {
+                --offset;
+            }
+            if (offset < leaf_end) reversed_ranges.push_back({offset, leaf_end});
+            if (offset > node->range.start) break;
+            offset = node->range.start;
+        }
+        ranges.assign(reversed_ranges.rbegin(), reversed_ranges.rend());
+    }
+    return ranges;
+}
+
 // ---- queries over a CST (used by renderer / hit-test / format-state) ----
 
 // Find the deepest node whose range covers `offset`. Returns nullptr if none.
