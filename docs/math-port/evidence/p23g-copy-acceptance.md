@@ -1,5 +1,17 @@
 # P23g Root copy acceptance
 
+Historical object-protocol checkpoint. As of 2026-10-23, the 108-case copy and
+six-case boundary C++ observers and their freeze mappers are retired. Their
+complete Source profiles remain with `sparse-mml-oracle.cjs` (all 299 rows) and
+`mml-copy-boundary-oracle.cjs` (all six rows); the completed Source/mapping proof
+was checked by file hash before retirement, not rerun. Metadata's 32-case
+observer remains pending migration. The dedicated legacy copy tools now address
+metadata only (32/1, seven retained mutations); the legacy inheritance tool
+retains 1335/11. These old tool configurations are not current native gates.
+Current native copy tests belong to `mml_native_factory.cpp` and
+`native_mml_families.cpp`; see `native-raii-acceptance.md` for current evidence.
+All results below describe the earlier object-protocol implementation.
+
 Root accepts only the restored `AbstractMmlNode::copy(bool)` body. The historical
 54/246 source-file tally is unchanged. TeX, mathematical layout, SVG, complete MML,
 the full core suite and Folia integration remain open.

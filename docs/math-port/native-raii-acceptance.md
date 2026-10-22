@@ -1658,6 +1658,28 @@ input/binary paths, thirty-one retained paths and seventeen target lists.
 Interfaces remain 248, unresolved imports zero, and class-binding cpp/ixx
 test consumers decrease 36 to 35. No new native runtime gate ran.
 
+### Copy observer retirement (2026-10-23)
+
+The completed `copy-source-executed-proof.json` retains the full 299-row sparse
+Source corpus, its 108 selected copy observations, and the six independent
+boundary observations. All twelve recorded file hashes matched before removal;
+the completed Source/mapping execution was not repeated. The two C++ observers
+and their freeze mappers retire, while all Source owners/profiles, metadata's
+32-case observer, CMake and the existing native copy tests remain byte-identical.
+The historical inheritance configuration decreases only 114 assertions/two
+suites, to 1335/11. Dedicated legacy tools retain only metadata32/1 and its seven
+previous mutation definitions. These object-protocol tools are pending migration
+and their static configuration checks are not current native runtime gates.
+
+`copy-retirement-build.log` builds FoliaMathTests successfully with parallel4.
+The existing inferred-copy and virtual-copy-versus-clone cases each execute
+25 assertions: two executed cases/50 assertions pass. Other cases were filtered;
+this is not a complete mathematical test run. Logs are
+`copy-retirement-native-inferred.log` and `copy-retirement-native-virtual.log`.
+`copy-consumer-retirement.json` records preserved hashes and the narrowed direct
+class_binding importer list: 35 to 33 cpp/ixx files, with four inc files unchanged.
+No production implementation or application integration changed in this batch.
+
 ### Current Debug and self-contained Release MSI (2026-10-21)
 
 Dependency setup passes. The supported Debug application build and actual
