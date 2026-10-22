@@ -1,5 +1,16 @@
 # Root P23h2 acceptance: seven existing bodies
 
+Historical object-protocol acceptance, superseded by the native RAII architecture.
+On 2026-10-23 the separate two-row mrow prototype C++ observer and mapper mode
+retired; its complete original Source owner/profile remain checked and unchanged.
+The ordinary155 observer/profile/emitted mapping remain byte-identical. Legacy
+returns configuration is187/2 and drops the two corresponding row-prototype
+mutations; shared inheritance configuration is1301/9. These are static retained
+configurations, not claims that obsolete object-protocol tools run against the
+current native graph. See native-raii-acceptance.md for native evidence and the
+explicit historical helper drift discovered during full C++ mapping review.
+The implementation, counters and mutation results below are historical.
+
 Accepted within the duties frozen in p23h2-return-contract.md. Root independently
 reviewed the production diff: only child_zero, required_child_zero, layout/base
 coreMO, mrow core/coreMO and mstyle notParent were restored. There are no new

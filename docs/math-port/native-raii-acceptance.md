@@ -1709,6 +1709,34 @@ parallel4; `all-math-tests.log` passes all 911 tests/218824 assertions. These lo
 are under `build/math-port/copy-metadata-review/`, not tracked build products.
 No production, installer or application integration changes are included.
 
+### Additional row prototype observer retirement (2026-10-23)
+
+`mml-return-probe-oracle.cjs --prototype --check` preserves both original inputs
+and their complete expected observations, canonical LF hash
+`92435496a5cf3b04687f1fdb00c5d58f00e7d9d1c13826b970bb3e4f6d9da050`.
+The old mapper's complete-file check first exposes historical optional-to-Property
+observer drift. A separate bounded check accounts for the entire C++ file with
+six explicit helper-format/type changes, including both complete case rows;
+it does not repair a retired object layer or claim old native execution.
+Evidence is `build/math-port/return-prototype-review/mapping-proof.json`.
+
+The dedicated two-row C++ observer and mapper branch retire. The ordinary
+155-row profile, C++ file and emitted mapper content remain byte-identical.
+The mapper explicitly rejects its retired --prototype mode and directs callers
+to the retained Source oracle. The legacy shared configuration decreases only
+2/1 to 1301/9; the returns configuration becomes187/2 and removes the two
+row-prototype mutations whose observer has retired. Remaining legacy tools are
+pending migration, not current native gates.
+
+Prototype property lookup/own-versus-inherited slots are Source-only behavior.
+Normal MML row core/coreMO projection, cache invalidation and clone ownership
+remain at native_mml_row_tokens.cpp and mml_exact_clone_row.cpp. Their files and
+the already-passing native binary are unchanged from the preceding full run
+(911 tests/218824 assertions). No extra mathematical algorithm or protocol test
+is introduced. retirement-proof.json records these preserved hashes and direct
+class_binding consumers33 to32 cpp/ixx, with four inc unchanged. The ordinary
+155-row corpus still includes other protocol observations awaiting review.
+
 ### Current Debug and self-contained Release MSI (2026-10-21)
 
 Dependency setup passes. The supported Debug application build and actual
