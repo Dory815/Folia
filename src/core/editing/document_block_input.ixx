@@ -2,9 +2,11 @@
 export module folia.core.document_block_input;
 import std;
 import folia.core.ast;
+import folia.core.container_source;
 import folia.core.block_source;
 import folia.core.block_tree;
 import folia.core.document;
+import folia.core.document_container_source;
 import folia.core.document_edit_support;
 import folia.core.ids;
 import folia.core.inline_document;
@@ -57,7 +59,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> replace_paragraph_
         BlockNode quote;
         quote.id = allocator.allocate();
         quote.kind = BlockKind::BlockQuote;
-        quote.ensure_text_special().opening_marker = exact_marker;
+        quote.ensure_container_source().lines.push_back({{source_block.id, ContainerAnchorPart::Source, 0}, exact_marker});
         const auto quote_id = quote.id;
         DocumentTreeEdit insert;
         insert.kind = DocumentTreeEditKind::Insert;
@@ -81,7 +83,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> replace_paragraph_
         if (!content || !inserted_quote || !insert_block(*inserted_quote, 0, std::move(*content))) {
             return std::nullopt;
         }
-        result.operations.emplace_back(std::move(move));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move));
         return result;
     }
 
@@ -121,7 +123,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> replace_paragraph_
     if (!content || !inserted_item || !insert_block(*inserted_item, 0, std::move(*content))) {
         return std::nullopt;
     }
-    result.operations.emplace_back(std::move(move_content));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move_content));
 
     auto* inserted_list = find_block(document.root, list_id);
     parent = find_block(document.root, parent_id);
@@ -141,14 +143,14 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> replace_paragraph_
         if (!moved_item || !insert_block(*previous, target_index, std::move(*moved_item))) {
             return std::nullopt;
         }
-        result.operations.emplace_back(std::move(move_item));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move_item));
 
         DocumentTreeEdit remove_list;
         remove_list.kind = DocumentTreeEditKind::Remove;
         remove_list.parent_id = parent_id;
         remove_list.index = effective_index;
         remove_list.before = parent->children[effective_index];
-        result.operations.emplace_back(std::move(remove_list));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove_list));
         parent->children.erase(parent->children.begin() + static_cast<std::ptrdiff_t>(effective_index));
         --effective_index;
         inserted_list = &parent->children[effective_index];
@@ -171,14 +173,14 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> replace_paragraph_
                     *inserted_list, move_item.other_index, std::move(*moved_item))) {
                 return std::nullopt;
             }
-            result.operations.emplace_back(std::move(move_item));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move_item));
         }
         DocumentTreeEdit remove_list;
         remove_list.kind = DocumentTreeEditKind::Remove;
         remove_list.parent_id = parent_id;
         remove_list.index = effective_index + 1;
         remove_list.before = parent->children[effective_index + 1];
-        result.operations.emplace_back(std::move(remove_list));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove_list));
         parent->children.erase(
             parent->children.begin() + static_cast<std::ptrdiff_t>(effective_index + 1));
     }
@@ -299,7 +301,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> remove_callout_pre
         remove_body.parent_id = callout->id;
         remove_body.index = 1;
         remove_body.before = callout->children[1];
-        result.operations.emplace_back(std::move(remove_body));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove_body));
         callout->children.erase(callout->children.begin() + 1);
     }
 
@@ -368,7 +370,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> remove_quote_prefi
     move.moved_id = current_quote->children.front().id;
     auto selected = current_quote ? remove_block(*current_quote, 0) : std::nullopt;
     if (!selected || !insert_block(*parent, quote_index, std::move(*selected))) return std::nullopt;
-    result.operations.emplace_back(std::move(move));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move));
 
     current_quote = find_block(document.root, quote_id);
     if (current_quote && current_quote->children.empty()) {
@@ -379,7 +381,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> remove_quote_prefi
         remove_quote.parent_id = parent_id;
         remove_quote.index = quote_index + 1;
         remove_quote.before = parent->children[quote_index + 1];
-        result.operations.emplace_back(std::move(remove_quote));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove_quote));
         parent->children.erase(parent->children.begin() + static_cast<std::ptrdiff_t>(quote_index + 1));
     }
     return result;

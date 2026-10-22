@@ -7,6 +7,7 @@
 
 #include "support/folia_test.hpp"
 import folia.core.ast;
+import folia.core.container_source;
 import folia.core.document;
 import folia.core.document_edit;
 import folia.core.document_history;
@@ -41,8 +42,8 @@ void expect_first_prefix_roundtrip(
     if (roots.size() != 1u || roots.front().kind != BlockKind::BlockQuote) return;
 
     const auto& quote = roots.front();
-    expect(quote.text_special().opening_marker == expected_prefix)
-        << label << "; marker=" << cps_to_utf8(quote.text_special().opening_marker);
+    expect(quote.container_source().lines.front().text == expected_prefix)
+        << label << "; marker=" << cps_to_utf8(quote.container_source().lines.front().text);
     expect(serialize_markdown(parsed.document) == source)
         << label << "; serialized=" << serialize_markdown(parsed.document)
         << "; expected=" << source;
@@ -119,13 +120,13 @@ suite quote_opening_marker_tests = [] {
     const auto& outer = parsed.document.root.children.front();
     expect(fatal(outer.kind == BlockKind::BlockQuote));
     if (outer.kind != BlockKind::BlockQuote) return;
-    expect(outer.text_special().opening_marker == U"> ");
+    expect(outer.container_source().lines.front().text == U"> ");
     expect(fatal(outer.children.size() == 1u));
     if (outer.children.size() != 1u) return;
     const auto& inner = outer.children.front();
     expect(fatal(inner.kind == BlockKind::BlockQuote));
     if (inner.kind != BlockKind::BlockQuote) return;
-    expect(inner.text_special().opening_marker == U">");
+    expect(inner.container_source().lines.front().text == U">");
     expect(serialize_markdown(parsed.document) == "> >foo\n");
 };
 
@@ -138,7 +139,7 @@ suite quote_opening_marker_tests = [] {
     expect(fatal(quote.kind == BlockKind::BlockQuote));
     if (quote.kind != BlockKind::BlockQuote || quote.children.empty()) return;
     const auto quote_id = quote.id;
-    expect(quote.text_special().opening_marker == U"  >");
+    expect(quote.container_source().lines.front().text == U"  >");
     auto& paragraph = quote.children.front();
     expect(fatal(paragraph.kind == BlockKind::Paragraph));
     if (paragraph.kind != BlockKind::Paragraph) return;
@@ -150,7 +151,7 @@ suite quote_opening_marker_tests = [] {
     if (split->after.root.children.size() != 1u) return;
     const auto& split_quote = split->after.root.children.front();
     expect(split_quote.id == quote_id);
-    expect(split_quote.text_special().opening_marker == U"  >");
+    expect(split_quote.container_source().lines.front().text == U"  >");
     const auto split_saved = serialize_markdown(split->after);
     expect(std::string_view(split_saved).starts_with("  >")) << split_saved;
     expect(split_quote.children.size() == 2u);
@@ -170,10 +171,10 @@ suite quote_opening_marker_tests = [] {
     history.push(*split);
     expect(fatal(history.undo(working, selection)));
     expect(serialize_markdown(working) == source);
-    expect(working.root.children.front().text_special().opening_marker == U"  >");
+    expect(working.root.children.front().container_source().lines.front().text == U"  >");
     expect(fatal(history.redo(working, selection)));
     expect(serialize_markdown(working) == split_saved);
-    expect(working.root.children.front().text_special().opening_marker == U"  >");
+    expect(working.root.children.front().container_source().lines.front().text == U"  >");
 };
 
 };

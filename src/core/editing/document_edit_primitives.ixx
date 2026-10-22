@@ -9,6 +9,7 @@ import folia.core.document;
 import folia.core.document_ids;
 import folia.core.document_operation_apply;
 import folia.core.document_text;
+import folia.core.document_container_source;
 import folia.core.inline_cst;
 import folia.core.inline_document;
 import folia.core.inline_parser;
@@ -182,7 +183,7 @@ inline void normalize_blocks(BlockVec& blocks, const EditorDocument& owner, Node
     }
 }
 
-inline std::optional<AppliedSourceEdit> edit_inline(
+inline std::optional<DocumentSourceEdit> edit_inline(
     EditorDocument& document,
     NodeId owner_id,
     SourceRange range,
@@ -190,14 +191,20 @@ inline std::optional<AppliedSourceEdit> edit_inline(
     NodeAllocator& allocator) {
     auto* inline_document = find_inline_owner(document, owner_id);
     if (!inline_document || !range.valid_for(inline_document->source.size())) return std::nullopt;
-    return apply_inline_source_edit(
+    auto applied = apply_inline_source_edit(
         owner_id,
         *inline_document,
         TextEdit{owner_id, range, std::move(replacement)},
         parse_context(document, allocator));
+    DocumentSourceEdit result;
+    result.forward = std::move(applied.forward);
+    result.inverse = std::move(applied.inverse);
+    result.metadata_edits = document_container_source::apply_source_edit_to_ancestors(
+        document, result.forward);
+    return result;
 }
 
-inline std::optional<AppliedSourceEdit> edit_block_source(
+inline std::optional<DocumentSourceEdit> edit_block_source(
     EditorDocument& document,
     BlockNode& block,
     SourceRange range,
@@ -205,14 +212,31 @@ inline std::optional<AppliedSourceEdit> edit_block_source(
     NodeAllocator& allocator) {
     if (auto* inline_document = editable_inline_document(block)) {
         if (!range.valid_for(inline_document->source.size())) return std::nullopt;
-        return apply_inline_source_edit(
+        auto applied = apply_inline_source_edit(
             block.id,
             *inline_document,
             TextEdit{block.id, range, std::move(replacement)},
             parse_context(document, allocator));
+        DocumentSourceEdit result;
+        result.forward = std::move(applied.forward);
+        result.inverse = std::move(applied.inverse);
+        result.metadata_edits = document_container_source::apply_source_edit_to_ancestors(
+            document, result.forward);
+        return result;
     }
     auto* source = editable_raw_block_source(block);
     if (!source || !range.valid_for(source->size())) return std::nullopt;
+    const auto old_source = *source;
+    std::optional<std::vector<BlockLineIndentation>> indentation_before;
+    std::optional<std::vector<BlockLineIndentation>> indentation_after;
+    if ((block.kind == BlockKind::CodeBlock || block.kind == BlockKind::MathBlock)
+        && block.block_source.storage) {
+        indentation_before = block.block_source.storage->indentation_contexts;
+        indentation_after = transform_block_line_indentation(
+            *indentation_before,
+            TextEdit{block.id, range, replacement},
+            old_source);
+    }
     auto removed = source->substr(range.start, range.length());
     TextEdit forward{block.id, range, std::move(replacement)};
     TextEdit inverse{
@@ -221,12 +245,22 @@ inline std::optional<AppliedSourceEdit> edit_block_source(
         std::move(removed)};
     apply_text_edit(*source, forward);
     if (block.kind == BlockKind::CodeBlock || block.kind == BlockKind::MathBlock) {
+        if (indentation_after && block.block_source.storage) {
+            block.block_source.storage->indentation_contexts = *indentation_after;
+        }
         reparse_block_source(block.block_source);
     }
-    return AppliedSourceEdit{std::move(forward), std::move(inverse)};
+    DocumentSourceEdit result;
+    result.forward = std::move(forward);
+    result.inverse = std::move(inverse);
+    result.indentation_before = std::move(indentation_before);
+    result.indentation_after = std::move(indentation_after);
+    result.metadata_edits = document_container_source::apply_source_edit_to_ancestors(
+        document, result.forward);
+    return result;
 }
 
-inline std::optional<AppliedSourceEdit> edit_block_source(
+inline std::optional<DocumentSourceEdit> edit_block_source(
     EditorDocument& document,
     NodeId owner_id,
     SourceRange range,
@@ -241,7 +275,7 @@ inline std::optional<AppliedSourceEdit> edit_block_source(
 struct InsertResult {
     std::size_t offset = 0;
     TextAffinity affinity = TextAffinity::Downstream;
-    std::optional<AppliedSourceEdit> source_edit;
+    std::optional<DocumentSourceEdit> source_edit;
 };
 inline std::optional<InsertResult> insert_text(
     EditorDocument& document,
@@ -288,7 +322,7 @@ inline std::optional<std::size_t> editable_length(const EditorDocument& document
     return std::nullopt;
 }
 
-inline std::optional<AppliedSourceEdit> erase_text(
+inline std::optional<DocumentSourceEdit> erase_text(
     EditorDocument& document,
     NodeId id,
     SourceRange range,

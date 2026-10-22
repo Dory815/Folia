@@ -219,6 +219,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\core\model\ast.ixx">
+    <ClCompile Include="..\core\model\container_source.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\parsing\block_source.ixx">
@@ -307,6 +308,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\editing\document_transaction.ixx">
+    <ClCompile Include="..\core\editing\document_container_source.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\editing\document_search_replace.ixx">

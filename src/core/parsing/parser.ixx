@@ -25,11 +25,13 @@ import folia.core.diagnostics;
 import folia.core.metadata;
 import folia.core.symbols;
 import folia.core.ast;
+import folia.core.container_source;
 import folia.core.block_source;
 import folia.core.block_tree;
 import folia.core.block_line_recognizer;
 import folia.core.callout;
 import folia.core.document;
+import folia.core.document_text;
 import folia.core.document_symbols;
 import folia.core.outline;
 import folia.core.slug;
@@ -54,14 +56,19 @@ struct ParseInput {
     std::string text;                       // UTF-8 source
     MarkdownDialect dialect = default_dialect();
     ParseProgressCallback progress;
+    // Parse-time container context; never an editing coordinate.
+    std::vector<std::size_t> lazy_lines;
+    std::vector<BlockLineIndentation> indentation;
 
     ParseInput() = default;
     ParseInput(
         std::uint64_t rev,
         std::string t,
         MarkdownDialect d = default_dialect(),
-        ParseProgressCallback callback = {})
-        : revision(rev), text(std::move(t)), dialect(d), progress(std::move(callback)) {}
+        ParseProgressCallback callback = {},
+        std::vector<BlockLineIndentation> line_indentation = {})
+        : revision(rev), text(std::move(t)), dialect(d), progress(std::move(callback)),
+          indentation(std::move(line_indentation)) {}
 };
 
 struct ParseOutput {
@@ -104,6 +111,8 @@ struct ParserSourceRange {
     PhysicalRange source_range;
     PhysicalRange content_range;
     std::vector<PhysicalRange> marker_ranges;
+    std::vector<std::size_t> owned_offsets;
+    std::optional<PhysicalRange> separator_range;
 
     ParserSourceRange() = default;
     ParserSourceRange(NodeId id, PhysicalRange source, PhysicalRange content)
@@ -141,6 +150,28 @@ public:
     explicit Parser(const ParseInput* in) : input(in) {
         cps = utf8_to_cps(in->text);
         scan_link_definitions();
+    }
+
+    BlockIndentation scan_indentation(
+        std::size_t at,
+        std::size_t maximum_columns = (std::numeric_limits<std::size_t>::max)()) const {
+        auto line_start = at;
+        while (line_start > 0 && cps[line_start - 1] != U'\n' && cps[line_start - 1] != U'\r') --line_start;
+        const auto line = line_context(line_start);
+        auto physical_column = line.physical_column;
+        for (auto cursor = line_start; cursor < at; ++cursor) {
+            physical_column += cps[cursor] == U'\t' ? 4 - physical_column % 4 : 1;
+        }
+        return scan_block_indentation(
+            cps, at, maximum_columns, physical_column,
+            at == line.source_offset ? line.residual_columns : 0);
+    }
+
+    BlockLineIndentation line_context(std::size_t at) const {
+        const auto context = std::ranges::lower_bound(
+            input->indentation, at, {}, &BlockLineIndentation::source_offset);
+        if (context != input->indentation.end() && context->source_offset == at) return *context;
+        return {at, 0, 0};
     }
 
     static std::string normalize_link_label(std::u32string_view label) {
@@ -780,12 +811,9 @@ public:
 
     bool line_starts_atx_heading(std::size_t at) const {
         const auto line_end = line_content_end(at);
-        auto cursor = at;
-        std::size_t indentation = 0;
-        while (cursor < line_end && cps[cursor] == U' ' && indentation < 4) {
-            ++cursor;
-            ++indentation;
-        }
+        const auto leading = scan_indentation(at, 3);
+        auto cursor = leading.end;
+        const auto indentation = leading.columns;
         if (indentation > 3 || cursor >= line_end || cps[cursor] != U'#') return false;
         std::size_t count = 0;
         while (cursor < line_end && cps[cursor] == U'#') { ++count; ++cursor; }
@@ -794,12 +822,9 @@ public:
     }
 
     bool line_starts_blockquote(std::size_t at) const {
-        auto cursor = at;
-        std::size_t indentation = 0;
-        while (cursor < cps.size() && cps[cursor] == U' ' && indentation < 4) {
-            ++cursor;
-            ++indentation;
-        }
+        const auto leading = scan_indentation(at, 3);
+        auto cursor = leading.end;
+        const auto indentation = leading.columns;
         return indentation <= 3 && cursor < cps.size() && cps[cursor] == U'>';
     }
 
@@ -847,12 +872,9 @@ public:
         return peek_line_start() && line_starts_block_html(pos);
     }
     bool line_starts_interrupting_block(std::size_t at) const {
-        auto cursor = at;
-        std::size_t indentation = 0;
-        while (cursor < cps.size() && cps[cursor] == U' ' && indentation < 4) {
-            ++cursor;
-            ++indentation;
-        }
+        const auto leading = scan_indentation(at, 3);
+        auto cursor = leading.end;
+        const auto indentation = leading.columns;
         if (indentation > 3) return false;
         return setext_underline_at(at).has_value()
             || line_is_thematic_break(at)
@@ -882,7 +904,7 @@ public:
         bool allow_container_prefixes = true) const {
         auto cursor = start;
         while (cursor < line_end) {
-            const auto indentation = scan_block_indentation(cps, cursor);
+            const auto indentation = scan_indentation(cursor);
             if (indentation.columns > 3 || indentation.end >= line_end) return false;
             cursor = indentation.end;
 
@@ -922,7 +944,7 @@ public:
             if (!list_marker) break;
             if (!allow_container_prefixes) return false;
 
-            auto column = indentation.columns + marker_end - cursor;
+            auto column = indentation.physical_column + marker_end - cursor;
             const auto padding_start_column = column;
             cursor = marker_end;
             while (cursor < line_end && (cps[cursor] == U' ' || cps[cursor] == U'\t')) {
@@ -967,6 +989,96 @@ public:
 
         return !setext_underline_at(cursor).has_value()
             && !line_starts_interrupting_block(cursor);
+    }
+
+    bool is_lazy_line(std::size_t at) const {
+        return std::ranges::find(input->lazy_lines, at) != input->lazy_lines.end();
+    }
+
+    struct PrefixLine {
+        std::size_t inner_start = 0;
+        std::u32string text;
+        bool lazy = false;
+        ContainerPrefixRole role = ContainerPrefixRole::Literal;
+    };
+
+    // Retain only transient physical mappings while extracting nested inputs.
+    // Durable prefix anchors use the existing block's source or syntax fields.
+    void record_owned_offsets(const BlockNode& block) {
+        auto range = std::ranges::find_if(source_ranges, [&](const auto& r) {
+            return r.node_id == block.id;
+        });
+        if (range == source_ranges.end() || !range->owned_offsets.empty()) return;
+        const std::u32string* source = editable_inline_document(block)
+            ? &block.inline_content.source : editable_raw_block_source(block);
+        if (!source) return;
+        const auto begin = editable_inline_document(block)
+            ? range->content_range.start : range->source_range.start;
+        if (begin + source->size() > cps.size()
+            || std::u32string_view(cps).substr(begin, source->size()) != *source) return;
+        range->owned_offsets.resize(source->size() + 1);
+        std::iota(range->owned_offsets.begin(), range->owned_offsets.end(), begin);
+    }
+
+    static ContainerSource bind_prefix_lines(
+        std::u32string_view inner,
+        const std::vector<ParserSourceRange>& ranges,
+        const std::vector<PrefixLine>& lines) {
+        ContainerSource result;
+        std::vector<std::optional<ContainerPrefixAnchor>> source_anchors(lines.size());
+        std::vector<std::size_t> nearest(lines.size(), (std::numeric_limits<std::size_t>::max)());
+        std::vector<std::size_t> ends;
+        ends.reserve(lines.size());
+        for (const auto& line : lines) {
+            auto end = line.inner_start;
+            while (end < inner.size() && inner[end] != U'\n' && inner[end] != U'\r') ++end;
+            ends.push_back(end);
+        }
+        // Index source anchors once; repeatedly scanning a long paragraph for
+        // every container line would make large quoted documents quadratic.
+        for (const auto& range : ranges) {
+            const auto count = range.owned_offsets.size();
+            for (std::size_t i = 0; i < count; ++i) {
+                if (i + 1 == count && count > 1) break;
+                const auto physical = range.owned_offsets[i];
+                const auto next = std::ranges::upper_bound(lines, physical, {}, &PrefixLine::inner_start);
+                if (next == lines.begin()) continue;
+                const auto line = static_cast<std::size_t>(next - lines.begin() - 1);
+                if (physical > ends[line] || physical >= nearest[line]) continue;
+                nearest[line] = physical;
+                source_anchors[line] = ContainerPrefixAnchor{range.node_id, ContainerAnchorPart::Source, i};
+            }
+        }
+        for (std::size_t index = 0; index < lines.size(); ++index) {
+            const auto& line = lines[index];
+            const auto end = ends[index];
+            auto anchor = source_anchors[index];
+            if (!anchor) {
+                for (const auto& range : ranges) {
+                    if (!range.separator_range) continue;
+                    const auto gap = *range.separator_range;
+                    if (gap.start <= line.inner_start && line.inner_start < gap.end) {
+                        anchor = ContainerPrefixAnchor{range.node_id, ContainerAnchorPart::Separator,
+                            line.inner_start - gap.start};
+                        break;
+                    }
+                }
+            }
+            if (!anchor) {
+                auto width = (std::numeric_limits<std::size_t>::max)();
+                for (const auto& range : ranges) {
+                    const auto raw = range.source_range;
+                    if (raw.start > end || raw.end < line.inner_start) continue;
+                    const auto size = raw.end - raw.start;
+                    if (size >= width) continue;
+                    width = size;
+                    anchor = ContainerPrefixAnchor{range.node_id,
+                        raw.start >= line.inner_start ? ContainerAnchorPart::Start : ContainerAnchorPart::End, 0};
+                }
+            }
+            if (anchor) result.lines.push_back({*anchor, line.text, line.lazy, line.role});
+        }
+        return result;
     }
 
     // Read the current physical line without its CRLF/CR/LF terminator.
@@ -1026,6 +1138,11 @@ public:
                 paragraph.id,
                 PhysicalRange(blank_ranges[index].start, blank_ranges[index].end),
                 PhysicalRange(blank_ranges[index].start, blank_ranges[index].content_end));
+            if (paragraph.separator_before) {
+                source_ranges.back().separator_range = PhysicalRange{
+                    *preceding_source_end, blank_ranges[index].start};
+            }
+            record_owned_offsets(paragraph);
             blocks.push_back(std::move(paragraph));
             preceding_source_end = blank_ranges[index].content_end;
         }
@@ -1052,6 +1169,11 @@ public:
                             *preceding_source_end,
                             block_start - *preceding_source_end));
                 }
+                if (b->separator_before) {
+                    auto mapped = std::ranges::find_if(source_ranges, [&](const auto& range) { return range.node_id == b->id; });
+                    if (mapped != source_ranges.end()) mapped->separator_range = PhysicalRange{*preceding_source_end, block_start};
+                }
+                record_owned_offsets(*b);
                 auto block_end = cur();
                 const auto serialized = serializer_detail::serialize_block(*b);
                 if (block_end > block_start
@@ -1229,7 +1351,7 @@ public:
             const auto newline = pos;
             consume_line_ending();
             if (pos >= limit || is_line_ending_character(peek1())
-                || is_blank_line_at(pos) || line_starts_interrupting_block(pos)) {
+                || is_blank_line_at(pos) || (!is_lazy_line(pos) && line_starts_interrupting_block(pos))) {
                 const auto hard_break = (newline >= start + 2 && cps[newline - 1] == U' ' && cps[newline - 2] == U' ')
                     || (newline > start && cps[newline - 1] == U'\\');
                 content_end = hard_break ? pos : newline;
@@ -1239,7 +1361,7 @@ public:
         }
         if (content_end == start) return std::nullopt;
 
-        if (const auto underline = setext_underline_at(pos)) {
+        if (const auto underline = is_lazy_line(pos) ? std::nullopt : setext_underline_at(pos)) {
             auto body_start = start;
             std::size_t indentation = 0;
             while (body_start < content_end && cps[body_start] == U' ' && indentation < 4) {
@@ -1948,6 +2070,9 @@ public:
         for (auto& range : nested.source_ranges) {
             range.source_range = PhysicalRange(remap(range.source_range.start), remap(range.source_range.end));
             range.content_range = PhysicalRange(remap(range.content_range.start), remap(range.content_range.end));
+            for (auto& offset : range.owned_offsets) offset = remap(offset);
+            if (range.separator_range) range.separator_range = PhysicalRange{
+                remap(range.separator_range->start), remap(range.separator_range->end)};
             for (auto& prefix : range.marker_ranges) {
                 prefix = PhysicalRange(remap(prefix.start), remap(prefix.end));
             }
@@ -1984,7 +2109,7 @@ public:
     // ---- code fence / fenced math ----
     std::optional<BlockNode> try_parse_indented_code_block() {
         auto indentation_end = [&](std::size_t line_start) -> std::optional<std::size_t> {
-            const auto indent = scan_block_indentation(cps, line_start, 4);
+            const auto indent = scan_indentation(line_start, 4);
             if (indent.columns >= 4) return indent.end;
             return std::nullopt;
         };
@@ -1992,12 +2117,14 @@ public:
         if (!indentation_end(start)) return std::nullopt;
         std::u32string text;
         std::vector<PhysicalRange> markers;
+        std::vector<BlockLineIndentation> code_contexts;
         std::size_t content_start = start;
         std::size_t content_end = start;
         bool first_line = true;
         while (pos < cps.size()) {
             auto line_start = pos;
             const auto line_end = line_content_end(line_start);
+            const auto context = line_context(line_start);
             auto indent_end = indentation_end(line_start);
             if (!indent_end) {
                 bool blank = true;
@@ -2016,6 +2143,7 @@ public:
                     next = next_end + line_ending_length(next_end);
                 }
                 if (next >= cps.size() || !indentation_end(next)) break;
+                code_contexts.push_back({line_start - start, context.physical_column, context.residual_columns});
                 markers.push_back(PhysicalRange(std::size_t(line_start), std::size_t(line_end)));
                 text.push_back(U'\n');
                 pos = line_end;
@@ -2023,6 +2151,7 @@ public:
                 content_end = line_end;
                 continue;
             }
+            code_contexts.push_back({line_start - start, context.physical_column, context.residual_columns});
             markers.push_back(PhysicalRange(std::size_t(line_start), std::size_t(*indent_end)));
             if (first_line) content_start = *indent_end;
             first_line = false;
@@ -2042,7 +2171,8 @@ public:
         block.ensure_atomic_special().code_indented = true;
         block.block_source = make_block_source(
             std::u32string(std::u32string_view(cps).substr(start, pos - start)),
-            BlockSourceKind::IndentedCode);
+            BlockSourceKind::IndentedCode,
+            std::move(code_contexts));
         trim_indented_code_blank_edges(block.block_source);
         return block;
     }
@@ -2075,6 +2205,7 @@ public:
             tree.content.clear();
             tree.content_to_source.assign(1, source_end);
             tree.content_ranges.clear();
+            tree.generated_indentation.clear();
             return;
         }
         auto last = lines.size() - 1;
@@ -2092,9 +2223,16 @@ public:
             if (!ranges.empty() && ranges.back().end == source_offset) ranges.back().end = source_offset + 1;
             else ranges.push_back({source_offset, source_offset + 1});
         }
+        std::vector<GeneratedCodeIndentation> generated;
+        for (auto indentation : tree.generated_indentation) {
+            if (indentation.content_offset < begin || indentation.content_offset > end) continue;
+            indentation.content_offset -= begin;
+            generated.push_back(indentation);
+        }
         tree.content = std::move(content);
         tree.content_to_source = std::move(mapping);
         tree.content_ranges = std::move(ranges);
+        tree.generated_indentation = std::move(generated);
     }
 
     std::optional<BlockNode> try_parse_code_block() {
@@ -2434,13 +2572,16 @@ public:
             std::size_t source_end = 0;
             std::u32string initial_prefix;
             std::vector<std::size_t> initial_prefix_map;
+            std::size_t initial_physical_column = 0;
+            std::size_t initial_residual_columns = 0;
+            std::size_t content_physical_column = 0;
             std::u32string text;
         };
         auto inspect = [&](std::size_t at) -> std::optional<Marker> {
             if (at >= cps.size() || !is_line_start_at(at)) return std::nullopt;
             Marker marker;
             marker.start = at;
-            const auto leading = scan_block_indentation(cps, at, 3);
+            const auto leading = scan_indentation(at, 3);
             marker.indent = leading.columns;
             if (marker.indent > 3) return std::nullopt;
             std::size_t cursor = leading.end;
@@ -2468,7 +2609,8 @@ public:
             marker.marker_end = cursor;
             const auto marker_width = cursor - leading.end;
             auto whitespace_end = cursor;
-            auto column = marker.indent + marker_width;
+            auto column = leading.physical_column + marker_width;
+            const auto marker_physical_column = column;
             while (whitespace_end < line_end
                 && (cps[whitespace_end] == U' ' || cps[whitespace_end] == U'\t')) {
                 if (cps[whitespace_end] == U' ')
@@ -2478,7 +2620,7 @@ public:
                 ++whitespace_end;
             }
             const bool has_content = whitespace_end < line_end;
-            const auto padding_columns = column - (marker.indent + marker_width);
+            const auto padding_columns = column - marker_physical_column;
             // A bullet or ordered-list marker can be followed by whitespace
             // or end-of-line. Without that separator, characters such as
             // `+++` and `---a---` are paragraph text, not nested list items.
@@ -2489,6 +2631,7 @@ public:
                 : std::size_t{1};
             marker.content_indent = marker.indent + marker_width + effective_padding;
             marker.content_start = whitespace_end;
+            marker.content_physical_column = column;
 
             if (overpadded) {
                 // Keep actual whitespace in the child source. A tab spanning
@@ -2499,6 +2642,16 @@ public:
                     marker.initial_prefix.push_back(cps[index]);
                     marker.initial_prefix_map.push_back(index);
                 }
+                auto prefix_column = marker_physical_column;
+                for (auto source = marker.marker_end; source < marker.initial_prefix_map.front(); ++source) {
+                    if (cps[source] == U' ') ++prefix_column;
+                    else if (cps[source] == U'\t') prefix_column += 4 - prefix_column % 4;
+                    else ++prefix_column;
+                }
+                marker.initial_physical_column = prefix_column;
+                const auto child_column = line_context(at).physical_column + marker.content_indent;
+                marker.initial_residual_columns = prefix_column > child_column
+                    ? prefix_column - child_column : 0;
             }
 
             if (!has_content) marker.content_start = line_end;
@@ -2619,7 +2772,7 @@ public:
                 auto line_start = item_end;
                 const auto line_end = line_content_end(line_start);
                 bool blank = true;
-                const auto indent = scan_block_indentation(cps, line_start);
+                const auto indent = scan_indentation(line_start);
                 const auto indentation = indent.columns;
                 for (auto cursor = line_start; cursor < line_end; ++cursor) {
                     if (cps[cursor] != U' ' && cps[cursor] != U'\t') blank = false;
@@ -2649,7 +2802,10 @@ public:
                             item_end = *trailing_blank_start;
                         }
                     } else {
-                        separator_before_next_item.reset();
+                        if (same_list_sibling) {
+                            separator_before_next_item = cps.substr(
+                                last_nonblank_line_end, line_start - last_nonblank_line_end);
+                        } else separator_before_next_item.reset();
                         separator_before_next_item_has_blank_line = false;
                         item_inner_end = item_end = line_start;
                     }
@@ -2686,7 +2842,7 @@ public:
                 }
                 if (!blank && indentation < content_indent && !lazy_paragraph_open) break;
                 if (!blank && indentation < content_indent
-                    && line_starts_interrupting_block(indent.end)) {
+                    && line_starts_interrupting_block(line_start)) {
                     // Lazy paragraph continuations may remain unindented, but
                     // an explicit peer-level block marker ends the item even
                     // without a separating blank line. Otherwise the nested
@@ -2709,6 +2865,9 @@ public:
 
             std::u32string inner;
             std::vector<std::size_t> offset_map;
+            std::vector<PrefixLine> prefix_lines;
+            std::vector<std::size_t> lazy_lines;
+            std::vector<BlockLineIndentation> nested_indentation;
             std::size_t inner_end_source = marker->content_start;
             auto append_range = [&](std::size_t begin, std::size_t end) {
                 for (auto cursor = begin; cursor < end; ++cursor) {
@@ -2721,29 +2880,53 @@ public:
                 inner.push_back(marker->initial_prefix[index]);
                 offset_map.push_back(marker->initial_prefix_map[index]);
             }
+            if (first_line_has_content) {
+                nested_indentation.push_back({
+                    0,
+                    marker->initial_prefix.empty()
+                        ? marker->content_physical_column
+                        : marker->initial_physical_column,
+                    marker->initial_prefix.empty() ? 0 : marker->initial_residual_columns});
+            }
             append_range(marker->content_start, marker->content_end);
+            prefix_lines.push_back({0, U"", false, ContainerPrefixRole::ItemOpening});
             const bool first_line_has_inner_content = !marker->initial_prefix.empty()
                 || marker->content_start < marker->content_end;
             auto line_start = marker->source_end;
             while (line_start < item_inner_end) {
                 const auto line_end = (std::min)(line_content_end(line_start), item_inner_end);
-                const auto indent = scan_block_indentation(cps, line_start, content_indent);
+                const auto line_indent = scan_indentation(line_start, content_indent);
+                const auto indent = line_indent;
                 auto content = (std::min)(indent.end, line_end);
-                if (!(line_start == marker->source_end
-                    && !first_line_has_inner_content
-                    && content < line_end)) {
+                const bool collapsed_marker_line = line_start == marker->source_end
+                    && !first_line_has_inner_content && content < line_end;
+                if (!collapsed_marker_line) {
                     offset_map.push_back(line_start > 0 ? line_start - 1 : line_start);
                     inner.push_back(U'\n');
                     inner_end_source = line_start;
                 }
+                const auto inner_line_start = inner.size();
+                const bool lazy = content < line_end && indent.columns < content_indent;
+                auto prefix = cps.substr(line_start, content - line_start);
+                if (collapsed_marker_line) {
+                    prefix_lines.front().text = cps.substr(marker->start + marker->text.size(),
+                        marker->source_end - marker->start - marker->text.size()) + prefix;
+                } else {
+                    prefix_lines.push_back({inner_line_start, std::move(prefix), lazy});
+                }
+                if (lazy || is_lazy_line(line_start)) lazy_lines.push_back(inner_line_start);
                 // Retain source characters after the container prefix. Any
                 // partial tab columns require a semantic indentation mapping,
                 // not synthetic characters in this block-local source.
+                nested_indentation.push_back({
+                    inner.size(), line_indent.physical_column, line_indent.residual_columns});
                 append_range(content, line_end);
                 line_start = line_end < item_end ? next_line_start(line_end) : line_end;
             }
             offset_map.push_back(inner_end_source);
-            ParseInput nested_input(input->revision, cps_to_utf8(inner), input->dialect);
+            ParseInput nested_input(
+                input->revision, cps_to_utf8(inner), input->dialect, {}, std::move(nested_indentation));
+            nested_input.lazy_lines = std::move(lazy_lines);
             Parser nested(&nested_input);
             nested.node_counter = node_counter;
             auto children = nested.parse_blocks(nullptr);
@@ -2764,26 +2947,32 @@ public:
             auto remap = [&](std::size_t value) {
                 return std::size_t(offset_map[(std::min)(value, offset_map.size() - 1)]);
             };
-            for (auto& range : nested.source_ranges) {
-                range.source_range = PhysicalRange(remap(range.source_range.start), remap(range.source_range.end));
-                range.content_range = PhysicalRange(remap(range.content_range.start), remap(range.content_range.end));
-                for (auto& prefix : range.marker_ranges) prefix = PhysicalRange(remap(prefix.start), remap(prefix.end));
-                source_ranges.push_back(std::move(range));
-            }
             if (children.empty()) {
                 BlockNode paragraph;
                 paragraph.id = next_node_id();
                 paragraph.kind = BlockKind::Paragraph;
-                source_ranges.emplace_back(
-                    paragraph.id,
-                    PhysicalRange(std::size_t(marker->content_start), std::size_t(marker->content_start)),
-                    PhysicalRange(std::size_t(marker->content_start), std::size_t(marker->content_start)));
+                nested.push_range(paragraph.id, {0, 0}, {0, 0});
+                nested.record_owned_offsets(paragraph);
                 children.push_back(std::move(paragraph));
+            }
+            auto prefixes = bind_prefix_lines(inner, nested.source_ranges, prefix_lines);
+            for (auto& range : nested.source_ranges) {
+                range.source_range = PhysicalRange(remap(range.source_range.start), remap(range.source_range.end));
+                range.content_range = PhysicalRange(remap(range.content_range.start), remap(range.content_range.end));
+                for (auto& offset : range.owned_offsets) offset = remap(offset);
+                if (range.separator_range) range.separator_range = PhysicalRange{
+                    remap(range.separator_range->start), remap(range.separator_range->end)};
+                for (auto& prefix : range.marker_ranges) prefix = PhysicalRange(remap(prefix.start), remap(prefix.end));
+                source_ranges.push_back(std::move(range));
             }
             for (auto& diagnostic : nested.diagnostics) {
                 diagnostics.push_back(std::move(diagnostic));
             }
             ParserSourceRange item_range(item_id, PhysicalRange(std::size_t(marker->start), std::size_t(item_end)), PhysicalRange(std::size_t(marker->content_start), std::size_t(inner_end_source)));
+            if (separator_before_this_item) {
+                item_range.separator_range = PhysicalRange{
+                    marker->start - separator_before_this_item->size(), marker->start};
+            }
             item_range.marker_ranges.push_back(PhysicalRange(std::size_t(marker->start), std::size_t(marker->content_start)));
             source_ranges.push_back(std::move(item_range));
             BlockNode item;
@@ -2792,6 +2981,7 @@ public:
             item.ensure_item_special().checked = marker->checked;
             item.ensure_item_special().marker = marker->text;
             item.separator_before = std::move(separator_before_this_item);
+            item.ensure_container_source() = std::move(prefixes);
             item.children = std::move(children);
             // The stored gap starts after the item's serialized source, just
             // like separators between ordinary blocks. Code may already own
@@ -2820,6 +3010,9 @@ public:
         std::size_t start = pos;
         std::u32string inner;
         std::vector<std::size_t> offset_map;
+        std::vector<PrefixLine> prefix_lines;
+        std::vector<std::size_t> lazy_lines;
+        std::vector<BlockLineIndentation> nested_indentation;
         std::vector<PhysicalRange> marker_ranges;
         std::size_t content_start = start;
         std::size_t content_end = start;
@@ -2827,7 +3020,7 @@ public:
         bool last_line_empty = false;
         auto paragraph_content_line = [&](std::size_t line_start, std::size_t line_end, bool allow_container_line) {
             if (line_start >= line_end) return false;
-            const auto indentation = scan_block_indentation(cps, line_start);
+            const auto indentation = scan_indentation(line_start);
             if (indentation.columns >= 4 || indentation.end >= line_end) return false;
             return line_has_leaf_paragraph_content(
                 line_start, line_end, allow_container_line);
@@ -2836,20 +3029,33 @@ public:
         while (pos < cps.size() && peek_line_start()) {
             const auto line_start = pos;
             const auto line_end = line_content_end(line_start);
-            const auto quote_indent = scan_block_indentation(cps, line_start, 3);
+            const auto quote_indent = scan_indentation(line_start, 3);
             const bool quoted = quote_indent.columns <= 3
                 && quote_indent.end < line_end
                 && cps[quote_indent.end] == U'>';
+            const auto inner_line_start = inner.size();
             std::size_t line_content_start = line_start;
             if (quoted) {
                 const auto marker_start = line_start;
                 pos = quote_indent.end;
+                auto physical_column = quote_indent.physical_column;
                 advance();
-                if (peek1() == U' ') advance();
+                ++physical_column;
+                std::size_t residual_columns = 0;
+                if (peek1() == U' ') {
+                    advance();
+                    ++physical_column;
+                } else if (peek1() == U'\t') {
+                    const auto next = physical_column + (4 - physical_column % 4);
+                    residual_columns = next - physical_column - 1;
+                    physical_column = next;
+                    advance();
+                }
                 line_content_start = pos;
                 if (first) content_start = line_content_start;
                 first = false;
                 marker_ranges.push_back(PhysicalRange(std::size_t(marker_start), std::size_t(line_content_start)));
+                nested_indentation.push_back({inner.size(), physical_column, residual_columns});
                 bool blank = true;
                 while (pos < line_end) {
                     if (cps[pos] != U' ' && cps[pos] != U'\t') blank = false;
@@ -2862,10 +3068,13 @@ public:
                 lazy_paragraph_open = !blank
                     && paragraph_content_line(line_content_start, line_end, true);
             } else {
-                if (!lazy_paragraph_open
-                    || !paragraph_content_line(line_start, line_end, false)) break;
-                const auto indentation = scan_block_indentation(cps, line_start);
+                if (!lazy_paragraph_open || is_blank_line_at(line_start)
+                    || (!is_lazy_line(line_start) && line_starts_interrupting_block(line_start)
+                        && !(setext_underline_at(line_start) && ch_at(scan_indentation(line_start).end) == U'='))) break;
+                const auto indentation = scan_indentation(line_start);
                 line_content_start = indentation.end;
+                lazy_lines.push_back(inner_line_start);
+                nested_indentation.push_back({inner.size(), indentation.physical_column, indentation.residual_columns});
                 for (auto source = line_content_start; source < line_end; ++source) {
                     offset_map.push_back(source);
                     inner.push_back(cps[source]);
@@ -2875,10 +3084,15 @@ public:
                 lazy_paragraph_open = true;
                 pos = line_end;
             }
+            prefix_lines.push_back({inner_line_start,
+                cps.substr(line_start, line_content_start - line_start), !quoted});
             if (pos < cps.size() && is_line_ending_character(cps[pos])) {
-                offset_map.push_back(pos);
-                inner.push_back(U'\n');
+                const auto ending_start = pos;
                 consume_line_ending();
+                for (auto ending = ending_start; ending < pos; ++ending) {
+                    offset_map.push_back(ending);
+                    inner.push_back(cps[ending]);
+                }
             }
         }
         // The block dispatcher may recognize an indented quote. If no quote
@@ -2906,7 +3120,17 @@ public:
         }
         auto body_start = callout ? (first_newline == std::u32string::npos ? inner.size() : first_newline + 1) : 0;
         auto body = inner.substr(body_start);
-        ParseInput nested_input(input->revision, cps_to_utf8(body), input->dialect);
+        std::vector<BlockLineIndentation> body_indentation;
+        for (auto context : nested_indentation) {
+            if (context.source_offset < body_start) continue;
+            context.source_offset -= body_start;
+            body_indentation.push_back(context);
+        }
+        ParseInput nested_input(
+            input->revision, cps_to_utf8(body), input->dialect, {}, std::move(body_indentation));
+        for (const auto line : lazy_lines) {
+            if (line >= body_start) nested_input.lazy_lines.push_back(line - body_start);
+        }
         Parser nested(&nested_input);
         nested.node_counter = node_counter;
         auto children = nested.parse_blocks(nullptr);
@@ -2915,12 +3139,6 @@ public:
             auto index = (std::min)(body_start + value, offset_map.size() - 1);
             return std::size_t(offset_map[index]);
         };
-        for (auto& range : nested.source_ranges) {
-            range.source_range = PhysicalRange(remap(range.source_range.start), remap(range.source_range.end));
-            range.content_range = PhysicalRange(remap(range.content_range.start), remap(range.content_range.end));
-            for (auto& marker : range.marker_ranges) marker = PhysicalRange(remap(marker.start), remap(marker.end));
-            source_ranges.push_back(std::move(range));
-        }
         const auto trailing_blank_belongs_to_unclosed_fence = [&] {
             if (!last_line_empty || children.empty()) return false;
             const auto& final_child = children.back();
@@ -2943,10 +3161,8 @@ public:
             BlockNode paragraph;
             paragraph.id = next_node_id();
             paragraph.kind = BlockKind::Paragraph;
-            source_ranges.emplace_back(
-                paragraph.id,
-                PhysicalRange(std::size_t(content_start), std::size_t(content_start)),
-                PhysicalRange(std::size_t(content_start), std::size_t(content_start)));
+            nested.push_range(paragraph.id, {0, 0}, {0, 0});
+            nested.record_owned_offsets(paragraph);
             children.push_back(std::move(paragraph));
         } else if (last_line_empty
             && !trailing_blank_belongs_to_unclosed_fence
@@ -2957,7 +3173,34 @@ public:
             BlockNode paragraph;
             paragraph.id = next_node_id();
             paragraph.kind = BlockKind::Paragraph;
+            const auto blank = body.size();
+            const auto previous = serializer_detail::serialize_block(children.back());
+            if (!previous.text.empty() && is_line_ending_character(previous.text.back())) {
+                paragraph.separator_before = U"";
+            } else {
+                auto ending = blank;
+                if (ending > 0 && body[ending - 1] == U'\n') --ending;
+                if (ending > 0 && body[ending - 1] == U'\r') --ending;
+                paragraph.separator_before = body.substr(ending);
+            }
+            nested.push_range(paragraph.id, {blank, blank}, {blank, blank});
+            nested.record_owned_offsets(paragraph);
             children.push_back(std::move(paragraph));
+        }
+        auto body_prefixes = prefix_lines;
+        if (body_start > 0) {
+            std::erase_if(body_prefixes, [&](const auto& line) { return line.inner_start < body_start; });
+            for (auto& line : body_prefixes) line.inner_start -= body_start;
+        }
+        auto prefixes = bind_prefix_lines(body, nested.source_ranges, body_prefixes);
+        for (auto& range : nested.source_ranges) {
+            range.source_range = PhysicalRange(remap(range.source_range.start), remap(range.source_range.end));
+            range.content_range = PhysicalRange(remap(range.content_range.start), remap(range.content_range.end));
+            for (auto& offset : range.owned_offsets) offset = remap(offset);
+            if (range.separator_range) range.separator_range = PhysicalRange{
+                remap(range.separator_range->start), remap(range.separator_range->end)};
+            for (auto& marker : range.marker_ranges) marker = PhysicalRange(remap(marker.start), remap(marker.end));
+            source_ranges.push_back(std::move(range));
         }
         for (auto& diagnostic : nested.diagnostics) {
             diagnostics.push_back(std::move(diagnostic));
@@ -2977,8 +3220,7 @@ public:
         BlockNode b;
         b.id = id;
         b.kind = BlockKind::BlockQuote;
-        b.ensure_text_special().opening_marker = std::u32string(
-            std::u32string_view(cps).substr(start, content_start - start));
+        b.ensure_container_source() = std::move(prefixes);
         b.children = std::move(children);
         return b;
     }

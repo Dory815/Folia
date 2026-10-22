@@ -1,6 +1,7 @@
 export module folia.core.serializer;
 import std;
 import folia.core.ast;
+import folia.core.container_source;
 import folia.core.block_tree;
 import folia.core.document;
 import folia.core.document_text;
@@ -74,6 +75,11 @@ namespace serializer_detail {
 struct ProjectedText {
     std::u32string text;
     std::vector<SerializedSourceMap> source_maps;
+    struct SyntaxAnchorEvent {
+        ContainerPrefixAnchor anchor;
+        std::size_t serialized_offset = 0;
+    };
+    std::vector<SyntaxAnchorEvent> syntax_anchors;
 
     void append(ProjectedText other) {
         const auto shift = text.size();
@@ -82,6 +88,11 @@ struct ProjectedText {
             for (auto& offset : map.source_to_serialized) offset += shift;
             source_maps.push_back(std::move(map));
         }
+        for (auto& event : other.syntax_anchors) event.serialized_offset += shift;
+        syntax_anchors.insert(
+            syntax_anchors.end(),
+            std::make_move_iterator(other.syntax_anchors.begin()),
+            std::make_move_iterator(other.syntax_anchors.end()));
     }
 
     void append_generated(std::u32string_view value) { text.append(value); }
@@ -114,9 +125,21 @@ inline ProjectedText atomic_text(NodeId owner, std::u32string value) {
 inline std::vector<std::size_t> line_starts(std::u32string_view value) {
     std::vector<std::size_t> result{0};
     for (std::size_t index = 0; index < value.size(); ++index) {
-        if (value[index] == U'\n') result.push_back(index + 1);
+        if (value[index] == U'\r') {
+            if (index + 1 < value.size() && value[index + 1] == U'\n') ++index;
+            result.push_back(index + 1);
+        } else if (value[index] == U'\n') {
+            result.push_back(index + 1);
+        }
     }
     return result;
+}
+
+inline bool is_line_ending(char32_t cp) { return cp == U'\r' || cp == U'\n'; }
+
+inline std::size_t line_content_end(std::u32string_view text, std::size_t start, std::size_t end) {
+    while (end > start && is_line_ending(text[end - 1])) --end;
+    return end;
 }
 
 template <class Prefix>
@@ -127,7 +150,10 @@ inline ProjectedText prefix_lines(ProjectedText input, Prefix&& prefix) {
     std::vector<std::size_t> cumulative_prefix_sizes(starts.size() + 1, 0);
     std::size_t inserted = 0;
     for (std::size_t line = 0; line < starts.size(); ++line) {
-        const auto end = line + 1 < starts.size() ? starts[line + 1] - 1 : input.text.size();
+        const auto end = line_content_end(
+            input.text,
+            starts[line],
+            line + 1 < starts.size() ? starts[line + 1] : input.text.size());
         prefixes.push_back(prefix(line, input.text.substr(starts[line], end - starts[line])));
         inserted += prefixes.back().size();
         cumulative_prefix_sizes[line + 1] = inserted;
@@ -150,6 +176,132 @@ inline ProjectedText prefix_lines(ProjectedText input, Prefix&& prefix) {
             offset += cumulative_prefix_sizes[prefixed_line_count];
         }
         result.source_maps.push_back(std::move(map));
+    }
+    for (auto& event : input.syntax_anchors) {
+        const auto prefixed_line_count = static_cast<std::size_t>(
+            std::ranges::upper_bound(starts, event.serialized_offset) - starts.begin());
+        event.serialized_offset += cumulative_prefix_sizes[prefixed_line_count];
+        result.syntax_anchors.push_back(std::move(event));
+    }
+    return result;
+}
+
+struct PrefixAnchorKey {
+    std::uint64_t owner = 0;
+    ContainerAnchorPart part = ContainerAnchorPart::Source;
+    std::size_t offset = 0;
+    bool operator==(const PrefixAnchorKey&) const = default;
+};
+
+struct PrefixAnchorKeyHash {
+    std::size_t operator()(const PrefixAnchorKey& key) const noexcept {
+        auto value = std::hash<std::uint64_t>{}(key.owner);
+        value ^= std::hash<std::size_t>{}(static_cast<std::size_t>(key.part))
+            + std::size_t{0x9e3779b9} + (value << 6) + (value >> 2);
+        value ^= std::hash<std::size_t>{}(key.offset)
+            + std::size_t{0x9e3779b9} + (value << 6) + (value >> 2);
+        return value;
+    }
+};
+
+inline PrefixAnchorKey prefix_anchor_key(const ContainerPrefixAnchor& anchor) {
+    return {anchor.owner_id.v, anchor.part, anchor.offset};
+}
+
+template <class Prefix>
+inline ProjectedText prefix_container_lines(
+    ProjectedText input,
+    const BlockNode& container,
+    Prefix&& canonical_prefix) {
+    const auto starts = line_starts(input.text);
+    std::unordered_map<std::uint64_t, const SerializedSourceMap*> source_map_index;
+    source_map_index.reserve(input.source_maps.size());
+    for (const auto& map : input.source_maps) {
+        source_map_index.try_emplace(map.container_id.v, &map);
+    }
+    std::unordered_map<PrefixAnchorKey, std::size_t, PrefixAnchorKeyHash> syntax_anchor_index;
+    syntax_anchor_index.reserve(input.syntax_anchors.size());
+    for (const auto& event : input.syntax_anchors) {
+        syntax_anchor_index.try_emplace(prefix_anchor_key(event.anchor), event.serialized_offset);
+    }
+
+    auto resolve = [&](const ContainerPrefixAnchor& anchor) -> std::optional<std::size_t> {
+        if (anchor.part == ContainerAnchorPart::Source) {
+            const auto found = source_map_index.find(anchor.owner_id.v);
+            if (found == source_map_index.end()
+                || anchor.offset >= found->second->source_to_serialized.size()) return std::nullopt;
+            return found->second->source_to_serialized[anchor.offset];
+        }
+        const auto found = syntax_anchor_index.find(prefix_anchor_key(anchor));
+        return found == syntax_anchor_index.end()
+            ? std::nullopt
+            : std::optional<std::size_t>(found->second);
+    };
+
+    std::vector<const ContainerLinePrefix*> line_records(starts.size(), nullptr);
+    for (const auto& record : container.container_source().lines) {
+        const auto resolved = resolve(record.anchor);
+        if (!resolved || *resolved > input.text.size()) continue;
+        const auto upper = std::ranges::upper_bound(starts, *resolved);
+        if (upper == starts.begin()) continue;
+        const auto line = static_cast<std::size_t>(upper - starts.begin() - 1);
+        if (line_records[line]) continue;
+        const auto next = line + 1 < starts.size() ? starts[line + 1] : input.text.size();
+        const auto end = line_content_end(input.text, starts[line], next);
+        if (*resolved < starts[line] || *resolved > end) continue;
+        // Source positions may follow syntax generated by a nested item. They
+        // still identify their containing physical line without changing the
+        // authoritative block-local coordinate.
+        line_records[line] = &record;
+    }
+
+    std::vector<std::u32string> prefixes;
+    prefixes.reserve(starts.size());
+    std::vector<std::size_t> cumulative_prefix_sizes(starts.size() + 1, 0);
+    std::size_t inserted = 0;
+    for (std::size_t line = 0; line < starts.size(); ++line) {
+        const auto next = line + 1 < starts.size() ? starts[line + 1] : input.text.size();
+        const auto end = line_content_end(input.text, starts[line], next);
+        const auto canonical = [&] {
+            return canonical_prefix(line, std::u32string_view(input.text).substr(starts[line], end - starts[line]));
+        };
+        if (line_records[line] == nullptr) prefixes.push_back(canonical());
+        else if (container.kind == BlockKind::ListItem || container.kind == BlockKind::TaskListItem) {
+            // The item marker has one owner: BlockItemSpecial. Physical
+            // opening-line records retain only the following syntax suffix.
+            if (line == 0) {
+                prefixes.push_back(canonical() + (line_records[line]->role == ContainerPrefixRole::ItemOpening
+                    ? line_records[line]->text : std::u32string{}));
+            } else if (line_records[line]->role == ContainerPrefixRole::ItemOpening) {
+                prefixes.push_back(canonical());
+            } else prefixes.push_back(line_records[line]->text);
+        } else prefixes.push_back(line_records[line]->text);
+        inserted += prefixes.back().size();
+        cumulative_prefix_sizes[line + 1] = inserted;
+    }
+
+    ProjectedText result;
+    result.text.reserve(input.text.size() + inserted);
+    std::size_t start_index = 0;
+    for (std::size_t offset = 0; offset <= input.text.size(); ++offset) {
+        while (start_index < starts.size() && starts[start_index] == offset) {
+            result.text += prefixes[start_index++];
+        }
+        if (offset < input.text.size()) result.text.push_back(input.text[offset]);
+    }
+    for (auto& map : input.source_maps) {
+        for (auto& offset : map.source_to_serialized) {
+            const auto count = static_cast<std::size_t>(
+                std::ranges::upper_bound(starts, offset) - starts.begin());
+            offset += cumulative_prefix_sizes[count];
+        }
+        result.source_maps.push_back(std::move(map));
+    }
+    for (auto& event : input.syntax_anchors) {
+        const auto count = static_cast<std::size_t>(
+            std::ranges::upper_bound(starts, event.serialized_offset) - starts.begin());
+        event.serialized_offset += cumulative_prefix_sizes[count];
+        result.syntax_anchors.push_back(std::move(event));
     }
     return result;
 }
@@ -387,30 +539,32 @@ inline ProjectedText serialize_html_backed_block(const BlockNode& block) {
 inline ProjectedText serialize_blocks(const BlockVec& blocks);
 inline ProjectedText serialize_blocks_from(const BlockVec& blocks, std::size_t start);
 
+inline void append_separator_anchor_events(
+    ProjectedText& target,
+    NodeId owner,
+    std::u32string_view separator) {
+    const auto separator_start = target.text.size();
+    for (const auto offset : line_starts(separator)) {
+        target.syntax_anchors.push_back({
+            {owner, ContainerAnchorPart::Separator, offset},
+            separator_start + offset});
+    }
+}
+
 inline ProjectedText serialize_list_item_blocks(const BlockVec& blocks) {
     ProjectedText result;
     for (std::size_t index = 0; index < blocks.size(); ++index) {
         if (index > 0) {
-            if (blocks[index].separator_before) {
-                result.append_generated(*blocks[index].separator_before);
-            } else {
-                const auto nested = blocks[index].kind == BlockKind::List
-                    || blocks[index].kind == BlockKind::TaskList;
-                result.append_generated(nested ? U"\n" : U"\n\n");
-            }
+            const auto separator = blocks[index].separator_before
+                ? *blocks[index].separator_before
+                : (blocks[index].kind == BlockKind::List || blocks[index].kind == BlockKind::TaskList
+                    ? std::u32string(U"\n") : std::u32string(U"\n\n"));
+            append_separator_anchor_events(result, blocks[index].id, separator);
+            result.append_generated(separator);
         }
         result.append(serialize_block(blocks[index]));
     }
     return result;
-}
-
-inline ProjectedText indent_continuation(ProjectedText value, std::size_t width) {
-    return prefix_lines(std::move(value), [width](std::size_t line, std::u32string_view text) {
-        if (line == 0 || std::ranges::all_of(text, [](char32_t ch) {
-                return ch == U' ' || ch == U'\t';
-            })) return std::u32string{};
-        return std::u32string(width, U' ');
-    });
 }
 
 inline ProjectedText serialize_footnote_definition(const BlockNode& block) {
@@ -445,11 +599,29 @@ inline ProjectedText serialize_list(const BlockNode& block) {
             marker = U"- ";
         }
         if (index > 0) {
-            if (item.separator_before) result.append_generated(*item.separator_before);
-            else result.append_generated(U"\n");
+            const auto separator = item.separator_before.value_or(U"\n");
+            append_separator_anchor_events(result, item.id, separator);
+            result.append_generated(separator);
         }
-        result.append_generated(marker);
-        result.append(indent_continuation(serialize_list_item_blocks(item.children), marker.size()));
+        auto body = serialize_list_item_blocks(item.children);
+        body.syntax_anchors.push_back({{item.id, ContainerAnchorPart::Start, 0}, 0});
+        auto end = body.text.size();
+        if (end > 0 && body.text.back() == U'\n') {
+            --end;
+            if (end > 0 && body.text[end - 1] == U'\r') --end;
+        } else if (end > 0 && body.text.back() == U'\r') {
+            --end;
+        }
+        body.syntax_anchors.push_back({{item.id, ContainerAnchorPart::End, 0}, end});
+        auto prefixed = prefix_container_lines(
+            std::move(body), item,
+            [&marker](std::size_t line, std::u32string_view text) {
+                if (line == 0) return marker;
+                return std::ranges::all_of(text, [](char32_t ch) {
+                    return ch == U' ' || ch == U'\t';
+                }) ? std::u32string{} : std::u32string(marker.size(), U' ');
+            });
+        result.append(std::move(prefixed));
     }
     return result;
 }
@@ -464,7 +636,7 @@ inline ProjectedText serialize_table_row(const BlockNode& row) {
     return result;
 }
 
-inline ProjectedText serialize_block(const BlockNode& block) {
+inline ProjectedText serialize_block_impl(const BlockNode& block) {
     if (block.has_html_source()) return serialize_html_backed_block(block);
     switch (block.kind) {
         case BlockKind::Paragraph:
@@ -485,13 +657,21 @@ inline ProjectedText serialize_block(const BlockNode& block) {
                 && block.children.back().kind == BlockKind::Paragraph
                 && block.children.back().inline_content.source.empty();
             const auto terminal_newline = !explicit_empty_paragraph
-                && !body.text.empty() && body.text.back() == U'\n';
+                && !body.text.empty() && is_line_ending(body.text.back());
             const auto terminal_line = starts.size() - 1;
-            const auto& opening_marker = block.text_special().opening_marker;
-            return prefix_lines(
+            body.syntax_anchors.push_back({{block.id, ContainerAnchorPart::Start, 0}, 0});
+            auto end = body.text.size();
+            if (end > 0 && body.text.back() == U'\n') {
+                --end;
+                if (end > 0 && body.text[end - 1] == U'\r') --end;
+            } else if (end > 0 && body.text[end - 1] == U'\r') {
+                --end;
+            }
+            body.syntax_anchors.push_back({{block.id, ContainerAnchorPart::End, 0}, end});
+            return prefix_container_lines(
                 std::move(body),
-                [terminal_newline, terminal_line, &opening_marker](std::size_t line, std::u32string_view text) {
-                    if (line == 0 && !opening_marker.empty()) return opening_marker;
+                block,
+                [terminal_newline, terminal_line](std::size_t line, std::u32string_view text) {
                     // A final LF already terminates the last quoted content
                     // line. Do not add a quote marker after it; preceding
                     // empty lines still receive markers as genuine quote lines.
@@ -594,6 +774,20 @@ inline ProjectedText serialize_block(const BlockNode& block) {
     return {};
 }
 
+inline ProjectedText serialize_block(const BlockNode& block) {
+    auto result = serialize_block_impl(block);
+    result.syntax_anchors.push_back({{block.id, ContainerAnchorPart::Start, 0}, 0});
+    auto end = result.text.size();
+    if (end > 0 && result.text[end - 1] == U'\n') {
+        --end;
+        if (end > 0 && result.text[end - 1] == U'\r') --end;
+    } else if (end > 0 && result.text[end - 1] == U'\r') {
+        --end;
+    }
+    result.syntax_anchors.push_back({{block.id, ContainerAnchorPart::End, 0}, end});
+    return result;
+}
+
 inline bool is_empty_paragraph(const BlockNode& block) {
     return block.kind == BlockKind::Paragraph && block.inline_content.source.empty();
 }
@@ -614,7 +808,11 @@ inline ProjectedText serialize_blocks_from(const BlockVec& blocks, std::size_t s
     ProjectedText result;
     start = (std::min)(start, blocks.size());
     for (std::size_t index = start; index < blocks.size(); ++index) {
-        if (index > start) result.append_generated(block_separator(blocks[index - 1], blocks[index]));
+        if (index > start) {
+            const auto separator = block_separator(blocks[index - 1], blocks[index]);
+            append_separator_anchor_events(result, blocks[index].id, separator);
+            result.append_generated(separator);
+        }
         result.append(serialize_block(blocks[index]));
     }
     return result;

@@ -136,7 +136,7 @@ inline Node placeholder(std::string tag, std::string key, std::string value) {
 }
 
 inline std::string code_block_text(BlockSourceDocument const& source) {
-    auto text = utf8(block_source_content(source));
+    auto text = utf8(block_source_code_projection(source));
     auto const& tree = source.tree();
     auto const boundary = tree.content_to_source.empty() ? std::size_t{0}
         : tree.content_to_source.back();

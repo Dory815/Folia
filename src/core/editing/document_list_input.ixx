@@ -4,6 +4,7 @@ import std;
 import folia.core.ast;
 import folia.core.block_tree;
 import folia.core.document;
+import folia.core.document_container_source;
 import folia.core.document_edit_support;
 import folia.core.ids;
 import folia.core.inline_document;
@@ -135,7 +136,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> upgrade_task_item(
         move_item.moved_id = list->children[context->item_index].id;
         auto moved = remove_block(*list, context->item_index);
         if (!moved || !insert_block(*tasks_list, 0, std::move(*moved))) return std::nullopt;
-        result.operations.emplace_back(std::move(move_item));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move_item));
     }
 
     list = find_block(document.root, list_id);
@@ -172,7 +173,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> upgrade_task_item(
             if (!moved || !insert_block(*after, target_index, std::move(*moved))) {
                 return std::nullopt;
             }
-            result.operations.emplace_back(std::move(move_after));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move_after));
             ++target_index;
         }
     }
@@ -266,7 +267,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> exit_empty_list_it
         remove_list.parent_id = parent_id;
         remove_list.index = list_index;
         remove_list.before = parent->children[list_index];
-        result.operations.emplace_back(std::move(remove_list));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove_list));
         parent->children.erase(parent->children.begin() + static_cast<std::ptrdiff_t>(list_index));
 
         DocumentTreeEdit insert_paragraph;
@@ -284,7 +285,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> exit_empty_list_it
     remove_item.parent_id = list_id;
     remove_item.index = context->item_index;
     remove_item.before = item;
-    result.operations.emplace_back(std::move(remove_item));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove_item));
     list->children.erase(list->children.begin() + static_cast<std::ptrdiff_t>(context->item_index));
 
     if (context->item_index == 0) {
@@ -345,7 +346,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> exit_empty_list_it
             move.moved_id = current_list->children[context->item_index].id;
             auto moved = remove_block(*current_list, context->item_index);
             if (!moved || !insert_block(*trailing_list, target_index, std::move(*moved))) return std::nullopt;
-            result.operations.emplace_back(std::move(move));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move));
         }
     }
     return result;
@@ -460,7 +461,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> split_list_item(
         move.moved_id = current_item->children[first_moved_child].id;
         auto child = remove_block(*current_item, first_moved_child);
         if (!child || !insert_block(*next_item, target_index, std::move(*child))) return std::nullopt;
-        result.operations.emplace_back(std::move(move));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move));
         ++target_index;
     }
     return result;
@@ -502,7 +503,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> outdent_nested_lis
     auto* target_list = find_block(document.root, grand_list_id);
     if (!item || !target_list
         || !insert_block(*target_list, parent_item_index + 1, std::move(*item))) return std::nullopt;
-    result.operations.emplace_back(std::move(move));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move));
 
     if (auto* current = find_block(document.root, nested_list_id); current && current->children.empty()) {
         auto location = block_path(document.root, nested_list_id);
@@ -515,7 +516,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> outdent_nested_lis
         remove_list.parent_id = owner->id;
         remove_list.index = index;
         remove_list.before = owner->children[index];
-        result.operations.emplace_back(std::move(remove_list));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove_list));
         if (!remove_block(*owner, index)) return std::nullopt;
     }
     return result;
@@ -575,7 +576,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> remove_top_level_l
             move_after.moved_id = list->children[context.item_index + 1].id;
             auto item = remove_block(*list, context.item_index + 1);
             if (!item || !insert_block(*trailing_list, target_index, std::move(*item))) return std::nullopt;
-            result.operations.emplace_back(std::move(move_after));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move_after));
         }
     }
 
@@ -595,7 +596,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> remove_top_level_l
         move_child.moved_id = selected->children.front().id;
         auto child = remove_block(*selected, 0);
         if (!child || !insert_block(*parent, move_child.other_index, std::move(*child))) return std::nullopt;
-        result.operations.emplace_back(std::move(move_child));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(move_child));
     }
 
     list = find_block(document.root, list_id);
@@ -605,7 +606,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> remove_top_level_l
     remove_item.parent_id = list_id;
     remove_item.index = context.item_index;
     remove_item.before = list->children[context.item_index];
-    result.operations.emplace_back(std::move(remove_item));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove_item));
     list->children.erase(list->children.begin() + static_cast<std::ptrdiff_t>(context.item_index));
 
     if (context.item_index == 0 && following_count > 0) {
@@ -625,7 +626,7 @@ inline std::optional<document_edit_detail::RecordedBlockEdit> remove_top_level_l
         remove_list.parent_id = parent_id;
         remove_list.index = shifted_list_index;
         remove_list.before = parent->children[shifted_list_index];
-        result.operations.emplace_back(std::move(remove_list));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove_list));
         parent->children.erase(parent->children.begin() + static_cast<std::ptrdiff_t>(shifted_list_index));
     }
     return result;
