@@ -235,11 +235,38 @@ inline void project_inline_nodes(
                     append_text(*parent.children.back().node, content());
                 }
                 break;
-            case K::HtmlElement:
-            case K::HtmlComment:
-                append_node(parent, placeholder("html-policy/projection", "source", raw()));
-                limitation(limitations, "inline-html-policy/projection");
+            case K::HtmlElement: {
+                const auto& semantic = item.semantics();
+                if (item.status != ParseStatus::Complete || semantic.html_tag.empty()) {
+                    append_node(parent, placeholder("html-policy/projection", "source", raw()));
+                    limitation(limitations, "inline-html-policy/projection");
+                    break;
+                }
+                std::vector<std::pair<std::string, std::string>> attrs;
+                attrs.reserve(semantic.html_attributes.size());
+                for (const auto& [name, value] : semantic.html_attributes) {
+                    attrs.emplace_back(name, value);
+                    if (value.find('&') != std::string::npos) {
+                        limitation(limitations, "inline-html-attribute-reference-not-decoded");
+                    }
+                }
+                auto n = element(semantic.html_tag, std::move(attrs));
+                if (semantic.html_tag != "img" && semantic.html_tag != "br") {
+                    project_inline_nodes(n, doc, item.children, limitations);
+                }
+                append_node(parent, std::move(n));
                 break;
+            }
+            case K::HtmlComment: {
+                const auto& content_range = item.delimiter_ranges().content;
+                if (item.status != ParseStatus::Complete || !content_range.valid_for(doc.source.size())) {
+                    append_node(parent, placeholder("html-policy/projection", "source", raw()));
+                    limitation(limitations, "inline-html-policy/projection");
+                    break;
+                }
+                append_node(parent, element("comment", {{"text", utf8(inline_source_slice(doc, content_range))}}));
+                break;
+            }
             case K::Raw:
                 append_text(parent, raw());
                 break;
@@ -301,6 +328,11 @@ inline bool project_block(
                     && std::ranges::all_of(block.inline_content.source, [](char32_t ch) {
                         return ch == U' ' || ch == U'\t';
                     }))) return false;
+            if (block.inline_content.syntax_mode == InlineSyntaxMode::HtmlText) {
+                project_inline_nodes(parent, block.inline_content,
+                    block.inline_content.tree.nodes, limitations);
+                return true;
+            }
             auto n = element("p");
             auto semantic_nodes = semantic_inline_nodes(
                 block.inline_content,

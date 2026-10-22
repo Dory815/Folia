@@ -36,6 +36,7 @@ import folia.core.slug;
 import folia.core.utf;
 import folia.core.link_label;
 import folia.core.html_entities;
+import folia.core.markdown_html;
 import folia.core.inline_cst;
 import folia.core.inline_document;
 import folia.core.inline_parser;
@@ -506,6 +507,12 @@ public:
                     continue;
                 }
 
+                if (type7_tag_name_at_line(line_start)) {
+                    line_start = type7_block_end(line_start);
+                    paragraph_open = false;
+                    continue;
+                }
+
             }
 
             if (line_is_thematic_break(line_start)
@@ -522,53 +529,70 @@ public:
     }
 
     std::optional<HtmlTag> html_tag_at(std::size_t at, std::size_t limit) const {
-        if (at >= limit || cps[at] != U'<') return std::nullopt;
+        const auto parsed = scan_markdown_html_tag(cps, at, limit);
+        if (!parsed) return std::nullopt;
         HtmlTag tag;
-        tag.start = at;
-        auto cursor = at + 1;
-        if (cursor < limit && cps[cursor] == U'/') { tag.closing = true; ++cursor; }
-        auto name_start = cursor;
-        while (cursor < limit && (is_alnum_(cps[cursor]) || cps[cursor] == U'-')) ++cursor;
-        if (cursor == name_start) return std::nullopt;
-        tag.name = cps_to_utf8(std::u32string_view(cps).substr(name_start, cursor - name_start));
-        std::transform(tag.name.begin(), tag.name.end(), tag.name.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-        while (cursor < limit) {
-            while (cursor < limit && (cps[cursor] == U' ' || cps[cursor] == U'\t')) ++cursor;
-            if (cursor >= limit || is_line_ending_character(cps[cursor])) return std::nullopt;
-            if (cps[cursor] == U'>') { tag.end = cursor + 1; return tag; }
-            if (cps[cursor] == U'/' && cursor + 1 < limit && cps[cursor + 1] == U'>') {
-                tag.self_closing = true;
-                tag.end = cursor + 2;
-                return tag;
-            }
-            auto attribute_start = cursor;
-            while (cursor < limit && (is_alnum_(cps[cursor]) || cps[cursor] == U'-' || cps[cursor] == U'_')) ++cursor;
-            if (cursor == attribute_start) return std::nullopt;
-            auto attribute = cps_to_utf8(std::u32string_view(cps).substr(attribute_start, cursor - attribute_start));
-            std::transform(attribute.begin(), attribute.end(), attribute.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-            while (cursor < limit && (cps[cursor] == U' ' || cps[cursor] == U'\t')) ++cursor;
+        tag.start = parsed->range.start;
+        tag.end = parsed->range.end;
+        tag.name = parsed->name;
+        tag.closing = parsed->closing;
+        tag.self_closing = parsed->self_closing;
+        for (const auto& source_attribute : parsed->attributes) {
+            auto attribute = cps_to_utf8(std::u32string_view(cps).substr(
+                source_attribute.name.start,
+                source_attribute.name.length()));
+            std::ranges::transform(attribute, attribute.begin(), [](unsigned char cp) {
+                return static_cast<char>(std::tolower(cp));
+            });
+            if (attribute.starts_with("on") || attribute == "style") continue;
             std::string value;
-            if (cursor < limit && cps[cursor] == U'=') {
-                ++cursor;
-                while (cursor < limit && (cps[cursor] == U' ' || cps[cursor] == U'\t')) ++cursor;
-                if (cursor >= limit) return std::nullopt;
-                if (cps[cursor] == U'"' || cps[cursor] == U'\'') {
-                    auto quote = cps[cursor++];
-                    auto value_start = cursor;
-                    while (cursor < limit && cps[cursor] != quote
-                        && !is_line_ending_character(cps[cursor])) ++cursor;
-                    if (cursor >= limit || cps[cursor] != quote) return std::nullopt;
-                    value = cps_to_utf8(std::u32string_view(cps).substr(value_start, cursor - value_start));
-                    ++cursor;
-                } else {
-                    auto value_start = cursor;
-                    while (cursor < limit && cps[cursor] != U' ' && cps[cursor] != U'\t' && cps[cursor] != U'>') ++cursor;
-                    value = cps_to_utf8(std::u32string_view(cps).substr(value_start, cursor - value_start));
-                }
+            if (source_attribute.value) {
+                value = cps_to_utf8(std::u32string_view(cps).substr(
+                    source_attribute.value->start,
+                    source_attribute.value->length()));
             }
-            if (!attribute.starts_with("on") && attribute != "style") tag.attributes[attribute] = std::move(value);
+            tag.attributes[attribute] = std::move(value);
         }
-        return std::nullopt;
+        return tag;
+    }
+
+    std::optional<std::string> type7_tag_name_at_line(std::size_t line_start) const {
+        const auto line_end = line_content_end(line_start);
+        auto tag_start = line_start;
+        std::size_t indentation = 0;
+        while (tag_start < line_end && cps[tag_start] == U' ' && indentation < 4) {
+            ++tag_start;
+            ++indentation;
+        }
+        if (indentation > 3) return std::nullopt;
+        const auto tag = scan_markdown_html_tag(cps, tag_start, line_end);
+        if (!tag) return std::nullopt;
+        for (auto cursor = tag->range.end; cursor < line_end; ++cursor) {
+            if (cps[cursor] != U' ' && cps[cursor] != U'\t') return std::nullopt;
+        }
+
+        // Keep opening tags on the existing type 1/6 route. Complete closing
+        // tags are eligible for type 7 even when their names are block tags.
+        if (!tag->closing && (tag->name == "pre" || tag->name == "script"
+            || tag->name == "style" || tag->name == "textarea"
+            || html_is_block_element(tag->name))) {
+            return std::nullopt;
+        }
+        return tag->name;
+    }
+
+    std::size_t type7_block_end(std::size_t start) const {
+        auto line_end = line_content_end(start);
+        auto block_end = line_end;
+        while (line_end < cps.size()) {
+            const auto next = next_line_start(line_end);
+            if (next == line_end) break;
+            block_end = next; // own preceding EOL, leave the blank separator
+            if (next >= cps.size() || is_blank_line_at(next)) break;
+            line_end = line_content_end(next);
+            block_end = line_end;
+        }
+        return block_end;
     }
 
     std::optional<std::pair<std::size_t, std::size_t>> html_closing_tag(std::string_view name, std::size_t from, std::size_t limit) const {
@@ -1080,7 +1104,7 @@ public:
             if (auto b = try_parse_list_or_task())       return b;
             if (try_match_toc())                          return parse_toc();
         }
-        if (peek1() == '<') {
+        if (peek1() == '<' || type7_tag_name_at_line(pos)) {
             if (auto b = try_parse_raw_html_block())     return b;
         }
         return parse_paragraph();
@@ -1698,6 +1722,28 @@ public:
 
     std::optional<BlockNode> try_parse_raw_html_block() {
         const auto start = pos;
+        if (type7_tag_name_at_line(start)) {
+            const auto block_end = type7_block_end(start);
+            auto content_end = block_end;
+            if (content_end > start && cps[content_end - 1] == U'\n') {
+                --content_end;
+                if (content_end > start && cps[content_end - 1] == U'\r') --content_end;
+            } else if (content_end > start && cps[content_end - 1] == U'\r') {
+                --content_end;
+            }
+            // Raw HTML is still one editable content source. Its inline CST
+            // retains tag/link/style structure; the block language prevents
+            // Markdown interpretation of the remaining HTML text.
+            BlockNode block;
+            block.id = next_node_id();
+            block.kind = BlockKind::Paragraph;
+            block.inline_content = make_inline_document(
+                start, content_end, InlineSyntaxMode::HtmlText);
+            push_range(block.id, {start, block_end}, {start, content_end});
+            pos = block_end;
+            return block;
+        }
+
         auto remainder = std::u32string_view(cps).substr(start);
         auto scanned = parse_html_cst(remainder);
         if (scanned.nodes.empty()) return std::nullopt;

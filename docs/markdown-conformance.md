@@ -12,20 +12,35 @@ List tightness is committed in e36af31e (core and all official cases verified).
 Whitespace semantics is committed in 7a804d73. The accompanying commit fixes
 #60 thematic-break precedence in the list sibling loop (c5d8da4c).
 Blank-line source and quote opening-marker fixes are committed in e94f5904.
-Shared markdown_html scanner + inline adapters accompany this checkpoint;
-core and all official cases passed regression comparison. No live build.
-The app project registers the new module. Windows tests passed before the final
-raw-tag delimiter-collection fix; rerun after the block/projection batch.
+Shared markdown_html scanner + inline adapters are committed in 875a0fac;
+core and all official cases passed regression comparison.
+The app project registers the new module. Final core and Windows runs include
+the raw-tag delimiter-collection fix and the accepted type-7 batch below.
 Focused #536 showed complete unknown tags were scanned correctly but their
 attribute brackets were still parsed as links in the main inline loop. Root
 now emits existing Raw CST nodes for complete tags without derived presentation;
 their text/render policy is retained, their internals stay opaque Markdown syntax.
-Next integrate html-type-seven/candidate-v2 and
-html-semantic-projection (test-only projection of already parsed inline HTML).
-Both candidates are delivered, no live agents.
-Root reviews/merges/builds; no agent builds/Git.
-The initial html-type-seven candidate is rejected: duplicate tag grammar,
-all tags made unsupported, and duplicate raw body storage. Only v2 may be used.
+The current accepted HTML batch uses the existing editable Paragraph/HtmlText owner
+for type-7 HTML blocks. The raw inline source excludes only the final physical
+EOL; existing document/separator ownership retains that EOL. No new block kind,
+source envelope, DOM fragment helper or serializer branch is introduced.
+The shared scanner recognizes type-7 starts only at block boundaries and stops
+at a blank line. Existing type 1-6 behavior stays on its established route.
+Test-only projection now consumes recognized HTML CST elements/comments directly;
+strict official expected trees remain unchanged.
+
+Rejected history: v1 duplicated tag grammar and raw source. v2 added HTML
+containers/fragments, but rendering inspection found an outer inline anchor lost
+its link/style behavior because HtmlContainer rendering walks children only.
+The current v3 reuses HtmlText CST semantics instead. Do not restore v1/v2.
+Accepted parser/editor tests came from candidates/html-type-seven/tests-v3/;
+root corrected explicit module imports, test construction and source-range
+expectations, then verified the actual production implementation.
+No live agents/builds. All current native runs completed normally. Root owns
+integration/builds/Git; maximum build parallelism is **4**.
+Next diagnose the remaining HTML grammar/boundary cases against md4c (after the
+official failures), separating retained rendering policy from syntax defects.
+Full container-prefix provenance still requires the edit/history contract below.
 
 Frozen HTML responsibilities: parsing/markdown_html.ixx scans complete open/close
 tag syntax to source ranges, without source copies/decoding/presentation policy.
@@ -40,48 +55,53 @@ multiline provenance implementation. Full prefix/history and Tab contracts
 remain pending before lazy continuations #93/#238/#312 can be completed.
 Scalar diagnosis found #21/#344 are HTML boundaries too; notes are under
 candidates/remaining-scalars/.
-Emphasis #475–477 are inline HTML behavior/projection differences, not delimiter
-resolution errors; six-line notes are under candidates/remaining-emphasis/.
+Emphasis #475 is now matched via actual HTML CST projection; #476/#477 remain
+missing-closer HTML behavior differences, not delimiter resolution errors.
 Candidates remain under ignored build/markdown-conformance/candidates/.
-No candidate delivery counts as acceptance. Root owns
-integration/builds; maximum parallelism is **4**. Earlier verified syntax
-batches are recorded in Git through d5dfc16b.
+No candidate delivery counts as acceptance. Earlier verified syntax batches are
+recorded in Git through d5dfc16b; later batches are listed above.
 
 | Check | Initial baseline | Current |
 |---|---:|---:|
-| Strict official semantic matches | 292/652 | **573/652** |
+| Strict official semantic matches | 292/652 | **579/652** |
 | Inline source/CST losslessness | 652/652 | **652/652** |
 | Character-exact document serialization | 571/652 | **631/652** |
 
-All 652 cases ran in **0.612s**, with no skips or abnormal exit. There remain
-**79 semantic differences**, **21 exact-save differences**, and **97 combined
-failed cases**. No semantic, save or inline-CST regression against d5dfc16b.
+All 652 cases ran in **0.615s**, with no skips or abnormal exit. There remain
+**73 semantic differences**, **21 exact-save differences**, and **91 combined
+failed cases**. No semantic, save or inline-CST regression against the immutable
+phase-four-start/ report (c5d8da4c), or the preceding accepted batch.
+New semantic matches: #162/#164/#166 (type-7 boundaries) and #475/#616/#625
+(actual recognized HTML CST projection). Exact-save gains this phase are
+#6/#227/#241. Strict expected trees were neither weakened nor skipped.
 Source checks and correct syntax are independent assertions.
 
 ## Verification
 
-- Core: **527 tests / 41935 assertions**, exit 0. The 8074-assert structure
+- Core: **559 tests / 42355 assertions**, exit 0. New real Editor tests cover
+  HtmlText insertion/deletion, Enter, undo/redo and retained link/bold rendering.
+  The 8074-assert structure
   property test covers Enter/merge/undo/redo and zero full-document parsing,
   serialization or transaction-diff work during normal edits.
 - Windows editor: **80 tests / 3429 assertions**, exit 0.
-- md4c on the remaining 79 official semantic differences: **79 semantic matches**;
-  74 exact HTML matches, 5 formatting-only newline differences. Its native
+- md4c on the remaining 73 official semantic differences: **73 semantic matches**;
+  68 exact HTML matches, 5 formatting-only newline differences. Its native
   exact-byte assertions return the normal test-failure code 1.
 - Fixture/generator Python tests: 10 passed; fixture inputs are hash-verified.
 
 Reports/logs are in ignored build/markdown-conformance/: results.{json,jsonl,md},
-blank-prefix-{core,official,platform}.log and md4c/results.json (79 unchanged
-semantic failures; reference run from the preceding batch).
+html-text-{core,official,platform,md4c}.log and md4c/results.json.
+Rejected v2 logs are historical and do not establish current acceptance.
 Initial reports remain in baseline/; phase-three-start/ is the d5dfc16b baseline.
 Earlier phase-one/, phase-two/ and intermediate batch logs are historical.
 Generated fixtures and downloaded third-party sources remain ignored.
 
 ## Remaining work and exact next action
 
-Of the 79 strict differences, none is list-tightness-only; 29 carry HTML
-policy/projection labels; 9 carry other limits; 41 have no such label.
+Of the 73 strict differences, none is list-tightness-only; 18 carry HTML
+policy/projection labels; 9 carry other limits; 46 have no such label.
 Several unlabeled cases also concern HTML boundaries (diagnoses above).
-They are not 79 independently established parser bugs. Diagnostic relaxed
+They are not 73 independently established parser bugs. Diagnostic relaxed
 comparison never passes a formal test; expectations were not changed or skipped.
 
 Before implementing container-prefix provenance, finish its edit/history
@@ -112,6 +132,7 @@ were rejected. Candidate delivery alone was never acceptance.
 
 ## Fixed responsibilities
 
+- parsing/markdown_html.ixx: complete HTML tag syntax and absolute source ranges.
 - parsing/parser.ixx: block/container recognition, physical source ranges, definitions.
 - parsing/inline_parser.ixx: one block's lossless CST, matching and incomplete states.
 - model/inline_document.ixx: exact source and CST queries, retaining source coordinates.
