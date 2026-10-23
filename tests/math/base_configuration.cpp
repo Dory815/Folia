@@ -11,10 +11,11 @@ struct BaseFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     explicit BaseFixture(TexOptionValues supplied = {}) {
         BasePackage::initialize(registry, maps);
-        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(),
-                                    std::move(supplied));
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, std::move(supplied));
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &parse(std::u16string source, TexEnvironment seed = {}) {
         TexParser parser(std::move(source), ParserEnvironmentSeed{std::move(seed)},
@@ -161,7 +162,7 @@ suite base_configuration = [] {
     "base configuration nonscript postprocessor updates original node kind lists"_test = [] {
         BaseFixture f;
         auto &options = f.jax->parseOptions();
-        auto &factory = options.nodeFactory;
+        auto &factory = options.request().nodeFactory;
         auto &space = factory.makeNode(NodeKind::mspace);
         std::array spaceChildren{&space};
         auto &style = factory.makeNode(NodeKind::mstyle, spaceChildren);
@@ -170,7 +171,7 @@ suite base_configuration = [] {
         auto &direct = factory.makeNode(NodeKind::mspace);
         std::array rootChildren{&wrapped, &direct};
         auto &root = factory.makeNode(NodeKind::math, rootChildren);
-        options.root = &root;
+        options.request().root = &root;
         wrapped.attributes().set(u"scriptlevel", 1.0);
         direct.attributes().set(u"scriptlevel", 1.0);
         options.addNode(u"nonscript", wrapped);
@@ -181,8 +182,8 @@ suite base_configuration = [] {
         auto callback = std::get<FilterList::VoidCallback>(package->postprocessors.front().method);
         callback(data);
         expect(all(root, NodeKind::mspace).empty());
-        expect(options.nodeLists[u"mspace"].empty());
-        expect(options.nodeLists[u"mstyle"].empty());
-        expect(options.nodeLists[u"mrow"].empty());
+        expect(options.request().nodeLists[u"mspace"].empty());
+        expect(options.request().nodeLists[u"mstyle"].empty());
+        expect(options.request().nodeLists[u"mrow"].empty());
     };
 };

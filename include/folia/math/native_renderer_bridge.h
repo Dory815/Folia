@@ -51,6 +51,29 @@ FoliaNativeMathStatus FoliaNativeMathRenderSvg(
     unsigned int timeout_ms,
     FoliaNativeMathResult** result);
 
+typedef struct FoliaNativeMathInput {
+    uint16_t const* tex;
+    size_t tex_units;
+    int display;
+    double em;
+    double container_width;
+    FoliaNativeMathCancellation* cancellation;
+    unsigned int timeout_ms;
+} FoliaNativeMathInput;
+
+typedef struct FoliaNativeMathOutput {
+    FoliaNativeMathStatus status;
+    FoliaNativeMathResult* result;
+} FoliaNativeMathOutput;
+
+// One font request for the batch. Item errors remain isolated; each returned
+// result is caller-owned. Timeout starts when that item begins rendering.
+FoliaNativeMathStatus FoliaNativeMathRenderSvgBatch(
+    FoliaNativeMathRenderer* renderer,
+    FoliaNativeMathInput const* inputs,
+    size_t count,
+    FoliaNativeMathOutput* outputs);
+
 char const* FoliaNativeMathResultSvg(
     FoliaNativeMathResult const* result,
     size_t* size);

@@ -69,6 +69,11 @@ namespace winrt::Folia
             resources.RebuildTextFormats(styleSheet);
             resources.ResetBrushes();
             resources.EnsureFrameResources(styleSheet);
+            auto context = CaptureMathPreparationContext();
+            context.surfaceWidth = PdfContentWidth;
+            auto preparedMath = PrepareMath(frame, context, mathPreparationStop, {});
+            mathJax = std::move(preparedMath->math);
+            mathJax.SetPreparationStopToken(mathPreparationStop);
         }
         auto state = pdfExportState;
         exporting = true;
@@ -219,8 +224,7 @@ namespace winrt::Folia
                 {
                     ready = false;
                 }
-                else if (block.pendingMath
-                    || block.pendingImage
+                else if (block.pendingImage
                     || block.pendingMermaid
                     || (imagesPending && block.containsImage && imageStillLoading(block)))
                 {

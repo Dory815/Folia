@@ -9,11 +9,21 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const cp = require('node:child_process');
 
-const root = path.resolve(__dirname, path.basename(__dirname) === 'inventory' ? '../../../../..' : '../..');
+function discoverRoot(start=__dirname) {
+  let candidate=path.resolve(start);
+  while(true) {
+    if(fs.existsSync(path.join(candidate,'CMakeLists.txt'))&&fs.existsSync(path.join(candidate,'docs/math-port/HANDOFF.md')))return candidate;
+    const parent=path.dirname(candidate);
+    if(parent===candidate)throw new Error(`Could not discover repository root from ${start}`);
+    candidate=parent;
+  }
+}
+const root = discoverRoot();
 const args=process.argv.slice(2);
 const option=(name,fallback)=>{const i=args.indexOf(name);return i>=0&&args[i+1]?path.resolve(args[i+1]):fallback;};
-const out=option('--report',path.join(root,'build/math-port/native-raii-inventory.json'));
-const manifestOut=option('--manifest',path.join(root,'docs/math-port/native-raii-files.json'));
+const inventoryOutputRoot=path.join(root,'build/math-port/inventory');
+const out=option('--report',path.join(inventoryOutputRoot,'native-raii-inventory.json'));
+const manifestOut=option('--manifest',path.join(inventoryOutputRoot,'native-raii-files.json'));
 const norm = p => p.split(path.sep).join('/');
 const walk = dir => fs.readdirSync(dir, {withFileTypes:true}).flatMap(e => {
   const p = path.join(dir, e.name);
@@ -25,6 +35,7 @@ const rootCMake = read('CMakeLists.txt');
 const list = dir => walk(path.join(root,dir)).map(p => norm(path.relative(root,p))).sort();
 const isSourceFile=p=>/\.(ixx|cpp|hpp|h|cc|c|inc)$/.test(p);
 const unresolvedRefs=(refs,known)=>[...refs].filter(p=>!known.has(p)).sort();
+const trackedUnder = dir => list(dir);
 function resolveModuleEdges(p,facts,providers,activeSources) {
   const found=[], unresolved=[];
   for(const i of facts.imports) {
@@ -41,6 +52,29 @@ function resolveModuleEdges(p,facts,providers,activeSources) {
   }
   return {edges:found,unresolved};
 }
+function resolveTargetSourceVariables(bodies,targetName,manifests) {
+  const variables=new Set();
+  for(const body of bodies)for(const m of body.matchAll(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g))variables.add(m[1]);
+  const resolved=[],unresolved=[];
+  for(const variable of variables) {
+    // These CMake built-ins expand path prefixes, not source-list contents.
+    if(['CMAKE_CURRENT_SOURCE_DIR','CMAKE_CURRENT_BINARY_DIR','CMAKE_CURRENT_LIST_DIR'].includes(variable))continue;
+    if(targetName==='folia_math'&&variable==='FOLIA_FONT_GENERATED_CPP'&&manifests.fontDependencies) {
+      const manifest=manifests.fontDependencies;
+      if(!Array.isArray(manifest.generated_cpp)) {
+        unresolved.push({target:targetName,variable,expression:`\${${variable}}`,reason:'known-font-dependency-manifest-has-no-generated_cpp-array'});
+        continue;
+      }
+      const generatedCpp=(manifest.generated_cpp??[]).filter(p=>/\.cpp$/.test(p));
+      resolved.push({target:targetName,variable,expression:`\${${variable}}`,origin:manifests.fontDependenciesPath,
+        sourceLock:manifest.source_lock??null,
+        manifestSha256:manifests.fontDependenciesSha256,sourceDependencyCount:(manifest.source_dependencies??[]).length,
+        manifestGeneratedCppCount:manifest.generated_cpp.length,
+        excludedNonCppOutputs:manifest.generated_cpp.filter(p=>!/\.cpp$/.test(p)),generatedCpp});
+    } else unresolved.push({target:targetName,variable,expression:`\${${variable}}`,reason:'source-list-variable-not-resolved-by-this-static-inventory'});
+  }
+  return {resolved,unresolved};
+}
 function runSelfTests() {
   const assert=require('node:assert/strict');
   assert.equal(isSourceFile('src/math/output/scene/builder.ixx'),true);
@@ -54,13 +88,98 @@ function runSelfTests() {
   assert.equal(missing.edges.length,0);
   assert.equal(missing.unresolved[0].reason,'no-registered-interface-provider');
   assert.equal(resolveModuleEdges('active.cpp',{isImplementationUnit:true,primaryModule:'fixture.absent',imports:[]},providers,new Set(['active.cpp'])).unresolved[0].reason,'implementation-unit-missing-primary-interface');
-  return 'passed 8 assertions';
+  const literalFixture=['literal.cpp'];
+  const variableFixture=resolveTargetSourceVariables(['target_sources(folia_math PRIVATE literal.cpp ${FOLIA_FONT_GENERATED_CPP} ${UNKNOWN_SOURCE_LIST})'],'folia_math',
+    {fontDependencies:{generated_cpp:['build/font/a.cpp','build/font/data.inc','build/font/b.cpp']},fontDependenciesPath:'fixture-dependencies.json',fontDependenciesSha256:'fixture-hash'});
+  assert.deepEqual(variableFixture.resolved[0].generatedCpp,['build/font/a.cpp','build/font/b.cpp']);
+  assert.equal(variableFixture.unresolved[0].variable,'UNKNOWN_SOURCE_LIST');
+  assert.equal(variableFixture.resolved[0].generatedCpp.includes('literal.cpp'),false);
+  assert.deepEqual([...literalFixture,...variableFixture.resolved[0].generatedCpp],['literal.cpp','build/font/a.cpp','build/font/b.cpp']);
+  assert.equal(resolveTargetSourceVariables(['target_sources(folia_math PRIVATE ${FOLIA_FONT_GENERATED_CPP})'],'folia_math',
+    {fontDependencies:{},fontDependenciesPath:'fixture-dependencies.json'}).unresolved[0].reason,'known-font-dependency-manifest-has-no-generated_cpp-array');
+  const missingEnvelope=codemodelEnvelopeStatus({root,index:null,codemodel:null});
+  assert.equal(missingEnvelope.status,'missing');
+  assert.equal(missingEnvelope.authoritative,false);
+  assert.equal(codemodelEnvelopeStatus({root,indexError:'bad json',codemodel:null}).status,'malformed');
+  const wrongRoot=codemodelEnvelopeStatus({root,index:{reply:{'client-math-port':{'codemodel-v2':{jsonFile:'cm.json'}}}},
+    codemodel:{paths:{source:path.resolve(root,'elsewhere'),build:path.resolve(root,'build/core')},configurations:[]}});
+  assert.equal(wrongRoot.status,'wrong-source-root');
+  assert.equal(wrongRoot.authoritative,false);
+  assert.equal(codemodelEnvelopeStatus({root,index:{reply:{'client-math-port':{'codemodel-v2':{jsonFile:'cm.json'}}}},
+    codemodel:{paths:{source:root},configurations:[]}}).status,'malformed');
+  assert.equal(codemodelEnvelopeStatus({root,index:{reply:{'client-math-port':{'codemodel-v2':{jsonFile:'cm.json'}}}},
+    codemodel:{paths:{source:root,build:path.join(root,'build/core')},configurations:{}}}).status,'malformed');
+  const missingReader=readConfiguredCodemodel(root,{replyDir:path.join(root,'build/math-port/no-file-api-reader-fixture')});
+  assert.equal(missingReader.status,'missing');
+  assert.equal(missingReader.authoritative,false);
+  const fixtureModel={paths:{source:'/fixture',build:'/fixture/build'}};
+  const fixtureTargets=[
+    {name:'folia_math',id:'folia_math::@fixture',sources:[
+      {path:'src/math/a.ixx',exists:true},{path:'src/math/b.ixx',exists:true},{path:'src/math/a.cpp',exists:true}]},
+    {name:'FoliaNativeMath',id:'FoliaNativeMath::@fixture',sources:[{path:'src/math/native_renderer_bridge.cpp',exists:true}]}
+  ];
+  const fixtureMap={modules:{'fixture.a':{},'fixture.b':{}}};
+  const fixtureTexts={'src/math/a.ixx':'export module fixture.a;','src/math/b.ixx':'export module fixture.b;'};
+  const evaluateFixture=(targets=fixtureTargets,map=fixtureMap,texts=fixtureTexts)=>evaluateConfiguredTargetData('/fixture',{
+    indexFile:'fixture-index.json',codemodelFile:'fixture-codemodel.json',codemodel:fixtureModel,configuration:'Debug',targetFacts:targets,
+    moduleMap:map,sourceText:p=>{if(!(p in texts))throw new Error(`unexpected fixture read: ${p}`);return texts[p];}});
+  const fixtureConfigured=evaluateFixture();
+  assert.equal(fixtureConfigured.status,'ready');
+  assert.equal(fixtureConfigured.authoritative,true);
+  assert.equal(fixtureConfigured.foliaMathSourceCount,3);
+  assert.equal(fixtureConfigured.foliaMathInterfaceCount,2);
+  assert.equal(fixtureConfigured.moduleMapCheck.exactMatch,true);
+  assert.equal(fixtureConfigured.bridgeSourceMember,true);
+  assert.deepEqual(fixtureConfigured.bridgeTargets,['FoliaNativeMath']);
+  assert.ok(fixtureConfigured.allTargetMathMembership.some(t=>t.name==='FoliaNativeMath'&&t.paths.includes('src/math/native_renderer_bridge.cpp')));
+  const missingGenerated=evaluateConfiguredTargetData('/fixture',{indexFile:'fixture-index.json',codemodelFile:'fixture-codemodel.json',
+    codemodel:fixtureModel,configuration:'Debug',targetFacts:fixtureTargets,moduleMap:fixtureMap,
+    generatedFontCpp:['build/font/missing.cpp'],sourceText:p=>fixtureTexts[p]});
+  assert.equal(missingGenerated.status,'stale-inputs');
+  assert.equal(missingGenerated.authoritative,false);
+  const staleSummary=configuredCodemodelSummary({...missingGenerated,indexFile:'latest-index.json',codemodelFile:'latest-codemodel.json',
+    missingFontInputs:['build/font/missing.cpp'],evidence:{index:{sha256:'fixture'}}});
+  assert.equal(staleSummary.indexFile,'latest-index.json');
+  assert.equal(staleSummary.missingFontInputs[0],'build/font/missing.cpp');
+  assert.equal(staleSummary.evidence.index.sha256,'fixture');
+  const generatedScan=moduleScanCandidates(['fixture-present.cpp','fixture-missing.cpp'],p=>p==='fixture-present.cpp');
+  assert.deepEqual(generatedScan.paths,['fixture-present.cpp']);
+  assert.deepEqual(generatedScan.missing,['fixture-missing.cpp']);
+  const absentModuleMap=evaluateFixture(fixtureTargets,{});
+  assert.equal(absentModuleMap.status,'malformed');
+  assert.equal(absentModuleMap.authoritative,false);
+  const malformedTarget=evaluateFixture([{name:'folia_math',sources:null}],fixtureMap);
+  assert.equal(malformedTarget.status,'malformed');
+  assert.equal(malformedTarget.authoritative,false);
+  const missingSource=evaluateFixture([{...fixtureTargets[0],sources:[{path:'src/math/missing.ixx',exists:false}]},fixtureTargets[1]]);
+  assert.equal(missingSource.status,'stale-inputs');
+  assert.equal(missingSource.authoritative,false);
+  const mismatchedMap=evaluateFixture(fixtureTargets,{modules:{'fixture.a':{},'fixture.other':{}}});
+  assert.equal(mismatchedMap.status,'incomplete');
+  assert.equal(mismatchedMap.authoritative,false);
+  assert.equal(mismatchedMap.moduleMapCheck.exactMatch,false);
+  const duplicateProvider=evaluateFixture([{...fixtureTargets[0],sources:[...fixtureTargets[0].sources,{path:'src/math/c.ixx',exists:true}]}],fixtureMap,
+    {...fixtureTexts,'src/math/c.ixx':'export module fixture.a;'});
+  assert.equal(duplicateProvider.status,'incomplete');
+  assert.equal(duplicateProvider.moduleMapCheck.duplicateProviders.length,1);
+  const undeclared=evaluateFixture([{...fixtureTargets[0],sources:[...fixtureTargets[0].sources,{path:'src/math/c.ixx',exists:true}]}],fixtureMap,
+    {...fixtureTexts,'src/math/c.ixx':'module;'});
+  assert.equal(undeclared.status,'incomplete');
+  assert.equal(undeclared.moduleMapCheck.undeclaredInterfaceCount,1);
+  const noBuildReader=readConfiguredCodemodel('/fixture',{replyDir:'/fixture/no-file-api-replies'});
+  assert.equal(noBuildReader.status,'missing');
+  assert.equal(noBuildReader.authoritative,false);
+  assert.equal(noBuildReader.foliaMathSources,undefined);
+  return 'passed 55 assertions (including isolated File API fixtures; no repository build inputs read)';
 }
 if(args.includes('--self-test')) { process.stdout.write(`${runSelfTests()}\n`); process.exit(0); }
-const trackedUnder = dir => cp.execFileSync('git',['ls-files','--',dir],{cwd:root,encoding:'utf8'}).split(/\r?\n/).filter(Boolean);
 const textFiles = list('src/math');
 const sourceFiles = textFiles.filter(isSourceFile);
 const fileIds = new Map(textFiles.map((p,i)=>[p,`F${String(i+1).padStart(3,'0')}`]));
+function moduleScanCandidates(paths,exists= p=>fs.existsSync(path.join(root,p))) {
+  const unique=[...new Set(paths)];
+  return {paths:unique.filter(exists),missing:unique.filter(p=>!exists(p))};
+}
 
 function moduleFacts(p) {
   if (!/\.(ixx|cpp)$/.test(p)) return {declaration:null, isInterface:false, isImplementationUnit:false, primaryModule:null, partition:null, imports:[], forwardDeclarations:[]};
@@ -77,56 +196,149 @@ function moduleFacts(p) {
     partition:named?.includes(':') ? named.slice(named.indexOf(':')+1) : null, imports, forwardDeclarations};
 }
 
-function disposition(p) {
-  const n = p.toLowerCase();
-  if (/\/license-[^/]+\.txt$|\/notice\.txt$/.test(n))
-    return ['keep','Preserve the required third-party license/notice text with the retained source/data.','Root (license provenance)'];
-  if (n.includes('/dependencies/mhchem_parser/'))
-    return ['rewrite','Native typed chemistry parser/helper algorithms used by the pinned mhchem package; verify exact upstream source mapping and behavior.','session-parser'];
-  if (/src\/math\/(output\/common|fonts)\/(font_data_options|font_data_bindings|font_data_surface|bbox_bindings|common_bindings|wrapper_class_bindings|factory_context_fields|newcm_font_data_surface)\./.test(n))
-    return ['remove','Context/Value/identity projection surface withdrawn; its typed service/data behavior belongs in the native repository, Scene, or serializer contract.','common-font-audit'];
-  if (/src\/math\/output\/common\/line_bbox\./.test(n))
-    return ['rewrite','Typed line-indent/BBox math using native node and layout contracts.','common-font-audit'];
-  if (/src\/math\/output\/common\/font_data\./.test(n))
-    return ['rewrite','Canonical typed immutable FontRepository and FontFaceData service, with no Property/Context representation.','common-font-audit'];
-  if (/src\/math\/util\/regexp_host\./.test(n))
-    return ['rewrite','Typed Unicode regular-expression service for the native math profile.','raii-regex'];
-  if (/src\/math\/fonts\/newcm_font_(data|module_provider)\./.test(n))
-    return ['rewrite','Typed immutable NewCM provider/installer using locked data; generated payload comes from the audited generator.','common-font-audit'];
-  if (/src\/math\/fonts\/svg_extensions\./.test(n))
-    return ['rewrite','Rewrite extension maps as typed values owned by common font face data; only immutable table payload may be reused.','common-font-audit'];
-  if (/src\/math\/core\/mml_tree\/(?:operator_dictionary_data|mo_pattern_data)\.cpp$/.test(n))
-    return n.endsWith('mo_pattern_data.cpp')
-      ? ['regenerate','Regenerate the immutable MathJax operator-pattern table from its pinned source and reviewed generator.','mml']
-      : ['rewrite','Generated operator definitions currently instantiate legacy Property graphs; emit typed immutable operator records instead.','mml'];
-  if (/src\/math\/input\/tex\/textcomp\/mapping_data\.inc$/.test(n))
-    return ['regenerate','Regenerate the locked TextcompMappings table as data-only output.','session-parser'];
-  if (/src\/math\/util\/(?:unicode_normalization_data\.ixx|js_case_data\.cpp)$/.test(n))
-    return ['regenerate','Regenerate the immutable Unicode mapping table from its pinned Unicode data inputs.','common-font-audit'];
-  if (/src\/math\/output\/common\/(wrapper|wrapper_factory|output_jax|linebreak_visitor)\.|src\/math\/output\/common\/wrappers\//.test(n))
-    return ['rewrite','Typed CommonWrapper/factory and per-family measurement/placement; move family algorithms into output/common/placement/<family>.','common-font-audit'];
-  if (/src\/math\/output\/scene\/wrappers\//.test(n))
-    return ['rewrite','Transfer mathematical family placement to output/common/placement/<family>; Scene only receives completed owned geometry.','common-font-audit'];
-  if (/\.(txt|inc)$/.test(n) && (/font|operator|pattern|unicode|entity|data/.test(n)))
-    return ['keep','Immutable mathematical/font/Unicode/operator data; verify provenance and representation before retaining.','common-font-audit'];
-  if (/src\/math\/(?:util\/.*_data\.inc|fonts\/.*_data\.inc|dependencies\/mhchem_parser\/.*_data\.inc)$/.test(n))
-    return ['keep','Immutable table payload; retain as data only after its exact Source mapping/license and import-free representation are confirmed.','common-font-audit'];
-  if (/context|binding|identity|projection|property|object|option_(types|storage|object|array|iterator)|callable|runtime_modules|lite|dom_adaptor|xml_dom|(?:^|\/)core\/tree\//.test(n))
-    return ['remove','Withdrawn runtime object graph, DOM/adaptor projection, or host-only compatibility layer; mathematical behavior must move to typed native owners where needed.','root-retirement'];
-  if (/(^|\/)host(?:[./]|$)|_host\./.test(n))
-    return ['remove','Withdrawn host projection/Context bridge; port any required mathematical behavior to the owning typed module.','root-retirement'];
-  if (n.includes('/output/svg/')) return ['rewrite','Source-compatible SVG serializer/metadata consumer over completed immutable Scene; no layout or mutable MML dependency.','svg'];
-  if (n.includes('/output/scene/')) return ['rewrite','Replace duplicate wrapper/identity projection with owned immutable Scene and one layout pass; placement ownership pending common audit.','scene'];
-  if (n.includes('/output/common/') || n.includes('/fonts/') || n.includes('/output/common')) return ['rewrite','Typed CommonWrapper/BBox/font/placement service; one measurement and placement pass, audited per file before reuse.','common-font-audit'];
-  if (n.includes('/core/mml_tree/')) return ['rewrite','Typed MML node family, attributes, factory, and document-local tree operations.','mml'];
-  if (n.includes('/input/tex/')) return ['rewrite','Native typed TeX parser/package behavior and explicit renderer session state.','session-parser'];
-  if (n.includes('/util/')) return ['rewrite','Keep only pure mathematical/text utilities after transitive import audit; replace JS coercion/object helpers with typed domain APIs.','common-font-audit'];
-  if (n.includes('/input/tex/')) return ['rewrite','Native typed TeX parser/package behavior and explicit renderer session state.','session-parser'];
-  if (n.includes('/core/')) return ['rewrite','Renderer/document lifecycle and typed orchestration around request-owned MML, Scene, and C ABI.','Root (pipeline integration)'];
-  if (n.includes('/handlers/html/')) return ['rewrite','Owned HTML and annotation content staging, measured into the immutable Scene.','scene'];
-  if (n.endsWith('/native_renderer_bridge.cpp')) return ['rewrite','Existing plain C ABI bridge to the single folia_math target; keep platform-specific integration outside the core pipeline.','Root (pipeline integration)'];
-  if (n.includes('/math.cpp') || n.includes('/math.ixx')) return ['rewrite','Public Renderer facade and request-pipeline orchestration only.','Root (pipeline integration)'];
-  return ['rewrite','Assign to the named Root pipeline owner for canonical-path decomposition and target retirement review.','Root (pipeline integration)'];
+function configuredCodemodelSummary(c) {
+  const summary={status:c.status,authoritative:c.authoritative,reason:c.reason??null};
+  for(const key of ['indexFile','codemodelFile','generatedModuleMapPath','expectedSourceRoot','reportedSourceRoot','expectedBuildRoot','reportedBuildRoot',
+    'actualReplyDir','expectedReplyDir','badPaths','missingInputs','newerInputs','missingFontInputs','extraFontInputs','moduleMapCheck','evidence','freshness'])
+    if(c[key]!==undefined)summary[key]=c[key];
+  if(c.authoritative)Object.assign(summary,{sourceRoot:c.sourceRoot,buildRoot:c.buildRoot,configuration:c.configuration,
+    foliaMathSourceCount:c.foliaMathSourceCount,foliaMathInterfaceCount:c.foliaMathInterfaceCount,bridgeSourceMember:c.bridgeSourceMember,
+    bridgeTargets:c.bridgeTargets,allTargetMathMembership:c.allTargetMathMembership,
+    targets:c.targets.map(t=>({name:t.name,id:t.id,type:t.type,sourcePaths:t.sources.map(s=>s.path)})),foliaMathSources:c.foliaMathSources});
+  return summary;
+}
+function codemodelEnvelopeStatus({index,indexError,codemodel,codemodelError,root}) {
+  if(!index&&!indexError)return {status:'missing',authoritative:false,reason:'no-file-api-index'};
+  if(indexError||codemodelError)return {status:'malformed',authoritative:false,reason:String(indexError??codemodelError)};
+  if(!index?.reply?.['client-math-port']?.['codemodel-v2'])return {status:'malformed',authoritative:false,reason:'missing-client-math-port-codemodel-v2'};
+  if(!Array.isArray(codemodel?.configurations)||typeof codemodel?.paths?.source!=='string'||!codemodel.paths.source.trim()||
+      typeof codemodel?.paths?.build!=='string'||!codemodel.paths.build.trim())
+    return {status:'malformed',authoritative:false,reason:'invalid-codemodel-shape'};
+  const actual=path.resolve(root,codemodel.paths.source),expected=path.resolve(root);
+  if(process.platform==='win32' ? actual.toLowerCase()!==expected.toLowerCase() : actual!==expected)
+    return {status:'wrong-source-root',authoritative:false,expectedSourceRoot:expected,reportedSourceRoot:actual};
+  const actualBuild=path.resolve(root,codemodel.paths.build),expectedBuild=path.resolve(root,'build/core');
+  if(process.platform==='win32' ? actualBuild.toLowerCase()!==expectedBuild.toLowerCase() : actualBuild!==expectedBuild)
+    return {status:'incomplete',authoritative:false,reason:'codemodel-build-root-does-not-match-local-core-module-map',expectedBuildRoot:expectedBuild,reportedBuildRoot:actualBuild};
+  return {status:'candidate',authoritative:false,sourceRoot:actual};
+}
+function evaluateConfiguredTargetData(repoRoot, {indexFile,codemodelFile,codemodel,configuration,targetFacts,moduleMap,
+    generatedFontCpp=[],indexTime=0,freshnessInputs=[],sourceText=p=>fs.readFileSync(path.join(repoRoot,p),'utf8')}) {
+  const mathTarget=targetFacts.find(t=>t.name==='folia_math'&&!t.name.includes('@synth'));
+  if(!mathTarget)return {status:'incomplete',authoritative:false,reason:'folia_math-target-not-present',indexFile,codemodelFile};
+  if(!targetFacts.every(t=>Array.isArray(t.sources)))return {status:'malformed',authoritative:false,reason:'target-sources-not-array',indexFile,codemodelFile};
+  if(!moduleMap||typeof moduleMap.modules!=='object'||moduleMap.modules===null||Array.isArray(moduleMap.modules))
+    return {status:'malformed',authoritative:false,reason:'generated-module-map-has-no-modules-object',indexFile,codemodelFile};
+  const badPaths=targetFacts.flatMap(t=>t.sources.filter(s=>!s.exists).map(s=>`${t.name}:${s.path}`));
+  if(badPaths.length)return {status:'stale-inputs',authoritative:false,reason:'configured-target-source-paths-missing',indexFile,codemodelFile,badPaths};
+  const newerInputs=freshnessInputs.filter(input=>input.mtimeMs>indexTime).map(input=>input.path);
+  const expectedSet=new Set(generatedFontCpp.map(norm)), configuredSet=new Set(mathTarget.sources.map(s=>s.path));
+  const missingFontInputs=[...expectedSet].filter(p=>!configuredSet.has(p));
+  const extraFontInputs=mathTarget.sources.map(s=>s.path).filter(p=>p.startsWith('build/math-port/font-generated-native-raii/')&&p.endsWith('.cpp')&&!expectedSet.has(p));
+  if(newerInputs.length||missingFontInputs.length||extraFontInputs.length)return {status:'stale-inputs',authoritative:false,
+    reason:'configured-codemodel-predates-source-list-inputs-or-font-manifest',indexFile,codemodelFile,newerInputs,missingFontInputs,extraFontInputs};
+  const interfaceRows=mathTarget.sources.filter(s=>s.path.endsWith('.ixx')).map(source=>{
+    const body=sourceText(source.path), declaration=body.match(/^\s*export\s+module\s+([^;]+);/m)?.[1]?.trim()??null;
+    return {path:source.path,module:declaration};
+  });
+  const providerMap=new Map();
+  for(const row of interfaceRows)if(row.module)providerMap.set(row.module,[...(providerMap.get(row.module)??[]),row.path]);
+  const moduleMapNames=Object.keys(moduleMap.modules??{}).sort(), providerNames=[...providerMap.keys()].sort();
+  const duplicateProviders=[...providerMap].filter(([,ps])=>ps.length>1).map(([module,paths])=>({module,paths}));
+  const moduleMapCheck={moduleMapCount:moduleMapNames.length,providerCount:providerNames.length,interfaceSourceCount:interfaceRows.length,
+    undeclaredInterfaceCount:interfaceRows.filter(x=>!x.module).length,
+    exactMatch:JSON.stringify(moduleMapNames)===JSON.stringify(providerNames)&&interfaceRows.every(x=>x.module)&&duplicateProviders.length===0,
+    missingFromMap:providerNames.filter(n=>!moduleMapNames.includes(n)),missingProviders:moduleMapNames.filter(n=>!providerMap.has(n)),duplicateProviders};
+  if(!moduleMapCheck.exactMatch)return {status:'incomplete',authoritative:false,reason:'configured-interface-declarations-do-not-match-generated-module-map',
+    indexFile,codemodelFile,moduleMapCheck};
+  const allMathTargets=targetFacts.map(t=>({name:t.name,id:t.id,paths:t.sources.filter(s=>s.path.startsWith('src/math/')).map(s=>s.path)})).filter(t=>t.paths.length);
+  const bridgeTargets=allMathTargets.filter(t=>t.paths.includes('src/math/native_renderer_bridge.cpp')).map(t=>t.name);
+  return {status:'ready',authoritative:true,sourceRoot:path.resolve(codemodel.paths.source),buildRoot:path.resolve(repoRoot,codemodel.paths.build),configuration,
+    indexFile,codemodelFile,targets:targetFacts,foliaMathSourceCount:mathTarget.sources.length,foliaMathSources:mathTarget.sources,
+    foliaMathInterfaceCount:interfaceRows.length,interfaceProviders:interfaceRows,moduleMapNames,moduleMapCheck,
+    allTargetMathMembership:allMathTargets,bridgeTargets,bridgeSourceMember:bridgeTargets.length>0,
+    freshness:{status:'mtime-current-at-read',indexMtimeUtc:new Date(indexTime).toISOString(),checkedCMakeInputs:freshnessInputs.map(x=>x.path),newerInputs:[],
+      generatedFontCppCount:expectedSet.size,missingFontInputs:[],extraFontInputs:[],
+      limitation:'Codemodel records the last configure result; it does not attest unchanged non-CMake glob contents or source file content hashes.'}};
+}
+function readConfiguredCodemodel(repoRoot, {generatedFontCpp=[],cmakeFiles=[],replyDir=path.join(repoRoot,'build/core/.cmake/api/v1/reply')}={}) {
+  let indexes=[];
+  try { indexes=fs.readdirSync(replyDir).filter(x=>/^index-.*\.json$/.test(x)).sort((a,b)=>fs.statSync(path.join(replyDir,b)).mtimeMs-fs.statSync(path.join(replyDir,a)).mtimeMs); }
+  catch(error) { return {status:'missing',authoritative:false,reason:String(error)}; }
+  if(!indexes.length)return {status:'missing',authoritative:false,reason:'no-file-api-index'};
+  let index,indexFile,indexPath,ref;
+  for(const candidate of indexes) {
+    indexPath=path.join(replyDir,candidate);
+    try { index=JSON.parse(fs.readFileSync(indexPath,'utf8')); }
+    catch(error) { return {status:'malformed',authoritative:false,reason:`index-invalid:${error}`,indexFile:candidate}; }
+    ref=index.reply?.['client-math-port']?.['codemodel-v2'];
+    if(ref?.jsonFile){indexFile=candidate;break;}
+  }
+  if(!indexFile)return {status:'missing',authoritative:false,reason:'no-index-contains-client-math-port-codemodel-v2'};
+  const codemodelFile=ref.jsonFile; let codemodel;
+  try { codemodel=JSON.parse(fs.readFileSync(path.join(replyDir,codemodelFile),'utf8')); }
+  catch(error) { return {status:'malformed',authoritative:false,reason:`codemodel-invalid:${error}`,indexFile,codemodelFile}; }
+  const envelope=codemodelEnvelopeStatus({index,codemodel,root:repoRoot});
+  if(envelope.status!=='candidate')return {...envelope,indexFile,codemodelFile};
+  const configuration=codemodel.configurations.find(x=>x.name==='Debug');
+  if(!configuration)return {status:'incomplete',authoritative:false,reason:'Debug-configuration-not-present',indexFile,codemodelFile};
+  if(!Array.isArray(configuration.targets))return {status:'malformed',authoritative:false,reason:'configuration-targets-not-array',indexFile,codemodelFile};
+  const indexTime=fs.statSync(indexPath).mtimeMs, targetFacts=[];
+  try {
+    for(const targetRef of configuration.targets??[]) {
+      if(!targetRef||typeof targetRef.jsonFile!=='string'||!targetRef.jsonFile.trim())return {status:'malformed',authoritative:false,reason:'invalid-target-reference',indexFile,codemodelFile};
+      const targetPath=path.join(replyDir,targetRef.jsonFile), target=JSON.parse(fs.readFileSync(targetPath,'utf8'));
+      if(!target||!Array.isArray(target.sources))return {status:'malformed',authoritative:false,reason:`target-${targetRef.name}-sources-not-array`,indexFile,codemodelFile};
+      const targetDirectory=target.paths?.source??'.', relative=path.relative(path.resolve(repoRoot),path.resolve(repoRoot,targetDirectory));
+      if(relative==='..'||relative.startsWith(`..${path.sep}`)||path.isAbsolute(relative))return {status:'wrong-source-root',authoritative:false,
+        reason:`target-${target.name}-source-root-outside-codemodel-root`,indexFile,codemodelFile};
+      const sources=(target.sources??[]).map(source=>{
+        const absolute=path.isAbsolute(source.path)?path.resolve(source.path):path.resolve(repoRoot,source.path);
+        return {path:norm(path.relative(repoRoot,absolute)),exists:fs.existsSync(absolute),isGenerated:!!source.isGenerated,compileGroupIndex:source.compileGroupIndex??null};
+      });
+      const stat=fs.statSync(targetPath);
+      targetFacts.push({name:target.name,id:target.id,type:target.type??null,reply:targetRef.jsonFile,sha256:sha(fs.readFileSync(targetPath)),
+        mtimeUtc:stat.mtime.toISOString(),sources});
+    }
+  } catch(error) { return {status:'malformed',authoritative:false,reason:`target-reply-invalid:${error}`,indexFile,codemodelFile}; }
+  if(!Array.isArray(configuration.directories)||!configuration.directories.every(d=>typeof d?.source==='string'))
+    return {status:'malformed',authoritative:false,reason:'configuration-directories-invalid',indexFile,codemodelFile};
+  const freshnessPaths=[...new Set([...configuration.directories.map(d=>path.join(repoRoot,d.source,'CMakeLists.txt')),
+    ...cmakeFiles.map(p=>path.join(repoRoot,p)),path.join(repoRoot,'build/math-port/font-generated-native-raii/font-data-source-dependencies.json')])];
+  const codemodelPath=path.join(replyDir,codemodelFile),indexStat=fs.statSync(indexPath),codemodelStat=fs.statSync(codemodelPath);
+  const partialEvidence={index:{path:norm(path.relative(repoRoot,indexPath)),sha256:sha(fs.readFileSync(indexPath)),mtimeUtc:indexStat.mtime.toISOString()},
+    codemodel:{path:norm(path.relative(repoRoot,codemodelPath)),sha256:sha(fs.readFileSync(codemodelPath)),mtimeUtc:codemodelStat.mtime.toISOString()},
+    targets:targetFacts.map(t=>({name:t.name,path:norm(path.join('build/core/.cmake/api/v1/reply',t.reply)),sha256:t.sha256,mtimeUtc:t.mtimeUtc}))};
+  const missingInputs=freshnessPaths.filter(p=>!fs.existsSync(p)).map(p=>norm(path.relative(repoRoot,p)));
+  if(missingInputs.length)return {status:'incomplete',authoritative:false,reason:'codemodel-configure-inputs-missing',indexFile,codemodelFile,missingInputs,evidence:partialEvidence};
+  const freshnessInputs=freshnessPaths.map(p=>({path:norm(path.relative(repoRoot,p)),mtimeMs:fs.statSync(p).mtimeMs}));
+  const buildRoot=path.resolve(repoRoot,codemodel.paths.build);
+  const expectedReplyDir=path.join(buildRoot,'.cmake/api/v1/reply');
+  const actualReplyDir=path.resolve(replyDir);
+  if(process.platform==='win32' ? actualReplyDir.toLowerCase()!==expectedReplyDir.toLowerCase() : actualReplyDir!==expectedReplyDir)
+    return {status:'incomplete',authoritative:false,reason:'file-api-reply-directory-does-not-match-codemodel-build-root',expectedReplyDir,actualReplyDir,indexFile,codemodelFile};
+  const moduleMapPath=path.join(buildRoot,'CMakeFiles/folia_math.dir/CXXModules.json'); let moduleMap;
+  try { moduleMap=JSON.parse(fs.readFileSync(moduleMapPath,'utf8')); }
+  catch(error) { return {status:'incomplete',authoritative:false,reason:`generated-module-map-invalid-or-missing:${error}`,indexFile,codemodelFile}; }
+  const mapStat=fs.statSync(moduleMapPath);
+  const evidence={...partialEvidence,
+    generatedModuleMap:{path:norm(path.relative(repoRoot,moduleMapPath)),sha256:sha(fs.readFileSync(moduleMapPath)),mtimeUtc:mapStat.mtime.toISOString()},
+  };
+  const result=evaluateConfiguredTargetData(repoRoot,{indexFile,codemodelFile,codemodel,configuration:configuration.name,targetFacts,moduleMap,
+    generatedFontCpp,indexTime:indexStat.mtimeMs,freshnessInputs,sourceText:p=>fs.readFileSync(path.join(repoRoot,p),'utf8')});
+  return {...result,evidence,generatedModuleMapPath:norm(path.relative(repoRoot,moduleMapPath)),
+    freshness:result.freshness??{status:result.status,newerInputs:result.newerInputs??[],limitation:'A rejected snapshot is not authoritative.'}};
+}
+
+function responsibility(p) {
+  const n=p.toLowerCase();
+  if(/(?:^|\/)(?:license-[^/]+|notice)\.txt$/.test(n))return {decision:'keep-license',responsibilityGroup:'third-party-license',namedOwner:'Root (license provenance)'};
+  const group=n.includes('/dependencies/mhchem_parser/')?'math.tex.mhchem':n.includes('/input/tex/')?'math.tex':
+    n.includes('/output/common/')?'math.common':n.includes('/output/scene/')?'math.scene':n.includes('/output/svg/')?'math.svg':
+    n.includes('/fonts/')?'math.fonts':n.includes('/util/')?'math.util':n.includes('/core/mml_tree/')?'math.mml':
+    n.includes('/core/tree/')?'math.tree':n.includes('/handlers/html/')?'math.html':n.includes('/adaptors/')||n.includes('/dom_')?'math.dom-adaptors':
+    n.includes('/core/')?'math.core':n.endsWith('/native_renderer_bridge.cpp')?'math.c-abi-bridge':n.includes('/math.cpp')||n.includes('/math.ixx')?'math.renderer':'math.other';
+  return {decision:'unreviewed',responsibilityGroup:group,namedOwner:'unassigned'};
 }
 
 function cmakeClosure() {
@@ -158,8 +370,8 @@ for (const block of cmakeText.matchAll(/(?:target_sources|add_library|add_execut
   for (const file of files) targetSources[target].add(file);
 }
 for (const p of targetSources.folia_math ?? []) if (p.startsWith('src/math/')) mathRefs.add(p);
-const unresolvedMathRefs=unresolvedRefs(mathRefs,new Set(fileIds.keys()));
-const existingMathRefs=[...mathRefs].filter(p=>fileIds.has(p));
+const lexicalUnresolvedMathRefs=unresolvedRefs(mathRefs,new Set(fileIds.keys()));
+let existingMathRefs=[...mathRefs].filter(p=>fileIds.has(p));
 const testRefs = new Set([...cmakeRefs].filter(p => p.startsWith('tests/math/')));
 const testGlobSources=list('tests').filter(p=>p.endsWith('.cpp')&&!p.startsWith('tests/platform/')&&!p.startsWith('tests/encoding/')&&!p.startsWith('tests/math/'));
 if (!targetSources.FoliaTests) targetSources.FoliaTests=new Set();
@@ -178,10 +390,44 @@ function targetBodies(targetName) {
   }
   return bodies;
 }
-const activeModuleInterfaces=new Set();
+let activeModuleInterfaces=new Set();
 for (const body of targetBodies('folia_math')) {
   if (!/FILE_SET\s+CXX_MODULES\s+FILES/.test(body)) continue;
   for (const m of body.matchAll(/src\/math\/[A-Za-z0-9_./-]+\.ixx/g)) activeModuleInterfaces.add(m[0]);
+}
+const fontDependenciesPath='build/math-port/font-generated-native-raii/font-data-source-dependencies.json';
+let fontDependencies=null,fontDependenciesSha256=null;
+if(fs.existsSync(path.join(root,fontDependenciesPath))) {
+  const bytes=fs.readFileSync(path.join(root,fontDependenciesPath));
+  try { fontDependencies=JSON.parse(bytes.toString('utf8')); fontDependenciesSha256=sha(bytes); }
+  catch(error) { fontDependencies={manifestError:String(error)}; }
+}
+const targetSourceExpressions=Object.keys(targetSources).map(target=>({target,bodies:targetBodies(target)}));
+const variableResolution=targetSourceExpressions.map(({target,bodies})=>resolveTargetSourceVariables(bodies,target,
+  {fontDependencies,fontDependenciesPath,fontDependenciesSha256}));
+const resolvedSourceVariableInputs=variableResolution.flatMap(x=>x.resolved);
+const unresolvedSourceVariableExpressions=variableResolution.flatMap(x=>x.unresolved);
+const generatedFontCppPaths=resolvedSourceVariableInputs.flatMap(x=>x.generatedCpp);
+const generatedFontSources=generatedFontCppPaths.map((p,index)=>{
+  if(!fs.existsSync(path.join(root,p)))return {id:`GF${String(index+1).padStart(3,'0')}`,path:p,exists:false,origin:fontDependenciesPath,manifestSha256:fontDependenciesSha256};
+  const bytes=fs.readFileSync(path.join(root,p));
+  const facts=moduleFacts(p);
+  return {id:`GF${String(index+1).padStart(3,'0')}`,path:p,exists:true,origin:fontDependenciesPath,
+    manifestSha256:fontDependenciesSha256,sha256:sha(bytes),bytes:bytes.length,...facts};
+});
+const missingGeneratedFontSources=generatedFontSources.filter(x=>!x.exists).map(x=>x.path);
+const missingGeneratedFoliaMathSources=missingGeneratedFontSources;
+const configuredCodemodel=readConfiguredCodemodel(root,{generatedFontCpp:generatedFontCppPaths,cmakeFiles});
+const configuredTargetsBySource=new Map();
+const configuredFoliaMathSources=new Set();
+if(configuredCodemodel.authoritative) {
+  for(const target of configuredCodemodel.targets)for(const source of target.sources)if(source.path.startsWith('src/math/')) {
+    if(!configuredTargetsBySource.has(source.path))configuredTargetsBySource.set(source.path,[]);
+    configuredTargetsBySource.get(source.path).push(target.name);
+  }
+  for(const source of configuredCodemodel.foliaMathSources)if(source.path.startsWith('src/math/'))configuredFoliaMathSources.add(source.path);
+  existingMathRefs=[...configuredFoliaMathSources].sort();
+  activeModuleInterfaces=new Set(configuredCodemodel.foliaMathSources.filter(s=>s.path.endsWith('.ixx')).map(s=>s.path));
 }
 const interfaceProviders=new Map();
 for (const p of activeModuleInterfaces) {
@@ -208,15 +454,23 @@ if(fs.existsSync(path.join(root,cmakeModuleMapPath))) {
 }
 const activeInterfaceNames=[...interfaceProviders.keys()].sort();
 const cmakeInterfaceNames=cmakeModuleMap?.modules??[];
-const interfaceMapCheck={available:!!cmakeModuleMap&&!cmakeModuleMap.error,
+const lexicalInterfaceMapCheck={available:!!cmakeModuleMap&&!cmakeModuleMap.error,authoritative:false,status:'lexical-candidate-only-no-configured-codemodel',
   generatedModuleCount:cmakeInterfaceNames.length,registeredInterfaceCount:activeInterfaceNames.length,
-  matches:!!cmakeModuleMap&&!cmakeModuleMap.error&&JSON.stringify(activeInterfaceNames)===JSON.stringify(cmakeInterfaceNames),
+  matches:null,
   missingFromGenerated:activeInterfaceNames.filter(x=>!cmakeInterfaceNames.includes(x)),
   unexpectedInGenerated:cmakeInterfaceNames.filter(x=>!activeInterfaceNames.includes(x))};
+const interfaceMapCheck=configuredCodemodel.authoritative
+  ? {available:true,authoritative:true,status:'configured-target-providers-compared-to-generated-module-map',
+      generatedModuleCount:configuredCodemodel.moduleMapCheck.moduleMapCount,registeredInterfaceCount:configuredCodemodel.moduleMapCheck.providerCount,
+      matches:configuredCodemodel.moduleMapCheck.exactMatch,missingFromGenerated:configuredCodemodel.moduleMapCheck.missingFromMap,
+      unexpectedInGenerated:configuredCodemodel.moduleMapCheck.missingProviders,duplicateProviders:configuredCodemodel.moduleMapCheck.duplicateProviders}
+  : lexicalInterfaceMapCheck;
 const edges = {};
 const unresolvedActiveImports=[];
-const activeSourceSet=new Set(existingMathRefs);
-for (const p of sourceFiles) {
+const activeSourceSet=new Set([...existingMathRefs,...generatedFontCppPaths]);
+const moduleScan=moduleScanCandidates([...sourceFiles,...generatedFontCppPaths]);
+const moduleSourcePaths=moduleScan.paths;
+for (const p of moduleSourcePaths) {
   const facts = moduleFacts(p);
   const resolved=resolveModuleEdges(p,facts,interfaceProviders,activeSourceSet);
   edges[p]=resolved.edges;
@@ -233,7 +487,7 @@ for (const p of sourceFiles) {
     }
   }
 }
-const active = new Set(existingMathRefs);
+const active = new Set(activeSourceSet);
 const queue = [...active];
 while (queue.length) for (const e of edges[queue.shift()] ?? []) if (!active.has(e.file)) { active.add(e.file); queue.push(e.file); }
 
@@ -274,38 +528,48 @@ function sourceAnnotations(p,facts) {
 }
 
 const files = textFiles.map(p => {
-  const [decision,responsibility,owner] = disposition(p), facts = moduleFacts(p), bytes = fs.readFileSync(path.join(root,p));
+  const {decision,responsibilityGroup,namedOwner:owner} = responsibility(p), facts = moduleFacts(p), bytes = fs.readFileSync(path.join(root,p));
   const annotations=sourceAnnotations(p,facts);
   const exactSources=[...new Map(annotations.filter(a=>a.sourceSha256).flatMap(a=>a.sourcePaths.filter(s=>s.includes('ts/')).map(s=>[`${s}:${a.sourceSha256}`,{path:s,sha256:a.sourceSha256,document:a.document,line:a.line}]))).values()];
-  const pinnedSource=exactSources.length===1
-    ? `MathJax 4.1.3 ${exactSources[0].path} sha256:${exactSources[0].sha256} (annotated in ${exactSources[0].document}:${exactSources[0].line})`
-    : exactSources.length>1
-      ? 'multiple annotated Source inputs; see sourceAnnotations for paths, hashes, and evidence lines'
-      : /\/LICENSE-[^/]+\.txt$|\/NOTICE\.txt$/i.test(p)
-        ? 'Third-party license/notice file; preserve alongside associated source/data.'
-        : /src\/math\/fonts\/newcm_font_|src\/math\/fonts\/svg_extensions\./.test(p)
-          ? 'docs/math-port/evidence/font-data-source-lock.json (NewCM payload lock; exact native-unit mapping unresolved)'
-          : 'unresolved: exact pinned MathJax 4.1.3 source path/hash not established by this static inventory';
+  const annotationIndexStatus=exactSources.length===1?'one-note-index-entry':exactSources.length>1?'multiple-note-index-entries':'no-exact-note-index-entry';
+  const configuredTargets=configuredTargetsBySource.get(p)??[];
   return {id:fileIds.get(p),path:p,sha256:sha(bytes),bytes:bytes.length,kind:path.extname(p).slice(1),...facts,
-    directlyListedByFoliaMath:mathRefs.has(p),activeModuleImportClosure:active.has(p),mentionedByCMake:cmakeRefs.has(p),
-    directCMakeTargets:Object.entries(targetSources).filter(([,files])=>files.has(p)).map(([target])=>target),
-    disposition:decision,nativeResponsibility:responsibility,sourceAnnotations:annotations,pinnedSource,namedOwner:owner,
-    confidence:'proposed; review disposition and source provenance before promotion'};
+    directlyListedByFoliaMath:configuredCodemodel.authoritative?configuredFoliaMathSources.has(p):null,
+    lexicallyListedByFoliaMath:mathRefs.has(p),activeModuleImportClosure:configuredCodemodel.authoritative?active.has(p):null,
+    mentionedByCMake:cmakeRefs.has(p),configuredTargets,
+    directCMakeTargets:[...new Set([...Object.entries(targetSources).filter(([,sources])=>sources.has(p)).map(([target])=>target),...configuredTargets])],
+    disposition:decision,nativeResponsibility:responsibilityGroup,responsibilityGroup,namedOwner:owner,
+    decisionStatus:decision==='keep-license'?'license-preservation':'unreviewed',sourceAnnotations:annotations,
+    sourceAnnotationIndexStatus:annotationIndexStatus,sourceAnnotationNote:'Index heuristic only; not algorithm equivalence, complete Source mapping, or disposition evidence.',
+    confidence:'responsibility grouping and annotation index only; no file disposition or algorithm-equivalence conclusion'};
 });
-const mappedSourceFiles=files.filter(f=>sourceFiles.includes(f.path)&&f.pinnedSource.startsWith('MathJax 4.1.3 '));
+const indexedSourceFiles=files.filter(f=>sourceFiles.includes(f.path)&&f.sourceAnnotationIndexStatus!=='no-exact-note-index-entry');
 
 const fontLockPath='docs/math-port/evidence/font-data-source-lock.json';
 const fontLock=JSON.parse(read(fontLockPath));
 const generatedFontSourceCandidates=fontLock.outputs.filter(x=>/^build\/math-port\/font-generated\/newcm_dynamic_setup_[A-Za-z0-9_]+\.cpp$/.test(x.path))
   .map((x,i)=>({id:`G${String(i+1).padStart(2,'0')}`,target:'folia_math',path:x.path,sha256:x.sha256,bytes:x.bytes,lock:fontLockPath}));
-const activeFontShardGeneration=/FOLIA_MATH_FONT_SHARD_SOURCES/.test(cmakeText);
-const generatedFontSources=activeFontShardGeneration?generatedFontSourceCandidates:[];
+for(const unit of generatedFontSources) {
+  const resolved=edges[unit.path]??[];
+  unit.resolvedImports=resolved.map(e=>({writtenImport:e.module,resolvedModule:e.resolvedModule,file:e.file,kind:e.kind}));
+  unit.unresolvedImports=unresolvedActiveImports.filter(e=>e.file===unit.path);
+}
+const generatedSourceRows=generatedFontSources.map(unit=>({path:unit.path,decisionStatus:'unreviewed',responsibilityGroup:'math.fonts.generated-newcm',
+  namedOwner:'unassigned',configuredTargetMember:configuredCodemodel.authoritative&&configuredCodemodel.foliaMathSources.some(s=>s.path===unit.path),
+  availableSourceProvenance:[{document:fontDependenciesPath,manifestSha256:fontDependenciesSha256,
+    sourceLock:fontDependencies?.source_lock??null,status:'dependency-manifest note only; no per-unit pinned TS mapping or algorithm-equivalence assertion'}]}));
+const lexicalUnresolvedMathSourceVariables=unresolvedSourceVariableExpressions.filter(x=>x.target==='folia_math');
+const unresolvedMathSourceVariables=configuredCodemodel.authoritative?[]:lexicalUnresolvedMathSourceVariables;
+const fullResolvedCMakeMathSourceCount=configuredCodemodel.authoritative?configuredCodemodel.foliaMathSourceCount:
+  existingMathRefs.length+generatedFontSources.filter(x=>x.exists).length;
 
-const targets = [...cmakeText.matchAll(/add_(?:library|executable)\s*\(\s*([A-Za-z0-9_]+)/g)].map(m=>m[1]);
+const targets = configuredCodemodel.authoritative?configuredCodemodel.targets.map(t=>t.name):[...cmakeText.matchAll(/add_(?:library|executable)\s*\(\s*([A-Za-z0-9_]+)/g)].map(m=>m[1]);
 const portScripts = trackedUnder('tools/math-port').filter(p=>p.endsWith('.cjs'));
 const jsOnlyContractCandidates = portScripts.filter(p=>/(?:mutation-test|\b(?:native-identities|option-array|option-filter|property-symbol|sparse-(?:tree|node)|callable-receiver)|(?:prototype|descriptor|identity|context-property)).*\.cjs$/i.test(p));
 const tests = {
-  currentCMakeMathTestSources:[...testRefs].sort(),
+  currentCMakeMathTestSources:configuredCodemodel.authoritative?configuredCodemodel.targets.flatMap(t=>t.sources
+    .filter(s=>s.path.startsWith('tests/math/')&&s.path.endsWith('.cpp')).map(s=>({target:t.name,path:s.path}))):null,
+  lexicalCandidateMathTestSources:[...testRefs].sort(),
   javascriptContractReviewCandidates:jsOnlyContractCandidates,
   retirementPlan:[
     {category:'retire-js-only-contract-tests',rule:'Retire only contracts for withdrawn JS identities/prototypes/descriptors/call mutation/sparse holes/JS coercion, Context projection, and host/object-heap mechanics. The candidate filename list is a review queue, not a claim every file has been read; decide per script and record rationale.'},
@@ -315,48 +579,74 @@ const tests = {
   ]
 };
 let revision = null;
-try { revision = cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(); } catch {}
+try { revision = cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim(); } catch {}
+const generator = {path:norm(path.relative(root,__filename)),sha256:sha(fs.readFileSync(__filename)),
+  revisionNote:'Revision identifies HEAD only; file hashes describe the observed working tree, which may contain uncommitted changes.'};
 const report = {
-  schema:'folia.math.native-raii.inventory.v1',generatedAt:new Date().toISOString(),root:'.',baseRevision:revision,
+  schema:'folia.math.native-raii.inventory.v1',generatedAt:new Date().toISOString(),root:'.',baseRevision:revision,generator,
   scope:{allSrcMathFiles:textFiles.length,codeSources:sourceFiles.length,moduleUnits:sourceFiles.filter(p=>p.endsWith('.ixx')).length,
     implementationUnits:sourceFiles.filter(p=>p.endsWith('.cpp')).length,otherSourceFiles:sourceFiles.filter(p=>! /\.(ixx|cpp)$/.test(p)).length,
-    currentCMakeDirectFoliaMathReferences:mathRefs.size,existingCMakeDirectFoliaMathFiles:existingMathRefs.length,
-    unresolvedCMakeDirectFoliaMathFiles:unresolvedMathRefs.length,moduleImportClosureFiles:active.size,
-    filesOutsideFoliaMathModuleClosure:textFiles.filter(p=>!mathRefs.has(p)&&!active.has(p)).length,
+    currentCMakeLiteralFoliaMathReferences:mathRefs.size,existingCMakeDirectFoliaMathFiles:existingMathRefs.length,
+    currentCMakeResolvedFoliaMathSourceFiles:fullResolvedCMakeMathSourceCount,
+    unresolvedFoliaMathSourceVariableExpressions:unresolvedMathSourceVariables.length,
+    missingGeneratedFoliaMathSources:missingGeneratedFontSources.length,
+    unresolvedCMakeDirectFoliaMathFiles:configuredCodemodel.authoritative?0:null,lexicalCandidateUnresolvedMathReferences:lexicalUnresolvedMathRefs.length,
+    moduleImportClosureFiles:configuredCodemodel.authoritative?active.size:null,
+    filesOutsideFoliaMathModuleClosure:configuredCodemodel.authoritative?textFiles.filter(p=>!configuredFoliaMathSources.has(p)&&!active.has(p)).length:null,
     allTargetCMakeMentions:cmakeRefs.size,generatedFoliaMathFontSources:generatedFontSources.length,
-    lockedButInactiveFontShardCandidates:generatedFontSourceCandidates.length-generatedFontSources.length},
-  graph:{cmakeFiles,cmakeMathSources:[...existingMathRefs].sort().map(p=>fileIds.get(p)),unresolvedCMakeMathSources:unresolvedMathRefs,
-    cmakeSourcesByTarget:Object.fromEntries(Object.entries(targetSources).map(([k,v])=>[k,[...v].sort().map(p=>fileIds.get(p)).filter(Boolean)])),
-    unresolvedSourcesByTarget:Object.fromEntries(Object.entries(targetSources).map(([k,v])=>[k,[...v].filter(p=>!fileIds.has(p))]).filter(([,v])=>v.length)),
+    lockedButInactiveFontShardCandidates:generatedFontSourceCandidates.length,
+    sourceMembershipAuthority:configuredCodemodel.status},
+  graph:{cmakeFiles,cmakeMathSources:[...existingMathRefs].sort().map(p=>fileIds.get(p)),unresolvedCMakeMathSources:configuredCodemodel.authoritative?[]:null,
+    lexicalCandidateUnresolvedMathReferences:lexicalUnresolvedMathRefs,
+    cmakeMathSourceCountBasis:configuredCodemodel.authoritative?'Configured File API Debug folia_math target sources; generated font source membership cross-checked against dependency manifest.':`Incomplete lexical candidate only (${configuredCodemodel.status}); no configured-target or unresolved-import conclusion.`,
+    fullResolvedCMakeMathSources:[...existingMathRefs].sort().map(p=>fileIds.get(p)).concat(generatedFontSources.filter(x=>x.exists).map(x=>x.path)),
+    resolvedSourceVariableInputs:resolvedSourceVariableInputs.map(input=>({...input,
+      generatedCpp:generatedFontSources.map(({path,exists,sha256,bytes,declaration,isInterface,isImplementationUnit,primaryModule,partition,imports,resolvedImports,unresolvedImports})=>
+        ({path,exists,sha256,bytes,declaration,isInterface,isImplementationUnit,primaryModule,partition,imports,resolvedImports,unresolvedImports}))})),
+    unresolvedSourceVariableExpressions:configuredCodemodel.authoritative?[]:null,
+    lexicalCandidateUnresolvedSourceVariableExpressions:unresolvedSourceVariableExpressions,missingGeneratedFoliaMathSources,
+    lexicalCandidateMathSourceIdsByTarget:Object.fromEntries(Object.entries(targetSources).map(([k,v])=>[k,[...v].sort().map(p=>fileIds.get(p)).filter(Boolean)])),
+    configuredCodemodel:configuredCodemodelSummary(configuredCodemodel),
+    lexicalCandidatePathsOutsideMathInventoryByTarget:Object.fromEntries(Object.entries(targetSources).map(([k,v])=>[k,[...v].filter(p=>!fileIds.has(p))]).filter(([,v])=>v.length)),
     generatedSources:generatedFontSources,
-    priorFontSourceLockCandidatesWhenInactive:activeFontShardGeneration?[]:generatedFontSourceCandidates.map(({id,path,sha256,bytes,lock})=>({id,path,sha256,bytes,lock})),
-    dynamicCMakeSourceExpressions:activeFontShardGeneration?['FOLIA_MATH_FONT_SHARD_SOURCES is populated from docs/math-port/evidence/font-data-source-lock.json outputs and appended to folia_math; exact generated output paths and lock hashes are in generatedSources.']:[],
+    priorFontSourceLockCandidatesWhenInactive:generatedFontSourceCandidates.map(({id,path,sha256,bytes,lock})=>({id,path,sha256,bytes,lock})),
+    dynamicCMakeSourceExpressions:{resolved:resolvedSourceVariableInputs.map(x=>({target:x.target,expression:x.expression,manifest:x.origin,manifestSha256:x.manifestSha256,cppCount:x.generatedCpp.length})),unresolved:unresolvedSourceVariableExpressions},
     edgeTupleColumns:['fromFileId','writtenImport','resolvedFileIdOrNull','kind','exported'],
     activeModuleInterfaces:[...activeModuleInterfaces].sort().map(p=>fileIds.has(p)?fileIds.get(p):p),
     activeInterfaceProviders:Object.fromEntries([...interfaceProviders].map(([name,ps])=>[name,ps.map(p=>fileIds.get(p))])),
     duplicateActiveInterfaceProviders, candidateInterfaceProviders:Object.fromEntries([...candidateInterfaceProviders].map(([name,ps])=>[name,ps.map(p=>fileIds.get(p))])),
-    implicitPrimaryInterfaceEdges:sourceFiles.filter(p=>existingMathRefs.includes(p)&&moduleFacts(p).isImplementationUnit)
-      .flatMap(p=>(edges[p]??[]).filter(e=>e.kind==='implicit-primary-interface').map(e=>[fileIds.get(p),fileIds.get(e.file)])),
-    unresolvedActiveImports,cmakeModuleMapPath,cmakeModuleMapEvidence:cmakeModuleMap,interfaceMapCheck,
-    moduleImportEdges:sourceFiles.flatMap(p=>moduleFacts(p).imports.map(i=>{
+    implicitPrimaryInterfaceEdges:moduleSourcePaths.filter(p=>activeSourceSet.has(p)&&moduleFacts(p).isImplementationUnit)
+      .flatMap(p=>(edges[p]??[]).filter(e=>e.kind==='implicit-primary-interface').map(e=>[fileIds.get(p)??p,fileIds.get(e.file)??e.file])),
+    unresolvedActiveImports:configuredCodemodel.authoritative?unresolvedActiveImports:[],lexicalCandidateUnresolvedImports:unresolvedActiveImports,
+    importResolutionAuthority:configuredCodemodel.status,cmakeModuleMapPath,cmakeModuleMapEvidence:cmakeModuleMap,interfaceMapCheck,
+    moduleImportEdges:moduleSourcePaths.flatMap(p=>moduleFacts(p).imports.map(i=>{
       const resolved=edges[p].find(e=>e.module===i.module);
-      return [fileIds.get(p),i.module,resolved?fileIds.get(resolved.file):null,i.kind,i.exported];
+      return [fileIds.get(p)??p,i.module,resolved?(fileIds.get(resolved.file)??resolved.file):null,i.kind,i.exported];
     })),
     forwardDeclarationTupleColumns:['fileId','symbol','importedModule','importedFileId'],
     forwardDeclarationRisks:forwardDeclarationRisks.map(r=>[fileIds.get(r.file),r.symbol,r.importedModule,fileIds.get(r.importedFile)]),
     fileIdNote:'Each tuple references the id field in files; unresolved imports have null target ids.'},tests:{...tests,observedCMakeTargets:[...new Set(targets)]},files,
-  limitations:['CMake inventory starts at the working-tree root CMakeLists.txt and follows literal add_subdirectory paths only; it never scans ignored candidate or draft CMake overlays. Conditions, generator expressions, and variable-defined target sources are not evaluated.',
-    'The FoliaTests recursive source glob is expanded against present working-tree files, excluding tests/platform, tests/encoding and tests/math as the root CMake does. Historical mathematical test migration remains incomplete.',
-    'Active module providers are limited to registered folia_math CXX_MODULES FILE_SET interfaces. Implementation units are not import providers; they receive an implicit edge to their registered primary interface. Missing active providers are reported as configuration errors. Candidate interfaces from inactive files are separate and never satisfy active closure imports. Textual includes and other generated dependencies are not resolved.',
+  limitations:['Configured membership comes from the latest matching CMake File API Debug codemodel only when its source root matches this repository, target replies parse, input mtimes do not postdate the index, source paths exist, and generated font .cpp membership matches the dependency manifest. Otherwise configured membership is unavailable and the literal CMake scan is an incomplete lexical candidate, not a configuration error. The File API cannot attest non-CMake glob contents or source-file content hashes after configure.',
+    'The separate lexical CMake scan follows literal add_subdirectory paths and literal source paths; it does not expand foreach, evaluate conditions, or resolve arbitrary source-list variables. FOLIA_FONT_GENERATED_CPP is resolved from its dependency manifest as an independent candidate input.',
+    'The configured mathematical test list comes from all Debug File API target sources under tests/math when available. The separate lexical test scan is a candidate only; historical mathematical test migration remains incomplete.',
+    'Only configured folia_math .ixx sources supply active module providers. Implementation units are not import providers; they receive an implicit edge to their primary interface. Lexical fallback providers and unresolved imports are candidate notes only, not compiler/configuration errors. Textual includes are not resolved.',
     'Forward-declaration flags are conservative textual name checks against imported module units, not compiler visibility diagnostics.',
-    'Source mappings are harvested only from tracked Markdown lines that explicitly mention a native path/module and a pinned TS path/hash. Missing mappings remain unresolved; existing notes may be partial.',
-    `Disposition and owner fields are proposals. The ${jsOnlyContractCandidates.length} JavaScript filename candidates are a review queue, not a blanket claim that every candidate is JS-only; mixed mathematical assertions must be rewritten and retained.`],
-  sourceProvenanceGate:{status:mappedSourceFiles.length===sourceFiles.length?'pass':'fail-incomplete',mappedFiles:mappedSourceFiles.length,totalSourceFiles:sourceFiles.length,unmappedSourceFiles:files.filter(f=>sourceFiles.includes(f.path)&&!f.pinnedSource.startsWith('MathJax 4.1.3 ')).map(f=>f.path)}
+    'Source annotations are a note index harvested from Markdown/header text by path/module and TS path/hash patterns. They do not establish algorithm equivalence, complete Source mapping, or a pass/fail provenance gate.',
+    'Responsibilities are narrow filename/location group labels. All non-license file decisions remain unreviewed; active membership does not prove behavioral coverage and inactive membership does not mean dead code.',
+    `The ${jsOnlyContractCandidates.length} JavaScript-named scripts are review candidates only; names do not establish their assertions or disposition.`],
+  sourceProvenanceGate:{status:'note-index-only',indexedSourceFiles:indexedSourceFiles.length,totalSourceFiles:sourceFiles.length,unindexedSourceFiles:files.filter(f=>sourceFiles.includes(f.path)&&f.sourceAnnotationIndexStatus==='no-exact-note-index-entry').map(f=>f.path),
+    limitation:'No completeness or algorithm-equivalence claim; this is not an acceptance gate.'}
 };
-const compact={schema:'folia.math.native-raii.decision-manifest.v1',snapshotRevision:revision,
-  scope:report.scope,limitations:[...report.limitations,'Generated module map was read only; no build or CMake generation was invoked.'],sourceProvenanceGate:{...report.sourceProvenanceGate,unmappedSourceFiles:undefined},
-  cmakeModuleMapEvidence:cmakeModuleMap,interfaceMapCheck,files:files.map(f=>({path:f.path,disposition:f.disposition,nativeResponsibility:f.nativeResponsibility,
-    namedOwner:f.namedOwner,availableSourceProvenance:f.sourceAnnotations.map(a=>({document:a.document,line:a.line,sourcePaths:a.sourcePaths,sourceSha256:a.sourceSha256,status:a.status}))}))};
+const compact={schema:'folia.math.native-raii.decision-manifest.v1',snapshotRevision:revision,generator,
+  scope:report.scope,limitations:[...report.limitations,'The inventory reader did not configure or build; it reads existing File API and module-map replies.'],sourceProvenanceGate:{...report.sourceProvenanceGate,unindexedSourceFiles:undefined},
+  cmakeModuleMapEvidence:cmakeModuleMap,interfaceMapCheck,generatedSourceUnits:generatedSourceRows,
+  configuredCodemodel:report.graph.configuredCodemodel,
+  resolvedSourceVariableInputs:resolvedSourceVariableInputs.map(({target,variable,expression,origin,sourceLock,manifestSha256,sourceDependencyCount,manifestGeneratedCppCount,excludedNonCppOutputs,generatedCpp})=>({target,variable,expression,origin,sourceLock,manifestSha256,sourceDependencyCount,manifestGeneratedCppCount,excludedNonCppOutputs,generatedCppCount:generatedCpp.length})),
+  unresolvedSourceVariableExpressions:report.graph.unresolvedSourceVariableExpressions,
+  lexicalCandidateUnresolvedSourceVariableExpressions:unresolvedSourceVariableExpressions,
+  files:files.map(f=>({path:f.path,decisionStatus:f.decisionStatus,responsibilityGroup:f.responsibilityGroup,
+    namedOwner:f.namedOwner,configuredTargets:f.configuredTargets,directlyListedByFoliaMath:f.directlyListedByFoliaMath,
+    sourceAnnotationIndexStatus:f.sourceAnnotationIndexStatus,sourceAnnotationIndex:f.sourceAnnotations.map(a=>({document:a.document,line:a.line,sourcePaths:a.sourcePaths,sourceSha256:a.sourceSha256,status:a.status}))}))};
 fs.mkdirSync(path.dirname(out),{recursive:true});
 fs.mkdirSync(path.dirname(manifestOut),{recursive:true});
 fs.writeFileSync(out,JSON.stringify(report,null,2)+'\n');

@@ -179,8 +179,9 @@ inline std::pair<LayoutBlock, float> layout_code_block(const RenderBlock& rb, fl
     const auto lines = code_presentation_lines(special.code_text);
     LayoutBlock lb(rb.id, rb.source_span, {LayoutBlockKind::CodeBlock}, style);
     for (std::size_t i = 0; i < lines.size(); ++i) {
+        const auto content_offset = lines[i].content_range.start;
         const auto text = special.code_text.substr(
-            lines[i].content_range.start,
+            content_offset,
             lines[i].content_range.length());
         const auto source_range = SourceRange{
             special.content_to_source.empty()
@@ -193,9 +194,30 @@ inline std::pair<LayoutBlock, float> layout_code_block(const RenderBlock& rb, fl
         TextLineLayout ll{{rb.id, source_range}};
         ll.rect = LogicalRect(pad, y + style.margin_top * scale + pad + i * line_height, viewport_width - pad, line_height);
         ll.baseline = ll.rect.y + font_size;
+        std::size_t generated_columns = 0;
+        for (const auto& generated : special.generated_code_indentation) {
+            if (generated.content_offset == content_offset) generated_columns += generated.columns;
+        }
+        float generated_width = 0.0f;
+        if (generated_columns != 0) {
+            std::u32string generated_text(generated_columns, U' ');
+            auto generated_shape = measurer.measure(generated_text, font_size, InlineStyle::plain());
+            GlyphRunLayout generated_run;
+            generated_run.source_span = {rb.id, {source_range.start, source_range.start}};
+            generated_run.text = std::move(generated_text);
+            generated_run.glyphs = std::move(generated_shape.glyphs);
+            generated_run.style = InlineStyle::plain();
+            generated_run.origin = LogicalPoint(pad, 0.0f);
+            generated_run.width = generated_shape.width;
+            generated_run.height = line_height;
+            generated_run.marker_visibility = MarkerVisibility::Always;
+            generated_run.generated_boundary_affinity = TextAffinity::Downstream;
+            generated_width = generated_run.width;
+            ll.runs.push_back(std::move(generated_run));
+        }
         GlyphRunLayout r;
         r.source_span = {rb.id, source_range}; r.text = text; r.glyphs = std::move(shape.glyphs);
-        r.style = InlineStyle::plain(); r.origin = LogicalPoint(pad, 0.0f);
+        r.style = InlineStyle::plain(); r.origin = LogicalPoint(pad + generated_width, 0.0f);
         r.width = shape.width; r.height = line_height; r.marker_visibility = MarkerVisibility::Always;
         ll.runs.push_back(std::move(r));
         LayoutItem li; li.kind = LayoutItem::Kind::Line; li.line = std::move(ll);

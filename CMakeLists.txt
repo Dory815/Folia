@@ -15,7 +15,7 @@ set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "451f2fe2-a8a2-47c3-bc32-94786d8fc91b")
 cmake_minimum_required(VERSION 4.0)
 
 project(folia
-    VERSION 0.2.1
+    VERSION 0.2.3
     LANGUAGES C CXX
     DESCRIPTION "Folia: native self-rendered WYSIWYG Markdown editor (C++)")
 
@@ -85,8 +85,8 @@ target_sources(folia_core PUBLIC
 target_sources(folia_core PRIVATE ${FOLIA_CORE_SOURCE})
 
 # Native math reconstruction: only reviewed typed C++ owners are active.
-# Parser, package families, common placement and Renderer are incomplete.
-# No withdrawn Context runtime, app bridge, or fallback is linked here.
+# Parser/packages and shared Common placement use the accepted typed owners.
+# The application-facing Renderer composes them without a Context runtime.
 add_library(folia_math STATIC)
 target_compile_features(folia_math PUBLIC cxx_std_23)
 set_target_properties(folia_math PROPERTIES CXX_MODULE_STD ON)
@@ -161,6 +161,7 @@ target_include_directories(folia_math PRIVATE ${FOLIA_ENTITIES_GENERATED_DIR})
 set_property(GLOBAL APPEND PROPERTY JOB_POOLS folia_math_compile=2)
 set_property(TARGET folia_math PROPERTY JOB_POOL_COMPILE folia_math_compile)
 target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
+    src/math/math.ixx
     src/math/core/tree/factory_types.ixx
     src/math/core/tree/factory.ixx
     src/math/core/tree/wrapper_types.ixx
@@ -299,6 +300,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/svg/xml_wrapper.ixx
     src/math/output/svg/serializer.ixx
     src/math/output/svg/font_data.ixx
+    src/math/output/common/direction.ixx
     src/math/output/common/font_data.ixx
     src/math/output/common/font_path.ixx
     src/math/output/common/line_bbox.ixx
@@ -314,6 +316,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/fonts/newcm_font_data.ixx
     src/math/fonts/newcm_font_module_provider.ixx
     src/math/util/constants.ixx
+    src/math/util/instance_count.ixx
     src/math/util/prioritized_list.ixx
     src/math/util/function_list.ixx
     src/math/util/bbox.ixx
@@ -326,6 +329,7 @@ target_sources(folia_math PUBLIC FILE_SET CXX_MODULES FILES
     src/math/output/common/types.ixx
     src/math/util/regexp_host.ixx)
 target_sources(folia_math PRIVATE
+    src/math/math.cpp
     src/math/core/math_item.cpp
     src/math/core/math_item_state.cpp
     src/math/core/mml_tree/attributes.cpp
@@ -553,6 +557,33 @@ target_sources(folia_math PRIVATE src/math/util/string.cpp)
 target_sources(folia_math PRIVATE src/math/util/entities.cpp)
 target_sources(folia_math PRIVATE src/math/util/js_case.cpp src/math/util/js_case_data.cpp)
 
+# Opaque application boundary. Only the C functions cross the DLL boundary;
+# the implementation and its C++ module dependencies remain private.
+add_library(FoliaNativeMath SHARED src/math/native_renderer_bridge.cpp)
+target_compile_features(FoliaNativeMath PRIVATE cxx_std_23)
+set_target_properties(FoliaNativeMath PROPERTIES CXX_MODULE_STD ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+target_link_libraries(FoliaNativeMath PRIVATE folia_math)
+if(WIN32)
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/FoliaNativeMath.def" CONTENT
+"LIBRARY FoliaNativeMath
+EXPORTS
+FoliaNativeMathRendererCreate
+FoliaNativeMathRendererDestroy
+FoliaNativeMathCancellationCreate
+FoliaNativeMathCancellationRequestStop
+FoliaNativeMathCancellationDestroy
+FoliaNativeMathRenderSvg
+FoliaNativeMathRenderSvgBatch
+FoliaNativeMathResultSvg
+FoliaNativeMathResultError
+FoliaNativeMathResultDestroy
+")
+    target_sources(FoliaNativeMath PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/FoliaNativeMath.def")
+endif()
+
 # ---------------------------------------------------------------------------
 # Platform library — the ONLY Windows-touching layer.
 # ---------------------------------------------------------------------------
@@ -622,6 +653,8 @@ list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/platform/")
 list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/encoding/")
 list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/math/")
 list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/mermaid_cpp/")
+list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/parsing/test_commonmark\\.cpp$")
+list(FILTER FOLIA_TEST_SRC EXCLUDE REGEX "/tests/parsing/test_md4c_reference\\.cpp$")
 target_sources(FoliaTests PRIVATE
     ${FOLIA_TEST_SRC})
 target_include_directories(FoliaTests PRIVATE
@@ -641,6 +674,9 @@ add_test(NAME FoliaTests COMMAND FoliaTests)
 # tracked for typed migration; they are not reported as passing this rewrite.
 add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/main.cpp
+    tests/math/mathjax_full_profile_package_bootstrap.cpp
+    tests/math/math_cancellation_g147.cpp
+    tests/math/native_renderer_bridge.cpp
     tests/math/mml_native_raii_foundation.cpp
     tests/math/native_raii_scene.cpp
     tests/math/lengths_native.cpp
@@ -779,6 +815,7 @@ add_executable(FoliaMathTests EXCLUDE_FROM_ALL
     tests/math/native_svg_mglyph_source.cpp
     tests/math/native_table_profile_source.cpp
     tests/math/native_canonical_scene_source.cpp
+    tests/math/request_lifetime.cpp
     tests/math/native_svg_actions.cpp
     tests/math/native_xml_dom_export.cpp
     tests/math/native_common_xml.cpp
@@ -799,7 +836,7 @@ set_target_properties(FoliaMathTests PROPERTIES CXX_MODULE_STD ON CXX_SCAN_FOR_M
 target_include_directories(FoliaMathTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 target_compile_definitions(FoliaMathTests PRIVATE
     FOLIA_MATH_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/math/fixtures")
-target_link_libraries(FoliaMathTests PRIVATE folia_math Boost::ut_module)
+target_link_libraries(FoliaMathTests PRIVATE folia_math FoliaNativeMath Boost::ut_module)
 add_test(NAME FoliaMathTests COMMAND FoliaMathTests)
 add_executable(FoliaMathFontDump EXCLUDE_FROM_ALL
     tools/math-port/font-data-dump.cpp)
@@ -809,6 +846,7 @@ target_link_libraries(FoliaMathFontDump PRIVATE folia_math)
 if(MSVC)
     target_link_options(FoliaTests PRIVATE /DEBUG:NONE /INCREMENTAL:NO)
     target_link_options(FoliaMathTests PRIVATE /DEBUG:NONE /INCREMENTAL:NO)
+    target_link_options(FoliaMathTests PRIVATE /STACK:16777216)
     target_link_options(FoliaMathFontDump PRIVATE /DEBUG:NONE /INCREMENTAL:NO)
 endif()
 
@@ -866,6 +904,57 @@ if(WIN32)
 endif()
 
 # These CMake executables are console tests/probes; the WinUI app uses MSBuild.
+# Official specification tests are separate because the current parser is not
+# conformant yet. They fail normally; they are not a snapshot/probe baseline.
+set(FOLIA_COMMONMARK_CASES "${CMAKE_CURRENT_BINARY_DIR}/commonmark/commonmark_cases.inc")
+add_custom_command(OUTPUT "${FOLIA_COMMONMARK_CASES}"
+    COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/tools/markdown-conformance/prepare.py"
+        --output "${FOLIA_COMMONMARK_CASES}"
+    DEPENDS tools/markdown-conformance/prepare.py
+        tools/markdown-conformance/canonical_html.py tools/markdown-conformance/sources.lock.json
+    VERBATIM)
+add_custom_target(FoliaCommonMarkFixtures DEPENDS "${FOLIA_COMMONMARK_CASES}")
+add_executable(FoliaCommonMarkTests EXCLUDE_FROM_ALL
+    tests/main.cpp tests/parsing/test_commonmark.cpp)
+add_dependencies(FoliaCommonMarkTests FoliaCommonMarkFixtures)
+target_compile_features(FoliaCommonMarkTests PRIVATE cxx_std_23)
+set_target_properties(FoliaCommonMarkTests PROPERTIES CXX_MODULE_STD ON)
+target_include_directories(FoliaCommonMarkTests PRIVATE tests "${CMAKE_CURRENT_BINARY_DIR}/commonmark")
+target_link_libraries(FoliaCommonMarkTests PRIVATE folia_core Boost::ut_module)
+add_test(NAME FoliaCommonMarkTests COMMAND FoliaCommonMarkTests)
+set_tests_properties(FoliaCommonMarkTests PROPERTIES LABELS "commonmark;conformance")
+
+option(FOLIA_BUILD_MD4C_REFERENCE_TESTS "Build md4c controls for failing official CommonMark cases" OFF)
+if(FOLIA_BUILD_MD4C_REFERENCE_TESTS)
+    set(FOLIA_MD_REFERENCE "${CMAKE_CURRENT_SOURCE_DIR}/build/dependencies/markdown-conformance")
+    if(NOT EXISTS "${FOLIA_MD_REFERENCE}/md4c.c")
+        message(FATAL_ERROR "Run python tools/markdown-conformance/prepare.py --fetch --reference first")
+    endif()
+    add_library(folia_md4c_reference STATIC
+        "${FOLIA_MD_REFERENCE}/md4c.c"
+        "${FOLIA_MD_REFERENCE}/md4c-html.c"
+        "${FOLIA_MD_REFERENCE}/entity.c")
+    target_include_directories(folia_md4c_reference PUBLIC "${FOLIA_MD_REFERENCE}")
+    target_compile_definitions(folia_md4c_reference PRIVATE _CRT_SECURE_NO_WARNINGS)
+    set(FOLIA_MD4C_FAILED_CASES "${CMAKE_CURRENT_BINARY_DIR}/commonmark/md4c_failed_examples.inc")
+    add_custom_command(OUTPUT "${FOLIA_MD4C_FAILED_CASES}"
+        COMMAND python "${CMAKE_CURRENT_SOURCE_DIR}/tools/markdown-conformance/reference.py"
+            --generate "${FOLIA_MD4C_FAILED_CASES}"
+        DEPENDS tools/markdown-conformance/reference.py
+            "${CMAKE_CURRENT_SOURCE_DIR}/build/markdown-conformance/results.json"
+        VERBATIM)
+    add_custom_target(FoliaMd4cFailureFixtures DEPENDS "${FOLIA_MD4C_FAILED_CASES}")
+    add_executable(FoliaMd4cReferenceTests EXCLUDE_FROM_ALL
+        tests/main.cpp tests/parsing/test_md4c_reference.cpp)
+    add_dependencies(FoliaMd4cReferenceTests FoliaCommonMarkFixtures FoliaMd4cFailureFixtures)
+    target_compile_features(FoliaMd4cReferenceTests PRIVATE cxx_std_23)
+    set_target_properties(FoliaMd4cReferenceTests PROPERTIES CXX_MODULE_STD ON)
+    target_include_directories(FoliaMd4cReferenceTests PRIVATE tests "${CMAKE_CURRENT_BINARY_DIR}/commonmark")
+    target_link_libraries(FoliaMd4cReferenceTests PRIVATE folia_md4c_reference Boost::ut_module)
+    add_test(NAME FoliaMd4cReferenceTests COMMAND FoliaMd4cReferenceTests)
+    set_tests_properties(FoliaMd4cReferenceTests PROPERTIES LABELS "commonmark;reference")
+endif()
+
 # Keep CRT reports on stderr, including failures before main().
 if(WIN32 AND MSVC)
     add_library(folia_console_test_runtime OBJECT tools/test-support/windows_console_runtime.cpp)

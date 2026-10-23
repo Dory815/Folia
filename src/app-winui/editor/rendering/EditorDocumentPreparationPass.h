@@ -34,8 +34,6 @@ namespace winrt::Folia
             EditorRenderResources& resources,
             EditorStyleSheet const& styleSheet,
             EditorInlineImageRenderer& inlineImages,
-            MathJaxRenderer& mathJax,
-            SvgNormalizer& svgNormalizer,
             EditorDocumentBlockPreparer& blockPreparer,
             folia::platform::editor::EditorScrollState& scrollState,
             std::unique_ptr<EditorPreparedDocument>& preparedDocument,

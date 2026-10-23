@@ -7,11 +7,11 @@ struct FilterFixture : Fixture {
     folia::math::core::AbstractMathItem math{u"", nullptr};
     TexFilterData data{math, document, *options};
     MmlNode &make(NodeKind kind, std::initializer_list<MmlNode *> children = {}) {
-        return options->nodeFactory.makeNode(kind, {children.begin(), children.size()});
+        return options->request().nodeFactory.makeNode(kind, {children.begin(), children.size()});
     }
     MmlNode &root(std::initializer_list<MmlNode *> children) {
         auto &node = make(NodeKind::math, children);
-        options->root = &node;
+        options->request().root = &node;
         document.setRoot(node);
         return node;
     }
@@ -96,10 +96,10 @@ suite filter_util = [] {
         auto &otherSub = f.token();
         auto &incomplete = f.scripts(NodeKind::msubsup, otherBase, &otherSub, nullptr);
         auto &root = f.root({&complete, &incomplete});
-        f.options->error = true;
+        f.options->request().error = true;
         FilterUtil::cleanSubSup(f.data);
         expect(descendants(root, NodeKind::msubsup).size() == 2_u);
-        f.options->error = false;
+        f.options->request().error = false;
         FilterUtil::cleanSubSup(f.data);
         expect(descendants(root, NodeKind::msubsup).size() == 1_u);
         expect(descendants(root, NodeKind::msub).size() == 1_u);

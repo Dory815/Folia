@@ -1,14 +1,30 @@
+#include <array>
+#include <cmath>
+#include <iostream>
+#include <memory>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
 #include "support/folia_test.hpp"
 import folia.math.output.common;
 import folia.math.core.mml_tree.mml_document;
 import folia.math.core.mml_tree.mml_nodes.munderover;
 import folia.math.fonts.newcm_font_module_provider;
+import folia.math.output.scene;
+import folia.math.output.svg.wrapper_factory;
+import folia.math.output.svg.writer;
+
+#include "support/mathml_scene.hpp"
 
 namespace {
 using namespace folia::math;
 using namespace folia::math::output::common;
 using namespace boost::ut;
 namespace mml = folia::math::mml;
+namespace scene = folia::math::output::scene;
+namespace svg = folia::math::output::svg;
 static_assert(std::is_base_of_v<CommonScriptbase, CommonMunder>);
 static_assert(std::is_base_of_v<CommonScriptbase, CommonMover>);
 static_assert(std::is_base_of_v<CommonScriptbase, CommonMunderover>);
@@ -175,6 +191,135 @@ CommonWrapper &wrapInMath(CommonOutputJax &jax, mml::MmlNode &node) {
     return *jax.wrapperFor(node);
 }
 } // namespace
+
+#include "fixtures/common-source/limits-mathml-scene.inc"
+
+namespace {
+class RejectLimitsMeasurement final : public MeasurementTarget {
+  public:
+    ExtendedMetrics measureMetrics(MetricRequest const &) override {
+        throw std::logic_error("limits Source input unexpectedly requested font metrics");
+    }
+    UnknownBBox measureUnknownText(UnknownTextRequest const &) override {
+        throw std::logic_error("limits Source input unexpectedly measured unknown text");
+    }
+};
+
+std::unique_ptr<Linebreaks> makeLimitsLinebreaks(CommonWrapperFactory &factory) {
+    return std::make_unique<LinebreakVisitor>(factory);
+}
+
+bool close(double actual, double expected) {
+    return std::abs(actual - expected) <= 1e-9;
+}
+
+bool matches(CommonWrapper &wrapper, LimitsSceneBBox const &expected) {
+    const auto &box = wrapper.getBBox();
+    return close(box.w, expected.w) && close(box.h, expected.h) && close(box.d, expected.d) &&
+           close(box.scale, expected.scale) && close(box.rscale, expected.rscale) &&
+           close(box.L, expected.L) && close(box.R, expected.R);
+}
+
+std::string writeLimitsScene(scene::Scene const &value,
+                             folia::math::fonts::NewcmFontDataBundle const &bundle,
+                             LimitsSceneSourceCase const &source) {
+    svg::SvgWriteOptions options;
+    options.font_resources = &bundle.svg_resources;
+    options.font_cache =
+        source.font_cache == "local" ? svg::FontCacheMode::local : svg::FontCacheMode::none;
+    options.local_cache_prefixes.reserve(source.local_cache_prefixes.size());
+    for (auto prefix : source.local_cache_prefixes)
+        options.local_cache_prefixes.emplace_back(prefix);
+    return svg::write(value, options);
+}
+
+struct LimitsSceneCapture {
+    scene::Scene value;
+    std::string before_retirement;
+    bool boxes_match{};
+};
+
+LimitsSceneCapture captureLimitsScene(LimitsSceneSourceCase const &source,
+                                      folia::math::fonts::NewcmFontDataBundle const &bundle) {
+    std::optional<scene::Scene> completed;
+    std::string before;
+    bool boxesMatch = false;
+    {
+        mml::MmlDocument document;
+        auto &root = mathml_scene_test::constructRoot(document, source.nodes, source.attributes);
+        document.setRoot(root);
+        root.setInheritedAttributes();
+        root.setTeXclass(nullptr);
+        RejectLimitsMeasurement measurement;
+        CommonOptions options;
+        options.displayOverflow = "linebreak";
+        options.linebreaks.inlineBreaks = true;
+        CommonOutputJaxConfig config{
+            {source.em, source.ex, source.width, 1.0, "MathJaxNewcm", source.display},
+            std::move(options),
+            bundle.fonts,
+            "MathJaxNewcm",
+            InlineBreakPolicy::forced};
+        LayoutJob job(document, std::move(config), measurement,
+                      svg::SvgWrapperFactory::defaultNodes(), makeLimitsLinebreaks);
+        auto &commonRoot = job.build();
+
+        std::vector<mml::MmlNode *> flattened;
+        const auto visit = [&](auto &&self, mml::MmlNode &node) -> void {
+            flattened.push_back(&node);
+            for (auto *child : node.children())
+                if (child)
+                    self(self, *child);
+        };
+        visit(visit, root);
+        bool allBoxesMatch =
+            flattened.size() == source.nodes.size() && source.limits_node_index < flattened.size();
+        auto *rootWrapper = &commonRoot;
+        auto *limitsWrapper = source.limits_node_index < flattened.size()
+                                  ? job.jax().wrapperFor(*flattened[source.limits_node_index])
+                                  : nullptr;
+        if (source.limits_node_index < flattened.size())
+            allBoxesMatch =
+                allBoxesMatch && mml::nodeKindName(flattened[source.limits_node_index]->kind()) ==
+                                     source.nodes[source.limits_node_index].kind;
+        allBoxesMatch = allBoxesMatch && rootWrapper && limitsWrapper &&
+                        matches(*rootWrapper, source.root_bbox) &&
+                        matches(*limitsWrapper, source.limits_bbox);
+        auto value = job.jax().buildScene(commonRoot);
+        const auto &metrics = value.metrics();
+        allBoxesMatch = allBoxesMatch && close(metrics.width, source.root_bbox.w) &&
+                        close(metrics.height, source.root_bbox.h) &&
+                        close(metrics.depth, source.root_bbox.d);
+        before = writeLimitsScene(value, bundle, source);
+        boxesMatch = allBoxesMatch;
+        completed.emplace(std::move(value));
+    }
+    return {std::move(*completed), std::move(before), boxesMatch};
+}
+} // namespace
+
+suite native_common_limits_scene = [] {
+    "direct_MathML_limits_Source_cases_match_BBoxes_and_survive_retirement"_test = [] {
+        auto bundle = folia::math::fonts::makeNewcmFontData();
+        expect(sourceLimitsSceneCases.size() == 24_u);
+        for (auto const &source : sourceLimitsSceneCases) {
+            const auto captured = captureLimitsScene(source, bundle);
+            expect(captured.boxes_match)
+                << "root/limits BBoxes and Scene metrics match Source case=" << source.name;
+            if (source.font_cache == "local")
+                expect(!source.local_cache_prefixes.empty())
+                    << "local Source case has captured prefixes case=" << source.name;
+            else
+                expect(source.local_cache_prefixes.empty())
+                    << "none Source case has no prefixes case=" << source.name;
+            expect(captured.before_retirement == source.svg)
+                << "complete Source SVG matches before retirement case=" << source.name;
+            const auto after = writeLimitsScene(captured.value, bundle, source);
+            expect(after == source.svg)
+                << "complete Scene SVG survives document/job retirement case=" << source.name;
+        }
+    };
+};
 
 suite native_common_limits_factory = [] {
     "common_munder_matches_pinned_source_bbox_and_child_slot"_test = [] {

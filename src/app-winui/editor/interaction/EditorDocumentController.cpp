@@ -65,6 +65,7 @@ namespace winrt::Folia
     void EditorDocumentController::Detach()
     {
         StopWatching(state_);
+        state_->loadStop.request_stop();
         state_->cancelRequested = true;
         state_->pdfExporting = false;
         if (state_->pdfWork) state_->pdfWork->stop.request_stop();
@@ -290,6 +291,9 @@ namespace winrt::Folia
     {
         if (!Active(state, generation) || !file) co_return;
         auto loadTicket = state->loadSerial.fetch_add(1) + 1;
+        state->loadStop.request_stop();
+        state->loadStop = std::stop_source{};
+        auto loadStop = state->loadStop.get_token();
         state->documentLoading.store(true, std::memory_order_release);
         struct LoadingGuard
         {
@@ -310,7 +314,7 @@ namespace winrt::Folia
             ? state->renderer->ScrollOffset()
             : 0.0f;
         if (state->setStatus) state->setStatus(LocalizeFormat(L"StatusReadingFile", { file.Name() }));
-        if (state->setProgress) state->setProgress(true, std::nullopt, false);
+        if (state->setProgress) state->setProgress(true, std::nullopt, true);
         std::vector<std::uint8_t> bytes;
         folia::platform::reload::WatchedFileVersion readVersion;
         for (std::size_t attempt = 0; attempt < 5; ++attempt)
@@ -335,7 +339,7 @@ namespace winrt::Folia
             if (!Active(state, generation) || state->loadSerial.load() != loadTicket) co_return;
         }
         if (state->setStatus) state->setStatus(LocalizeFormat(L"StatusParsingFile", { file.Name() }));
-        if (state->setProgress) state->setProgress(true, 0.0, false);
+        if (state->setProgress) state->setProgress(true, 0.0, true);
         auto dispatcher = winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread();
         auto reportedPercent = std::make_shared<std::atomic_size_t>(0);
         auto progressActive = std::make_shared<std::atomic_bool>(true);
@@ -360,12 +364,15 @@ namespace winrt::Folia
                 std::move(decoded.candidates), [
                 state,
                 generation,
+                loadTicket,
+                loadStop,
                 dispatcher,
                 reportedPercent,
                 progressActive](
                 std::size_t consumed,
                 std::size_t total)
             {
+                if (loadStop.stop_requested()) throw winrt::hresult_canceled();
                 if (!progressActive->load()) return;
                 auto percent = total == 0
                     ? std::size_t{100}
@@ -374,12 +381,13 @@ namespace winrt::Folia
                 while (percent > previous
                     && !reportedPercent->compare_exchange_weak(previous, percent)) {}
                 if (percent <= previous) return;
-                dispatcher.TryEnqueue([state, generation, percent, progressActive]
+                dispatcher.TryEnqueue([state, generation, loadTicket, percent, progressActive]
                 {
                     if (!progressActive->load()
                         || !Active(state, generation)
+                        || state->loadSerial.load() != loadTicket
                         || !state->setProgress) return;
-                    state->setProgress(true, static_cast<double>(percent) / 100.0, false);
+                    state->setProgress(true, static_cast<double>(percent) / 100.0, true);
                 });
             }, requestedEncoding.has_value());
             if (viewState) loaded->RestoreReloadViewState(*viewState);
@@ -391,13 +399,75 @@ namespace winrt::Folia
         progressActive->store(false);
         co_await uiContext;
         if (!Active(state, generation) || state->loadSerial.load() != loadTicket) co_return;
+        if (loadStop.stop_requested())
+        {
+            if (state->setProgress) state->setProgress(false, std::nullopt, false);
+            if (state->setStatus) state->setStatus(Localize(L"StatusOpenCancelled"));
+            co_return;
+        }
         if (loadFailure) std::rethrow_exception(loadFailure);
+        std::unique_ptr<EditorMathPreparation> preparation;
+        for (;;)
+        {
+            if (!Active(state, generation) || state->loadSerial.load() != loadTicket) co_return;
+            if (loadStop.stop_requested())
+            {
+                if (state->setProgress) state->setProgress(false, std::nullopt, false);
+                if (state->setStatus) state->setStatus(Localize(L"StatusOpenCancelled"));
+                co_return;
+            }
+            auto context = state->renderer->CaptureMathPreparationContext();
+            if (!context.ready)
+            {
+                co_await winrt::resume_after(std::chrono::milliseconds(32));
+                continue;
+            }
+            if (state->setStatus) state->setStatus(LocalizeFormat(L"StatusPreparingMath", {file.Name()}));
+            if (state->setProgress) state->setProgress(true, 0.0, true);
+            auto mathProgressActive = std::make_shared<std::atomic_bool>(true);
+            auto mathPercent = std::make_shared<std::atomic_size_t>(0);
+            co_await winrt::resume_background();
+            try
+            {
+                loaded->SetTheme(context.theme);
+                preparation = EditorSurfaceRenderer::PrepareMath(
+                    loaded->RenderFrame(), context, loadStop,
+                    [state, generation, loadTicket, dispatcher, mathProgressActive, mathPercent]
+                    (std::size_t completed, std::size_t total)
+                    {
+                        auto percent = total == 0 ? std::size_t{100}
+                            : (std::min)(std::size_t{100}, completed * 100 / total);
+                        if (mathPercent->exchange(percent) == percent) return;
+                        dispatcher.TryEnqueue([state, generation, loadTicket, mathProgressActive, percent]
+                        {
+                            if (!mathProgressActive->load() || !Active(state, generation)
+                                || state->loadSerial.load() != loadTicket || !state->setProgress) return;
+                            state->setProgress(true, static_cast<double>(percent) / 100.0, true);
+                        });
+                    });
+            }
+            catch (...) { loadFailure = std::current_exception(); }
+            mathProgressActive->store(false);
+            co_await uiContext;
+            if (!Active(state, generation) || state->loadSerial.load() != loadTicket) co_return;
+            if (loadStop.stop_requested())
+            {
+                if (state->setProgress) state->setProgress(false, std::nullopt, false);
+                if (state->setStatus) state->setStatus(Localize(L"StatusOpenCancelled"));
+                co_return;
+            }
+            if (loadFailure) std::rethrow_exception(loadFailure);
+            if (state->renderer->MatchesMathPreparationContext(context)) break;
+            // Only formula inputs depend on this context; ordinary blocks
+            // continue through the existing viewport materialization path.
+            preparation.reset();
+        }
         auto versionAfterParse = folia::platform::reload::query_watched_file_version(
             std::filesystem::path(file.Path().c_str()));
         *state->session = std::move(*loaded);
         if (state->renderer)
         {
-            state->renderer->ResetDocumentCaches();
+            state->renderer->AdoptMathPreparation(std::move(preparation));
             state->renderer->SetScrollOffset(scrollOffset);
         }
         if (state->textInput) state->textInput->NotifyTextChanged();

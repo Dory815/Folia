@@ -17,6 +17,7 @@ struct DsfontFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit DsfontFixture(bool sans = false) {
         DsfontConfiguration::initializeModule(registry, maps);
@@ -26,8 +27,8 @@ struct DsfontFixture {
             std::vector<PackageSelection>{{u"base", {}}, {u"dsfont", {}}, {u"newcommand", {}}};
         options.dsfont = DsfontOptions{.sans = sans};
         options.formatError = &formatDsfontError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -41,7 +42,7 @@ struct DsfontFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     void ok(std::u16string source,

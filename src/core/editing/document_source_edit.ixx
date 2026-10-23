@@ -51,7 +51,7 @@ inline std::optional<DocumentTransaction> document_delete_selection(EditorDocume
 
 inline DocumentTransaction source_transaction_with_block_reparse(
     EditorDocument& after,
-    AppliedSourceEdit edit,
+    DocumentSourceEdit edit,
     TextSelection selection_before,
     TextPosition target,
     std::uint64_t revision_before,
@@ -161,7 +161,7 @@ inline std::optional<DocumentTransaction> document_enter(EditorDocument& documen
     }
     document_edit_detail::NodeAllocator allocator(after);
     TextPosition target;
-    std::optional<AppliedSourceEdit> source_edit;
+    std::optional<DocumentSourceEdit> source_edit;
     if (auto exited = document_edit_detail::exit_empty_indented_code(after, current.active, allocator)) {
         target = exited->target;
         operations.insert(
@@ -349,7 +349,7 @@ inline std::optional<DocumentTransaction> document_delete_backward(EditorDocumen
     if (!selection.is_caret()) return document_delete_selection(document, selection);
     const auto revision_before = document.revision;
     auto& after = document; auto target = selection.active; document_edit_detail::NodeAllocator allocator(after);
-    std::optional<AppliedSourceEdit> source_edit;
+    std::optional<DocumentSourceEdit> source_edit;
     std::vector<DocumentOperation> operations;
     auto const* selected_block = find_document_block(after, target.container_id);
     if (selected_block && document_edit_detail::atomic_block(selected_block->kind)) {
@@ -432,7 +432,7 @@ inline std::optional<DocumentTransaction> document_delete_forward(EditorDocument
     if (!selection.is_caret()) return document_delete_selection(document, selection);
     const auto revision_before = document.revision;
     auto& after = document; auto target = selection.active; document_edit_detail::NodeAllocator allocator(after);
-    std::optional<AppliedSourceEdit> source_edit;
+    std::optional<DocumentSourceEdit> source_edit;
     std::vector<DocumentOperation> operations;
     auto const* selected_block = find_document_block(after, target.container_id);
     if (selected_block && document_edit_detail::atomic_block(selected_block->kind)) {
@@ -672,12 +672,10 @@ inline std::optional<DocumentTransaction> document_delete_selection(EditorDocume
         });
         remove_ids.erase(std::unique(remove_ids.begin(), remove_ids.end()), remove_ids.end());
         for (const auto id : remove_ids) {
-            auto remove = document_edit_detail::remove_node_recorded(after, id);
-            if (!remove) return std::nullopt;
-            operations.emplace_back(std::move(*remove));
+            if (!document_edit_detail::remove_node_recorded(after, id, operations)) return std::nullopt;
         }
         if (operations.empty()) return std::nullopt;
-        document_edit_detail::prune_empty_containers_recorded(after.root, operations);
+        document_edit_detail::prune_empty_containers_recorded(after.root, operations, after);
         if (after.root.children.empty()) {
             auto paragraph = document_edit_detail::empty_paragraph(allocator, after);
             DocumentTreeEdit insert;
@@ -738,13 +736,9 @@ inline std::optional<DocumentTransaction> document_delete_selection(EditorDocume
     // Remove in reverse tree order so cached sibling paths ahead of the
     // mutation remain valid throughout this transaction.
     for (auto id = removed_ids.rbegin(); id != removed_ids.rend(); ++id) {
-        auto remove = document_edit_detail::remove_node_recorded(
-            after,
-            *id);
-        if (!remove) return std::nullopt;
-        operations.emplace_back(std::move(*remove));
+        if (!document_edit_detail::remove_node_recorded(after, *id, operations)) return std::nullopt;
     }
-    document_edit_detail::prune_empty_containers_recorded(after.root, operations);
+    document_edit_detail::prune_empty_containers_recorded(after.root, operations, after);
     if (after.root.children.empty()) {
         auto paragraph = document_edit_detail::empty_paragraph(allocator, after);
         DocumentTreeEdit insert;

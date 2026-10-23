@@ -22,6 +22,7 @@ struct BraketFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     std::u16string message;
     explicit BraketFixture(bool aliases = false, bool selected = true) {
@@ -35,8 +36,8 @@ struct BraketFixture {
             options.packages->push_back({u"newcommand", {}});
         }
         options.formatError = &formatBraketError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -54,7 +55,7 @@ struct BraketFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     MmlNode &ok(std::u16string source) {
@@ -229,7 +230,7 @@ suite braket = [] {
             auto &item = dynamic_cast<BraketItem &>(*frame);
             item.open = u"⟨";
             item.close = u"⟩";
-            auto &x = f.jax->parseOptions().nodeFactory.makeToken(NodeKind::mi, u"x");
+            auto &x = f.jax->parseOptions().request().nodeFactory.makeToken(NodeKind::mi, u"x");
             auto mml = factory.create(StackKind::mml, MmlItemInit{x});
             expect(item.checkItem(mml).action == CheckAction::drop);
             auto close = factory.create(StackKind::close);
@@ -238,7 +239,7 @@ suite braket = [] {
             expect(item.Size() == 0_u && item.barNodes.size() == 1_u);
             if (!item.barNodes.empty())
                 expect(item.barNodes[0] == &x);
-            auto &y = f.jax->parseOptions().nodeFactory.makeToken(NodeKind::mi, u"y");
+            auto &y = f.jax->parseOptions().request().nodeFactory.makeToken(NodeKind::mi, u"y");
             expect(item.checkItem(factory.create(StackKind::mml, MmlItemInit{y})).action ==
                    CheckAction::drop);
             expect(&item.toMml(false) == &y);
@@ -251,7 +252,7 @@ suite braket = [] {
             single.single = true;
             single.open = u"{";
             single.close = u"}";
-            auto &z = f.jax->parseOptions().nodeFactory.makeToken(NodeKind::mi, u"z");
+            auto &z = f.jax->parseOptions().request().nodeFactory.makeToken(NodeKind::mi, u"z");
             result = single.checkItem(factory.create(StackKind::mml, MmlItemInit{z}));
             expect(result.action == CheckAction::replay && result.replacements.size() == 1_u);
             if (!result.replacements.empty())
@@ -267,7 +268,7 @@ suite braket = [] {
                 }
             } restore;
             braketRequests = &requests;
-            f.jax->parseOptions().nodeFactory.setCreators(
+            f.jax->parseOptions().request().nodeFactory.setCreators(
                 NodeCreators{.node = &observeBraketNode, .token = &observeBraketToken});
             auto &root = f.ok(u"\\braket{a|b}");
             expect(requests.size() == 3_u);

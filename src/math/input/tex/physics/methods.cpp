@@ -229,7 +229,7 @@ DispatchOutcome PhysicsMethods::Commutator(TexParser &parser, MacroInvocation co
 DispatchOutcome PhysicsMethods::VectorBold(TexParser &parser, MacroInvocation const &invocation) {
     const bool star = parser.GetStar();
     auto source = parser.GetArgument(invocation.dispatch_token).value();
-    auto &factory = parser.configuration.nodeFactory;
+    auto &factory = parser.configuration.request().nodeFactory;
     auto environment = parser.stack.environmentScope();
     MmlNode *result{};
     {

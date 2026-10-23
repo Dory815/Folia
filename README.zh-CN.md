@@ -103,6 +103,15 @@ powershell -ExecutionPolicy Bypass -File .\build_msi.ps1 -Version 0.2.1
 `{LocalAppData}\Folia\Assets`，程序启动时再针对当前用户解析该占位符；普通
 开发构建仍沿用原有 Assets 位置。
 
+检查刚生成的自包含 MSI 应用中的原生数学 worker：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\math-port\winui-math-worker-probe.ps1 -Configuration Release -SkipBuild -SelfContained
+```
+
+该检查使用已有应用对象和已部署的数学 DLL，不改变应用的部署构建参数。
+MSI 不包含 worker 测试程序和旧 QuickJS 数学、字体脚本。
+
 所有生成文件都位于 `build/`。应用输出位于
 `build/app-winui/bin/<platform>/<configuration>/`，构建不会向源码树写入文件。
 

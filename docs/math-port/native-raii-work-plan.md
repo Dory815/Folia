@@ -6,7 +6,12 @@ for agents to choose separate architectures. All older Context retirement,
 prototype-fidelity and runtime-lifecycle packets are withdrawn from promotion.
 They may remain as ignored historical evidence; they are not dependencies.
 
-## First implementation wave
+Current execution state and next action are only in HANDOFF.md. The allocations
+below are historical; they do not supersede later architecture locks or the
+accepted Renderer/WinUI worker. Remaining cleanup must account for each inactive
+file and preserve its independent mathematical/owner tests before retirement.
+
+## Historical first implementation wave
 
 Agents write complete candidate files/patches in separate ignored packets.
 They must target the canonical paths below and use the current worktree bytes

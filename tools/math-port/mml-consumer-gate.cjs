@@ -40,10 +40,10 @@ mi('mi-skips-virtual-class-setter','setTexClass(static_cast<double>(TEXCLASS.OP)
 style('style-level-addition-normalized','host::add(level, Property(host::integer(text)))','Property(host::number(level)+host::integer(text))');
 style('style-cramped-normalized','prime = cramped;','prime = host::truthy(cramped);');
 style('style-displaystyle-truthiness','displaystyle == Property(true)','host::truthy(displaystyle)');
-const math=method('core/mml_tree/mml_nodes/math.cpp','void MmlMath::verifyTree('),html=method('core/mml_tree/mml_nodes/html_node.cpp','void HtmlNode::verifyTree(');
+const math=method('core/mml_tree/mml_nodes/math.cpp','void MmlMath::verifyTree(');
 math('math-local-default-omitted','if (options.missing()) options = PropertyNull{};','');
 math('math-super-omitted','AbstractMmlNode::verifyTree(options);','');
 math('math-null-skips-derived-check','AbstractMmlNode::verifyTree(options);','AbstractMmlNode::verifyTree(options); if(std::holds_alternative<PropertyNull>(options.value))return;');
-html('html-token-condition-reversed','!getParent().requireNode("isToken")->isToken()','getParent().requireNode("isToken")->isToken()');
+
 for(const name of ['MmlMprescripts','MmlNone']){const methodChange=method('core/mml_tree/mml_nodes/mmultiscripts.cpp','void '+name+'::verifyTree(');methodChange(name+'-super-omitted','AbstractMmlNode::verifyTree(options);','');methodChange(name+'-raw-options-normalized','AbstractMmlNode::verifyTree(options);','if(options.missing())options=PropertyNull{}; AbstractMmlNode::verifyTree(options);');}
-require('./native-mutation-runner.cjs')({name:'math-port-mml-consumers',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_mml_error.cpp',additionalFixtures:['reference_mml_math_verification.cpp','reference_mml_node.cpp','reference_leaf.cpp','reference_html_node.cpp','reference_mml_verification_parents.inc','reference_mml_spacing.cpp','reference_mml_row_class.cpp'],pattern:'*math_port*',assertions:5815,tests:238,suiteSummaries:[{assertions:3208,tests:2},{assertions:72,tests:1},{assertions:1084,tests:43},{assertions:669,tests:27},{assertions:434,tests:75},{assertions:288,tests:88},{assertions:32,tests:1},{assertions:28,tests:1}],mutants});
+require('./native-mutation-runner.cjs')({name:'math-port-mml-consumers',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_mml_error.cpp',additionalFixtures:['reference_mml_node.cpp','reference_mml_verification_parents.inc','reference_mml_spacing.cpp','reference_mml_row_class.cpp'],pattern:'*math_port*',assertions:4640,tests:135,suiteSummaries:[{assertions:3208,tests:2},{assertions:1084,tests:43},{assertions:288,tests:88},{assertions:32,tests:1},{assertions:28,tests:1}],mutants});

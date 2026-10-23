@@ -219,6 +219,7 @@ struct MhchemFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     MhchemError error;
 
     explicit MhchemFixture(bool ams, bool newcommand = false) {
@@ -235,8 +236,8 @@ struct MhchemFixture {
         options.packages->push_back({u"mhchem", {}});
         options.maxMacros = 1000;
         options.formatError = &formatMhchemError;
-        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(),
-                                    std::move(options));
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, std::move(options));
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
 
     MmlNode *compile(std::u16string_view source) {
@@ -357,7 +358,7 @@ suite mhchem = [] {
                 << folia::math::utf16::encode(entry.name);
             expect(fixture.error.message == entry.formattedErrorMessage)
                 << folia::math::utf16::encode(entry.name);
-            expect(fixture.jax->parseOptions().parsers.empty())
+            expect(fixture.jax->parseOptions().request().parsers.empty())
                 << folia::math::utf16::encode(entry.name);
         }
     };
@@ -471,7 +472,8 @@ suite mhchem = [] {
             return NodeFactory::createToken(factory, kind, std::move(definition), text);
         };
         activeRequests = &requests;
-        fixture.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.token = creator});
+        fixture.jax->parseOptions().request().nodeFactory.setCreators(
+            NodeCreators{.token = creator});
         auto *tree = fixture.compile(mhchemCreatorCase.input);
         activeRequests = nullptr;
         expect(tree != nullptr);
@@ -511,7 +513,7 @@ suite mhchem = [] {
                 << folia::math::utf16::encode(entry.input);
             expect(fixture.error.message == entry.errorMessage)
                 << folia::math::utf16::encode(entry.input);
-            expect(fixture.jax->parseOptions().parsers.empty())
+            expect(fixture.jax->parseOptions().request().parsers.empty())
                 << folia::math::utf16::encode(entry.input);
         }
     };

@@ -3,6 +3,7 @@ export import folia.math.core.tree.node;
 export import folia.math.core.mml_tree.node_kind;
 export import folia.math.core.mml_tree.attributes;
 export import folia.math.core.mml_tree.node_properties;
+import folia.math.util.instance_count;
 import std;
 
 export namespace folia::math::mml {
@@ -78,6 +79,7 @@ struct InheritanceStop {
 class MmlNode : public tree::Node<MmlNode, NodeKind> {
     friend class MmlDocument;
     friend class MmlClone;
+    [[no_unique_address]] util::InstanceCount<MmlNode> instance_count_;
     MmlDocument *owner_;
     NodeKind kind_;
     std::u16string text_;

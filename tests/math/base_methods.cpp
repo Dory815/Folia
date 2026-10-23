@@ -373,7 +373,7 @@ suite base_methods = [] {
         Fixture f;
         baseSetup(f);
         folia::math::core::AbstractMathItem item(u"", nullptr);
-        f.options->mathItem = &item;
+        f.options->request().mathItem = &item;
         auto &root = parse(f, u"\\begin{indentalign}[1em][2em][3em]{lcr}x\\end{indentalign}");
         auto styles = nodes(root, NodeKind::mstyle);
         expect(std::any_of(styles.begin(), styles.end(), [](auto *n) {
@@ -381,11 +381,11 @@ suite base_methods = [] {
         }));
         parse(f, u"\\begin{equation}a\\label{a}\\notag\\end{equation}");
         expect(item.isDisplay());
-        expect(f.options->equation.labels.contains(u"a"));
+        expect(f.options->request().equation.labels.contains(u"a"));
         auto &array = parse(f, u"\\begin{eqnarray}a&=&b\\end{eqnarray}");
         expect(nodes(array, NodeKind::mtable).size() == 1_u);
         auto &refs = parse(f, u"\\ref{missing}+\\eqref{missing}");
-        expect(f.options->equation.redo);
+        expect(f.options->request().equation.redo);
         expect(visible(refs).find(u"???") != std::u16string::npos);
         texError([&] { parse(f, u"\\begin{bad\\name}"); }, "InvalidEnv");
     };
@@ -405,7 +405,7 @@ suite base_methods = [] {
             HandlerRegistration{HandlerKind::macro, {u"sessioncommands"}}};
         f.options->handlers.add(sessionHandler);
         expect(visible(parse(f, u"\\sessionmacro{x}+\\sessionmacro[q]{r}")) == u"k+x+q+r");
-        f.options->equation.pending_label.clear();
+        f.options->request().equation.pending_label.clear();
         f.options->tags->setLabel(u"");
         parse(f, u"\\label{x}");
         f.options->tags->setLabel(u"");

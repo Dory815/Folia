@@ -1,8 +1,28 @@
-// Root independent actual-CJS observations for the five P16a source classes.
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {root,u,MmlFactory,kinds,classes,core}=require('./simple-mml-reference.cjs');
-const {valueEmitter}=require('./oracle-values.cjs'),values=valueEmitter(u),{p,list}=values,q=JSON.stringify;
+const {root,MmlFactory,kinds,classes,hashes,core}=require('./simple-mml-reference.cjs');
+function buildProfile(){
+
+const scenarios=[];let current=null;
+function encode(v){
+ if(v===undefined)return ['$undefined'];
+ if(v===null||typeof v==='string'||typeof v==='boolean')return v;
+ if(typeof v==='number'){if(Number.isNaN(v))return ['$number','NaN'];if(v===Infinity)return ['$number','Infinity'];if(v===-Infinity)return ['$number','-Infinity'];if(Object.is(v,-0))return ['$number','-0'];return v;}
+ if(Array.isArray(v))return ['$array',v.length,Object.keys(v).map(k=>[k,encode(v[k])])];
+ assert.equal(typeof v,'object');return ['$object',Object.keys(v).map(k=>[k,encode(v[k])])];
+}
+function record(kind,value){assert.ok(current);current.observations.push({kind,expected:encode(value)});}
+function input(value){record('input',value);}
+function matrix(rows){record('matrix',rows);}
+function startCase(name){current={name,input:{scenario:name,dimensions:name.split('_')},observations:[]};scenarios.push(current);}
+function finish(){
+ assert.equal(cases,106);assert.equal(rawRows,1605);assert.equal(assertions,7667);
+ const counts={scenarios:scenarios.length,sourceAssertions:assertions,matrixRows:rawRows,equal:0,deep:0,input:0,call:0,matrix:0};
+ for(const s of scenarios)for(const o of s.observations)++counts[o.kind];
+ const runtime=JSON.parse(fs.readFileSync(path.join(root,'docs/math-port/evidence/p12b-source-lock.json'),'utf8'));
+ const profile={schema:'folia.math.simple-mml-source.v1',source:{node:process.version,package:'@mathjax/src',version:'4.1.3',pins:hashes,runtime},migration:{originalToolSha256:'25391161b4b90826d3f1c26c30e390eaa85f6f64ea336885467154e1be176308',frozenFixtureSha256:'6d585447047dc2e82addf1d6bb39a2483e89f9bedf07dccbbe463dc5c1e17849',note:'The one-time migration checks the complete original C++ fixture, every ordered Source scenario/observation, all matrix cells and all 296 recursive legacy value records. No native results generate this profile.'},counts,scenarios};
+ return {profile,counts};
+}
 let enabled=false,phase=false,mode='',events=[],calls=[],target=null,late=null,returned=null,phaseBag=null,merged=null,errorOptions=null;
 const note=s=>{if(enabled)events.push(s);},clone=v=>Array.isArray(v)?v.map(clone):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).map(k=>[k,clone(v[k])])):v;
 function fail(){throw Object.assign(new Error('witness'),{name:'WitnessError'});}function reset(){enabled=phase=false;mode='';events=[];calls=[];target=late=returned=phaseBag=merged=errorOptions=null;}
@@ -21,40 +41,210 @@ function factory(){const f=new MmlFactory();f.setNodeClass('record',Record);for(
 function setup(k){reset();const f=factory(),n=f.create('probe-'+k),a=f.create('record'),b=f.create('record'),prev=f.create('record');a.label='first';b.label='late';prev.label='previous';a.texClass=2;a.prevClass='first-prev';a.prevLevel='first-level';b.texClass=5;b.prevClass='late-prev';b.prevLevel='late-level';prev.texClass=1;prev.attributes.set('scriptlevel','2');n.childNodes=[a];a.parent=n;b.parent=n;target=n;late=returned=b;return{f,n,a,b,prev};}
 function state(n){return{tex:n.texClass,prev:n.prevClass,level:n.prevLevel,properties:clone(n.properties),children:n.childNodes?.map(c=>c?.label||c?.kind)};}
 function tree(n){if(!n)return null;return{kind:n.kind,text:n instanceof core.TextNode?n.getText():undefined,properties:clone(n.properties),tex:n.texClass,attributes:clone(n.attributes?.getAllAttributes()),inherited:clone(n.attributes?.getAllInherited()),children:n.childNodes?.map(tree)};}
-const header=['// Generated actual-CJS P16a semantic observations.','#include "support/folia_test.hpp"',...kinds.map(k=>'import folia.math.core.mml_tree.mml_nodes.'+k+';'),...['math','mrow','mi','merror','mtext'].map(k=>'import folia.math.core.mml_tree.mml_nodes.'+k+';'),'import folia.math.core.mml_tree.arithmetic_host;','import folia.math.core.mml_tree.class_binding;','import folia.math.core.tree.node_factory;',
-`namespace m=folia::math::mml;namespace h=m::host;namespace tr=folia::math::tree;using folia::math::Property;using folia::math::PropertyList;using folia::math::PropertyArray;using folia::math::Missing;using folia::math::PropertyNull;using namespace boost::ut;namespace {
-std::u16string units(std::initializer_list<unsigned>v){std::u16string s;for(auto x:v)s.push_back(static_cast<char16_t>(x));return s;}m::Children children(std::initializer_list<m::MmlNode*>v={}){auto result=std::make_shared<tr::ChildArray<m::MmlNode>>();for(auto*node:v)result->push_back(m::NodeValue(node));return result;}
-Property clone(const Property&v){if(auto a=PropertyArray::array(v)){PropertyArray r;for(std::size_t i=0;i<a->size();++i)r.push(clone(a->get(i)));return r;}if(auto a=PropertyList::object(v)){PropertyList r;for(const auto&k:a->keys())r.setOwn(k,clone(a->getOwn(k)));return r;}return v;}
-bool deep(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return(std::isnan(*x)&&std::isnan(*y))||(*x==*y&&std::signbit(*x)==std::signbit(*y));auto x=PropertyList::record(a),y=PropertyList::record(b);if(x&&y){if(PropertyArray::array(a).has_value()!=PropertyArray::array(b).has_value()||x->keys()!=y->keys())return false;for(const auto&k:x->keys())if(!deep(x->getOwn(k),y->getOwn(k)))return false;return true;}return a==b;}
-bool enabled=false,phase=false;std::string mode;std::vector<std::string>simpleEvents;m::MmlNode*target=nullptr,*late=nullptr,*returned=nullptr;PropertyList phaseBag;Property merged;std::optional<PropertyList>errorOptions;struct Call{Property a;Property d,l,p;};std::vector<Call>calls;
-void note(std::string s){if(enabled)simpleEvents.push_back(std::move(s));}void fail(){throw m::Error("WitnessError",u"witness");}void reset(){enabled=phase=false;mode.clear();simpleEvents.clear();calls.clear();target=late=returned=nullptr;phaseBag=PropertyList{};merged=PropertyList{};errorOptions.reset();}Property eventValue(){PropertyArray a;for(const auto&s:simpleEvents)a.push(s);return a;}
-struct Record:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::string label;std::string kind()const override{return "record";}m::NodeValue setTeXclass(m::NodeValue prev)override{note("child/"+label+"/"+(prev.isNode()?"prev":"null"));if(mode=="child-throw")fail();if(mode=="child-rebind")target->childNodes=children({late});if(mode=="child-empty")target->childNodes=children();if(mode=="child-null-array")target->childNodes.reset();return mode=="child-return-prev"?prev:m::NodeValue(returned);}void inheritAttributes(m::AttributeList a,Property d,Property l,Property p)override{note("inherit/"+label);calls.push_back({a,d,l,p});if(mode=="inherit-mutate")h::set(a,"seen",PropertyArray{"record",label});if(mode=="inherit-rebind")target->childNodes=children({late});if(mode=="inherit-append"&&label=="first")target->childNodes->push_back(m::NodeValue(late));if(mode=="inherit-throw")fail();}};
-std::string label(m::MmlNode*n){if(auto*r=dynamic_cast<Record*>(n))return r->label;return n?n->kind():"none";}
-template<class T>struct Probe:T{using T::T;std::shared_ptr<folia::math::Attributes>attributes()const override{note("attributes");return T::attributes();}Property texClass()override{note("tex.read");return T::texClass();}void setTexClass(Property v)override{note("tex.write");T::setTexClass(v);if(enabled&&mode=="class-rebind")this->childNodes=children({late});}Property prevClass()override{note("prev.read");return T::prevClass();}void setPrevClass(Property v)override{note("prev.write");T::setPrevClass(v);}Property prevLevel()const override{note("level.read");return T::prevLevel();}void setPrevLevel(Property v)override{note("level.write");T::setPrevLevel(v);}Property getProperty(std::string_view k)const override{note("get/"+std::string(k));const auto v=T::getProperty(k);if(enabled&&mode=="get-rebind")const_cast<Probe*>(this)->childNodes=children({late});return v;}void getPrevClass(m::NodeValue p)override{note(std::string("getPrev/")+(p.isNode()?"prev":"null"));if(mode=="prev-throw")fail();T::getPrevClass(p);if(mode=="prev-rebind")this->childNodes=children({late});}void updateTeXclass(m::NodeValue c)override{note("update/"+label(c.nodeOrNull()));if(mode=="update-throw")fail();T::updateTeXclass(c);}m::AttributeList addInheritedAttributes(m::AttributeList a,Property b)override{note("merge");if(mode=="merge-throw")fail();if(mode=="merge-rebind")this->childNodes=children({late});if(mode=="merge-mutate")h::set(a,"extra",PropertyArray{"origin","raw"});merged=mode=="merge-return-input"?a:T::addInheritedAttributes(a,b);return merged;}m::MmlNode*mError(std::string s,Property o,bool shortError=false)override{note("error/"+s+"/"+(shortError?"true":"false"));errorOptions=PropertyList::object(o);if(mode=="error-throw")fail();if(!errorOptions)h::typeError("Null witness options");errorOptions->setOwn("observed",true);return returned;}void setChildren(m::Children c)override{if(phase){note("phase/"+h::debugText(h::string(T::texClass())));phaseBag=this->getAllProperties();}T::setChildren(c);}void hook(m::AttributeList a,Property d,Property l,Property p){T::setChildInheritedAttributes(a,d,l,p);}};
-using NF=tr::AbstractNodeFactory<m::MmlNode>;tr::FactoryClassMap<m::MmlNode>bindings(){return{{"math",m::classBinding<m::MmlMath>()},{"mrow",m::classBinding<m::MmlMrow>()},{"inferredMrow",m::classBinding<m::MmlInferredMrow>()},{"mi",m::classBinding<m::MmlMi>()},{"merror",m::classBinding<m::MmlMerror>()},{"mtext",m::classBinding<m::MmlMtext>()},{"text",m::classBinding<m::TextNode>()},{"record",m::classBinding<Record>()},${kinds.flatMap(k=>['{'+q(k)+',m::classBinding<m::'+classes[k].name+'>()}','{'+q('probe-'+k)+',m::classBinding<Probe<m::'+classes[k].name+'>>()}']).join(',')}};}
-m::MmlNode*create(NF&f,std::string_view k,PropertyList a={},m::Children c=children()){return f.create(k,std::array<std::any,2>{a,c});}
-struct Setup{NF f{bindings()};m::MmlNode*n;Record*a,*b,*prev;explicit Setup(std::string_view k){reset();n=create(f,k);a=dynamic_cast<Record*>(create(f,"record"));b=dynamic_cast<Record*>(create(f,"record"));prev=dynamic_cast<Record*>(create(f,"record"));a->label="first";b->label="late";prev->label="previous";a->setTexClass(2);a->setPrevClass("first-prev");a->setPrevLevel("first-level");b->setTexClass(5);b->setPrevClass("late-prev");b->setPrevLevel("late-level");prev->setTexClass(1);prev->attributes()->set("scriptlevel","2");n->childNodes=children({a});a->setParent(m::NodeValue(n));b->setParent(m::NodeValue(n));target=n;late=returned=b;}};
-Property state(m::MmlNode*n){Property c=Missing{};if(n->childNodes){PropertyArray a;const auto children=n->childNodes;const auto length=children->size();a.resize(length);for(std::size_t i=0;i<length;++i)if(children->has(i)){auto*node=children->get(i).nodeOrNull();a.set(i,node?Property(label(node)):Property(Missing{}));}c=a;}return PropertyList{{"tex",n->texClass()},{"prev",n->prevClass()},{"level",n->prevLevel()},{"properties",n->getAllProperties()},{"children",c}};}
-Property tree(m::MmlNode*n){if(!n)return PropertyNull{};Property text=Missing{},c=Missing{};if(auto*t=dynamic_cast<m::TextNode*>(n))text=h::debugText(t->getText());if(n->childNodes){const auto children=n->childNodes;const auto length=children->size();PropertyArray a;a.resize(length);for(std::size_t i=0;i<length;++i)if(children->has(i))a.set(i,tree(children->get(i).nodeOrNull()));c=a;}const auto attrs=n->attributes();return PropertyList{{"kind",n->kind()},{"text",text},{"properties",n->getAllProperties()},{"tex",n->texClass()},{"attributes",attrs?Property(attrs->getAllAttributes()):Property(Missing{})},{"inherited",attrs?Property(attrs->getAllInherited()):Property(Missing{})},{"children",c}};}
-}`];
-const tests=[];let cases=0,assertions=0,rawRows=0;const emit=s=>tests.push(s);
-function begin(name){reset();++cases;emit(q('math_port_simple_mml_'+name)+'_test=[] {reset();');}function end(){enabled=false;emit('enabled=false;};');}
-function eq(v,expr){++assertions;emit('expect(bool(('+expr+')=='+(typeof v==='string'?q(v):v===Infinity?'std::numeric_limits<double>::infinity()':v===-Infinity?'-std::numeric_limits<double>::infinity()':String(v))+'));');}
-function prop(v,expr){++assertions;emit('expect(deep('+expr+','+p(v)+'));');}
-function observe(fn,code){enabled=true;events=[];let error='';try{fn();}catch(e){error=e.name;}enabled=false;emit('{enabled=true;simpleEvents.clear();std::string failure;try{'+code+';}catch(const m::Error&e){failure=e.name;}enabled=false;');eq(error,'failure');prop(events,'eventValue()');emit('}');}
-begin('defaults_getters_fields');{const f=factory();emit('NF f(bindings());');for(const k of kinds){const n=f.create(k),cls=classes[k].name;emit('{auto*n=create(f,'+q(k)+');');for(const key of ['kind','arity','isToken','isEmpty','isSpacelike','linebreakContainer','notParent'])eq(n[key],'n->'+key+'()');prop(n.texClass,'n->texClass()');prop(classes[k].defaults,'Property(m::'+cls+'::defaults())');eq(classes[k].defaults===Object.getPrototypeOf(classes[k]).defaults,'Property(m::'+cls+'::defaults())==Property(m::'+Object.getPrototypeOf(classes[k]).name+'::defaults())');if(n.arity<0){eq(n.childNodes[0].isInferred,'n->childNodes&&n->childNodes->get(0).requireNode("isInferred")->isInferred()');}emit('}');}}end();
-for(const k of kinds){begin('constructor_'+k);const f=factory();phase=true;let n;emit('NF f(bindings());phase=true;m::MmlNode*n=nullptr;');observe(()=>n=f.create('probe-'+k),'n=create(f,'+q('probe-'+k)+')');phase=false;emit('phase=false;');prop(state(n),'state(n)');eq(phaseBag===n.properties,'Property(phaseBag)==Property(n->getAllProperties())');end();}
-const vboxes=[undefined,null,false,true,-1,-0,0,1,2,NaN,Infinity,'','0','false',[],[0],{}, {value:false}];
-for(const k of ['menclose','mpadded'])for(const change of ['', 'child-rebind','child-empty','child-null-array','child-throw','child-return-prev','get-rebind','prev-rebind','prev-throw','class-rebind','update-throw','empty','null-child','null-array'])for(const previous of [false,true]){begin('class_'+k+'_'+(change||'normal')+'_'+previous);const s=setup(k);mode=change;if(k==='mpadded')s.n.setProperty('vbox',true);if(change==='empty')s.n.childNodes=[];if(change==='null-child')s.n.childNodes=[null];if(change==='null-array')s.n.childNodes=null;let result=null;emit('Setup s('+q('probe-'+k)+');mode='+q(change)+';'+(k==='mpadded'?'s.n->setProperty("vbox",true);':'')+(change==='empty'?'s.n->childNodes=children();':change==='null-child'?'s.n->childNodes=children({nullptr});':change==='null-array'?'s.n->childNodes.reset();':'')+'m::NodeValue result{PropertyNull{}};');observe(()=>result=s.n.setTeXclass(previous?s.prev:null),'result=s.n->setTeXclass('+(previous?'s.prev':'nullptr')+')');eq(result===s.n,'result==s.n');eq(result===s.b,'result==s.b');eq(result===(previous?s.prev:null),'result=='+(previous?'s.prev':'nullptr'));prop(state(s.n),'state(s.n)');prop(state(s.a),'state(s.a)');prop(state(s.b),'state(s.b)');end();}
-begin('raw_vbox_matrix');{const rows=[];for(const v of vboxes){const s=setup('mpadded');s.n.setProperty('vbox',v);let result=null,error='';try{result=s.n.setTeXclass(s.prev);}catch(e){error=e.name;}rows.push({input:v,error,self:result===s.n,returned:result===s.b,n:state(s.n),a:state(s.a)});}emit('struct Row{Property input;std::string error;bool self,returned;Property n,a;};const Row rows[]={');for(const r of rows)emit('{'+p(r.input)+','+q(r.error)+','+r.self+','+r.returned+','+p(r.n)+','+p(r.a)+'},');emit('};for(const auto&r:rows){Setup s("probe-mpadded");s.n->setProperty("vbox",clone(r.input));m::NodeValue result{PropertyNull{}};std::string failure;try{result=s.n->setTeXclass(s.prev);}catch(const m::Error&e){failure=e.name;}expect(failure==r.error);expect((result==s.n)==r.self);expect((result==s.b)==r.returned);expect(deep(state(s.n),r.n));expect(deep(state(s.a),r.a));}');assertions+=rows.length*5;rawRows+=rows.length;}end();
-const glyphInputs=[undefined,null,false,true,0,1,'','valid',[],[''],{}];
-begin('raw_glyph_attribute_matrix');{const rows=[];for(const src of glyphInputs)for(const family of glyphInputs)for(const index of glyphInputs){const s=setup('mglyph'),opts={checkAttributes:true,checkMathvariants:true};s.n.attributes.setList({src,fontfamily:family,index,unknown:'raw',mathvariant:'bogus'});enabled=true;events=[];let error='';try{s.n.verifyAttributes(opts);}catch(e){error=e.name;}enabled=false;rows.push({src,family,index,error,trace:clone(events),opts:clone(opts),alias:errorOptions===opts});}
-emit('struct Row{Property src,family,index;std::string error;Property trace,opts;bool alias;};const Row rows[]={');for(const r of rows)emit('{'+[r.src,r.family,r.index].map(p).join(',')+','+q(r.error)+','+p(r.trace)+','+p(r.opts)+','+r.alias+'},');emit('};for(const auto&r:rows){Setup s("probe-mglyph");s.n->attributes()->setList(PropertyList{{"src",clone(r.src)},{"fontfamily",clone(r.family)},{"index",clone(r.index)},{"unknown","raw"},{"mathvariant","bogus"}});PropertyList opts{{"checkAttributes",true},{"checkMathvariants",true}};enabled=true;simpleEvents.clear();std::string failure;try{dynamic_cast<m::MmlMglyph*>(s.n)->verifyAttributes(opts);}catch(const m::Error&e){failure=e.name;}enabled=false;expect(failure==r.error);expect(deep(eventValue(),r.trace));expect(deep(Property(opts),r.opts));expect((errorOptions&&Property(*errorOptions)==Property(opts))==r.alias);}');assertions+=rows.length*4;rawRows+=rows.length;}end();
-for(const change of ['error-throw','attributes-null','valid-no-checks','invalid-no-checks']){begin('glyph_'+change);const s=setup('mglyph'),opts={checkAttributes:false,checkMathvariants:false};mode=change;if(change==='attributes-null')s.n.attributes=null;else s.n.attributes.setList({src:change==='valid-no-checks'?'image':'',fontfamily:'',index:''});emit('Setup s("probe-mglyph");mode='+q(change)+';'+(change==='attributes-null'?'s.n->setAttributes(nullptr);':'s.n->attributes()->setList(PropertyList{{"src",'+q(change==='valid-no-checks'?'image':'')+'},{"fontfamily",""},{"index",""}});')+'PropertyList opts{{"checkAttributes",false},{"checkMathvariants",false}};');observe(()=>s.n.verifyAttributes(opts),'dynamic_cast<m::MmlMglyph*>(s.n)->verifyAttributes(opts)');prop(opts,'Property(opts)');end();}
-for(const change of ['defaults','inherited-src','inherited-family-index','inherited-family-empty-index','explicit-empty-src','explicit-missing-src','explicit-family-empty','explicit-index-empty']){begin('glyph_lookup_'+change);const s=setup('mglyph'),opts={checkAttributes:true,checkMathvariants:true};let inherited={},explicit={};if(change==='inherited-src')inherited={src:'image'};if(change.includes('family'))inherited={fontfamily:'font',index:'42'};if(change==='inherited-family-empty-index')inherited.index='';if(change==='explicit-empty-src'||change==='explicit-missing-src'){inherited={src:'image'};explicit={src:change==='explicit-empty-src'?'':undefined};}if(change==='explicit-family-empty')explicit={fontfamily:''};if(change==='explicit-index-empty'){inherited={fontfamily:'font',index:'42'};explicit={index:''};}for(const [k,v]of Object.entries(inherited))s.n.attributes.setInherited(k,v);s.n.attributes.setList(explicit);emit('Setup s("probe-mglyph");PropertyList opts{{"checkAttributes",true},{"checkMathvariants",true}};');for(const[k,v]of Object.entries(inherited))emit('s.n->attributes()->setInherited('+q(k)+','+p(v)+');');emit('s.n->attributes()->setList('+list(explicit)+');');prop(s.n.attributes.getList('src','fontfamily','index'),'Property(s.n->attributes()->getList({"src","fontfamily","index"}))');observe(()=>s.n.verifyAttributes(opts),'dynamic_cast<m::MmlMglyph*>(s.n)->verifyAttributes(opts)');prop(opts,'Property(opts)');eq(errorOptions===opts,'errorOptions.has_value()&&Property(*errorOptions)==Property(opts)');end();}
-const inh=[undefined,null,false,true,-1,-0,0,1,2,NaN,Infinity,'','2',[],[2],{}];
-for(const change of ['', 'merge-return-input','merge-mutate','merge-rebind','merge-throw','inherit-rebind','inherit-append','inherit-mutate','inherit-throw','attributes-null','null-child','null-array']){begin('group_hook_'+(change||'normal'));const s=setup('maligngroup'),a={color:['ancestor','red']};s.n.childNodes=[s.a,s.b];s.n.attributes.setList({groupalign:'right',mathcolor:'blue',style:'color:red',displaystyle:true,scriptlevel:'2'});mode=change;if(change==='attributes-null')s.n.attributes=null;if(change==='null-child')s.n.childNodes=[null];if(change==='null-array')s.n.childNodes=null;emit('Setup s("probe-maligngroup");s.n->childNodes=children({s.a,s.b});s.n->attributes()->setList(PropertyList{{"groupalign","right"},{"mathcolor","blue"},{"style","color:red"},{"displaystyle",true},{"scriptlevel","2"}});mode='+q(change)+';'+(change==='attributes-null'?'s.n->setAttributes(nullptr);':'')+(change==='null-child'?'s.n->childNodes=children({nullptr});':change==='null-array'?'s.n->childNodes.reset();':'')+'PropertyList attrs='+list(a)+';');observe(()=>s.n.hook(a,'display','2','prime'),'dynamic_cast<Probe<m::MmlMaligngroup>*>(s.n)->hook(attrs,"display","2","prime")');eq(calls.length,'calls.size()');for(const [i,c]of calls.entries()){prop({a:c.a,d:c.d,l:c.l,p:c.p},'PropertyList{{"a",calls['+i+'].a},{"d",calls['+i+'].d},{"l",calls['+i+'].l},{"p",calls['+i+'].p}}');eq(c.a===a,'Property(calls['+i+'].a)==Property(attrs)');eq(c.a===merged,'Property(calls['+i+'].a)==Property(merged)');}prop(a,'Property(attrs)');end();}
-begin('raw_group_inheritance_matrix');{const rows=[];for(const d of inh)for(const l of inh){const s=setup('maligngroup'),a={shared:['ancestor','value']};s.n.hook(a,d,l,'prime');rows.push({d,l,a:calls[0].a,display:calls[0].d,level:calls[0].l,prime:calls[0].p,alias:calls[0].a===a});}emit('struct Row{Property d,l,a,display,level,prime;bool alias;};const Row rows[]={');for(const r of rows)emit('{'+[r.d,r.l,r.a,r.display,r.level,r.prime].map(p).join(',')+','+r.alias+'},');emit('};for(const auto&r:rows){Setup s("probe-maligngroup");PropertyList attrs{{"shared",PropertyArray{"ancestor","value"}}};dynamic_cast<Probe<m::MmlMaligngroup>*>(s.n)->hook(attrs,clone(r.d),clone(r.l),"prime");expect(calls.size()==1_u);if(calls.size()!=1)continue;expect(deep(Property(calls[0].a),r.a));expect(deep(calls[0].d,r.display));expect(deep(calls[0].l,r.level));expect(deep(calls[0].p,r.prime));expect((Property(calls[0].a)==Property(attrs))==r.alias);}');assertions+=rows.length*6;rawRows+=rows.length;}end();
-for(const k of kinds)for(const size of [0,1,2]){begin('real_outer_'+k+'_'+size);const f=factory(),cs=Array.from({length:size},()=>f.create('mi',{},[f.create('text').setText('x')])),n=f.create(k,{mathcolor:'blue'},cs),parent=f.create('mrow',{},[n]);emit('NF f(bindings());auto cs=children();for(int i=0;i<'+size+';++i)cs->push_back(create(f,"mi",{},children({dynamic_cast<m::TextNode*>(create(f,"text"))->setText(u"x")})));auto*n=create(f,'+q(k)+',PropertyList{{"mathcolor","blue"}},cs);auto*parent=create(f,"mrow",{},children({n}));');observe(()=>n.setInheritedAttributes({mathsize:['math','large']},true,'2',true),'n->setInheritedAttributes(PropertyList{{"mathsize",PropertyArray{"math","large"}}},true,"2",true)');prop(tree(parent),'tree(parent)');end();}
-for(const full of [false,true]){begin('real_glyph_error_'+full);const f=factory(),n=f.create('mglyph'),parent=f.create('mrow',{},[n]);n.attributes.setList({src:'',fontfamily:'',index:''});emit('NF f(bindings());auto*n=dynamic_cast<m::MmlMglyph*>(create(f,"mglyph"));auto*parent=create(f,"mrow",{},children({n}));n->attributes()->setList(PropertyList{{"src",""},{"fontfamily",""},{"index",""}});');observe(()=>n.verifyAttributes({fullErrors:full}),'n->verifyAttributes(PropertyList{{"fullErrors",'+full+'}})');prop(tree(parent),'tree(parent)');end();}
-header.push(...values.declarations(),'suite math_port_simple_mml_tests=[] {',...tests,'};');const output=header.join('\n')+'\n',file=path.join(root,'tests/math/reference_simple_mml.cpp');if(process.argv.includes('--check'))assert.equal(fs.readFileSync(file,'utf8').replaceAll('\r\n','\n'),output);else fs.writeFileSync(file,output);console.log(JSON.stringify({cases,assertions,raw_rows:rawRows,source_value_records:values.size(),mode:process.argv.includes('--check')?'check':'generate'}));
+
+let cases=0,assertions=0,rawRows=0;
+function begin(name){reset();++cases;startCase(name);}
+function end(){enabled=false;current=null;}
+function eq(value){++assertions;record('equal',value);}
+function prop(value){++assertions;record('deep',value);}
+function observe(fn){enabled=true;events=[];let error='';try{fn();}catch(e){error=e.name;}enabled=false;record('call',{error,events});eq(error);prop(events);}
+begin('defaults_getters_fields');
+{
+    const f = factory();
+    for (const k of kinds) {
+        const n = f.create(k);
+        for (const key of ['kind', 'arity', 'isToken', 'isEmpty', 'isSpacelike', 'linebreakContainer', 'notParent'])
+            eq(n[key]);
+        prop(n.texClass);
+        prop(classes[k].defaults);
+        eq(classes[k].defaults === Object.getPrototypeOf(classes[k]).defaults);
+        if (n.arity < 0) {
+            eq(n.childNodes[0].isInferred);
+        }
+    }
+}
+end();
+for (const k of kinds) {
+    begin('constructor_' + k);
+    const f = factory();
+    phase = true;
+    let n;
+    observe(() => n = f.create('probe-' + k));
+    phase = false;
+    prop(state(n));
+    eq(phaseBag === n.properties);
+    end();
+}
+const vboxes = [undefined, null, false, true, -1, -0, 0, 1, 2, NaN, Infinity, '', '0', 'false', [], [0], {}, { value: false }];
+for (const k of ['menclose', 'mpadded'])
+    for (const change of ['', 'child-rebind', 'child-empty', 'child-null-array', 'child-throw', 'child-return-prev', 'get-rebind', 'prev-rebind', 'prev-throw', 'class-rebind', 'update-throw', 'empty', 'null-child', 'null-array'])
+        for (const previous of [false, true]) {
+            begin('class_' + k + '_' + (change || 'normal') + '_' + previous);
+            const s = setup(k);
+            mode = change;
+            if (k === 'mpadded')
+                s.n.setProperty('vbox', true);
+            if (change === 'empty')
+                s.n.childNodes = [];
+            if (change === 'null-child')
+                s.n.childNodes = [null];
+            if (change === 'null-array')
+                s.n.childNodes = null;
+            let result = null;
+            observe(() => result = s.n.setTeXclass(previous ? s.prev : null));
+            eq(result === s.n);
+            eq(result === s.b);
+            eq(result === (previous ? s.prev : null));
+            prop(state(s.n));
+            prop(state(s.a));
+            prop(state(s.b));
+            end();
+        }
+begin('raw_vbox_matrix');
+{
+    const rows = [];
+    for (const v of vboxes) {
+        const s = setup('mpadded');
+        s.n.setProperty('vbox', v);
+        let result = null, error = '';
+        try {
+            result = s.n.setTeXclass(s.prev);
+        }
+        catch (e) {
+            error = e.name;
+        }
+        rows.push({ input: v, error, self: result === s.n, returned: result === s.b, n: state(s.n), a: state(s.a) });
+    }
+    matrix(rows);
+    assertions += rows.length * 5;
+    rawRows += rows.length;
+}
+end();
+const glyphInputs = [undefined, null, false, true, 0, 1, '', 'valid', [], [''], {}];
+begin('raw_glyph_attribute_matrix');
+{
+    const rows = [];
+    for (const src of glyphInputs)
+        for (const family of glyphInputs)
+            for (const index of glyphInputs) {
+                const s = setup('mglyph'), opts = { checkAttributes: true, checkMathvariants: true };
+                s.n.attributes.setList({ src, fontfamily: family, index, unknown: 'raw', mathvariant: 'bogus' });
+                enabled = true;
+                events = [];
+                let error = '';
+                try {
+                    s.n.verifyAttributes(opts);
+                }
+                catch (e) {
+                    error = e.name;
+                }
+                enabled = false;
+                rows.push({ src, family, index, error, trace: clone(events), opts: clone(opts), alias: errorOptions === opts });
+            }
+    matrix(rows);
+    assertions += rows.length * 4;
+    rawRows += rows.length;
+}
+end();
+for (const change of ['error-throw', 'attributes-null', 'valid-no-checks', 'invalid-no-checks']) {
+    begin('glyph_' + change);
+    const s = setup('mglyph'), opts = { checkAttributes: false, checkMathvariants: false };
+    mode = change;
+    if (change === 'attributes-null')
+        s.n.attributes = null;
+    else
+        s.n.attributes.setList({ src: change === 'valid-no-checks' ? 'image' : '', fontfamily: '', index: '' });
+    observe(() => s.n.verifyAttributes(opts));
+    prop(opts);
+    end();
+}
+for (const change of ['defaults', 'inherited-src', 'inherited-family-index', 'inherited-family-empty-index', 'explicit-empty-src', 'explicit-missing-src', 'explicit-family-empty', 'explicit-index-empty']) {
+    begin('glyph_lookup_' + change);
+    const s = setup('mglyph'), opts = { checkAttributes: true, checkMathvariants: true };
+    let inherited = {}, explicit = {};
+    if (change === 'inherited-src')
+        inherited = { src: 'image' };
+    if (change.includes('family'))
+        inherited = { fontfamily: 'font', index: '42' };
+    if (change === 'inherited-family-empty-index')
+        inherited.index = '';
+    if (change === 'explicit-empty-src' || change === 'explicit-missing-src') {
+        inherited = { src: 'image' };
+        explicit = { src: change === 'explicit-empty-src' ? '' : undefined };
+    }
+    if (change === 'explicit-family-empty')
+        explicit = { fontfamily: '' };
+    if (change === 'explicit-index-empty') {
+        inherited = { fontfamily: 'font', index: '42' };
+        explicit = { index: '' };
+    }
+    for (const [k, v] of Object.entries(inherited))
+        s.n.attributes.setInherited(k, v);
+    s.n.attributes.setList(explicit);
+    for (const [k, v] of Object.entries(inherited))
+        input(v);
+    input(explicit);
+    prop(s.n.attributes.getList('src', 'fontfamily', 'index'));
+    observe(() => s.n.verifyAttributes(opts));
+    prop(opts);
+    eq(errorOptions === opts);
+    end();
+}
+const inh = [undefined, null, false, true, -1, -0, 0, 1, 2, NaN, Infinity, '', '2', [], [2], {}];
+for (const change of ['', 'merge-return-input', 'merge-mutate', 'merge-rebind', 'merge-throw', 'inherit-rebind', 'inherit-append', 'inherit-mutate', 'inherit-throw', 'attributes-null', 'null-child', 'null-array']) {
+    begin('group_hook_' + (change || 'normal'));
+    const s = setup('maligngroup'), a = { color: ['ancestor', 'red'] };
+    s.n.childNodes = [s.a, s.b];
+    s.n.attributes.setList({ groupalign: 'right', mathcolor: 'blue', style: 'color:red', displaystyle: true, scriptlevel: '2' });
+    mode = change;
+    if (change === 'attributes-null')
+        s.n.attributes = null;
+    if (change === 'null-child')
+        s.n.childNodes = [null];
+    if (change === 'null-array')
+        s.n.childNodes = null;
+    input(a);
+    observe(() => s.n.hook(a, 'display', '2', 'prime'));
+    eq(calls.length);
+    for (const [i, c] of calls.entries()) {
+        prop({ a: c.a, d: c.d, l: c.l, p: c.p });
+        eq(c.a === a);
+        eq(c.a === merged);
+    }
+    prop(a);
+    end();
+}
+begin('raw_group_inheritance_matrix');
+{
+    const rows = [];
+    for (const d of inh)
+        for (const l of inh) {
+            const s = setup('maligngroup'), a = { shared: ['ancestor', 'value'] };
+            s.n.hook(a, d, l, 'prime');
+            rows.push({ d, l, a: calls[0].a, display: calls[0].d, level: calls[0].l, prime: calls[0].p, alias: calls[0].a === a });
+        }
+    matrix(rows);
+    assertions += rows.length * 6;
+    rawRows += rows.length;
+}
+end();
+for (const k of kinds)
+    for (const size of [0, 1, 2]) {
+        begin('real_outer_' + k + '_' + size);
+        const f = factory(), cs = Array.from({ length: size }, () => f.create('mi', {}, [f.create('text').setText('x')])), n = f.create(k, { mathcolor: 'blue' }, cs), parent = f.create('mrow', {}, [n]);
+        observe(() => n.setInheritedAttributes({ mathsize: ['math', 'large'] }, true, '2', true));
+        prop(tree(parent));
+        end();
+    }
+for (const full of [false, true]) {
+    begin('real_glyph_error_' + full);
+    const f = factory(), n = f.create('mglyph'), parent = f.create('mrow', {}, [n]);
+    n.attributes.setList({ src: '', fontfamily: '', index: '' });
+    observe(() => n.verifyAttributes({ fullErrors: full }));
+    prop(tree(parent));
+    end();
+}
+return finish();
+}
+if(require.main===module){assert.ok(process.argv.includes('--check'),'Source-only oracle is check-only');const result=buildProfile();assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root,'docs/math-port/evidence/simple-mml-source.json'),'utf8')),result.profile);console.log(JSON.stringify({...result.counts,mode:'check'}));}
+module.exports={buildProfile};

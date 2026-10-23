@@ -142,7 +142,7 @@ void ParserConfiguration::add(std::u16string_view name, TeX& jax,
     configurations_.add(configuration, configuration->priority);
     init();
     auto& parser = jax.parseOptions();
-    parser.nodeFactory.setCreators(configuration->nodes);
+    parser.setNodeCreators(configuration->nodes);
     for (auto const& [kind, constructor] : configuration->items)
         parser.itemFactory->setNodeClass(kind, constructor);
     TagsFactory::addTags(*this, configuration->tags);

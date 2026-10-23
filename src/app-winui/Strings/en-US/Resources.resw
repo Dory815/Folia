@@ -79,6 +79,7 @@
   <data name="StatusOpenCancelled" xml:space="preserve"><value>Open cancelled</value></data>
   <data name="StatusReadingFile" xml:space="preserve"><value>Reading {0}…</value></data>
   <data name="StatusParsingFile" xml:space="preserve"><value>Parsing {0}…</value></data>
+  <data name="StatusPreparingMath" xml:space="preserve"><value>Preparing math and layout for {0}…</value></data>
   <data name="StatusOpenedFile" xml:space="preserve"><value>Opened {0}</value></data>
   <data name="StatusReloadedFile" xml:space="preserve"><value>Reloaded {0}</value></data>
   <data name="StatusReloadFailed" xml:space="preserve"><value>Reload failed: {0}</value></data>
@@ -108,12 +109,7 @@
   <data name="Licenses" xml:space="preserve"><value>Licenses</value></data>
   <data name="About" xml:space="preserve"><value>About</value></data>
   <data name="GeneralDescription" xml:space="preserve"><value>Control optional rendering services and editor behavior.</value></data>
-  <data name="RenderMath" xml:space="preserve"><value>Render mathematical formulas</value></data>
-  <data name="MathJaxOn" xml:space="preserve"><value>MathJax service on</value></data>
-  <data name="ShowMarkdownSource" xml:space="preserve"><value>Show Markdown source</value></data>
-  <data name="MathServiceDescription" xml:space="preserve"><value>When disabled, Folia does not start the QuickJS MathJax worker. Disabling it also interrupts active work and releases the JavaScript runtime.</value></data>
   <data name="ChangesApplyImmediately" xml:space="preserve"><value>Changes apply immediately</value></data>
-  <data name="MathChangesDescription" xml:space="preserve"><value>Existing formulas switch between rendered output and Markdown source. The choice is saved automatically.</value></data>
   <data name="Language" xml:space="preserve"><value>Language</value></data>
   <data name="ApplicationLanguage" xml:space="preserve"><value>Application language</value></data>
   <data name="FollowWindowsLanguage" xml:space="preserve"><value>Follow Windows</value></data>

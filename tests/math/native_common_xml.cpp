@@ -149,6 +149,39 @@ XmlProbe &buildXml(common::LayoutJob &job, mml::XMLNode &xml) {
 } // namespace
 
 suite native_common_xml = [] {
+    "XML font styles use an explicit typed metrics family when the parent family is empty"_test = [] {
+        auto fonts = folia::math::fonts::makeNewcmFontData();
+        NoTextMeasurement measurement;
+        CountingLite adaptor;
+        auto parent = adaptor.node(u"div");
+        auto container = adaptor.node(u"div");
+        auto config = makeConfig(fonts.fonts, &adaptor, parent, container);
+        config.metrics.family = "ExplicitMetrics";
+
+        auto owner = mml::XmlDomAdaptor::create();
+        mml::MmlDocument document;
+        auto &xml = appendXml(document, makeInputXml(adaptor), owner);
+        common::LayoutJob job(document, std::move(config), measurement, xmlCatalog(),
+                              makeLinebreaks);
+        auto &wrapper = buildXml(job, xml);
+        expect(wrapper.parent != nullptr);
+        if (!wrapper.parent)
+            return;
+        wrapper.parent->styles.emplace();
+        wrapper.parent->styles->set(u"font-family", folia::math::styles::StyleValue(u""));
+
+        const auto styles = wrapper.getFontStyles();
+        expect(styles.size() == 2_u) << "XML font styles retain family and size only";
+        if (styles.size() != 2_u)
+            return;
+        expect(styles[0].first == "font-family");
+        expect(styles[0].second == u"ExplicitMetrics")
+            << "typed Common metrics family is used after the empty parent family";
+        expect(styles[1].first == "font-size");
+        expect(styles[1].second == u"16px")
+            << "font size uses em times the wrapper relative scale";
+    };
+
     "automatic htmlHDW follows the typed adaptor capability and rejects absent services"_test = [] {
         auto fonts = folia::math::fonts::makeNewcmFontData();
         NoTextMeasurement measurement;

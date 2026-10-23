@@ -15,13 +15,14 @@ struct ColorFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit ColorFixture(TexOptionValues options = {}) {
         ColorConfiguration::initializeModule(registry, maps);
         options.packages = std::vector<PackageSelection>{{u"base", {}}, {u"color", {}}};
         options.formatError = formatColorError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -73,8 +74,8 @@ suite color_package = [] {
                                                           u"red"};
         for (std::size_t i = 0; i < std::min(tokens.size(), expected.size()); ++i)
             expect(attr(*tokens[i], u"mathcolor") == expected[i]);
-        expect(!f.jax->parseOptions().error);
-        expect(f.jax->parseOptions().parsers.empty());
+        expect(!f.jax->parseOptions().request().error);
+        expect(f.jax->parseOptions().request().parsers.empty());
     };
     "color package definitions persist across formulas and tag reset with isolated models"_test =
         [] {
@@ -152,7 +153,7 @@ suite color_package = [] {
             ColorFixture f;
             f.compile(std::u16string(input));
             expect(f.error == expected);
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             auto nodes = coloredTokens(f.compile(u"\\color{green}x"));
             expect(f.error.empty());
             expect(attr(*nodes[0], u"mathcolor") == u"green");

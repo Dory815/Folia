@@ -157,4 +157,35 @@ suite mml_exact_clone_xml = [] {
         expect(adaptor->cloneCalls == 1_u);
         expect(throws<std::logic_error>([&] { (void)copy.getSerializedXML(); }));
     };
+    "html_verify_tree_null_and_explicit_options_preserve_token_and_non_token_placements"_test = [] {
+        MmlDocument document;
+        auto &factory = document.factory();
+        MmlNode &token = factory.make(NodeKind::mi);
+        MmlNode &tokenHtml = factory.make(NodeKind::html);
+        document.append(token, tokenHtml);
+
+        MmlNode &row = factory.make(NodeKind::mrow);
+        MmlNode &rowHtml = factory.make(NodeKind::html);
+        document.append(row, rowHtml);
+        const auto nodeCountBefore = document.size();
+
+        tokenHtml.verifyTree(std::nullopt);
+        rowHtml.verifyTree(std::nullopt);
+        tokenHtml.verifyTree(VerifyOptions{});
+        rowHtml.verifyTree(VerifyOptions{});
+
+        expect(token.isToken());
+        expect(tokenHtml.parent() == &token);
+        expect(token.children().size() == 1u);
+        if (!token.children().empty())
+            expect(token.children().front() == &tokenHtml);
+        expect(!row.isToken());
+        expect(rowHtml.parent() == &row);
+        expect(row.children().size() == 1u);
+        if (!row.children().empty())
+            expect(row.children().front() == &rowHtml);
+        expect(document.size() == nodeCountBefore)
+            << "HtmlNode's inherited empty-node mError leaves invalid placement unchanged";
+    };
+
 };

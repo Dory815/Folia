@@ -34,15 +34,16 @@ std::vector<mml::MmlNode *> internalMath(TexParser &parser, std::u16string_view 
                                          std::optional<ScriptLevel> level,
                                          std::optional<std::u16string_view> font) {
     auto &data = *parser.configuration.textmacros;
+    auto &texParser = data.parseOptions->request().texParser;
     struct Restore {
-        TextMacrosData &data;
+        TexParser *&slot;
         TexParser *previous;
         ~Restore() {
-            data.texParser = previous;
+            slot = previous;
         }
-    } restore{data, data.texParser};
+    } restore{texParser, texParser};
     if (!dynamic_cast<TextParser *>(&parser))
-        data.texParser = &parser;
+        texParser = &parser;
     data.parseOptions->clear();
     ParserEnvironmentSeed environment;
     if (font && !font->empty())
@@ -60,7 +61,6 @@ void configureTextMacros(ParserConfiguration &configuration, TeX &jax) {
     data->textConf->init();
     data->parseOptions = std::make_unique<ParseOptions>(
         *data->textConf, SharedTexOptions{jax.options}, jax.session(),
-        jax.parseOptions().nodeFactory.mmlFactory(),
         ParseOptions::getVariant(data->textConf->options.mathStyle.value_or(u"TeX")));
     data->textConf->config(jax);
     data->parseOptions->tags = TagsFactory::getDefault(
@@ -70,7 +70,6 @@ void configureTextMacros(ParserConfiguration &configuration, TeX &jax) {
 }
 void prepareTextMacros(TexFilterData &data) {
     auto &inner = *data.data.textmacros->parseOptions;
-    inner.nodeFactory.setMmlFactory(data.data.nodeFactory.mmlFactory());
     inner.clear();
 }
 } // namespace

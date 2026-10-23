@@ -12,6 +12,7 @@ struct SizeFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     explicit SizeFixture(bool selected = true, bool aliases = false, bool reversed = false) {
         FontSizeV3Configuration::initializeModule(registry, maps);
         TexOptionValues options;
@@ -26,15 +27,15 @@ struct SizeFixture {
             NewcommandConfiguration::initializeModule(registry, maps);
             options.packages->push_back({u"newcommand", {}});
         }
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(!jax->parseOptions().error);
-        expect(jax->parseOptions().parsers.empty());
+        expect(!jax->parseOptions().request().error);
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
 };
@@ -124,7 +125,8 @@ suite fontsizev3 = [] {
                 }
             } restore;
             sizeRequests = &requests;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.node = &observeSize});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.node = &observeSize});
             f.compile(u"\\tiny\\large x");
             expect(requests.size() == 2_u);
             if (requests.size() == 2) {

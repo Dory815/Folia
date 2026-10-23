@@ -74,6 +74,7 @@ struct MtTagFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit MtTagFixture(std::u16string_view mode = u"all", bool tagformat = false,
                           bool reverse = false) {
@@ -103,8 +104,8 @@ struct MtTagFixture {
         options.tags = std::u16string(mode);
         options.maxMacros = 1000;
         options.formatError = &mtFormatError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MathtoolsTags &forms() {
         auto result = dynamic_cast<MathtoolsTags *>(jax->parseOptions().tags->tagForm());
@@ -130,7 +131,7 @@ struct MtTagFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(true);
         auto &tree = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return tree;
     }
     MmlNode &ok(std::u16string source) {
@@ -260,6 +261,7 @@ suite mathtools_tags = [] {
         expect(mtText(parent.jax->parseOptions().tags->formatTag(u"X")) == u"[X]");
         parent.ok(u"x");
         expect(parent.parent.finalized == 1_i);
+        parent.request.reset();
         parent.jax.reset();
         expect(parent.parent.alive == 0_i);
         expect(parent.parent.destroyed == 1_i);
@@ -290,7 +292,7 @@ suite mathtools_tags = [] {
         for (std::u16string_view mode : {u"none", u"all", u"ams", u"cases"}) {
             MtTagFixture f(mode, true);
             auto &tags = *f.jax->parseOptions().tags;
-            auto &equation = f.jax->parseOptions().equation;
+            auto &equation = f.jax->parseOptions().request().equation;
             tags.start("subnumcases", true, true);
             tags.autoTag();
             expect(equation.counter.equation == (mode == u"none" ? 0 : 1));
@@ -341,10 +343,12 @@ suite mathtools_tags = [] {
         auto options = f.jax->options;
         options.tags = u"parent";
         const auto registrySize = f.registry.keys().size();
+        f.request.reset();
         f.jax.reset();
         for (int i = 0; i < 48; ++i) {
             {
-                TeX jax(f.registry, f.maps, f.callbacks, f.warnings, f.document.factory(), options);
+                TeX jax(f.registry, f.maps, f.callbacks, f.warnings, options);
+                TeXRequest request(jax, f.document.factory());
                 expect(dynamic_cast<MtParentTags *>(jax.parseOptions().tags.get()) != nullptr);
                 expect(dynamic_cast<MathtoolsTags *>(jax.parseOptions().tags->tagForm()) !=
                        nullptr);

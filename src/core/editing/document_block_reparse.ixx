@@ -7,6 +7,7 @@ import folia.core.ast;
 import folia.core.block_source;
 import folia.core.block_tree;
 import folia.core.document;
+import folia.core.document_container_source;
 import folia.core.document_edit_support;
 import folia.core.document_text;
 import folia.core.ids;
@@ -137,6 +138,16 @@ inline void assign_fresh_ids(
             allocator,
             remapped_ids);
     }
+    if (block.has_container_source()) {
+        auto& lines = block.ensure_container_source().lines;
+        for (auto& line : lines) {
+            const auto mapping = std::ranges::find(
+                remapped_ids,
+                line.anchor.owner_id,
+                &std::pair<NodeId, NodeId>::first);
+            if (mapping != remapped_ids.end()) line.anchor.owner_id = mapping->second;
+        }
+    }
     if (block.has_html_source()) {
         auto& html = block.ensure_html_special();
         for (auto& slot : html.content_slots) {
@@ -256,7 +267,7 @@ inline std::optional<RecordedBlockEdit> reparse_edited_direct_block(
     remove.parent_id = parent_id;
     remove.index = index;
     remove.before = parent->children[index];
-    result.operations.emplace_back(std::move(remove));
+        document_container_source::append_container_tree_operation(document, result.operations, std::move(remove));
     parent->children.erase(parent->children.begin() + static_cast<std::ptrdiff_t>(index));
 
     for (std::size_t replacement_index = 0;

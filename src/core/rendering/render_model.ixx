@@ -13,6 +13,7 @@ import folia.core.ast; // for AST contents reused during build (children)
 import folia.core.selection;
 import folia.core.text_edit;
 import folia.core.source_style;
+import folia.core.block_source;
 
 export namespace folia {
 
@@ -303,6 +304,7 @@ struct RenderBlockSpecial {
     std::vector<std::size_t> content_to_source;
     std::optional<std::string> language;
     std::u32string code_text;
+    std::vector<GeneratedCodeIndentation> generated_code_indentation;
     std::size_t line_count = 0;
     bool code_indented = false;
     // MathBlock

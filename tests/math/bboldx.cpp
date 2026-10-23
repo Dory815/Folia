@@ -41,6 +41,7 @@ struct BboldxFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit BboldxFixture(bool text = true, bool bfbb = false, bool light = false,
                            bool aliases = false, bool reversed = false, bool selected = true) {
@@ -62,8 +63,8 @@ struct BboldxFixture {
             options.packages->push_back({u"newcommand", {}});
         }
         options.formatError = &formatBboldxError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -77,10 +78,10 @@ struct BboldxFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         if (auto data = jax->parseOptions().textmacros) {
-            expect(data->texParser == nullptr);
-            expect(data->parseOptions->parsers.empty());
+            expect(data->parseOptions->request().texParser == nullptr);
+            expect(data->parseOptions->request().parsers.empty());
         }
         return root;
     }
@@ -239,7 +240,8 @@ suite bboldx = [] {
                 }
             } restore;
             bbRequests = &requests;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.token = &observeBboldx});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.token = &observeBboldx});
             auto &tree = f.ok(u"\\bbGamma+\\bfbbLparen");
             expect(requests.size() == 2_u);
             if (requests.size() == 2) {

@@ -5,6 +5,7 @@ import folia.core.block_source;
 import folia.core.block_tree;
 import folia.core.callout;
 import folia.core.document;
+import folia.core.document_container_source;
 import folia.core.document_ids;
 import folia.core.ids;
 import folia.core.inline_cst;
@@ -93,7 +94,7 @@ inline bool insert_container_and_move_range(
         move.moved_id = parent->children[range.first + 1].id;
         auto child = remove_block(*parent, range.first + 1);
         if (!child || !insert_block(*inserted, target_index, std::move(*child))) return false;
-        operations.emplace_back(std::move(move));
+        document_container_source::append_container_tree_operation(document, operations, std::move(move));
     }
     return true;
 }
@@ -122,7 +123,7 @@ inline bool unwrap_container(
         move.moved_id = container->children.front().id;
         auto child = remove_block(*container, 0);
         if (!child || !insert_block(*parent, move.other_index, std::move(*child))) return false;
-        operations.emplace_back(std::move(move));
+        document_container_source::append_container_tree_operation(document, operations, std::move(move));
     }
     parent = find_block(document.root, parent_id);
     const auto container_index = range.first + child_count;
@@ -132,7 +133,7 @@ inline bool unwrap_container(
     remove.parent_id = parent_id;
     remove.index = container_index;
     remove.before = parent->children[container_index];
-    operations.emplace_back(std::move(remove));
+        document_container_source::append_container_tree_operation(document, operations, std::move(remove));
     parent->children.erase(parent->children.begin() + static_cast<std::ptrdiff_t>(container_index));
     return true;
 }
@@ -305,7 +306,7 @@ inline std::optional<DocumentTransaction> document_toggle_list(EditorDocument& d
                 move.moved_id = item->children.front().id;
                 auto child = remove_block(*item, 0);
                 if (!child || !insert_block(*parent, move.other_index, std::move(*child))) return std::nullopt;
-                operations.emplace_back(std::move(move));
+                document_container_source::append_container_tree_operation(after, operations, std::move(move));
             }
             list = find_block(after.root, list_id);
             if (!list || list->children.empty()) return std::nullopt;
@@ -314,7 +315,7 @@ inline std::optional<DocumentTransaction> document_toggle_list(EditorDocument& d
             remove_item.parent_id = list_id;
             remove_item.index = 0;
             remove_item.before = list->children.front();
-            operations.emplace_back(std::move(remove_item));
+        document_container_source::append_container_tree_operation(after, operations, std::move(remove_item));
             list->children.erase(list->children.begin());
         }
         parent = find_block(after.root, parent_id);
@@ -324,7 +325,7 @@ inline std::optional<DocumentTransaction> document_toggle_list(EditorDocument& d
         remove_list.parent_id = parent_id;
         remove_list.index = parent_index;
         remove_list.before = parent->children[parent_index];
-        operations.emplace_back(std::move(remove_list));
+        document_container_source::append_container_tree_operation(after, operations, std::move(remove_list));
         parent->children.erase(parent->children.begin() + static_cast<std::ptrdiff_t>(parent_index));
     } else {
         BlockNode list;
@@ -375,7 +376,7 @@ inline std::optional<DocumentTransaction> document_toggle_list(EditorDocument& d
             if (!child || !inserted_item || !insert_block(*inserted_item, 0, std::move(*child))) {
                 return std::nullopt;
             }
-            operations.emplace_back(std::move(move));
+        document_container_source::append_container_tree_operation(after, operations, std::move(move));
         }
     }
     ++after.revision;
@@ -503,7 +504,7 @@ inline std::optional<DocumentTransaction> document_insert_atomic_block(EditorDoc
         remove.parent_id = parent->id;
         remove.index = index;
         remove.before = parent->children[index];
-        operations.emplace_back(std::move(remove));
+        document_container_source::append_container_tree_operation(after, operations, std::move(remove));
         parent->children.erase(parent->children.begin() + static_cast<std::ptrdiff_t>(index));
 
         DocumentTreeEdit insert;
@@ -568,6 +569,7 @@ inline std::optional<DocumentTransaction> document_indent_list_item(EditorDocume
         created.ensure_list_special().ordered = list->list_special().ordered;
         created.ensure_list_special().start = list->list_special().start;
         created.ensure_list_special().delimiter = list->list_special().delimiter;
+        created.ensure_list_special().tight = list->list_special().tight;
         const auto nested_id = created.id;
         DocumentTreeEdit insert;
         insert.kind = DocumentTreeEditKind::Insert;
@@ -593,7 +595,7 @@ inline std::optional<DocumentTransaction> document_indent_list_item(EditorDocume
     move.moved_id = list->children[item_index].id;
     auto item = list ? remove_block(*list, item_index) : std::nullopt;
     if (!item || !nested || !insert_block(*nested, target_index, std::move(*item))) return std::nullopt;
-    operations.emplace_back(std::move(move));
+        document_container_source::append_container_tree_operation(after, operations, std::move(move));
     ++after.revision;
     rollback.commit();
     return make_recorded_document_transaction(
@@ -698,7 +700,7 @@ inline std::optional<DocumentTransaction> document_edit_table(
         remove.parent_id = parent_id;
         remove.index = index;
         remove.before = owner->children[index];
-        operations.emplace_back(std::move(remove));
+        document_container_source::append_container_tree_operation(after, operations, std::move(remove));
         return remove_block(*owner, index).has_value();
     };
     auto move_node = [&](NodeId parent_id, std::size_t from, std::size_t to) {
@@ -713,8 +715,9 @@ inline std::optional<DocumentTransaction> document_edit_table(
         move.other_parent_id = parent_id;
         move.other_index = to;
         move.moved_id = node->id;
-        operations.emplace_back(std::move(move));
-        return insert_block(*owner, to, std::move(*node));
+        if (!insert_block(*owner, to, std::move(*node))) return false;
+        document_container_source::append_container_tree_operation(after, operations, std::move(move));
+        return true;
     };
     bool changed = true;
     switch (edit) {

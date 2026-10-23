@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <variant>
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -50,7 +51,22 @@ suite editor_tree_history_tests = [] {
         expect(fatal(bool(counters.full_document_parses == 0u))) << markdown;
         expect(fatal(bool(counters.full_document_serializations == 0u))) << markdown;
         expect(fatal(bool(counters.full_tree_transaction_diffs == 0u))) << markdown;
-        expect(fatal(bool(transaction->operations.size() == 2u))) << markdown;
+        std::size_t text_edits = 0;
+        std::size_t inserted_blocks = 0;
+        for (const auto& operation : transaction->operations) {
+            if (std::holds_alternative<DocumentTextOperation>(operation)) ++text_edits;
+            else {
+                const auto& tree_edit = std::get<DocumentTreeEdit>(operation);
+                if (tree_edit.kind == DocumentTreeEditKind::Insert) ++inserted_blocks;
+                else {
+                    expect(fatal(tree_edit.kind == DocumentTreeEditKind::UpdatePayload));
+                    expect(fatal(tree_edit.before.children.empty() && tree_edit.after.children.empty()));
+                    expect(fatal(tree_edit.before.inline_content.source.empty()
+                        && tree_edit.after.inline_content.source.empty()));
+                }
+            }
+        }
+        expect(fatal(text_edits == 1u && inserted_blocks == 1u)) << markdown;
         const auto after_markdown = editor.markdown_utf8();
         const auto after_selection = editor.selection();
 

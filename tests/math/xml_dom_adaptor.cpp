@@ -190,4 +190,26 @@ suite xml_dom_adaptor = [] {
         expect(throws<std::invalid_argument>([&] { (void)adaptor->fromDOM({}); }))
             << "fromDOM rejects a null Lite node";
     };
+
+    "XMLNode serializes a frozen Lite payload after retaining its typed adaptor"_test = [] {
+        LiteBase source;
+        DOMAttributes attributes{{u"data-x", u"a&b"}};
+        std::array<DOMNodeRef, 1> children{source.text(u"raw < text")};
+        const auto element = source.node(u"span", attributes, children);
+
+        MmlDocument document;
+        auto &xml = dynamic_cast<XMLNode &>(document.make(NodeKind::xml));
+        std::weak_ptr<XmlAdaptor const> ownerLease;
+        {
+            auto owner = XmlDomAdaptor::create();
+            ownerLease = owner;
+            xml.setXML(owner->fromDOM(element), owner);
+        }
+
+        expect(!ownerLease.expired()) << "XMLNode retains its real XmlDomAdaptor";
+        expect(xml.getSerializedXML() == "<span data-x=\"a&amp;b\">raw &lt; text</span>")
+            << "XMLNode serializes the immutable typed Lite payload through its retained owner";
+        xml.setXML({}, {});
+        expect(ownerLease.expired()) << "clearing XML state releases the retained adaptor";
+    };
 };

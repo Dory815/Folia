@@ -21,6 +21,7 @@ struct ActionFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     std::u16string message;
     explicit ActionFixture(bool aliases = false, bool selected = true) {
@@ -34,8 +35,8 @@ struct ActionFixture {
             options.packages->push_back({u"newcommand", {}});
         }
         options.formatError = &formatActionError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -53,7 +54,7 @@ struct ActionFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     MmlNode &ok(std::u16string source) {
@@ -203,7 +204,8 @@ suite action = [] {
                 }
             } restore;
             actionRequests = &requests;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.node = &observeAction});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.node = &observeAction});
             auto actions =
                 actionNodes(f.ok(u"\\toggle{x}{y}\\endtoggle+\\mathtip{a}{b}"), NodeKind::maction);
             expect(requests.size() == 2_u && actions.size() == 2_u);

@@ -358,7 +358,12 @@ suite render_model_basic_tests = [] {
                 && item.source_span.container_id == code->id
                 && item.source_span.source_range.start == code->content_span.source_range.end;
         });
-        expect(fatal(bool(trailingBreak == list.inline_items.end())));
+        // The separator between sibling items is a generated boundary after
+        // the final code row, not an editable blank paragraph inside the code.
+        expect(fatal(bool(trailingBreak != list.inline_items.end())));
+        if (trailingBreak != list.inline_items.end()) {
+            expect(trailingBreak->source_span.source_range.empty());
+        }
     }
     bool styled_code = false;
     for (auto const& item : list.inline_items) {

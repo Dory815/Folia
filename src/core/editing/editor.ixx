@@ -615,6 +615,15 @@ private:
             if (!update_document_block_index(document_, operations, change.forward)) {
                 rebuild_document_block_index(document_);
             }
+            // The index now describes the final tree. An intermediate payload
+            // update may target a container removed later in the transaction;
+            // an absent final locator is expected, not a reason to scan again.
+            auto live_block = [&](NodeId id) -> const BlockNode* {
+                const auto path = cached_document_block_path(document_, id);
+                if (!path) return nullptr;
+                const auto* block = block_at_path(document_.root, *path);
+                return block && block->id == id ? block : nullptr;
+            };
             bool heading_changed = change.structural_outline_may_change;
             bool symbol_contributions_changed = false;
             bool symbol_order_changed = false;
@@ -626,7 +635,7 @@ private:
                 for (const auto& child : block.children) self(self, child);
             };
             for (auto moved : change.moved_roots) {
-                if (const auto* block = find_document_block(document_, moved)) {
+                if (const auto* block = live_block(moved)) {
                     inspect_moved_subtree(inspect_moved_subtree, *block);
                 }
                 if (symbol_order_changed && heading_changed) break;
@@ -646,7 +655,7 @@ private:
                     || (tree->kind == DocumentTreeEditKind::Insert && change.forward)
                     || (tree->kind == DocumentTreeEditKind::Remove && !change.forward);
                 if (live_expected) {
-                    const auto* live = find_document_block(document_, snapshot->id);
+                    const auto* live = live_block(snapshot->id);
                     if (!live) continue;
                     if (tree->kind == DocumentTreeEditKind::UpdatePayload) {
                         symbol_contributions_changed = update_document_symbol_contribution(
@@ -661,7 +670,7 @@ private:
             for (const auto& operation : change.text_operations) {
                 const auto& edit = change.forward ? operation.forward : operation.inverse;
                 if (!refreshed.insert(edit.container_id.v).second) continue;
-                if (const auto* block = find_document_block(document_, edit.container_id)) {
+                if (const auto* block = live_block(edit.container_id)) {
                     heading_changed = heading_changed || block->kind == BlockKind::Heading;
                     symbol_contributions_changed = update_document_symbol_contribution(
                         *block, symbol_contributions_) || symbol_contributions_changed;

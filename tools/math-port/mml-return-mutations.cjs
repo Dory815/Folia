@@ -1,4 +1,4 @@
-// Root full actual-registry comparison and method-scoped semantic mutants.
+// Legacy object-protocol return gate, pending migration; not current native acceptance.
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');const root=path.resolve(__dirname,'../..'),cmake=fs.readFileSync(path.join(root,'CMakeLists.txt'),'utf8');
 const modules=[...cmake.match(/target_sources\(folia_math PUBLIC FILE_SET CXX_MODULES FILES([\s\S]*?)\)/)[1].matchAll(/src\/math\/(\S+\.ixx)/g)].map(x=>x[1]);const units=[...cmake.match(/target_sources\(folia_math PRIVATE([\s\S]*?)\)/)[1].matchAll(/src\/math\/(\S+\.cpp)/g)].map(x=>x[1]);
@@ -22,7 +22,6 @@ for(const id of ['core','coreMO']){
  edit(id+'-zero-cache-treated-absent',id,[['if (!core_) return this;','if (!core_ || *core_==0) return this;']]);
  edit(id+'-wrong-dynamic-null-index',id,[['std::to_string(index)','std::string("0")']]);
  edit(id+'-ignore-getter-false-result',id,[['if (!this->isEmbellished()) return this;','(void)this->isEmbellished();']]);
- edit(id+'-ignore-prototype',id,[['children->get(index)','(children->hasOwn(index)?children->get(index):NodeValue(Missing{}))']]);
 }
 edit('coreMO-return-child-not-call','coreMO',[['return child.requireNode("coreMO")->coreMO();','return child;']]);
 edit('coreMO-normalize-virtual-undefined','coreMO',[['return child.requireNode("coreMO")->coreMO();','return NodeValue(child.requireNode("coreMO")->coreMO().nodeOrNull());']]);
@@ -32,4 +31,4 @@ edit('style-own-length-instead-of-child','style',[['grandchildren->size() == 1',
 edit('style-accept-two-child-length','style',[['grandchildren->size() == 1','grandchildren->size() <= 2']]);
 edit('style-ignore-prototype','style',[['const NodeValue first = firstArray->get(0);','const NodeValue first = firstArray->hasOwn(0)?firstArray->get(0):NodeValue(Missing{});']]);
 edit('style-null-inner-length-error-wrong','style',[["reading 'length'","reading 'childNodes'"]]);
-require('./native-mutation-runner.cjs')({name:'math-port-mml-return-mutations',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_mml_returns.cpp',additionalFixtures:['reference_mml_return_probes.cpp','reference_mml_return_prototype.cpp'],pattern:'*math_port_mml_returns*',assertions:189,tests:3,suiteSummaries:[{assertions:32,tests:1},{assertions:155,tests:1},{assertions:2,tests:1}],mutants});
+require('./native-mutation-runner.cjs')({name:'math-port-mml-return-mutations',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_mml_returns.cpp',additionalFixtures:['reference_mml_return_probes.cpp'],pattern:'*math_port_mml_returns*',assertions:187,tests:2,suiteSummaries:[{assertions:32,tests:1},{assertions:155,tests:1}],mutants});

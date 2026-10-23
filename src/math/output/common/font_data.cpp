@@ -5,7 +5,11 @@ namespace folia::math::output::common {
 namespace {
 struct GlyphLookup { FontGlyph const* data{}; std::uint32_t codepoint{}; };
 std::optional<GlyphLookup> resolveSourceGlyph(FontFaceData const& face,
-        FontVariant const& start, std::uint32_t codepoint) noexcept {
+        FontVariant const& start, std::uint32_t codepoint) {
+    auto direct = [&](FontVariant const& variant, std::uint32_t cp) -> FontGlyph const* {
+        if (auto found = variant.glyphs.find(cp); found != variant.glyphs.end()) return &found->second;
+        return face.glyphSource ? face.glyphSource->glyph(variant.name, cp) : nullptr;
+    };
     auto resolve = [&](auto&& self, FontVariant const& current, std::uint32_t cp,
                        unsigned depth) -> std::optional<GlyphLookup> {
         if (depth > face.variants.size()) return {};
@@ -14,7 +18,7 @@ std::optional<GlyphLookup> resolveSourceGlyph(FontFaceData const& face,
             if (target == face.variants.end()) return {};
             return self(self, target->second, r->second.codepoint, depth + 1);
         }
-        if (auto direct = current.glyphs.find(cp); direct != current.glyphs.end()) return GlyphLookup{&direct->second,cp};
+        if (auto found = direct(current, cp)) return GlyphLookup{found, cp};
         if (current.link_overlay_variant) {
             auto link = face.variants.find(*current.link_overlay_variant);
             if (link != face.variants.end()) {
@@ -23,7 +27,7 @@ std::optional<GlyphLookup> resolveSourceGlyph(FontFaceData const& face,
                     if (target == face.variants.end()) return {};
                     return self(self, target->second, r->second.codepoint, depth + 1);
                 }
-                if (auto direct = link->second.glyphs.find(cp); direct != link->second.glyphs.end()) return GlyphLookup{&direct->second,cp};
+                if (auto found = direct(link->second, cp)) return GlyphLookup{found, cp};
             }
         }
         if (current.inherit_variant) {
@@ -36,6 +40,10 @@ std::optional<GlyphLookup> resolveSourceGlyph(FontFaceData const& face,
 }
 std::optional<GlyphReference> resolveSourceRemap(FontFaceData const &face, FontVariant const &start,
                                                  std::uint32_t codepoint) {
+    auto hasDirect = [&](FontVariant const& variant, std::uint32_t cp) {
+        return variant.glyphs.contains(cp)
+            || (face.glyphSource && face.glyphSource->contains(variant.name, cp));
+    };
     auto resolve = [&](auto &&self, FontVariant const &current, std::uint32_t cp,
                        unsigned depth) -> std::optional<GlyphReference> {
         if (depth > face.variants.size())
@@ -45,7 +53,7 @@ std::optional<GlyphReference> resolveSourceRemap(FontFaceData const &face, FontV
         // Source reads the resolved character entry, not just its SMP marker.
         // An explicit glyph at this level owns the codepoint and therefore
         // prevents a remap inherited from a lower-priority variant.
-        if (current.glyphs.find(cp) != current.glyphs.end())
+        if (hasDirect(current, cp))
             return {};
         if (current.link_overlay_variant) {
             auto link = face.variants.find(*current.link_overlay_variant);
@@ -54,7 +62,7 @@ std::optional<GlyphReference> resolveSourceRemap(FontFaceData const &face, FontV
                     return found->second;
                 // The linked variant is Source's shallow character overlay. Its
                 // glyph entry owns the slot before the requested variant's inherit.
-                if (link->second.glyphs.find(cp) != link->second.glyphs.end())
+                if (hasDirect(link->second, cp))
                     return {};
             }
         }
@@ -70,7 +78,7 @@ std::optional<GlyphReference> resolveSourceRemap(FontFaceData const &face, FontV
 } // namespace
 
 std::size_t FontFaceData::glyphCount() const noexcept {
-    std::size_t count = 0;
+    std::size_t count = glyphSource ? glyphSource->glyphCount() : 0;
     for (const auto &[name, variant] : variants) {
         count += variant.glyphs.size();
         count += variant.remap.size();
@@ -98,7 +106,7 @@ FontFaceData const& FontRepository::face(std::string_view name) const {
 }
 
 FontGlyph const* FontRepository::glyph(std::string_view faceName,
-        std::string_view variantName, std::uint32_t codepoint) const noexcept {
+        std::string_view variantName, std::uint32_t codepoint) const {
     const auto f = faces_.find(faceName);
     if (f == faces_.end()) return nullptr;
     const auto v = f->second->variants.find(variantName);
@@ -157,6 +165,8 @@ void FontRepositoryBuilder::addGlyph(std::string_view faceName, std::string_view
     if (it == faces_.end()) throw std::out_of_range("unknown font face");
     auto& variant = it->second->variants[std::string(variantName)];
     variant.name = variantName;
+    if (it->second->glyphSource && it->second->glyphSource->contains(variantName, codepoint))
+        throw std::invalid_argument("duplicate glyph in generated font data");
     if (!variant.glyphs.emplace(codepoint, std::move(glyph)).second)
         throw std::invalid_argument("duplicate glyph in generated font data");
 }

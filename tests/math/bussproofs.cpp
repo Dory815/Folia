@@ -110,9 +110,9 @@ struct ProofFixture {
     MapHandler maps;
     MacroCallbacks callbacks{proofCallbacks, {}};
     Warnings warnings;
-    MmlDocument bootstrap;
     std::unique_ptr<MmlDocument> document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     ProofOutput output;
     std::string error;
     explicit ProofFixture(bool newcommand = true, bool proof = true) {
@@ -126,8 +126,7 @@ struct ProofFixture {
             values.packages->push_back({u"bussproofs", {}});
         values.maxMacros = 1000;
         values.formatError = &proofFormatError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, bootstrap.factory(), values);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, values);
     }
     MmlNode &compile(std::u16string source, bool withOutput = true) {
         error.clear();
@@ -138,7 +137,9 @@ struct ProofFixture {
             }
         } restore;
         proofError = &error;
+        request.reset();
         document = std::make_unique<MmlDocument>();
+        request = std::make_unique<TeXRequest>(*jax, document->factory());
         core::AbstractMathItem math(std::move(source), jax.get());
         math.setMetrics(16, 8, 640, 1);
         return jax->compile(math, *document, {withOutput ? &output : nullptr});
@@ -146,7 +147,7 @@ struct ProofFixture {
     MmlNode &ok(std::u16string source) {
         auto &root = compile(std::move(source));
         expect(error.empty()) << error;
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
 };
@@ -355,7 +356,7 @@ suite bussproofs_package = [] {
             ProofFixture f;
             f.compile(std::u16string(entry.source));
             expect(f.error == entry.id) << entry.id;
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"x");
             f.ok(u"\\begin{prooftree}\\AxiomC{A}\\UnaryInfC{B}\\end{prooftree}");
         }
@@ -363,7 +364,7 @@ suite bussproofs_package = [] {
             ProofFixture f;
             expect(entry.kind == "TypeError");
             expect(throws<std::logic_error>([&] { f.compile(std::u16string(entry.source)); }));
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.ok(u"x");
             f.ok(u"\\begin{prooftree}\\AxiomC{A}\\UnaryInfC{B}\\end{prooftree}");
         }
@@ -387,7 +388,7 @@ suite bussproofs_package = [] {
                     expect(f->error == entry.error);
                     proofMatchesSource(root, entry.snapshot);
                 }
-                expect(f->jax->parseOptions().parsers.empty());
+                expect(f->jax->parseOptions().request().parsers.empty());
             }
             expect(f->output.measurements > 0_u);
         };
@@ -395,12 +396,12 @@ suite bussproofs_package = [] {
         [] {
             ProofFixture f;
             expect(throws<std::runtime_error>([&] { f.compile(u"x", false); }));
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             const auto source = u"\\begin{prooftree}\\AxiomC{A}\\AxiomC{B}\\BinaryInfC{C}"
                                 u"\\UnaryInfC{D}\\end{prooftree}";
             f.output.fail = true;
             expect(throws<std::runtime_error>([&] { f.compile(source); }));
-            expect(f.jax->parseOptions().parsers.empty());
+            expect(f.jax->parseOptions().request().parsers.empty());
             f.output.fail = false;
             f.ok(source);
             expect(f.output.measurements > 0_u);
@@ -414,7 +415,7 @@ suite bussproofs_package = [] {
                 ProofFixture f;
                 f.ok(u"x");
                 auto &options = f.jax->parseOptions();
-                auto &node = options.nodeFactory.makeNode(NodeKind::mrow);
+                auto &node = options.request().nodeFactory.makeNode(NodeKind::mrow);
                 auto &props = node.properties().proof;
                 if (entry.name == u"plain-inference"sv) {
                     props.setRuleDirection(ProofRuleDirection::down);
@@ -448,7 +449,7 @@ suite bussproofs_package = [] {
                     props.right_space = .5;
                 } else
                     throw std::logic_error("Unknown proof semantic Source case");
-                options.root = &node;
+                options.request().root = &node;
                 core::AbstractMathItem math(u"", f.jax.get());
                 math.root = &node;
                 TexFilterData data{math, *f.document, options, &f.output};
@@ -461,18 +462,14 @@ suite bussproofs_package = [] {
         [] {
             ProofFixture f;
             std::vector<ProofRequest> requests;
-            auto &factory = f.jax->parseOptions().nodeFactory;
             struct Restore {
-                NodeFactory &factory;
-                NodeCreators creators;
                 std::vector<ProofRequest> *old{proofRequests};
                 ~Restore() {
-                    factory.setCreators(creators);
                     proofRequests = old;
                 }
-            } restore{factory, factory.creators()};
+            } restore;
             proofRequests = &requests;
-            factory.setCreators(NodeCreators{.node = &observeProofNode});
+            f.jax->parseOptions().setNodeCreators(NodeCreators{.node = &observeProofNode});
             auto &root = f.ok(u"\\begin{prooftree}\\AxiomC{A}\\LeftLabel{l}\\RightLabel{r}"
                               u"\\UnaryInfC{B}\\end{prooftree}");
             std::size_t spaces{}, labels{}, rules{};

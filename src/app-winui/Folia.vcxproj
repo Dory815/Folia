@@ -83,20 +83,24 @@
     <IntDir>$(FoliaBuildRoot)obj\$(Platform)\$(Configuration)\</IntDir>
     <GeneratedFilesDir>$(IntDir)Generated Files\</GeneratedFilesDir>
     <FoliaResolvedAssetsDirectory Condition="'$(FoliaAssetsDirectory)'!=''">$([System.Environment]::ExpandEnvironmentVariables('$(FoliaAssetsDirectory)'))</FoliaResolvedAssetsDirectory>
+    <FoliaNativeMathBuildDir Condition="'$(FoliaNativeMathBuildDir)'=='' and '$(Configuration)'=='Debug'">$(ProjectDir)..\..\build\core\</FoliaNativeMathBuildDir>
+    <FoliaNativeMathBuildDir Condition="'$(FoliaNativeMathBuildDir)'=='' and '$(Configuration)'=='Release'">$(ProjectDir)..\..\build\core-release\</FoliaNativeMathBuildDir>
+    <FoliaNativeMathImportLibrary>$(FoliaNativeMathBuildDir)FoliaNativeMath.lib</FoliaNativeMathImportLibrary>
+    <FoliaNativeMathRuntime>$(FoliaNativeMathBuildDir)FoliaNativeMath.dll</FoliaNativeMathRuntime>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\platform;$(FoliaIcuRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\platform;$(ProjectDir)..\..\include;$(FoliaIcuRoot)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level4</WarningLevel>
       <LanguageStandard Condition="'$(VisualStudioVersion)' &gt;= '18.0'">stdcpplatest</LanguageStandard>
       <LanguageStandard Condition="'$(VisualStudioVersion)' &lt; '18.0'">stdcpp17</LanguageStandard>
       <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>$(IntDir)quickjs\quickjs.lib;$(FoliaIcuRoot)lib64\icuin.lib;$(FoliaIcuRoot)lib64\icuuc.lib;$(FoliaIcuRoot)lib64\icudt.lib;d2d1.lib;d3d11.lib;dwrite.lib;dxgi.lib;windowscodecs.lib;shlwapi.lib;winspool.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(FoliaNativeMathImportLibrary);$(FoliaIcuRoot)lib64\icuin.lib;$(FoliaIcuRoot)lib64\icuuc.lib;$(FoliaIcuRoot)lib64\icudt.lib;d2d1.lib;d3d11.lib;dwrite.lib;dxgi.lib;windowscodecs.lib;shlwapi.lib;winspool.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>%(AdditionalOptions) /STACK:33554432</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -189,11 +193,15 @@
     <ClInclude Include="export\EditorPdfExportTypes.h" />
     <ClInclude Include="editor\interaction\EditorSidebarController.h" />
     <ClInclude Include="editor\rendering\EditorSurfaceRenderer.h" />
+      <ClInclude Include="editor\rendering\EditorMathPreparation.h" />
+      <ClInclude Include="editor\rendering\EditorContentGeometry.h" />
+      <ClInclude Include="media\NativeMathSession.h" />
+      <ClInclude Include="media\MathSvgStore.h" />
       <ClInclude Include="editor\rendering\EditorPreparedDocument.h" />
       <ClInclude Include="editor\rendering\EditorPreparedDocumentCache.h" />
       <ClInclude Include="editor\rendering\EditorPreparedDocumentRetention.h" />
-    <ClInclude Include="media\AsyncWorkDependency.h" />
     <ClInclude Include="media\MathJaxRenderer.h" />
+    <ClInclude Include="media\MathJaxRenderer.State.h" />
     <ClInclude Include="media\MathJaxSvgParser.h" />
     <ClInclude Include="media\MermaidRenderer.h" />
     <ClInclude Include="media\SvgNormalizer.h" />
@@ -211,12 +219,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\core\model\ast.ixx">
+    <ClCompile Include="..\core\model\container_source.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\parsing\block_source.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\parsing\block_line_recognizer.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\core\parsing\markdown_html.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\parsing\html_cst.ixx">
@@ -296,6 +308,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\editing\document_transaction.ixx">
+    <ClCompile Include="..\core\editing\document_container_source.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\editing\document_search_replace.ixx">
@@ -423,6 +436,12 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\model\inline_document.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\core\parsing\link_label.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\core\support\html_entities.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\core\parsing\inline_parser.ixx">
@@ -564,6 +583,12 @@
     <ClCompile Include="editor\rendering\EditorSurfaceRenderer.Interaction.cpp" />
     <ClCompile Include="editor\rendering\EditorSurfaceRenderer.Pdf.cpp" />
     <ClCompile Include="media\MathJaxRenderer.cpp" />
+    <ClCompile Include="media\MathJaxRenderer.Cache.cpp" />
+    <ClCompile Include="media\MathJaxRenderer.Batch.cpp" />
+    <ClCompile Include="media\MathJaxRenderer.Worker.cpp" />
+    <ClCompile Include="media\NativeMathSession.cpp" />
+    <ClCompile Include="media\MathSvgStore.cpp" />
+    <ClCompile Include="editor\rendering\EditorSurfaceRenderer.Math.cpp" />
     <ClCompile Include="media\MathJaxSvgParser.cpp" />
     <ClCompile Include="media\MermaidRenderer.cpp" />
     <ClCompile Include="media\SvgNormalizer.cpp" />
@@ -636,12 +661,6 @@
     <None Include="Assets\latex\commands.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\mathjax\mathjax-quickjs.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Assets\mathjax\font\*.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Assets\mathjax\LICENSE-MathJax.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -671,7 +690,7 @@
   <Target Name="CopyConfiguredFoliaAssets" AfterTargets="Build" Condition="'$(FoliaAssetsDirectory)'!='' and '$(FoliaDeployAssets)'=='true'">
     <ItemGroup>
       <FoliaDeployableAsset Include="$(ProjectDir)Assets\**\*"
-        Exclude="$(ProjectDir)Assets\settings.json;$(ProjectDir)Assets\themes\custom\**\*" />
+        Exclude="$(ProjectDir)Assets\settings.json;$(ProjectDir)Assets\themes\custom\**\*;$(ProjectDir)Assets\mathjax\mathjax-quickjs.js;$(ProjectDir)Assets\mathjax\font\**\*.js" />
     </ItemGroup>
     <Copy
       SourceFiles="@(FoliaDeployableAsset)"
@@ -696,21 +715,8 @@
     <Import Project="packages\Microsoft.Windows.SDK.BuildTools.10.0.28000.2270\build\Microsoft.Windows.SDK.BuildTools.targets" Condition="Exists('packages\Microsoft.Windows.SDK.BuildTools.10.0.28000.2270\build\Microsoft.Windows.SDK.BuildTools.targets')" />
     <Import Project="packages\Microsoft.Windows.ImplementationLibrary.1.0.260126.7\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('packages\Microsoft.Windows.ImplementationLibrary.1.0.260126.7\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
   </ImportGroup>
-  <Target Name="BuildQuickJs" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <QuickJsRuntimeOptions Condition="'$(FoliaSelfContained)'=='true' and '$(UseDebugLibraries)'=='true'">/MTd /D_DEBUG</QuickJsRuntimeOptions>
-      <QuickJsRuntimeOptions Condition="'$(FoliaSelfContained)'=='true' and '$(UseDebugLibraries)'!='true'">/MT /DNDEBUG</QuickJsRuntimeOptions>
-      <QuickJsRuntimeOptions Condition="'$(FoliaSelfContained)'!='true' and '$(UseDebugLibraries)'=='true'">/MDd /D_DEBUG</QuickJsRuntimeOptions>
-      <QuickJsRuntimeOptions Condition="'$(FoliaSelfContained)'!='true' and '$(UseDebugLibraries)'!='true'">/MD /DNDEBUG</QuickJsRuntimeOptions>
-      <QuickJsCompileOptions>/nologo $(QuickJsRuntimeOptions) /TC /std:c17 /D_CRT_SECURE_NO_WARNINGS /U__SIZEOF_INT128__ -Wno-microsoft-enum-forward-reference</QuickJsCompileOptions>
-    </PropertyGroup>
-    <MakeDir Directories="$(IntDir)quickjs" />
-    <Exec Command="&quot;$(VCInstallDir)Tools\Llvm\x64\bin\clang-cl.exe&quot; $(QuickJsCompileOptions) /c &quot;$(ProjectDir)third_party\quickjs\cutils.c&quot; /Fo&quot;$(IntDir)quickjs\cutils.obj&quot;" />
-    <Exec Command="&quot;$(VCInstallDir)Tools\Llvm\x64\bin\clang-cl.exe&quot; $(QuickJsCompileOptions) /c &quot;$(ProjectDir)third_party\quickjs\dtoa.c&quot; /Fo&quot;$(IntDir)quickjs\dtoa.obj&quot;" />
-    <Exec Command="&quot;$(VCInstallDir)Tools\Llvm\x64\bin\clang-cl.exe&quot; $(QuickJsCompileOptions) /c &quot;$(ProjectDir)third_party\quickjs\libregexp.c&quot; /Fo&quot;$(IntDir)quickjs\libregexp.obj&quot;" />
-    <Exec Command="&quot;$(VCInstallDir)Tools\Llvm\x64\bin\clang-cl.exe&quot; $(QuickJsCompileOptions) /c &quot;$(ProjectDir)third_party\quickjs\libunicode.c&quot; /Fo&quot;$(IntDir)quickjs\libunicode.obj&quot;" />
-    <Exec Command="&quot;$(VCInstallDir)Tools\Llvm\x64\bin\clang-cl.exe&quot; $(QuickJsCompileOptions) /c &quot;$(ProjectDir)third_party\quickjs\quickjs.c&quot; /Fo&quot;$(IntDir)quickjs\quickjs.obj&quot;" />
-    <Exec Command="&quot;$(VCInstallDir)Tools\Llvm\x64\bin\llvm-lib.exe&quot; /nologo /OUT:&quot;$(IntDir)quickjs\quickjs.lib&quot; &quot;$(IntDir)quickjs\cutils.obj&quot; &quot;$(IntDir)quickjs\dtoa.obj&quot; &quot;$(IntDir)quickjs\libregexp.obj&quot; &quot;$(IntDir)quickjs\libunicode.obj&quot; &quot;$(IntDir)quickjs\quickjs.obj&quot;" />
+  <Target Name="CopyNativeMathRuntime" AfterTargets="Build">
+    <Copy SourceFiles="$(FoliaNativeMathRuntime)" DestinationFiles="$(OutDir)FoliaNativeMath.dll" SkipUnchangedFiles="true" />
   </Target>
   <Target Name="CopySvgNormalizer" AfterTargets="Build">
     <Copy SourceFiles="$(FoliaBuildRoot)..\dependencies\usvg-normalizer\release\folia_svg_normalizer.dll" DestinationFiles="$(OutDir)folia_svg_normalizer.dll" SkipUnchangedFiles="true" />
@@ -731,6 +737,8 @@
     <Error Condition="!Exists('packages\Microsoft.WindowsAppSDK.2.2.0\build\native\Microsoft.WindowsAppSDK.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.WindowsAppSDK.2.2.0\build\native\Microsoft.WindowsAppSDK.props'))" />
     <Error Condition="!Exists('packages\Microsoft.WindowsAppSDK.WinUI.2.2.1\metadata\Microsoft.UI.Xaml.winmd')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.WindowsAppSDK.WinUI.2.2.1\metadata\Microsoft.UI.Xaml.winmd'))" />
     <Error Condition="!Exists('$(FoliaBuildRoot)..\dependencies\usvg-normalizer\release\folia_svg_normalizer.dll')" Text="Missing native SVG normalizer. Run setup.ps1 before building Folia." />
+    <Error Condition="!Exists('$(FoliaNativeMathImportLibrary)')" Text="Missing FoliaNativeMath import library at $(FoliaNativeMathImportLibrary). Run build_app.ps1 to configure and build the native math DLL." />
+    <Error Condition="!Exists('$(FoliaNativeMathRuntime)')" Text="Missing FoliaNativeMath runtime DLL at $(FoliaNativeMathRuntime). Run build_app.ps1 to configure and build the native math DLL." />
     <Error Condition="!Exists('$(FoliaIcuRoot)include\unicode\ucsdet.h')" Text="Missing ICU headers. Run setup.ps1 before building Folia." />
     <Error Condition="!Exists('$(FoliaIcuRoot)lib64\icuin.lib')" Text="Missing ICU libraries. Run setup.ps1 before building Folia." />
   </Target>

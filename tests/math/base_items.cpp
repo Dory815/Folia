@@ -168,7 +168,7 @@ suite base_items = [] {
         expect(NodeUtil::getText(x) == u"x\u0338");
         auto space = f.mml(f.token(NodeKind::mspace, u""));
         f.item(StackKind::nonscript)->checkItem(space);
-        expect(f.options->nodeLists[u"nonscript"].back() == space->First());
+        expect(f.options->request().nodeLists[u"nonscript"].back() == space->First());
         auto dotsFrame = f.item(StackKind::dots);
         auto &dots = dynamic_cast<DotsItem &>(*dotsFrame);
         dots.ldots = &f.token(NodeKind::mo, u"…");

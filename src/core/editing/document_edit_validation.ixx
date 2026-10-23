@@ -58,16 +58,21 @@ inline void validate_blocks(
 
 inline DocumentTransaction source_transaction(
     EditorDocument& after,
-    AppliedSourceEdit edit,
+    DocumentSourceEdit edit,
     TextSelection selection_before,
     TextSelection selection_after,
     std::uint64_t revision_before,
     DocumentTransactionReason reason) {
     std::vector<DocumentOperation> operations;
     operations.emplace_back(DocumentTextOperation{
-        std::move(edit.forward),
-        std::move(edit.inverse),
+        edit.forward,
+        edit.inverse,
+        edit.indentation_before,
+        edit.indentation_after,
     });
+    for (auto& metadata_edit : edit.metadata_edits) {
+        operations.emplace_back(std::move(metadata_edit));
+    }
     return make_recorded_document_transaction(
         std::move(operations),
         selection_before,

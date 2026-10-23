@@ -3,6 +3,7 @@
 import folia.math.core.mml_tree.mml_document;
 import folia.math.core.mml_tree.mml_nodes.maction;
 import folia.math.core.mml_tree.mml_nodes.math;
+import folia.math.core.mml_tree.mml_nodes.mrow;
 import folia.math.core.mml_tree.mml_nodes.mspace;
 import folia.math.fonts.newcm_font_module_provider;
 import folia.math.output.common;
@@ -186,6 +187,70 @@ suite native_common_maction = [] {
                 << "fractional array lookup uses the MML empty-row fallback";
             expect(fallback != first && fallback != last)
                 << "fractional lookup does not select a neighboring child";
+        }
+    };
+
+    "CommonMaction delegates multiline break count and line boxes to its selected child"_test = [] {
+        const auto bundle = folia::math::fonts::makeNewcmFontData();
+        NoMeasurements measurement;
+        mml::MmlDocument document;
+
+        auto &beforeBreak = makeSpace(document, u".5em");
+        auto &newline = dynamic_cast<mml::MmlMspace &>(
+            document.factory().make(mml::NodeKind::mspace));
+        newline.attributes().set(u"linebreak", u"newline");
+        expect(newline.hasNewline()) << "the break has no explicit height or depth";
+        auto &afterBreak = makeSpace(document, u"2em");
+        const std::array<mml::MmlNode *, 3> selectedChildren{
+            &beforeBreak, &newline, &afterBreak};
+        auto &selectedRow = document.factory().make(mml::NodeKind::mrow, {}, selectedChildren);
+
+        auto &unselected = makeSpace(document, u"1em");
+        mml::AttributeSet attributes;
+        attributes.set(u"selection", 2.0);
+        const std::array<mml::MmlNode *, 2> actionChildren{&unselected, &selectedRow};
+        auto &actionNode =
+            document.factory().make(mml::NodeKind::maction, std::move(attributes), actionChildren);
+        const std::array<mml::MmlNode *, 1> mathChildren{&actionNode};
+        auto &math = document.factory().make(mml::NodeKind::math, {}, mathChildren);
+        document.setRoot(math);
+        math.setInheritedAttributes();
+        math.setTeXclass(nullptr);
+
+        common::CommonOutputJax jax(document, config(bundle.fonts), measurement,
+                                    common::CommonWrapperFactory::standardNodes(), &makeLinebreaks);
+        (void)jax.factory().wrap(math);
+        auto *action = dynamic_cast<common::CommonMaction *>(jax.wrapperFor(actionNode));
+        expect(action != nullptr);
+        if (!action)
+            return;
+
+        auto *selected = action->selected();
+        expect(selected != nullptr);
+        if (!selected)
+            return;
+        expect(selected->node == &selectedRow);
+        (void)selected->getBBox();
+        (void)action->getBBox();
+        expect(selected->breakCount() == 1u)
+            << "the actual selected MML row contains one explicit newline break";
+        if (selected->breakCount() != 1)
+            return;
+        expect(action->breakCount() == selected->breakCount())
+            << "CommonMaction reports its selected child's break count";
+        expect(selected->lineBBox.size() == selected->breakCount() + 1u)
+            << "the selected row has one computed line BBox per actual line";
+
+        for (std::size_t lineIndex = 0; lineIndex <= selected->breakCount(); ++lineIndex) {
+            const auto selectedLine = selected->getLineBBox(lineIndex);
+            const auto actionLine = action->getLineBBox(lineIndex);
+            expect(selectedLine != nullptr && actionLine != nullptr);
+            if (!selectedLine || !actionLine)
+                continue;
+            expect(std::abs(actionLine->w - selectedLine->w) < 1e-10);
+            expect(std::abs(actionLine->h - selectedLine->h) < 1e-10);
+            expect(std::abs(actionLine->d - selectedLine->d) < 1e-10)
+                << "CommonMaction line geometry delegates to the selected child's real line BBox";
         }
     };
 };

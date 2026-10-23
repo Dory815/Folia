@@ -1,84 +1,54 @@
-# MathJax 原生移植交接入口
+# MathJax 原生移植：当前交接
 
-本文件是唯一当前 checkpoint。恢复时先读本文件，再只检查可能使当前结论失效的改动。架构与职责锁见
-[native-raii-architecture.md](native-raii-architecture.md)，总验收门槛见
-[native-raii-acceptance.md](native-raii-acceptance.md)。实质状态变化后更新本文件；不另建交接笔记。
+恢复/压缩后先实际读本文。架构、职责和详细验收见 [architecture](native-raii-architecture.md)、[files](native-raii-files.json)、[acceptance](native-raii-acceptance.md)。只复查新变化；ignored候选用 `rg --no-ignore`。
 
-## 当前 checkpoint：table 新矩阵已验收，准备完整双模式 Source gate
+## 当前 checkpoint：恢复旧测试清理（2026-10-23）
 
-- 本批提交：架构 `51d9e344`、独立Source/fixture `037e543f`、原生UT/CMake `5923227e`；生产代码未改。
-- 最新 `build/math-port/table-profile-build.log` exit0，parallel4；full `table-profile-full-math.log` exit0：843 tests / 213573 assertions / 169 suites，无skip。聚焦Source14 UT1/669、table-regression42/4701、default86 UT1/1021过。所有build/native终止，无live handles。
-- 真实MathML7场景×none/local：labels左右/含宽度、percentage/nested、ragged/align、horizontal stretch、break exact SVG。每张表最终BBox/TableData/形状/flags/pWidth及完整SVG在请求退出前后均对齐；原direct-MML8、SVG14、数值branch8不变。
-- Source default/write/no-op和Root独立default（`table-profile-source-root.log`）过，fixture SHA `b23150d14cb8cdeb08e429428c87b6820f16bffb14eb87613165dad7209c12f8`。实际分支：nested pWidth3.9/父列6；ragged2/1cells+override；stretchy mo/table W3；break各2linebox/逐字符mi。不要退回TeX默认stretchy=false或多字符mi替代断行内容。
-- `table-profile-results.json` / `table-profile-native.log`：canonical75正常exit1，73 byte-equal、2 `source_error_native_success`（action-toggle/action-tooltip，严格Lite缺addEventListener），无SVG mismatch/native exception；不算完整75/150通过。
-- common_base_emission已交付只读候选`build/math-port/canonical-mode-witness-plan.md`，Root已读；所有Luna freeze，无live handles。保留旧严格Lite证据，拟额外同75输入的none/local150对照，host仅复用已验maction14真实EventTarget注册、不dispatch。尚未授权实现/改变gate。
-- 下一具体动作：按计划核对common_scene.cpp现有TeX→Scene helper职责与共享方式，避免复制pipeline或继续堆大测试文件；锁新增Source/fixture/test职责后派Luna。canonical75是原18+profile57，两个独立cache session要同顺序，不把57误称75或重复执行改变session。不要重做已验table/mglyph或改原75输入/expected。可复用common_scene_source_tests（Source）、common_scene_entry（UT）、common_base_emission（writer/plan）、common_rows_emission（table）、scene_values_writer（Scene）；Root独占CMake/build/native/Git。
+- 已完成copy/copy_boundary（`15809d75`）与metadata（`45b2d38d`）：旧Cpp/mapper及专用工具退出，全部Source profiles/owners保留。copy既有proof的12pins相符、未重复执行；metadata Source32行与完整Cpp映射通过。原factory owner新增8kind×keepIds值语义，472断言通过，不模拟JS身份/可空attributes。
+- 本轮math全测 **911测试/218824断言通过**，`build/math-port/copy-metadata-review/{final-build,all-math-tests}.log`；先前两个copy用例共50断言通过。仅新增测试，生产/应用/版本不变，parallel≤4。各批proof为`copy-consumer-retirement.json`、`copy-metadata-review/retirement-proof.json`。
+- return_prototype已提交`0b05c59b`：两行Source检查通过，旧Cpp/mapper分支退出，普通155输入/profile/Cpp及生成字节完全保留。旧mapper原检查因历史optional→Property辅助类型漂移失败；完整Cpp经6类明确差异核对、全部输入/期待相符，见`return-prototype-review/{mapping-proof,retirement-proof}.json`，不是旧native执行。共享配置1303/10→1301/9；专用returns配置189/3→187/2并退对应2项原型mutation。最后构建`build.log`成功，沿用字节未变且全测通过的binary；无live build/agent，未重复全测。三个功能批次均本地提交，未推送/打包。
+- 当前class_binding直接旧消费者 **32cpp/ixx+4inc**，未包括全部间接依赖；最新窄清单在return-prototype proof。下一步按`reference_mml_returns.cpp`32行和`reference_mml_return_probes.cpp`155行逐组审查，保留完整Source及现有native数学覆盖，不搬原型/getter/callback协议进native。Luna均完成。Root独占修改/build/Git；高CPU采样、Mermaid及生产owner链仍暂停。
 
-## 已接受的近期证据
+## 历史：0.2.3运行高CPU，已捕获线程栈（2026-10-22）
 
-- mglyph已验提交 `0f6fa2e0`/`ed6fd605`/`b0bd1b5d`，原Common算法/charWrapper保留，旧placement移除；13独立Source例退出请求后仍byte-equal。精确hash/计数见acceptance，完整math已被本批full覆盖。
-- maction/cache已验提交 `897a0f50`（前序见Git/acceptance）。Resource order 由 Builder 实际生成次序决定；FontCachePlan 临时借用 Scene 并按 scope/Glyph
-  地址索引，writer 只消费完整 prefix 列表，不分配 ID。
-- Source cache witness
-  SHA：`e00941e648aae4ce257f227b89c6f9e76974a4d3ac49c83987ff6708ff5e4fa1`；独立
-  `cache-source-root.log` 通过 14 例，Source 原始 SVG 与 Git `175ecabf` 的旧 10 例一致。旧结果与细节见架构文档及验收记录。
-- 上游固定为 MathJax 4.1.3、38 个 TeX packages；Source commit
-  `fb987178c2d279a99b0db5ea02e751691703955e`，compiled hash
-  `cbb0d3b6a08fbde6614b070f111fb58cc3cfe9d00a9713163fd4cd6d0300355a`。profile：`tools/math-port/reference-profile.cjs`；范围：`docs/math-port/scope.json`。
-- Source witness 使用 Node heap 512 MB、cwd `C:/Windows`，每个进程一次 `createReference`。默认 Luna，必要时仅
-  GPT-6.1 Sol。
+- **当前优先级**：用户已要求“先暂时不管”高CPU/无响应问题，暂停继续采样、计数及修复；保留下方证据，待用户重启此项。当前转为评估Markdown解析器与md4c的规范对照/接入取舍，尚未授权或实施解析器替换。
+- **新证据/当前任务**：用户报告Folia卡死及高CPU，要求捕获堆栈。已对运行中安装版PID38588采样8次：`build/hang-diagnostics/folia-38588-sample-{1..3}.txt`及`followup-{1..5}.txt`；工具 `capture.ps1`/`capture-followup.ps1` 用Windows线程/DbgHelp API，finally恢复线程，未关闭目标进程。安装Folia.exe与本地Release SHA256相同（D1CD68A92469CEF99412287AE2FE2F3AF1E52745CD253703C6DC0C0B96E176D1），App PDB可解析；Release Math DLL没有匹配PDB，内部仅模块偏移/最近导出名，不能把最近导出名当真实函数。
+- **恢复前后已抓到**：用户随后确认突然恢复响应。新增 `unresponsive-{1..5}.txt` 五次样本：1为math完成回调→Invalidate→Render→DrawDocument→EditorEmbeddedContentUpdater::Update:84→BlockPreparer::Prepare:745→DirectWrite文本测量；2/3在EndDraw；4/5主线程已回到GetMessageW、math线程条件变量空闲等待且累计CPU未再增加。随后Responding=true（窗口标题“折笺 — 整合.md”）。因此是长时间UI计算/绘制后恢复，**不可宣称永久死锁或已证明无限循环**；下述请求/取消反馈仍待证明。目标未关闭/未改代码，无live采样工具。
+- **已确认采样结果**：主线程62912持续在D2D EndDraw/DXGI Present；全部8次均经math完成通知→Invalidate→MainWindow::RenderEditorSurface→Render，部分同时出现Render退出RAII再次同步Invalidate→Render。followup1→5主线程累计增加4046.875ms，math线程18220增加3437.5ms。math线程在RenderBatch、取消catch清理renderer和条件变量等待之间变化，证据不支持单个公式一直不返回。GPU驱动线程35848也有工作。
+- **尚未证明的原因**：优先检查预取/embedded范围提出math请求，DrawDocument末尾按actual visible取消，取消完成仍发completion→embeddedGeneration变化→pendingMath刷新重提的循环；以及Render析构同步补帧导致UI不让出消息循环。代码支持这些风险，但采样尚未证明具体重复的key/owner。精确下一步是对这一窄链增加请求/取消/刷新计数或可复现测试，不重开字体/旧移植宽审。当前仅采样与读源码，未改生产代码、未构建/重打包；无live agent/build，PID仅为采样时事实。
 
-## 已接受边界与未完成目标
+- **用户确认**：2026-10-22 用户确认当前版本无误，要求整理提交；本轮功能已收尾。不将此确认解释为具体内存数值测量或整个旧移植清理完成。
+- **用户边界**：只有一种批量实现，单个=1项；字体正文/轮廓/解码对象仅属本批请求，结束即释放，不跨请求LRU。数学线程与轻量引擎持续驻留。普通视口流程不变、禁止HasMath分类/全文视觉排版；滚动UI零同步IO、离屏任务取消；编辑预览异步且仅内存。固定**0.2.3**并允许同版本更新，不回退/擅自bump。Mermaid及旧移植清理暂停。
+- **实现已提交**：视口取消/移除8MiB历史SVG缓存 `b8ded311`，测试 `8b7a8028`；请求字体 `3248adc2`、Source验收 `a6e0a005`；Core C ABI批量及字体职责整理 `2d591d14`；Folia有界批量/驻留轻量引擎 `3205ccab`；启动批次/未提交请求取消/视口测试 `0fc6b705`。无reset/推送/发布。Root独占Git/build，parallel≤4、math pool2。
+- 字体职责：`newcm_font_data.*`只读POD表/索引/元数据，`newcm_font_module_provider.*`拥有本批NewcmFontRequest及去重/解码；Renderer仅保留共享只读元数据和解析器，每批建/释放FontDataBundle，Scene只持用到的resource。数据为DLL文件支持的只读表，无全量堆展开、SQLite/独立fontpack。Common/SVG借用同请求，不引入第二套数学算法。
+- 统一批量已贯通Renderer→C ABI→NativeMathSession→`MathJaxRenderer.Batch.cpp`；原单项helper委托1项批次。每项结果/异常隔离，超时从该项开始算。Folia32公式/16块有界提交等待，单owner不拆；staged Batch析构清掉未提交请求。FinishPreparation/ReleaseSession过渡策略已删除，引擎持续驻留。
+- **最终Core验收**：构建 `font-request-owner-core-final-build.log`；math全测 `font-request-owner-all-math-tests.log`6.64s通过；Core全测 `font-request-core-tests.log`通过。Source `font-request-owner-source-compare.log` **14,568,049值0差异**（24,307 glyph/642,872段/238,666 aliases）。比较器已分别严格检查既有semantic resourceID和SVG cacheID；旧eager-map测试helper改为实际lookup，原33号glyph/BBox期待不变，不重新调查这两项已解决差异。
+- **最终内存探针** `font-request-owner-memory-batch.log`：引擎持续存活，64×16=1024公式；private idle4,165,632→重复后5,582,848→取消/错误后5,754,880 bytes，重复一致/取消/恢复通过，1.92s。旧全量引擎仅构造曾约增加112MiB；这是隔离测量，**不是Folia GUI回到128MB的证明**。用户实际基线是首次native运行时版 `2d58ded9`；同文档/同内存列的GUI对照仍待提供文档并实测。
+- **最终App验收**：`font-request-release-msi.log` Release构建成功；worker `font-request-release-worker-final.log`1.76s PASS：预览文件IO0、引擎驻留、离屏SVG0，100次视口替换取消107 Read、实际1 Read+1当前native render，abandoned batch无遗留pending/文件。layout `font-request-release-layout-final.log`1.68s PASS：512不同公式32批，同owner80公式3批、entries完整；4100重复/普通节点及15行稳定断行通过。
+- **当前MSI包含上述最终代码**：`build/installer/bin/Folia-0.2.3-x64.msi`，53,366,438 bytes；SHA256 `C8D29D3B708B67C76238C58AE0A36643B36CDC299A1A92A538C3F6A16188F23C`。`font-request-release-deployment.json`记录148文件逐个hash相符、Core DLL相符、probe/旧JS排除、同版本升级开启且ProductCode更新。安装清单重生成一致；验包用Windows PowerShell，pwsh7的排序差异只改变XML顺序。WiX有预期ICE61同版本覆盖warning。用户已确认无误；agent未安装/GUI试用/断电实测，未推送/发布。
+- **此前交付状态**：请求字体/批量/视口代码、测试、MSI及用户确认已完成，验包记录 `11594681`、用户确认 `6f680548`；当前高CPU新证据按上方checkpoint继续。旧迁移清理保持暂停。build、日志、验包JSON/MSI均ignored，远端需按tracked脚本重建。
 
-- 总目标：TeX → request-owned MML → 共享 Common layout/placement → immutable Scene → SVG → 现有
-  Folia SVG 路径，替换math QuickJS。Mermaid暂停；无D2D像素gate，未来后端共用数学布局。SVG 不重算数学布局；Scene 不持有 MML、DOM、请求指针或回调。完整架构原则、既定修复和 Source
-  细节以架构文档为准，避免在本文件复制历史。
-- Common→Scene 使用 em/y-up；`SceneContainers.nodes` 是本 wrapper 的输出，`content` 是 children 的
-  parents；SceneNodes 槽位可为空，不压缩。孩子由各自 wrapper 的 `placeScene` 放置；缺失 segment 保留槽位。完整接口见架构文档
-  Common-to-Scene 段。
-- Mglyph 保留 `CommonMglyph::getParameters/computeBBox` 和 legacy index `charWrapper`
-  的现有布局与所有权。Source image 用一个 Image Scene 值，不加载/解码 URI，不从图像内在尺寸推导布局；图像追加到第一个 standard content
-  root。Source 矩阵、属性顺序及空值边界以架构文档 mglyph lock 为准。
-- 尚未完成：完整Source profile与剩余专用 family覆盖；canonical 75 layout /
-  双模式 150 SVG byte comparison；request ownership 长跑；Folia
-  integration；旧对象层完整退出。组件通过不代表这些总门槛通过。
-- 已接受组件批次包括 XML/HTML、merror、table direct-MML 8 例、semantics/fenced 11 例、enclosure 86
-  例、maction/cache、Unicode/Entities、mhchem、texhtml/Lite 及相关 TeX package。其精确 Source
-  hash、聚焦断言、构建日志和限制留在 `native-raii-acceptance.md`；不得仅凭批次验收宣称完整 75/150 或应用集成。
+## 历史：0.2.3前两次包
 
-## 工作规则
+版本提交71dbd654曾未经用户要求升0.2.3；用户已安装，现固定此版本。同名旧包先为53,350,054 bytes/SHA256 `39645DCE4ABE67D2DEB16B857E48C28DBA786FA3CF467E2F2B623E3F8CE5B416`（ee5cc224记录），随后被上方视口修复包覆盖；旧hash不能用于当前文件。源码/原验包JSON可追溯，不恢复8MiB SVG历史缓存或销毁重建完整引擎的过渡策略。
 
-- 保留 MathJax 原 owner 和已验算法；不建平行 `native/new/typed` 实现，不模拟 JS 对象，不添加请求释放补丁。Source fixture
-  独立生成，不能为迎合 C++ 改 expected。
-- Root 独占 CMake、build/native tests、Git；同一时间只跑一个 build，parallel 不超过 4。交接前记录实际 build/test
-  结果、日志路径、live handle 和下一具体动作。
-- C++23 modules 使用 `import std;`。Windows console tests 链接
-  `folia_console_test_runtime`；手工构建需加入
-  `tools/test-support/windows_console_runtime.cpp`。异常进程退出后停止广泛测试，先做有界诊断。
-- 标准构建：
+## 历史：0.2.2安装包（已被当前源码替代）
 
-```bat
-call "%ProgramFiles%\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
-cmake --build build/core --parallel 4 --target FoliaMathTests
-```
+- `e1b66948`启动回收、`230c1430`版本、`5942bade`验包记录；未推送/发布。0.2.2自包含MSI `build/installer/bin/Folia-0.2.2-x64.msi`，53,337,766 bytes，SHA256 `2134773981B611CE18FE471739B19B64E60C3BF03EAFCE3A2115A418CC3C30E7`。148文件解包hash已验，两个probe EXE与旧JS资产排除；证明`math-cache-cleanup-release-deployment.json`。不要用旧MSI验当前异步流程。
+- 0.2.2的全文块预排版/额外离屏renderer已由当前源码移除，不重新恢复。更早0.2.1推送至origin/master `2d58ded9`；当前不擅自推送/打包。原生接入仍为TeX→request-owned MML→原Common共享布局→immutable Scene→SVG→Folia，整个旧移植清理尚未完成。
+- MathSvgStore仍沿用TEMP/FoliaMath/{GUID}.svgstore、独占非继承/DELETE_ON_CLOSE；普通退出/进程结束关闭句柄删除，断电遗留下次后台回收，不复用半写内容。缓存不含源文档，不提供未保存编辑恢复。此前删除旧probe小目录被自动审批拦截，保留`build/math-port/worker-probe/Debug/cache-reclaim-9f3496cb771f4cc395a1bbd80711917d`，不要为清它绕过审批；不影响产物。
 
-- 聚焦测试使用 positional pattern：`build\core\FoliaMathTests.exe "*name*"`。日志及生成物放 ignored
-  `build/math-port`。小批、明确路径提交；不 reset worktree 或改写历史。
+## 旧迁移剩余工作（旧测试已恢复；生产owner链尚未处理）
 
-## 保护的既有 dirty 路径
+1. **旧测试直接消费者仍有32个cpp/ixx +4个inc**（按class_binding直接导入文件，不是断言；未包含所有间接依赖）。旧consumer退出必须保留全部Source期待和实际数学覆盖。旧宽图`8ba6b468`是历史；最新窄清单见`return-prototype-review/retirement-proof.json`，不重做宽审。metadata消费者是间接依赖，不计入32。
+2. copy/copy_boundary/metadata及额外return_prototype消费者均已收尾，Source全量profiles/owners保留，见顶部与acceptance记录。普通returns/probes尚未退出；额外prototype退休不代表普通155内所有原型观察已清掉。旧共享工具只是剩余配置，不是当前native验收路径。
+3. 旧生产owner链仍需整体收尾：Fields → ContextBindings → ParserRuntime，values唯一调用仍fields.cpp:439。未配置不等于死代码；不能孤删/stub或新增双轨。`fe5eba6e` 按用户“全部提交”保存了原有4文件投影补丁（context_bindings.cpp/.ixx、mtable_bindings.cpp、semantics_bindings.cpp）；它们不在478活动源内，未重新验旧协议。**这是交接存档，不是继续扩展投影补丁的方向**，仍按RAII架构退出整条旧链。
+4. 整个旧移植清理最终完成前，还要对剩余源码/工具/依赖做对应验收及完整完成审查；D2D不是本轮接入前提。本轮请求字体/批量/视口改动已获用户确认，不代表剩余旧迁移已验收。不要把既有Source-only检查或编译成功当作新的native运行验收。
 
-不得顺手修改、暂存或提交以下 13 条路径：
+## 固定边界与本机资料
 
-- `src/app-winui/media/MathJaxSvgParser.cpp`
-- `src/app-winui/media/SvgNormalizer.cpp`
-- `src/math/adaptors/lite/lite_module.cpp`
-- `src/math/adaptors/lite/lite_module.ixx`
-- `src/math/core/mml_tree/mml_context_bindings.cpp`
-- `src/math/core/mml_tree/mml_context_bindings.ixx`
-- `src/math/core/mml_tree/mml_nodes/mtable_bindings.cpp`
-- `src/math/core/mml_tree/mml_nodes/semantics_bindings.cpp`
-- `src/math/math.cpp`
-- `tests/math/context_object_record_retirement.cpp`
-- `tests/math/lite_array_view_request_retirement_g259.cpp`
-- `tests/math/mml_private_renderer_allocation_domain_g227.cpp`
-- `tools/math-port/native-raii-inventory.cjs`
+- 保留MathJax的TeX/MML/Common家族职责；SVG和未来D2D消费同一完成布局，不引入平行算法、Scene家族或JS解释/对象语义层。旧原型/getter/rebind矩阵仅留离线Source来源记录。
+- Root独占Git/CMake/build/native，一次一个build、parallel≤4。Windows console probe链接 `folia_console_test_runtime`；异常退出后只做有界诊断。小批提交，不reset，不覆盖接手人的改动。
+- 已完成staging/执行proof不重复运行；512/513及verification旧256/257是host预算，不新增MathJax深度规则，不重新抽取旧对象协议测试。
+- 之前6个dirty路径已按用户授权全部处理：4个旧binding源码保存于fe5eba6e；MathJaxSvgParser.cpp/SvgNormalizer.cpp只有行尾/状态差异，暂存后无内容改动。原备份仍在 `build/math-port/context-dirty-backup-20261021/`；不再存在“永远保护这6个未提交文件”的限制。
+- **build/日志/候选/安装包均ignored，不随Git推送。** 远端接手者应按tracked脚本重建，不能假设本机候选存在；canonical Source profiles与owners在仓库中。live句柄只以上方当前checkpoint为准。

@@ -25,6 +25,7 @@ struct TextcompFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit TextcompFixture(bool text = true, bool aliases = false, bool reversed = false) {
         TextcompConfiguration::initializeModule(registry, maps);
@@ -41,8 +42,8 @@ struct TextcompFixture {
             options.packages->push_back({u"newcommand", {}});
         }
         options.formatError = &formatTextcompError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -56,10 +57,10 @@ struct TextcompFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         if (auto text = jax->parseOptions().textmacros) {
-            expect(text->texParser == nullptr);
-            expect(text->parseOptions->parsers.empty());
+            expect(text->parseOptions->request().texParser == nullptr);
+            expect(text->parseOptions->request().parsers.empty());
         }
         return root;
     }
@@ -162,7 +163,8 @@ suite textcomp = [] {
                 }
             } restore;
             textcompRequests = &requests;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.node = &observeTextcomp});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.node = &observeTextcomp});
             auto texts = textcompTexts(f.ok(u"\\textoneoldstyle"));
             expect(requests.size() == 1_u && texts.size() == 1_u);
             if (requests.size() == 1 && texts.size() == 1) {

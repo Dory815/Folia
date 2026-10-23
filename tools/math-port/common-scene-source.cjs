@@ -118,6 +118,13 @@ for (const item of [
     notation: 'rightarrow'}
 ]) cases.push({...item, display: false, em: 16, ex: 8, width: 1280, features: ['enclose']});
 
+// Preserve the older CommonWrapper broken-border geometry witness after all
+// existing records; the original 75-case Source corpus and case order stay fixed.
+for (const [name, style] of [['scene-border-dashed', 'dashed'],
+                             ['scene-border-dotted', 'dotted']])
+  cases.push({name, tex: String.raw`\bbox[border:2px ${style} red]{x+y}`,
+    display: false, em: 16, ex: 8, width: 1280, features: ['bbox']});
+
 function cpp(value) {
   // MSVC rejects a single string literal token beyond 16K; keep each emitted
   // raw token well below the compiler limit. Iterate JS code points so a
@@ -397,7 +404,7 @@ async function capture() {
 function generate({records}) {
   const baseline = profileCases.cases.length + 18;
   let body = `// Pinned MathJax 4.1.3 Source -> Common SVG witness; raw SVG and decoded root/geometry observations.\n`+
-    `// Source corpus: original 18 baseline + profile-cases.json (${profileCases.cases.length}); full 75/150 gates remain outstanding.\n`+
+    `// Source corpus: original 18 baseline + profile-cases.json (${profileCases.cases.length}); canonical acceptance is recorded separately.\n`+
     `// scope=${sourceLock.scopeHash}; profile corpus=${sourceLock.corpusSha256}; font/Common dependency files=${sourceLock.dependencies.length}.\n`+
     `// Source is generated only by common-scene-source.cjs through reference-profile.cjs.\n`+
     `struct CommonSceneCase { std::string_view name, tex; bool display; double em, ex; int width; std::string_view tag_side;\n`+

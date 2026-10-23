@@ -19,8 +19,8 @@ class TagForm {
 class Tags {
   public:
     virtual ~Tags() = default;
-    virtual std::string_view env() const noexcept = 0;
-    virtual std::u16string_view label() const noexcept = 0;
+    virtual std::string_view env() const = 0;
+    virtual std::u16string_view label() const = 0;
     virtual void setLabel(std::u16string value) = 0;
     virtual void setFormatters(TexOptionValues const &) = 0;
     virtual void setTagForm(std::unique_ptr<TagForm>) = 0;
@@ -69,12 +69,12 @@ class AbstractTags : public Tags {
     void tag(std::u16string_view value, bool no_format) override;
     void notag() override;
     mml::MmlNode &enTag(mml::MmlNode &, mml::MmlNode &) override;
-    std::string_view env() const noexcept override;
-    std::u16string_view label() const noexcept override;
+    std::string_view env() const override;
+    std::u16string_view label() const override;
     void setLabel(std::u16string value) override;
 
   protected:
-    bool noTag() const noexcept;
+    bool noTag() const;
     std::u16string formatId(std::u16string_view id);
     std::u16string formatNumber(std::int64_t number,
                                 std::optional<std::int64_t> subnumber = std::nullopt);

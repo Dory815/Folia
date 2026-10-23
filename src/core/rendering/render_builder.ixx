@@ -101,6 +101,9 @@ inline void append(Hasher& hash, InlineDocument const& document) {
 inline void append(Hasher& hash, BlockNode const& block) {
     hash.scalar(block.id); hash.scalar(block.kind); append(hash, block.inline_content);
     hash.text(block.block_source.source());
+    for (const auto& indent : block.block_source.tree().generated_indentation) {
+        hash.scalar(indent.content_offset); hash.scalar(indent.source_offset); hash.scalar(indent.columns);
+    }
     auto const& text = block.text_special();
     hash.scalar(text.level); hash.text(text.slug); hash.text(text.opening_marker); hash.text(text.closing_marker);
     auto const& item = block.item_special();
@@ -319,6 +322,12 @@ struct Builder {
             const auto source_start = block_source_offset_for_content(
                 block.block_source,
                 display_range.start);
+            for (const auto& generated : block.block_source.tree().generated_indentation) {
+                if (generated.content_offset == display_range.start) {
+                    append_generated_indent(
+                        out, block.id, generated.source_offset, generated.columns);
+                }
+            }
             append_line_indent(source_start, first_line);
             const auto source_end = block_source_offset_for_content(
                 block.block_source,
@@ -657,8 +666,10 @@ struct Builder {
         const InlineDocument& document,
         NodeId owner_id,
         const InlineStyle& base,
-        bool preserve_soft_breaks = false) {
+        bool preserve_soft_breaks = false,
+        InlineBlockWhitespacePolicy whitespace_policy = InlineBlockWhitespacePolicy::None) {
         std::vector<InlineRenderItem> output;
+        const auto semantic_whitespace = inline_block_semantic_whitespace_ranges(document, whitespace_policy);
         auto source_span = [&](SourceRange range) {
             return TextSpan{owner_id, range};
         };
@@ -692,6 +703,111 @@ struct Builder {
                     item.style = text_style;
                     target.push_back(std::move(item));
                 };
+                auto append_raw_text_leaf = [&] {
+                    if (node.kind != K::Text && node.kind != K::Whitespace) {
+                        append_text(inline_source_slice(document, node.range), node.range, style);
+                        return;
+                    }
+                    const auto found = std::find_if(semantic_whitespace.begin(), semantic_whitespace.end(), [&](const auto& range) {
+                        return range.start >= node.range.start && range.end <= node.range.end;
+                    });
+                    if (found == semantic_whitespace.end()) {
+                        append_text(inline_source_slice(document, node.range), node.range, style);
+                        return;
+                    }
+                    if (node.range.start < found->start) {
+                        const SourceRange prefix{node.range.start, found->start};
+                        append_text(inline_source_slice(document, prefix), prefix, style);
+                    }
+                    InlineRenderItem marker;
+                    marker.kind = InlineRenderItem::Kind::Marker;
+                    marker.id = node.id;
+                    marker.source_span = source_span(*found);
+                    marker.text = inline_source_slice(document, *found);
+                    marker.style = style;
+                    auto& marker_payload = marker.ensure_special();
+                    marker_payload.marker_owner = node.id;
+                    marker_payload.marker_role = MarkerRole::Syntax;
+                    marker_payload.marker_style = MarkerStyle{true, {}};
+                    marker_payload.visibility = MarkerVisibility::HiddenButEditable;
+                    target.push_back(std::move(marker));
+                    if (found->end < node.range.end) {
+                        const SourceRange suffix{found->end, node.range.end};
+                        append_text(inline_source_slice(document, suffix), suffix, style);
+                    }
+                };
+                auto append_code_span_text = [&](const InlineCstNode& code_node, const InlineStyle& text_style) {
+                    struct ProjectedCharacter {
+                        char32_t value;
+                        SourceRange source_range;
+                    };
+                    const auto content = code_node.delimiter_ranges().content;
+                    const auto raw = inline_source_slice(document, content);
+                    const auto normalized = normalize_inline_code_span(raw);
+                    std::vector<ProjectedCharacter> projected;
+                    projected.reserve(raw.size());
+                    for (std::size_t offset = 0; offset < raw.size(); ++offset) {
+                        const auto source_start = content.start + offset;
+                        const auto value = raw[offset];
+                        if (value == U'\r') {
+                            auto source_end = source_start + 1;
+                            if (offset + 1 < raw.size() && raw[offset + 1] == U'\n') {
+                                ++offset;
+                                ++source_end;
+                            }
+                            projected.push_back({U' ', {source_start, source_end}});
+                        } else if (value == U'\n') {
+                            projected.push_back({U' ', {source_start, source_start + 1}});
+                        } else {
+                            projected.push_back({value, {source_start, source_start + 1}});
+                        }
+                    }
+
+                    auto content_start = std::size_t{0};
+                    auto content_end = projected.size();
+                    const auto trim_outer_spaces = projected.size() >= 2
+                        && projected.front().value == U' '
+                        && projected.back().value == U' '
+                        && std::ranges::any_of(projected, [](const auto& character) {
+                            return character.value != U' ';
+                        });
+                    if (trim_outer_spaces) {
+                        append_marker(target, code_node, projected.front().source_range);
+                        ++content_start;
+                        --content_end;
+                    }
+
+                    auto cursor = content_start;
+                    while (cursor < content_end) {
+                        if (projected[cursor].source_range.length() != 1) {
+                            const auto display_start = cursor - content_start;
+                            append_text(
+                                normalized.substr(display_start, 1),
+                                projected[cursor].source_range,
+                                text_style);
+                            ++cursor;
+                            continue;
+                        }
+                        auto run_end = cursor + 1;
+                        while (run_end < content_end
+                            && projected[run_end].source_range.length() == 1
+                            && projected[run_end - 1].source_range.end
+                                == projected[run_end].source_range.start) {
+                            ++run_end;
+                        }
+                        const auto display_start = cursor - content_start;
+                        auto text = normalized.substr(display_start, run_end - cursor);
+                        append_text(
+                            std::move(text),
+                            {projected[cursor].source_range.start, projected[run_end - 1].source_range.end},
+                            text_style);
+                        cursor = run_end;
+                    }
+
+                    if (trim_outer_spaces) {
+                        append_marker(target, code_node, projected.back().source_range);
+                    }
+                };
                 switch (node.kind) {
                     case K::Strong: {
                         auto child_style = style; child_style.bold = true;
@@ -717,7 +833,7 @@ struct Builder {
                     case K::CodeSpan: {
                         auto child_style = style; child_style.code = true;
                         append_marker(target, node, delim.opening);
-                        append_text(inline_source_slice(document, delim.content), delim.content, child_style);
+                        append_code_span_text(node, child_style);
                         if (delim.closing) append_marker(target, node, *delim.closing);
                         break;
                     }
@@ -847,9 +963,11 @@ struct Builder {
                         append_text(decode_inline_entity(inline_source_slice(document, node.range)), node.range, style);
                         break;
                     case K::SoftBreak:
-                        append_text(preserve_soft_breaks ? U"\n" : U" ", node.range, style);
-                        break;
                     case K::HardBreak:
+                        if (node.kind == K::SoftBreak) {
+                            append_text(preserve_soft_breaks ? U"\n" : U" ", node.range, style);
+                            break;
+                        }
                         append_text(U"\n", node.range, style);
                         break;
                     case K::FootnoteRef: {
@@ -869,6 +987,10 @@ struct Builder {
                     case K::Incomplete:
                         append_marker(target, node, delim.opening);
                         if (!delim.content.empty()) append_text(inline_source_slice(document, delim.content), delim.content, style);
+                        break;
+                    case K::Text:
+                    case K::Whitespace:
+                        append_raw_text_leaf();
                         break;
                     default:
                         append_text(inline_source_slice(document, node.range), node.range, style);
@@ -924,7 +1046,14 @@ struct Builder {
                         TextAffinity::Downstream);
                     rb.inline_items.back().ensure_special().marker_owner = b.id;
                 }
-                auto items = build_inline_document(b.inline_content, b.id, s);
+                auto items = build_inline_document(
+                    b.inline_content,
+                    b.id,
+                    s,
+                    false,
+                    b.kind == BK::Paragraph
+                        ? InlineBlockWhitespacePolicy::Paragraph
+                        : InlineBlockWhitespacePolicy::None);
                 for (auto& item : items) rb.inline_items.push_back(std::move(item));
                 if (!b.text_special().closing_marker.empty()) {
                     cursor = b.inline_content.source.size();
@@ -960,7 +1089,12 @@ struct Builder {
                     rb.inline_items.push_back(std::move(marker));
                 };
                 append_heading_marker(b.text_special().opening_marker, 0, TextAffinity::Downstream);
-                auto items = build_inline_document(b.inline_content, b.id, s, true);
+                auto items = build_inline_document(
+                    b.inline_content,
+                    b.id,
+                    s,
+                    true,
+                    InlineBlockWhitespacePolicy::Heading);
                 for (auto& it : items) rb.inline_items.push_back(std::move(it));
                 append_heading_marker(
                     b.text_special().closing_marker,
@@ -992,6 +1126,7 @@ struct Builder {
                 auto& special = rb.ensure_special();
                 special.raw_source = b.block_source.source();
                 special.content_to_source = b.block_source.tree().content_to_source;
+                special.generated_code_indentation = b.block_source.tree().generated_indentation;
                 special.language = b.block_source.tree().language;
                 special.code_text = block_source_content(b.block_source);
                 special.code_indented = b.atomic_special().code_indented;

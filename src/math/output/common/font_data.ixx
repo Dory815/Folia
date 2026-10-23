@@ -2,6 +2,7 @@
 export module folia.math.output.common.font_data;
 import std;
 import folia.math.output.scene.types;
+export import folia.math.output.common.direction;
 export import folia.math.util.style_json;
 export import folia.math.output.common.font_path;
 
@@ -20,6 +21,16 @@ struct FontGlyph {
     // expands them through the same selected variant; no markup is retained.
     std::vector<std::uint32_t> composition;
     std::shared_ptr<output::scene::GlyphResource const> resource;
+};
+// A font request owns the values returned by this mathematical lookup view.
+// Implementations may acquire data on demand; published Scene resources own
+// their used outlines independently of this request.
+class FontGlyphLookup {
+public:
+    virtual ~FontGlyphLookup() = default;
+    virtual FontGlyph const* glyph(std::string_view variant, std::uint32_t codepoint) const = 0;
+    virtual bool contains(std::string_view variant, std::uint32_t codepoint) const = 0;
+    virtual std::size_t glyphCount() const noexcept = 0;
 };
 struct GlyphReference {
     std::string variant;
@@ -42,7 +53,6 @@ struct FontVariant {
     // Source's synthetic SMP entries identify one exact target variant/key.
     std::map<std::uint32_t, GlyphReference> remap;
 };
-enum class StretchDirection : std::uint8_t { none, horizontal, vertical };
 struct DelimiterRecipe {
     StretchDirection direction{StretchDirection::none};
     std::vector<double> sizes;
@@ -93,6 +103,7 @@ struct FontFaceData {
     std::map<std::uint32_t, std::u16string> operatorRemap;
     std::map<std::uint32_t, std::u16string> accentRemap;
     std::map<std::uint32_t, std::u16string> numberRemap;
+    std::shared_ptr<FontGlyphLookup const> glyphSource;
     std::size_t glyphCount() const noexcept;
     std::size_t sourceProfileGlyphCount() const noexcept { return source_profile_glyph_count; }
     std::string getFamily(std::string_view family) const;
@@ -107,7 +118,7 @@ public:
     FontRepository() = default;
     FontFaceData const& face(std::string_view name) const;
     FontGlyph const* glyph(std::string_view face, std::string_view variant,
-                           std::uint32_t codepoint) const noexcept;
+                           std::uint32_t codepoint) const;
     std::optional<ResolvedFontGlyph> resolveGlyph(std::string_view face,
                            std::string_view variant, std::uint32_t codepoint) const;
     std::optional<GlyphReference> remap(std::string_view face,

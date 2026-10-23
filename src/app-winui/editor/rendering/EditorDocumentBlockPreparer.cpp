@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "editor/rendering/EditorDocumentBlockPreparer.h"
+#include "editor/rendering/EditorContentGeometry.h"
 
 import folia.core.utf;
 
@@ -261,9 +262,7 @@ namespace winrt::Folia
                 || block.kind == folia::RenderBlockKind::Callout);
         auto paddingTop = flowContainer ? 0.0f : block.block_style.padding_top;
         auto paddingBottom = flowContainer ? 0.0f : block.block_style.padding_bottom;
-        auto paddingLeft = flowContainer ? 0.0f : block.block_style.padding_left;
-        auto paddingRight = flowContainer ? 0.0f : block.block_style.padding_right;
-        auto contentWidth = (std::max)(1.0f, documentWidth - paddingLeft - paddingRight);
+        auto contentWidth = EditorBlockContentWidth(block, documentWidth);
         if (block.kind == folia::RenderBlockKind::ThematicBreak) return 40.0f;
         if (block.kind == folia::RenderBlockKind::Blank)
             return styleSheet.body.lineHeight + paddingTop + paddingBottom;
@@ -523,12 +522,12 @@ namespace winrt::Folia
         bool requestEmbedded,
         bool highPriority)
     {
+        mathJax.BeginBlock(block.id.v);
         EditorPreparedDocument::Block prepared;
         InitializeMetadata(prepared, block);
         InitializeContentMetadata(prepared, block);
         prepared.embeddedRequested = requestEmbedded;
         prepared.embeddedGeneration = embeddedGeneration;
-        prepared.dependencyCheckGeneration = embeddedGeneration;
         prepared.remoteImageGeneration = remoteImageGeneration;
         std::unordered_set<std::uint64_t> owners;
         for (auto owner : prepared.owners) owners.insert(owner.v);
@@ -557,14 +556,11 @@ namespace winrt::Folia
             {
                 for (auto const& span : block.special().table_cell_spans)
                     addOwner(span.container_id);
-                prepared.pendingMath = prepared.table->pendingMath;
-                prepared.pendingMathJaxDependencies =
-                    prepared.table->pendingMathJaxDependencies;
-                prepared.pendingSvgDependencyGroups =
-                    prepared.table->pendingSvgDependencyGroups;
                 prepared.pendingImage = prepared.table->pendingImage;
+                prepared.pendingMath = prepared.table->pendingMath;
                 prepared.height = prepared.table->height;
                 prepared.valid = true;
+                mathJax.EndBlock();
                 return prepared;
             }
         }
@@ -573,9 +569,7 @@ namespace winrt::Folia
                 || block.kind == folia::RenderBlockKind::Callout);
         auto paddingTop = flowContainer ? 0.0f : block.block_style.padding_top;
         auto paddingBottom = flowContainer ? 0.0f : block.block_style.padding_bottom;
-        auto paddingLeft = flowContainer ? 0.0f : block.block_style.padding_left;
-        auto paddingRight = flowContainer ? 0.0f : block.block_style.padding_right;
-        auto contentWidth = (std::max)(1.0f, documentWidth - paddingLeft - paddingRight);
+        auto contentWidth = EditorBlockContentWidth(block, documentWidth);
         prepared.display = BuildDisplay(
             block,
             contentWidth,
@@ -625,12 +619,8 @@ namespace winrt::Folia
             }
         }
         documentPainter.ApplyNestedCodeHighlights(prepared.display, block);
-        prepared.pendingMath = prepared.display.pendingMath;
-        prepared.pendingMathJaxDependencies =
-            prepared.display.pendingMathJaxDependencies;
-        prepared.pendingSvgDependencyGroups =
-            prepared.display.pendingSvgDependencyGroups;
         prepared.pendingMermaid = prepared.display.pendingMermaid;
+        prepared.pendingMath = prepared.display.pendingMath;
         auto format = textLayoutEngine.FormatFor(
             prepared.code || prepared.sourceMode,
             prepared.display.ranges);
@@ -766,6 +756,7 @@ namespace winrt::Folia
         for (auto const& position : prepared.display.displayToSource)
             addOwner(position.container_id);
         prepared.valid = true;
+        mathJax.EndBlock();
         return prepared;
     }
 

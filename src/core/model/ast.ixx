@@ -10,6 +10,7 @@ import folia.core.image_dimension;
 import folia.core.text_edit;
 import folia.core.inline_document;
 import folia.core.html_cst;
+import folia.core.container_source;
 
 export namespace folia {
 
@@ -57,6 +58,9 @@ struct BlockListSpecial {
     bool ordered = false;
     std::uint64_t start = 1;
     char32_t delimiter = U'.';
+    // CommonMark list looseness is syntax metadata. It does not affect the
+    // editor's list layout or source serialization.
+    bool tight = true;
 };
 
 struct BlockItemSpecial {
@@ -137,12 +141,15 @@ struct BlockSupplementalSpecial {
     std::unique_ptr<BlockImageSpecial> image;
     std::unique_ptr<BlockContainerSpecial> container;
     std::unique_ptr<BlockHtmlSpecial> html;
+    std::unique_ptr<ContainerSource> source_prefixes;
 
     BlockSupplementalSpecial() = default;
     BlockSupplementalSpecial(BlockSupplementalSpecial const& other)
         : image(other.image ? std::make_unique<BlockImageSpecial>(*other.image) : nullptr),
           container(other.container ? std::make_unique<BlockContainerSpecial>(*other.container) : nullptr),
-          html(other.html ? std::make_unique<BlockHtmlSpecial>(*other.html) : nullptr) {}
+          html(other.html ? std::make_unique<BlockHtmlSpecial>(*other.html) : nullptr),
+          source_prefixes(other.source_prefixes
+              ? std::make_unique<ContainerSource>(*other.source_prefixes) : nullptr) {}
     BlockSupplementalSpecial& operator=(BlockSupplementalSpecial const& other) {
         if (this == &other) return *this;
         *this = BlockSupplementalSpecial(other);
@@ -319,6 +326,26 @@ struct BlockNode {
             special.supplemental->html = std::make_unique<BlockHtmlSpecial>();
         }
         return *special.supplemental->html;
+    }
+
+    ContainerSource const& container_source() const {
+        static const ContainerSource empty{};
+        return payload && payload->supplemental && payload->supplemental->source_prefixes
+            ? *payload->supplemental->source_prefixes
+            : empty;
+    }
+    ContainerSource& ensure_container_source() {
+        auto& special = ensure_special();
+        if (!special.supplemental) {
+            special.supplemental = std::make_unique<BlockSupplementalSpecial>();
+        }
+        if (!special.supplemental->source_prefixes) {
+            special.supplemental->source_prefixes = std::make_unique<ContainerSource>();
+        }
+        return *special.supplemental->source_prefixes;
+    }
+    bool has_container_source() const {
+        return payload && payload->supplemental && payload->supplemental->source_prefixes;
     }
 
     bool has_html_source() const {

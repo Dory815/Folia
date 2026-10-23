@@ -1,77 +1,317 @@
 // Root independent actual-CJS observations, frozen before implementation.
 'use strict';
-const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {root,u,MmlFactory,kinds,classes,core}=require('./multiscript-reference.cjs');
-const q=JSON.stringify;
-let enabled=false,multiscriptEvents=[],calls=[],mode='',target=null,late=null,base=null,old=null,serial=0,changingOptions=null,created=[];
-const note=s=>{if(enabled)multiscriptEvents.push(s);};
-const clone=v=>Array.isArray(v)?v.map(clone):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).map(k=>[k,clone(v[k])])):v;
-function reset(){enabled=false;multiscriptEvents=[];calls=[];mode='';target=late=base=old=changingOptions=null;serial=0;created=[];}
-function error(n,message,options,short){note('error/'+message+'/'+Boolean(short));if(mode==='throw')throw Object.assign(new Error('witness'),{name:'WitnessError'});if(mode==='fix-mutate'){note('error-options-alias/'+String(options===changingOptions));note('error-fix/'+String(options.fixMmultiscripts));options.fixMmultiscripts=true;}return n;}
-function receive(n,a,d,l,p){note('inherit/'+n.label);calls.push({label:n.label,a,snapshot:clone(a),d,l,p});if(n.label==='base'){
- if(mode==='rebind')target.childNodes=[n,late];
- if(mode==='grow'){target.childNodes.push(late);mode='';}
- if(mode==='null-next')target.childNodes[1]=null;
- }if(n.label==='sub'&&mode==='alias'){a.shared[1]='callback';a.added='visible';}if(n.label==='sub'&&mode==='sub-rebind')target.childNodes=[base,n,late];if(n.label==='sub'&&mode==='sub-grow'){target.childNodes.push(late);mode='';}}
+const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
+const { root, MmlFactory, kinds, classes, core } = require(path.join(path.resolve(__dirname, '../..'), 'tools/math-port/multiscript-reference.cjs'));
+const scenarios = [];
+let current = null;
+function encode(v) {
+    if (v === undefined)
+        return ['$undefined'];
+    if (v === null)
+        return ['$null'];
+    if (typeof v === 'string')
+        return ['$utf16', Array.from({ length: v.length }, (_, i) => v.charCodeAt(i))];
+    if (typeof v === 'boolean')
+        return v;
+    if (typeof v === 'number') {
+        if (Number.isNaN(v))
+            return ['$number', 'NaN'];
+        if (v === Infinity)
+            return ['$number', 'Infinity'];
+        if (v === -Infinity)
+            return ['$number', '-Infinity'];
+        if (Object.is(v, -0))
+            return ['$number', '-0'];
+        return v;
+    }
+    if (Array.isArray(v)) {
+        const entries = [];
+        for (const k of Object.keys(v))
+            entries.push([k, encode(v[k])]);
+        return ['$array', v.length, entries];
+    }
+    if (v && typeof v === 'object' && v.constructor && v.constructor.name !== 'Object')
+        return ['$instance', v.constructor.name, v.label ?? null, Boolean(v.marker), Array.isArray(v.childNodes) ? v.childNodes.map(encode) : null];
+    return ['$object', Object.keys(v).map(k => [k, encode(v[k])])];
+}
+function input(kind, value) { assert.ok(current, 'input outside case: ' + kind); current.inputs.push({ kind, value: encode(value) }); }
+const emitterValues = [];
+let expectedEmission = null;
+function sourceContains(haystack, needle) { if (JSON.stringify(haystack) === JSON.stringify(needle))
+    return true; if (Array.isArray(haystack))
+    return haystack.some(x => sourceContains(x, needle)); if (haystack && typeof haystack === 'object')
+    return Object.keys(haystack).some(k => sourceContains(haystack[k], needle)); return false; }
+function startCase(name) { current = { name, inputs: [{ kind: 'case', value: encode(name) }], expected: [] }; scenarios.push(current); }
+function recordExpected(kind, value) { assert.ok(current, 'expected value outside case: ' + kind); current.expected.push({ ordinal: assertions, kind, value: encode(value) }); }
+let enabled = false, multiscriptEvents = [], calls = [], mode = '', target = null, late = null, base = null, old = null, serial = 0, changingOptions = null, created = [];
+const note = s => { if (enabled)
+    multiscriptEvents.push(s); };
+const clone = v => Array.isArray(v) ? v.map(clone) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).map(k => [k, clone(v[k])])) : v;
+function reset() { enabled = false; multiscriptEvents = []; calls = []; mode = ''; target = late = base = old = changingOptions = null; serial = 0; created = []; }
+function error(n, message, options, short) { note('error/' + message + '/' + Boolean(short)); if (mode === 'throw')
+    throw Object.assign(new Error('witness'), { name: 'WitnessError' }); if (mode === 'fix-mutate') {
+    note('error-options-alias/' + String(options === changingOptions));
+    note('error-fix/' + String(options.fixMmultiscripts));
+    options.fixMmultiscripts = true;
+} return n; }
+function receive(n, a, d, l, p) {
+    note('inherit/' + n.label);
+    calls.push({ label: n.label, a, snapshot: clone(a), d, l, p });
+    if (n.label === 'base') {
+        if (mode === 'rebind')
+            target.childNodes = [n, late];
+        if (mode === 'grow') {
+            target.childNodes.push(late);
+            mode = '';
+        }
+        if (mode === 'null-next')
+            target.childNodes[1] = null;
+    }
+    if (n.label === 'sub' && mode === 'alias') {
+        a.shared[1] = 'callback';
+        a.added = 'visible';
+    }
+    if (n.label === 'sub' && mode === 'sub-rebind')
+        target.childNodes = [base, n, late];
+    if (n.label === 'sub' && mode === 'sub-grow') {
+        target.childNodes.push(late);
+        mode = '';
+    }
+}
 class Record extends core.AbstractMmlNode {
- get kind(){note('kind/'+this.label);return this.marker?'mprescripts':'record';}
- isKind(k){note('isKind/'+this.label+'/'+k);if(k==='mprescripts'){if(this.marker&&mode==='marker-rebind')target.childNodes=[base];if(this.label==='sub'&&mode==='verify-rebind')target.childNodes=[base,this,late];if(this.label==='sub'&&mode==='verify-grow'){target.childNodes.push(late);mode='';}return Boolean(this.marker);}return super.isKind(k);}
- setInheritedAttributes(a,d,l,p){receive(this,a,d,l,p);}
- verifyTree(o){note('verify/'+this.label);}
- mError(m,o,s=false){return error(this,m,o,s);}
+    get kind() { note('kind/' + this.label); return this.marker ? 'mprescripts' : 'record'; }
+    isKind(k) { note('isKind/' + this.label + '/' + k); if (k === 'mprescripts') {
+        if (this.marker && mode === 'marker-rebind')
+            target.childNodes = [base];
+        if (this.label === 'sub' && mode === 'verify-rebind')
+            target.childNodes = [base, this, late];
+        if (this.label === 'sub' && mode === 'verify-grow') {
+            target.childNodes.push(late);
+            mode = '';
+        }
+        return Boolean(this.marker);
+    } return super.isKind(k); }
+    setInheritedAttributes(a, d, l, p) { receive(this, a, d, l, p); }
+    verifyTree(o) { note('verify/' + this.label); }
+    mError(m, o, s = false) { return error(this, m, o, s); }
 }
 class RecordingNone extends classes.none {
- setInheritedAttributes(a,d,l,p){receive(this,a,d,l,p);}
- verifyTree(o){note('verify/'+this.label);return super.verifyTree(o);}
- mError(m,o,s=false){return error(this,m,o,s);}
+    setInheritedAttributes(a, d, l, p) { receive(this, a, d, l, p); }
+    verifyTree(o) { note('verify/' + this.label); return super.verifyTree(o); }
+    mError(m, o, s = false) { return error(this, m, o, s); }
 }
 class Probe extends classes.mmultiscripts {
- get kind(){note('kind/owner');return 'mmultiscripts';}
- hook(a,d,l,p){return super.setChildInheritedAttributes(a,d,l,p);}
- verify(o){return super.verifyChildren(o);}
- mError(m,o,s=false){return error(this,m,o,s);}
- appendChild(c){note('append/'+(c?.label||'null'));const result=super.appendChild(c);if(mode==='append-swap')this.childNodes=[late];return result;}
+    get kind() { note('kind/owner'); return 'mmultiscripts'; }
+    hook(a, d, l, p) { input('inheritance-arguments', { a, d, l, p }); return super.setChildInheritedAttributes(a, d, l, p); }
+    verify(o) { input('verify-options', o); return super.verifyChildren(o); }
+    mError(m, o, s = false) { return error(this, m, o, s); }
+    appendChild(c) { note('append/' + (c?.label || 'null')); const result = super.appendChild(c); if (mode === 'append-swap')
+        this.childNodes = [late]; return result; }
 }
-const parentProbes={};for(const k of ['mprescripts','none'])parentProbes[k]=class extends classes[k]{
- verifyAttributes(o){note('super-attributes');return super.verifyAttributes(o);}
- verifyChildren(o){note('super-children');return super.verifyChildren(o);}
- mError(m,o,s=false){return error(this,m,o,s);}
-};
+const parentProbes = {};
+for (const k of ['mprescripts', 'none'])
+    parentProbes[k] = class extends classes[k] {
+        verifyAttributes(o) { note('super-attributes'); return super.verifyAttributes(o); }
+        verifyChildren(o) { note('super-children'); return super.verifyChildren(o); }
+        mError(m, o, s = false) { return error(this, m, o, s); }
+    };
 class Factory extends MmlFactory {
- constructor(){super();this.setNodeClass('probe',Probe);this.setNodeClass('record',Record);this.setNodeClass('none',RecordingNone);for(const k of ['mprescripts','none'])this.setNodeClass('parent-'+k,parentProbes[k]);}
- create(k,...args){if(enabled&&k==='none'){note('factory/none/'+args.length);if(mode==='factory-null')return null;if(mode==='factory-rebind')target.childNodes=[base,late];}
- const n=super.create(k,...args);if(k==='none')n.label='none'+serial++;return n;}
+    constructor() { super(); this.setNodeClass('probe', Probe); this.setNodeClass('record', Record); this.setNodeClass('none', RecordingNone); for (const k of ['mprescripts', 'none'])
+        this.setNodeClass('parent-' + k, parentProbes[k]); }
+    create(k, ...args) {
+        if (enabled && k === 'none') {
+            note('factory/none/' + args.length);
+            if (mode === 'factory-null')
+                return null;
+            if (mode === 'factory-rebind')
+                target.childNodes = [base, late];
+        }
+        input('factory-create', { kind: k, args });
+        const n = super.create(k, ...args);
+        if (k === 'none')
+            n.label = 'none' + serial++;
+        return n;
+    }
 }
-class TraceFactory extends MmlFactory {create(k,...a){note('factory/'+k+'/'+a.length);const n=super.create(k,...a);if(enabled)created.push(n);return n;}}
-const createdValues=()=>created.map(n=>({kind:n.kind,explicit:clone(n.attributes?.getAllAttributes())}));
-function setup(shape){reset();const f=new Factory(),n=f.create('probe');target=n;const ns=[];for(let i=0;i<shape.length;i++){let s=f.create('record');s.label=i===0?'base':shape[i]==='p'?'mark'+i:i===1?'sub':'script'+i;s.marker=shape[i]==='p';s.parent=n;ns.push(s);}n.childNodes=ns;base=ns[0];late=f.create('record');late.label='late';late.parent=n;old=ns;return {f,n,ns};}
-function rows(){return calls.map(c=>({label:c.label,a:c.snapshot,d:c.d,l:c.l,p:c.p}));}
-function shapeSnapshot(n){if(!n)return null;return {kind:n.kind,label:n.label,parent:n.parent?.kind,properties:clone(n.properties),explicit:clone(n.attributes?.getAllAttributes()),inherited:clone(n.attributes?.getAllInherited()),children:n.childNodes?.map(shapeSnapshot)};}
-const out=['// Generated pinned actual-CJS multiscript observations.','#include "support/folia_test.hpp"',...['mmultiscripts','msubsup','mrow','math','mi','mtext','merror'].map(k=>'import folia.math.core.mml_tree.mml_nodes.'+k+';'),'import folia.math.core.mml_tree.class_binding;','import folia.math.core.mml_tree.multiscript_host;','import folia.math.core.tree.node_factory;',
-"namespace m=folia::math::mml;namespace h=m::host;namespace tr=folia::math::tree;using folia::math::Property;using folia::math::PropertyList;using folia::math::PropertyArray;using folia::math::Missing;using folia::math::PropertyNull;using namespace boost::ut;namespace {\nstd::u16string units(std::initializer_list<unsigned>v){std::u16string s;for(auto x:v)s.push_back(static_cast<char16_t>(x));return s;}\nm::Children children(std::initializer_list<m::NodeValue>v={}){return std::make_shared<tr::ChildArray<m::MmlNode>>(v);}m::MmlNode*parentNode(m::MmlNode*n){return n?n->getParent().nodeOrNull():nullptr;}Property parentValue(m::MmlNode*n,Property absent){auto*p=parentNode(n);return p?Property(p->kind()):absent;}Property snapshot(m::MmlNode*);Property childrenSnapshot(m::Children a){PropertyArray result;if(!a)return result;const auto length=a->size();result.resize(length);for(std::size_t i=0;i<length;i++)if(a->has(i))result.set(i,snapshot(a->get(i).nodeOrNull()));return result;}\nProperty clone(const Property&v){if(auto a=PropertyArray::array(v)){PropertyArray r;for(std::size_t i=0;i<a->size();i++)r.push(clone(a->get(i)));return r;}if(auto a=PropertyList::object(v)){PropertyList r;for(const auto&k:a->keys())r.setOwn(k,clone(a->getOwn(k)));return r;}return v;}\nbool deep(const Property&a,const Property&b){if(auto x=std::get_if<double>(&a.value))if(auto y=std::get_if<double>(&b.value))return(std::isnan(*x)&&std::isnan(*y))||(*x==*y&&std::signbit(*x)==std::signbit(*y));auto x=PropertyList::record(a),y=PropertyList::record(b);if(x&&y){if(PropertyArray::array(a).has_value()!=PropertyArray::array(b).has_value()||x->keys()!=y->keys())return false;for(const auto&k:x->keys())if(!deep(x->getOwn(k),y->getOwn(k)))return false;if(auto ax=PropertyArray::array(a))return ax->size()==PropertyArray::array(b)->size();return true;}return a==b;}\nstruct Call{std::string label;Property a=PropertyList{};Property snapshot,d,l,p;};bool enabled=false;std::vector<std::string> multiscriptEvents;std::vector<Call> calls;std::string mode;m::MmlNode*target=nullptr,*late=nullptr,*base=nullptr;m::Children old;int serial=0;PropertyList changingOptions;std::vector<m::MmlNode*>created;\nvoid note(std::string s){if(enabled)multiscriptEvents.push_back(std::move(s));}\nvoid reset(){enabled=false;multiscriptEvents.clear();calls.clear();mode.clear();target=late=base=nullptr;old.reset();serial=0;changingOptions=PropertyList{};created.clear();}\nstd::string label(m::MmlNode*);\nm::MmlNode* error(m::MmlNode*n,std::string message,Property o,bool shortError){note(\"error/\"+message+\"/\"+(shortError?\"true\":\"false\"));if(mode==\"throw\")throw m::Error(\"WitnessError\",u\"witness\");if(mode==\"fix-mutate\"){auto handle=PropertyList::object(o);note(\"error-options-alias/\"+std::string(handle&&Property(*handle)==Property(changingOptions)?\"true\":\"false\"));note(\"error-fix/\"+h::debugText(h::string(h::get(o,\"fixMmultiscripts\"))));if(handle)handle->setOwn(\"fixMmultiscripts\",true);}return n;}\nvoid receive(m::MmlNode*n,Property a,Property d,Property l,Property p){const auto name=label(n);note(\"inherit/\"+name);calls.push_back({name,a,clone(Property(a)),d,l,p});if(name==\"base\"){if(mode==\"rebind\")target->childNodes=children({n,late});if(mode==\"grow\"){target->childNodes->push_back(late);mode.clear();}if(mode==\"null-next\"&&target->childNodes->size()>1)target->childNodes->set(1,m::NodeValue(PropertyNull{}));}if(name==\"sub\"&&mode==\"alias\"){PropertyArray::array(h::get(a,\"shared\"))->set(1,\"callback\");h::set(a,\"added\",\"visible\");}if(name==\"sub\"&&mode==\"sub-rebind\")target->childNodes=children({base,n,late});if(name==\"sub\"&&mode==\"sub-grow\"){target->childNodes->push_back(late);mode.clear();}}\nstruct Record:m::AbstractMmlNode{using AbstractMmlNode::AbstractMmlNode;std::string label;bool marker=false;std::string kind()const override{note(\"kind/\"+label);return marker?\"mprescripts\":\"record\";}bool isKind(std::string_view k)const override{note(\"isKind/\"+label+\"/\"+std::string(k));if(k==\"mprescripts\"){if(marker&&mode==\"marker-rebind\")target->childNodes=children({base});if(label==\"sub\"&&mode==\"verify-rebind\")target->childNodes=children({base,const_cast<Record*>(this),late});if(label==\"sub\"&&mode==\"verify-grow\"){target->childNodes->push_back(late);mode.clear();}return marker;}return AbstractMmlNode::isKind(k);}void inheritAttributes(Property a,Property d,Property l,Property p)override{receive(this,a,d,l,p);}void verifyTree(Property o=Missing{})override{note(\"verify/\"+label);}m::MmlNode*mError(std::string s,Property o,bool shortError=false)override{return error(this,std::move(s),o,shortError);}};\nstruct RecordingNone:m::MmlNone{using MmlNone::MmlNone;std::string label;void inheritAttributes(Property a,Property d,Property l,Property p)override{receive(this,a,d,l,p);}void verifyTree(Property o=Missing{})override{note(\"verify/\"+label);MmlNone::verifyTree(o);}m::MmlNode*mError(std::string s,Property o,bool shortError=false)override{return error(this,std::move(s),o,shortError);}};\nstd::string label(m::MmlNode*n){if(auto*r=dynamic_cast<Record*>(n))return r->label;if(auto*r=dynamic_cast<RecordingNone*>(n))return r->label;return n?\"\":\"null\";}\nstruct Probe:m::MmlMmultiscripts{using MmlMmultiscripts::MmlMmultiscripts;std::string kind()const override{note(\"kind/owner\");return \"mmultiscripts\";}void hook(PropertyList a,Property d,Property l,Property p){MmlMmultiscripts::setChildInheritedAttributes(a,d,l,p);}void verify(PropertyList o){MmlMmultiscripts::verifyChildren(o);}m::MmlNode*mError(std::string s,Property o,bool shortError=false)override{return error(this,std::move(s),o,shortError);}m::NodeValue appendChild(m::NodeValue c)override{note(\"append/\"+(c.nodeOrNull()?label(c.nodeOrNull()):\"null\"));auto r=MmlMmultiscripts::appendChild(c);if(mode==\"append-swap\")childNodes=children({late});return r;}};\ntemplate<class T>struct ParentProbe:T{using T::T;void verifyAttributes(Property o)override{note(\"super-attributes\");T::verifyAttributes(o);}void verifyChildren(Property o)override{note(\"super-children\");T::verifyChildren(o);}m::MmlNode*mError(std::string s,Property o,bool shortError=false)override{return error(this,std::move(s),o,shortError);}};\nusing NF=tr::AbstractNodeFactory<m::MmlNode>;\ntr::FactoryClassMap<m::MmlNode>bindings(){return{{\"mmultiscripts\",m::classBinding<m::MmlMmultiscripts>()},{\"mprescripts\",m::classBinding<m::MmlMprescripts>()},{\"none\",m::classBinding<m::MmlNone>()},{\"parent-mprescripts\",m::classBinding<ParentProbe<m::MmlMprescripts>>()},{\"parent-none\",m::classBinding<ParentProbe<m::MmlNone>>()},{\"probe\",m::classBinding<Probe>()},{\"record\",m::classBinding<Record>()},{\"msubsup\",m::classBinding<m::MmlMsubsup>()},{\"mrow\",m::classBinding<m::MmlMrow>()},{\"inferredMrow\",m::classBinding<m::MmlInferredMrow>()},{\"math\",m::classBinding<m::MmlMath>()},{\"mi\",m::classBinding<m::MmlMi>()},{\"mtext\",m::classBinding<m::MmlMtext>()},{\"merror\",m::classBinding<m::MmlMerror>()},{\"text\",m::classBinding<m::TextNode>()}};}\nstruct Factory:NF{Factory():NF(bindings()){setNodeClass(\"none\",m::classBinding<RecordingNone>());}m::MmlNode*create(std::string_view k,tr::FactoryArgs args)override{if(enabled&&k==\"none\"){note(\"factory/none/\"+std::to_string(args.size()));if(mode==\"factory-null\")return nullptr;if(mode==\"factory-rebind\")target->childNodes=children({base,late});}auto*n=NF::create(k,args);if(k==\"none\")dynamic_cast<RecordingNone*>(n)->label=\"none\"+std::to_string(serial++);return n;}};\nstruct TraceFactory:NF{TraceFactory():NF(bindings()){}m::MmlNode*create(std::string_view k,tr::FactoryArgs a)override{note(\"factory/\"+std::string(k)+\"/\"+std::to_string(a.size()));auto*n=NF::create(k,a);if(enabled)created.push_back(n);return n;}};\nm::MmlNode*create(NF&f,std::string_view k,PropertyList a={},m::Children c=children()){return f.create(k,std::array<std::any,2>{a,c});}\nstruct Setup{Factory f;Probe*n;std::vector<Record*>ns;Setup(std::string_view shape){reset();n=dynamic_cast<Probe*>(create(f,\"probe\"));target=n;n->childNodes=children();for(std::size_t i=0;i<shape.size();i++){auto*r=dynamic_cast<Record*>(create(f,\"record\"));r->label=i==0?\"base\":shape[i]=='p'?\"mark\"+std::to_string(i):i==1?\"sub\":\"script\"+std::to_string(i);r->marker=shape[i]=='p';r->setParent(m::NodeValue(n));ns.push_back(r);n->childNodes->push_back(r);}base=ns.empty()?nullptr:ns[0];late=create(f,\"record\");dynamic_cast<Record*>(late)->label=\"late\";late->setParent(m::NodeValue(n));old=n->childNodes;}};\nProperty rows(){PropertyArray r;for(const auto&c:calls)r.push(PropertyList{{\"label\",c.label},{\"a\",c.snapshot},{\"d\",c.d},{\"l\",c.l},{\"p\",c.p}});return r;}\nProperty eventValues(){PropertyArray r;for(const auto&e:multiscriptEvents)r.push(e);return r;}\nProperty createdValues(){PropertyArray r;for(auto*n:created){auto a=n->attributes();r.push(PropertyList{{\"kind\",n->kind()},{\"explicit\",a?clone(Property(a->getAllAttributes())):Property(Missing{})}});}return r;}\nProperty snapshot(m::MmlNode*n){if(!n)return PropertyNull{};Property labelValue=Missing{};if(dynamic_cast<Record*>(n)||dynamic_cast<RecordingNone*>(n))labelValue=label(n);Property childrenValue=Missing{};if(n->childNodes)childrenValue=childrenSnapshot(n->childNodes);auto attr=n->attributes();return PropertyList{{\"kind\",n->kind()},{\"label\",labelValue},{\"parent\",parentValue(n,Property(Missing{}))},{\"properties\",n->getAllProperties()},{\"explicit\",attr?clone(Property(attr->getAllAttributes())):Property(Missing{})},{\"inherited\",attr?clone(Property(attr->getAllInherited())):Property(Missing{})},{\"children\",childrenValue}};}\n}\nsuite math_port_multiscript_tests=[] {"];
-let count=0,assertions=0;const graph=[],ids=new Map();
-function key(v){if(v===undefined)return'undefined';if(v===null)return'null';if(typeof v==='number')return Number.isNaN(v)?'nan':Object.is(v,-0)?'-0':String(v);if(typeof v!=='object')return typeof v+'/'+q(v);return(Array.isArray(v)?'a':'o')+'{'+Object.keys(v).map(k=>q(k)+':'+key(v[k])).join(',')+'}';}
-function valueId(v){const k=key(v);if(ids.has(k))return ids.get(k);let e;if(v===undefined)e='Property(Missing{})';else if(v===null)e='Property(PropertyNull{})';else if(typeof v==='string')e='Property(h::debugText('+u(v)+'))';else if(typeof v==='boolean')e='Property('+v+')';else if(typeof v==='number')e='Property('+(Number.isNaN(v)?'std::numeric_limits<double>::quiet_NaN()':!Number.isFinite(v)?(v<0?'-':'')+'std::numeric_limits<double>::infinity()':Object.is(v,-0)?'-0.0':v+'.0')+')';else if(Array.isArray(v))e='Property(PropertyArray{'+v.map(x=>'values['+valueId(x)+']').join(',')+'})';else e='Property(PropertyList{'+Object.keys(v).map(k=>'{'+q(k)+',values['+valueId(v[k])+']}').join(',')+'})';const id=graph.length;graph.push(e);ids.set(k,id);return id;}
-const p=v=>'clone(sourceValues['+valueId(v)+'])',list=v=>'PropertyList::record('+p(v)+').value()',emit=s=>out.push(s);
-function begin(name){reset();count++;emit(q('math_port_multiscript_'+name)+'_test=[] {reset();');}
-function end(){enabled=false;emit('enabled=false;};');}
-function pp(v,expr){assertions++;emit('expect(deep('+expr+','+p(v)+'));');}
-function eq(v,expr){assertions++;emit('expect(bool(('+expr+')=='+(typeof v==='string'?q(v):String(v))+'));');}
-function observe(fn,expr){enabled=true;multiscriptEvents=[];let name='';try{fn();}catch(e){name=e.name;}enabled=false;emit('enabled=true;multiscriptEvents.clear();std::string failure;try{'+expr+';}catch(const m::Error&e){failure=e.name;}enabled=false;');eq(name,'failure');pp(multiscriptEvents,'eventValues()');}
-begin('defaults_accessors_class_identity');{const f=new MmlFactory();emit('NF f(bindings());');for(const k of kinds){const n=f.create(k),T=classes[k];emit('{auto*n=create(f,'+q(k)+');');for(const prop of ['kind','arity','notParent','linebreakContainer'])eq(n[prop],'n->'+prop+'()');pp(n.texClass,'n->texClass()');pp(T.defaults,'Property(m::'+T.name+'::defaults())');emit('}');}eq(classes.mmultiscripts.defaults===f.getNodeClass('msubsup').defaults,'Property(m::MmlMmultiscripts::defaults())==Property(m::MmlMsubsup::defaults())');eq(classes.none.defaults===classes.mprescripts.defaults,'Property(m::MmlNone::defaults())==Property(m::MmlMprescripts::defaults())');eq(classes.none.defaults===core.AbstractMmlNode.defaults,'Property(m::MmlNone::defaults())==Property(m::AbstractMmlNode::defaults())');}end();
-const shapes=['b','bs','bss','bsss','bp','bps','bpss','bsp','bsps','bssps','bpp','bspps','bsspsss'];
-for(const shape of shapes){begin('normalization_'+shape);const s=setup(shape),a={shared:['origin','before']};emit('Setup s('+q(shape)+');PropertyList attrs='+list(a)+';');observe(()=>s.n.hook(a,true,2,false),'s.n->hook(attrs,true,2,false)');pp(rows(),'rows()');pp(shapeSnapshot(s.n),'snapshot(s.n)');eq(s.n.childNodes===old,'s.n->childNodes==old');for(const c of calls)eq(c.a===a,'calls.size()>'+calls.indexOf(c)+'&&Property(calls['+calls.indexOf(c)+'].a)==Property(attrs)');end();}
-begin('raw_inheritance_matrix');{const raw=[];for(const shape of ['bss','bsp','bsps','bsss'])for(const d of [false,true,'raw',null])for(const l of [-1,0,'2',null,NaN])for(const prime of [false,true,0,'raw',null,[]]){const s=setup(shape),a={};s.n.hook(a,d,l,prime);raw.push({shape,d,l,prime,rows:rows()});}emit('struct Rule{std::string shape;Property d,l,p,expected;};const Rule rowsData[]={');for(const r of raw)emit('{'+q(r.shape)+','+[r.d,r.l,r.prime,r.rows].map(p).join(',')+'},');emit('};for(const auto&r:rowsData){Setup s(r.shape);s.n->hook({},clone(r.d),clone(r.l),clone(r.p));expect(deep(rows(),r.expected));}');assertions+=raw.length;}end();
-for(const [shape,change]of [['bss','rebind'],['bss','grow'],['bssss','sub-rebind'],['bss','sub-grow'],['bs','alias'],['bsp','marker-rebind'],['bsp','factory-rebind'],['bs','append-swap'],['bsp','factory-null'],['bs','factory-null'],['bss','null-next'],['',''],['bs','null-array']]){begin('callback_'+count);const s=setup(shape),a={shared:['origin','before']};mode=change;if(change==='null-array')s.n.childNodes=null;emit('Setup s('+q(shape)+');PropertyList attrs='+list(a)+';mode='+q(change)+';'+(change==='null-array'?'s.n->childNodes.reset();':''));observe(()=>s.n.hook(a,false,'2','raw'),'s.n->hook(attrs,false,"2","raw")');pp(rows(),'rows()');pp(a,'Property(attrs)');pp(shapeSnapshot(s.n),'snapshot(s.n)');eq(s.n.childNodes===old,'s.n->childNodes==old');end();}
-for(const [shape,change]of [['bssss','verify-rebind'],['bs','verify-grow']]){begin(change);const s=setup(shape),o={fixMmultiscripts:true};mode=change;emit('Setup s('+q(shape)+');PropertyList options{{"fixMmultiscripts",true}};mode='+q(change)+';');observe(()=>s.n.verify(o),'s.n->verify(options)');pp(shapeSnapshot(s.n),'snapshot(s.n)');end();}
-for(const shape of ['b','bs','bss','bsp','bpp','bspps','bssps'])for(const fix of [undefined,false,true,'raw',0,[]])for(const change of ['','throw']){begin('verify_flow_'+count);const s=setup(shape),o={fixMmultiscripts:fix};mode=change;emit('Setup s('+q(shape)+');PropertyList options='+list(o)+';mode='+q(change)+';');observe(()=>s.n.verify(o),'s.n->verify(options)');pp(shapeSnapshot(s.n),'snapshot(s.n)');end();}
+class TraceFactory extends MmlFactory {
+    create(k, ...a) { note('factory/' + k + '/' + a.length); input('trace-factory-create', { kind: k, args: a }); const n = super.create(k, ...a); if (enabled)
+        created.push(n); return n; }
+}
+class InputFactory extends MmlFactory {
+    create(k, ...a) { input('mml-factory-create', { kind: k, args: a }); return super.create(k, ...a); }
+}
+const createdValues = () => created.map(n => ({ kind: n.kind, explicit: clone(n.attributes?.getAllAttributes()) }));
+function setup(shape) { input('setup-shape', shape); reset(); const f = new Factory(), n = f.create('probe'); target = n; const ns = []; for (let i = 0; i < shape.length; i++) {
+    let s = f.create('record');
+    s.label = i === 0 ? 'base' : shape[i] === 'p' ? 'mark' + i : i === 1 ? 'sub' : 'script' + i;
+    s.marker = shape[i] === 'p';
+    s.parent = n;
+    ns.push(s);
+} n.childNodes = ns; base = ns[0]; late = f.create('record'); late.label = 'late'; late.parent = n; old = ns; return { f, n, ns }; }
+function rows() { return calls.map(c => ({ label: c.label, a: c.snapshot, d: c.d, l: c.l, p: c.p })); }
+function shapeSnapshot(n) { if (!n)
+    return null; return { kind: n.kind, label: n.label, parent: n.parent?.kind, properties: clone(n.properties), explicit: clone(n.attributes?.getAllAttributes()), inherited: clone(n.attributes?.getAllInherited()), children: n.childNodes?.map(shapeSnapshot) }; }
+let count = 0, assertions = 0;
+function begin(name) { reset(); count++; startCase(name); }
+function end() { enabled = false; }
+function pp(v) { assertions++; recordExpected('deep', v); }
+function eq(v) { assertions++; recordExpected('equal', v); }
+function observe(fn, expr) { input('callback-mode', mode); enabled = true; multiscriptEvents = []; let name = ''; try {
+    fn();
+}
+catch (e) {
+    name = e.name;
+} enabled = false; {
+} eq(name); pp(multiscriptEvents); }
+begin('defaults_accessors_class_identity');
+{
+    const f = new InputFactory();
+    for (const k of kinds) {
+        const n = f.create(k), T = classes[k];
+        for (const prop of ['kind', 'arity', 'notParent', 'linebreakContainer'])
+            eq(n[prop]);
+        pp(n.texClass);
+        pp(T.defaults);
+    }
+    eq(classes.mmultiscripts.defaults === f.getNodeClass('msubsup').defaults);
+    eq(classes.none.defaults === classes.mprescripts.defaults);
+    eq(classes.none.defaults === core.AbstractMmlNode.defaults);
+}
+end();
+const shapes = ['b', 'bs', 'bss', 'bsss', 'bp', 'bps', 'bpss', 'bsp', 'bsps', 'bssps', 'bpp', 'bspps', 'bsspsss'];
+for (const shape of shapes) {
+    begin('normalization_' + shape);
+    const s = setup(shape), a = { shared: ['origin', 'before'] };
+    observe(() => s.n.hook(a, true, 2, false));
+    pp(rows());
+    pp(shapeSnapshot(s.n));
+    eq(s.n.childNodes === old);
+    for (const c of calls)
+        eq(c.a === a);
+    end();
+}
+begin('raw_inheritance_matrix');
+{
+    const raw = [];
+    for (const shape of ['bss', 'bsp', 'bsps', 'bsss'])
+        for (const d of [false, true, 'raw', null])
+            for (const l of [-1, 0, '2', null, NaN])
+                for (const prime of [false, true, 0, 'raw', null, []]) {
+                    const s = setup(shape), a = {};
+                    s.n.hook(a, d, l, prime);
+                    raw.push({ shape, d, l, prime, rows: rows() });
+                }
+    assert.equal(raw.length, 480);
+    assert.equal(new Set(raw.map(r => r.shape)).size, 4);
+    assert.equal(new Set(raw.map(r => JSON.stringify(encode(r.d)))).size, 4);
+    assert.equal(new Set(raw.map(r => JSON.stringify(encode(r.l)))).size, 5);
+    assert.equal(new Set(raw.map(r => JSON.stringify(encode(r.prime)))).size, 6);
+    assert.equal(new Set(raw.map(r => JSON.stringify(encode([r.shape, r.d, r.l, r.prime])))).size, 480);
+    for (const row of raw)
+        assert.deepEqual(Object.keys(row), ['shape', 'd', 'l', 'prime', 'rows']);
+    input('raw-inheritance-matrix', raw.map(({ shape, d, l, prime, rows }) => ({ shape, d, l, prime, rows })));
+    for (const row of raw) {
+        assertions++;
+        recordExpected('matrix-row', row.rows);
+    }
+}
+end();
+for (const [shape, change] of [['bss', 'rebind'], ['bss', 'grow'], ['bssss', 'sub-rebind'], ['bss', 'sub-grow'], ['bs', 'alias'], ['bsp', 'marker-rebind'], ['bsp', 'factory-rebind'], ['bs', 'append-swap'], ['bsp', 'factory-null'], ['bs', 'factory-null'], ['bss', 'null-next'], ['', ''], ['bs', 'null-array']]) {
+    begin('callback_' + count);
+    const s = setup(shape), a = { shared: ['origin', 'before'] };
+    mode = change;
+    if (change === 'null-array')
+        s.n.childNodes = null;
+    observe(() => s.n.hook(a, false, '2', 'raw'));
+    pp(rows());
+    pp(a);
+    pp(shapeSnapshot(s.n));
+    eq(s.n.childNodes === old);
+    end();
+}
+for (const [shape, change] of [['bssss', 'verify-rebind'], ['bs', 'verify-grow']]) {
+    begin(change);
+    const s = setup(shape), o = { fixMmultiscripts: true };
+    mode = change;
+    observe(() => s.n.verify(o));
+    pp(shapeSnapshot(s.n));
+    end();
+}
+for (const shape of ['b', 'bs', 'bss', 'bsp', 'bpp', 'bspps', 'bssps'])
+    for (const fix of [undefined, false, true, 'raw', 0, []])
+        for (const change of ['', 'throw']) {
+            begin('verify_flow_' + count);
+            const s = setup(shape), o = { fixMmultiscripts: fix };
+            mode = change;
+            observe(() => s.n.verify(o));
+            pp(shapeSnapshot(s.n));
+            end();
+        }
 // Dedicated returning-error witness changes the options handle during the scan.
-begin('captured_fix_mutated_after_first_error');{const s=setup('bspps'),o={fixMmultiscripts:false};mode='fix-mutate';changingOptions=o;emit('Setup s("bspps");PropertyList options{{"fixMmultiscripts",false}};mode="fix-mutate";changingOptions=options;');observe(()=>s.n.verify(o),'s.n->verify(options)');pp(o,'Property(options)');}end();
-for(const k of ['mprescripts','none'])for(const parent of [null,'mrow','mmultiscripts','inferredMrow'])for(const opts of [null,{}, {checkArity:true},{checkAttributes:true}])for(const withChild of [false,true]){begin('parent_verification_'+count);const f=new Factory(),n=f.create('parent-'+k,{bad:'value'},withChild?[f.create('record')]:[]);if(withChild)n.childNodes[0].label='child';if(parent)n.parent=f.create(parent);if(parent==='inferredMrow')n.parent.parent=f.create('mmultiscripts');emit('Factory f;auto*n=create(f,'+q('parent-'+k)+',PropertyList{{"bad","value"}},'+(withChild?'children({create(f,"record")})':'children()')+');'+(withChild?'dynamic_cast<Record*>(n->childNodes->get(0).requireNode())->label="child";':'')+(parent?'n->setParent(m::NodeValue(create(f,'+q(parent)+')));':'')+(parent==='inferredMrow'?'parentNode(n)->setParent(m::NodeValue(create(f,"mmultiscripts")));':''));observe(()=>n.verifyTree(opts),'n->verifyTree('+(opts===null?'PropertyNull{}':list(opts))+')');pp(shapeSnapshot(n),'snapshot(n)');end();}
-for(const k of ['mprescripts','none'])for(const parent of ['mrow','mmultiscripts','merror','inferredMrow'])for(const opts of [null,{fullErrors:false},{fullErrors:true}]){begin('real_parent_partial_'+count);const f=new TraceFactory(),n=f.create(k),holder=f.create(parent,{},[n]);n.parent=holder;if(parent==='inferredMrow')holder.parent=f.create('mmultiscripts');emit('TraceFactory f;auto*n=create(f,'+q(k)+');auto*holder=create(f,'+q(parent)+',{},children({n}));n->setParent(m::NodeValue(holder));'+(parent==='inferredMrow'?'holder->setParent(m::NodeValue(create(f,"mmultiscripts")));':''));observe(()=>n.verifyTree(opts),'n->verifyTree('+(opts===null?'PropertyNull{}':list(opts))+')');pp(shapeSnapshot(holder),'snapshot(holder)');pp(createdValues(),'createdValues()');end();}
+begin('captured_fix_mutated_after_first_error');
+{
+    const s = setup('bspps'), o = { fixMmultiscripts: false };
+    mode = 'fix-mutate';
+    changingOptions = o;
+    observe(() => s.n.verify(o));
+    pp(o);
+}
+end();
+for (const k of ['mprescripts', 'none'])
+    for (const parent of [null, 'mrow', 'mmultiscripts', 'inferredMrow'])
+        for (const opts of [null, {}, { checkArity: true }, { checkAttributes: true }])
+            for (const withChild of [false, true]) {
+                begin('parent_verification_' + count);
+                const f = new Factory(), n = f.create('parent-' + k, { bad: 'value' }, withChild ? [f.create('record')] : []);
+                if (withChild)
+                    n.childNodes[0].label = 'child';
+                input('parent-context', { node: k, parent, logicalParent: parent === 'inferredMrow' ? 'mmultiscripts' : null });
+                if (parent)
+                    n.parent = f.create(parent);
+                if (parent === 'inferredMrow')
+                    n.parent.parent = f.create('mmultiscripts');
+                input('verify-tree-options', opts);
+                observe(() => n.verifyTree(opts));
+                pp(shapeSnapshot(n));
+                end();
+            }
+for (const k of ['mprescripts', 'none'])
+    for (const parent of ['mrow', 'mmultiscripts', 'merror', 'inferredMrow'])
+        for (const opts of [null, { fullErrors: false }, { fullErrors: true }]) {
+            begin('real_parent_partial_' + count);
+            const f = new TraceFactory(), n = f.create(k), holder = f.create(parent, {}, [n]);
+            n.parent = holder;
+            input('parent-context', { node: k, parent, logicalParent: parent === 'inferredMrow' ? 'mmultiscripts' : null });
+            if (parent === 'inferredMrow')
+                holder.parent = f.create('mmultiscripts');
+            input('verify-tree-options', opts);
+            observe(() => n.verifyTree(opts));
+            pp(shapeSnapshot(holder));
+            pp(createdValues());
+            end();
+        }
 // Real source error-tree construction, distinct from returning-error probes.
-for(const shape of ['b','bs','bsp','bpp','bspps'])for(const fix of [false,true])for(const full of [false,true]){begin('real_errors_'+count);const f=new MmlFactory(),ns=[...shape].map(c=>f.create(c==='p'?'mprescripts':'mi')),n=f.create('mmultiscripts',{},ns),holder=f.create('mrow',{},[n]),o={fixMmultiscripts:fix,fullErrors:full};emit('NF f(bindings());auto ns=children();for(char c:std::string('+q(shape)+'))ns->push_back(create(f,c==\'p\'?"mprescripts":"mi"));auto*n=create(f,"mmultiscripts",{},ns);auto*holder=create(f,"mrow",{},children({n}));PropertyList options='+list(o)+';');observe(()=>n.verifyTree(o),'n->verifyTree(options)');pp(shapeSnapshot(holder),'snapshot(holder)');end();}
-for(const shape of ['bss','bsp','bsps']){begin('real_outer_inheritance_'+shape);const f=new MmlFactory(),ns=[...shape].map(c=>f.create(c==='p'?'mprescripts':'mi')),n=f.create('mmultiscripts',{},ns);emit('NF f(bindings());auto ns=children();for(char c:std::string('+q(shape)+'))ns->push_back(create(f,c==\'p\'?"mprescripts":"mi"));auto*n=create(f,"mmultiscripts",{},ns);');observe(()=>n.setInheritedAttributes({mathcolor:['math','blue']},true,0,false),'n->setInheritedAttributes(PropertyList{{"mathcolor",PropertyArray{"math","blue"}}},true,0,false)');pp(shapeSnapshot(n),'snapshot(n)');end();}
-emit('};');const marker=out.findIndex(s=>s.includes('suite math_port_multiscript_tests='));assert.ok(marker>=0);const [prefix,suffix]=out[marker].split('suite math_port_multiscript_tests=[] {');out[marker]=prefix;out.splice(marker+1,0,'namespace {const std::vector<Property> sourceValues=[] {std::vector<Property> values;values.reserve('+graph.length+');',...graph.map(s=>'values.push_back('+s+');'),'return values;}();}','suite math_port_multiscript_tests=[] {',suffix||'');
-const output=out.join('\n')+'\n',targetFile=path.join(root,'tests/math/reference_multiscript.cpp');if(process.argv.includes('--check'))assert.equal(fs.readFileSync(targetFile,'utf8').replaceAll('\r\n','\n'),output);else fs.writeFileSync(targetFile,output);
-console.log(JSON.stringify({assertions,cases:count,raw_rows:480,source_value_records:graph.length,mode:process.argv.includes('--check')?'check':'generate'}));
+for (const shape of ['b', 'bs', 'bsp', 'bpp', 'bspps'])
+    for (const fix of [false, true])
+        for (const full of [false, true]) {
+            begin('real_errors_' + count);
+            const f = new InputFactory(), ns = [...shape].map(c => f.create(c === 'p' ? 'mprescripts' : 'mi')), n = f.create('mmultiscripts', {}, ns), holder = f.create('mrow', {}, [n]), o = { fixMmultiscripts: fix, fullErrors: full };
+            input('verify-tree-options', o);
+            observe(() => n.verifyTree(o));
+            pp(shapeSnapshot(holder));
+            end();
+        }
+for (const shape of ['bss', 'bsp', 'bsps']) {
+    begin('real_outer_inheritance_' + shape);
+    const f = new InputFactory(), ns = [...shape].map(c => f.create(c === 'p' ? 'mprescripts' : 'mi')), n = f.create('mmultiscripts', {}, ns);
+    input('outer-inheritance-arguments', { attributes: { mathcolor: ['math', 'blue'] }, display: true, level: 0, prime: false });
+    observe(() => n.setInheritedAttributes({ mathcolor: ['math', 'blue'] }, true, 0, false));
+    pp(shapeSnapshot(n));
+    end();
+}
+
+assert.equal(count,226);assert.equal(assertions,1304);assert.equal(scenarios.length,226);const ordered=scenarios.flatMap(s=>s.expected);assert.equal(ordered.length,1304);for(let i=0;i<ordered.length;i++)assert.equal(ordered[i].ordinal,i+1);
+const profile={schema:'folia.math.multiscript-source.v1',source:{node:process.version,package:'@mathjax/src',version:'4.1.3',typescript:'5.9.3',module:{path:'ts/core/MmlTree/MmlNodes/mmultiscripts.ts',sha256:'bb8d8d2180ef483b86b0b1570b919ba424ed54db1f30ef6e0e697cfab0bf5cf7'},locks:{p12bPath:'docs/math-port/evidence/p12b-source-lock.json',p12bSha256:'e7ea07818f7d6aa1d1dda7c2cc1c5cb32e68596f0b84a1801351485624eaa369',moRuntime:'cjs/core/MmlTree/MmlNodes/mo.js',moRuntimeSha256:'7c68f0570d82f585eb6ca7e8bbca119b96a02666e0d4b268a413bf4035ff0b2c',compiledPackageFiles:424,compiledPackageSha256:'773bf3ae1c075baa36c02b6958f7e3bed5fb116d0818ecf99bb70c5337d9e537'},loader:{multiscriptReferenceSha256:'1c3063d12886bfa1e3593b5b669370631c81e4fd76aea0ffff385469bb22f212',arithmeticReferenceSha256:'a3691e9fcba94abbe89397fff6f90ca2d5f29cead0ef58d334cce9cdc1251458'}},migration:{legacyOracleSha256:'f3e9eb1d8f486747f7a9841418b336ac1dc1900fbe46123520a3aec97ccd3d16',legacyFixtureSha256:'c6b4ad31c98fe0e9c3956264c255bbe8e5fd4abc511ea7dea79523ea169dc914'},counts:{sourceCases:226,sourceAssertions:1304,staticExpectSites:825,rawMatrixRows:480,sourceValueRecords:1170,nativeOnlyCases:0},scenarios};
+assert.ok(process.argv.includes('--check'),'Source-only oracle is check-only');
+assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root,'docs/math-port/evidence/multiscript-source-profile.json'),'utf8')),profile);
+console.log(JSON.stringify({...profile.counts,mode:'check'}));

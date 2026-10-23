@@ -10,15 +10,11 @@ namespace winrt::Folia
         detail::EditorRenderFrame const& valueFrame,
         EditorRenderResources& valueResources,
         EditorInlineImageRenderer& valueInlineImages,
-        MathJaxRenderer& valueMathJax,
-        SvgNormalizer& valueSvgNormalizer,
         EditorDocumentBlockPreparer& valueBlockPreparer,
         std::unique_ptr<EditorPreparedDocument>& valuePreparedDocument)
         : frame(valueFrame),
           resources(valueResources),
           inlineImages(valueInlineImages),
-          mathJax(valueMathJax),
-          svgNormalizer(valueSvgNormalizer),
           blockPreparer(valueBlockPreparer),
           preparedDocument(valuePreparedDocument)
     {
@@ -57,23 +53,13 @@ namespace winrt::Folia
             if (block.kind == folia::RenderBlockKind::ThematicBreak) return true;
             auto& prepared = preparedDocument->blocks[index];
             if (!prepared.valid) return true;
-            auto refreshForMath = false;
-            if (prepared.pendingMath
-                && prepared.embeddedRequested
-                && prepared.dependencyCheckGeneration != embeddedGeneration)
-            {
-                refreshForMath = mathJax.AnyCompletedAfter(
-                        prepared.pendingMathJaxDependencies)
-                    || svgNormalizer.AnyGroupCompletedAfter(
-                        prepared.pendingSvgDependencyGroups);
-                if (!refreshForMath)
-                    prepared.dependencyCheckGeneration = embeddedGeneration;
-            }
             auto refreshForImages = prepared.containsImage
                 && prepared.embeddedRequested
                 && (prepared.remoteImageGeneration != remoteImageGeneration
                     || (prepared.pendingImage
                         && prepared.embeddedGeneration != embeddedGeneration));
+            auto refreshForMath = prepared.pendingMath
+                && prepared.embeddedGeneration != embeddedGeneration;
             auto refreshForMermaid = prepared.containsMermaid
                 && prepared.embeddedRequested
                 && prepared.pendingMermaid
@@ -81,8 +67,7 @@ namespace winrt::Folia
             auto highPriority = index >= embeddedPlan.visible.begin
                 && index < embeddedPlan.visible.end;
             auto enteredEmbeddedBand = !prepared.embeddedRequested
-                && (prepared.containsMath
-                    || prepared.containsImage
+                && (prepared.containsImage
                     || prepared.containsMermaid)
                 && (!viewportActive || highPriority);
             if (!refreshForMath

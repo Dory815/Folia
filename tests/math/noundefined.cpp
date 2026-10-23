@@ -37,6 +37,7 @@ struct UndefinedFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit UndefinedFixture(TexOptionValues options = {}, bool enabled = true) {
         NoUndefinedConfiguration::initializeModule(registry);
@@ -44,8 +45,8 @@ struct UndefinedFixture {
         if (enabled)
             options.packages->push_back({u"noundefined", {}});
         options.formatError = &formatUndefinedError;
-        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(),
-                                    std::move(options));
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, std::move(options));
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -101,8 +102,8 @@ suite noundefined_package = [] {
         });
         expect(following);
         expect(f.error.empty());
-        expect(!f.jax->parseOptions().error);
-        expect(f.jax->parseOptions().parsers.empty());
+        expect(!f.jax->parseOptions().request().error);
+        expect(f.jax->parseOptions().request().parsers.empty());
         f.jax->reset(12);
         expect(NodeUtil::getText(*undefinedText(f.compile(u"\\again"))[0]) == u"\\again");
     };
@@ -146,7 +147,7 @@ suite noundefined_package = [] {
         expect(f.error == "UnknownEnv");
         f.compile(u"{\\missing");
         expect(f.error == "ExtraOpenMissingClose");
-        expect(f.jax->parseOptions().parsers.empty());
+        expect(f.jax->parseOptions().request().parsers.empty());
         f.compile(u"\\after");
         expect(f.error.empty());
         UndefinedFixture base({}, false);
@@ -155,7 +156,7 @@ suite noundefined_package = [] {
     };
     "noundefined package calls configured text then node creators without token creator"_test = [] {
         UndefinedFixture f;
-        f.jax->parseOptions().nodeFactory.setCreators(
+        f.jax->parseOptions().request().nodeFactory.setCreators(
             NodeCreators{.node = observeNode, .token = observeToken, .text = observeText});
         std::vector<std::string> events;
         struct Restore {

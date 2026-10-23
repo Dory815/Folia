@@ -432,7 +432,7 @@ void fixInitialMO(ParseOptions &options, std::vector<mml::MmlNode *> &nodes) {
              (!child->children().empty() && !child->children().front()->children().empty()))) {
             if (child->isEmbellished() || (child->kind() == mml::NodeKind::tex_atom &&
                                            child->texClass() == mml::TexClass::rel)) {
-                auto node = &options.nodeFactory.makeNode(mml::NodeKind::mi);
+                auto node = &options.request().nodeFactory.makeNode(mml::NodeKind::mi);
                 nodes.insert(nodes.begin(), node);
             }
             break;
@@ -441,7 +441,7 @@ void fixInitialMO(ParseOptions &options, std::vector<mml::MmlNode *> &nodes) {
 mml::MmlNode &fenced(ParseOptions &configuration, std::u16string_view open, mml::MmlNode &contents,
                      std::u16string_view close, std::u16string_view big,
                      std::u16string_view color) {
-    auto &factory = configuration.nodeFactory;
+    auto &factory = configuration.request().nodeFactory;
     NodeDefinition definition;
     definition.properties.tex.open = std::u16string(open);
     definition.properties.tex.close = std::u16string(close);
@@ -497,7 +497,8 @@ mml::MmlNode &fixedFence(ParseOptions &configuration, std::u16string_view open,
     definition.properties.tex.open = std::u16string(open);
     definition.properties.tex.close = std::u16string(close);
     definition.properties.tex.explicit_tex_class = mml::TexClass::ord;
-    auto &row = configuration.nodeFactory.makeNode(mml::NodeKind::mrow, {}, std::move(definition));
+    auto &row = configuration.request().nodeFactory.makeNode(mml::NodeKind::mrow, {},
+                                                             std::move(definition));
     if (!open.empty())
         row.appendChild(mathPalette(configuration, open, u"l"));
     if (contents.kind() == mml::NodeKind::mrow) {

@@ -166,4 +166,88 @@ suite math_native_mml_families = [] {
         expect(dynamic_cast<mml::TextNode &>(*virtualCopy.children().front()).getText() ==
                u"glyph text");
     };
+
+    "menclose_and_mpadded_set_texclass_match_source_for_previous_and_vbox_cases"_test = [] {
+        struct Case {
+            mml::NodeKind kind;
+            std::optional<std::u16string_view> vertical_box;
+            bool returns_wrapper;
+            bool row_has_none_previous;
+        };
+        constexpr Case cases[] = {
+            {mml::NodeKind::menclose, std::nullopt, false, false},
+            {mml::NodeKind::mpadded, std::u16string_view{u""}, false, false},
+            {mml::NodeKind::mpadded, std::u16string_view{u"bottom"}, true, true},
+        };
+
+        for (const auto &test_case : cases) {
+            mml::MmlDocument document;
+            auto &factory = document.factory();
+            auto &wrapper = factory.make(test_case.kind);
+            const auto wrapper_children = wrapper.children();
+            expect(wrapper_children.size() == 1u)
+                << "family constructor creates exactly one inferred row";
+            if (wrapper_children.size() != 1u)
+                continue;
+            auto *row = wrapper_children.front();
+            expect(row && row->kind() == mml::NodeKind::inferred_mrow && row->isInferred())
+                << "wrapper child is its actual inferred mrow";
+            if (!row || row->kind() != mml::NodeKind::inferred_mrow || !row->isInferred())
+                continue;
+            expect(row->parent() == &wrapper) << "inferred row parent is the wrapper";
+            if (row->parent() != &wrapper)
+                continue;
+
+            auto &token = factory.make(mml::NodeKind::mo);
+            token.setTexClass(mml::TexClass::bin);
+            row->appendChild(token);
+            const auto row_children = row->children();
+            expect(row_children.size() == 1u && row_children.front() == &token)
+                << "inferred row owns the BIN token";
+            if (row_children.size() != 1u || row_children.front() != &token)
+                continue;
+            expect(token.parent() == row) << "token parent is the inferred row";
+            if (token.parent() != row)
+                continue;
+
+            if (test_case.vertical_box) {
+                auto *padded = dynamic_cast<mml::MmlMpadded *>(&wrapper);
+                expect(padded != nullptr) << "vbox cases construct an MmlMpadded family";
+                if (!padded)
+                    continue;
+                padded->properties().tex.vertical_box = std::u16string(*test_case.vertical_box);
+            }
+            auto &previous = factory.make(mml::NodeKind::mo);
+            previous.setTexClass(mml::TexClass::rel);
+            expect(previous.texClass() == mml::TexClass::rel && !previous.prevClass() &&
+                   !previous.prevLevel())
+                << "incoming previous mo starts as REL with empty previous getters";
+
+            auto *result = wrapper.setTeXclass(&previous);
+            expect(result == (test_case.returns_wrapper ? &wrapper : &token))
+                << "setTeXclass returns the Source-matched wrapper or final token";
+            expect(wrapper.texClass() == mml::TexClass::ord)
+                << "wrapper current class matches Source";
+            expect(wrapper.prevClass() == mml::TexClass::rel)
+                << "wrapper records incoming REL class";
+            expect(wrapper.prevLevel().value_or(-1.0) == 0.0)
+                << "wrapper records incoming default script level";
+            expect(row->texClass() == mml::TexClass::ord)
+                << "inferred row class reflects trailing BIN adjustment";
+            if (test_case.row_has_none_previous)
+                expect(row->prevClass() == mml::TexClass::none)
+                    << "truthy vbox leaves TEXCLASS.NONE (-1) on the isolated row";
+            else
+                expect(!row->prevClass()) << "wrapper consumes inferred-row previous class";
+            expect(!row->prevLevel()) << "inferred row has no previous script level";
+            expect(token.texClass() == mml::TexClass::ord)
+                << "Source operator adjustment converts trailing BIN to ORD";
+            expect(!token.prevClass()) << "inferred row consumes token previous class";
+            expect(!token.prevLevel()) << "inferred row consumes token previous script level";
+            expect(previous.texClass() == mml::TexClass::rel)
+                << "class transfer leaves the incoming previous mo unchanged";
+            expect(!previous.prevClass() && !previous.prevLevel())
+                << "class transfer leaves previous mo history getters unchanged";
+        }
+    };
 };

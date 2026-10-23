@@ -122,7 +122,8 @@ suite parse_methods = [] {
             env.font = emptyFont ? u"" : u"normal";
             CreationObservation observed;
             ObserveCreationScope scope(observed);
-            fixture.options->nodeFactory.setCreators(NodeCreators{.token = observeCreation});
+            fixture.options->request().nodeFactory.setCreators(
+                NodeCreators{.token = observeCreation});
             TexParser parser(u"abc", ParserEnvironmentSeed{env}, *fixture.options);
             auto *root = parser.mml();
             expect((root->isToken() ? 1u : root->children().size()) == (emptyFont ? 3u : 1u));
@@ -218,7 +219,8 @@ suite parse_methods = [] {
             Fixture fixture;
             CreationObservation observed;
             ObserveCreationScope scope(observed);
-            fixture.options->nodeFactory.setCreators(NodeCreators{.token = observeCreation});
+            fixture.options->request().nodeFactory.setCreators(
+                NodeCreators{.token = observeCreation});
             AttributeSet attrs;
             attrs.set(u"stretchy", true);
             attrs.set(u"largeop", true);
@@ -226,7 +228,7 @@ suite parse_methods = [] {
                          Token(u"a", std::u16string(u"∑"), attrs));
             TexParser parser(u"a", ParserEnvironmentSeed{}, *fixture.options);
             auto &node = first(parser);
-            fixture.options->root = &node;
+            fixture.options->request().root = &node;
             expect(node.properties().tex.fix_stretchy.value_or(false));
             expect(!observed.fix_stretchy_before);
             expect(!observed.fix_stretchy_after);

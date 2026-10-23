@@ -115,7 +115,7 @@ for(const extension of source.extensions)extensionCounts[extension.name]=Object.
 eq(native.extension_glyph_counts,extensionCounts,'extension_glyph_counts');
 for(const [name,sv] of Object.entries(sourceVariants)){
   const av=actualVariants[name];if(!av){fail(`variants.${name}`,null,'present');continue;}
-  eq(av.cache_id,sv.cacheID,`variants.${name}.cache_id`);
+  eq(av.cache_id,sv.cacheID??'',`variants.${name}.cache_id`);
   const expectedGlyphs={};for(const [cp,t] of Object.entries(sv.ownChars))if(!Number.isInteger(t?.[3]?.smp)){
     const g=sourceGlyph(t);expectedGlyphs[cp]={metrics:g.metrics,path_defined:g.path_defined,composition:g.composition};
   }
@@ -125,7 +125,9 @@ for(const [name,sv] of Object.entries(sourceVariants)){
     eq(a.metrics,g.metrics,`variants.${name}.glyphs.${cp}.metrics`);eq(a.path_defined,g.path_defined,`variants.${name}.glyphs.${cp}.path_defined`);eq(a.composition,g.composition,`variants.${name}.glyphs.${cp}.composition`);
     const t=sv.ownChars[cp], sg=sourceGlyph(t), parsed=sg.path_defined?outlineFromFragment(sg.path_data):null;
     if(parsed===null){if(a.outline!==null)fail(`variants.${name}.glyphs.${cp}.outline`,a.outline,null);eq(a.outline_error,null,`variants.${name}.glyphs.${cp}.outline_error`);}
-    else {if(!a.outline)fail(`variants.${name}.glyphs.${cp}.outline`,null,'resource');else {eq(a.outline.font_id,sv.cacheID,`variants.${name}.glyphs.${cp}.outline.font_id`);eq(a.outline.segments,parsed.segments,`variants.${name}.glyphs.${cp}.outline.segments`);}eq(a.outline_error,parsed.error,`variants.${name}.glyphs.${cp}.outline_error`);}
+    // Native resource identity preserves the semantic variant. SVG cacheID is
+    // checked separately above; extensions may share/omit that cache namespace.
+    else {if(!a.outline)fail(`variants.${name}.glyphs.${cp}.outline`,null,'resource');else {eq(a.outline.font_id,`MathJaxNewcm/${name}`,`variants.${name}.glyphs.${cp}.outline.font_id`);eq(a.outline.segments,parsed.segments,`variants.${name}.glyphs.${cp}.outline.segments`);}eq(a.outline_error,parsed.error,`variants.${name}.glyphs.${cp}.outline_error`);}
   }
   // The generated native map contains all Source-visible SMP rows (the
   // generator uses `for..in` over materialized chars), including inherited
@@ -162,11 +164,11 @@ for(const [name,sv] of Object.entries(sourceVariants)){
     eq(a.metrics,g.metrics,`effective_glyphs.${name}.${cp}.metrics`);
     eq(a.path_defined,g.path_defined,`effective_glyphs.${name}.${cp}.path_defined`);
     eq(a.composition,g.composition,`effective_glyphs.${name}.${cp}.composition`);
-    eq(a.glyph_key,[name,sv.cacheID,resolvedCp],`effective_glyphs.${name}.${cp}.glyph_key`);
+    eq(a.glyph_key,[name,sv.cacheID??'',resolvedCp],`effective_glyphs.${name}.${cp}.glyph_key`);
     const parsed=g.path_defined?outlineFromFragment(g.path_data):null;
     eq(a.outline_error,parsed?.error??null,`effective_glyphs.${name}.${cp}.outline_error`);
     const alias=sourceAliasTargets.get(JSON.stringify([name,resolvedCp]));
-    const expectedOutlineFont=alias?sourceVariants[alias[0]]?.cacheID:sv.cacheID;
+    const expectedOutlineFont=`MathJaxNewcm/${alias?alias[0]:name}`;
     if(g.path_defined)eq(a.outline_font_id,expectedOutlineFont,`effective_glyphs.${name}.${cp}.outline_font_id`);
     if(g.path_defined||g.content_data!==null){
       const expectedSvg={path_defined:g.path_defined,path_data:g.path_defined&&g.path_data?`M${g.path_data}Z`:'',content_data:g.content_data};

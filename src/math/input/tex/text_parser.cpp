@@ -27,9 +27,11 @@ TextParser::TextParser(std::u16string source, ParserEnvironmentSeed environment,
     level_ = std::move(level);
 }
 TexParser &TextParser::texParser() const {
-    if (!configuration.textmacros || !configuration.textmacros->texParser)
+    if (!configuration.textmacros || !configuration.textmacros->parseOptions ||
+        !configuration.textmacros->parseOptions->hasRequest() ||
+        !configuration.textmacros->parseOptions->request().texParser)
         throw std::logic_error("TextParser requires an active TeX parser");
-    return *configuration.textmacros->texParser;
+    return *configuration.textmacros->parseOptions->request().texParser;
 }
 Tags &TextParser::tags() const {
     return texParser().tags();
@@ -48,10 +50,10 @@ mml::MmlNode *TextParser::mml() {
 }
 void TextParser::copyLists() {
     auto &target = texParser().configuration;
-    for (auto const &[name, list] : configuration.nodeLists)
+    for (auto const &[name, list] : configuration.request().nodeLists)
         for (auto *node : list)
             target.addNode(name, *node);
-    configuration.nodeLists.clear();
+    configuration.request().nodeLists.clear();
 }
 void TextParser::Parse() {
     text_.clear();

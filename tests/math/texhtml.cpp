@@ -27,6 +27,7 @@ struct TexHtmlFixture {
     LiteAdaptor adaptor;
     std::shared_ptr<HTMLDomStringsOptions> htmlOptions = std::make_shared<HTMLDomStringsOptions>();
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
 
     explicit TexHtmlFixture(std::optional<bool> allow = true) {
         TexHtmlConfiguration::initializeModule(registry, maps, htmlOptions);
@@ -36,8 +37,8 @@ struct TexHtmlFixture {
             std::vector<PackageSelection>{{u"base", {}}, {u"texhtml", {}}, {u"setoptions", {}}};
         if (allow)
             options.allowTexHTML = *allow;
-        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(),
-                                    std::move(options));
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, std::move(options));
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
 };
 
@@ -281,11 +282,11 @@ struct BorrowTraceScope {
 };
 void observeBorrowPre(TexFilterData &data) {
     if (borrowTrace)
-        borrowTrace->pre.push_back(data.data.texhtmlAdaptor == data.adaptor);
+        borrowTrace->pre.push_back(data.data.request().texhtmlAdaptor == data.adaptor);
 }
 void observeBorrowPost(TexFilterData &data) {
     if (borrowTrace)
-        borrowTrace->post.push_back(data.data.texhtmlAdaptor == nullptr);
+        borrowTrace->post.push_back(data.data.request().texhtmlAdaptor == nullptr);
 }
 void throwBeforeTexHtmlCompile(TexFilterData &) {
     throw std::runtime_error("texhtml compile filter failure");
@@ -325,7 +326,7 @@ suite texhtml = [] {
             TexHtmlFixture f(test.initialAllowTexHTML);
             auto &options = f.jax->parseOptions();
             options.options.allowTexHTML = test.initialAllowTexHTML;
-            options.texhtmlAdaptor = &f.adaptor;
+            options.request().texhtmlAdaptor = &f.adaptor;
             try {
                 TexParser parser(std::u16string(test.input), ParserEnvironmentSeed{}, options);
                 auto *root = parser.mml();
@@ -348,7 +349,7 @@ suite texhtml = [] {
                 expect(error.id() == folia::math::utf16::encode(test.errorId)) << caseName;
                 expect(error.message() == test.errorMessage) << caseName;
             }
-            options.texhtmlAdaptor = nullptr;
+            options.request().texhtmlAdaptor = nullptr;
         }
     };
 
@@ -386,7 +387,7 @@ suite texhtml = [] {
                 AbstractMathItem expression(item.math, f.jax.get(), item.display);
                 auto &root =
                     f.jax->compile(expression, f.document, CompileServices{nullptr, &f.adaptor});
-                expect(f.jax->parseOptions().texhtmlAdaptor == nullptr)
+                expect(f.jax->parseOptions().request().texhtmlAdaptor == nullptr)
                     << "compile clears the borrowed Lite adaptor";
                 expect(!trace.pre.empty() && trace.pre.front());
                 expect(!trace.post.empty() && trace.post.back());
@@ -427,13 +428,13 @@ suite texhtml = [] {
                 f.jax->compile(bad, f.document, CompileServices{nullptr, &f.adaptor});
             auto *error = firstKind(badRoot, NodeKind::merror);
             expect(error != nullptr);
-            expect(f.jax->parseOptions().texhtmlAdaptor == nullptr);
+            expect(f.jax->parseOptions().request().texhtmlAdaptor == nullptr);
 
             AbstractMathItem recovered(std::u16string(broken.recoveredInput), f.jax.get());
             auto &root =
                 f.jax->compile(recovered, f.document, CompileServices{nullptr, &f.adaptor});
             expect(firstKind(root, NodeKind::html) != nullptr);
-            expect(f.jax->parseOptions().texhtmlAdaptor == nullptr);
+            expect(f.jax->parseOptions().request().texhtmlAdaptor == nullptr);
         };
 
     "texhtml disabled remains literal and leaves no DOM adaptor borrow"_test = [] {
@@ -441,7 +442,8 @@ suite texhtml = [] {
         AbstractMathItem expression(u"<tex-html><b>literal</b></tex-html>", f.jax.get());
         auto &root = f.jax->compile(expression, f.document, CompileServices{nullptr, &f.adaptor});
         expect(firstKind(root, NodeKind::html) == nullptr) << "disabled input creates no HTML node";
-        expect(f.jax->parseOptions().texhtmlAdaptor == nullptr) << "compile releases DOM borrow";
+        expect(f.jax->parseOptions().request().texhtmlAdaptor == nullptr)
+            << "compile releases DOM borrow";
         // Ordinary TeX still normalizes the minus, as in the disabled Source fixture.
         expect(textTokens(root).find(u"tex\u2212html") != std::u16string::npos)
             << "disabled tag characters pass through ordinary TeX token handling";
@@ -453,7 +455,7 @@ suite texhtml = [] {
         AbstractMathItem expression(u"<tex-html><b>literal</b></tex-html>", f.jax.get());
         auto &root = f.jax->compile(expression, f.document, CompileServices{nullptr, &f.adaptor});
         expect(firstKind(root, NodeKind::html) == nullptr);
-        expect(f.jax->parseOptions().texhtmlAdaptor == nullptr);
+        expect(f.jax->parseOptions().request().texhtmlAdaptor == nullptr);
     };
 
     "texhtml compile exception unwinds the borrowed DOM adaptor"_test = [] {
@@ -463,7 +465,7 @@ suite texhtml = [] {
         expect(throws<std::runtime_error>([&] {
             (void)f.jax->compile(expression, f.document, CompileServices{nullptr, &f.adaptor});
         }));
-        expect(f.jax->parseOptions().texhtmlAdaptor == nullptr);
+        expect(f.jax->parseOptions().request().texhtmlAdaptor == nullptr);
     };
 
     "texhtml package replaces absent and falsey include hooks but preserves configured values"_test =
@@ -491,7 +493,8 @@ suite texhtml = [] {
                 Warnings warnings;
                 MmlDocument document;
                 MacroCallbacks callbacks{{}, {}};
-                TeX jax(registry, maps, callbacks, warnings, document.factory(), supplied);
+                TeX jax(registry, maps, callbacks, warnings, supplied);
+                TeXRequest request(jax, document.factory());
                 auto entry = find(*options);
                 expect(entry != options->includeHtmlTags.end());
                 if (entry == options->includeHtmlTags.end())
@@ -527,8 +530,9 @@ suite texhtml = [] {
                     creatorRequests = previous;
                 }
             } restore{previous};
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.node = &observeCreator});
-            f.jax->parseOptions().texhtmlAdaptor = &f.adaptor;
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.node = &observeCreator});
+            f.jax->parseOptions().request().texhtmlAdaptor = &f.adaptor;
             TexParser parser(u"<tex-html><b data-x=\"1\">text</b></tex-html>",
                              ParserEnvironmentSeed{}, f.jax->parseOptions());
             auto *tree = parser.mml();
@@ -542,7 +546,7 @@ suite texhtml = [] {
                 expect(requests[1].children == std::vector<NodeKind>{NodeKind::html});
                 expect(!requests[1].definitionHasAttributes && !requests[1].hasText);
             }
-            f.jax->parseOptions().texhtmlAdaptor = nullptr;
+            f.jax->parseOptions().request().texhtmlAdaptor = nullptr;
         };
 
     "texhtml HTMLDomStrings handler preserves callback ownership while it runs"_test = [] {
@@ -568,6 +572,6 @@ suite texhtml = [] {
                    u"before<tex-html "
                    u"n=\"2\"><b>outer<tex-html>inner</tex-html></b><!2></tex-html>after");
         expect(found.nodes.size() == 1_u);
-        expect(f.jax->parseOptions().texhtmlAdaptor == nullptr);
+        expect(f.jax->parseOptions().request().texhtmlAdaptor == nullptr);
     };
 };

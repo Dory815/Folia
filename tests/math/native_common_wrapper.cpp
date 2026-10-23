@@ -107,10 +107,43 @@ struct WrapperProbe final : CommonWrapper {
     std::shared_ptr<LineBBox> lineFrom(CommonWrapper &child, std::size_t index) {
         return getChildLineBBox(child, index);
     }
+
+
+    double convertLength(LengthInput const &value, double size = 1,
+                         std::optional<double> scale = {}) const {
+        return CommonWrapper::length2em(value, size, scale);
+    }
 };
 } // namespace
 
 suite native_common_wrapper_source_cases = [] {
+    "real_common_wrapper_length2em_source_values_and_scale"_test = [] {
+        TestMeasurementTarget target;
+        mml::MmlDocument document;
+        auto jax = makeJax(document, target);
+        auto &row = document.factory().make(mml::NodeKind::mrow);
+        document.setRoot(row);
+        auto &wrapper = dynamic_cast<WrapperProbe &>(
+            jax.factory().adopt(std::make_unique<WrapperProbe>(jax.factory(), row)));
+
+        expect(wrapper.convertLength(LengthInput{0.0}) == 0.0);
+        const auto negativeZero = wrapper.convertLength(LengthInput{-0.0});
+        expect(negativeZero == 0.0);
+        expect(wrapper.convertLength(LengthInput{2.0}) == 2.0);
+        expect(wrapper.convertLength(LengthInput{2.0}, .5) == 1.0);
+
+        const auto rule = testFonts().face("MathJaxNewcm").parameters.required("rule_thickness");
+        expect(wrapper.convertLength(LengthInput{std::u16string{u"medium"}}) == rule);
+        expect(wrapper.convertLength(LengthInput{std::u16string{u"thin"}}) == rule * 2.0 / 3.0);
+        expect(wrapper.convertLength(LengthInput{std::u16string{u"thick"}}) == rule * 5.0 / 3.0);
+        expect(wrapper.convertLength(LengthInput{std::u16string{u"2px"}}) == 2.0 / jax.pxPerEm());
+        expect(wrapper.convertLength(LengthInput{std::u16string{u"2px"}}, 1, 2.0) ==
+               2.0 / jax.pxPerEm() / 2.0);
+        expect(wrapper.convertLength(LengthInput{std::u16string{u"40%"}}, .5) == .2);
+
+        expect(wrapper.convertLength(LengthInput{std::numeric_limits<double>::quiet_NaN()}) == 1.0);
+        expect(wrapper.convertLength(LengthInput{std::u16string{}}) == 1.0);
+    };
     "style_removal_and_scale_match_pinned_style_case"_test = [] {
         TestMeasurementTarget target;
         mml::MmlDocument document;

@@ -89,6 +89,16 @@ suite native_mml_base = [] {
         expect(fraction.children().front()->children().front() == &sourceChild);
         fraction.setInheritedAttributes();
         expect(fraction.children().size() == 2) << "finite arity is repaired with mrows";
+        for (auto const *child : fraction.children())
+            expect(child->kind() == m::NodeKind::mrow)
+                << "finite-arity repair creates mrow children";
+
+        auto &emptyFraction = document.factory().make(m::NodeKind::mfrac);
+        emptyFraction.setInheritedAttributes();
+        expect(emptyFraction.children().size() == 2) << "empty fraction repairs both child slots";
+        for (auto const *child : emptyFraction.children())
+            expect(child->kind() == m::NodeKind::mrow)
+                << "each missing fraction child is a native mrow";
 
         auto &inferred = document.factory().make(m::NodeKind::inferred_mrow);
         auto &child = document.factory().make(m::NodeKind::mi);
@@ -108,6 +118,46 @@ suite native_mml_base = [] {
         expect(sourceInferred.children().empty());
         expect(first.parent() == &arbitrary && second.parent() == &arbitrary);
     };
+    "mml_base_tex_spacing_complete_class_matrix_and_script_suppression"_test = [] {
+        constexpr std::array<m::TexClass, 8> classes{
+            m::TexClass::ord, m::TexClass::op, m::TexClass::bin, m::TexClass::rel,
+            m::TexClass::open, m::TexClass::close, m::TexClass::punct, m::TexClass::inner};
+        constexpr std::array<std::array<int, 8>, 8> spacing{{
+            {{0, -1, 2, 3, 0, 0, 0, 1}}, {{-1, -1, 0, 3, 0, 0, 0, 1}},
+            {{2, 2, 0, 0, 2, 0, 0, 2}}, {{3, 3, 0, 0, 3, 0, 0, 3}},
+            {{0, 0, 0, 0, 0, 0, 0, 0}}, {{0, -1, 2, 3, 0, 0, 0, 1}},
+            {{1, 1, 0, 1, 1, 1, 1, 1}}, {{1, -1, 2, 3, 1, 0, 1, 1}}}};
+        constexpr std::array<std::string_view, 4> lengths{
+            "", "thinmathspace", "mediummathspace", "thickmathspace"};
+        for (std::size_t previous = 0; previous < classes.size(); ++previous) {
+            for (std::size_t currentClass = 0; currentClass < classes.size(); ++currentClass) {
+                m::MmlDocument document;
+                auto &current = document.factory().make(m::NodeKind::mo);
+                current.setPrevClass(classes[previous]);
+                current.setTexClass(classes[currentClass]);
+                current.attributes().set(u"scriptlevel", 0.0);
+                const int cell = spacing[previous][currentClass];
+                expect(current.texSpacing() == lengths[static_cast<std::size_t>(std::abs(cell))]);
+
+                current.setPrevLevel(1.0);
+                expect(current.texSpacing() == (cell < 0
+                    ? lengths[static_cast<std::size_t>(std::abs(cell))] : std::string_view{}));
+                current.setPrevLevel(0.0);
+                current.attributes().set(u"scriptlevel", 1.0);
+                expect(current.texSpacing() == (cell < 0
+                    ? lengths[static_cast<std::size_t>(std::abs(cell))] : std::string_view{}));
+            }
+        }
+        m::MmlDocument document;
+        auto &none = document.factory().make(m::NodeKind::mo);
+        none.setPrevClass(m::TexClass::none);
+        none.setTexClass(m::TexClass::rel);
+        expect(none.texSpacing().empty());
+        none.setPrevClass(m::TexClass::ord);
+        none.setTexClass(m::TexClass::none);
+        expect(none.texSpacing().empty());
+    };
+
     "mml_base_variant_validation_preserves_source_truthiness_and_value_text"_test = [] {
         m::MmlDocument document;
         auto &row = document.factory().make(m::NodeKind::mrow);
@@ -154,6 +204,118 @@ suite native_mml_base = [] {
         auto &booleanLevel = document.factory().make(m::NodeKind::mi, std::move(boolean));
         current.setTeXclass(&booleanLevel);
         expect(current.prevLevel() == 1.0) << "boolean values retain numeric conversion semantics";
+    };
+    "mml_base_mathvariant_error_replacement_is_stable_on_reverification"_test = [] {
+        m::MmlDocument document;
+        auto &row = document.factory().make(m::NodeKind::mrow);
+        m::AttributeSet invalidAttributes;
+        invalidAttributes.set(u"mathvariant", 5.0);
+        auto &invalid = document.factory().make(m::NodeKind::mi, std::move(invalidAttributes));
+        row.appendChild(invalid);
+
+        m::VerifyOptions options;
+        options.checkArity = false;
+        options.checkAttributes = false;
+        options.checkMathvariants = true;
+        invalid.verifyTree(options);
+        expect(row.children().size() == 1_u);
+        if (row.children().size() != 1)
+            return;
+        auto *error = row.children().front();
+        expect(error != &invalid);
+        expect(error->kind() == m::NodeKind::merror);
+        expect(error->parent() == &row);
+        expect(invalid.parent() == nullptr);
+        expect(error->attributes().own(u"data-mjx-message") != nullptr);
+
+        row.verifyTree(options);
+        expect(row.children().size() == 1_u);
+        if (row.children().size() != 1)
+            return;
+        expect(row.children().front() == error)
+            << "reverification keeps the repaired error subtree stable";
+        expect(error->parent() == &row);
+    };
+    "inheritAttributesFrom uses own mathsize over inherited and copies source style values without mutation"_test = [] {
+        m::MmlDocument document;
+        auto &factory = document.factory();
+        auto &source = factory.make(m::NodeKind::mrow);
+        auto &destination = factory.make(m::NodeKind::mrow);
+        source.attributes().set(u"mathsize", u"own-size");
+        source.attributes().setInherited(u"mathsize", u"inherited-size");
+        source.attributes().set(u"displaystyle", true);
+        source.attributes().set(u"scriptlevel", 3.0);
+        source.properties().tex.prime_style = true;
+
+        destination.inheritAttributesFrom(source);
+
+        const auto *size = destination.attributes().inherited(u"mathsize");
+        expect(size && std::get_if<std::u16string>(size) && *std::get_if<std::u16string>(size) == u"own-size");
+        const auto *display = destination.attributes().inherited(u"displaystyle");
+        expect(display && std::get_if<bool>(display) && *std::get_if<bool>(display));
+        const auto *level = destination.attributes().inherited(u"scriptlevel");
+        expect(level && std::get_if<double>(level) && *std::get_if<double>(level) == 3.0);
+        expect(destination.properties().tex.prime_style.value_or(false));
+
+        expect(std::get<std::u16string>(*source.attributes().own(u"mathsize")) == u"own-size");
+        expect(std::get<std::u16string>(*source.attributes().inherited(u"mathsize")) == u"inherited-size");
+        expect(std::get<bool>(*source.attributes().own(u"displaystyle")));
+        expect(std::get<double>(*source.attributes().own(u"scriptlevel")) == 3.0);
+        expect(source.properties().tex.prime_style.value_or(false));
+    };
+
+    "inheritAttributesFrom copies inherited-only mathsize and source style values without mutation"_test = [] {
+        m::MmlDocument document;
+        auto &factory = document.factory();
+        auto &source = factory.make(m::NodeKind::mrow);
+        auto &destination = factory.make(m::NodeKind::mrow);
+        source.attributes().setInherited(u"mathsize", u"inherited-size");
+        source.attributes().set(u"displaystyle", false);
+        source.attributes().set(u"scriptlevel", 2.0);
+        source.properties().tex.prime_style = false;
+
+        destination.inheritAttributesFrom(source);
+
+        const auto *size = destination.attributes().inherited(u"mathsize");
+        expect(size && std::get_if<std::u16string>(size) && *std::get_if<std::u16string>(size) == u"inherited-size");
+        const auto *display = destination.attributes().inherited(u"displaystyle");
+        expect(display && std::get_if<bool>(display) && !*std::get_if<bool>(display));
+        const auto *level = destination.attributes().inherited(u"scriptlevel");
+        expect(level && std::get_if<double>(level) && *std::get_if<double>(level) == 2.0);
+        expect(!destination.properties().tex.prime_style.value_or(false));
+
+        expect(source.attributes().own(u"mathsize") == nullptr);
+        expect(std::get<std::u16string>(*source.attributes().inherited(u"mathsize")) == u"inherited-size");
+        expect(!std::get<bool>(*source.attributes().own(u"displaystyle")));
+        expect(std::get<double>(*source.attributes().own(u"scriptlevel")) == 2.0);
+        expect(!source.properties().tex.prime_style.value_or(false));
+    };
+
+    "inheritAttributesFrom does not copy default-only mathsize"_test = [] {
+        m::MmlDocument document;
+        auto &factory = document.factory();
+        auto &source = factory.make(m::NodeKind::mrow);
+        auto &destination = factory.make(m::NodeKind::mrow);
+        source.attributes().setDefault(u"mathsize", u"default-size");
+        source.attributes().set(u"displaystyle", true);
+        source.attributes().set(u"scriptlevel", 1.0);
+        source.properties().tex.prime_style = true;
+
+        destination.inheritAttributesFrom(source);
+
+        expect(source.attributes().own(u"mathsize") == nullptr);
+        expect(source.attributes().inherited(u"mathsize") == nullptr);
+        expect(source.attributes().defaultValue(u"mathsize") != nullptr);
+        expect(destination.attributes().inherited(u"mathsize") == nullptr);
+        const auto *display = destination.attributes().inherited(u"displaystyle");
+        expect(display && std::get_if<bool>(display) && *std::get_if<bool>(display));
+        const auto *level = destination.attributes().inherited(u"scriptlevel");
+        expect(level && std::get_if<double>(level) && *std::get_if<double>(level) == 1.0);
+        expect(destination.properties().tex.prime_style.value_or(false));
+
+        expect(std::get<bool>(*source.attributes().own(u"displaystyle")));
+        expect(std::get<double>(*source.attributes().own(u"scriptlevel")) == 1.0);
+        expect(source.properties().tex.prime_style.value_or(false));
     };
 };
 } // namespace

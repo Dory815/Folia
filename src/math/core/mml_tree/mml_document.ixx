@@ -1,6 +1,7 @@
 export module folia.math.core.mml_tree.mml_document;
 export import :node;
 export import :factory;
+import folia.math.util.instance_count;
 import std;
 
 export namespace folia::math::mml {
@@ -27,6 +28,7 @@ class MmlClone final {
 
 class MmlDocument final : public tree::NodeOwner<MmlNode, NodeKind> {
     friend class MmlFactory;
+    [[no_unique_address]] util::InstanceCount<MmlDocument> instance_count_;
     std::unique_ptr<MmlFactory> factory_;
     std::vector<std::unique_ptr<MmlNode>> arena_;
     MmlNode *root_ = nullptr;

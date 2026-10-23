@@ -74,6 +74,7 @@ inline void apply_local_format(
     if (options.canonical_lists
         && (block.kind == BlockKind::ListItem || block.kind == BlockKind::TaskListItem)) {
         block.ensure_item_special().marker.clear();
+        block.ensure_container_source().lines.clear();
     }
     if (options.canonical_lists && block.kind == BlockKind::List
         && block.list_special().ordered) {

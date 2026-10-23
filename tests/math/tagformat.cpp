@@ -95,6 +95,7 @@ struct TagFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit TagFixture(TexOptionValues options = {}, bool selected = true,
                         bool customParent = false) {
@@ -114,8 +115,8 @@ struct TagFixture {
         if (selected)
             options.packages->push_back({u"tagformat", {}});
         options.formatError = &formatTagError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source, bool display = true) {
         error.clear();
@@ -129,7 +130,7 @@ struct TagFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(display);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     MmlNode &ok(std::u16string source, bool display = true) {
@@ -387,14 +388,17 @@ suite tagformat = [] {
                 tagformatConfig(f.jax->configuration(), *f.jax);
                 expect(f.jax->configuration().tags.size() == before);
                 f.ok(u"x");
+                f.request.reset();
                 f.jax.reset();
                 expect(f.parent.alive == 0_u);
                 expect(f.parent.created == f.parent.destroyed);
-                f.jax = std::make_unique<TeX>(f.registry, f.maps, f.callbacks, f.warnings,
-                                              f.document.factory(), supplied);
+                f.jax =
+                    std::make_unique<TeX>(f.registry, f.maps, f.callbacks, f.warnings, supplied);
+                f.request = std::make_unique<TeXRequest>(*f.jax, f.document.factory());
                 expect(f.registry.keys().size() == registrySize);
                 expect(f.jax->configuration().tags.size() == catalogSize);
             }
+            f.request.reset();
             f.jax.reset();
             expect(f.parent.alive == 0_u);
             expect(f.parent.created == f.parent.destroyed);

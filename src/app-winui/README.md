@@ -24,11 +24,11 @@ Source ownership:
   layouts, COM resources, image handles, and the prepared-document cache stay
   here because they are application rendering state rather than portable
   policy.
-- `media/` owns GIF decoding and MathJax, Mermaid, and SVG integration. MathJax
-  runtime/queue ownership is separate from parsing the renderer's SVG fragment
-  protocol; changing fragment measurement must not alter QuickJS lifecycle or
-  scheduling. Images and animated GIFs are loaded asynchronously around the
-  viewport; intrinsic metadata is retained so unloaded media does not move the
+- `media/` owns GIF decoding and native math, Mermaid, and SVG integration.
+  Native math request/queue ownership is separate from parsing the renderer's
+  SVG fragment protocol; fragment measurement preserves worker scheduling,
+  cancellation, generation and cache behavior. Images and animated GIFs are
+  loaded asynchronously around the viewport; intrinsic metadata is retained so unloaded media does not move the
   surrounding layout.
 - `settings/` owns WinUI settings pages and persisted application settings.
   Feature-specific schemas such as shortcut/snippet bindings serialize through

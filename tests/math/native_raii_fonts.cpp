@@ -15,6 +15,42 @@ using output::scene::MoveTo;
 using output::scene::LineTo;
 
 suite font_repository_contract = [] {
+    "NewCM batch font bodies belong only to the active request"_test = [] {
+        using namespace folia::math::fonts;
+        std::weak_ptr<FontGlyphLookup const> requestLifetime;
+        std::weak_ptr<output::scene::GlyphResource const> outlineLifetime;
+        std::shared_ptr<output::scene::GlyphResource const> retained;
+        {
+            const auto bundle = makeNewcmFontData();
+            auto request = std::dynamic_pointer_cast<NewcmFontRequest const>(
+                bundle.fonts.face("MathJaxNewcm").glyphSource);
+            expect(request != nullptr);
+            if (!request) return;
+            requestLifetime = request;
+            expect(request->loadedGlyphCount() == 0_u);
+            expect(request->contains("normal", 0x41));
+            FontRepositoryBuilder duplicate;
+            duplicate.addFace(bundle.fonts.face("MathJaxNewcm"));
+            expect(throws<std::invalid_argument>([&] {
+                duplicate.addGlyph("MathJaxNewcm", "normal", 0x41, FontGlyph{});
+            }));
+            expect(request->loadedGlyphCount() == 0_u);
+            const std::array<SvgFontGlyphKey, 3> keys{{{"normal", 0x41}, {"bold", 0x42}, {"normal", 0x41}}};
+            auto values = request->read(keys);
+            expect(values.size() == 3_u);
+            expect(values[0] == values[2]);
+            expect(request->loadedGlyphCount() == 2_u);
+            expect(values[0]->glyph.has_value());
+            if (!values[0]->glyph) return;
+            retained = values[0]->glyph->resource;
+            outlineLifetime = retained;
+        }
+        expect(requestLifetime.expired());
+        expect(!outlineLifetime.expired());
+        expect(!retained->outline().outline.segments.empty());
+        retained.reset();
+        expect(outlineLifetime.expired());
+    };
     "font parameters distinguish required values from optional lookup"_test = [] {
         FontParameters parameters;
         expect(throws<std::out_of_range>([&] { (void)parameters.required("missing"); }));
@@ -262,13 +298,14 @@ suite font_repository_contract = [] {
         expect(coverage.source_dynamic_module_count == 40_u);
         expect(coverage.source_provider_trace_events == 80_u);
         expect(coverage.native_actual_direct_glyph_records == repository.face("MathJaxNewcm").glyphCount() - coverage.native_actual_remap_records);
-        expect(coverage.native_actual_glyph_resource_objects > 0_u);
+        expect(coverage.native_actual_glyph_resource_objects == 0_u);
         const auto* capitalA = repository.glyph("MathJaxNewcm", "normal", 0x41);
         expect(capitalA != nullptr);
         expect(capitalA->metrics.h == .716);
         expect(capitalA->metrics.d == 0);
         expect(capitalA->metrics.w == .75);
         expect(capitalA->resource != nullptr);
+        expect(folia::math::fonts::newcmProviderCoverage(repository).native_actual_glyph_resource_objects == 1_u);
         const auto* svgA = bundle.svg_resources.find({"normal",0x41});
         expect(svgA != nullptr);
         expect(svgA->path_defined);

@@ -15,6 +15,7 @@ struct CdFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit CdFixture(AmscdOptions options = {}) {
         AmsCdConfiguration::initializeModule(registry, maps);
@@ -22,8 +23,8 @@ struct CdFixture {
         values.packages = std::vector<PackageSelection>{{u"base", {}}, {u"amscd", {}}};
         values.amscd = std::move(options);
         values.formatError = &formatCdError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), values);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, values);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -37,7 +38,7 @@ struct CdFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(true);
         auto &result = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return result;
     }
     MmlNode &ok(std::u16string source) {
@@ -280,7 +281,7 @@ suite amscd = [] {
             cdRequests = &requests;
             NodeCreators creators;
             creators.token = &observeCdToken;
-            f.jax->parseOptions().nodeFactory.setCreators(creators);
+            f.jax->parseOptions().request().nodeFactory.setCreators(creators);
             auto &tree = f.ok(u"\\begin{CD}A@>a>b>B\\\\@VaVbV\\end{CD}");
             expect(requests.size() == 2_u);
             if (requests.size() == 2) {

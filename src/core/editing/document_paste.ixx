@@ -7,6 +7,8 @@ import folia.core.document;
 import folia.core.document_edit_support;
 import folia.core.document_source_edit;
 import folia.core.document_text;
+import folia.core.container_source;
+import folia.core.document_container_source;
 import folia.core.inline_cst;
 import folia.core.inline_document;
 import folia.core.inline_parser;
@@ -49,12 +51,32 @@ inline void assign_fresh_ids(
 
 inline void assign_fresh_ids(
     BlockNode& block,
-    document_edit_detail::NodeAllocator& allocator) {
+    document_edit_detail::NodeAllocator& allocator,
+    std::unordered_map<std::uint64_t, NodeId>& id_map) {
+    const auto old_id = block.id;
     block.id = allocator.allocate();
+    id_map.insert_or_assign(old_id.v, block.id);
     if (auto* inline_document = editable_inline_document(block)) {
         assign_fresh_ids(*inline_document, allocator);
     }
-    for (auto& child : block.children) assign_fresh_ids(child, allocator);
+    for (auto& child : block.children) assign_fresh_ids(child, allocator, id_map);
+}
+
+inline void assign_fresh_ids(
+    BlockNode& block,
+    document_edit_detail::NodeAllocator& allocator) {
+    std::unordered_map<std::uint64_t, NodeId> id_map;
+    assign_fresh_ids(block, allocator, id_map);
+    walk_blocks(block, [&](BlockNode& owner) {
+        if (!owner.has_container_source()) return;
+        auto& lines = owner.ensure_container_source().lines;
+        for (auto& line : lines) {
+            if (const auto found = id_map.find(line.anchor.owner_id.v);
+                found != id_map.end()) {
+                line.anchor.owner_id = found->second;
+            }
+        }
+    });
 }
 
 inline bool record_insert(
@@ -131,9 +153,7 @@ inline std::optional<TextPosition> sew_tail_and_remove(
             operations);
         if (!appended) return std::nullopt;
     }
-    auto remove = document_edit_detail::remove_node_recorded(document, tail_id);
-    if (!remove) return std::nullopt;
-    operations.emplace_back(std::move(*remove));
+    if (!document_edit_detail::remove_node_recorded(document, tail_id, operations)) return std::nullopt;
     return TextPosition{target_id, seam, TextAffinity::Downstream};
 }
 
@@ -621,9 +641,7 @@ inline std::optional<TextPosition> paste_parsed_blocks(
         const auto* tail = find_block(document.root, tail_id);
         const auto* tail_inline = tail ? editable_inline_document(*tail) : nullptr;
         if (tail_inline && tail_inline->source.empty()) {
-            auto remove = document_edit_detail::remove_node_recorded(document, tail_id);
-            if (!remove) return std::nullopt;
-            operations.emplace_back(std::move(*remove));
+            if (!document_edit_detail::remove_node_recorded(document, tail_id, operations)) return std::nullopt;
             if (!inserted_ids.empty()) {
                 if (const auto* last = find_block(document.root, inserted_ids.back())) {
                     target = document_edit_detail::last_editable_position(*last).value_or(target);
@@ -637,9 +655,7 @@ inline std::optional<TextPosition> paste_parsed_blocks(
     // inserted block before recording the removal.
     if (!merged_first && head_was_empty && removable_empty_head
         && !inserted_ids.empty()) {
-        auto remove = document_edit_detail::remove_node_recorded(document, head_id);
-        if (!remove) return std::nullopt;
-        operations.emplace_back(std::move(*remove));
+        if (!document_edit_detail::remove_node_recorded(document, head_id, operations)) return std::nullopt;
     }
     return target;
 }

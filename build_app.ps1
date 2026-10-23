@@ -37,10 +37,36 @@ $MSBuild = Join-Path ($Installation | Select-Object -First 1) 'MSBuild\Current\B
 if (-not (Test-Path -LiteralPath $MSBuild -PathType Leaf)) {
     throw "MSBuild was not found: $MSBuild"
 }
+$VsDevCmd = Join-Path ($Installation | Select-Object -First 1) 'Common7\Tools\VsDevCmd.bat'
+if (-not (Test-Path -LiteralPath $VsDevCmd -PathType Leaf)) {
+    throw "Visual C++ environment script was not found: $VsDevCmd"
+}
+
+$NativeBuildDirectory = if ($Configuration -eq 'Debug') {
+    Join-Path $Root 'build\core'
+} else {
+    Join-Path $Root 'build\core-release'
+}
+
+$ConfigureCommand = 'call "' + $VsDevCmd + '" -arch=x64 -host_arch=x64 && cmake -S "' +
+    $Root + '" -B "' + $NativeBuildDirectory + '" -G Ninja -DCMAKE_BUILD_TYPE=' +
+    $Configuration
+& $env:ComSpec /d /s /c $ConfigureCommand
+if ($LASTEXITCODE -ne 0) {
+    throw "FoliaNativeMath CMake configure failed with exit code $LASTEXITCODE"
+}
+
+$NativeBuildCommand = 'call "' + $VsDevCmd + '" -arch=x64 -host_arch=x64 && cmake --build "' +
+    $NativeBuildDirectory + '" --parallel 4 --target FoliaNativeMath'
+& $env:ComSpec /d /s /c $NativeBuildCommand
+if ($LASTEXITCODE -ne 0) {
+    throw "FoliaNativeMath build failed with exit code $LASTEXITCODE"
+}
 
 $Properties = @(
     "/p:Configuration=$Configuration",
-    "/p:Platform=$Platform"
+    "/p:Platform=$Platform",
+    '/p:CL_MPCount=4'
 )
 if ($AssetsDirectory) {
     # The value is emitted into a C++ wide string literal. Forward slashes are

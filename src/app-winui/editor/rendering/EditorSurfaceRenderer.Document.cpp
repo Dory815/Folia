@@ -21,6 +21,14 @@ namespace winrt::Folia
         detail::EditorRenderFrame const& frame,
         std::optional<float> sourceTopOverride)
     {
+        if (!mathModelRevision || *mathModelRevision != frame.renderModel.revision)
+        {
+            std::vector<std::uint64_t> owners;
+            owners.reserve(frame.renderModel.blocks.size());
+            for (auto const& block : frame.renderModel.blocks) owners.push_back(block.id.v);
+            mathJax.RetainBlocks(owners);
+            mathModelRevision = frame.renderModel.revision;
+        }
         interactionMap.Clear();
         nonInteractiveRegions.clear();
         auto padding = (std::min)(styleSheet.horizontalPadding, (std::max)(12.0f, resources.surfaceWidthDip * 0.06f));
@@ -55,7 +63,7 @@ namespace winrt::Folia
 
         EditorSvgPainter svgPainter(resources, renderCache);
         auto svgSupported = svgPainter.Supported();
-        auto mathSvgSupported = svgSupported && mathJax.Enabled();
+        auto mathSvgSupported = svgSupported;
         EditorTextLayoutEngine textLayoutEngine(resources, styleSheet);
         EditorInlineImageRenderer inlineImages(
             resources,
@@ -65,11 +73,24 @@ namespace winrt::Folia
             svgPainter,
             frame.baseDirectory,
             !printMode);
+        std::vector<std::uint64_t> visibleMath;
         auto drawMath = [&](MathJaxSvgFragment const& fragment, D2D1_POINT_2F origin, D2D1_COLOR_F) {
-            if (!fragment.svg) return false;
+            if (origin.x + fragment.width < 0.0f || origin.y + fragment.height < 0.0f
+                || origin.x > resources.surfaceWidthDip || origin.y > resources.surfaceHeightDip)
+                return true;
+            visibleMath.push_back(fragment.renderId);
+            auto payload = fragment.svg ? fragment.svg : mathJax.GetSvg(fragment.renderId);
+            if (!payload && printMode)
+            {
+                // PDF export runs off the UI thread and must record complete pages.
+                mathJax.SetVisibleSvgIds(std::span{&fragment.renderId, std::size_t{1}});
+                mathJax.WaitForIdle(mathPreparationStop);
+                payload = mathJax.GetSvg(fragment.renderId);
+            }
+            if (!payload) return true; // Geometry is final; the background read will request a repaint.
             return svgPainter.Draw(
                 fragment.renderId,
-                *fragment.svg,
+                *payload,
                 fragment.width,
                 fragment.height,
                 origin);
@@ -141,8 +162,6 @@ namespace winrt::Folia
             resources,
             styleSheet,
             inlineImages,
-            mathJax,
-            svgNormalizer,
             blockPreparer,
             scrollState,
             preparedDocument,
@@ -183,6 +202,12 @@ namespace winrt::Folia
             pointerPosition,
             draggedTableAction,
             tableDropIndex);
+        std::vector<std::uint64_t> visibleMathBlocks;
+        visibleMathBlocks.reserve(preparation.visible.end - preparation.visible.begin);
+        for (auto index = preparation.visible.begin; index < preparation.visible.end; ++index)
+            visibleMathBlocks.push_back(frame.renderModel.blocks[index].id.v);
+        mathJax.CancelOffscreenRenders(visibleMathBlocks);
+        mathJax.SetVisibleSvgIds(visibleMath);
         totalDocumentHeight = preparedDocument->totalHeight;
         if (!sourceTopOverride) scrollState.Clamp(MaximumScrollOffset());
     }

@@ -21,6 +21,9 @@ import folia.core.ids;
 import folia.core.dialect;
 import folia.core.image_dimension;
 import folia.core.utf;
+import folia.core.html_entities;
+import folia.core.link_label;
+import folia.core.markdown_html;
 import folia.core.inline_cst;
 import folia.core.inline_document;
 import folia.core.instrumentation;
@@ -32,6 +35,7 @@ namespace inline_parser_detail {
 struct Parser {
     std::u32string_view src;
     std::size_t pos = 0;
+    std::size_t scope_start = 0;
     std::size_t limit = 0;
     InlineParseContext ctx;
     std::uint64_t counter;
@@ -59,19 +63,7 @@ struct Parser {
         return (c >= U'!' && c <= U'/') || (c >= U':' && c <= U'@') || (c >= U'[' && c <= U'`') || (c >= U'{' && c <= U'~');
     }
 
-    static bool delimiter_punct(char32_t c) {
-        // CommonMark defines delimiter flanking in terms of Unicode
-        // punctuation. Cover ASCII plus the Unicode punctuation blocks used by
-        // ordinary prose; this deliberately does not classify letters or
-        // numbers from any script as punctuation.
-        return ascii_punct(c)
-            || (c >= 0x2000 && c <= 0x206F)
-            || (c >= 0x2E00 && c <= 0x2E7F)
-            || (c >= 0x3000 && c <= 0x303F)
-            || (c >= 0xFE10 && c <= 0xFE1F)
-            || (c >= 0xFE30 && c <= 0xFE4F)
-            || (c >= 0xFF01 && c <= 0xFF65);
-    }
+    static bool delimiter_punct(char32_t c) { return unicode_punctuation_or_symbol(c); }
 
     struct DelimiterFlanking {
         bool left = false;
@@ -81,12 +73,12 @@ struct Parser {
     };
 
     DelimiterFlanking delimiter_flanking(std::size_t at, std::size_t length) const {
-        const auto previous_boundary = at == 0;
+        const auto previous_boundary = at == scope_start;
         const auto next_boundary = at + length >= limit;
         const auto previous = previous_boundary ? char32_t{} : ch(at - 1);
         const auto next = next_boundary ? char32_t{} : ch(at + length);
-        const auto previous_whitespace = previous_boundary || is_cp_white(previous);
-        const auto next_whitespace = next_boundary || is_cp_white(next);
+        const auto previous_whitespace = previous_boundary || is_commonmark_whitespace(previous);
+        const auto next_whitespace = next_boundary || is_commonmark_whitespace(next);
         const auto previous_punctuation = !previous_boundary && delimiter_punct(previous);
         const auto next_punctuation = !next_boundary && delimiter_punct(next);
         return {
@@ -105,6 +97,218 @@ struct Parser {
     bool underscore_can_close(std::size_t at, std::size_t length) const {
         const auto flanking = delimiter_flanking(at, length);
         return flanking.right && (!flanking.left || flanking.next_punctuation);
+    }
+
+    struct EmphasisPair {
+        std::size_t open_start = 0;
+        std::size_t open_end = 0;
+        std::size_t close_start = 0;
+        std::size_t close_end = 0;
+        InlineCstKind kind = InlineCstKind::Emphasis;
+    };
+
+    struct EmphasisRun {
+        char32_t marker = U'\0';
+        std::size_t start = 0;
+        std::size_t end = 0;
+        std::size_t length = 0;
+        bool can_open = false;
+        bool can_close = false;
+        std::vector<std::size_t> link_context;
+        std::size_t open_remaining = 0;
+        std::size_t close_consumed = 0;
+        bool active_opener = false;
+    };
+
+    struct LinkLabelRange { std::size_t open = 0; std::size_t close = 0; };
+
+    std::optional<std::vector<EmphasisPair>> emphasis_pairs_cache;
+
+    bool starts_with_at(std::size_t at, std::u32string_view value) const {
+        return at + value.size() <= limit && src.substr(at, value.size()) == value;
+    }
+
+    // Return the end of an opaque inline construct for delimiter collection.
+    // This only shields source that the normal parser handles separately; it
+    // does not assign Markdown meaning or produce CST nodes.
+    std::size_t skip_emphasis_opaque(std::size_t at) const {
+        if (at >= limit) return at;
+        if (src[at] == U'\\' && at + 1 < limit
+            && (ascii_punct(src[at + 1]) || is_line_ending(src[at + 1]))) {
+            return at + 2;
+        }
+        if (src[at] == U'`') {
+            auto run_end = at;
+            while (run_end < limit && src[run_end] == U'`') ++run_end;
+            // Match the production code-span scanner: exact-length runs may
+            // close across blank lines; unmatched openers remain ordinary
+            // delimiters and must not hide later emphasis.
+            const auto close_end = matching_code_span_end(at, limit);
+            if (close_end != npos) return close_end;
+            return run_end;
+        }
+        if (src[at] == U'<') {
+            if (starts_with_at(at, U"<!--")) {
+                const auto close = src.find(U"-->", at + 4);
+                return close != std::u32string_view::npos && close + 3 <= limit ? close + 3 : at + 1;
+            }
+            if (const auto tag = html_tag_at(at, limit)) {
+                if (tag->closing || (tag->name != "img" && tag->name != "br"
+                        && !safe_html_container(tag->name))) return tag->end;
+                if (tag->name == "img" || tag->name == "br" || tag->self_closing) return tag->end;
+                if (const auto closing = html_closing_tag(tag->name, tag->end)) return closing->second;
+                // parse_html_element emits an incomplete container through
+                // the current line when its matching close is missing.
+                return find_line_or_doc_end(tag->end);
+            }
+            const auto autolink_end = valid_autolink_end(at, limit);
+            if (autolink_end != npos) return autolink_end;
+        }
+        return at;
+    }
+
+    std::size_t find_link_label_close(std::size_t open) const {
+        std::size_t depth = 1;
+        for (auto scan = open + 1; scan < limit;) {
+            const auto skipped = skip_emphasis_opaque(scan);
+            if (skipped != scan) { scan = skipped; continue; }
+            if (src[scan] == U'[') ++depth;
+            else if (src[scan] == U']' && --depth == 0) return scan;
+            ++scan;
+        }
+        return npos;
+    }
+
+    std::vector<LinkLabelRange> emphasis_link_labels() const {
+        std::vector<LinkLabelRange> ranges;
+        for (auto scan = scope_start; scan < limit;) {
+            const auto skipped = skip_emphasis_opaque(scan);
+            if (skipped != scan) { scan = skipped; continue; }
+            if (src[scan] == U'[' && (scan == scope_start || src[scan - 1] != U'!')) {
+                const auto close = find_link_label_close(scan);
+                if (close != npos) {
+                    bool is_link_candidate = close + 1 < limit
+                        && (src[close + 1] == U'(' || src[close + 1] == U'[');
+                    if (!is_link_candidate && ctx.resolve_link_label) {
+                        const auto label = normalized_reference_label(src.substr(scan + 1, close - scan - 1));
+                        is_link_candidate = ctx.resolve_link_label(label).has_value();
+                    }
+                    if (is_link_candidate) ranges.push_back({scan, close});
+                }
+            }
+            ++scan;
+        }
+        return ranges;
+    }
+
+    bool has_separate_inline_structure(std::size_t from) const {
+        const auto labels = emphasis_link_labels();
+        for (auto scan = from; scan < limit;) {
+            const auto skipped = skip_emphasis_opaque(scan);
+            if (skipped != scan) {
+                if ((src[scan] == U'\\' && scan + 1 < limit
+                        && (ascii_punct(src[scan + 1]) || is_line_ending(src[scan + 1])))
+                    || src[scan] == U'`' || src[scan] == U'<') return true;
+                scan = skipped;
+                continue;
+            }
+            if (src[scan] == U'&') {
+                const auto entity = entity_end(src, scan);
+                if (entity != npos && entity <= limit) return true;
+            }
+            if (src[scan] == U'[') {
+                if (std::ranges::any_of(labels, [&](LinkLabelRange const& range) { return range.open == scan; })) return true;
+            }
+            if (src[scan] == U'!' && scan + 1 < limit && src[scan + 1] == U'[') {
+                const auto close = find_link_label_close(scan + 1);
+                if (close != npos && close + 1 < limit
+                    && (src[close + 1] == U'(' || src[close + 1] == U'[')) return true;
+            }
+            ++scan;
+        }
+        return false;
+    }
+
+    std::vector<EmphasisPair> resolve_emphasis_pairs() const {
+        std::vector<EmphasisRun> runs;
+        const auto labels = emphasis_link_labels();
+        for (auto scan = scope_start; scan < limit;) {
+            const auto skipped = skip_emphasis_opaque(scan);
+            if (skipped != scan) { scan = skipped; continue; }
+            const auto marker = src[scan];
+            if (marker != U'*' && marker != U'_') { ++scan; continue; }
+            const auto start = scan;
+            while (scan < limit && src[scan] == marker) ++scan;
+            const auto length = scan - start;
+            const auto flank = delimiter_flanking(start, length);
+            const bool can_open = marker == U'_'
+                ? flank.left && (!flank.right || flank.previous_punctuation)
+                : flank.left;
+            const bool can_close = marker == U'_'
+                ? flank.right && (!flank.left || flank.next_punctuation)
+                : flank.right;
+            if (!can_open && !can_close) continue;
+            EmphasisRun run;
+            run.marker = marker;
+            run.start = start;
+            run.end = scan;
+            run.length = length;
+            run.can_open = can_open;
+            run.can_close = can_close;
+            for (auto const& label : labels) {
+                if (start > label.open && start < label.close) run.link_context.push_back(label.open);
+            }
+            run.open_remaining = length;
+            runs.push_back(std::move(run));
+        }
+
+        std::vector<EmphasisPair> pairs;
+        for (std::size_t closer_index = 0; closer_index < runs.size(); ++closer_index) {
+            auto& closer = runs[closer_index];
+            std::size_t closer_remaining = closer.length;
+            while (closer.can_close && closer_remaining != 0) {
+                std::size_t opener_index = npos;
+                for (std::size_t back = closer_index; back > 0; --back) {
+                    auto const& opener = runs[back - 1];
+                    if (!opener.active_opener || opener.marker != closer.marker
+                        || opener.open_remaining == 0 || opener.link_context != closer.link_context) continue;
+                    const bool rule_of_three = (closer.can_open || opener.can_close)
+                        && ((opener.length + closer.length) % 3 == 0)
+                        && (opener.length % 3 != 0 || closer.length % 3 != 0);
+                    if (rule_of_three) continue;
+                    opener_index = back - 1;
+                    break;
+                }
+                if (opener_index == npos) break;
+
+                auto& opener = runs[opener_index];
+                const auto use = opener.open_remaining >= 2 && closer_remaining >= 2 ? 2u : 1u;
+                const auto open_start = opener.start + opener.open_remaining - use;
+                const auto close_start = closer.start + closer.close_consumed;
+                pairs.push_back({open_start, open_start + use, close_start, close_start + use,
+                    use == 2 ? InlineCstKind::Strong : InlineCstKind::Emphasis});
+                opener.open_remaining -= use;
+                if (opener.open_remaining == 0) opener.active_opener = false;
+                closer.close_consumed += use;
+                closer_remaining -= use;
+
+                // CommonMark removes all intervening openers after resolving
+                // a closer, which prevents crossing emphasis ranges.
+                for (std::size_t between = opener_index + 1; between < closer_index; ++between) {
+                    runs[between].active_opener = false;
+                }
+            }
+            if (closer.can_open && closer_remaining != 0) {
+                closer.open_remaining = closer_remaining;
+                closer.active_opener = true;
+            }
+        }
+        return pairs;
+    }
+
+    std::vector<EmphasisPair> const& emphasis_pairs() {
+        if (!emphasis_pairs_cache) emphasis_pairs_cache = resolve_emphasis_pairs();
+        return *emphasis_pairs_cache;
     }
 
     // Match a literal substring at `pos`; return true and advance if matched.
@@ -127,17 +331,457 @@ struct Parser {
     }
     static constexpr std::size_t npos = std::u32string::npos;
 
+    static bool ascii_alpha(char32_t c) {
+        return (c >= U'a' && c <= U'z') || (c >= U'A' && c <= U'Z');
+    }
+
+    static bool ascii_digit(char32_t c) {
+        return c >= U'0' && c <= U'9';
+    }
+
+    static bool ascii_alnum(char32_t c) {
+        return ascii_alpha(c) || ascii_digit(c);
+    }
+
+    static bool markdown_whitespace(char32_t c) {
+        return c == U' ' || c == U'\t' || c == U'\n' || c == U'\r'
+            || c == U'\f' || c == U'\v';
+    }
+
+    std::size_t matching_code_span_end(std::size_t at, std::size_t end) const {
+        if (at >= end || src[at] != U'`') return npos;
+        std::size_t run_end = at + 1;
+        while (run_end < end && src[run_end] == U'`') ++run_end;
+        const auto run_size = run_end - at;
+        for (std::size_t cursor = run_end; cursor < end;) {
+            if (src[cursor] != U'`') { ++cursor; continue; }
+            auto candidate_end = cursor + 1;
+            while (candidate_end < end && src[candidate_end] == U'`') ++candidate_end;
+            if (candidate_end - cursor == run_size) return candidate_end;
+            cursor = candidate_end;
+        }
+        return npos;
+    }
+
+    std::size_t html_tag_end(std::size_t at, std::size_t end) const {
+        const auto tag = scan_markdown_html_tag(src, at, end);
+        return tag ? tag->range.end : npos;
+    }
+
+    std::size_t matching_bracket(std::size_t open, std::size_t end) const {
+        if (open >= end || src[open] != U'[') return npos;
+        std::size_t depth = 1;
+        for (std::size_t cursor = open + 1; cursor < end;) {
+            if (src[cursor] == U'\\' && cursor + 1 < end && ascii_punct(src[cursor + 1])) {
+                cursor += 2;
+                continue;
+            }
+            if (src[cursor] == U'`') {
+                const auto code_end = matching_code_span_end(cursor, end);
+                if (code_end != npos) { cursor = code_end; continue; }
+                while (cursor < end && src[cursor] == U'`') ++cursor;
+                continue;
+            }
+            if (src[cursor] == U'<') {
+                const auto tag_end = html_tag_end(cursor, end);
+                if (tag_end != npos) { cursor = tag_end; continue; }
+                const auto autolink_end = valid_autolink_end(cursor, end);
+                if (autolink_end != npos) { cursor = autolink_end; continue; }
+            }
+            if (src[cursor] == U'[') ++depth;
+            else if (src[cursor] == U']' && --depth == 0) return cursor;
+            ++cursor;
+        }
+        return npos;
+    }
+
+    static std::u32string decode_link_escapes_and_entities(std::u32string_view raw) {
+        std::u32string result;
+        result.reserve(raw.size());
+        for (std::size_t cursor = 0; cursor < raw.size();) {
+            if (raw[cursor] == U'\\' && cursor + 1 < raw.size() && ascii_punct(raw[cursor + 1])) {
+                result.push_back(raw[cursor + 1]);
+                cursor += 2;
+                continue;
+            }
+            if (raw[cursor] == U'&') {
+                const auto entity_end = Parser::entity_end(raw, cursor);
+                if (entity_end != npos) {
+                    if (auto decoded = decode_html_character_reference(raw.substr(cursor, entity_end - cursor))) {
+                        result += *decoded;
+                    }
+                    cursor = entity_end;
+                    continue;
+                }
+            }
+            result.push_back(raw[cursor++]);
+        }
+        return result;
+    }
+
+    static std::string normalize_link_destination(std::u32string_view raw) {
+        return percent_encode_url(cps_to_utf8(decode_link_escapes_and_entities(raw)));
+    }
+
+    static std::string percent_encode_url(std::string_view decoded) {
+        static constexpr std::string_view allowed = "~-_.+!*(),%#@?=;:/$&";
+        static constexpr char hex[] = "0123456789ABCDEF";
+        std::string result;
+        result.reserve(decoded.size());
+        for (const unsigned char byte : decoded) {
+            if (ascii_alnum(byte) || allowed.find(static_cast<char>(byte)) != std::string_view::npos) {
+                result.push_back(static_cast<char>(byte));
+            } else {
+                result.push_back('%');
+                result.push_back(hex[byte >> 4]);
+                result.push_back(hex[byte & 0x0f]);
+            }
+        }
+        return result;
+    }
+
+    static bool valid_email_autolink(std::u32string_view address) {
+        const auto at = address.find(U'@');
+        if (at == npos || at == 0 || at + 1 >= address.size()
+            || address.find(U'@', at + 1) != npos) return false;
+        const auto local = address.substr(0, at);
+        auto is_atext = [](char32_t c) {
+            return ascii_alnum(c) || c == U'!' || c == U'#' || c == U'$' || c == U'%'
+                || c == U'&' || c == U'\'' || c == U'*' || c == U'+' || c == U'-'
+                || c == U'/' || c == U'=' || c == U'?' || c == U'^' || c == U'_'
+                || c == U'`' || c == U'{' || c == U'|' || c == U'}' || c == U'~';
+        };
+        bool previous_dot = true;
+        for (const auto c : local) {
+            if (c == U'.') {
+                if (previous_dot) return false;
+                previous_dot = true;
+            } else {
+                if (!is_atext(c)) return false;
+                previous_dot = false;
+            }
+        }
+        if (previous_dot) return false;
+
+        const auto domain = address.substr(at + 1);
+        bool saw_dot = false;
+        bool label_start = true;
+        char32_t previous = 0;
+        for (const auto c : domain) {
+            if (c == U'.') {
+                if (label_start || previous == U'-') return false;
+                saw_dot = true;
+                label_start = true;
+            } else if (ascii_alnum(c)) {
+                label_start = false;
+            } else if (c == U'-') {
+                if (label_start) return false;
+                label_start = false;
+            } else {
+                return false;
+            }
+            previous = c;
+        }
+        return saw_dot && !label_start && previous != U'-';
+    }
+
+    static bool valid_uri_autolink(std::u32string_view uri) {
+        const auto colon = uri.find(U':');
+        if (colon < 2 || colon > 32 || colon + 1 >= uri.size() || !ascii_alpha(uri.front())) return false;
+        for (std::size_t i = 1; i < colon; ++i) {
+            const auto c = uri[i];
+            if (!ascii_alnum(c) && c != U'+' && c != U'.' && c != U'-') return false;
+        }
+        for (const auto c : uri.substr(colon + 1)) {
+            if (c <= 0x20 || c == 0x7f || c == U'<' || c == U'>') return false;
+        }
+        return true;
+    }
+
+    std::size_t valid_autolink_end(std::size_t at, std::size_t end) const {
+        if (at >= end || src[at] != U'<') return npos;
+        auto close = at + 1;
+        while (close < end && src[close] != U'>' && !is_line_ending(src[close])) ++close;
+        if (close >= end || src[close] != U'>' || close == at + 1) return npos;
+        const auto contents = src.substr(at + 1, close - at - 1);
+        return valid_uri_autolink(contents) || valid_email_autolink(contents) ? close + 1 : npos;
+    }
+
+    bool contains_code_span_or_html_tag(std::size_t begin, std::size_t end) const {
+        for (auto cursor = begin; cursor < end;) {
+            if (src[cursor] == U'\\' && cursor + 1 < end && ascii_punct(src[cursor + 1])) {
+                cursor += 2;
+                continue;
+            }
+            if (src[cursor] == U'`') {
+                const auto code_end = matching_code_span_end(cursor, end);
+                if (code_end != npos) return true;
+                while (cursor < end && src[cursor] == U'`') ++cursor;
+                continue;
+            }
+            if (src[cursor] == U'<') {
+                if (html_tag_end(cursor, end) != npos) return true;
+            }
+            ++cursor;
+        }
+        return false;
+    }
+
+    static std::string normalize_link_title(std::u32string_view raw) {
+        return cps_to_utf8(decode_link_escapes_and_entities(raw));
+    }
+
+    bool skip_link_whitespace(std::size_t& cursor, std::size_t end) const {
+        unsigned line_breaks = 0;
+        while (cursor < end && markdown_whitespace(src[cursor])) {
+            if (src[cursor] == U'\r' || src[cursor] == U'\n') {
+                if (src[cursor] == U'\r' && cursor + 1 < end && src[cursor + 1] == U'\n') ++cursor;
+                if (++line_breaks > 1) return false;
+            }
+            ++cursor;
+        }
+        return true;
+    }
+
+    bool parse_inline_link_suffix(
+        std::size_t suffix,
+        std::size_t end,
+        std::size_t& source_end,
+        std::string& href,
+        std::optional<std::string>& title) const {
+        if (suffix >= end || src[suffix] != U'(') return false;
+        std::size_t cursor = suffix + 1;
+        const auto after_open = cursor;
+        if (!skip_link_whitespace(cursor, end)) return false;
+        const bool leading_whitespace = cursor != after_open;
+
+        std::size_t destination_start = cursor;
+        std::size_t destination_end = cursor;
+        const bool title_opener = cursor < end
+            && (src[cursor] == U'"' || src[cursor] == U'\'' || src[cursor] == U'(');
+        const bool empty_destination = cursor < end && (src[cursor] == U')'
+            || (leading_whitespace && title_opener));
+        if (empty_destination) {
+            href.clear();
+            destination_end = destination_start;
+        } else if (cursor < end && src[cursor] == U'<') {
+            destination_start = ++cursor;
+            while (cursor < end) {
+                if (src[cursor] == U'\\' && cursor + 1 < end && ascii_punct(src[cursor + 1])) {
+                    cursor += 2;
+                    continue;
+                }
+                if (is_line_ending(src[cursor]) || src[cursor] == U'<') return false;
+                if (src[cursor] == U'>') break;
+                ++cursor;
+            }
+            if (cursor >= end || src[cursor] != U'>') return false;
+            destination_end = cursor;
+            ++cursor;
+        } else {
+            std::size_t parenthesis_depth = 0;
+            while (cursor < end) {
+                const auto current = src[cursor];
+                if (current == U'\\' && cursor + 1 < end && ascii_punct(src[cursor + 1])) {
+                    cursor += 2;
+                    continue;
+                }
+                if (markdown_whitespace(current)) break;
+                if (current == U'<' || current == U'>' || current < 0x20 || current == 0x7f) return false;
+                if (current == U'(') {
+                    if (++parenthesis_depth > 32) return false;
+                } else if (current == U')') {
+                    if (parenthesis_depth == 0) break;
+                    --parenthesis_depth;
+                }
+                ++cursor;
+            }
+            if (parenthesis_depth != 0) return false;
+            destination_end = cursor;
+            if (destination_start == destination_end && (cursor >= end || src[cursor] != U')')) return false;
+        }
+        if (!empty_destination) {
+            href = normalize_link_destination(std::u32string_view(src).substr(
+                destination_start, destination_end - destination_start));
+        }
+
+        const auto after_destination = cursor;
+        if (!skip_link_whitespace(cursor, end)) return false;
+        if (cursor < end && (src[cursor] == U'"' || src[cursor] == U'\'' || src[cursor] == U'(')) {
+            if (cursor == after_destination && !leading_whitespace) return false;
+            const auto opener = src[cursor++];
+            const auto closer = opener == U'(' ? U')' : opener;
+            const auto title_start = cursor;
+            std::size_t nesting = opener == U'(' ? 1u : 0u;
+            bool title_closed = false;
+            while (cursor < end) {
+                if (src[cursor] == U'\\' && cursor + 1 < end && ascii_punct(src[cursor + 1])) {
+                    cursor += 2;
+                    continue;
+                }
+                if (opener == U'(' && src[cursor] == U'(') ++nesting;
+                else if (src[cursor] == closer) {
+                    if (opener != U'(' || --nesting == 0) {
+                        title = normalize_link_title(std::u32string_view(src).substr(title_start, cursor - title_start));
+                        ++cursor;
+                        title_closed = true;
+                        break;
+                    }
+                }
+                ++cursor;
+            }
+            if (!title_closed || !skip_link_whitespace(cursor, end)) return false;
+        }
+        if (cursor >= end || src[cursor] != U')') return false;
+        source_end = cursor + 1;
+        return true;
+    }
+
+    static bool contains_link_or_autolink(const InlineCstNodes& nodes) {
+        for (const auto& node : nodes) {
+            if (node.kind == InlineCstKind::Link || node.kind == InlineCstKind::Autolink) return true;
+            if (contains_link_or_autolink(node.children)) return true;
+        }
+        return false;
+    }
+
+    static void append_image_alt(const InlineCstNodes& nodes, std::u32string_view source, std::u32string& output) {
+        for (const auto& node : nodes) {
+            const auto range = node.range;
+            const auto raw = range.valid_for(source.size())
+                ? source.substr(range.start, range.length()) : std::u32string_view{};
+            switch (node.kind) {
+                case InlineCstKind::Emphasis:
+                case InlineCstKind::Strong:
+                case InlineCstKind::Strikethrough:
+                case InlineCstKind::Link:
+                    append_image_alt(node.children, source, output);
+                    break;
+                case InlineCstKind::Image:
+                    output += utf8_to_cps(node.semantics().alt);
+                    break;
+                case InlineCstKind::HtmlElement:
+                    if (node.semantics().html_tag == "img") {
+                        output += utf8_to_cps(node.semantics().alt);
+                    } else if (node.semantics().html_tag == "br") {
+                        output.push_back(U' ');
+                    } else {
+                        append_image_alt(node.children, source, output);
+                    }
+                    break;
+                case InlineCstKind::Escape:
+                    if (!raw.empty()) output.push_back(raw.back());
+                    break;
+                case InlineCstKind::Entity:
+                    if (auto decoded = decode_html_character_reference(raw)) output += *decoded;
+                    break;
+                case InlineCstKind::SoftBreak:
+                case InlineCstKind::HardBreak:
+                    output.push_back(U' ');
+                    break;
+                case InlineCstKind::CodeSpan:
+                    if (node.delimiter_ranges().content.valid_for(source.size())) {
+                        auto code = std::u32string(source.substr(
+                            node.delimiter_ranges().content.start,
+                            node.delimiter_ranges().content.length()));
+                        for (auto& character : code) {
+                            if (character == U'\n' || character == U'\r') character = U' ';
+                        }
+                        const auto all_spaces = std::all_of(code.begin(), code.end(), [](char32_t c) { return c == U' '; });
+                        if (code.size() >= 2 && code.front() == U' ' && code.back() == U' ' && !all_spaces) {
+                            code.erase(code.begin());
+                            code.pop_back();
+                        }
+                        output += code;
+                    }
+                    break;
+                case InlineCstKind::Autolink:
+                    if (node.delimiter_ranges().content.valid_for(source.size())) {
+                        output += source.substr(
+                            node.delimiter_ranges().content.start,
+                            node.delimiter_ranges().content.length());
+                    }
+                    break;
+                case InlineCstKind::HtmlComment:
+                    break;
+                default:
+                    output += decode_link_escapes_and_entities(raw);
+                    break;
+            }
+        }
+    }
+
+    InlineCstNodes parse_label_content(std::size_t begin, std::size_t end) {
+        Parser inner{src, ctx};
+        inner.counter = counter;
+        inner.pos = begin;
+        auto children = inner.parse_until(end);
+        counter = inner.counter;
+        return children;
+    }
+
+    bool nested_link_after(std::size_t begin, std::size_t end) {
+        if (begin >= end) return false;
+        auto nodes = parse_label_content(begin, end);
+        return contains_link_or_autolink(nodes);
+    }
+
+    bool emit_link_or_image(
+        InlineCstNodes& out,
+        std::size_t& run_start,
+        std::size_t start,
+        std::size_t text_start,
+        std::size_t text_end,
+        std::size_t source_end,
+        bool is_image,
+        std::string href,
+        std::optional<std::string> title) {
+        auto children = parse_label_content(text_start, text_end);
+        if (!is_image && contains_link_or_autolink(children)) return false;
+        flush_text_to(out, run_start, start);
+        InlineCstNode node;
+        node.id = next_id();
+        node.kind = is_image ? InlineCstKind::Image : InlineCstKind::Link;
+        node.status = ParseStatus::Complete;
+        node.range = {start, source_end};
+        node.ensure_delimiter_ranges() = {
+            {start, source_end},
+            {start, text_start},
+            {text_start, text_end},
+            SourceRange{text_end, source_end}};
+        auto& semantic = node.ensure_semantics();
+        semantic.href = std::move(href);
+        semantic.title = std::move(title);
+        if (is_image) {
+            std::u32string alt;
+            append_image_alt(children, src, alt);
+            semantic.alt = cps_to_utf8(alt);
+        }
+        node.children = std::move(children);
+        out.push_back(std::move(node));
+        pos = source_end;
+        run_start = pos;
+        return true;
+    }
+
+    std::string normalized_reference_label(std::u32string_view raw) const {
+        // Reference labels are normalized as raw label strings; CommonMark
+        // does not parse escapes or character references inside them.
+        return normalize_markdown_link_label(raw);
+    }
+
     // ---- entity (preserved verbatim as an Entity node) ----
     // Returns end offset (exclusive) of a recognized entity starting at `at`, else npos.
     static std::size_t entity_end(std::u32string_view s, std::size_t at) {
         if (at >= s.size() || s[at] != U'&') return npos;
-        std::size_t end = at + 1;
-        while (end < s.size() && end - at <= 12 && s[end] != U';' && !is_line_ending(s[end])) ++end;
-        if (end >= s.size() || s[end] != U';') return npos;
-        auto body = cps_to_utf8(s.substr(at + 1, end - at - 1));
-        if (body == "amp" || body == "lt" || body == "gt" || body == "quot" || body == "apos"
-            || body == "nbsp" || body == "#39" || body.starts_with("#")) {
-            return end + 1;
+        const auto max_length = (std::min)(std::size_t{34}, s.size() - at);
+        for (std::size_t length = 3; length <= max_length; ++length) {
+            const auto current = s[at + length - 1];
+            if (is_line_ending(current)) return npos;
+            if (current != U';') continue;
+            const auto raw = s.substr(at, length);
+            if (decode_html_character_reference(raw)) return at + length;
+            return npos;
         }
         return npos;
     }
@@ -165,33 +809,39 @@ struct Parser {
         std::size_t& run_start,
         bool markdown_hard_breaks = true) {
         if (!is_line_ending(peek())) return false;
-        std::size_t nl = pos;
         const auto ending_length = line_ending_length(pos);
-        // Hard break: two trailing spaces (already in the text run) — detect by
-        // looking back into the pending run.
-        bool hard = false;
-        if (markdown_hard_breaks && pos >= 2 && ch(pos - 1) == U' ' && ch(pos - 2) == U' ') {
-            hard = true;
-        } else if (markdown_hard_breaks && pos >= 1 && ch(pos - 1) == U'\\') {
-            // backslash line break "\\\n"
-            hard = true;
+        // CommonMark discards trailing line whitespace. Two or more literal
+        // spaces make a hard break; an odd run of backslashes makes one only
+        // when its final backslash is not escaped by the preceding run.
+        auto trailing_spaces = pos;
+        while (trailing_spaces > run_start && ch(trailing_spaces - 1) == U' ') --trailing_spaces;
+        const auto space_count = pos - trailing_spaces;
+        auto trailing_whitespace = pos;
+        while (trailing_whitespace > run_start
+            && !is_line_ending(ch(trailing_whitespace - 1))
+            && is_commonmark_whitespace(ch(trailing_whitespace - 1))) {
+            --trailing_whitespace;
         }
+        const auto soft_break_start = markdown_hard_breaks ? trailing_whitespace : pos;
+        auto after_break = pos + ending_length;
+        if (markdown_hard_breaks) {
+            while (after_break < limit && (ch(after_break) == U' ' || ch(after_break) == U'\t')) ++after_break;
+        }
+        auto slash_count = std::size_t{0};
+        while (pos > run_start + slash_count && ch(pos - slash_count - 1) == U'\\') ++slash_count;
+        const bool hard_spaces = markdown_hard_breaks && space_count >= 2;
+        const bool hard_slash = markdown_hard_breaks && !hard_spaces
+            && (slash_count % 2 == 1) && after_break < limit;
+        const bool hard = hard_spaces || hard_slash;
+        const auto break_start = hard_spaces ? soft_break_start : hard_slash ? pos - 1 : soft_break_start;
         if (hard) {
-            // Emit preceding text (if any) excluding the trailing break chars,
-            // then a HardBreak node covering the break source.
-            std::size_t break_start = pos;
-            std::size_t text_end = pos;
-            if (ch(pos - 1) == U'\\') {
-                break_start = pos - 1;
-                text_end = pos - 1;
-            } else {
-                break_start = pos - 2;
-                text_end = pos - 2;
-            }
+            // The break owns the exact trailing marker/whitespace, line ending
+            // and continuation indentation. None of those characters are
+            // removed from source or from the CST's range partition.
+            const auto text_end = break_start;
             // An incomplete construct immediately before this newline may
             // already own the trailing backslash/spaces. Top-level nodes must
             // not claim those characters twice.
-            break_start = (std::max)(break_start, run_start);
             if (text_end > run_start) {
                 InlineCstNode node;
                 node.id = next_id();
@@ -199,8 +849,7 @@ struct Parser {
                 node.range = {run_start, text_end};
                 out.push_back(std::move(node));
             }
-            run_start = pos;
-            advance(ending_length);
+            advance(after_break - pos);
             InlineCstNode hb;
             hb.id = next_id();
             hb.kind = InlineCstKind::HardBreak;
@@ -209,13 +858,16 @@ struct Parser {
             out.push_back(std::move(hb));
             run_start = pos;
         } else {
-            flush_text(out, run_start);
-            advance(ending_length);
+            // Strip a single trailing space (or a tab) and continuation
+            // indentation from the break's semantic projection while keeping
+            // every source code point inside this one CST node.
+            flush_text_to(out, run_start, soft_break_start);
+            advance(after_break - pos);
             InlineCstNode sb;
             sb.id = next_id();
             sb.kind = InlineCstKind::SoftBreak;
-            sb.range = {nl, pos};
-            sb.ensure_delimiter_ranges() = {{nl, pos}, {nl, pos}, {nl, pos}, std::nullopt};
+            sb.range = {soft_break_start, pos};
+            sb.ensure_delimiter_ranges() = {{soft_break_start, pos}, {soft_break_start, pos}, {soft_break_start, pos}, std::nullopt};
             out.push_back(std::move(sb));
             run_start = pos;
         }
@@ -225,7 +877,7 @@ struct Parser {
     // ---- escape `\punct` ----
     bool parse_escape(InlineCstNodes& out, std::size_t& run_start) {
         if (peek() != U'\\') return false;
-        if (peek(1) == U'\n') return false; // handled as hard break
+        if (is_line_ending(peek(1))) return false; // handled as hard break
         if (!ascii_punct(peek(1))) return false;
         std::size_t start = pos;
         flush_text_to(out, run_start, start);
@@ -340,6 +992,112 @@ struct Parser {
         return true;
     }
 
+    bool parse_commonmark_emphasis(InlineCstNodes& out, std::size_t& run_start) {
+        const auto marker = peek();
+        if (marker != U'*' && marker != U'_') return false;
+
+        auto run_start_source = pos;
+        while (run_start_source > scope_start && src[run_start_source - 1] == marker) --run_start_source;
+        auto run_end_source = pos;
+        while (run_end_source < limit && src[run_end_source] == marker) ++run_end_source;
+
+        const auto& pairs = emphasis_pairs();
+        const EmphasisPair* match = nullptr;
+        for (auto const& pair : pairs) {
+            if (pair.open_start < pos || pair.open_start >= run_end_source) continue;
+            if (!match || pair.open_start < match->open_start) match = &pair;
+        }
+
+        if (match && match->open_start > pos) {
+            flush_text_to(out, run_start, pos);
+            InlineCstNode literal_open;
+            literal_open.id = next_id();
+            literal_open.kind = InlineCstKind::Incomplete;
+            literal_open.status = ParseStatus::MissingCloser;
+            literal_open.range = {pos, match->open_start};
+            literal_open.ensure_delimiter_ranges() = {
+                {pos, match->open_start}, {pos, match->open_start},
+                {match->open_start, match->open_start}, std::nullopt};
+            out.push_back(std::move(literal_open));
+            pos = match->open_start;
+            run_start = pos;
+            return true;
+        }
+
+        if (!match) {
+            const auto length = run_end_source - run_start_source;
+            const auto flank = delimiter_flanking(run_start_source, length);
+            const bool can_open = marker == U'_'
+                ? flank.left && (!flank.right || flank.previous_punctuation)
+                : flank.left;
+            flush_text_to(out, run_start, pos);
+
+            const auto later_pair = std::ranges::find_if(pairs, [&](EmphasisPair const& pair) {
+                return pair.open_start >= run_end_source;
+            });
+            if ((can_open && later_pair != pairs.end())
+                || has_separate_inline_structure(run_end_source)) {
+                InlineCstNode incomplete;
+                incomplete.id = next_id();
+                incomplete.kind = InlineCstKind::Incomplete;
+                incomplete.status = ParseStatus::MissingCloser;
+                incomplete.range = {pos, run_end_source};
+                incomplete.ensure_delimiter_ranges() = {
+                    {pos, run_end_source}, {pos, run_end_source},
+                    {run_end_source, run_end_source}, std::nullopt};
+                out.push_back(std::move(incomplete));
+                pos = run_end_source;
+                run_start = pos;
+                return true;
+            }
+
+            auto incomplete_end = run_end_source;
+            if (can_open) incomplete_end = find_line_or_doc_end(run_end_source);
+            else incomplete_end = run_end_source;
+            Parser inner{src, ctx};
+            inner.counter = counter;
+            inner.pos = run_end_source;
+            auto children = inner.parse_until(incomplete_end);
+            counter = inner.counter;
+            InlineCstNode incomplete;
+            incomplete.id = next_id();
+            incomplete.kind = InlineCstKind::Incomplete;
+            incomplete.status = ParseStatus::MissingCloser;
+            incomplete.range = {pos, incomplete_end};
+            incomplete.ensure_delimiter_ranges() = {
+                {pos, incomplete_end}, {pos, run_end_source},
+                {run_end_source, incomplete_end}, std::nullopt};
+            incomplete.children = std::move(children);
+            out.push_back(std::move(incomplete));
+            pos = incomplete_end;
+            run_start = pos;
+            return true;
+        }
+
+        flush_text_to(out, run_start, match->open_start);
+        Parser inner{src, ctx};
+        inner.counter = counter;
+        inner.pos = match->open_end;
+        InlineCstNodes children = inner.parse_until(match->close_start);
+        counter = inner.counter;
+        pos = match->close_end;
+
+        InlineCstNode node;
+        node.id = next_id();
+        node.kind = match->kind;
+        node.status = ParseStatus::Complete;
+        node.range = {match->open_start, match->close_end};
+        node.ensure_delimiter_ranges() = {
+            {match->open_start, match->close_end},
+            {match->open_start, match->open_end},
+            {match->open_end, match->close_start},
+            SourceRange{match->close_start, match->close_end}};
+        node.children = std::move(children);
+        out.push_back(std::move(node));
+        run_start = pos;
+        return true;
+    }
+
     bool starts_with(std::size_t at, std::u32string_view lit) const {
         if (at + lit.size() > limit) return false;
         for (std::size_t i = 0; i < lit.size(); ++i) if (src[at + i] != lit[i]) return false;
@@ -364,12 +1122,12 @@ struct Parser {
         return npos;
     }
 
-    std::size_t find_line_or_doc_end(std::size_t from) {
+    std::size_t find_line_or_doc_end(std::size_t from) const {
         // For incomplete constructs, consume to end of this line (incl. newline)
         // or end of source.
         std::size_t i = from;
-        while (i < limit && src[i] != U'\n') ++i;
-        if (i < limit) ++i; // include the newline
+        while (i < limit && !is_line_ending(src[i])) ++i;
+        if (i < limit) i += line_ending_length(i); // include CR, LF, or CRLF exactly
         return i;
     }
 
@@ -381,23 +1139,28 @@ struct Parser {
         std::size_t count = 0;
         while (pos < limit && peek() == U'`') { ++count; advance(); }
         std::size_t content_start = pos;
-        // find a closing run of exactly `count` backticks, not crossing blank line
+        // CommonMark closes on an exact-length run and code spans can cross
+        // blank lines. Keep the first other-length run available as a possible
+        // opener if this delimiter remains unmatched.
         std::size_t search = pos;
         std::size_t closing = npos;
+        std::size_t next_candidate_run = npos;
         while (search < limit) {
-            if (src[search] == U'\n' && search + 1 < limit && src[search + 1] == U'\n') break;
             if (src[search] == U'`') {
                 std::size_t run = search;
                 while (search < limit && src[search] == U'`') ++search;
                 if (search - run == count) { closing = run; break; }
+                if (next_candidate_run == npos) next_candidate_run = run;
             } else {
                 ++search;
             }
         }
         if (closing == npos) {
-            // Incomplete code span: keep opener + rest verbatim.
+            // Preserve an unmatched opener as an incomplete CST segment. If a
+            // later, differently sized run can begin another valid span, stop
+            // before it so that run can be parsed on the next iteration.
             flush_text_to(out, run_start, start);
-            pos = find_line_or_doc_end(pos);
+            pos = next_candidate_run == npos ? find_line_or_doc_end(pos) : next_candidate_run;
             InlineCstNode node;
             node.id = next_id();
             node.kind = InlineCstKind::Incomplete;
@@ -497,130 +1260,94 @@ struct Parser {
 
     // ---- link / image [text](url) / ![alt](url) / [text][ref] ----
     bool parse_link_or_image(InlineCstNodes& out, std::size_t& run_start) {
-        std::size_t start = pos;
-        bool is_image = false;
-        if (peek() == U'!' && peek(1) == U'[') { is_image = true; advance(); }
-        if (peek() != U'[') { pos = start; return false; }
-        advance();
-        std::size_t text_start = pos;
-        std::size_t depth = 1;
-        while (!eof() && depth > 0 && peek() != U'\n') {
-            if (peek() == U'\\' && pos + 1 < limit) { advance(2); continue; }
-            if (peek() == U'[') ++depth;
-            else if (peek() == U']') --depth;
-            if (depth > 0) advance();
-        }
-        if (depth != 0 || peek() != U']') {
-            // Incomplete: opener `[` (and `!`) + rest verbatim.
-            pos = start;
+        const auto start = pos;
+        const bool is_image = peek() == U'!' && peek(1) == U'[';
+        const auto open = start + (is_image ? 1u : 0u);
+        if (open >= limit || src[open] != U'[') return false;
+
+        const auto close = matching_bracket(open, limit);
+        if (close == npos) {
+            // An unmatched outer bracket must not hide a complete inner link.
+            // Leave the input untouched in that case so the normal scanner can
+            // recognize the inner construct on its next pass.
+            if (nested_link_after(open + 1, limit)
+                || contains_code_span_or_html_tag(open + 1, limit)) return false;
             return parse_incomplete_bracket(out, run_start, start);
         }
-        std::size_t text_end = pos;
-        advance(); // consume ']'
-        // Inline destination `( ... )`
-        if (peek() == U'(') {
-            advance();
-            while (!eof() && (peek() == U' ' || peek() == U'\t')) advance();
-            std::u32string href;
+
+        const auto text_start = open + 1;
+        const auto text_end = close;
+        const auto after_text = close + 1;
+
+        if (after_text < limit && src[after_text] == U'(') {
+            std::size_t source_end = after_text;
+            std::string href;
             std::optional<std::string> title;
-            bool angle = false;
-            if (peek() == U'<') { angle = true; advance(); while (!eof() && peek() != U'>' && peek() != U'\n') href.push_back(peek()), advance(); if (peek() != U'>') { pos = start; return parse_incomplete_bracket(out, run_start, start); } advance(); }
-            else {
-                std::size_t parens = 0;
-                while (!eof() && peek() != U'\n') {
-                    if (peek() == U'\\' && pos + 1 < limit) { href.push_back(peek(1)); advance(2); continue; }
-                    if (peek() == U'(') { ++parens; href.push_back(peek()); advance(); continue; }
-                    if (peek() == U')') { if (parens == 0) break; --parens; href.push_back(peek()); advance(); continue; }
-                    if ((peek() == U' ' || peek() == U'\t') && parens == 0) break;
-                    href.push_back(peek()); advance();
+            if (parse_inline_link_suffix(after_text, limit, source_end, href, title)) {
+                if (emit_link_or_image(out, run_start, start, text_start, text_end,
+                        source_end, is_image, std::move(href), std::move(title))) return true;
+                return false; // CommonMark forbids a link nested inside a link.
+            }
+            // A partial destination remains an editable incomplete construct;
+            // a closed but invalid form is ordinary literal Markdown.
+            bool has_close_paren = false;
+            for (auto cursor = after_text + 1; cursor < limit; ++cursor) {
+                if (src[cursor] == U'\\' && cursor + 1 < limit && ascii_punct(src[cursor + 1])) {
+                    ++cursor;
+                    continue;
+                }
+                if (src[cursor] == U')') { has_close_paren = true; break; }
+            }
+            if (!has_close_paren && !nested_link_after(text_start, text_end)) {
+                return parse_incomplete_bracket(out, run_start, start);
+            }
+            if (has_close_paren && ctx.resolve_link_label) {
+                const auto key = normalized_reference_label(src.substr(text_start, text_end - text_start));
+                if (auto definition = ctx.resolve_link_label(key)) {
+                    auto href = percent_encode_url(definition->href);
+                    auto title = definition->title
+                        ? std::optional<std::string>(*definition->title)
+                        : std::nullopt;
+                    if (emit_link_or_image(out, run_start, start, text_start, text_end,
+                            after_text, is_image, std::move(href), std::move(title))) return true;
                 }
             }
-            (void)angle;
-            while (!eof() && (peek() == U' ' || peek() == U'\t')) advance();
-            if (!eof() && (peek() == U'"' || peek() == U'\'' || peek() == U'(')) {
-                char32_t opening = peek();
-                char32_t closing = opening == U'(' ? U')' : opening;
-                advance();
-                std::u32string value;
-                while (!eof() && peek() != closing && peek() != U'\n') value.push_back(peek()), advance();
-                if (peek() != closing) { pos = start; return parse_incomplete_bracket(out, run_start, start); }
-                advance();
-                while (!eof() && (peek() == U' ' || peek() == U'\t')) advance();
-                title = cps_to_utf8(value);
-            }
-            if (peek() != U')') { pos = start; return parse_incomplete_bracket(out, run_start, start); }
-            advance();
-            std::size_t source_end = pos;
-            flush_text_to(out, run_start, start);
-            // Recurse into text content for links (images keep alt as plain text).
-            InlineCstNodes children;
-            if (!is_image) {
-                Parser inner{src, ctx};
-                inner.counter = counter;
-                inner.pos = text_start;
-                children = inner.parse_until(text_end);
-                counter = inner.counter;
-            }
-            InlineCstNode node;
-            node.id = next_id();
-            node.kind = is_image ? InlineCstKind::Image : InlineCstKind::Link;
-            node.status = ParseStatus::Complete;
-            node.range = {start, source_end};
-            node.ensure_delimiter_ranges() = {{start, source_end}, {start, text_start}, {text_start, text_end}, SourceRange{text_end, source_end}};
-            auto& semantic = node.ensure_semantics();
-            semantic.href = cps_to_utf8(href);
-            semantic.title = std::move(title);
-            if (is_image) semantic.alt = cps_to_utf8(src.substr(text_start, text_end - text_start));
-            node.children = std::move(children);
-            out.push_back(std::move(node));
-            pos = source_end;
-            run_start = pos;
-            return true;
+            return false;
         }
-        // Reference link [text][ref] or [text][]
-        if (peek() == U'[') {
-            advance();
-            std::size_t label_start = pos;
-            while (!eof() && peek() != U']' && peek() != U'\n') advance();
-            if (peek() != U']') { pos = start; return parse_incomplete_bracket(out, run_start, start); }
-            std::size_t label_end = pos;
-            advance();
-            std::string label = label_end == label_start
-                ? normalize_label(src.substr(text_start, text_end - text_start))
-                : normalize_label(src.substr(label_start, label_end - label_start));
-            std::optional<InlineLinkDef> def;
-            if (ctx.resolve_link_label) def = ctx.resolve_link_label(label);
-            if (!def) { pos = start; return parse_incomplete_bracket(out, run_start, start); }
-            std::size_t source_end = pos;
-            flush_text_to(out, run_start, start);
-            InlineCstNodes children;
-            if (!is_image) {
-                Parser inner{src, ctx};
-                inner.counter = counter;
-                inner.pos = text_start;
-                children = inner.parse_until(text_end);
-                counter = inner.counter;
+
+        std::size_t source_end = after_text;
+        std::u32string_view label = src.substr(text_start, text_end - text_start);
+        if (after_text < limit && src[after_text] == U'[') {
+            const auto ref_close = matching_bracket(after_text, limit);
+            if (ref_close == npos) {
+                if (nested_link_after(text_start, text_end)) return false;
+                return parse_incomplete_bracket(out, run_start, start);
             }
-            InlineCstNode node;
-            node.id = next_id();
-            node.kind = is_image ? InlineCstKind::Image : InlineCstKind::Link;
-            node.status = ParseStatus::Complete;
-            node.range = {start, source_end};
-            node.ensure_delimiter_ranges() = {{start, source_end}, {start, text_start}, {text_start, text_end}, SourceRange{text_end, source_end}};
-            auto& semantic = node.ensure_semantics();
-            semantic.href = def->href;
-            semantic.title = def->title;
-            if (is_image) semantic.alt = cps_to_utf8(src.substr(text_start, text_end - text_start));
-            node.children = std::move(children);
-            out.push_back(std::move(node));
-            pos = source_end;
-            run_start = pos;
-            return true;
+            const auto ref_text = src.substr(after_text + 1, ref_close - after_text - 1);
+            if (!ref_text.empty()) label = ref_text;
+            source_end = ref_close + 1;
         }
-        // Just `[text]` with no destination — treat the `[` opener as incomplete
-        // (it may become a link as the user keeps typing).
-        pos = start;
-        return parse_incomplete_bracket(out, run_start, start);
+
+        if (ctx.resolve_link_label) {
+            const auto key = normalized_reference_label(label);
+            auto definition = ctx.resolve_link_label(key);
+            if (definition) {
+                // Link-definition parsing already decodes escapes and HTML
+                // character references. Only URL-attribute escaping remains.
+                auto href = percent_encode_url(definition->href);
+                auto title = definition->title
+                    ? std::optional<std::string>(*definition->title)
+                    : std::nullopt;
+                if (emit_link_or_image(out, run_start, start, text_start, text_end,
+                        source_end, is_image, std::move(href), std::move(title))) return true;
+                return false;
+            }
+        }
+
+        // A syntactically explicit but unresolved reference is literal; it does
+        // not fall back to shortcut-reference interpretation.
+        if (after_text < limit && src[after_text] == U'[') return false;
+        return false;
     }
 
     // Emit an Incomplete node for a bracket opener that didn't close into a
@@ -645,42 +1372,32 @@ struct Parser {
         return true;
     }
 
-    static std::string normalize_label(std::u32string_view label) {
-        std::string out;
-        for (char32_t c : label) {
-            if (c == U' ' || c == U'\t' || c == U'\n') { if (!out.empty() && out.back() != ' ') out.push_back(' '); }
-            else out.push_back(static_cast<char>(c >= 0x80 ? '?' : std::tolower(static_cast<unsigned char>(c))));
-        }
-        while (!out.empty() && out.back() == ' ') out.pop_back();
-        return out;
-    }
-
     // ---- autolink <url> / <email> ----
     bool parse_autolink(InlineCstNodes& out, std::size_t& run_start) {
         if (peek() != U'<') return false;
-        std::size_t start = pos;
-        advance();
-        std::size_t content_start = pos;
-        std::u32string value;
-        while (!eof() && peek() != U'>' && peek() != U'\n' && peek() != U' ' && peek() != U'\t') value.push_back(peek()), advance();
-        if (peek() != U'>' || value.empty()) { pos = start; return false; }
-        auto text = cps_to_utf8(value);
-        auto lower = text;
-        std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-        bool url = lower.starts_with("http://") || lower.starts_with("https://");
-        auto at = text.find('@');
-        bool email = at != std::string::npos && at > 0 && at + 1 < text.size() && text.find('@', at + 1) == std::string::npos;
-        if (!url && !email) { pos = start; return false; }
-        advance();
+        const auto start = pos;
+        const auto content_start = start + 1;
+        auto close = content_start;
+        while (close < limit && src[close] != U'>' && !is_line_ending(src[close])) ++close;
+        if (close >= limit || src[close] != U'>' || close == content_start) return false;
+        const auto value = src.substr(content_start, close - content_start);
+        const bool is_email = valid_email_autolink(value);
+        if (!is_email && !valid_uri_autolink(value)) return false;
+
+        const auto text = cps_to_utf8(value);
+        const auto href = is_email
+            ? std::string("mailto:") + percent_encode_url(text)
+            : percent_encode_url(text);
+        pos = close + 1;
         flush_text_to(out, run_start, start);
-        std::size_t close_end = pos;
+        const auto close_end = pos;
         InlineCstNode node;
         node.id = next_id();
         node.kind = InlineCstKind::Autolink;
         node.status = ParseStatus::Complete;
         node.range = {start, pos};
         node.ensure_delimiter_ranges() = {{start, close_end}, {start, content_start}, {content_start, close_end - 1}, SourceRange{close_end - 1, close_end}};
-        node.ensure_semantics().href = email ? "mailto:" + text : text;
+        node.ensure_semantics().href = href;
         node.children.push_back(InlineCstNode{next_id(), InlineCstKind::Text, {content_start, close_end - 1}, ParseStatus::Complete});
         out.push_back(std::move(node));
         run_start = pos;
@@ -696,11 +1413,6 @@ struct Parser {
         bool self_closing = false;
     };
 
-    static bool html_name_char(char32_t value) {
-        return (value >= U'a' && value <= U'z') || (value >= U'A' && value <= U'Z')
-            || (value >= U'0' && value <= U'9') || value == U'-' || value == U'_';
-    }
-
     static std::string lower_ascii(std::string value) {
         std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
             return static_cast<char>(std::tolower(ch));
@@ -709,57 +1421,21 @@ struct Parser {
     }
 
     std::optional<HtmlTag> html_tag_at(std::size_t at, std::size_t parse_limit) const {
-        if (at >= parse_limit || src[at] != U'<') return std::nullopt;
+        const auto scanned = scan_markdown_html_tag(src, at, parse_limit);
+        if (!scanned) return std::nullopt;
         HtmlTag tag;
-        tag.start = at;
-        auto cursor = at + 1;
-        if (cursor < parse_limit && src[cursor] == U'/') {
-            tag.closing = true;
-            ++cursor;
-        }
-        const auto name_start = cursor;
-        while (cursor < parse_limit && html_name_char(src[cursor])) ++cursor;
-        if (cursor == name_start) return std::nullopt;
-        tag.name = lower_ascii(cps_to_utf8(src.substr(name_start, cursor - name_start)));
-
-        while (cursor < parse_limit) {
-            while (cursor < parse_limit && (src[cursor] == U' ' || src[cursor] == U'\t')) ++cursor;
-            if (cursor >= parse_limit || src[cursor] == U'\n') return std::nullopt;
-            if (src[cursor] == U'>') {
-                tag.end = cursor + 1;
-                return tag;
-            }
-            if (src[cursor] == U'/' && cursor + 1 < parse_limit && src[cursor + 1] == U'>') {
-                tag.self_closing = true;
-                tag.end = cursor + 2;
-                return tag;
-            }
-            if (tag.closing) return std::nullopt;
-
-            const auto attribute_start = cursor;
-            while (cursor < parse_limit && html_name_char(src[cursor])) ++cursor;
-            if (cursor == attribute_start) return std::nullopt;
-            auto attribute = lower_ascii(cps_to_utf8(src.substr(attribute_start, cursor - attribute_start)));
-            while (cursor < parse_limit && (src[cursor] == U' ' || src[cursor] == U'\t')) ++cursor;
-
+        tag.start = scanned->range.start;
+        tag.end = scanned->range.end;
+        tag.name = scanned->name;
+        tag.closing = scanned->closing;
+        tag.self_closing = scanned->self_closing;
+        for (const auto& attribute_range : scanned->attributes) {
+            auto attribute = lower_ascii(cps_to_utf8(src.substr(
+                attribute_range.name.start, attribute_range.name.length())));
             std::string value;
-            if (cursor < parse_limit && src[cursor] == U'=') {
-                ++cursor;
-                while (cursor < parse_limit && (src[cursor] == U' ' || src[cursor] == U'\t')) ++cursor;
-                if (cursor >= parse_limit) return std::nullopt;
-                if (src[cursor] == U'"' || src[cursor] == U'\'') {
-                    const auto quote = src[cursor++];
-                    const auto value_start = cursor;
-                    while (cursor < parse_limit && src[cursor] != quote && src[cursor] != U'\n') ++cursor;
-                    if (cursor >= parse_limit || src[cursor] != quote) return std::nullopt;
-                    value = cps_to_utf8(src.substr(value_start, cursor - value_start));
-                    ++cursor;
-                } else {
-                    const auto value_start = cursor;
-                    while (cursor < parse_limit && src[cursor] != U' ' && src[cursor] != U'\t'
-                        && src[cursor] != U'\n' && src[cursor] != U'>') ++cursor;
-                    value = cps_to_utf8(src.substr(value_start, cursor - value_start));
-                }
+            if (attribute_range.value) {
+                const auto& range = *attribute_range.value;
+                value = cps_to_utf8(src.substr(range.start, range.length()));
             }
             // Event handlers never enter derived presentation state.  Safe
             // CSS declarations are filtered later by the HTML presentation
@@ -768,7 +1444,7 @@ struct Parser {
                 tag.attributes[std::move(attribute)] = std::move(value);
             }
         }
-        return std::nullopt;
+        return tag;
     }
 
     std::optional<std::pair<std::size_t, std::size_t>> html_closing_tag(
@@ -859,8 +1535,23 @@ struct Parser {
         if (peek() != U'<') return false;
         const auto start = pos;
         const auto tag = html_tag_at(start, limit);
-        if (!tag || tag->closing) return false;
-        if (tag->name != "img" && tag->name != "br" && !safe_html_container(tag->name)) return false;
+        if (!tag) return false;
+
+        // Complete tags remain opaque syntax even when they have no derived
+        // presentation. In particular, brackets and delimiters in attributes
+        // cannot become Markdown links or emphasis.
+        if (tag->closing || (tag->name != "img" && tag->name != "br"
+                && !safe_html_container(tag->name))) {
+            flush_text_to(out, run_start, start);
+            pos = tag->end;
+            InlineCstNode node;
+            node.id = next_id();
+            node.kind = InlineCstKind::Raw;
+            node.range = {start, pos};
+            out.push_back(std::move(node));
+            run_start = pos;
+            return true;
+        }
 
         flush_text_to(out, run_start, start);
         if (tag->name == "img" || tag->name == "br") {
@@ -1016,8 +1707,15 @@ struct Parser {
             const auto c = src[cursor];
 
             if (is_line_ending(c)) {
-                const bool hard = (cursor >= 2 && src[cursor - 1] == U' ' && src[cursor - 2] == U' ')
-                    || (cursor >= 1 && src[cursor - 1] == U'\\');
+                std::size_t slash_count = 0;
+                while (cursor > slash_count && src[cursor - slash_count - 1] == U'\\') ++slash_count;
+                auto after_break = cursor + line_ending_length(cursor);
+                if (ctx.syntax_mode == InlineSyntaxMode::Markdown) {
+                    while (after_break < limit && (src[after_break] == U' ' || src[after_break] == U'\t')) ++after_break;
+                }
+                const bool hard = ctx.syntax_mode == InlineSyntaxMode::Markdown
+                    && ((cursor >= 2 && src[cursor - 1] == U' ' && src[cursor - 2] == U' ')
+                        || (slash_count % 2 == 1 && after_break < limit));
                 cursor += line_ending_length(cursor);
                 emit(hard ? TokenKind::HardBreak : TokenKind::SoftBreak, start, cursor);
                 continue;
@@ -1084,16 +1782,13 @@ struct Parser {
             }
             if (parse_escape(out, run_start)) continue;
             if (parse_entity(out, run_start)) continue;
-            if (peek() == U'*' && peek(1) == U'*') { if (parse_delimited(out, run_start, U"**", InlineCstKind::Strong)) continue; }
-            if (peek() == U'*') { if (parse_delimited(out, run_start, U"*", InlineCstKind::Emphasis)) continue; }
-            if (peek() == U'_' && peek(1) == U'_') { if (parse_delimited(out, run_start, U"__", InlineCstKind::Strong)) continue; }
-            if (peek() == U'_') { if (parse_delimited(out, run_start, U"_", InlineCstKind::Emphasis)) continue; }
+            if (peek() == U'*' || peek() == U'_') { if (parse_commonmark_emphasis(out, run_start)) continue; }
             if (peek() == U'~' && peek(1) == U'~') { if (parse_delimited(out, run_start, U"~~", InlineCstKind::Strikethrough)) continue; }
             if (peek() == U'`') { if (parse_code_span(out, run_start)) continue; }
             if (peek() == U'!' && peek(1) == U'[') { if (parse_link_or_image(out, run_start)) continue; }
             if (peek() == U'[') {
                 if (peek(1) == U'^') { if (parse_footnote_ref(out, run_start)) continue; }
-                if (peek(1) == U'[') { if (parse_wiki_link(out, run_start)) continue; }
+                if (ctx.dialect.wiki_links && peek(1) == U'[') { if (parse_wiki_link(out, run_start)) continue; }
                 if (parse_link_or_image(out, run_start)) continue;
             }
             if (peek() == U'<') {
@@ -1111,24 +1806,12 @@ struct Parser {
     // Parse [from, limit) — used for nested content.
     InlineCstNodes parse_until(std::size_t requested_limit) {
         limit = (std::min)(limit, requested_limit);
+        const auto previous_scope_start = scope_start;
+        scope_start = pos;
         InlineCstNodes out;
         std::size_t run_start = pos;
         while (!eof()) {
-            if (is_line_ending(peek())) {
-                // soft break within nested content (no hard-break detection
-                // needed for losslessness; the newline becomes its own node).
-                flush_text(out, run_start);
-                std::size_t nl = pos;
-                advance();
-                InlineCstNode sb;
-                sb.id = next_id();
-                sb.kind = InlineCstKind::SoftBreak;
-                sb.range = {nl, pos};
-                sb.ensure_delimiter_ranges() = {{nl, pos}, {nl, pos}, {nl, pos}, std::nullopt};
-                out.push_back(std::move(sb));
-                run_start = pos;
-                continue;
-            }
+            if (parse_break(out, run_start, ctx.syntax_mode == InlineSyntaxMode::Markdown)) continue;
             if (ctx.syntax_mode == InlineSyntaxMode::HtmlText) {
                 if (parse_entity(out, run_start)) continue;
                 if (peek() == U'<' && parse_html_comment(out, run_start)) continue;
@@ -1139,16 +1822,13 @@ struct Parser {
             if (peek() == U'$' || (peek() == U'\\' && peek(1) == U'(')) { if (parse_math(out, run_start)) continue; }
             if (parse_escape(out, run_start)) continue;
             if (parse_entity(out, run_start)) continue;
-            if (peek() == U'*' && peek(1) == U'*') { if (parse_delimited(out, run_start, U"**", InlineCstKind::Strong)) continue; }
-            if (peek() == U'*') { if (parse_delimited(out, run_start, U"*", InlineCstKind::Emphasis)) continue; }
-            if (peek() == U'_' && peek(1) == U'_') { if (parse_delimited(out, run_start, U"__", InlineCstKind::Strong)) continue; }
-            if (peek() == U'_') { if (parse_delimited(out, run_start, U"_", InlineCstKind::Emphasis)) continue; }
+            if (peek() == U'*' || peek() == U'_') { if (parse_commonmark_emphasis(out, run_start)) continue; }
             if (peek() == U'~' && peek(1) == U'~') { if (parse_delimited(out, run_start, U"~~", InlineCstKind::Strikethrough)) continue; }
             if (peek() == U'`') { if (parse_code_span(out, run_start)) continue; }
             if (peek() == U'!' && peek(1) == U'[') { if (parse_link_or_image(out, run_start)) continue; }
             if (peek() == U'[') {
                 if (peek(1) == U'^') { if (parse_footnote_ref(out, run_start)) continue; }
-                if (peek(1) == U'[') { if (parse_wiki_link(out, run_start)) continue; }
+                if (ctx.dialect.wiki_links && peek(1) == U'[') { if (parse_wiki_link(out, run_start)) continue; }
                 if (parse_link_or_image(out, run_start)) continue;
             }
             if (peek() == U'<') {
@@ -1159,6 +1839,7 @@ struct Parser {
             advance();
         }
         flush_text(out, run_start);
+        scope_start = previous_scope_start;
         return out;
     }
 };

@@ -3,6 +3,7 @@
 #include "MainWindow.xaml.h"
 #include "localization/Localization.h"
 #include "settings/AppSettings.h"
+#include "media/MathSvgStore.h"
 #include <shellapi.h>
 
 using namespace winrt;
@@ -12,6 +13,21 @@ namespace winrt::Folia::implementation
 {
     namespace
     {
+        winrt::fire_and_forget ReclaimMathCacheAsync()
+        {
+            try
+            {
+                co_await winrt::resume_background();
+                auto result = winrt::Folia::MathSvgStore::ReclaimOrphans();
+                if (result.failed != 0)
+                    ::OutputDebugStringW(L"Folia: some unused math cache files could not be reclaimed.\n");
+            }
+            catch (...)
+            {
+                ::OutputDebugStringW(L"Folia: math cache startup maintenance could not be scheduled.\n");
+            }
+        }
+
         std::optional<winrt::hstring> InitialDocumentPath()
         {
             struct LocalArguments
@@ -44,6 +60,7 @@ namespace winrt::Folia::implementation
 
     void App::OnLaunched([[maybe_unused]] LaunchActivatedEventArgs const& e)
     {
+        ReclaimMathCacheAsync();
         ApplyLanguageOverride(LoadAppSettings().settings.languageId);
         auto initialDocument = InitialDocumentPath();
         window = initialDocument

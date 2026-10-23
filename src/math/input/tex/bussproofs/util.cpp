@@ -123,7 +123,7 @@ void addSpace(ParseOptions &config, MmlNode *inference, double space, bool right
         return;
     auto &initial = properties(inference);
     if (initial.rule_direction() || initial.labelled_rule()) {
-        auto &row = config.nodeFactory.makeNode(NodeKind::mrow);
+        auto &row = config.request().nodeFactory.makeNode(NodeKind::mrow);
         required(required(inference).parent()).replaceChild(row, *inference);
         row.appendChild(*inference);
         mml::moveProofProperties(initial, row.properties().proof);
@@ -148,7 +148,8 @@ void addSequentSpace(ParseOptions &config, MmlNode *sequent, std::size_t positio
                      double width) {
     NodeDefinition definition;
     definition.attributes.set(u"width", em(width));
-    auto &space = config.nodeFactory.makeNode(NodeKind::mspace, {}, std::move(definition));
+    auto &space =
+        config.request().nodeFactory.makeNode(NodeKind::mspace, {}, std::move(definition));
     auto *cell = child(sequent, position);
     if (right)
         required(cell).appendChild(space);
@@ -183,8 +184,8 @@ void adjustSequentPairwise(Geometry &geometry, ParseOptions &config,
     }
 }
 void adjustSequents(Geometry &geometry, ParseOptions &config) {
-    auto found = config.nodeLists.find(u"sequent");
-    if (found == config.nodeLists.end())
+    auto found = config.request().nodeLists.find(u"sequent");
+    if (found == config.request().nodeLists.end())
         return;
     auto const &sequents = found->second;
     for (auto index = sequents.size(); index != 0;) {
@@ -281,7 +282,7 @@ void clearDocument(TexFilterData &) {
     // with the calling compile invocation, including when another filter throws.
 }
 void makeBsprAttributes(TexFilterData &data) {
-    required(data.data.root).walkTree([](MmlNode &node) {
+    required(data.data.request().root).walkTree([](MmlNode &node) {
         auto value = semantics(node.properties().proof);
         if (!value.empty())
             node.attributes().set(u"semantics", std::move(value));
@@ -291,8 +292,8 @@ void balanceRules(TexFilterData &data) {
     auto &config = data.data;
     Geometry geometry(data);
     adjustSequents(geometry, config);
-    auto found = config.nodeLists.find(u"inference");
-    if (found == config.nodeLists.end())
+    auto found = config.request().nodeLists.find(u"inference");
+    if (found == config.request().nodeLists.end())
         return;
     double maxAdjust = 0;
     for (auto *inference : found->second) {
@@ -334,7 +335,8 @@ void balanceRules(TexFilterData &data) {
         if (auto *sibling = nextSibling(column)) {
             NodeDefinition definition;
             definition.attributes.set(u"width", em(maxAdjust));
-            auto &space = config.nodeFactory.makeNode(NodeKind::mspace, {}, std::move(definition));
+            auto &space =
+                config.request().nodeFactory.makeNode(NodeKind::mspace, {}, std::move(definition));
             sibling->appendChild(space);
             maxAdjust = 0;
             continue;

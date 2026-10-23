@@ -73,7 +73,20 @@ template<class Range, class Emit> void arrayJson(std::ostream& out, Range const&
 // a native target. It emits a complete deterministic comparison document.
 void dumpNativeRaiiFontData(std::ostream& out) {
     const auto bundle = makeNewcmFontData();
-    auto const& face = bundle.fonts.face("MathJaxNewcm");
+    auto face = bundle.fonts.face("MathJaxNewcm");
+    const auto request = std::dynamic_pointer_cast<NewcmFontRequest const>(face.glyphSource);
+    if (!request) throw std::runtime_error("font verification requires the NewCM request provider");
+    // This offline comparison explicitly requests the entire pinned profile.
+    // Normal rendering never enumerates or materializes all font records.
+    const auto keys = request->keys();
+    const auto records = request->read(keys);
+    output::svg::SvgFontResourcesBuilder svgBuilder;
+    for (std::size_t i=0; i<keys.size(); ++i) {
+        if (records[i]->glyph) face.variants.at(keys[i].variant).glyphs.emplace(keys[i].codepoint, *records[i]->glyph);
+        if (records[i]->svg) svgBuilder.add(keys[i], *records[i]->svg);
+    }
+    for (auto const& [key,target] : request->aliases()) svgBuilder.addAlias(key, target);
+    const auto allSvg = std::move(svgBuilder).freeze();
     std::size_t directGlyphRecords=0, remapRecords=0, outlineSegments=0;
     std::set<output::scene::GlyphResource const*> resources;
     for(auto const& [_,variant]:face.variants){
@@ -146,8 +159,8 @@ void dumpNativeRaiiFontData(std::ostream& out) {
         auto optarr=[&](char const* key,auto const& value){out<<",\""<<key<<"\":";if(value)arrayJson(out,*value,[&](auto x){out<<x;});else out<<"null";};
         optarr("hd",d.heightDepth);optarr("HDW",d.heightDepthWidth);optarr("fullExt",d.fullExtent);out<<'}';}
     out << "},\"svg_resources\":{"; first=true;
-    for(auto const&[key,value]:bundle.svg_resources.entries()){if(!first)out<<',';first=false;std::ostringstream encodedKey;encodedKey<<'[';stringJson(encodedKey,key.variant);encodedKey<<','<<key.codepoint<<']';stringJson(out,encodedKey.str());out<<":{\"path_defined\":"<<(value.path_defined?"true":"false")<<",\"path_data\":";stringJson(out,value.path_data);out<<",\"content_data\":";if(value.content_data)stringJson(out,*value.content_data);else out<<"null";out<<'}';}
-    out << "},\"svg_aliases\":["; first=true;for(auto const&[key,target]:bundle.svg_resources.aliases()){if(!first)out<<',';first=false;out<<"[[";stringJson(out,key.variant);out<<','<<key.codepoint<<"],[";stringJson(out,target.variant);out<<','<<target.codepoint<<"]]";}out<<"]}\n";
+    for(auto const&[key,value]:allSvg.entries()){if(!first)out<<',';first=false;std::ostringstream encodedKey;encodedKey<<'[';stringJson(encodedKey,key.variant);encodedKey<<','<<key.codepoint<<']';stringJson(out,encodedKey.str());out<<":{\"path_defined\":"<<(value.path_defined?"true":"false")<<",\"path_data\":";stringJson(out,value.path_data);out<<",\"content_data\":";if(value.content_data)stringJson(out,*value.content_data);else out<<"null";out<<'}';}
+    out << "},\"svg_aliases\":["; first=true;for(auto const&[key,target]:allSvg.aliases()){if(!first)out<<',';first=false;out<<"[[";stringJson(out,key.variant);out<<','<<key.codepoint<<"],[";stringJson(out,target.variant);out<<','<<target.codepoint<<"]]";}out<<"]}\n";
 }
 }
 

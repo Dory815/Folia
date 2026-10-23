@@ -7,12 +7,10 @@ import folia.platform.editor_viewport_plan;
 #include "editor/rendering/EditorPreparedDocument.h"
 #include "editor/rendering/EditorRenderResources.h"
 #include "editor/session/EditorRenderFrame.h"
-#include "media/MathJaxRenderer.h"
-#include "media/SvgNormalizer.h"
 
 namespace winrt::Folia
 {
-    // Refreshes completed asynchronous math/image work near the viewport and
+    // Refreshes completed asynchronous image/Mermaid work near the viewport and
     // unloads embedded resources after they leave the retention band.
     class EditorEmbeddedContentUpdater final
     {
@@ -21,8 +19,6 @@ namespace winrt::Folia
             detail::EditorRenderFrame const& frame,
             EditorRenderResources& resources,
             EditorInlineImageRenderer& inlineImages,
-            MathJaxRenderer& mathJax,
-            SvgNormalizer& svgNormalizer,
             EditorDocumentBlockPreparer& blockPreparer,
             std::unique_ptr<EditorPreparedDocument>& preparedDocument);
 
@@ -38,8 +34,6 @@ namespace winrt::Folia
         detail::EditorRenderFrame const& frame;
         EditorRenderResources& resources;
         EditorInlineImageRenderer& inlineImages;
-        MathJaxRenderer& mathJax;
-        SvgNormalizer& svgNormalizer;
         EditorDocumentBlockPreparer& blockPreparer;
         std::unique_ptr<EditorPreparedDocument>& preparedDocument;
         static constexpr folia::platform::editor::EditorViewportPolicy viewportPolicy{};

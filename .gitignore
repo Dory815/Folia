@@ -47,39 +47,21 @@ compile_commands.json
 /.foreign-object-transform-*/
 /tools/math-port/drafts/**
 
-# Keep verification sources referenced by CMake visible for review.
+# Historical verification inputs pending individual retirement review.
 !/tools/math-port/drafts/array-unshift-native-candidate.cpp
 !/tools/math-port/drafts/attributes-bindings-native-probe.cpp
 !/tools/math-port/drafts/attributes-bindings-native-tests.cpp
 !/tools/math-port/drafts/bussproofs-expanded-native-candidate.cpp
-!/tools/math-port/drafts/bussproofs-session-state-native-test.cpp
-!/tools/math-port/drafts/bussproofs-stack-packet/
-!/tools/math-port/drafts/bussproofs-stack-packet/bussproofs-session-state-native-candidate.cpp
-!/tools/math-port/drafts/common-getbbox-lifetime-native-candidate.cpp
-!/tools/math-port/drafts/common-getbbox-native-candidate.cpp
 !/tools/math-port/drafts/handler-context-defaults-native-candidate.cpp
-!/tools/math-port/drafts/maction-texttip-native-candidate.cpp
-!/tools/math-port/drafts/map-handler-session-native-candidate.cpp
 !/tools/math-port/drafts/math-native-session-retirement-next/
 !/tools/math-port/drafts/math-native-session-retirement-next/renderer-owner-counts.cpp
 !/tools/math-port/drafts/mhchem-native-dependency.cpp
-!/tools/math-port/drafts/mhchem-package-native-candidate.cpp
 !/tools/math-port/drafts/mml-factory-context-methods-native-tests.cpp
 !/tools/math-port/drafts/parser-projection-native-candidate.cpp
-!/tools/math-port/drafts/scene-context-nodes-test.cpp
-!/tools/math-port/drafts/scene-layering-source-tests.cpp
 !/tools/math-port/drafts/subhandlers-live-owner-native-candidate.cpp
-!/tools/math-port/drafts/svg-processmath-packet/
-!/tools/math-port/drafts/svg-processmath-packet/maction-context-native-test.cpp
 !/tools/math-port/drafts/tag-setoptions-default-methods-native-witness.cpp
-!/tools/math-port/drafts/tag-setoptions-native-candidate.cpp
-!/tools/math-port/drafts/tex-parser-context-fields-native-candidate.cpp
 !/tools/math-port/drafts/texhtml-bridge-native-test.cpp
-!/tools/math-port/drafts/texhtml-html-dom-strings-native-test.cpp
-!/tools/math-port/drafts/texhtml-native-candidate.cpp
-!/tools/math-port/drafts/texhtml-xml-font-fallback-test.cpp
 !/tools/math-port/drafts/texhtml-xml-lifetime-test.cpp
-!/tools/math-port/drafts/texhtml-xml-native-candidate.cpp
 !/tools/math-port/drafts/token_map_context_bindings.cpp
 
 # Python cache

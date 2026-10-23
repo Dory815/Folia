@@ -6,6 +6,56 @@ its ownership-repair plans. The original MathJax version, 38-package profile,
 fonts and rendering requirements in `scope.json` remain in scope. No runtime
 or container retirement patch is part of this redesign.
 
+## Request-scoped font data (implemented 2026-10-22)
+
+The user defines demand as one request, which may contain a bounded batch of
+formulas. There is one batch entry point; a single formula is a batch of one.
+Deduplicate glyph requirements within that request and read/decode them in
+groups. Do not preserve glyph bodies or decoded outlines between requests,
+including through an LRU, a persistent provider cache, or a renderer session.
+An idle native renderer retains the TeX session and small lookup indexes.
+`NewcmFontSource` shares immutable metadata and compiled read-only tables;
+`NewcmFontRequest` alone owns the loaded glyph map for one batch. Common and
+SVG project values from that same request. The existing single-item helpers
+delegate to the batch implementation rather than retaining a separate path.
+
+The font source is file-backed, read-only data, without SQLite. The reader's
+batch contract must return request-owned values or explicit lifetime leases,
+never pointers into a temporary read buffer. Platform mapping/handle APIs stay
+outside core. The existing compiled read-only font tables are source data;
+there is no separate font-pack file. Engine construction does not expand every
+row into heap objects. Storage lookup preserves pinned variant inheritance, shallow
+link overlays, SMP remaps, extension precedence, SVG aliases, present-empty
+paths, compositions, and outline diagnostics. Missing or invalid data is a
+reported error, not a switch to the eager implementation.
+
+| Owner | Responsibility |
+|---|---|
+| `fonts/newcm_font_data.*` and its existing generator | Pinned read-only records/indexes and exact source metadata; no eager outline construction |
+| `fonts/newcm_font_module_provider.*` | One request's deduplicated batch reads and typed font values; release all loaded bodies at request completion/cancellation/failure |
+| `output/common/font_data.*` | Mathematical metrics, variant/remap resolution and a borrow from the active request; no Windows APIs, disk queue, or persistent glyph-body cache |
+| `output/svg/font_data.*` | Exact SVG path/content access from the same request; no second font selection implementation |
+| `math.*` / native C ABI | One batch request lifecycle shared by startup computation and editing; persistent lightweight parser, independent per-formula MML ownership/results |
+| Folia math worker | Bounded startup batches, asynchronous preview, request cancellation; file access never on the UI thread |
+
+Completed Scene results still own only the glyph resources they actually use,
+as required by the existing immutable Scene contract. A Scene must not capture
+the complete font request or renderer. SVG results retain no font source/body
+after serialization. Returning a Scene must remain valid after its request and
+engine are destroyed.
+
+Acceptance must include batch-of-one versus multi-formula equivalence against
+the same pinned Source, glyph deduplication inside a batch, exact metrics/SVG
+aliases/outlines, and retained-Scene ownership. Measure cold and repeated
+requests while leaving the engine alive, and verify zero loaded font bodies
+after success, cancellation and errors. Compare the user's original native
+runtime-rendering baseline (`2d58ded9`) with the same document and memory metric;
+the font-only measurement alone does not explain the reported 128→218 MB delta.
+Keep the scrolling checks: obsolete queued reads/native jobs are removed;
+already-started obsolete reads cannot publish bytes or trigger repaint. No
+opening-time full-document visual layout, HasMath document classification,
+UI-thread file IO, or disk-backed editing preview is introduced.
+
 ## Pipeline and responsibilities
 
 ```text
@@ -49,9 +99,10 @@ Common and Scene family implementations. Duplicate family arithmetic has now
 been consolidated. The former scalar APIs were replaced in place by actual
 CommonMfrac/CommonMsqrt/CommonMroot classes in `95a119b1`; they now participate
 in the native factory, MML, font, BBox and recursive linebreak collaboration.
-The renderer facade and complete TeX input remain outside the active graph;
-it cannot render TeX end to end. A successful component build does not resolve
-that integration gap.
+The native Renderer now drives these families through the complete typed TeX,
+MML, Common and Scene graph and the application worker consumes its SVG output.
+The earlier component-only integration gap is closed; current acceptance and
+remaining inactive-source cleanup are recorded in HANDOFF.md.
 
 | Pinned upstream responsibility | Native owning files | Required boundary |
 |---|---|---|
@@ -715,6 +766,16 @@ and multiline rows/text. Existing 75 Common/150 byte-exact SVG/full-profile
 gates remain required. During implementation report unsupported families and
 writer gaps explicitly. After focused tests, one full math run; no D2D pixel
 gate and no Folia switch before the complete SVG gate passes.
+
+The existing `CommonWrapper::sceneDx` is a virtual native layout query.
+`CommonMrow` returns zero when an inferred row emits directly into its parents
+(stack or no line break), because Source skips that row's styled SVG shell.
+An explicit or broken inferred row retains the ordinary padding/border offset.
+This is computed from the existing row state; no output-state flag is retained.
+The pinned development oracle `common-mrow-style-source.cjs` observes own CSS
+attributes on actual compiled MML: zero for the unbroken inferred path and
+1.125em for its broken control. That programmatic MML state is not claimed as
+a naturally authored TeX case.
 
 ### Script-family Scene emission (2026-10-21 Root lock)
 
@@ -2133,3 +2194,340 @@ Freeze all owners before one parallel4 build. Acceptance: strict Source unchange
 default/hash; hosted default/write/no-op, independent two-process Source150;
 native75 layout pairs/150 SVG bytes; default86 and strict75 unchanged; full math.
 This proves no browser dispatch, request192 lifetime run or Folia integration.
+
+Canonical execution exposed two concrete assumptions to correct in their
+original owners. CommonMspace::computeLineBBox must pass an absent authored
+length through the existing empty-length/default-size rule; feeding the default
+as a numeric length scales it twice (.2 becomes .04). Fix that method and add a
+focused absent/empty/explicit/zero leading regression, retaining Source output.
+
+The actual profile constructs its font before addExtension; extension instance
+cacheID can therefore be absent even though the constructor's static cache-ID
+map contains entries. The generator must not assign static IDs back to those
+Source instances. Capture effective SVG suffix as instance.cacheID||'', permit
+that empty suffix in FontRepository::resolveGlyph and generated aliases, and
+keep missing variants/glyphs distinct from valid empty IDs. GlyphResource.font_id
+denotes outline provenance, independently of the SVG cache suffix: generated
+resources use face.name + "/" + originating variantName, and aliases share that
+same immutable resource. This replaces the previous conflation, adds no runtime
+metadata fallback and retains both font metrics/outlines and Source cache bytes.
+common_base_emission owns the generator/resolver/focused-font UT; Root reviews
+and regenerates the locked ignored provider output before the single build.
+
+### Request lifetime observation lock
+
+The next batch observes the accepted pipeline without changing its ownership.
+MmlDocument still owns its node arena, CommonWrapperFactory still owns wrappers,
+and Lite DOM parent links remain weak. No retire/reset registry or alternate
+renderer is introduced. `buildScene` is already the Scene-only entry; full
+render requests call the same entry and then SVG::write. Do not copy the compile
+pipeline or add a second compile-only helper for this gate.
+
+One small `util/instance_count.ixx` module may provide an allocation-free typed
+InstanceCount<T> member. It counts actual construction/destruction (including
+copies/moves), with relaxed atomic numeric totals and no addresses, callbacks,
+resets or owned objects. Its actual consumers are the original MmlNode,
+MmlDocument, CommonWrapper, DOMNode, DOMDocument and DOMWindow owners. Empty
+counter members use no_unique_address; existing object semantics remain intact.
+These are observation totals, not an allocator or lifetime-management service.
+
+One focused request-lifetime UT reuses tests/math/support/tex_scene.hpp unchanged.
+Warm a fixed semantic session across every input, retain a completed Scene and
+an immutable SVG font catalog separately, then measure 192 and a longer 768
+mixed Scene-only/full-SVG requests. Compare actual live counts at every request
+boundary and verify construction/destruction totals advanced. A Windows Debug
+test-support heap snapshot reads real CRT normal/client block counts and bytes;
+compare warmed request boundaries before making UT assertions or logging.
+This domain is explicit: it does not measure OS/GPU allocations or replace
+object ownership review, and peak arena size is not a zero-growth proof.
+
+Use actual unknown-text measurement exceptions, malformed TeX/merror, and a real
+writer error followed by successful requests. Retained Scene SVG must survive
+later requests and destruction of InputOwner, using only its separately retained
+immutable font catalog. Persistent macro/label semantics and cancellation at the
+future C ABI remain separate gates. Report request and cleanup time; RSS is only
+supporting evidence. Any growth is diagnosed at its original owner, never hidden
+by changing counters or adding manual releases.
+
+Owners: common_base_emission implements the counter and three MML/Common owner
+members; common_rows_emission owns only DOM base members; common_scene_entry
+owns the focused UT and CRT-only test helper. Root reviews, registers sources,
+formats, runs the single parallel4 build and tests, then commits small batches.
+
+### ParseOptions request ownership lock (2026-10-21)
+
+New evidence is the repeating CRT footprint and expired request borrows in
+TeX/ParseOptions, not growing MML/Common/DOM populations. Preserve every accepted
+parser, package, tag and layout algorithm. No end-of-compile clear/retire patch,
+counter relaxation, copied compile pipeline or second ParseOptions implementation.
+The original ParseOptions.ts and tex.ts C++ owners contain this change; add no
+production file or generic Core request payload. MathInputJaxService::compile
+and MathItem's existing mathematical service contract remain unchanged.
+
+`ParseOptions` retains configuration/session collaborators: handlers, effective
+options, StackItemFactory catalog, tag formatter product, BegingroupStack,
+ColumnParser, math-style resolver, packageData and TextMacrosData configuration.
+Store effective NodeCreators there as a finite typed value. Remove its MML
+factory argument: a configured input jax must not retain a request factory.
+
+In parse_options.ixx/.cpp, `ParseRequest(ParseOptions&, MmlFactory&)` is an
+explicit noncopyable/nonmovable caller-owned RAII object. It owns NodeFactory,
+TexEquationState equation, parsers, mathItem, texhtmlAdaptor, root, nodeLists,
+error and the text parser bridge pointer texParser. All names retain their
+Source roles. Its private binding saves the previous active ParseRequest and
+restores it on scope exit; this only bounds a temporary borrow and never clears
+or destroys another owner's data. Construct/validate factories before binding,
+so constructor failure cannot leave an active pointer. Destructor unbinds before
+normal member destruction. Request data never moves back into ParseOptions.
+
+ParseOptions exposes request() const/nonconst (logic_error outside a scope),
+hasRequest() noexcept, and setNodeCreators(NodeCreators const&). The setter merges
+configured creators and updates an active factory if configuration changes
+during a request. Existing NodeFactory creation algorithms remain unchanged;
+consumers access `options.request().nodeFactory`. Other expression fields use
+the same request() accessor; configuration-only fields remain on ParseOptions.
+clear() retains its Source meaning at the start of an expression, operating on
+the active request, not cleanup at request exit.
+
+In tex_jax.ixx/.cpp, `TeXRequest(TeX&, MmlFactory&)` owns one ParseRequest plus an
+optional text-macro ParseRequest, both bound for the caller's compile/typeset/
+observation lifetime. It restores nested scopes through member RAII, including
+partial constructor failure. TeX construction no longer receives a factory;
+remove AbstractInputJax's unused persistent factory pointer and setMmlFactory.
+compile checks that the active request factory matches its document, keeps
+latex as a local snapshot after prefilters, and returns the final request.root;
+remove persistent latex_/mathNode_. Configuration is still installed only once.
+No implicit request, compatibility path or retained default request is allowed.
+MathItem and CompileServices adaptor borrows are narrower than the frame: keep
+the existing compile-scope restoration role for them, saving/restoring previous
+borrows on every return/throw. This neither clears expression data nor changes
+the lifetime of the caller-owned document; post-compile root/list observations
+remain valid until the frame ends.
+
+TextMacrosData keeps only textConf/ParseOptions configuration. Its texParser
+borrow moves into the text ParseRequest; internalMath retains its existing
+nested restoration and copyLists algorithms against that frame. Configure text
+options without a document factory, and prepare the already bound text frame.
+Tags' equation accesses move to request().equation; definitions/formatters and
+session counters/labels remain persistent. reset(offset) must also work with no
+active request: reset session semantics, and only reset expression fields when
+a frame exists. Remove noexcept where a now request-dependent accessor may throw.
+
+Caller scopes are explicit: the TeX scene helper creates TeXRequest after the
+input jax exists and before compile, and it ends before MmlDocument destruction.
+Single-document package fixtures own a frame beside their document/jax so all
+existing in-document observations remain valid. The 64-fresh-document TeX test
+creates one frame per loop and verifies absence of an active request afterwards.
+Standalone parser fixtures own ParseRequest directly. Do not migrate inactive
+Context tests/bindings or touch the thirteen protected dirty paths.
+
+Acceptance: invalid/missing/foreign request rejection, nested binding restoration
+and exception unwinding; existing parser/package Source tests unchanged in
+meaning; canonical75/150 + default86 + strict73/two-errors unchanged; real
+192+768 allocation/object/error/recovery/retained-Scene gate; one full math run
+after final changes. Macro/label persistence and C ABI cancellation remain
+separate gates. Root reviews all changes by responsibility and commits in small
+packets; agents do not build, run native tests, modify CMake or mutate Git.
+
+### Direct MathML limits witness lock (2026-10-21)
+
+This batch extends evidence only, at the existing limits owners; it does not
+replace accepted CommonMunder/CommonMover/CommonMunderover algorithms. Extend
+`common-limits-source-witness.cjs` with a separate `--scene` mode, retaining the
+existing numeric witness and fixture byte-for-byte. New data belongs in
+`tests/math/fixtures/common-source/limits-mathml-scene.inc`; add one compact
+table-driven test to the already registered `native_common_limits.cpp`.
+No new production file/module, copied layout pipeline or CMake registration.
+
+The fixed matrix is munder/mover/munderover times four conditions: inline
+movable integral, display sum limits, explicit accents on x, and horizontally
+stretchy accents over/under a wider row. Capture all twelve real MathML inputs
+in none/local cache modes through the pinned full38 profile and NewCM. Record
+actual compiled MML, root and selected limits-wrapper BBox, resolved local
+prefixes and complete SVG; do not synthesize cache IDs or expected geometry.
+The fixture owns named static arrays, not temporary spans or generated asserts.
+
+Shared fixture contract: LimitsSceneBBox {w,h,d,scale,rscale,L,R};
+LimitsSceneSourceCase {name,font_cache,display,em,ex,width,nodes,attributes,
+root_bbox,limits_node_index,limits_bbox,local_cache_prefixes,svg}, with the
+existing mathml_scene_test::Node/Attribute spans. The test reconstructs the
+captured tree via the existing helper, invokes LayoutJob/defaultNodes once,
+compares both BBoxes and final Scene metrics, and writes complete SVG before
+and after document/job teardown. Each of 24 records must complete. Known-glyph
+inputs reject unexpected text measurement; no result is skipped or replaced.
+
+Source owner: common_mo_emission (generator and fixture only); native-test
+owner: common_limits_emission (original test file only). Root reviews Source
+write/default/no-op provenance and unchanged numeric fixture, then owns one
+parallel4 build, focused limits, hosted canonical and the required final full.
+Any mismatch is diagnosed at its original owner, never by adjusting expected.
+
+### Application Renderer owner lock (2026-10-21)
+
+Replace the existing inactive `math.ixx/.cpp` implementation at its original
+owner, after accounting for its protected dirty diff. Do not introduce another
+renderer or re-enable NativeRenderSession/Context bindings. The old dirty
+callback/projection retirement hunks only served that withdrawn graph; their
+request cleanup requirement is satisfied by typed document/frame/job RAII.
+The resident-record diagnostic leaves with the object-layer diagnostic probe.
+No unrelated protected file changes in this packet. Candidate files remain
+ignored until Root reviews and deliberately promotes the original owner.
+
+Preserve RenderOptions/RenderResult/RenderError and every render/renderScene/
+toSvg UTF-8/UTF-16/stop-token signature and all C ABI signatures. Remove the
+obsolete RendererDiagnosticsProbe and its Context/identity-count API, rather
+than return invented zero counters. Native lifetime tests use actual owners.
+
+Renderer::State owns the immutable NewCM bundle, Lite adaptor, configuration/
+map/callback catalogs, HTML options, warning sink and one configured TeX input.
+Register the same 38 packages in the pinned order once; no per-call registry.
+Each call owns MmlDocument, TeXRequest and AbstractMathItem. A private narrowly
+scoped MathOutputJaxService adapter delegates typeset/getBBox to the existing
+LayoutJob/CommonOutputJax and SvgWrapperFactory catalog; it adds no mathematics.
+Use the same Lite text/HTML measurement and linebreak wiring as the accepted
+tex_scene helper, including the actual html parent for texhtml measurement.
+
+Metrics are display, em (default16), ex=em*.5, width(default1280), scale1;
+Common displayOverflow=linebreak, inline breaks enabled/forced. Completed Scene
+outlives document/frame/job. render serializes that Scene exactly once with
+SvgWriteOptions font_cache=none and the immutable NewCM catalog. renderScene
+does no SVG serialization; toSvg delegates to render. No DOM SVG intermediate,
+Node invocation, runtime object facade, release loop or duplicated layout.
+
+Retain cancellation::Request/Scope and real existing checkpoints. Check owner
+thread and session validity, then pre-cancellation before entering the pipeline;
+pre-cancel leaves the session usable. In-flight cancellation makes subsequent
+calls return SessionUnusable, including cancellation during serialization.
+Other errors unwind typed scopes; malformed TeX remains successful merror SVG.
+The C ABI continues enforcing finite positive metrics, UTF-16 units, opaque
+result ownership, thread/cancel/deadline/status/OOM rules without STL crossing.
+Root owns CMake promotion, console-runtime linkage and native execution.
+
+Acceptance before WinUI switch: production Renderer matches independent Source
+captures using its actual public options, covering the canonical75 TeX strings,
+UTF encodings and metrics. Per-case options absent from RenderOptions (such as
+tagSide) must be recorded as a distinct profile, not secretly set in the native
+runner or added only for fixtures; existing canonical/strict evidence stays
+unchanged. Also verify
+Scene-only/result ownership after renderer teardown; errors and next request;
+pre/in-flight cancel, deadline and wrong-thread cases; C ABI same SVG bytes,
+result destruction and invalid arguments. Root then locks the worker/DLL wiring
+separately, retaining priority/cache/generation behavior and the existing SVG
+parser. No D2D pixel gate or math QuickJS fallback. WinUI remains unchanged
+until this native application-facing gate passes.
+
+The actual locked canonical75 records have empty tag_side, em16, ex8 and
+widths 1280/100/80/120. Root inspected their generated evidence: every none-mode
+record is directly representable by the current public API. Reuse that existing
+independent fixture for all 75 UTF-8, 75 UTF-16 and 75 opaque-C render calls;
+no new oracle or expanded RenderOptions is needed for this batch.
+
+Root promotes math.ixx/.cpp into folia_math and builds the existing C ABI source
+as shared target FoliaNativeMath linked to that library. On Windows, generate
+the nine-function C export .def under the ignored build directory; do not
+export C++/STL symbols or add Windows headers to portable math. FoliaMathTests
+links the real DLL for its new opaque-ABI test; C++ public profile/cancellation
+tests replace their existing test owners. All console probes retain the test
+runtime and an adequate stack reserve. DLL build output stays in build/core.
+The worker switch, deployment and WinUI build remain the subsequent packet.
+
+### WinUI math worker integration lock (2026-10-21)
+
+Prepare this packet as ignored candidates while the native full gate runs;
+Root promotes only after that gate passes. MathJaxRenderer.h and its public
+queue/cache/dependency API remain unchanged. In MathJaxRenderer.cpp replace only
+the worker backend with the verified opaque C ABI. Create/use/destroy one
+native renderer on its worker thread. Convert queued UTF-8 explicitly to owned
+UTF-16 units; submit display/em/width with the existing two-second deadline.
+A per-call cancellation handle outlives its stop_callback and result copying;
+the worker stop token invokes only RequestStop across threads. Disabling stops
+and joins as before; Clear preserves its generation/drop behavior.
+
+Use RAII for all opaque handles; native statuses provide retry classification,
+not substring guesses from human messages. Keep the first-transient-failure
+retry policy, completion revisions/callbacks, priority queue bound256, cache
+budget16MiB/count4096, keys, generation checks and callback-outside-lock flow.
+Cancelled/unusable/OOM sessions are rebuilt on that worker. Native successful
+SVG goes directly to existing ParseMathJaxSvgOutput; its data-mjx-error mapping
+remains Formula. No SVG parser/normalizer edits, extra Scene ABI or D2D path.
+
+Current non-vendored app search finds QuickJS consumers only in this worker and
+its vcxproj build target. Remove those runtime calls, QuickJS link/build target
+and deployment of unused JS math/font assets; retain licenses and development
+Source oracle files. Do not touch Mermaid or its Rust normalizer dependency.
+No fallback or runtime selector. The app links only the nine-function C import
+library and deploys the verified DLL, with portable math headers as includes.
+
+Reuse build_app.ps1 to configure/build FoliaNativeMath with parallel4 before
+MSBuild (also capped4). Debug reuses build/core; Release uses build/core-release
+so the existing test tree is not silently reconfigured. vcxproj has matching
+build-dir defaults, early missing-library checks and an after-build DLL copy.
+No additional application build scripts/projects, header-only std replacement, restored package commits
+or extra build tree for the Debug path. Existing app stack reserve32MiB remains.
+Root runs setup.ps1, supported WinUI build and relevant deterministic platform
+tests, then verifies a real queue->C ABI->SVG-parser worker run including cache,
+priority/dependencies, generation changes, formula errors and shutdown.
+
+The reproducible test owner is tools/math-port/winui-math-worker-probe.cpp with
+its PowerShell runner. It invokes the supported build_app.ps1, reuses actual
+MSBuild worker/parser/module/PCH objects and the deployed DLL, and includes the
+console failure runtime. It adds no alternate application implementation or
+build project; generated compiler/linker files and logs stay under ignored build.
+
+### Retire the old SVG Context graph (2026-10-21)
+
+The native_document/render_session pair assembled the discarded Context service
+graph. math.cpp now owns the application request orchestration using the real
+TeXRequest/MathItem/LayoutJob owners. The old output_jax pair mixed mutable SVG
+DOM construction with mathematical placement; Common output_jax now owns the
+shared frame/line placement and the SVG writer owns serialization. The old
+menclose_surface callbacks delegate to, or duplicate, the retained CommonMenclose
+and notation algorithms. Keep those mathematical owners and Source witnesses.
+
+scene_context_nodes and output_jax_bindings are mutable object projection only.
+wrapper_classes, wrapper_constructors and wrapper_source_methods construct JS
+identities and reflective dispatch; the typed CommonWrapperFactory/catalog and
+original Common family classes own the actual products and algorithms. Remove
+these nine module pairs together after their source consumers are accounted.
+
+Legacy native observers that require this graph are not a second supported
+pipeline. Retire their C++ harnesses and paired native-result drivers/comparers;
+keep independent Source oracles, inputs, locks and fixtures. Their whole-object
+field/call/descriptor traces do not become C++ API contracts. Retained mathematical
+coverage remains in the typed family Source tests, full canonical SVG/metrics,
+75-case Scene-route geometry, package corpora and actual lifetime tests. Do not
+describe that as a replay of every old reflective trace field. Tracked draft
+copies are also source consumers; directory names do not make them ignored.
+
+### Scene responsibilities after retirement (2026-10-21)
+
+The obsolete Scene family placement hierarchy and its mutable object adapters
+have retired. The eight remaining Scene sources are builder.{ixx,cpp},
+scene.{ixx,cpp}, types.ixx, html_types.ixx and html_snapshot.{ixx,cpp}.
+They own value construction, immutable results and frozen foreign HTML content.
+Mathematical measurement, stretching, placement and line breaking remain in
+the original Common family owners. SVG serialization and resource planning
+remain in the SVG writer/cache owners; future Direct2D consumes the same Scene.
+
+CommonMrow::sceneDx owns the inferred-row origin exception observed in Source:
+unbroken inferred rows skip the styled row shell; broken line stacks retain
+the CommonWrapper style offset. It adds no request state or parallel layout
+helper. The old family, script, menclose, glyph-painter and support files are
+not alternative production implementations. Other inactive object-projection
+files still require per-owner consumer review before retirement.
+
+### Font direction and value boundaries (2026-10-21)
+
+The original output/common/direction.ixx owns the closed StretchDirection enum,
+matching the responsibility of Source Direction.ts. FontData re-exports that
+module and keeps DelimiterRecipe; Common wrappers share the same type. The
+move preserves enum values and all stretch/layout algorithms. No string-valued
+DIRECTION/V/H compatibility aliases or second direction type remain.
+
+FontRepository/FontGlyph and SvgFontResources publish immutable final font data.
+The existing NewCM module owner builds all pinned shards before publication;
+Source module/event counts are provenance, while direct glyph/remap/resource
+counts come from the actual native values. Old mutable FontDataClass/tuple,
+constructor/prototype, ListPatch and runtime JS-loader bindings are retired.
+The Source data generators/locks, final typed payload and independent oracles
+remain; no runtime loader/cache/promise API is reintroduced to satisfy old probes.

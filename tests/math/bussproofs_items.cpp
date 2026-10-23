@@ -360,9 +360,9 @@ suite bussproofs_items = [] {
                 proofRequests = previous;
                 factory.setCreators(creators);
             }
-        } restore{f.options->nodeFactory, f.options->nodeFactory.creators()};
+        } restore{f.options->request().nodeFactory, f.options->request().nodeFactory.creators()};
         proofRequests = &requests;
-        f.options->nodeFactory.setCreators(NodeCreators{.node = &proofCreator});
+        f.options->request().nodeFactory.setCreators(NodeCreators{.node = &proofCreator});
         auto &combined = frame->toMml();
         auto found = std::find_if(requests.begin(), requests.end(),
                                   [&](auto const &request) { return request.result == &combined; });

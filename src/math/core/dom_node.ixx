@@ -1,5 +1,6 @@
 export module folia.math.core.dom_node;
 import std;
+import folia.math.util.instance_count;
 
 export namespace folia::math {
 class DOMNode;
@@ -11,6 +12,7 @@ using DOMDocumentRef = std::shared_ptr<DOMDocument>;
 using DOMWindowRef = std::shared_ptr<DOMWindow>;
 
 class DOMNode {
+    [[no_unique_address]] util::InstanceCount<DOMNode> instance_count_;
     std::weak_ptr<DOMNode> parent_;
 public:
     virtual ~DOMNode() = default;
@@ -21,12 +23,16 @@ public:
 };
 
 class DOMDocument {
-public:
+    [[no_unique_address]] util::InstanceCount<DOMDocument> instance_count_;
+
+  public:
     virtual ~DOMDocument() = default;
 };
 
 class DOMWindow {
-public:
+    [[no_unique_address]] util::InstanceCount<DOMWindow> instance_count_;
+
+  public:
     virtual ~DOMWindow() = default;
 };
 }

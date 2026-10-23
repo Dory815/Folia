@@ -30,6 +30,7 @@ struct UnitFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     explicit UnitFixture(bool extensions = false, bool selected = true) {
         GensymbConfiguration::initializeModule(registry, maps);
         TexOptionValues options;
@@ -42,8 +43,8 @@ struct UnitFixture {
             options.packages->push_back({u"newcommand", {}});
             options.packages->push_back({u"boldsymbol", {}});
         }
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     std::vector<MmlNode *> tokens(std::u16string source) {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
@@ -74,7 +75,7 @@ suite gensymb = [] {
                     expect(NodeUtil::getText(*nodes.front()) == character);
                     expect(attr(*nodes.front(), u"mathvariant") == u"normal");
                     expect(attr(*nodes.front(), u"class") == u"MathML-Unit");
-                    expect(!f.jax->parseOptions().error);
+                    expect(!f.jax->parseOptions().request().error);
                 }
             }
         };
@@ -96,7 +97,8 @@ suite gensymb = [] {
                     unitRequests = nullptr;
                 }
             } restore;
-            f.jax->parseOptions().nodeFactory.setCreators(NodeCreators{.token = &observeUnit});
+            f.jax->parseOptions().request().nodeFactory.setCreators(
+                NodeCreators{.token = &observeUnit});
             auto nodes = f.tokens(u"\\unitText\\unitNull\\unitEmpty");
             expect(requests.size() == 3_u && nodes.size() == 3_u);
             for (auto const &request : requests) {
@@ -146,7 +148,7 @@ suite gensymb = [] {
             expect(NodeUtil::getText(*b.front()) == u"Ω");
         }
         baseOnly.tokens(u"\\ohm");
-        expect(baseOnly.jax->parseOptions().error);
-        expect(!second.jax->parseOptions().error);
+        expect(baseOnly.jax->parseOptions().request().error);
+        expect(!second.jax->parseOptions().request().error);
     };
 };

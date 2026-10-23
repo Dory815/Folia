@@ -1,15 +1,20 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <functional>
+#include <condition_variable>
+#include <exception>
+#include <filesystem>
+#include <mutex>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <stop_token>
+#include <thread>
 #include <vector>
-
-#include "media/AsyncWorkDependency.h"
 
 namespace winrt::Folia
 {
@@ -18,6 +23,12 @@ namespace winrt::Folia
         None,
         Formula,
         Infrastructure,
+    };
+
+    enum class MathRenderPurpose
+    {
+        Document,
+        Preview,
     };
 
     struct MathJaxSvgFragment
@@ -48,32 +59,89 @@ namespace winrt::Folia
         }
     };
 
+    // Document-owned, asynchronous native math cache. All native rendering
+    // and SVG normalization run on its private worker.
     class MathJaxRenderer
     {
+        struct State;
     public:
+        class Batch
+        {
+            struct Impl;
+            std::unique_ptr<Impl> impl;
+            explicit Batch(std::shared_ptr<State> state);
+            friend class MathJaxRenderer;
+        public:
+            ~Batch();
+            Batch(Batch&&) noexcept;
+            Batch& operator=(Batch&&) noexcept;
+            void Render(std::string_view tex, bool display, float em, float containerWidth,
+                std::string_view color, std::stop_token stop = {});
+            void Submit();
+        };
         MathJaxRenderer();
         ~MathJaxRenderer();
         MathJaxRenderer(MathJaxRenderer const&) = delete;
         MathJaxRenderer& operator=(MathJaxRenderer const&) = delete;
 
-        void SetEnabled(bool enabled);
-        bool Enabled() const;
-        std::shared_ptr<MathJaxSvg const> GetOrQueue(
+        MathJaxRenderer(MathJaxRenderer&&) noexcept;
+        MathJaxRenderer& operator=(MathJaxRenderer&&) noexcept;
+        Batch BeginBatch();
+
+        std::shared_ptr<MathJaxSvg const> Render(
             std::string_view tex,
             bool display,
             float em,
             float containerWidth,
-            bool allowQueue = true,
-            bool highPriority = false,
-            AsyncWorkDependency* pendingDependency = nullptr);
-        bool AnyCompletedAfter(
-            std::span<AsyncWorkDependency const> dependencies) const;
+            std::string_view color,
+            std::stop_token stop = {},
+            MathRenderPurpose purpose = MathRenderPurpose::Document);
+        std::shared_ptr<MathJaxSvg const> Prepare(
+            std::string_view tex,
+            bool display,
+            float em,
+            float containerWidth,
+            std::string_view color,
+            std::stop_token stop = {},
+            MathRenderPurpose purpose = MathRenderPurpose::Document);
+        // Lookup only: geometry/layout never implicitly schedules disk reads.
+        std::shared_ptr<std::string const> GetSvg(std::uint64_t renderId);
+        // Replace the viewport's demand, canceling queued reads that left it.
+        void SetVisibleSvgIds(std::span<std::uint64_t const> ids);
+        void CancelOffscreenRenders(std::span<std::uint64_t const> visibleBlocks);
+        void WaitForIdle(std::stop_token stop = {});
         void SetCompletionCallback(std::function<void()> callback);
+
+        struct Statistics
+        {
+            std::size_t entries = 0;
+            std::size_t svgBytes = 0;
+            std::size_t nativeRenders = 0;
+            std::size_t nativeBatches = 0;
+            std::size_t pending = 0;
+            std::uint64_t fileReads = 0;
+            std::uint64_t fileWrites = 0;
+            std::size_t residentSvgBytes = 0;
+            std::size_t previewSvgBytes = 0;
+            std::size_t queuedReads = 0;
+            std::uint64_t canceledReads = 0;
+            std::uint64_t discardedReads = 0;
+            bool nativeSessionActive = false;
+            std::filesystem::path backingPath;
+            std::thread::id lastIoThread;
+        };
+        Statistics Snapshot() const;
+
+        void SetPreparationStopToken(std::stop_token stop);
+        void BeginBlock(std::uint64_t owner);
+        void EndBlock();
+        void RetainBlocks(std::span<std::uint64_t const> owners);
         void Clear();
 
     private:
-        struct State;
+        std::shared_ptr<State> CurrentState() const;
 
-        std::unique_ptr<State> state;
+        mutable std::mutex stateMutex;
+        std::shared_ptr<State> state;
     };
 }

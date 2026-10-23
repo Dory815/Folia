@@ -190,16 +190,19 @@ suite render_model_content_tests = [] {
 
 "unordered_list_preserves_source_markers_and_presents_bullets"_test = [] {
     auto m = build_model("- alpha\n* beta\n+ gamma\n");
-    expect(fatal(bool((m.blocks.size()) == (1u))));
-    expect(fatal(bool((m.blocks[0].block_style.padding_left) == (20.0f))));
+    // CommonMark starts a new list when the bullet glyph changes.
+    expect(fatal(bool((m.blocks.size()) == (3u))));
     std::vector<std::u32string> source_markers;
     std::vector<std::u32string> display_markers;
-    for (auto const& item : m.blocks[0].inline_items) {
-        if (item.kind != InlineRenderItem::Kind::Marker
-            || item.special().marker_role != MarkerRole::ListBullet) continue;
-        source_markers.push_back(item.text);
-        display_markers.push_back(item.special().display_text);
-        expect(fatal(bool(item.source_span.source_range.empty())));
+    for (auto const& block : m.blocks) {
+        expect(fatal(bool(block.block_style.padding_left == 20.0f)));
+        for (auto const& item : block.inline_items) {
+            if (item.kind != InlineRenderItem::Kind::Marker
+                || item.special().marker_role != MarkerRole::ListBullet) continue;
+            source_markers.push_back(item.text);
+            display_markers.push_back(item.special().display_text);
+            expect(fatal(bool(item.source_span.source_range.empty())));
+        }
     }
     expect(fatal(bool((source_markers.size()) == (3u))));
     expect(fatal(bool(source_markers[0] == U"- ")));

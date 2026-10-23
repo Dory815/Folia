@@ -5,6 +5,7 @@ export module folia.core.block_source;
 import std;
 import folia.core.text_edit;
 import folia.core.utf;
+import folia.core.html_entities;
 
 export namespace folia {
 
@@ -20,20 +21,118 @@ enum class BlockSourceKind {
 struct BlockIndentation {
     std::size_t end = 0;
     std::size_t columns = 0;
+    std::size_t physical_column = 0;
+    std::size_t residual_columns = 0;
 };
+
+// Visual column state at a physical line start in a nested parser input.
+// source_offset is still a character offset; residual_columns represents
+// columns left when a container consumed a tab across its boundary.
+struct BlockLineIndentation {
+    std::size_t source_offset = 0;
+    std::size_t physical_column = 0;
+    std::size_t residual_columns = 0;
+
+    bool operator==(const BlockLineIndentation&) const = default;
+};
+
+struct GeneratedCodeIndentation {
+    std::size_t content_offset = 0;
+    std::size_t source_offset = 0;
+    std::size_t columns = 0;
+
+    bool operator==(const GeneratedCodeIndentation&) const = default;
+};
+
+inline std::vector<BlockLineIndentation> transform_block_line_indentation(
+    std::span<const BlockLineIndentation> contexts,
+    const TextEdit& edit,
+    std::u32string_view old_source) {
+    if (!edit.range.valid_for(old_source.size())) {
+        throw std::out_of_range("TextEdit range is outside block-line indentation source");
+    }
+    std::u32string new_source(old_source);
+    new_source.replace(edit.range.start, edit.range.length(), edit.replacement);
+
+    BlockLineIndentation inherited{edit.range.start, 0, 0};
+    for (const auto& context : contexts) {
+        if (context.source_offset > edit.range.start) break;
+        inherited = context;
+    }
+    inherited.source_offset = edit.range.start;
+
+    std::vector<BlockLineIndentation> result;
+    result.reserve(contexts.size() + edit.replacement.size() / 16 + 2);
+    const auto delta = static_cast<std::ptrdiff_t>(edit.replacement.size())
+        - static_cast<std::ptrdiff_t>(edit.range.length());
+    auto map_offset = [&](std::size_t offset) {
+        if (offset < edit.range.start) return offset;
+        if (offset >= edit.range.end) {
+            return static_cast<std::size_t>(static_cast<std::ptrdiff_t>(offset) + delta);
+        }
+        return edit.range.start;
+    };
+    auto is_line_start = [&](std::size_t offset) {
+        return offset == 0 || (offset <= new_source.size()
+            && (new_source[offset - 1] == U'\r' || new_source[offset - 1] == U'\n')
+            && !(offset < new_source.size() && new_source[offset - 1] == U'\r'
+                && new_source[offset] == U'\n'));
+    };
+    for (auto context : contexts) {
+        context.source_offset = map_offset(context.source_offset);
+        if (context.source_offset <= new_source.size() && is_line_start(context.source_offset)) {
+            result.push_back(context);
+        }
+    }
+
+    // New physical lines inherit the enclosing-container column state of the
+    // edited line. CRLF is one boundary; CR and LF also work independently.
+    for (std::size_t cursor = 0; cursor < edit.replacement.size();) {
+        if (edit.replacement[cursor] != U'\r' && edit.replacement[cursor] != U'\n') {
+            ++cursor;
+            continue;
+        }
+        if (edit.replacement[cursor] == U'\r' && cursor + 1 < edit.replacement.size()
+            && edit.replacement[cursor + 1] == U'\n') cursor += 2;
+        else ++cursor;
+        result.push_back({edit.range.start + cursor, inherited.physical_column, inherited.residual_columns});
+    }
+
+    std::ranges::stable_sort(result, {}, &BlockLineIndentation::source_offset);
+    std::vector<BlockLineIndentation> unique;
+    unique.reserve(result.size());
+    for (const auto& context : result) {
+        if (!unique.empty() && unique.back().source_offset == context.source_offset) {
+            // Prefer a surviving original line context over an inferred one.
+            continue;
+        }
+        unique.push_back(context);
+    }
+    return unique;
+}
 
 // Source offsets remain character offsets; structural indentation uses
 // four-column tab stops, including a tab preceded by ordinary spaces.
 inline BlockIndentation scan_block_indentation(
     std::u32string_view source, std::size_t start,
-    std::size_t maximum_columns = (std::numeric_limits<std::size_t>::max)()) {
-    BlockIndentation result{start, 0};
+    std::size_t maximum_columns = (std::numeric_limits<std::size_t>::max)(),
+    std::size_t physical_column = 0,
+    std::size_t residual_columns = 0) {
+    BlockIndentation result{start, residual_columns, physical_column, residual_columns};
     while (result.end < source.size() && result.columns < maximum_columns) {
-        if (source[result.end] == U' ') ++result.columns;
-        else if (source[result.end] == U'\t') result.columns += 4 - result.columns % 4;
+        if (source[result.end] == U' ') {
+            ++result.columns;
+            ++result.physical_column;
+        } else if (source[result.end] == U'\t') {
+            const auto next = result.physical_column + (4 - result.physical_column % 4);
+            result.columns += next - result.physical_column;
+            result.physical_column = next;
+        }
         else break;
         ++result.end;
     }
+    result.residual_columns = result.columns > maximum_columns
+        ? result.columns - maximum_columns : 0;
     return result;
 }
 
@@ -63,6 +162,7 @@ struct BlockSourceTree {
     // the syntax language without rewriting auxiliary info-string text.
     std::optional<SourceRange> language_range;
     std::vector<SourceRange> content_ranges;
+    std::vector<GeneratedCodeIndentation> generated_indentation;
     std::vector<std::size_t> content_to_source;
     std::u32string content;
     std::optional<std::string> language;
@@ -73,6 +173,7 @@ struct BlockSourceTree {
 struct BlockSourceStorage {
     std::u32string source;
     BlockSourceTree tree;
+    std::vector<BlockLineIndentation> indentation_contexts;
 };
 
 struct BlockSourceDocument {
@@ -170,6 +271,40 @@ inline std::u32string trim_horizontal(std::u32string_view value) {
     return std::u32string(value.substr(start, end - start));
 }
 
+inline bool ascii_punctuation(char32_t value) {
+    return (value >= U'!' && value <= U'/')
+        || (value >= U':' && value <= U'@')
+        || (value >= U'[' && value <= U'`')
+        || (value >= U'{' && value <= U'~');
+}
+
+inline std::u32string decode_info_word(std::u32string_view raw) {
+    std::u32string decoded;
+    for (std::size_t cursor = 0; cursor < raw.size();) {
+        if (raw[cursor] == U'&') {
+            auto semicolon = cursor + 1;
+            while (semicolon < raw.size() && semicolon - cursor <= 35
+                && raw[semicolon] != U';' && !horizontal_space(raw[semicolon])) {
+                ++semicolon;
+            }
+            if (semicolon < raw.size() && raw[semicolon] == U';') {
+                if (auto value = decode_html_character_reference(raw.substr(cursor, semicolon - cursor + 1))) {
+                    decoded.append(*value);
+                    cursor = semicolon + 1;
+                    continue;
+                }
+            }
+        }
+        if (raw[cursor] == U'\\' && cursor + 1 < raw.size() && ascii_punctuation(raw[cursor + 1])) {
+            decoded.push_back(raw[cursor + 1]);
+            cursor += 2;
+        } else {
+            decoded.push_back(raw[cursor++]);
+        }
+    }
+    return decoded;
+}
+
 inline std::optional<SourceRange> closing_fence(
     std::u32string_view source,
     std::size_t content_start,
@@ -247,9 +382,9 @@ inline BlockSourceTree parse_fenced(std::u32string_view source, BlockSourceKind 
     }
     if (language_start < language_end) {
         tree.language_range = SourceRange{language_start, language_end};
-        tree.language = cps_to_utf8(source.substr(
+        tree.language = cps_to_utf8(decode_info_word(source.substr(
             language_start,
-            language_end - language_start));
+            language_end - language_start)));
     }
     auto content_start = first_end;
     if (opening_line_ending_length != 0) {
@@ -359,7 +494,9 @@ inline BlockSourceTree parse_math(std::u32string_view source, BlockSourceKind ki
     return tree;
 }
 
-inline BlockSourceTree parse_indented(std::u32string_view source) {
+inline BlockSourceTree parse_indented(
+    std::u32string_view source,
+    std::span<const BlockLineIndentation> contexts = {}) {
     BlockSourceTree tree;
     tree.kind = BlockSourceKind::IndentedCode;
     tree.complete_opening = true;
@@ -368,7 +505,10 @@ inline BlockSourceTree parse_indented(std::u32string_view source) {
     auto content_boundary = std::size_t{0};
     while (line_start < source.size()) {
         const auto end = line_end(source, line_start);
-        const auto indent = scan_block_indentation(source, line_start, 4);
+        const auto context = std::ranges::find(contexts, line_start, &BlockLineIndentation::source_offset);
+        const auto physical_column = context == contexts.end() ? 0 : context->physical_column;
+        const auto residual_columns = context == contexts.end() ? 0 : context->residual_columns;
+        const auto indent = scan_block_indentation(source, line_start, 4, physical_column, residual_columns);
         auto content_start = indent.end;
         if (indent.columns >= 4 || content_start == end) {
             push_token(tree, BlockSourceTokenKind::Indentation, line_start, content_start);
@@ -376,6 +516,10 @@ inline BlockSourceTree parse_indented(std::u32string_view source) {
             content_start = line_start;
         }
         if (content_start < end) {
+            if (indent.columns > 4) {
+                tree.generated_indentation.push_back({
+                    tree.content.size(), content_start, indent.columns - 4});
+            }
             tree.content_ranges.push_back({content_start, end});
             push_token(tree, BlockSourceTokenKind::Content, content_start, end);
             for (auto offset = content_start; offset < end; ++offset) {
@@ -481,13 +625,16 @@ inline BlockSourceTree parse_html_code(std::u32string_view source) {
 
 } // namespace block_source_detail
 
-inline BlockSourceTree parse_block_source(std::u32string_view source, BlockSourceKind kind) {
+inline BlockSourceTree parse_block_source(
+    std::u32string_view source,
+    BlockSourceKind kind,
+    std::span<const BlockLineIndentation> contexts = {}) {
     switch (kind) {
         case BlockSourceKind::FencedCode:
         case BlockSourceKind::FencedMath:
             return block_source_detail::parse_fenced(source, kind);
         case BlockSourceKind::IndentedCode:
-            return block_source_detail::parse_indented(source);
+            return block_source_detail::parse_indented(source, contexts);
         case BlockSourceKind::HtmlCode:
             return block_source_detail::parse_html_code(source);
         case BlockSourceKind::DollarMath:
@@ -497,15 +644,21 @@ inline BlockSourceTree parse_block_source(std::u32string_view source, BlockSourc
     return {};
 }
 
-inline BlockSourceDocument make_block_source(std::u32string source, BlockSourceKind kind) {
+inline BlockSourceDocument make_block_source(
+    std::u32string source,
+    BlockSourceKind kind,
+    std::vector<BlockLineIndentation> contexts = {}) {
     BlockSourceDocument document;
     document.source() = std::move(source);
-    document.tree() = parse_block_source(document.source(), kind);
+    document.storage->indentation_contexts = std::move(contexts);
+    document.tree() = parse_block_source(document.source(), kind, document.storage->indentation_contexts);
     return document;
 }
 
 inline void reparse_block_source(BlockSourceDocument& document) {
-    document.tree() = parse_block_source(document.source(), document.tree().kind);
+    auto& tree = document.tree();
+    tree = parse_block_source(
+        document.source(), tree.kind, document.storage->indentation_contexts);
 }
 
 inline bool block_source_tokens_partition(const BlockSourceDocument& document) {
@@ -531,6 +684,17 @@ inline std::u32string flatten_block_source_tokens(const BlockSourceDocument& doc
 
 inline std::u32string block_source_content(const BlockSourceDocument& document) {
     return document.tree().content;
+}
+
+// Semantic code text includes visual columns left after a tab-crossing code
+// indentation boundary. The authoritative content and source map stay raw.
+inline std::u32string block_source_code_projection(const BlockSourceDocument& document) {
+    auto result = document.tree().content;
+    const auto& generated = document.tree().generated_indentation;
+    for (auto iterator = generated.rbegin(); iterator != generated.rend(); ++iterator) {
+        result.insert(iterator->content_offset, iterator->columns, U' ');
+    }
+    return result;
 }
 
 inline std::size_t block_source_offset_for_content(

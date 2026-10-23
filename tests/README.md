@@ -1,6 +1,6 @@
 # Test layout
 
-Folia has three Boost.UT C++23-module test executables:
+Folia's Boost.UT C++23-module test executables include:
 
 - `FoliaTests` covers the platform-independent core under `foundation/`,
   `parsing/`, `editing/`, `query/`, and `rendering/`.
@@ -9,6 +9,12 @@ Folia has three Boost.UT C++23-module test executables:
 - `FoliaEncodingTests` covers the app storage boundary against the pinned ICU
   runtime: BOM handling, detection candidate ordering, strict transcoding,
   converter enumeration, and byte-faithful round trips.
+- `FoliaCommonMarkTests` registers all 652 official CommonMark 0.31.2 examples
+  individually, plus per-example source-preservation assertions. It currently
+  fails and remains a separate conformance suite; no known-failure skips or
+  alternate expected outputs are used. Run `cmd /c build_commonmark_test.bat`.
+  Reports and test-projection limits are documented in
+  [markdown-conformance](../tools/markdown-conformance/README.md).
 
 Run them from a Visual Studio developer environment through the repository
 wrappers:

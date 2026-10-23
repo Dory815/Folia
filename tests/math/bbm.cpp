@@ -18,6 +18,7 @@ struct BbmFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit BbmFixture(bool bold = false) {
         BbmConfiguration::initializeModule(registry, maps);
@@ -27,8 +28,8 @@ struct BbmFixture {
             std::vector<PackageSelection>{{u"base", {}}, {u"bbm", {}}, {u"newcommand", {}}};
         options.bbm = BbmOptions{.bold = bold};
         options.formatError = &formatBbmError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     MmlNode &compile(std::u16string source) {
         error.clear();
@@ -42,7 +43,7 @@ struct BbmFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
+        expect(jax->parseOptions().request().parsers.empty());
         return root;
     }
     void ok(std::u16string source,

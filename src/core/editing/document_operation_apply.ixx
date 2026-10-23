@@ -146,6 +146,12 @@ inline bool apply_text_edit(
     auto* source = editable_raw_block_source(*block);
     if (!source || !edit.range.valid_for(source->size())) return false;
     folia::apply_text_edit(*source, edit);
+    const auto& indentation = forward
+        ? operation.indentation_after
+        : operation.indentation_before;
+    if (indentation && block->block_source.storage) {
+        block->block_source.storage->indentation_contexts = *indentation;
+    }
     reparse_block_source(block->block_source);
     return true;
 }

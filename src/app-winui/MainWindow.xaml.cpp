@@ -66,7 +66,6 @@ namespace winrt::Folia::implementation
         auto loadedSettings = winrt::Folia::LoadAppSettings();
         appSettings = std::move(loadedSettings.settings);
         themeCatalog->Refresh();
-        editorRenderer.SetMathRenderingEnabled(appSettings.mathRenderingEnabled);
         ExtendsContentIntoTitleBar(true);
         SetTitleBar(AppTitleBar());
         RegisterCommandHandlers();
@@ -422,6 +421,10 @@ namespace winrt::Folia::implementation
         catch (winrt::hresult_error const& error)
         {
             SetStatus(LocalizeFormat(L"RenderFailed", { error.message() }));
+        }
+        catch (std::exception const& error)
+        {
+            SetStatus(LocalizeFormat(L"RenderFailed", { winrt::to_hstring(error.what()) }));
         }
     }
 

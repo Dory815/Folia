@@ -266,21 +266,21 @@ mml::MmlNode &TexParser::finishCreatedNode(mml::MmlNode &node) {
 mml::MmlNode &TexParser::create(mml::NodeKind kind, std::span<mml::MmlNode *const> children,
                                 NodeDefinition attributes, mml::MmlNode *text) {
     return finishCreatedNode(
-        configuration.nodeFactory.makeNode(kind, children, std::move(attributes), text));
+        configuration.request().nodeFactory.makeNode(kind, children, std::move(attributes), text));
 }
 mml::MmlNode &TexParser::createToken(mml::NodeKind kind, std::optional<std::u16string_view> text,
                                      NodeDefinition attributes) {
     return finishCreatedNode(
-        configuration.nodeFactory.makeToken(kind, text, std::move(attributes)));
+        configuration.request().nodeFactory.makeToken(kind, text, std::move(attributes)));
 }
 mml::MmlNode &TexParser::createText(std::u16string_view text) {
-    auto node = configuration.nodeFactory.makeText(text);
+    auto node = configuration.request().nodeFactory.makeText(text);
     if (!node)
         throw std::logic_error("Configured text creator returned no node");
     return finishCreatedNode(*node);
 }
 mml::MmlNode &TexParser::createError(std::u16string_view message) {
-    return finishCreatedNode(configuration.nodeFactory.makeError(message));
+    return finishCreatedNode(configuration.request().nodeFactory.makeError(message));
 }
 std::u16string TexParser::trimTex(std::u16string tex) {
     return UnitUtil::instance().trimSpaces(tex) +

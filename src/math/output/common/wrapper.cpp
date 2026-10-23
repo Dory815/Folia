@@ -843,7 +843,7 @@ std::optional<ResolvedFontGlyph> CommonWrapper::getVariantChar(std::string_view 
     return jax().fonts().resolveGlyph(jax().face().name, selected, codepoint);
 }
 
-double CommonWrapper::sceneDx() const {
+double CommonWrapper::sceneDx() {
     if (!styleData)
         return 0;
     return styleData->padding[3] + (styleData->border ? styleData->border->width[3] : 0);

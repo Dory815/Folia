@@ -1,5 +1,11 @@
 # P23h2 Root frozen raw-return and child-zero responsibilities
 
+Historical object-protocol contract, not the current native ownership/API rules.
+The additional two-row mrow prototype C++ observer retired on 2026-10-23 after
+retaining both complete Source inputs/expectations; ordinary155 remains pending
+migration. Array prototypes/getters/callback identities are offline Source
+observations and must not be reintroduced into the native C++ node model.
+
 Luna may restore only seven existing bodies: child_zero and required_child_zero,
 AbstractMmlLayoutNode::coreMO and AbstractMmlBaseNode::coreMO in mml_branches.cpp;
 MmlMrow::core/coreMO in mml_nodes/mrow.cpp; MmlMstyle::notParent in mml_nodes/mstyle.cpp.

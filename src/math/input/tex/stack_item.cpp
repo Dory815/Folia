@@ -68,11 +68,13 @@ mml::MmlNode &MmlStack::toMml(bool inferred, bool forceRow) {
 }
 mml::MmlNode &MmlStack::create(mml::NodeKind kind, std::span<mml::MmlNode *const> children,
                                mml::AttributeSet attributes) {
-    return factory().configuration().nodeFactory.makeNode(kind, children, std::move(attributes));
+    return factory().configuration().request().nodeFactory.makeNode(kind, children,
+                                                                    std::move(attributes));
 }
 mml::MmlNode &MmlStack::createToken(mml::NodeKind kind, std::u16string_view text,
                                     mml::AttributeSet attributes) {
-    return factory().configuration().nodeFactory.makeToken(kind, text, std::move(attributes));
+    return factory().configuration().request().nodeFactory.makeToken(kind, text,
+                                                                     std::move(attributes));
 }
 BaseItem::BaseItem(StackItemFactory &owner, bool open, std::vector<mml::MmlNode *> values)
     : MmlStack(std::move(values)), factory_(owner),

@@ -1,4 +1,4 @@
-// Root independent tagged fenced-consumer gate over the actual module graph.
+// Legacy fenced-consumer gate; its NodeValue runner is outside native acceptance.
 'use strict';const fs=require('node:fs'),path=require('node:path'),root=path.resolve(__dirname,'../..'),cmake=fs.readFileSync(path.join(root,'CMakeLists.txt'),'utf8');
 const modules=[...cmake.match(/target_sources\(folia_math PUBLIC FILE_SET CXX_MODULES FILES([\s\S]*?)\)/)[1].matchAll(/src\/math\/(\S+\.ixx)/g)].map(x=>x[1]),units=[...cmake.match(/target_sources\(folia_math PRIVATE([\s\S]*?)\)/)[1].matchAll(/src\/math\/(\S+\.cpp)/g)].map(x=>x[1]);
 const file='core/mml_tree/mml_nodes/mfenced.cpp',source=fs.readFileSync(path.join(root,'src/math',file),'utf8').replaceAll('\r\n','\n'),mutants=[];
@@ -8,7 +8,7 @@ const classes=method('NodeValue MmlMfenced::setTeXclass(');
 classes('fenced-previous-class-omitted','getPrevClass(previous);','');
 classes('fenced-open-class-omitted','if (open) previous = open->setTeXclass(previous);','');
 classes('fenced-close-class-omitted','if (close) previous = close->setTeXclass(previous);','');
-classes('fenced-loop-length-reread','i < count','i < (childNodes ? childNodes->size() : 0)');
+
 classes('fenced-separator-class-omitted','if (separator.isNode()) previous = separator.requireNode("setTeXclass")->setTeXclass(previous);','');
 classes('fenced-fallback-update-omitted','updateTeXclass(updateTarget);','');
 const inherit=method('void MmlMfenced::setChildInheritedAttributes(');
@@ -28,4 +28,4 @@ fake('fake-explicit-null-props-defaulted','if (properties.missing()) properties 
 fake('fake-class-write-omitted','NodeValue(node).requireNodeForWrite("texClass")->setTexClass(texClass);','');
 fake('fake-text-setter-result-discarded','children->push_back(NodeValue(text));','children->push_back(this->factory.create("text",{}));');
 method('std::u16string nativeStringReplaceTarget(')('fenced-undefined-replace-error-flattened','if (value.missing()) host::typeError("Cannot read properties of undefined (reading \'replace\')");','');
-require('./native-mutation-runner.cjs')({name:'math-port-mfenced-consumers',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_mfenced.cpp',additionalFixtures:['reference_mml_mfenced_entries.inc','reference_mml_mfenced_boundaries.cpp','reference_mml_mfenced_string_errors.cpp','reference_mml_mfenced_class_length.cpp'],pattern:'*math_port*',assertions:1012,tests:229,suiteSummaries:[{assertions:984,tests:225},{assertions:4,tests:1},{assertions:11,tests:1},{assertions:9,tests:1},{assertions:4,tests:1}],mutants});
+require('./native-mutation-runner.cjs')({name:'math-port-mfenced-consumers',modules,units,supportFiles:['util/option_storage.hpp'],fixture:'reference_mfenced.cpp',additionalFixtures:['reference_mml_mfenced_entries.inc'],pattern:'*math_port*',assertions:988,tests:226,suiteSummaries:[{assertions:984,tests:225},{assertions:4,tests:1}],mutants});

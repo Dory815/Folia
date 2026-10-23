@@ -6,18 +6,17 @@ export import :tex_parser;
 import std;
 
 export namespace folia::math::tex {
+class TeXRequest;
 class TeX : public core::AbstractInputJax<TexOptionValues, ParseOptions> {
+    friend class TeXRequest;
     TexSessionState session_;
     std::unique_ptr<ParserConfiguration> configuration_;
     std::unique_ptr<ParseOptions> parseOptions_;
     std::unique_ptr<TextMacrosData> textmacros_;
-    std::u16string latex_;
-    mml::MmlNode *mathNode_{}; // borrowed from the caller's current MmlDocument
   public:
-    // The compiled package registry, map registry, callback table and factory
-    // outlive this jax. Per-expression MML is always owned by the supplied document.
+    // Configuration and session outlive requests; expression state is caller-owned.
     TeX(ConfigurationHandler &, MapHandler &, MacroCallbacks const &, WarningSink &,
-        mml::MmlFactory &, TexOptionValues supplied = {});
+        TexOptionValues supplied = {});
     ~TeX() override;
     TeX(TeX const &) = delete;
     TeX &operator=(TeX const &) = delete;
@@ -27,10 +26,21 @@ class TeX : public core::AbstractInputJax<TexOptionValues, ParseOptions> {
     ParserConfiguration &configuration() const noexcept;
     TexSessionState &session() noexcept;
     void installTextMacros(std::unique_ptr<TextMacrosData>);
-    void setMmlFactory(mml::MmlFactory &) override;
     void reset(std::int64_t offset = 0);
     mml::MmlNode &compile(core::MathItem &, mml::MmlDocument &,
                           core::CompileServices = {}) override;
     virtual mml::MmlNode &formatError(TexError const &);
+};
+
+class TeXRequest final {
+  public:
+    ParseRequest main;
+    std::optional<ParseRequest> text;
+
+    TeXRequest(TeX &, mml::MmlFactory &);
+    TeXRequest(TeXRequest const &) = delete;
+    TeXRequest &operator=(TeXRequest const &) = delete;
+    TeXRequest(TeXRequest &&) = delete;
+    TeXRequest &operator=(TeXRequest &&) = delete;
 };
 } // namespace folia::math::tex

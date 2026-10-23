@@ -79,6 +79,7 @@
   <data name="StatusOpenCancelled" xml:space="preserve"><value>已取消打开</value></data>
   <data name="StatusReadingFile" xml:space="preserve"><value>正在读取 {0}…</value></data>
   <data name="StatusParsingFile" xml:space="preserve"><value>正在解析 {0}…</value></data>
+  <data name="StatusPreparingMath" xml:space="preserve"><value>正在准备 {0} 的公式与布局…</value></data>
   <data name="StatusOpenedFile" xml:space="preserve"><value>已打开 {0}</value></data>
   <data name="StatusReloadedFile" xml:space="preserve"><value>已重新加载 {0}</value></data>
   <data name="StatusReloadFailed" xml:space="preserve"><value>重新加载失败：{0}</value></data>
@@ -107,13 +108,8 @@
   <data name="Themes" xml:space="preserve"><value>主题</value></data>
   <data name="Licenses" xml:space="preserve"><value>许可证</value></data>
   <data name="About" xml:space="preserve"><value>关于</value></data>
-  <data name="GeneralDescription" xml:space="preserve"><value>管理可选渲染服务和编辑器行为。</value></data>
-  <data name="RenderMath" xml:space="preserve"><value>渲染数学公式</value></data>
-  <data name="MathJaxOn" xml:space="preserve"><value>启用 MathJax 服务</value></data>
-  <data name="ShowMarkdownSource" xml:space="preserve"><value>显示 Markdown 源码</value></data>
-  <data name="MathServiceDescription" xml:space="preserve"><value>关闭后，折笺不会启动 QuickJS MathJax 工作线程；正在进行的任务也会停止，并释放 JavaScript 运行时。</value></data>
+  <data name="GeneralDescription" xml:space="preserve"><value>设置应用语言。</value></data>
   <data name="ChangesApplyImmediately" xml:space="preserve"><value>更改立即生效</value></data>
-  <data name="MathChangesDescription" xml:space="preserve"><value>现有公式会在渲染结果和 Markdown 源码之间切换，选项会自动保存。</value></data>
   <data name="Language" xml:space="preserve"><value>语言</value></data>
   <data name="ApplicationLanguage" xml:space="preserve"><value>应用语言</value></data>
   <data name="FollowWindowsLanguage" xml:space="preserve"><value>跟随 Windows</value></data>

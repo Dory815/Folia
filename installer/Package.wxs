@@ -10,7 +10,7 @@
            Compressed="yes">
     <SummaryInformation Description="Folia Markdown editor" Manufacturer="water2004" />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
-    <MajorUpgrade DowngradeErrorMessage="A newer version of Folia is already installed." />
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of Folia is already installed." />
 
     <StandardDirectory Id="LocalAppDataFolder">
       <Directory Id="LOCALPROGRAMS" Name="Programs">

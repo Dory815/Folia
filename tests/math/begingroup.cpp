@@ -37,6 +37,7 @@ struct BegingroupFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     std::u16string message;
     bool observedSandbox{};
@@ -54,8 +55,8 @@ struct BegingroupFixture {
         options.formatError = &groupFormatError;
         if (allow)
             options.begingroup = BegingroupOptions{std::move(allow)};
-        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(),
-                                    std::move(options));
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, std::move(options));
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     BegingroupStack &stack() { return *jax->parseOptions().begingroup; }
     MmlNode &compile(std::u16string source) {
@@ -194,7 +195,7 @@ suite begingroup = [] {
         f.compile(u"\\begingroup\\def\\a{l}\\unknownGroupCommand");
         expect(f.error == "UndefinedControlSequence");
         expect(f.stack().index() == -101_i && f.stack().top() == -101_i);
-        expect(f.jax->parseOptions().parsers.empty());
+        expect(f.jax->parseOptions().request().parsers.empty());
         expect(f.text(u"\\a\\endgroup\\a") == u"lg");
     };
     "begingroup package remove discards interrupted groups above previous finished top"_test = [] {
@@ -204,7 +205,7 @@ suite begingroup = [] {
             f.compile(u"\\begingroup\\def\\a{i}\\interruptedFormula");
         }));
         expect(f.stack().index() == -102_i && f.stack().top() == -101_i);
-        expect(f.jax->parseOptions().parsers.empty());
+        expect(f.jax->parseOptions().request().parsers.empty());
         expect(f.text(u"\\a") == u"o");
         expect(f.stack().index() == -101_i && f.stack().top() == -101_i);
         expect(f.text(u"\\endgroup\\a") == u"g");

@@ -247,6 +247,13 @@ void CommonMrow::breakToWidth(double width) {
     linebreaks().breakToWidth(*this, width);
 }
 
+double CommonMrow::sceneDx() {
+    // The inferred fast path emits into its parents without a styled row shell.
+    if (node->isInferred() && (isStack || breakCount() == 0))
+        return 0;
+    return CommonWrapper::sceneDx();
+}
+
 SceneNodes CommonMrow::emitScene(scene::Builder &builder, std::span<scene::NodeId const> parents) {
     (void)getBBox();
     const auto lines = isStack ? std::size_t{0} : breakCount();

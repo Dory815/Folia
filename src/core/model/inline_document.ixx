@@ -15,6 +15,7 @@ import folia.core.dialect;
 import folia.core.inline_cst;
 import folia.core.text_edit;
 import folia.core.utf;
+import folia.core.html_entities;
 
 export namespace folia {
 
@@ -46,6 +47,81 @@ struct InlineDocument {
 
     std::u32string serialize() const { return source; }
 };
+
+enum class InlineBlockWhitespacePolicy : std::uint8_t {
+    None,
+    Paragraph,
+    Heading,
+};
+
+// Return only source ranges whose outermost raw whitespace is omitted by the
+// block's CommonMark semantic projection. The ranges remain in source and CST;
+// callers use them as source-mapped structural markers rather than deleting
+// or normalizing editable text.
+inline std::vector<SourceRange> inline_block_semantic_whitespace_ranges(
+    const InlineDocument& document,
+    InlineBlockWhitespacePolicy policy) {
+    std::vector<SourceRange> ranges;
+    if (document.syntax_mode != InlineSyntaxMode::Markdown || document.source.empty()
+        || document.tree.nodes.empty()) return ranges;
+
+    // A parser-owned editable blank physical line may contain its original
+    // spaces or tabs as source.  They have no CommonMark paragraph content,
+    // but remain in the CST and are exposed through one hidden editable
+    // marker spanning the exact source range.
+    if (policy == InlineBlockWhitespacePolicy::Paragraph
+        && std::ranges::all_of(document.source, [](char32_t ch) {
+            return ch == U' ' || ch == U'\t';
+        })) {
+        ranges.push_back({0, document.source.size()});
+        return ranges;
+    }
+
+    const auto is_raw_text_leaf = [](const InlineCstNode& node) {
+        return node.children.empty()
+            && (node.kind == InlineCstKind::Text || node.kind == InlineCstKind::Whitespace);
+    };
+    if (policy == InlineBlockWhitespacePolicy::Paragraph) {
+        auto offset = std::size_t{0};
+        auto spaces = std::size_t{0};
+        for (const auto& node : document.tree.nodes) {
+            if (!is_raw_text_leaf(node) || node.range.start != offset) break;
+            const auto leaf_start = offset;
+            while (offset < node.range.end && document.source[offset] == U' ' && spaces < 4) {
+                ++offset;
+                ++spaces;
+            }
+            if (offset > leaf_start) ranges.push_back({leaf_start, offset});
+            if (spaces == 4) {
+                ranges.clear();
+                return ranges;
+            }
+            if (offset < node.range.end || spaces == 0) break;
+        }
+        // A four-space run begins an indented code block at a paragraph
+        // boundary, so don't hide any prefix if it appears in an editable
+        // paragraph node produced by a surrounding/container parser.
+        if (spaces == 0) ranges.clear();
+        return ranges;
+    }
+    if (policy == InlineBlockWhitespacePolicy::Heading) {
+        auto offset = document.source.size();
+        std::vector<SourceRange> reversed_ranges;
+        for (auto node = document.tree.nodes.rbegin(); node != document.tree.nodes.rend(); ++node) {
+            if (!is_raw_text_leaf(*node) || node->range.end != offset) break;
+            const auto leaf_end = offset;
+            while (offset > node->range.start
+                && (document.source[offset - 1] == U' ' || document.source[offset - 1] == U'\t')) {
+                --offset;
+            }
+            if (offset < leaf_end) reversed_ranges.push_back({offset, leaf_end});
+            if (offset > node->range.start) break;
+            offset = node->range.start;
+        }
+        ranges.assign(reversed_ranges.rbegin(), reversed_ranges.rend());
+    }
+    return ranges;
+}
 
 // ---- queries over a CST (used by renderer / hit-test / format-state) ----
 
@@ -89,36 +165,33 @@ inline std::u32string inline_source_slice(const InlineDocument& document, Source
 }
 
 inline std::u32string decode_inline_entity(std::u32string_view raw) {
-    if (raw == U"&amp;") return U"&";
-    if (raw == U"&lt;") return U"<";
-    if (raw == U"&gt;") return U">";
-    if (raw == U"&quot;") return U"\"";
-    if (raw == U"&apos;" || raw == U"&#39;") return U"'";
-    if (raw == U"&nbsp;") return U"\u00a0";
-    if (raw.size() >= 4 && raw[0] == U'&' && raw[1] == U'#' && raw.back() == U';') {
-        std::uint32_t value = 0;
-        std::size_t cursor = 2;
-        int base = 10;
-        if (cursor < raw.size() - 1 && (raw[cursor] == U'x' || raw[cursor] == U'X')) {
-            base = 16;
-            ++cursor;
-        }
-        bool valid = cursor < raw.size() - 1;
-        for (; cursor < raw.size() - 1 && valid; ++cursor) {
-            const auto ch = raw[cursor];
-            int digit = -1;
-            if (ch >= U'0' && ch <= U'9') digit = static_cast<int>(ch - U'0');
-            else if (base == 16 && ch >= U'a' && ch <= U'f') digit = 10 + static_cast<int>(ch - U'a');
-            else if (base == 16 && ch >= U'A' && ch <= U'F') digit = 10 + static_cast<int>(ch - U'A');
-            else valid = false;
-            if (digit >= base) valid = false;
-            if (valid) value = value * static_cast<std::uint32_t>(base) + static_cast<std::uint32_t>(digit);
-        }
-        if (valid && value <= 0x10ffff && !(value >= 0xd800 && value <= 0xdfff)) {
-            return std::u32string(1, static_cast<char32_t>(value));
+    if (auto decoded = decode_html_character_reference(raw)) return std::move(*decoded);
+    return std::u32string(raw);
+}
+
+// CommonMark's code-span text projection: line endings become spaces, then
+// one outer ASCII space is removed only when both ends are spaces and the
+// result contains a non-space. The source and its CST range remain untouched.
+inline std::u32string normalize_inline_code_span(std::u32string_view raw) {
+    std::u32string normalized;
+    normalized.reserve(raw.size());
+    for (std::size_t index = 0; index < raw.size(); ++index) {
+        const auto ch = raw[index];
+        if (ch == U'\r') {
+            if (index + 1 < raw.size() && raw[index + 1] == U'\n') ++index;
+            normalized.push_back(U' ');
+        } else if (ch == U'\n') {
+            normalized.push_back(U' ');
+        } else {
+            normalized.push_back(ch);
         }
     }
-    return std::u32string(raw);
+    if (normalized.size() >= 2 && normalized.front() == U' ' && normalized.back() == U' '
+        && std::ranges::any_of(normalized, [](char32_t ch) { return ch != U' '; })) {
+        normalized.erase(normalized.begin());
+        normalized.pop_back();
+    }
+    return normalized;
 }
 
 inline void append_inline_visible_text(
@@ -155,6 +228,8 @@ inline void append_inline_visible_text(
                 output += U"[^" + utf8_to_cps(node.semantics().label) + U"]";
                 break;
             case K::CodeSpan:
+                output += normalize_inline_code_span(inline_source_slice(document, node.delimiter_ranges().content));
+                break;
             case K::InlineMath:
             case K::Autolink:
                 output += inline_source_slice(document, node.delimiter_ranges().content);

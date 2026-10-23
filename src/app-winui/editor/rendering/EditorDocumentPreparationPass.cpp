@@ -10,8 +10,6 @@ namespace winrt::Folia
         EditorRenderResources& valueResources,
         EditorStyleSheet const& valueStyleSheet,
         EditorInlineImageRenderer& valueInlineImages,
-        MathJaxRenderer& valueMathJax,
-        SvgNormalizer& valueSvgNormalizer,
         EditorDocumentBlockPreparer& valueBlockPreparer,
         folia::platform::editor::EditorScrollState& valueScrollState,
         std::unique_ptr<EditorPreparedDocument>& valuePreparedDocument,
@@ -38,8 +36,6 @@ namespace winrt::Folia
               valueFrame,
               valueResources,
               valueInlineImages,
-              valueMathJax,
-              valueSvgNormalizer,
               valueBlockPreparer,
               valuePreparedDocument),
           retention(
@@ -89,4 +85,5 @@ namespace winrt::Folia
             .invalidateRequested = invalidateRequested,
         };
     }
+
 }

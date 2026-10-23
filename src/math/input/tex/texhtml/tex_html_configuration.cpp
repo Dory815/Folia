@@ -135,11 +135,11 @@ void configureTexHtml(ParserConfiguration &configuration, TeX &) {
 }
 
 void texHtmlPreFilter(TexFilterData &data) {
-    data.data.texhtmlAdaptor = data.adaptor;
+    data.data.request().texhtmlAdaptor = data.adaptor;
 }
 
 void texHtmlPostFilter(TexFilterData &data) {
-    data.data.texhtmlAdaptor = nullptr;
+    data.data.request().texhtmlAdaptor = nullptr;
 }
 
 } // namespace
@@ -170,7 +170,7 @@ DispatchOutcome HtmlNodeMethods::TexHTML(TexParser &parser, MacroInvocation cons
     const auto htmlSource = trimHtml(source.substr(bodyStart, found - bodyStart));
     parser.setPosition(found + end.size());
 
-    auto *adaptor = parser.configuration.texhtmlAdaptor;
+    auto *adaptor = parser.configuration.request().texhtmlAdaptor;
     const auto *map = configuredMap(parser);
     if (!adaptor || !map)
         throw std::logic_error("TexHTML requires its configured request DOM adaptor and map");

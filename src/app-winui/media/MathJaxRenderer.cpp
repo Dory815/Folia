@@ -1,434 +1,223 @@
 #include "pch.h"
+
+import std;
 #include "media/MathJaxRenderer.h"
-#include "media/MathJaxSvgParser.h"
-#include "storage/AssetPaths.h"
-
-import folia.platform.editor_priority_work_queue;
-
-#pragma warning(push)
-#pragma warning(disable : 4100 4244)
-extern "C"
-{
-#include "third_party/quickjs/quickjs.h"
-}
-#pragma warning(pop)
-
-namespace
-{
-    std::string ReadUtf8File(std::wstring const& path)
-    {
-        std::ifstream stream(path, std::ios::binary);
-        if (!stream)
-        {
-            return {};
-        }
-        return { std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>() };
-    }
-
-    std::wstring MathJaxBundlePath()
-    {
-        return winrt::Folia::AssetPath(std::filesystem::path(L"mathjax") / L"mathjax-quickjs.js").wstring();
-    }
-
-    std::wstring MathJaxFontPath(std::string_view module)
-    {
-        auto separator = module.find_last_of('/');
-        auto name = module.substr(separator == std::string_view::npos ? 0 : separator + 1);
-        if (name.empty() || name.size() > 64) return {};
-        for (auto value : name)
-        {
-            if (!(std::isalnum(static_cast<unsigned char>(value)) || value == '-' || value == '.')) return {};
-        }
-        auto bundle = MathJaxBundlePath();
-        auto directory = bundle.substr(0, bundle.find_last_of(L"\\/"));
-        return directory + L"\\font\\" + std::wstring(name.begin(), name.end());
-    }
-
-}
+#include "media/MathJaxRenderer.State.h"
 
 namespace winrt::Folia
 {
-    using folia::platform::editor::EditorPriorityWorkQueue;
-    using folia::platform::editor::EditorQueueChange;
-    using folia::platform::editor::EditorWorkPriority;
-
-    struct MathJaxRenderer::State
-    {
-        struct Request
-        {
-            std::string key;
-            std::string tex;
-            bool display = false;
-            float em = 0.0f;
-            float containerWidth = 0.0f;
-            std::uint64_t generation = 0;
-        };
-
-        std::mutex mutex;
-        std::condition_variable_any ready;
-        EditorPriorityWorkQueue<Request> requestQueue;
-        std::unordered_map<std::string, std::shared_ptr<MathJaxSvg const>> cache;
-        std::unordered_map<std::string, std::uint64_t> completionRevisions;
-        std::unordered_map<std::string, std::size_t> transientFailures;
-        std::deque<std::string> cacheOrder;
-        std::size_t cacheBytes = 0;
-        std::uint64_t generation = 0;
-        std::uint64_t nextCompletionRevision = 1;
-        std::function<void()> completion;
-        JSRuntime* runtime = nullptr;
-        JSContext* context = nullptr;
-        std::chrono::steady_clock::time_point deadline{};
-        bool initializationAttempted = false;
-        bool enabled = false;
-        std::atomic_bool interruptRequested = false;
-        std::jthread worker;
-
-        static bool RetryableFailure(std::string_view error)
-        {
-            return error.find("interrupted") != std::string_view::npos
-                || error.find("out of memory") != std::string_view::npos
-                || error.find("stack overflow") != std::string_view::npos
-                || error.find("runtime could not be initialized") != std::string_view::npos
-                || error.find("font module is unavailable") != std::string_view::npos;
-        }
-
-        static int Interrupt(JSRuntime*, void* opaque)
-        {
-            auto self = static_cast<State*>(opaque);
-            return self->interruptRequested.load(std::memory_order_relaxed)
-                || std::chrono::steady_clock::now() >= self->deadline;
-        }
-
-        static JSValue LoadFontModule(JSContext* context, JSValueConst, int count, JSValueConst* arguments)
-        {
-            if (count != 1) return JS_ThrowTypeError(context, "Expected one MathJax font module name");
-            auto name = JS_ToCString(context, arguments[0]);
-            if (!name) return JS_EXCEPTION;
-            auto path = MathJaxFontPath(name);
-            JS_FreeCString(context, name);
-            auto source = path.empty() ? std::string{} : ReadUtf8File(path);
-            if (source.empty()) return JS_ThrowReferenceError(context, "MathJax font module is unavailable");
-            auto result = JS_Eval(context, source.data(), source.size(), "mathjax-font.js", JS_EVAL_TYPE_GLOBAL);
-            if (JS_IsException(result)) return result;
-            JS_FreeValue(context, result);
-            return JS_UNDEFINED;
-        }
-
-        std::string ExceptionText()
-        {
-            auto exception = JS_GetException(context);
-            auto message = JS_ToCString(context, exception);
-            std::string text = message ? message : "MathJax evaluation failed";
-            if (message) JS_FreeCString(context, message);
-            JS_FreeValue(context, exception);
-            return text;
-        }
-
-        bool InitializeRuntime()
-        {
-            if (context) return true;
-            if (initializationAttempted) return false;
-            initializationAttempted = true;
-            auto bundle = ReadUtf8File(MathJaxBundlePath());
-            if (bundle.empty())
-            {
-                initializationAttempted = false;
-                return false;
-            }
-            runtime = JS_NewRuntime();
-            if (!runtime)
-            {
-                initializationAttempted = false;
-                return false;
-            }
-            JS_SetMemoryLimit(runtime, 24 * 1024 * 1024);
-            JS_SetMaxStackSize(runtime, 8 * 1024 * 1024);
-            JS_SetInterruptHandler(runtime, Interrupt, this);
-            context = JS_NewContext(runtime);
-            if (!context)
-            {
-                ShutdownRuntime();
-                initializationAttempted = false;
-                return false;
-            }
-            auto global = JS_GetGlobalObject(context);
-            JS_SetPropertyStr(context, global, "FoliaLoadMathJaxModule", JS_NewCFunction(context, LoadFontModule, "FoliaLoadMathJaxModule", 1));
-            JS_FreeValue(context, global);
-            deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-            auto result = JS_Eval(context, bundle.data(), bundle.size(), "mathjax-quickjs.js", JS_EVAL_TYPE_GLOBAL);
-            if (JS_IsException(result))
-            {
-                JS_FreeValue(context, result);
-                ShutdownRuntime();
-                initializationAttempted = false;
-                return false;
-            }
-            JS_FreeValue(context, result);
-            return true;
-        }
-
-        void ShutdownRuntime()
-        {
-            if (context)
-            {
-                JS_FreeContext(context);
-                context = nullptr;
-            }
-            if (runtime)
-            {
-                JS_FreeRuntime(runtime);
-                runtime = nullptr;
-            }
-            initializationAttempted = false;
-        }
-
-        MathJaxSvg RenderNow(Request const& request)
-        {
-            MathJaxSvg rendered;
-            rendered.display = request.display;
-            if (!InitializeRuntime())
-            {
-                rendered.error = "MathJax runtime could not be initialized";
-                rendered.errorKind = MathJaxErrorKind::Infrastructure;
-                return rendered;
-            }
-            auto global = JS_GetGlobalObject(context);
-            auto api = JS_GetPropertyStr(context, global, "FoliaMathJax");
-            auto function = JS_GetPropertyStr(context, api, "render");
-            JSValue arguments[] = {
-                JS_NewStringLen(context, request.tex.data(), request.tex.size()),
-                JS_NewBool(context, request.display),
-                JS_NewFloat64(context, request.em),
-                JS_NewFloat64(context, request.containerWidth),
-            };
-            deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
-            auto result = JS_Call(context, function, api, static_cast<int>(std::size(arguments)), arguments);
-            for (auto& argument : arguments) JS_FreeValue(context, argument);
-            JS_FreeValue(context, function);
-            JS_FreeValue(context, api);
-            JS_FreeValue(context, global);
-            if (JS_IsException(result))
-            {
-                rendered.error = ExceptionText();
-                rendered.errorKind = MathJaxErrorKind::Infrastructure;
-                JS_FreeValue(context, result);
-                if (RetryableFailure(rendered.error))
-                {
-                    ShutdownRuntime();
-                    initializationAttempted = false;
-                }
-                return rendered;
-            }
-            std::string output;
-            auto svg = JS_ToCString(context, result);
-            if (svg)
-            {
-                output = svg;
-                JS_FreeCString(context, svg);
-            }
-            JS_FreeValue(context, result);
-
-            return ParseMathJaxSvgOutput(output, request.display, request.em);
-        }
-
-        static std::size_t ResultBytes(MathJaxSvg const& result)
-        {
-            std::size_t bytes = sizeof(result);
-            for (auto const& fragment : result.fragments) bytes += sizeof(fragment) + (fragment.svg ? fragment.svg->size() : 0);
-            return bytes + result.error.size();
-        }
-
-        void Store(Request const& request, MathJaxSvg result)
-        {
-            constexpr std::size_t budget = 16 * 1024 * 1024;
-            auto shared = std::make_shared<MathJaxSvg const>(std::move(result));
-            auto bytes = request.key.size() + ResultBytes(*shared);
-            while ((!cacheOrder.empty()) && (cacheBytes + bytes > budget || cache.size() >= 4096))
-            {
-                auto oldest = std::move(cacheOrder.front());
-                cacheOrder.pop_front();
-                auto found = cache.find(oldest);
-                if (found == cache.end()) continue;
-                cacheBytes -= found->first.size() + ResultBytes(*found->second);
-                cache.erase(found);
-                completionRevisions.erase(oldest);
-            }
-            if (bytes <= budget)
-            {
-                cacheBytes += bytes;
-                cacheOrder.push_back(request.key);
-                cache.emplace(request.key, std::move(shared));
-            }
-        }
-
-        void Run(std::stop_token stop)
-        {
-            while (!stop.stop_requested())
-            {
-                Request request;
-                std::uint64_t ticket = 0;
-                {
-                    std::unique_lock lock(mutex);
-                    if (!ready.wait(lock, stop, [&] {
-                            return requestQueue.Ready(true);
-                        })) break;
-                    auto queued = requestQueue.Pop(true);
-                    if (!queued) continue;
-                    ticket = queued->ticket;
-                    request = std::move(queued->work);
-                    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
-                }
-                auto result = RenderNow(request);
-                std::function<void()> notify;
-                {
-                    std::scoped_lock lock(mutex);
-                    requestQueue.Complete(request.key, ticket);
-                    if (request.generation == generation)
-                    {
-                        auto retryable = RetryableFailure(result.error);
-                        bool store = true;
-                        if (retryable)
-                        {
-                            auto [failure, first] = transientFailures.try_emplace(request.key, 1);
-                            if (first) store = false;
-                            else transientFailures.erase(failure);
-                        }
-                        else
-                        {
-                            transientFailures.erase(request.key);
-                        }
-                        if (store) Store(request, std::move(result));
-                        completionRevisions[request.key] = nextCompletionRevision++;
-                        notify = completion;
-                    }
-                }
-                if (notify) notify();
-            }
-            ShutdownRuntime();
-        }
-    };
-
-    MathJaxRenderer::MathJaxRenderer() : state(std::make_unique<State>()) {}
+    MathJaxRenderer::MathJaxRenderer() : state(std::make_shared<State>()) {}
 
     MathJaxRenderer::~MathJaxRenderer()
     {
-        if (!state) return;
-        SetCompletionCallback({});
-        SetEnabled(false);
+        auto old = CurrentState();
+        if (old) old->Stop();
     }
 
-    void MathJaxRenderer::SetEnabled(bool enabled)
+    MathJaxRenderer::MathJaxRenderer(MathJaxRenderer&& other) noexcept
     {
-        if (!state) return;
-        if (enabled)
+        std::scoped_lock lock(other.stateMutex);
+        state = std::move(other.state);
+    }
+
+    MathJaxRenderer& MathJaxRenderer::operator=(MathJaxRenderer&& other) noexcept
+    {
+        if (this != &other)
         {
-            std::scoped_lock lock(state->mutex);
-            if (state->enabled) return;
-            state->enabled = true;
-            state->interruptRequested = false;
-            auto current = state.get();
-            state->worker = std::jthread([current](std::stop_token stop) { current->Run(stop); });
-            return;
+            std::shared_ptr<State> old;
+            {
+                std::scoped_lock lock(stateMutex, other.stateMutex);
+                old = std::move(state);
+                state = std::move(other.state);
+            }
+            if (old) old->Stop();
         }
+        return *this;
+    }
 
-        std::jthread worker;
+    std::shared_ptr<MathJaxRenderer::State> MathJaxRenderer::CurrentState() const
+    {
+        std::scoped_lock lock(stateMutex);
+        return state;
+    }
+
+    std::shared_ptr<MathJaxSvg const> MathJaxRenderer::Render(
+        std::string_view tex, bool display, float em, float containerWidth,
+        std::string_view color, std::stop_token stop, MathRenderPurpose purpose)
+    {
+        auto current = CurrentState();
+        if (!current) throw winrt::hresult_canceled();
+        auto entry = current->Request(tex, display, em, containerWidth, color, stop, purpose);
+        std::scoped_lock lock(current->mutex);
+        return entry->result;
+    }
+
+    std::shared_ptr<MathJaxSvg const> MathJaxRenderer::Prepare(
+        std::string_view tex, bool display, float em, float containerWidth,
+        std::string_view color, std::stop_token stop, MathRenderPurpose purpose)
+    {
+        auto current = CurrentState();
+        if (!current) throw winrt::hresult_canceled();
+        if (!stop.stop_possible())
         {
-            std::scoped_lock lock(state->mutex);
-            if (!state->enabled && !state->worker.joinable()) return;
-            state->enabled = false;
-            ++state->generation;
-            state->requestQueue.Clear();
-            state->cache.clear();
-            state->completionRevisions.clear();
-            state->cacheOrder.clear();
-            state->transientFailures.clear();
-            state->cacheBytes = 0;
-            state->interruptRequested = true;
-            state->worker.request_stop();
-            state->ready.notify_all();
-            worker = std::move(state->worker);
+            std::scoped_lock lock(current->mutex);
+            stop = current->preparationStop;
         }
-        if (worker.joinable()) worker.join();
-        state->interruptRequested = false;
+        auto entry = current->Request(tex, display, em, containerWidth, color, stop, purpose);
+        {
+            std::unique_lock lock(current->mutex);
+            if (!current->ready.wait(lock, stop, [&]
+                { return !entry->pending || current->stopping || entry->removed || current->workerFinished; }))
+                throw winrt::hresult_canceled();
+            if (stop.stop_requested() || entry->removed || current->stopping)
+                throw winrt::hresult_canceled();
+            if (!entry->result) throw winrt::hresult_canceled();
+            if (entry->result->errorKind == MathJaxErrorKind::Infrastructure
+                || purpose == MathRenderPurpose::Preview)
+                return entry->result;
+        }
+        return current->AwaitFull(entry, stop);
     }
 
-    bool MathJaxRenderer::Enabled() const
+    std::shared_ptr<std::string const> MathJaxRenderer::GetSvg(std::uint64_t renderId)
     {
-        if (!state) return false;
-        std::scoped_lock lock(state->mutex);
-        return state->enabled;
+        auto current = CurrentState();
+        return current ? current->GetSvg(renderId) : std::shared_ptr<std::string const>{};
     }
 
-    void MathJaxRenderer::Clear()
+    void MathJaxRenderer::SetVisibleSvgIds(std::span<std::uint64_t const> ids)
     {
-        if (!state) return;
-        std::scoped_lock lock(state->mutex);
-        ++state->generation;
-        state->requestQueue.Clear();
-        state->cache.clear();
-        state->completionRevisions.clear();
-        state->cacheOrder.clear();
-        state->transientFailures.clear();
-        state->cacheBytes = 0;
+        auto current = CurrentState();
+        if (current) current->SetVisibleSvgIds(ids);
+    }
+
+    void MathJaxRenderer::CancelOffscreenRenders(std::span<std::uint64_t const> visibleBlocks)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::unordered_set<std::uint64_t> visible(visibleBlocks.begin(), visibleBlocks.end());
+        std::vector<std::shared_ptr<State::Entry>> canceled;
+        {
+            std::scoped_lock lock(current->mutex);
+            std::vector<std::shared_ptr<State::Entry>> obsolete;
+            auto consider = [&](auto const& entry)
+            {
+                if (!entry) return;
+                if (entry->pending && !entry->unowned
+                    && std::ranges::none_of(entry->owners,
+                        [&](auto owner) { return visible.contains(owner); }))
+                    obsolete.push_back(entry);
+            };
+            consider(current->activeRender);
+            for (auto const& job : current->jobs)
+                if (job.kind == State::Job::Kind::Render) consider(job.entry);
+            for (auto const& entry : obsolete) current->RemoveEntryLocked(entry, canceled);
+        }
+        for (auto const& entry : canceled) entry->cancel.request_stop();
+    }
+
+    void MathJaxRenderer::WaitForIdle(std::stop_token stop)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::unique_lock lock(current->mutex);
+        if (!current->idle.wait(lock, stop, [&]
+            { return (current->pending == 0 && !current->workerBusy) || current->workerFinished; }))
+            throw winrt::hresult_canceled();
+        if (stop.stop_requested()) throw winrt::hresult_canceled();
+        if (current->workerFailure) std::rethrow_exception(current->workerFailure);
     }
 
     void MathJaxRenderer::SetCompletionCallback(std::function<void()> callback)
     {
-        std::scoped_lock lock(state->mutex);
-        state->completion = std::move(callback);
+        auto current = CurrentState();
+        if (!current) return;
+        std::scoped_lock lock(current->mutex);
+        if (!current->stopping && !current->workerFinished)
+            current->completion = std::move(callback);
     }
 
-    std::shared_ptr<MathJaxSvg const> MathJaxRenderer::GetOrQueue(
-        std::string_view tex,
-        bool display,
-        float em,
-        float containerWidth,
-        bool allowQueue,
-        bool highPriority,
-        AsyncWorkDependency* pendingDependency)
+    MathJaxRenderer::Statistics MathJaxRenderer::Snapshot() const
     {
-        auto key = std::string(tex) + '\x1f' + (display ? "1" : "0") + '\x1f' + std::to_string(em) + '\x1f' + std::to_string(containerWidth);
-        std::scoped_lock lock(state->mutex);
-        if (!state->enabled) return {};
-        if (auto found = state->cache.find(key); found != state->cache.end()) return found->second;
-        if (pendingDependency)
+        Statistics result;
+        auto current = CurrentState();
+        if (!current) return result;
+        std::scoped_lock lock(current->mutex);
+        result.entries = current->index.size();
+        result.svgBytes = current->residentSvgBytes + current->previewSvgBytes;
+        result.nativeRenders = current->nativeRenders;
+        result.nativeBatches = current->nativeBatches;
+        result.pending = current->pending;
+        result.fileReads = current->fileReads;
+        result.fileWrites = current->fileWrites;
+        result.residentSvgBytes = current->residentSvgBytes;
+        result.previewSvgBytes = current->previewSvgBytes;
+        result.queuedReads = static_cast<std::size_t>(std::ranges::count_if(current->jobs,
+            [](auto const& job) { return job.kind == State::Job::Kind::Read; }));
+        result.canceledReads = current->canceledReads;
+        result.discardedReads = current->discardedReads;
+        result.nativeSessionActive = current->nativeSessionActive;
+        result.backingPath = current->backingPath;
+        result.lastIoThread = current->lastIoThread;
+        return result;
+    }
+
+    void MathJaxRenderer::SetPreparationStopToken(std::stop_token stop)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::scoped_lock lock(current->mutex);
+        current->preparationStop = stop;
+    }
+
+    void MathJaxRenderer::BeginBlock(std::uint64_t owner)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::vector<std::shared_ptr<State::Entry>> cancelAfterUnlock;
         {
-            pendingDependency->key = key;
-            if (auto completed = state->completionRevisions.find(key);
-                completed != state->completionRevisions.end())
-                pendingDependency->observedCompletion = completed->second;
+            std::scoped_lock lock(current->mutex);
+            auto previous = std::move(current->blockEntries);
+            current->blockEntries.clear();
+            for (auto id : previous) current->RemoveIfOrphanLocked(id, cancelAfterUnlock);
+            current->activeOwner = owner;
         }
-        if (!allowQueue) return {};
-        auto change = state->requestQueue.Enqueue(
-            State::Request{
-                key,
-                std::string(tex),
-                display,
-                em,
-                containerWidth,
-                state->generation,
-            },
-            highPriority
-                ? EditorWorkPriority::Visible
-                : EditorWorkPriority::Background,
-            256);
-        if (change != EditorQueueChange::Unchanged) state->ready.notify_one();
-        return {};
+        for (auto const& entry : cancelAfterUnlock) entry->cancel.request_stop();
     }
 
-    bool MathJaxRenderer::AnyCompletedAfter(
-        std::span<AsyncWorkDependency const> dependencies) const
+    void MathJaxRenderer::EndBlock()
     {
-        if (!state || dependencies.empty()) return false;
-        std::scoped_lock lock(state->mutex);
-        return std::ranges::any_of(
-            dependencies,
-            [&](AsyncWorkDependency const& dependency)
-            {
-                if (dependency.key.empty()) return false;
-                auto completed = state->completionRevisions.find(dependency.key);
-                return completed != state->completionRevisions.end()
-                    && completed->second > dependency.observedCompletion;
-            });
+        auto current = CurrentState();
+        if (!current) return;
+        std::vector<std::shared_ptr<State::Entry>> cancelAfterUnlock;
+        {
+            std::scoped_lock lock(current->mutex);
+            current->FinishBlock(cancelAfterUnlock);
+        }
+        for (auto const& entry : cancelAfterUnlock) entry->cancel.request_stop();
+    }
+
+    void MathJaxRenderer::RetainBlocks(std::span<std::uint64_t const> owners)
+    {
+        auto current = CurrentState();
+        if (!current) return;
+        std::vector<std::shared_ptr<State::Entry>> cancelAfterUnlock;
+        {
+            std::scoped_lock lock(current->mutex);
+            current->Retain(owners, cancelAfterUnlock);
+        }
+        for (auto const& entry : cancelAfterUnlock) entry->cancel.request_stop();
+    }
+
+    void MathJaxRenderer::Clear()
+    {
+        auto replacement = std::make_shared<State>();
+        std::shared_ptr<State> old;
+        {
+            std::scoped_lock lock(stateMutex);
+            old = std::move(state);
+            state = std::move(replacement);
+        }
+        if (old) old->Stop();
     }
 }

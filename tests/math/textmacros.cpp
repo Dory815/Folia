@@ -24,6 +24,7 @@ struct TextFixture {
     Warnings warnings;
     MmlDocument document;
     std::unique_ptr<TeX> jax;
+    std::unique_ptr<TeXRequest> request;
     std::string error;
     explicit TextFixture(bool extras = false, bool aliases = false, bool childStyle = false) {
         TextMacrosConfiguration::initializeModule(registry, maps);
@@ -57,8 +58,8 @@ struct TextFixture {
             options.macros = std::unordered_map<std::u16string, MacroDefinition>{{u"fixed", fixed}};
         }
         options.formatError = &formatTextError;
-        jax =
-            std::make_unique<TeX>(registry, maps, callbacks, warnings, document.factory(), options);
+        jax = std::make_unique<TeX>(registry, maps, callbacks, warnings, options);
+        request = std::make_unique<TeXRequest>(*jax, document.factory());
     }
     TextMacrosData &data() {
         return *jax->parseOptions().textmacros;
@@ -75,9 +76,9 @@ struct TextFixture {
         folia::math::core::AbstractMathItem math(std::move(source), jax.get());
         math.setDisplay(false);
         auto &root = jax->compile(math, document);
-        expect(jax->parseOptions().parsers.empty());
-        expect(data().parseOptions->parsers.empty());
-        expect(data().texParser == nullptr);
+        expect(jax->parseOptions().request().parsers.empty());
+        expect(data().parseOptions->request().parsers.empty());
+        expect(data().parseOptions->request().texParser == nullptr);
         return root;
     }
     MmlNode &ok(std::u16string source) {
@@ -326,7 +327,8 @@ suite textmacros = [] {
             }
         } restore;
         textRequests = &requests;
-        f.data().parseOptions->nodeFactory.setCreators(NodeCreators{.node = &observeTextNode});
+        f.data().parseOptions->request().nodeFactory.setCreators(
+            NodeCreators{.node = &observeTextNode});
         auto &tree = f.text(u"\\bf\\large a\\u{b}$x$");
         expect(std::ranges::any_of(requests, [](auto const &r) {
             return r.kind == NodeKind::mtext &&
@@ -338,9 +340,9 @@ suite textmacros = [] {
         if (accent != requests.end()) {
             auto nodes = textNodes(tree, NodeKind::mo);
             expect(std::ranges::find(nodes, accent->node) != nodes.end());
-            auto list = f.jax->parseOptions().nodeLists.find(u"mo");
-            expect(list != f.jax->parseOptions().nodeLists.end());
-            if (list != f.jax->parseOptions().nodeLists.end())
+            auto list = f.jax->parseOptions().request().nodeLists.find(u"mo");
+            expect(list != f.jax->parseOptions().request().nodeLists.end());
+            if (list != f.jax->parseOptions().request().nodeLists.end())
                 expect(std::ranges::find(list->second, accent->node) != list->second.end());
             expect(textNumber(accent->node->attributes(), u"mathsize", 1.095));
             expect(attr(*accent->node, u"mathvariant") == u"bold");
@@ -350,16 +352,15 @@ suite textmacros = [] {
         [] {
             TextFixture f;
             auto &inner = *f.data().parseOptions;
-            inner.nodeFactory.setMmlFactory(f.document.factory());
             TexParser primary(u"", {}, f.jax->parseOptions());
             primary.mml();
             struct Restore {
                 TextMacrosData &data;
                 ~Restore() {
-                    data.texParser = nullptr;
+                    data.parseOptions->request().texParser = nullptr;
                 }
             } restore{f.data()};
-            f.data().texParser = &primary;
+            inner.request().texParser = &primary;
             std::vector<TextRequest> requests;
             struct RestoreRequests {
                 ~RestoreRequests() {
@@ -367,7 +368,7 @@ suite textmacros = [] {
                 }
             } restoreRequests;
             textRequests = &requests;
-            inner.nodeFactory.setCreators(NodeCreators{.node = &observeTextNode});
+            inner.request().nodeFactory.setCreators(NodeCreators{.node = &observeTextNode});
             TextParser p(u"a", {}, inner, ScriptLevel{2.0});
             auto *node = p.mml();
             expect(node->kind() == NodeKind::mstyle);
@@ -382,18 +383,19 @@ suite textmacros = [] {
             explicitDefinition.attributes.set(u"mathsize", 0.0);
             explicitDefinition.attributes.set(u"mathcolor", u"blue");
             explicitDefinition.attributes.set(u"mathvariant", u"italic");
-            auto &token =
-                inner.nodeFactory.makeToken(NodeKind::mi, u"x", std::move(explicitDefinition));
+            auto &token = inner.request().nodeFactory.makeToken(NodeKind::mi, u"x",
+                                                                std::move(explicitDefinition));
             q.addAttributes(token);
             expect(textNumber(token.attributes(), u"mathsize", 0));
             expect(attr(token, u"mathcolor") == u"blue");
             expect(attr(token, u"mathvariant") == u"italic");
             q.mml();
             TextParser r(u"", {}, inner);
-            auto &a = inner.nodeFactory.makeToken(NodeKind::mi, u"a");
-            auto &b = inner.nodeFactory.makeToken(NodeKind::mi, u"b");
+            auto &a = inner.request().nodeFactory.makeToken(NodeKind::mi, u"a");
+            auto &b = inner.request().nodeFactory.makeToken(NodeKind::mi, u"b");
             const std::array children{&a, &b};
-            auto &inferred = inner.nodeFactory.makeNode(NodeKind::inferred_mrow, children);
+            auto &inferred =
+                inner.request().nodeFactory.makeNode(NodeKind::inferred_mrow, children);
             r.PushMath(inferred);
             auto *math = r.mml();
             expect(math->kind() == NodeKind::tex_atom);
@@ -405,6 +407,6 @@ suite textmacros = [] {
             }
             for (auto source : {u"}", u"$x}"})
                 texError([&] { TextParser parser(source, {}, inner); }, "ExtraCloseMissingOpen");
-            expect(inner.parsers.empty());
+            expect(inner.request().parsers.empty());
         };
 };

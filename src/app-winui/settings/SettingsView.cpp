@@ -101,7 +101,6 @@ namespace winrt::Folia
         shortcutModel_.Reset(settings_.shortcutBindings);
         systemVariant_ = systemVariant;
         refreshing_ = true;
-        mathToggle_.IsOn(settings_.mathRenderingEnabled);
         latexSuggestionsToggle_.IsOn(settings_.latexSuggestionsEnabled);
         languageCombo_.SelectedIndex(LanguageIndex(settings_.languageId));
         refreshing_ = false;

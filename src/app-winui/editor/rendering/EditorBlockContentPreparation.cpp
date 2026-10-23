@@ -88,8 +88,8 @@ namespace winrt::Folia
         float fontSize,
         float containerWidth,
         bool svgSupported,
-        bool requestMath,
-        bool highPriority)
+        bool /*requestMath*/,
+        bool /*highPriority*/)
     {
         DisplayInlineText display;
         auto const& special = block.special();
@@ -119,27 +119,11 @@ namespace winrt::Folia
             return display;
         }
 
-        AsyncWorkDependency mathJaxDependency;
-        auto rawMath = mathJax.GetOrQueue(
-            folia::cps_to_utf8(special.tex),
-            true,
-            fontSize,
-            containerWidth,
-            requestMath,
-            highPriority,
-            &mathJaxDependency);
-        if (!rawMath && mathJaxDependency)
-            display.pendingMathJaxDependencies.push_back(
-                std::move(mathJaxDependency));
-        auto math = rawMath ? NormalizeMathJaxSvg(
-            *rawMath,
-            svgNormalizer,
-            svgColor,
-            fontSize,
-            requestMath,
-            highPriority,
-            &display.pendingSvgDependencyGroups) : std::nullopt;
-        display.pendingMath = !rawMath || !math;
+        auto math = mathJax.Render(
+            folia::cps_to_utf8(special.tex), true, fontSize,
+            containerWidth, SvgColor(svgColor), {},
+            editing ? MathRenderPurpose::Preview : MathRenderPurpose::Document);
+        display.pendingMath = !math;
         if (editing)
         {
             AppendProjectedSourceText(
