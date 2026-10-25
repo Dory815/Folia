@@ -3,9 +3,9 @@
 ## Active implementation checkpoint - 2026-10-26
 
 The execution plan below is now authorized for implementation. Preserve its
-23-family scope and separate native/default/application gates. Three workers
-are active: ELK source/adapter and algorithm boundary, Class SVG-label and
-font configuration closeout, and the complete Quadrant family. The coordinator
+23-family scope and separate native/default/application gates. Active worker
+packages now advance ELK long-edge splitting and Radar after the saved Class,
+Sequence, Quadrant and ELK layering candidates below. The coordinator
 owns host integration, shared dispatch/build wiring and delivery to PR #1.
 
 Current bounded packages and exits:
@@ -28,13 +28,43 @@ Current bounded packages and exits:
   the single C++ path in an isolated WinUI candidate and build/run it. No
   production dependency switch until M1/M2/M3 pass.
 
-The incoming plan was an uncommitted user change and is retained. No completed
-verification is claimed for these new packages yet. Local MSVC/CMake are absent;
-native validation will use the existing Windows Actions infrastructure.
+Saved candidates: host ABI `272214bb` with test fixes `6504e61f`/`ef586865`,
+Class closeout `f2d661b1`, ELK selector `e2db6e10`, source availability notes
+`8e066c19`, and Quadrant public entry `1a908de5`. Run `40212341385` compiled
+the native packages; Release platform/host suites passed, with only a Quadrant
+axis-arrow trailing-space mismatch in the core suite. The real native output
+passed all 66 Class browser comparisons and the other 18 Quadrant comparisons.
+Twelve representative Class/Quadrant previews were inspected in
+`build/mermaid-cpp/functional-first-native/native-preview.png`. Fix `5cf9e632`
+retains the original axis text trimming. The next combined run `40212947219`
+at `9c801ed9` includes that fix, Sequence closeout `3bae4cd2` and original
+ELK flat layering `c9b7645a`; it is active and not yet accepted. The first
+host run `40211873250` found a test header/module include-order error, fixed
+above. Source oracles pass locally: Class 66 browser observations, Quadrant
+20 successes/eight errors plus 20 browser SVGs, ELK seven cycle/11 layering
+observations, and Sequence 92 original browser observations. Radar's finite
+parser/config/curve-helper oracle is prepared; its native family is in progress.
 
-## Current execution plan - 2026-10-26, functional milestones and parallel delivery
+Default-path correction: the unconfigured Flowchart path also selects global
+ELK, so both Flowchart and Class are blocked on required ELK. The host test
+preserves explicit failures and checks source-configured Dagre separately.
 
-This is a planning checkpoint; no implementation, build settings or tests changed.
+Isolated M3 checkout: `build/mermaid-cpp/winui-candidate`, branch
+`codex/mermaid-cpp-winui-candidate`, head `fbe90a3a`; run `40212313553` active.
+Standalone Debug/Release jobs passed, including the new native host ABI tests.
+It uses only the C++ backend, then ordinary usvg normalization, preserving
+the queue/cache/completion code. The candidate's integrated Release job runs
+setup.ps1 and build_app.ps1 and uploads the application if it builds. This
+candidate is not cherry-picked into the contribution/production branch.
+
+The incoming plan was an uncommitted user change and is retained in `fd37c879`.
+Local MSVC/CMake are absent. Next: fix only actual combined CI failures, inspect
+new native SVG evidence, deliver accepted packages to PR #1 without merging,
+and continue Radar / Flowchart-Sequence closeout / original ELK layering.
+
+## Execution schedule - 2026-10-26 (baseline facts superseded by active checkpoint)
+
+This records the original planning baseline; implementation progress is above.
 The implementation baseline is local `0095233e` (verified runtime `157f54fb`).
 The working tree was clean before this documentation update. Read this plan as
 the current scheduling entry; earlier checkpoints retain their verification
