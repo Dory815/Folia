@@ -3,7 +3,10 @@ on:
   workflow_dispatch:
   push:
     branches: [codex/mermaid-cpp-winui-candidate]
-    paths: [.github/workflows/mermaid-winui-candidate.yml]
+    paths:
+      - .github/workflows/mermaid-winui-candidate.yml
+      - src/app-winui/**
+      - build_app.ps1
 permissions:
   contents: read
 concurrency:
