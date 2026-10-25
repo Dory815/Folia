@@ -2,86 +2,80 @@
 
 ## Active implementation checkpoint - 2026-10-26
 
-The execution plan below is now authorized for implementation. Preserve its
-23-family scope and separate native/default/application gates. Worker packages
-for Class, Sequence, Quadrant, Radar and the first three ELK phases are saved;
-workers are waiting for final CI diagnostics, with no further scope expansion.
-The coordinator
-owns host integration, shared dispatch/build wiring and delivery to PR #1.
+Authorized execution continues under the schedule below. The incoming plan is
+preserved in fd37c879. Class/Sequence closeout, Quadrant/Radar public entries,
+UTF-8 host ABI and the first three ELK phases are committed in small packages.
+Workers class_closeout/data_family/elk_boundary have finished; no further worker
+assignment or local build/browser/application process is running.
 
-Current bounded packages and exits:
+Runtime head: `52b6be2c`; contribution equivalent: `116e2a8a` in
+`build/mermaid-cpp/entry-contribution` on `feat/mermaid-cpp-port`. Runtime, tests,
+workflow and public README match; fork guidelines/execution schedule are excluded.
+Final gate https://github.com/zhao0349/Folia/actions/runs/40215740739 passed all
+four standalone/integrated Debug/Release jobs, including all affected native
+suites, FoliaTests/FoliaWindowsEditorTests and original SVG/text comparisons. The preceding
+seven-family head `9bfc171f` passed all four configurations in run `40214517262`.
+The only later runtime change moves Windows UTF-8 conversion/per-request config
+into `src/platform/text/mermaid_host.ixx`, leaving buffer ownership in the ABI.
 
-- Class: SVG-label spacing for the captured members/classifier inputs plus
-  common font size/family/weight/style configuration; default/dark original
-  comparisons and affected existing checks. Next: Flowchart/Sequence closeout.
-- Quadrant: title/accessibility, four quadrant labels, axis endpoints, normalized
-  points, class/point styles and existing canvas configuration. Preserve the
-  original fixed-canvas/linear-scale algorithm and SVG text anchors (the
-  original does not measure text). Exit on parser, geometry/paint and public
-  source-to-SVG comparisons. Next: Radar.
-- ELK: establish the pinned Class/State adapter and original layered algorithm
-  dependencies first; never substitute Dagre. Record the exact native algorithm
-  boundary and distinguish oracle/contract progress from a working renderer.
-- Host bridge: UTF-8 source, default/dark theme with classic appearance, fresh
-  source configuration per request, unchanged family layout defaults, native
-  SVG/error/dimensions and owned buffers. Ordinary SVG normalization remains
-  in usvg. Exit on native ABI and source-config precedence checks; then wire
-  the single C++ path in an isolated WinUI candidate and build/run it. No
-  production dependency switch until M1/M2/M3 pass.
+Accepted functional packages: Class SVG-label spacing and original font-paint
+semantics; Sequence alignment, category font weights and literal non-break
+markup; Quadrant configured canvas/scales/points/styles/labels; Radar named or
+positional curves, original polar/Catmull-Rom geometry, grids, scales and legend.
+Native entry now covers Packet, Pie, Flowchart, Sequence, Class, Quadrant, Radar.
+Sixteen retained families lack native rendering. Both Flowchart and Class still
+select global ELK by default; explicit Dagre works, default ELK fails explicitly.
+ELK cycle selection, flat network-simplex layering and long-edge splitting are
+internal phases, not a completed renderer. Next shared phase is original port
+ordering and LayerSweepCrossingMinimizer/BarycenterHeuristic, then placement,
+routing and compound handling. Required Flowchart closeout remains separate.
 
-Saved candidates: host ABI `272214bb` with test fixes `6504e61f`/`ef586865`,
-Class closeout `f2d661b1`, ELK selector `e2db6e10`, source availability notes
-`8e066c19`, and Quadrant public entry `1a908de5`. Run `40212341385` compiled
-the native packages; Release platform/host suites passed, with only a Quadrant
-axis-arrow trailing-space mismatch in the core suite. The real native output
-passed all 66 Class browser comparisons and the other 18 Quadrant comparisons.
-Twelve representative Class/Quadrant previews were inspected in
-`build/mermaid-cpp/functional-first-native/native-preview.png`. Fix `5cf9e632`
-retains the original axis text trimming. Run `40212947219` at `9c801ed9`
-passed the Release core/host suites, including ELK layering `c9b7645a` and
-Quadrant. Its only platform failures were two obsolete Sequence rejection
-assertions; `e4c36a33` removes them because the new positive literal-label case
-already covers the supported behavior. Actual native output passed all 92
-Sequence and all 20 Quadrant browser comparisons with unchanged tolerances.
-Ten Sequence previews were inspected under
-`build/mermaid-cpp/functional-second-native/native-preview.png`.
+Verification uses 92 Flowchart/92 Sequence/66 Class/20 Quadrant/16 Radar browser
+comparisons and existing Packet/Pie/96 real text metrics; tolerances unchanged.
+Preview evidence: `build/mermaid-cpp/functional-first-native/native-preview.png`,
+`functional-second-native/native-preview.png` and `radar-native/native-preview.png`
+(the latter two share the same build/mermaid-cpp prefix). Actual findings fixed:
+Quadrant axis trailing whitespace, obsolete Sequence negative assertions, and
+missing UTF-8 metadata in data-browser probes. Earlier failed/cancelled runs do
+not establish final success; use the combined gates above.
 
-Final combined run `40213681479` at `e4c36a33` is active. It includes Radar
-`8e36b76a` (16 original SVGs, 16 source successes/six errors), ELK layer order
-and LongEdgeSplitter `bb50eb25` (11 layering/five splitting observations),
-and the prior packages. It is not yet accepted. Earlier failed runs were
-cancelled only after diagnostics were retained and replacement runs started.
-The first
-host run `40211873250` found a test header/module include-order error, fixed
-above. Source oracles pass locally: Class 66 browser observations, Quadrant
-20 successes/eight errors plus 20 browser SVGs, ELK seven cycle/11 layering
-observations, and Sequence 92 original browser observations. Radar's finite
-parser/config/curve-helper oracle is prepared; its native family is in progress.
+M3 isolated checkout: `build/mermaid-cpp/winui-candidate`, branch
+`codex/mermaid-cpp-winui-candidate`, head `b011ff85`. Dedicated actual Release
+MSBuild run https://github.com/zhao0349/Folia/actions/runs/40214720270 succeeded.
+It connects C++ through existing queue/cache/completion and ordinary usvg; no
+Rust fallback. Two malformed baseline vcxproj ClCompile elements were repaired
+only in this candidate. This checkout uses the earlier five-family runtime and
+is not in the contribution. Artifact saved to `build/mermaid-cpp/winui-candidate-app`
+with `Folia.exe`, native Mermaid DLL and normalizer; downloaded zip SHA-256 is
+`df2487501c4af6b7aadbb0207bed0a762fc2d31a210b53cfaafdae5c200010d1`, matching CI.
+No real WinUI editing/preview/theme/PDF/GPU/DPI acceptance is claimed. Local
+MSVC/CMake are absent. The listed computer-use SKILL.md is also absent locally;
+no GUI automation was started. Production remains on Rust until M1/M2/M3 pass.
 
-Default-path correction: the unconfigured Flowchart path also selects global
-ELK, so both Flowchart and Class are blocked on required ELK. The host test
-preserves explicit failures and checks source-configured Dagre separately.
+Contribution delivered at `92aa70ca3976ecdc9b66f2ccb1b9bc2353b83a6b`.
+PR https://github.com/water2004/Folia/pull/1 title/body and remote head were
+verified updated, open and unmerged. No AGENTS.md difference against base
+508423f2. Delivery-triggered reruns are separate from completed runtime gates.
+Next continue the XY package below, remaining
+Flowchart requirements and original ELK crossing minimization. Do not reopen
+passed family packages absent a related change or actual regression.
 
-Isolated M3 checkout: `build/mermaid-cpp/winui-candidate`, branch
-`codex/mermaid-cpp-winui-candidate`, head `a41a0cd0`; dedicated application
-run `40213840980` is active. The four library configurations of earlier run
-`40212313553` at `fbe90a3a` passed their test/comparison steps, including the
-host ABI. That run was cancelled during its duplicated application build after
-the dedicated application run started; do not report its overall status as success.
-It uses only the C++ backend, then ordinary usvg normalization, preserving
-the queue/cache/completion code. The dedicated job runs setup.ps1, builds the
-application's native runtimes once and invokes MSBuild; it uploads the app only
-if that build succeeds. This
-candidate is not cherry-picked into the contribution/production branch.
+### Next data package: XY
 
-The incoming plan was an uncommitted user change and is retained in `fd37c879`.
-Local MSVC/CMake are absent. Next: fix only actual combined CI failures, inspect
-new native SVG evidence, deliver accepted packages to PR #1 without merging,
-and continue the next missing data family / remaining required Flowchart
-closeout / ELK port ordering and crossing minimization. The public entry has
-seven implemented family candidates, with Radar awaiting its first native gate;
-16 families still lack a native render path. No local build or WinUI/GPU/DPI
-acceptance is claimed. No local browser/build process remains running.
+Bounded source inspection is complete under the pinned source checkout:
+`packages/mermaid/src/diagrams/xychart/{parser/xychart.jison,xychartDb.ts,
+xychartRenderer.ts,chartBuilder/orchestrator.ts}` and chartBuilder's axis/text
+components. XY needs original vertical/horizontal space allocation, measured
+title/axis/legend bounds, linear ticks and band scales; it cannot reuse the
+Quadrant/Radar no-measurement layout. Use the existing native measurement seam.
+Deliver bar/line plots, numeric/category axes, titles/accessibility, existing
+orientation/canvas/axis/theme configuration and public source-to-SVG entry.
+First capture a finite representative source/browser corpus, then port the
+original scale/layout dependencies and compare native output. Exit on that
+functional corpus and affected checks; next data family is Sankey. Do not
+implement DOM callbacks or expand into a general charting API. Renderer data
+labels use an upstream-specific fit policy; inspect and classify that option
+before selecting the corpus rather than adding an invented width fallback.
 
 ## Execution schedule - 2026-10-26 (baseline facts superseded by active checkpoint)
 
