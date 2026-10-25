@@ -3,9 +3,10 @@
 ## Active implementation checkpoint - 2026-10-26
 
 The execution plan below is now authorized for implementation. Preserve its
-23-family scope and separate native/default/application gates. Active worker
-packages now advance ELK long-edge splitting and Radar after the saved Class,
-Sequence, Quadrant and ELK layering candidates below. The coordinator
+23-family scope and separate native/default/application gates. Worker packages
+for Class, Sequence, Quadrant, Radar and the first three ELK phases are saved;
+workers are waiting for final CI diagnostics, with no further scope expansion.
+The coordinator
 owns host integration, shared dispatch/build wiring and delivery to PR #1.
 
 Current bounded packages and exits:
@@ -36,9 +37,21 @@ axis-arrow trailing-space mismatch in the core suite. The real native output
 passed all 66 Class browser comparisons and the other 18 Quadrant comparisons.
 Twelve representative Class/Quadrant previews were inspected in
 `build/mermaid-cpp/functional-first-native/native-preview.png`. Fix `5cf9e632`
-retains the original axis text trimming. The next combined run `40212947219`
-at `9c801ed9` includes that fix, Sequence closeout `3bae4cd2` and original
-ELK flat layering `c9b7645a`; it is active and not yet accepted. The first
+retains the original axis text trimming. Run `40212947219` at `9c801ed9`
+passed the Release core/host suites, including ELK layering `c9b7645a` and
+Quadrant. Its only platform failures were two obsolete Sequence rejection
+assertions; `e4c36a33` removes them because the new positive literal-label case
+already covers the supported behavior. Actual native output passed all 92
+Sequence and all 20 Quadrant browser comparisons with unchanged tolerances.
+Ten Sequence previews were inspected under
+`build/mermaid-cpp/functional-second-native/native-preview.png`.
+
+Final combined run `40213681479` at `e4c36a33` is active. It includes Radar
+`8e36b76a` (16 original SVGs, 16 source successes/six errors), ELK layer order
+and LongEdgeSplitter `bb50eb25` (11 layering/five splitting observations),
+and the prior packages. It is not yet accepted. Earlier failed runs were
+cancelled only after diagnostics were retained and replacement runs started.
+The first
 host run `40211873250` found a test header/module include-order error, fixed
 above. Source oracles pass locally: Class 66 browser observations, Quadrant
 20 successes/eight errors plus 20 browser SVGs, ELK seven cycle/11 layering
@@ -50,17 +63,25 @@ ELK, so both Flowchart and Class are blocked on required ELK. The host test
 preserves explicit failures and checks source-configured Dagre separately.
 
 Isolated M3 checkout: `build/mermaid-cpp/winui-candidate`, branch
-`codex/mermaid-cpp-winui-candidate`, head `fbe90a3a`; run `40212313553` active.
-Standalone Debug/Release jobs passed, including the new native host ABI tests.
+`codex/mermaid-cpp-winui-candidate`, head `a41a0cd0`; dedicated application
+run `40213840980` is active. The four library configurations of earlier run
+`40212313553` at `fbe90a3a` passed their test/comparison steps, including the
+host ABI. That run was cancelled during its duplicated application build after
+the dedicated application run started; do not report its overall status as success.
 It uses only the C++ backend, then ordinary usvg normalization, preserving
-the queue/cache/completion code. The candidate's integrated Release job runs
-setup.ps1 and build_app.ps1 and uploads the application if it builds. This
+the queue/cache/completion code. The dedicated job runs setup.ps1, builds the
+application's native runtimes once and invokes MSBuild; it uploads the app only
+if that build succeeds. This
 candidate is not cherry-picked into the contribution/production branch.
 
 The incoming plan was an uncommitted user change and is retained in `fd37c879`.
 Local MSVC/CMake are absent. Next: fix only actual combined CI failures, inspect
 new native SVG evidence, deliver accepted packages to PR #1 without merging,
-and continue Radar / Flowchart-Sequence closeout / original ELK layering.
+and continue the next missing data family / remaining required Flowchart
+closeout / ELK port ordering and crossing minimization. The public entry has
+seven implemented family candidates, with Radar awaiting its first native gate;
+16 families still lack a native render path. No local build or WinUI/GPU/DPI
+acceptance is claimed. No local browser/build process remains running.
 
 ## Execution schedule - 2026-10-26 (baseline facts superseded by active checkpoint)
 
