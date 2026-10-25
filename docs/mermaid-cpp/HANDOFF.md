@@ -1,6 +1,188 @@
 # Mermaid C++ continuity
 
-## Current checkpoint - 2026-10-25, Class paints and lollipop interfaces verified
+## Active implementation checkpoint - 2026-10-26
+
+The execution plan below is now authorized for implementation. Preserve its
+23-family scope and separate native/default/application gates. Three workers
+are active: ELK source/adapter and algorithm boundary, Class SVG-label and
+font configuration closeout, and the complete Quadrant family. The coordinator
+owns host integration, shared dispatch/build wiring and delivery to PR #1.
+
+Current bounded packages and exits:
+
+- Class: SVG-label spacing for the captured members/classifier inputs plus
+  common font size/family/weight/style configuration; default/dark original
+  comparisons and affected existing checks. Next: Flowchart/Sequence closeout.
+- Quadrant: title/accessibility, four quadrant labels, axis endpoints, normalized
+  points, class/point styles and existing canvas configuration. Preserve the
+  original fixed-canvas/linear-scale algorithm and SVG text anchors (the
+  original does not measure text). Exit on parser, geometry/paint and public
+  source-to-SVG comparisons. Next: Radar.
+- ELK: establish the pinned Class/State adapter and original layered algorithm
+  dependencies first; never substitute Dagre. Record the exact native algorithm
+  boundary and distinguish oracle/contract progress from a working renderer.
+- Host bridge: UTF-8 source, default/dark theme with classic appearance, fresh
+  source configuration per request, unchanged family layout defaults, native
+  SVG/error/dimensions and owned buffers. Ordinary SVG normalization remains
+  in usvg. Exit on native ABI and source-config precedence checks; then wire
+  the single C++ path in an isolated WinUI candidate and build/run it. No
+  production dependency switch until M1/M2/M3 pass.
+
+The incoming plan was an uncommitted user change and is retained. No completed
+verification is claimed for these new packages yet. Local MSVC/CMake are absent;
+native validation will use the existing Windows Actions infrastructure.
+
+## Current execution plan - 2026-10-26, functional milestones and parallel delivery
+
+This is a planning checkpoint; no implementation, build settings or tests changed.
+The implementation baseline is local `0095233e` (verified runtime `157f54fb`).
+The working tree was clean before this documentation update. Read this plan as
+the current scheduling entry; earlier checkpoints retain their verification
+evidence, but their individual "next" instructions are historical.
+
+### Verified position and remaining work
+
+- The native public entry contains five families, not five fully finished
+  replacements: Packet, Pie, Flowchart, Sequence and Class. The remaining 18
+  families have no native render path. Detection/configuration support is not
+  family parsing/rendering support. Keep the existing 23-family scope.
+- Packet/Pie and the completed frontend, configuration, default/dark themes,
+  measurement and Dagre boundaries are accepted foundations. Reopen only the
+  specific boundary affected by a new requirement, change or reproduced failure.
+- Flowchart has measured classic/Dagre shapes, groups, loops and common styled
+  labels. Sequence has its principal message, region, grouping and lifecycle
+  chain. Class has substantial measured Dagre rendering, but its default ELK
+  path still fails. Class SVG-label spacing and typography, and the required
+  remaining Flowchart/Sequence display/configuration features need finite
+  closeout packages; do not promote every upstream option into a requirement.
+- Existing comparisons explicitly initialize supported themes/looks/layouts.
+  They do not establish unconfigured host behavior. Freeze Folia's actual
+  source + light/dark initialization contract and source-config precedence;
+  do not silently force Dagre to conceal an unimplemented required ELK path.
+  Conversely, upstream redux-color/neo defaults do not automatically create
+  a requirement for all upstream themes/looks in Folia.
+- WinUI still loads `folia_mermaid_render` from `folia_svg_normalizer.dll`,
+  where Rust Mermaid renders and usvg normalizes the result. The C++ API is
+  opt-in. Root integrated CI builds libraries/tests, not the MSBuild WinUI shell.
+  No real application replacement or WinUI/GPU/DPI acceptance is established.
+- The recorded verification run `40208084657` was checked live: all four
+  Windows standalone/integrated Debug/Release jobs succeeded. PR
+  https://github.com/water2004/Folia/pull/1 was checked live: open/unmerged,
+  contribution head `17fffb072d0b84eaa6f31e6d726430829e484f81`.
+  No new build, oracle run or CI dispatch was needed for this planning review.
+
+Current status uses separate native/default/host gates, not a completion percentage:
+
+| Families | Native source-to-SVG | Required/default-path closeout | WinUI C++ acceptance |
+| --- | --- | --- | --- |
+| Packet, Pie | Accepted within recorded boundaries | Reuse baseline; verify host initialization when connected | Pending |
+| Flowchart | Accepted classic/Dagre subset | Finite required syntax/display/configuration list; required layout selection | Pending |
+| Sequence | Accepted principal functional chain | Finite required rich-label/configuration list | Pending |
+| Class | Accepted explicit Dagre subset | Default ELK; SVG-label mode and required styled typography/configuration | Pending |
+| State, ER, Requirement, Quadrant, Radar, XY, Sankey, Treemap, Journey, Timeline, Gantt, Git graph, Block, Kanban, C4, Mindmap, Architecture, ZenUML | No native family render path | Required family behavior and default paths pending | Pending |
+
+Evidence anchors: `third_party/mermaid-cpp/src/render_entry.{ixx,cpp}`,
+`src/platform/text/mermaid_renderer.ixx`,
+`src/app-winui/media/MermaidRenderer.cpp`,
+`src/app-winui/third_party/usvg-normalizer/{Cargo.toml,src/lib.rs}`,
+`build_app.ps1`, `src/app-winui/Folia.vcxproj`, and
+`.github/workflows/mermaid-cpp.yml`. Some older README entry summaries still
+name only Packet/Pie/Flowchart; use the current implementation/matrix above.
+
+### Milestones: start M1, M2 and M3 in parallel; then M4 and M5
+
+| Milestone | Deliverable and permitted scope | Exit condition / next action |
+| --- | --- | --- |
+| M1: Existing families and required default paths | Freeze the host initialization contract; implement the required native ELK algorithm/adapter boundary; close the finite required Flowchart/Sequence/Class feature lists. Keep accepted Packet/Pie behavior. | All five families meet their recorded Folia requirements through the public entry, including required default configuration without editing user source to select a workaround. Close each independent package as soon as it passes; proceed to M2 packages without waiting for unrelated polish. |
+| M2: Remaining 18 families | Deliver the six family groups below. Each family owner takes parsing, configuration, real measurement, original layout, SVG and public-entry integration together. | Each family passes its agreed native functional gate independently. All 23 retained families and their required configuration/default paths are accounted for before M4. |
+| M3: Early WinUI integration candidate | In an isolated integration checkout, connect one C++ backend through the existing queue/cache/completion mechanisms and complete CMake/MSBuild/deployment wiring. Resolve the SVG normalization boundary. Start with currently supported representative inputs. | A real WinUI candidate builds/runs and demonstrates editing/preview, theme changes, dimensions and PDF through C++. Unsupported families remain explicit errors in this candidate. This is integration evidence, not a production switch; continue adding family coverage through the same interface. |
+| M4: Formal dependency switch | After M1/M2/M3 pass, promote the single C++ application path and remove Mermaid-specific Rust crate usage, exports, tests and packaging references; update the affected lockfile/notices/build documentation. | Actual application artifacts use C++ for every required Mermaid family. Preserve ordinary SVG usvg normalization and unrelated Rust/Math code. No JS runtime, Rust fallback or permanent old/new switch. Then perform M5. |
+| M5: Product acceptance and bounded repair | Validate the final artifact on representative real editor/PDF paths and the user's normal display scaling; repair reproduced common-use failures caused by this migration. | All declared functional/application gates and affected existing checks pass; record exact evidence and residual nonblocking limits. Deliver reviewed small commits and update the existing PR under the established workflow; leave merging under user control. No speculative hardening phase is required. |
+
+M1 is composed of independent packages, not a reason to keep all agents in Class:
+
+- **Shared layout/default package:** implement only the required ELK call path
+  and options from the pinned original source, retaining family semantics.
+  Identify consumers such as Class and State before fixing the shared boundary;
+  do not attempt the entire ELK product/API or substitute Dagre.
+- **Existing-family closeout packages:** group Class SVG-label spacing,
+  required font styles and configuration together. Group the required remaining
+  Flowchart syntax/label/configuration features together; likewise Sequence
+  rich labels/alignment/font configuration. At package start, classify the
+  documented gaps as required, known nonblocking, or outside the Folia contract,
+  with a brief reason. Lack of a current sample alone cannot remove a prior
+  requirement. Do not add an unlimited list of upstream features at acceptance.
+- The four already captured Class SVG-label observations in
+  `build/mermaid-cpp/class-svg-label-next/original.json` are reusable inputs to
+  the Class package, not the next global milestone. Existing completed shapes,
+  notes, namespaces, paints, wrapping and interfaces stay accepted.
+
+M2 work groups cover all 18 missing families (3 + 5 + 4 + 3 + 2 + 1):
+
+| Work group | Families | Shared services / dependencies to retain |
+| --- | --- | --- |
+| Relational diagrams | State, ER, Requirement | Unified graph, measured labels, markers and the required Dagre/ELK routes; do not assume all defaults are Dagre. |
+| Data diagrams | Quadrant, Radar, XY, Sankey, Treemap | Theme/text/SVG services; preserve XY scale/axis behavior, d3-sankey and d3-hierarchy algorithms separately. |
+| Time and narrative diagrams | Journey, Timeline, Gantt, Git graph | Reuse measurement/drawing services; retain each family's placement, and Gantt's required date/scheduling behavior. |
+| Structures and containers | Block, Kanban, C4 | Reuse measured boxes and drawing services without replacing the families' own arrangements with a generic graph layout. |
+| Mindmap and architecture | Mindmap, Architecture | Account for Mindmap's cose-bilkent and Architecture's Cytoscape/fCoSE routes; shared infrastructure does not make these the same algorithm. |
+| External integration | ZenUML | The official package wraps @zenuml/core. Establish the original source, license/provenance and required native boundary early; it is not an already available intrinsic parser. |
+
+These groups are scheduling queues, not six giant commits or barriers. A finished
+family is integrated and accepted immediately; its siblings need not be finished.
+Investigate source availability and required boundaries for ELK, Mindmap,
+Architecture and ZenUML at the outset, then start their implementation as slots
+open. Do not postpone every independent difficult dependency until the last
+simple family, and do not turn this bounded discovery into an all-dependency audit.
+
+### Agent ownership and immediate dispatch
+
+Use one coordinator plus up to three implementation agents. This review's
+read-only agents have finished; no implementation agent/build was started.
+
+| Owner | First assignment | Subsequent dispatch |
+| --- | --- | --- |
+| Coordinator / application owner | Freeze input encoding, light/dark/session defaults, SVG + dimensions/error output, normalization ownership and request lifetime. Own M3 and integration of central files. Record concrete source/provenance blockers for the independent algorithms early. | Integrate accepted family commits, manage M4/M5, maintain this single checkpoint and status matrix. |
+| Agent A | Required native ELK/default layout package, starting from Class and checking State's consumer contract. | Required relational families or the next independent algorithm package. |
+| Agent B | Finite Class display/configuration closeout, then the required Flowchart/Sequence closeout packages. | Start an outstanding complex family package early; take time/container work when dependencies and slots permit. |
+| Agent C | A complete data family through public-entry SVG, then the rest of that independent group as appropriate. | Take other ready family groups; do not wait for Class/ELK if the family does not depend on them. |
+
+This is the next implementation dispatch, replacing "do only Class SVG-label
+spacing, then choose another small detail." Agents work on disjoint family or
+algorithm files. The coordinator owns final changes to shared render dispatch,
+platform measurement entry, build/workflow wiring, source-lock/notices and this
+handoff; workers supply required integration changes for review rather than
+concurrently editing those central files. Share new primitives only when a
+concrete family needs them; no generic plugin framework is part of the plan.
+
+### Exit and persistence rules
+
+- A functional package can contain several small, reviewable commits. Parser,
+  layout and styling commits are internal progress, not separate milestones
+  requiring a fresh global plan/PR narrative. A family package exits only after
+  source-to-SVG integration; large shared algorithms may have their own bounded
+  package and consumer gate.
+- Before implementation, record this package's required features, representative
+  successful inputs, necessary common errors, affected regression checks and
+  next package here. Keep the list fixed unless new project evidence changes it.
+- Validate against the pinned official behavior for that scope, native tests and
+  actual measured SVG. Retain required existing CI checks; do not add a new broad
+  matrix, rerun passed stages just for handoff, or widen geometric tolerances to
+  conceal failures. Share one final verified package head where appropriate,
+  rather than making each visual property an independent full delivery cycle.
+- Mark native entry, required default paths and actual WinUI acceptance
+  separately. Existing library CI is not a substitute for MSBuild/application
+  evidence. The currently missing local MSVC/CMake toolchain is an execution
+  constraint: use available Windows build infrastructure and record any real
+  device-validation blocker explicitly instead of claiming it was tested.
+- Stop expanding a package when its exit conditions pass, save its reviewable
+  commits and advance. Fix actual blocking regressions; record known low-frequency
+  nonblocking issues briefly for later. No invented completion percentage or
+  test-count milestone, no removal of required families, no unrelated refactor.
+- Keep the existing contribution/merge controls. This planning pass only changes
+  this document; it does not commit, push, modify PR metadata or start implementation.
+
+## Historical implementation checkpoint - 2026-10-25, Class paints and lollipop interfaces verified
 
 - Paint batch 8aa88d5c connects style/classDef/cssClass/inline ::: assignments
   to fill, border, stroke width/dash and text colors, retaining statement order,
