@@ -219,6 +219,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\core\model\ast.ixx">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\core\model\container_source.ixx">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
