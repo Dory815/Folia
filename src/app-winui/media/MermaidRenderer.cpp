@@ -25,9 +25,17 @@ namespace
             }
             create = reinterpret_cast<Create>(GetProcAddress(module, "folia_svg_normalizer_create"));
             destroy = reinterpret_cast<Destroy>(GetProcAddress(module, "folia_svg_normalizer_destroy"));
-            render = reinterpret_cast<Render>(GetProcAddress(module, "folia_mermaid_render"));
+            normalize = reinterpret_cast<Normalize>(GetProcAddress(module, "folia_svg_normalize"));
             freeBuffer = reinterpret_cast<FreeBuffer>(GetProcAddress(module, "folia_svg_buffer_destroy"));
-            if (!create || !destroy || !render || !freeBuffer)
+            nativeModule = LoadLibraryExW((ModuleDirectory() + L"FoliaNativeMermaid.dll").c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+            if (!nativeModule)
+            {
+                error = "Native C++ Mermaid library could not be loaded";
+                return;
+            }
+            render = reinterpret_cast<Render>(GetProcAddress(nativeModule, "FoliaNativeMermaidRender"));
+            freeNative = reinterpret_cast<FreeNative>(GetProcAddress(nativeModule, "FoliaNativeMermaidFree"));
+            if (!create || !destroy || !normalize || !freeBuffer || !render || !freeNative)
             {
                 error = "Native Mermaid library has an incompatible ABI";
                 return;
@@ -39,6 +47,7 @@ namespace
         ~Runtime()
         {
             if (context && destroy) destroy(context);
+            if (nativeModule) FreeLibrary(nativeModule);
             if (module) FreeLibrary(module);
         }
 
@@ -54,7 +63,6 @@ namespace
             std::uint8_t* output = nullptr;
             std::size_t outputLength = 0;
             auto status = render(
-                context,
                 reinterpret_cast<std::uint8_t const*>(source.data()),
                 source.size(),
                 dark,
@@ -64,23 +72,43 @@ namespace
                 &result.height);
             std::string value;
             if (output && outputLength > 0) value.assign(reinterpret_cast<char const*>(output), outputLength);
+            if (output) freeNative(output);
+            if (status != 0)
+            {
+                result.error = value.empty() ? "Native Mermaid rendering failed" : std::move(value);
+                return result;
+            }
+            // Keep ordinary SVG normalization, font outlining and intrinsic
+            // dimensions in the existing usvg consumer boundary.
+            output = nullptr; outputLength = 0;
+            result.width = 0; result.height = 0;
+            status = normalize(context,
+                reinterpret_cast<std::uint8_t const*>(value.data()), value.size(), 16.0f,
+                &output, &outputLength, &result.width, &result.height);
+            std::string normalized;
+            if (output && outputLength) normalized.assign(reinterpret_cast<char const*>(output), outputLength);
             if (output) freeBuffer(output, outputLength);
-            if (status == 0) result.svg = std::move(value);
-            else result.error = value.empty() ? "Native Mermaid rendering failed" : std::move(value);
+            if (status == 0) result.svg = std::move(normalized);
+            else result.error = normalized.empty() ? "Mermaid SVG normalization failed" : std::move(normalized);
             return result;
         }
 
     private:
         using Create = void* (*)();
         using Destroy = void (*)(void*);
-        using Render = std::int32_t (*)(void*, std::uint8_t const*, std::size_t, bool, std::uint8_t**, std::size_t*, float*, float*);
+        using Render = std::int32_t (*)(std::uint8_t const*, std::size_t, bool, std::uint8_t**, std::size_t*, float*, float*);
+        using FreeNative = void (*)(std::uint8_t*);
+        using Normalize = std::int32_t (*)(void*, std::uint8_t const*, std::size_t, float, std::uint8_t**, std::size_t*, float*, float*);
         using FreeBuffer = void (*)(std::uint8_t*, std::size_t);
 
         HMODULE module = nullptr;
+        HMODULE nativeModule = nullptr;
         void* context = nullptr;
         Create create = nullptr;
         Destroy destroy = nullptr;
         Render render = nullptr;
+        FreeNative freeNative = nullptr;
+        Normalize normalize = nullptr;
         FreeBuffer freeBuffer = nullptr;
         std::string error;
     };

@@ -718,6 +718,13 @@
   <Target Name="CopyNativeMathRuntime" AfterTargets="Build">
     <Copy SourceFiles="$(FoliaNativeMathRuntime)" DestinationFiles="$(OutDir)FoliaNativeMath.dll" SkipUnchangedFiles="true" />
   </Target>
+  <Target Name="CopyNativeMermaidRuntime" AfterTargets="Build">
+    <PropertyGroup>
+      <FoliaNativeMermaidRuntime Condition="'$(Configuration)'=='Debug'">$(FoliaBuildRoot)..\core\tools\mermaid-cpp\FoliaNativeMermaid.dll</FoliaNativeMermaidRuntime>
+      <FoliaNativeMermaidRuntime Condition="'$(Configuration)'=='Release'">$(FoliaBuildRoot)..\core-release\tools\mermaid-cpp\FoliaNativeMermaid.dll</FoliaNativeMermaidRuntime>
+    </PropertyGroup>
+    <Copy SourceFiles="$(FoliaNativeMermaidRuntime)" DestinationFiles="$(OutDir)FoliaNativeMermaid.dll" SkipUnchangedFiles="true" />
+  </Target>
   <Target Name="CopySvgNormalizer" AfterTargets="Build">
     <Copy SourceFiles="$(FoliaBuildRoot)..\dependencies\usvg-normalizer\release\folia_svg_normalizer.dll" DestinationFiles="$(OutDir)folia_svg_normalizer.dll" SkipUnchangedFiles="true" />
   </Target>

@@ -57,7 +57,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $NativeBuildCommand = 'call "' + $VsDevCmd + '" -arch=x64 -host_arch=x64 && cmake --build "' +
-    $NativeBuildDirectory + '" --parallel 4 --target FoliaNativeMath'
+    $NativeBuildDirectory + '" --parallel 4 --target FoliaNativeMath FoliaNativeMermaid'
 & $env:ComSpec /d /s /c $NativeBuildCommand
 if ($LASTEXITCODE -ne 0) {
     throw "FoliaNativeMath build failed with exit code $LASTEXITCODE"

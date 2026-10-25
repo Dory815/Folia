@@ -270,6 +270,22 @@ jobs:
           node tools/mermaid-cpp/compare-text-probe.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Build the isolated C++ Mermaid WinUI candidate
+        if: github.ref_name == 'codex/mermaid-cpp-winui-candidate' && matrix.scope == 'integrated' && matrix.configuration == 'Release'
+        run: |
+          ./setup.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./build_app.ps1 -Configuration Release -SelfContained -SkipAssetsDeployment *>&1 |
+            Tee-Object -FilePath build/mermaid-cpp/winui-build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload the isolated WinUI candidate
+        if: github.ref_name == 'codex/mermaid-cpp-winui-candidate' && matrix.scope == 'integrated' && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mermaid-winui-candidate
+          path: build/app-winui/bin/x64/Release/
+
       - name: Upload text measurement evidence
         if: always()
         uses: actions/upload-artifact@v4
