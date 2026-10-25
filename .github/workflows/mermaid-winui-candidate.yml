@@ -1,0 +1,77 @@
+name: Mermaid WinUI candidate
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/mermaid-cpp-winui-candidate]
+    paths: [.github/workflows/mermaid-winui-candidate.yml]
+permissions:
+  contents: read
+concurrency:
+  group: mermaid-winui-candidate
+  cancel-in-progress: true
+jobs:
+  winui:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Restore existing root generation inputs
+        run: |
+          npm ci --prefix tools/mathjax-bundle --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $lock = Get-Content docs/math-port/evidence/entities-source-lock.json -Raw | ConvertFrom-Json
+          foreach ($entry in $lock.source.ts.PSObject.Properties) {
+            $source = Join-Path tools/mathjax-bundle/node_modules/@mathjax/src/ts/util $entry.Name
+            $target = Join-Path .reference/MathJax-src/ts/util $entry.Name
+            $content = [IO.File]::ReadAllText($source) -replace "`r?`n", "`r`n"
+            New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+            [IO.File]::WriteAllText($target, $content, [Text.UTF8Encoding]::new($false))
+            if ((Get-FileHash $target -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.Value) {
+              throw 'Pinned entity source mismatch'
+            }
+          }
+      - name: Install pinned CMake
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'cmake.zip'
+          Invoke-WebRequest 'https://github.com/Kitware/CMake/releases/download/v4.3.5/cmake-4.3.5-windows-x86_64.zip' -OutFile $archive
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'c05a60d22d5df22d75a72ae9b6628ef5f20daee4f4ba380920e1fbbeaf244fc1') { throw 'CMake hash mismatch' }
+          $destination = Join-Path $env:RUNNER_TEMP 'folia-cmake'
+          Expand-Archive $archive $destination
+          Join-Path $destination 'cmake-4.3.5-windows-x86_64/bin' | Add-Content $env:GITHUB_PATH
+      - name: Restore WinUI and SVG dependencies
+        run: ./setup.ps1
+      - name: Build application native runtimes once
+        run: |
+          cmake -Wno-dev -S . -B build/core-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build/core-release --parallel 4 --target FoliaNativeMath FoliaNativeMermaid
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build the C++ Mermaid WinUI shell
+        run: |
+          msbuild src/app-winui/Folia.vcxproj /nologo /m:4 /v:minimal /t:Build /p:Configuration=Release /p:Platform=x64 /p:CL_MPCount=4 /p:FoliaSelfContained=true /p:FoliaDeployAssets=false *>&1 |
+            Tee-Object -FilePath build/winui-candidate.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mermaid-winui-candidate
+          path: build/app-winui/bin/x64/Release/
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: mermaid-winui-build-diagnostics
+          path: |
+            build/winui-candidate.log
+            build/core-release/CMakeFiles/CMakeConfigureLog.yaml
