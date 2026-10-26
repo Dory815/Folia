@@ -151,6 +151,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/quadrant-oracle.mjs --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/treemap-oracle.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/sankey-oracle.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/xy-oracle.mjs --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/radar-oracle.mjs --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/elk-cycle-oracle.mjs
@@ -158,6 +164,16 @@ jobs:
           node tools/mermaid-cpp/elk-layering-oracle.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/elk-long-edges-oracle.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/elk-ports-oracle.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/elk-pipeline-oracle.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/elk-restore-oracle.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/elk-routing-oracle.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/elk-placement-oracle.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/elk-order-oracle.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -256,12 +272,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/quadrant-browser-probe.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/treemap-browser-probe.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/sankey-browser-probe.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/xy-browser-probe.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/radar-browser-probe.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Run the native Mermaid tests
         run: |
           $env:FOLIA_MERMAID_SVG_OUTPUT = Join-Path $pwd 'build/mermaid-cpp/pie-svg'
+          $env:FOLIA_MERMAID_XY_MEASUREMENTS = Join-Path $pwd 'build/mermaid-cpp/xy-browser/measurements.tsv'
           # Match built suites exactly; unrelated optional Math/encoding/spec
           # runners are not part of the Mermaid integration check.
           ctest --test-dir build/mermaid-cpp --output-on-failure --no-tests=error `
@@ -275,6 +298,14 @@ jobs:
           node tools/mermaid-cpp/compare-class-svg.mjs build/mermaid-cpp/class-browser/original.json build/mermaid-cpp/pie-svg
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/compare-quadrant-svg.mjs build/mermaid-cpp/quadrant-browser/original.json build/mermaid-cpp/pie-svg
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/compare-treemap-svg.mjs build/mermaid-cpp/treemap-browser/original.json build/mermaid-cpp/pie-svg
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/compare-sankey-svg.mjs build/mermaid-cpp/sankey-browser/original.json build/mermaid-cpp/pie-svg
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/compare-xy-svg.mjs build/mermaid-cpp/xy-browser/original.json build/mermaid-cpp/pie-svg
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tools/mermaid-cpp/compare-xy-svg.mjs build/mermaid-cpp/xy-browser/original.json build/mermaid-cpp/pie-svg --oracle-measurements
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tools/mermaid-cpp/compare-radar-svg.mjs build/mermaid-cpp/radar-browser/original.json build/mermaid-cpp/pie-svg
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -324,6 +355,13 @@ jobs:
             build/mermaid-cpp/class-browser/*.svg
             build/mermaid-cpp/quadrant-browser/*.json
             build/mermaid-cpp/quadrant-browser/*.svg
+            build/mermaid-cpp/treemap-browser/*.json
+            build/mermaid-cpp/treemap-browser/*.svg
+            build/mermaid-cpp/sankey-browser/*.json
+            build/mermaid-cpp/sankey-browser/*.svg
+            build/mermaid-cpp/xy-browser/*.json
+            build/mermaid-cpp/xy-browser/*.svg
+            build/mermaid-cpp/xy-browser/*.tsv
             build/mermaid-cpp/radar-browser/*.json
             build/mermaid-cpp/radar-browser/*.svg
             ${{ env.FOLIA_MERMAID_BINARY_DIR }}/FoliaMermaidTextProbe.exe

@@ -51,51 +51,57 @@ std::expected<folia::mermaid::DiagramSvg,std::string> render_mermaid(
             flowchart_measurements.title=FlowchartTextBox{
                 .width=title->bounds_width,.height=title->line_height,.baseline=title->baseline};
         }
-        auto measure=[&](const auto& source,double wrapping_width,bool group=false)->std::expected<FlowchartTextBox,std::string> {
+        auto measure=[flow,&measurer](const auto& source,double wrapping_width,bool group=false)->std::expected<FlowchartTextBox,std::string> {
             const auto& text=source.label;
-            auto label_font=flowchart_label_font(source.compiled_styles,source.styles,flow->theme);
+            const bool svg_label=!flow->theme.html_label_spacing;
+            const auto* auto_wrap=flow->document.effective_config.find(u"markdownAutoWrap");
+            const bool nowrap=source.label_type==u"markdown" && !svg_label && auto_wrap &&
+                auto_wrap->kind==ConfigKind::boolean && !auto_wrap->boolean;
+            if(nowrap)wrapping_width=std::numeric_limits<double>::infinity();
+            // Class CSS is inherited during sizing; direct cluster styles are
+            // applied to the finished span by clusters.js after its size is fixed.
+            auto label_font=flowchart_label_font(source.compiled_styles,group?std::vector<std::u16string>{}:source.styles,flow->theme);
             if(!label_font) return std::unexpected(label_font.error());
             auto family=measurer.resolve_family(label_font->family);
             if(!family) return std::unexpected(family.error());
             label_font->family=std::move(*family);
-            // Original clusters apply font styles after sizing their HTML
-            // container. That separate group-title adapter is still pending.
-            if(group && (label_font->family!=flow->theme.font_family || label_font->size!=flow->theme.font_size ||
-                label_font->weight!=400 || label_font->italic))
-                return std::unexpected("Flowchart group title font styles require the styled cluster-label adapter");
             const auto size=label_font->size;
             if(!std::isfinite(size)||size<=0||size>std::numeric_limits<float>::max())
                 return std::unexpected("Invalid Mermaid font size");
             const MermaidFont font{label_font->family,static_cast<float>(size),label_font->weight,label_font->italic};
-            auto lines=flowchart_label_runs(text,source.label_type);
+            auto lines=svg_label?flowchart_svg_label_runs(text,source.label_type):flowchart_label_runs(text,source.label_type);
             if(!lines) return std::unexpected(lines.error());
-            const bool styled=std::ranges::any_of(*lines,[](const auto& line) {
-                return std::ranges::any_of(line,[](const auto& run){return run.strong||run.emphasis;});
-            });
-            if(styled && (group||!flow->theme.html_label_spacing))
-                return std::unexpected("Styled Flowchart labels currently require node/edge HTML label mode");
+            // markdownToHTML preserves spaces as NBSP when auto wrapping is off.
+            if(nowrap)for(auto& line:*lines)for(auto& run:line)
+                std::ranges::replace(run.text,u' ',u'\u00a0');
             FlowchartTextBox box;
-            box.font=*label_font;
+            box.font=*label_font;box.svg_label=svg_label;
+            box.centered_group=group && source.label_type==u"markdown";
             // Empty lines still occupy a font line box, measured with a glyph's
             // font metrics rather than an estimated glyph height.
             auto font_metrics=measurer.measure(u"M",font);
             if(!font_metrics) return std::unexpected(font_metrics.error());
-            box.line_step=flow->theme.html_label_spacing?size*1.5:font_metrics->line_height;
-            box.baseline=font_metrics->baseline+(box.line_step-font_metrics->line_height)/2;
+            box.line_step=size*(svg_label?1.1:1.5);
+            box.baseline=svg_label?size:font_metrics->baseline+(box.line_step-font_metrics->line_height)/2;
             bool wrapped=false;
             for(const auto& line:*lines) {
                 std::u16string display;
                 std::vector<MermaidTextStyle> styles;
                 for(const auto& run:line) {
-                    const auto weight=run.strong?(font.weight<350?400u:font.weight<550?700u:900u):font.weight;
-                    styles.push_back({display.size(),run.text.size(),weight,font.italic||run.emphasis});
+                    const auto weight=svg_label?(run.strong?700u:400u):run.strong?(font.weight<350?400u:font.weight<550?700u:900u):font.weight;
+                    styles.push_back({display.size(),run.text.size(),weight,svg_label?run.emphasis:font.italic||run.emphasis});
                     display+=run.text;
                 }
-                auto wrapped_lines=measurer.wrap(display,font,wrapping_width,styles);
+                auto wrapped_lines=measurer.wrap(display,font,wrapping_width,styles,!svg_label);
                 if(!wrapped_lines) return std::unexpected(wrapped_lines.error());
                 wrapped=wrapped||wrapped_lines->size()>1;
                 std::size_t start=0;
                 for(auto& value:*wrapped_lines) {
+                    const auto raw_end=start+value.size();
+                    if(svg_label) {
+                        while(!value.empty() && value.front()==u' ') {value.erase(0,1);++start;}
+                        while(!value.empty() && value.back()==u' ') value.pop_back();
+                    }
                     const auto end=start+value.size();
                     FlowchartLabelLine runs;
                     std::vector<MermaidTextStyle> line_styles;
@@ -106,16 +112,34 @@ std::expected<folia::mermaid::DiagramSvg,std::string> render_mermaid(
                         runs.push_back({display.substr(first,last-first),line[i].strong,line[i].emphasis});
                         line_styles.push_back({first-start,last-first,style.weight,style.italic});
                     }
-                    auto metrics=measurer.measure(value,font,true,line_styles);
+                    auto metrics=measurer.measure(value,font,true,line_styles,svg_label);
                     if(!metrics) return std::unexpected(metrics.error());
                     box.width=std::max(box.width,metrics->bounds_width);
-                    box.lines.push_back(std::move(value));box.runs.push_back(std::move(runs));start=end;
+                    box.lines.push_back(std::move(value));box.runs.push_back(std::move(runs));start=raw_end;
                 }
             }
             if(wrapped && flow->theme.html_label_spacing) box.width=std::max(box.width,wrapping_width);
             box.height=text.empty()?0:box.line_step*box.lines.size();
+            if(svg_label && !text.empty()) {
+                auto metrics=measurer.svg_font_metrics(font);if(!metrics)return std::unexpected(metrics.error());
+                box.height=metrics->height+box.line_step*(box.lines.size()-1);
+            }
             if(text.empty()) box.baseline=0;
+            if(group && !svg_label && !source.styles.empty()) {
+                auto paint=flowchart_label_font(source.compiled_styles,source.styles,flow->theme);
+                if(!paint)return std::unexpected(paint.error());
+                auto family=measurer.resolve_family(paint->family);
+                if(!family)return std::unexpected(family.error());
+                paint->family=std::move(*family);
+                const MermaidFont font{paint->family,static_cast<float>(paint->size),paint->weight,paint->italic};
+                auto metrics=measurer.measure(u"M",font);if(!metrics)return std::unexpected(metrics.error());
+                box.paint_font=*paint;box.paint_line_step=paint->size*1.5;
+                box.paint_baseline=metrics->baseline+(box.paint_line_step-metrics->line_height)/2;
+            }
             return box;
+        };
+        flowchart_measurements.measure_group=[flow,measure](std::size_t index,double width) {
+            return measure(flow->document.nodes.at(index),width,true);
         };
         for(const auto& node:flow->document.nodes) {
             auto box=measure(node,node.group?std::numeric_limits<double>::infinity():flow->theme.wrapping_width,node.group);
@@ -126,6 +150,13 @@ std::expected<folia::mermaid::DiagramSvg,std::string> render_mermaid(
             // createText uses its 200px default for edge labels; group titles
             // go through createLabel's unbounded plain-text width above.
             auto box=measure(edge,200);if(!box) return std::unexpected(box.error());
+            if(box->svg_label && !edge.label.empty()) {
+                const auto& f=*box->font;
+                auto metrics=measurer.svg_font_metrics({f.family,static_cast<float>(f.size),f.weight,f.italic});
+                if(!metrics)return std::unexpected(metrics.error());
+                // createText's edge background is the glyph box plus two units per side.
+                box->width+=4;box->height+=4;box->baseline=metrics->baseline+2;
+            }
             flowchart_measurements.edges.push_back(*box);
         }
     }
@@ -377,6 +408,39 @@ std::expected<folia::mermaid::DiagramSvg,std::string> render_mermaid(
             class_measurements.edges.push_back(std::move(m));
         }
     }
-    return render_native_diagram(*input,widths,flowchart_measurements,sequence_measurements,class_measurements);
+    SankeyMeasurements sankey_measurements;
+    if(auto sankey=std::get_if<SankeyRenderInput>(&input->content)) {
+        const MermaidFont font{sankey->theme.font_family,14};
+        auto height=measurer.svg_font_metrics(font);
+        if(!height) return std::unexpected(height.error());
+        for(const auto& text:sankey_measurement_requests(*sankey)) {
+            auto metrics=measurer.measure(text,font,false,{},true);
+            if(!metrics) return std::unexpected(metrics.error());
+            sankey_measurements.labels.push_back({metrics->bounds_width,height->height,height->baseline});
+        }
+    }
+    XYMeasurements xy_measurements;
+    if(auto xy=std::get_if<XYRenderInput>(&input->content)) {
+        for(const auto& request:xy_measurement_requests(*xy)) {
+            const MermaidFont font{xy->theme.font_family,static_cast<float>(request.font_size)};
+            auto metrics=measurer.measure(request.text,font,true,{},true);
+            if(!metrics) return std::unexpected(metrics.error());
+            auto height=measurer.svg_font_height(font);
+            if(!height) return std::unexpected(height.error());
+            xy_measurements.text.push_back({metrics->bounds_width,request.text.empty()?0:*height});
+        }
+    }
+    TreemapMeasure treemap_measure;
+    if(auto treemap=std::get_if<TreemapRenderInput>(&input->content)) {
+        treemap_measure=[treemap,&measurer](std::u16string_view text,double size,unsigned weight,bool italic)->std::expected<TreemapTextBox,std::string> {
+            const MermaidFont font{treemap->theme.font_family,static_cast<float>(size),weight,italic};
+            auto box=measurer.measure(text,font,false,{},true);
+            if(!box)return std::unexpected(box.error());
+            auto metrics=measurer.svg_font_metrics(font);
+            if(!metrics)return std::unexpected(metrics.error());
+            return TreemapTextBox{box->advance,box->bounds_width,metrics->height,metrics->baseline,metrics->middle_offset};
+        };
+    }
+    return render_native_diagram(*input,widths,flowchart_measurements,sequence_measurements,class_measurements,xy_measurements,sankey_measurements,treemap_measure);
 }
 }

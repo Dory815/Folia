@@ -7,6 +7,8 @@ module interfaces port the original ELK DepthFirstCycleBreaker, flat
 NetworkSimplexLayerer and LongEdgeSplitter. `src/elk_order.{ixx,cpp}` ports the
 flat east/west PortListSorter, BarycenterHeuristic, port-rank distributors and
 LayerSweepCrossingMinimizer controller from the same worker.
+Flat BK placement, point ports, orthogonal routing, shared random state and
+long-edge restoration modules follow the same worker.
 These files are licensed under
 EPL-2.0, not the Mermaid MIT license. The full license is in `ELK-LICENSE`.
 Original source: https://github.com/kieler/elkjs, package `elkjs` 0.9.3,
@@ -36,6 +38,17 @@ from d3-shape (`pie.js`, `arc.js`, `math.js`, `path.js`) and d3-path (`path.js`)
 Flowchart's spline writer follows d3-shape `src/curve/basis.js`.
 Source hashes and versions are recorded in `docs/mermaid-cpp/source-lock.json`.
 The complete ISC notice is also preserved in `src/pie_geometry.cpp`.
+
+XY scales and numeric ticks follow d3-scale 4.0.2, d3-array 3.2.4 and
+d3-interpolate 3.0.1. XY line paths use d3-shape linear interpolation.
+Treemap hierarchy summation, stable sorting, squarify, rounding and padding
+follow d3-hierarchy 3.1.2; the bounded value formatter follows d3-format 3.1.0.
+Both carry Copyright 2010-2021 Mike Bostock and the ISC notice below.
+Their source-map contents are hash-pinned alongside the Mermaid sources.
+
+Copyright 2010-2021 Mike Bostock (d3-scale, d3-interpolate)
+
+Copyright 2010-2023 Mike Bostock (d3-array)
 
 Copyright 2010-2022 Mike Bostock (d3-shape)
 
@@ -101,3 +114,10 @@ merge, pinned to the dependency embedded in the official Mermaid 12.2.0 bundle.
 The MIT notice, including the OpenJS/Lodash compatibility attribution, is
 reproduced in `ES-TOOLKIT-LICENSE`. The package and transitive helper sources are
 hash-locked in `docs/mermaid-cpp/source-lock.json` and used only by the oracle.
+
+## d3-sankey 0.12.3
+
+Sankey node alignment, six-round relaxation/collision layout and link positioning
+follow d3-sankey 0.12.3. Its BSD-3-Clause notice is reproduced in
+`D3-SANKEY-LICENSE`; source-map contents are hash-pinned in source-lock.json.
+The JavaScript implementation is used only by the test oracle.

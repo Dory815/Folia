@@ -124,13 +124,18 @@ std::expected<FlowchartScene,std::string> layout_measured_flowchart(
     std::span<const FlowchartEdgeLabelSize> labels,const FlowchartMeasurements& measured,const FlowchartSvgTheme& theme) {
     try {
         auto prepared=prepare_flowchart_graph(graph);if(!prepared) return std::unexpected(prepared.error());
-        return layout_prepared(graph,prepared->graph,boxes,labels,measured,theme);
+        auto labels_for_layout=measured;
+        return layout_prepared(graph,prepared->graph,boxes,labels,labels_for_layout,theme);
     } catch(const std::exception& e) {return std::unexpected(e.what());}
 }
 
-std::expected<FlowchartSvg,std::string> render_flowchart_svg(const FlowchartRenderInput& input,const FlowchartMeasurements& measured) {
+std::expected<FlowchartSvg,std::string> render_flowchart_svg(const FlowchartRenderInput& input,const FlowchartMeasurements& measurements) {
     try {
-        const auto& graph=input.document;const auto& theme=input.theme;
+        auto measured=measurements;
+        auto graph=input.document;const auto& theme=input.theme;
+        for(auto& node:graph.nodes) if(!node.group) {
+            if(const auto shape=flowchart_classic_shape(node.shape);!shape.empty())node.shape=shape;
+        }
         if(measured.nodes.size()!=graph.nodes.size() || measured.edges.size()!=graph.edges.size())
             return std::unexpected("Flowchart needs one measured label per node and edge");
         for(auto v:{theme.font_size,theme.minimum_label_width,theme.wrapping_width,theme.padding,theme.radius,theme.group_title_top,theme.group_title_bottom})
@@ -205,19 +210,28 @@ std::expected<FlowchartSvg,std::string> render_flowchart_svg(const FlowchartRend
             svg+=marker_definitions(theme.line,"flow-"+std::to_string(i),xml(edge_paints[i].marker_stroke));
         svg+="<g font-family=\""+xml(theme.font_family)+"\" font-size=\""+number(theme.font_size)+"\" transform=\"translate("+number(theme.padding)+","+number(theme.padding)+")\">";
         const auto text=[&](std::u16string_view,FlowchartPoint center,const FlowchartTextBox& b,std::string_view css,const FlowchartPaint& paint) {
-            std::string out="<text class=\""+std::string(css)+"\" xml:space=\"preserve\" text-anchor=\"middle\" fill=\""+paint.get(u"color",css=="cluster-label"?theme.cluster_text:theme.text)+"\"";
-            if(b.font) out+=" font-family=\""+xml(b.font->family)+"\" font-size=\""+number(b.font->size)+
-                "\" font-weight=\""+std::to_string(b.font->weight)+"\" font-style=\""+(b.font->italic?"italic":"normal")+"\"";
+            // createLabel's unbounded HTML group box keeps each line left aligned.
+            const bool left=css=="cluster-label" && theme.html_label_spacing && !b.centered_group;
+            if(left) center.x-=b.width/2;
+            std::string out="<text class=\""+std::string(css)+"\" xml:space=\"preserve\" text-anchor=\""+(left?"start":"middle")+"\" fill=\""+paint.get(u"color",css=="cluster-label"?theme.cluster_text:theme.text)+"\"";
+            const auto& font=b.paint_font?b.paint_font:b.font;
+            if(font) out+=" font-family=\""+xml(font->family)+"\" font-size=\""+number(font->size)+
+                "\" font-weight=\""+std::to_string(font->weight)+"\" font-style=\""+(font->italic?"italic":"normal")+"\"";
             out+=">";
             for(std::size_t i=0;i<b.lines.size();++i) {
-                out+="<tspan x=\""+number(center.x)+"\" y=\""+number(center.y+b.baseline-b.height/2+i*b.line_step)+"\">";
+                out+="<tspan x=\""+number(center.x)+"\" y=\""+number(center.y+(b.paint_font?b.paint_baseline:b.baseline)-b.height/2+i*(b.paint_font?b.paint_line_step:b.line_step))+"\">";
                 if(b.runs.empty()) out+=xml(b.lines[i]);
                 else for(const auto& run:b.runs.at(i)) {
                     out+="<tspan";
                     // HTML strong uses CSS bolder relative to the label font.
-                    if(run.strong) out+=" font-weight=\""+std::to_string(
-                        b.font && b.font->weight>=550?900:b.font && b.font->weight<350?400:700)+"\"";
-                    if(run.emphasis) out+=" font-style=\"italic\"";
+                    if(b.svg_label) {
+                        out+=" font-weight=\""+std::string(run.strong?"bold":"normal")+"\"";
+                        out+=" font-style=\""+std::string(run.emphasis?"italic":"normal")+"\"";
+                    } else {
+                        if(run.strong) out+=" font-weight=\""+std::to_string(
+                            font && font->weight>=550?900:font && font->weight<350?400:700)+"\"";
+                        if(run.emphasis) out+=" font-style=\"italic\"";
+                    }
                     out+=">"+xml(run.text)+"</tspan>";
                 }
                 out+="</tspan>";

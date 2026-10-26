@@ -32,7 +32,7 @@ struct MermaidTextStyle {
     unsigned weight=400;
     bool italic=false;
 };
-struct MermaidSvgFontMetrics { double height{},baseline{}; };
+struct MermaidSvgFontMetrics { double height{},baseline{},middle_offset{}; };
 
 // Measures UTF-16 after SVG's default whitespace processing (collapse ASCII
 // whitespace, including LF/CR/TAB). The browser probe checks the
@@ -120,7 +120,7 @@ public:
         DWRITE_FONT_METRICS metrics{}; selected->GetMetrics(&metrics);
         const auto scale=font.size/static_cast<double>(metrics.designUnitsPerEm);
         const auto baseline=std::round(metrics.ascent*scale);
-        return MermaidSvgFontMetrics{baseline+std::round(metrics.descent*scale),baseline};
+        return MermaidSvgFontMetrics{baseline+std::round(metrics.descent*scale),baseline,metrics.xHeight*scale/2};
     }
     std::expected<double,std::string> svg_font_height(const MermaidFont& font) const {
         auto metrics=svg_font_metrics(font);if(!metrics) return std::unexpected(metrics.error());
@@ -248,7 +248,7 @@ public:
     // measured display lines and SVG text use the same characters and spacing.
     std::expected<std::vector<std::u16string>,std::string> wrap(
         std::u16string_view source, MermaidFont const& font, double width,
-        std::span<const MermaidTextStyle> styles={}) const {
+        std::span<const MermaidTextStyle> styles={},bool break_spaces=true) const {
         using Microsoft::WRL::ComPtr;
         auto valid=measure(source,font,true,styles);
         if(!valid) return std::unexpected(valid.error());
@@ -281,14 +281,15 @@ public:
         // excludes them when deciding whether another word fits. Retain native
         // cluster widths and Unicode break opportunities, including those spaces.
         std::vector<std::u16string> lines;
-        std::size_t start=0,segment=0,end=0;double used=0,segment_width=0;
+        std::size_t start=0,segment=0,end=0;double used=0,segment_width=0,trailing_width=0;
         for(std::size_t i=0;i<metrics.size();++i) {
             const auto& cluster=metrics[i];end+=cluster.length;segment_width+=cluster.width;
+            trailing_width=cluster.isWhitespace?trailing_width+cluster.width:0;
             if(!cluster.canWrapLineAfter && i+1<metrics.size()) continue;
-            if(segment>start && used+segment_width>width) {
+            if(segment>start && used+segment_width-(break_spaces?0:trailing_width)>width) {
                 lines.emplace_back(source.substr(start,segment-start));start=segment;used=0;
             }
-            used+=segment_width;segment_width=0;segment=end;
+            used+=segment_width;segment_width=0;trailing_width=0;segment=end;
         }
         lines.emplace_back(source.substr(start));
         return lines;

@@ -2,6 +2,24 @@ module folia.mermaid.flowchart;
 import std;
 
 namespace folia::mermaid {
+std::u16string_view flowchart_classic_shape(std::u16string_view shape) {
+    for(const auto& [name,handler]:{
+        std::pair{u"rect",u"squareRect"},{u"proc",u"squareRect"},{u"process",u"squareRect"},{u"rectangle",u"squareRect"},
+        {u"rounded",u"roundedRect"},{u"event",u"roundedRect"},{u"terminal",u"stadium"},{u"pill",u"stadium"},
+        {u"fr-rect",u"subroutine"},{u"subprocess",u"subroutine"},{u"subproc",u"subroutine"},{u"framed-rectangle",u"subroutine"},
+        {u"cyl",u"cylinder"},{u"db",u"cylinder"},{u"database",u"cylinder"},{u"circ",u"circle"},
+        {u"diam",u"diamond"},{u"decision",u"diamond"},{u"question",u"diamond"},
+        {u"hex",u"hexagon"},{u"prepare",u"hexagon"},{u"lean-r",u"lean_right"},{u"lean-right",u"lean_right"},{u"in-out",u"lean_right"},
+        {u"lean-l",u"lean_left"},{u"lean-left",u"lean_left"},{u"out-in",u"lean_left"},
+        {u"trap-b",u"trapezoid"},{u"priority",u"trapezoid"},{u"trapezoid-bottom",u"trapezoid"},
+        {u"trap-t",u"inv_trapezoid"},{u"manual",u"inv_trapezoid"},{u"trapezoid-top",u"inv_trapezoid"},{u"inv-trapezoid",u"inv_trapezoid"},
+        {u"dbl-circ",u"doublecircle"},{u"double-circle",u"doublecircle"}})
+        if(shape==name)return handler;
+    for(const auto name:{u"squareRect",u"roundedRect",u"stadium",u"subroutine",u"cylinder",u"circle",u"diamond",
+        u"hexagon",u"lean_right",u"lean_left",u"trapezoid",u"inv_trapezoid",u"doublecircle",u"odd"})
+        if(shape==name)return name;
+    return {};
+}
 namespace {
 using Text = std::u16string;
 using View = std::u16string_view;
@@ -43,7 +61,7 @@ class Parser {
     std::vector<Group> groups;
     std::map<Text, Class, std::less<>> classes;
     Texts default_edge_styles;
-    Text curve = u"basis";
+    Text curve = u"basis", default_curve;
     double padding = 15;
     bool inherit_direction = false;
 
@@ -112,6 +130,14 @@ class Parser {
         }
         return s.starts_with(u"--") || s.starts_with(u"==") || s.starts_with(u"-.") || s.starts_with(u"~~");
     }
+    std::size_t edge_id_end() const {
+        auto end = pos;
+        while (end < source.size() && !space(source[end]) && source[end] != u'\n' && source[end] != u'"') {
+            if (source[end] == u'@') return link_start(end+1) ? end : View::npos;
+            ++end;
+        }
+        return View::npos;
+    }
     Text identifier() {
         horizontal(); auto start = pos;
         while (pos < source.size()) {
@@ -133,8 +159,59 @@ class Parser {
         Vertex v; v.node.id = id; v.node.label = id; v.node.padding = padding;
         vertices.push_back(std::move(v)); return vertices.back();
     }
+    void metadata(const Text& id) {
+        pos+=2;const auto start=pos;bool quoted=false;
+        while(pos<source.size()) {
+            if(source[pos]==u'"')quoted=!quoted;
+            if(source[pos]==u'}'&&!quoted)break;
+            ++pos;
+        }
+        if(pos==source.size())fail("Unclosed Flowchart metadata");
+        Text data{source.substr(start,pos-start)};++pos;
+        // The original shapeData lexer turns newlines inside double quotes
+        // into explicit breaks before FlowDB selects block or flow YAML.
+        Text yaml;quoted=false;
+        for(std::size_t i=0;i<data.size();++i) {
+            const auto c=data[i];if(c==u'"')quoted=!quoted;
+            if(c==u'\n'&&quoted) {
+                yaml+=u"<br/>";while(i+1<data.size()&&(space(data[i+1])||data[i+1]==u'\n'))++i;
+            } else yaml+=c;
+        }
+        if(yaml.find(u'\n')==Text::npos)yaml=u"{\n"+yaml+u"\n}";
+        else yaml+=u'\n';
+        auto doc=parse_config_yaml(yaml,limits.frontend.yaml);
+        if(!doc)throw std::runtime_error(doc.error());
+        if(doc->kind!=ConfigKind::mapping)fail("Flowchart metadata requires a mapping");
+        for(const auto& [key,value]:doc->mapping)
+            if(key!=u"shape"&&key!=u"label"&&key!=u"labelType"&&key!=u"curve")
+                fail("Flowchart asset, animation or group metadata is not implemented");
+        const auto string=[&](View key)->Text {
+            const auto* value=doc->find(key);
+            if(!value||!config_truthy(*value))return {};
+            if(value->kind!=ConfigKind::string)fail("Flowchart metadata field requires text");
+            return value->string;
+        };
+        if(auto edge=std::ranges::find(result.edges,id,&FlowchartEdge::id);edge!=result.edges.end()) {
+            if(auto curve=string(u"curve");!curve.empty())edge->curve=std::move(curve);
+            return;
+        }
+        auto& node=vertex(id).node;
+        if(auto shape=string(u"shape");!shape.empty()) {
+            if(std::ranges::any_of(shape,[](char16_t c){return c==u'_'||(c>=u'A'&&c<=u'Z');}) || flowchart_classic_shape(shape).empty())
+                fail("Flowchart metadata shape is not implemented by the classic renderer");
+            node.shape=std::move(shape);
+        }
+        if(auto label=string(u"label");!label.empty()) {
+            node.label=std::move(label);node.label_type=string(u"labelType");
+            if(node.label_type!=u"text"&&node.label_type!=u"string"&&node.label_type!=u"markdown")node.label_type=u"markdown";
+        }
+    }
     Text node() {
-        auto id = identifier(); auto& v = vertex(id); horizontal();
+        auto id = identifier();horizontal();
+        if(at(u"@{") && std::ranges::find(result.edges,id,&FlowchartEdge::id)!=result.edges.end()) {
+            metadata(id);horizontal();return id;
+        }
+        auto& v = vertex(id);
         struct Shape { View open, close, shape; };
         static constexpr Shape shapes[] = {
             {u"(((",u")))",u"doublecircle"},{u"((",u"))",u"circle"},
@@ -158,6 +235,7 @@ class Parser {
         }
         horizontal();
         if (take(u":::")) v.classes.push_back(identifier());
+        horizontal();if(at(u"@{"))metadata(id);
         return id;
     }
     Texts node_list() {
@@ -212,7 +290,7 @@ class Parser {
         edge.min_length = std::min<std::size_t>(edge.min_length,10);
         horizontal();
         if (take(u"|")) { auto text = label(u"|"); edge.label = std::move(text.text); edge.label_type = std::move(text.type); }
-        edge.curve = curve;
+        edge.curve = default_curve;
         if (edge.type.starts_with(u"double_")) edge.arrow_start = edge.arrow_end = edge.type.substr(7);
         else edge.arrow_end = edge.type;
         if (edge.stroke == u"invisible" || edge.type == u"arrow_open") edge.arrow_start = edge.arrow_end = u"none";
@@ -223,14 +301,21 @@ class Parser {
             if (result.edges.size() >= limits.edges) fail("Flowchart edge limit exceeded");
             auto edge = prototype; edge.start = start; edge.end = end;
             auto count = std::ranges::count_if(result.edges,[&](const auto& e){return e.start == start && e.end == end;});
-            edge.id = u"L_" + start + u"_" + end + u"_" + digits(count ? count+1 : 0);
+            if (prototype.id.empty() || start != from.back() || end != to.front() ||
+                std::ranges::any_of(result.edges,[&](const auto& e){return e.id == prototype.id;}))
+                edge.id = u"L_" + start + u"_" + end + u"_" + digits(count ? count+1 : 0);
             result.edges.push_back(std::move(edge));
         }
     }
     Texts chain() {
         auto from = node_list(); auto members = from; horizontal();
-        while (link_start(pos)) {
-            auto edge = link(); auto to = node_list(); add_edges(from,to,edge);
+        while (link_start(pos) || edge_id_end() != View::npos) {
+            Text id;
+            if (const auto end = edge_id_end(); end != View::npos) {
+                id = source.substr(pos,end-pos); pos = end+1;
+            }
+            auto edge = link(); edge.id = std::move(id);
+            auto to = node_list(); add_edges(from,to,edge);
             members.insert(members.begin(),to.begin(),to.end()); from = std::move(to); horizontal();
         }
         separator(); return members;
@@ -242,11 +327,17 @@ class Parser {
         }
     }
     void style_statement(const Text& command) {
-        const auto ids = word(); const auto value = rest();
+        const auto ids = word(); auto value = rest();
         if (value.empty()) fail("Missing style or class");
-        if (command == u"linkStyle" && value.starts_with(u"interpolate "))
-            fail("Per-edge interpolation commands are not supported by this stage");
-        auto styles = split(value,u',');
+        Text interpolation;
+        if (command == u"linkStyle" && value.starts_with(u"interpolate ")) {
+            value = trim(View{value}.substr(12));
+            const auto end = value.find_first_of(u" \t");
+            interpolation = value.substr(0,end);
+            if (interpolation.empty()) fail("Missing link interpolation");
+            value = end == Text::npos ? Text{} : trim(View{value}.substr(end));
+        }
+        auto styles = value.empty() ? Texts{} : split(value,u',');
         if (command == u"class") set_class(ids,value);
         else if (command == u"classDef") {
             for (const auto& id : split(ids,u',')) for (const auto& style : styles) {
@@ -258,7 +349,10 @@ class Parser {
                 }
             }
         } else if (command == u"style") append(vertex(ids).node.styles,styles);
-        else if (ids == u"default") default_edge_styles = std::move(styles);
+        else if (ids == u"default") {
+            if (!interpolation.empty()) default_curve = interpolation;
+            if (!value.empty()) default_edge_styles = std::move(styles);
+        }
         else for (const auto& id : split(ids,u',')) {
             std::size_t index = 0;
             for (auto c : id) {
@@ -266,8 +360,11 @@ class Parser {
                 index = index*10 + (c-u'0');
             }
             if (index >= result.edges.size()) fail("linkStyle index out of bounds");
-            auto& target = result.edges[index].styles; target = styles;
-            if (!std::ranges::any_of(target,[](const auto& s){return s.starts_with(u"fill");})) target.push_back(u"fill:none");
+            if (!interpolation.empty()) result.edges[index].curve = interpolation;
+            if (!value.empty()) {
+                auto& target = result.edges[index].styles; target = styles;
+                if (!std::ranges::any_of(target,[](const auto& s){return s.starts_with(u"fill");})) target.push_back(u"fill:none");
+            }
         }
         separator();
     }
@@ -349,7 +446,10 @@ class Parser {
                 result.nodes.push_back(std::move(node));
             }
         }
-        for (auto& edge : result.edges) edge.styles.insert(edge.styles.begin(),default_edge_styles.begin(),default_edge_styles.end());
+        for (auto& edge : result.edges) {
+            edge.styles.insert(edge.styles.begin(),default_edge_styles.begin(),default_edge_styles.end());
+            if (edge.curve.empty()) edge.curve = default_curve.empty() ? curve : default_curve;
+        }
     }
 public:
     Parser(View source_, FlowchartLimits limits_) : source(source_), limits(std::move(limits_)) {}

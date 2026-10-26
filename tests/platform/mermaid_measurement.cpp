@@ -152,6 +152,19 @@ suite mermaid_measurement = [] {
         expect(fatal(session->set_site_config(site).has_value()));
         struct Example {std::string name;std::u16string body,title;};
         const std::vector<Example> cases={
+            {"edge-ids-interpolation",u"flowchart TD\nA first@--> B\nA second@-- next --> C\nB --> D\nC --> D\nlinkStyle 0,1 interpolate linear stroke:#226688\nlinkStyle 2 interpolate basis"},
+            {"edge-interpolation-default",u"flowchart LR\nA-->B\nlinkStyle default interpolate linear\nB-->C\nlinkStyle default interpolate basis\nC-->D\nA-->D"},
+            {"rich-group-html",u"flowchart TD\nsubgraph g[\"Read <strong>source</strong> and <em>write</em>\"]\nA[Read]-->B[Write]\nend\ng-->C[Done]"},
+            {"rich-group-html-nested",u"flowchart LR\nsubgraph outer[\"<b>Processing</b><br/>queue\"]\nsubgraph inner[\"<em>Storage</em> and <strong>files</strong>\"]\ndirection TB\nA[Read]-->B[Write]\nend\nend\nouter-->C[Done]"},
+            {"svg-label-plain",u"flowchart LR\nA[\"Read input<br/>then save\"] -->|\"next step<br/>when ready\"| B[\"Save the source document and finish\"]"},
+            {"svg-label-markdown",u"flowchart TD\nA[\"`Read **source** and *save*`\"] -->|\"`next **step** and *write*`\"| B[\"`Write the **updated document** and finish`\"]"},
+            {"markdown-group",u"flowchart TD\nsubgraph g[\"`Read **source** and *write*`\"]\nA[Read]-->B[Write]\nend\ng-->C[Done]"},
+            {"markdown-group-wrapped",u"flowchart LR\nsubgraph outer[\"`**Processing** the source documents and saving every updated result in the queue`\"]\nsubgraph inner[\"`*Storage*\nand **files**`\"]\ndirection TB\nA[Read]-->B[Write]\nend\nend\nouter-->C[Done]"},
+            {"group-font",u"flowchart TD\nsubgraph g[Read source files]\nA[Read]-->B[Write]\nend\ng-->C[Done]\nstyle g font-size:22px,font-weight:bold"},
+            {"group-font-nested",u"flowchart LR\nsubgraph outer[Processing]\nsubgraph inner[Storage and files]\ndirection TB\nA[Read]-->B[Write]\nend\nend\nouter-->C[Done]\nclassDef groupTitle font-family:Courier New,font-size:20px,font-style:italic\nclass inner groupTitle"},
+            {"shapes-metadata",u"flowchart LR\nA@{shape: rect, label: Read}\nB@{shape: cyl, label: Store}\nA named@--> B\nB --> C@{shape: terminal, label: Done}\nnamed@{curve: linear}"},
+            {"metadata-display",u"flowchart LR\nA@{shape: rect, label: \"Read **source**\", labelType: markdown} --> B@{shape: rounded, label: Write}\nA@{label: \"Updated *source*\", labelType: markdown}"},
+            {"markdown-nowrap",u"%%{init: {\"markdownAutoWrap\": false}}%%\nflowchart TD\nA[\"`Read the **complete source document** and *validate* every entry`\"] -->|\"`Continue with the **next operation** and save the complete document`\"| B[\"`Write the **updated document**\nthen finish`\"]"},
             {"rich-markdown",u"flowchart LR\nA[\"`Read **bold** and *italic*`\"] -->|\"`next **operation**`\"| B[\"`Save ***both***\nthen finish`\"]"},
             {"rich-markdown-group",u"flowchart TD\nsubgraph g[Operations]\ndirection LR\nA[\"`Read the __source document__ and _validate input_`\"] -->|\"`continue with **next step** and *save*`\"| B[\"`Write **updated _data_**`\"]\nend\ng --> C[Done]"},
             {"rich-markdown-literal",u"flowchart LR\nA[\"`Read \\*literal\\* &amp; **bold**`\"] --> B[\"`Save file_name and *unfinished`\"]"},
@@ -205,7 +218,7 @@ suite mermaid_measurement = [] {
             const auto& name=sample.name;
             const auto& body=sample.body;
             const auto source=std::u16string(u"---\n")+(sample.title.empty()?std::u16string{}:u"title: "+sample.title+u"\n")+u"config:\n  theme: "+theme+
-                u"\n  look: classic\n  layout: dagre\n  fontFamily: Arial\n  themeVariables: {fontFamily: Arial}\n  flowchart: {htmlLabels: true}\n---\n"+body;
+                u"\n  look: classic\n  layout: dagre\n  fontFamily: Arial\n  themeVariables: {fontFamily: Arial}\n  htmlLabels: "+(name.starts_with("svg-label-")?u"false":u"true")+u"\n---\n"+body;
             const auto svg=render_mermaid(source,*session);
             expect(svg.has_value())<<name<<(svg?"":svg.error());
             if(!svg) continue;

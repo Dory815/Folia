@@ -17,6 +17,15 @@ assert(dbIndex >= 0);
 assert.equal(map.sourcesContent[dbIndex].replaceAll('\r\n', '\n'),
   read('packages/mermaid/src/diagrams/flowchart/flowDb.ts'));
 const cases = [
+  ["shape-metadata", "flowchart LR\nA@{shape: rect, label: Read} --> B@{shape: rounded, label: Write}\nB --> C@{shape: cyl, label: Store}"],
+  ["shape-metadata-alias", "flowchart TD\nA@{shape: decision, label: Ready?} --> B@{shape: terminal, label: Done}\nB --> C@{shape: subproc, label: Work}\nC --> D@{shape: hex, label: Prepare}"],
+  ["shape-metadata-label", "flowchart LR\nA@{shape: rect, label: \"Read **source**\", labelType: markdown} --> B[Write]\nA@{label: \"Updated *source*\", labelType: markdown}"],
+  ["edge-metadata", "flowchart TD\nA edge@--> B\nedge@{curve: linear}"],
+  ["unfinished-metadata", "flowchart TD\nA@{shape: rect"],
+  ['edge-ids', 'flowchart LR\nA first@--> B\nA first@--> B\nB named@-- next --> C'],
+  ['edge-ids-group', 'flowchart LR\nA & B group@--> C & D'],
+  ['interpolation', 'flowchart TD\nA-->B-->C\nlinkStyle 0 interpolate linear stroke:#123\nlinkStyle 1 interpolate basis'],
+  ['interpolation-default', 'flowchart LR\nA-->B\nlinkStyle default interpolate linear\nB-->C\nlinkStyle default interpolate basis\nC-->D'],
   ['markdown', 'flowchart LR\nA["`Read **bold** and *italic*`"] -->|"`next **operation**`"| B["`Save ***both***\nthen finish`"]'],
   ['markdown-infix', 'flowchart LR\nA -- "`read **input**`" --> B'],
   ['basic', 'graph TD; A[Start] --> B{Ready?}; B -->|yes| C(End); B -->|no| A'],
