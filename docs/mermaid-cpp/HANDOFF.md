@@ -2,39 +2,131 @@
 
 ## Active implementation checkpoint - 2026-10-26
 
-The execution plan below is now authorized for implementation. Preserve its
-23-family scope and separate native/default/application gates. Three workers
-are active: ELK source/adapter and algorithm boundary, Class SVG-label and
-font configuration closeout, and the complete Quadrant family. The coordinator
-owns host integration, shared dispatch/build wiring and delivery to PR #1.
+Runtime package `05303f77` implements the original ELK flat crossing order:
+PortListSorter, both barycenter port-rank strategies, BarycenterHeuristic and
+the repeated layer-sweep controller for adjacent-layer east/west ports with one
+edge per port. It preserves seeded ordering, long-edge dummies and fixed port
+positions. Shared-port hyperedges, in-layer edges and north/south/compound
+constraints require their original processors and are explicitly rejected.
+The fixed ten-case worker corpus checks exact node/port orders and crossing
+counts, including different seeds; native tests also check repeatability and
+rejection without mutation. All four standalone/integrated Debug/Release jobs
+passed in https://github.com/zhao0349/Folia/actions/runs/40247796526, including
+FoliaTests, FoliaWindowsEditorTests, all three Mermaid suites and the existing
+browser/text comparisons. This package has met its exit condition.
+No default ELK renderer or application replacement is claimed.
 
-Current bounded packages and exits:
+Next data package has begun: `492a09a1` captures the finite original XY corpus
+described below. Its 12 successful parser/DB cases, three syntax errors and
+24 browser SVGs pass locally. This is preparation, not native XY implementation.
+Next concrete action is XY parser/DB plus original linear/band scales and
+measured axis/title/legend layout, then SVG/public-entry integration against
+that corpus. The shared-layout queue proceeds to node placement and remaining
+crossing preprocessing; do not reopen accepted order cases without a related
+change or actual failure. Seven native families remain available; sixteen are
+still missing, and M3/production-switch limits remain as recorded below.
 
-- Class: SVG-label spacing for the captured members/classifier inputs plus
-  common font size/family/weight/style configuration; default/dark original
-  comparisons and affected existing checks. Next: Flowchart/Sequence closeout.
-- Quadrant: title/accessibility, four quadrant labels, axis endpoints, normalized
-  points, class/point styles and existing canvas configuration. Preserve the
-  original fixed-canvas/linear-scale algorithm and SVG text anchors (the
-  original does not measure text). Exit on parser, geometry/paint and public
-  source-to-SVG comparisons. Next: Radar.
-- ELK: establish the pinned Class/State adapter and original layered algorithm
-  dependencies first; never substitute Dagre. Record the exact native algorithm
-  boundary and distinguish oracle/contract progress from a working renderer.
-- Host bridge: UTF-8 source, default/dark theme with classic appearance, fresh
-  source configuration per request, unchanged family layout defaults, native
-  SVG/error/dimensions and owned buffers. Ordinary SVG normalization remains
-  in usvg. Exit on native ABI and source-config precedence checks; then wire
-  the single C++ path in an isolated WinUI candidate and build/run it. No
-  production dependency switch until M1/M2/M3 pass.
+Contribution equivalents `de57c8c3` and `011e0656` were delivered from
+`build/mermaid-cpp/entry-contribution`; runtime/tests/public docs match and
+AGENTS.md has no diff against base `508423f2`. PR
+https://github.com/water2004/Folia/pull/1 title/body and remote head
+`011e0656d0fcf13511aa9d583f23b06cc0692b83` were verified updated, open and
+unmerged. Delivery-triggered reruns are separate from the completed runtime
+gate. No local build/browser process or agent is running. XY evidence lives
+in `build/mermaid-cpp/xy-browser/original.json`.
 
-The incoming plan was an uncommitted user change and is retained. No completed
-verification is claimed for these new packages yet. Local MSVC/CMake are absent;
-native validation will use the existing Windows Actions infrastructure.
+### Previous seven-family delivery checkpoint (historical)
 
-## Current execution plan - 2026-10-26, functional milestones and parallel delivery
+Authorized execution continues under the schedule below. The incoming plan is
+preserved in fd37c879. Class/Sequence closeout, Quadrant/Radar public entries,
+UTF-8 host ABI and the first three ELK phases are committed in small packages.
+Workers class_closeout/data_family/elk_boundary have finished; no further worker
+assignment or local build/browser/application process is running.
 
-This is a planning checkpoint; no implementation, build settings or tests changed.
+Runtime head: `52b6be2c`; contribution equivalent: `116e2a8a` in
+`build/mermaid-cpp/entry-contribution` on `feat/mermaid-cpp-port`. Runtime, tests,
+workflow and public README match; fork guidelines/execution schedule are excluded.
+Final gate https://github.com/zhao0349/Folia/actions/runs/40215740739 passed all
+four standalone/integrated Debug/Release jobs, including all affected native
+suites, FoliaTests/FoliaWindowsEditorTests and original SVG/text comparisons. The preceding
+seven-family head `9bfc171f` passed all four configurations in run `40214517262`.
+The only later runtime change moves Windows UTF-8 conversion/per-request config
+into `src/platform/text/mermaid_host.ixx`, leaving buffer ownership in the ABI.
+
+Accepted functional packages: Class SVG-label spacing and original font-paint
+semantics; Sequence alignment, category font weights and literal non-break
+markup; Quadrant configured canvas/scales/points/styles/labels; Radar named or
+positional curves, original polar/Catmull-Rom geometry, grids, scales and legend.
+Native entry now covers Packet, Pie, Flowchart, Sequence, Class, Quadrant, Radar.
+Sixteen retained families lack native rendering. Both Flowchart and Class still
+select global ELK by default; explicit Dagre works, default ELK fails explicitly.
+ELK cycle selection, flat network-simplex layering and long-edge splitting are
+internal phases, not a completed renderer. Next shared phase is original port
+ordering and LayerSweepCrossingMinimizer/BarycenterHeuristic, then placement,
+routing and compound handling. Required Flowchart closeout remains separate.
+
+Verification uses 92 Flowchart/92 Sequence/66 Class/20 Quadrant/16 Radar browser
+comparisons and existing Packet/Pie/96 real text metrics; tolerances unchanged.
+Preview evidence: `build/mermaid-cpp/functional-first-native/native-preview.png`,
+`functional-second-native/native-preview.png` and `radar-native/native-preview.png`
+(the latter two share the same build/mermaid-cpp prefix). Actual findings fixed:
+Quadrant axis trailing whitespace, obsolete Sequence negative assertions, and
+missing UTF-8 metadata in data-browser probes. Earlier failed/cancelled runs do
+not establish final success; use the combined gates above.
+
+M3 isolated checkout: `build/mermaid-cpp/winui-candidate`, branch
+`codex/mermaid-cpp-winui-candidate`, head `b011ff85`. Dedicated actual Release
+MSBuild run https://github.com/zhao0349/Folia/actions/runs/40214720270 succeeded.
+It connects C++ through existing queue/cache/completion and ordinary usvg; no
+Rust fallback. Two malformed baseline vcxproj ClCompile elements were repaired
+only in this candidate. This checkout uses the earlier five-family runtime and
+is not in the contribution. Artifact saved to `build/mermaid-cpp/winui-candidate-app`
+with `Folia.exe`, native Mermaid DLL and normalizer; downloaded zip SHA-256 is
+`df2487501c4af6b7aadbb0207bed0a762fc2d31a210b53cfaafdae5c200010d1`, matching CI.
+No real WinUI editing/preview/theme/PDF/GPU/DPI acceptance is claimed. Local
+MSVC/CMake are absent. The listed computer-use SKILL.md is also absent locally;
+no GUI automation was started. Production remains on Rust until M1/M2/M3 pass.
+
+Contribution delivered at `92aa70ca3976ecdc9b66f2ccb1b9bc2353b83a6b`.
+PR https://github.com/water2004/Folia/pull/1 title/body and remote head were
+verified updated, open and unmerged. No AGENTS.md difference against base
+508423f2. Delivery-triggered reruns are separate from completed runtime gates.
+Next continue the XY package below, remaining
+Flowchart requirements and original ELK crossing minimization. Do not reopen
+passed family packages absent a related change or actual regression.
+
+### Next data package: XY
+
+Bounded source inspection is complete under the pinned source checkout:
+`packages/mermaid/src/diagrams/xychart/{parser/xychart.jison,xychartDb.ts,
+xychartRenderer.ts,chartBuilder/orchestrator.ts}` and chartBuilder's axis/text
+components. XY needs original vertical/horizontal space allocation, measured
+title/axis/legend bounds, linear ticks and band scales; it cannot reuse the
+Quadrant/Radar no-measurement layout. Use the existing native measurement seam.
+Deliver bar/line plots, numeric/category axes, titles/accessibility, existing
+orientation/canvas/axis/theme configuration and public source-to-SVG entry.
+The finite corpus is now captured by `tools/mermaid-cpp/xy-{cases,oracle,
+browser-probe}.mjs`: 12 parser/DB successes, three common syntax failures and
+24 default/dark browser SVG observations in `build/mermaid-cpp/xy-browser`.
+Pinned source hashes and release sourcemap/source equivalence were checked.
+The native family is still unimplemented; these observations are prerequisites,
+not native acceptance. Next port the original scale/layout dependencies and
+connect the measurement seam, then compare native output. Exit on that
+functional corpus and affected checks; next data family is Sankey. Do not
+implement DOM callbacks or expand into a general charting API. Renderer data
+labels use an upstream-specific fit policy: retain its explicit 0.7-per-character
+font-size reduction formula for showDataLabel/showDataLabelOutsideBar as option
+behavior (both orientations are in the corpus). Do not reuse it as a text-width
+fallback for title/axis/legend layout, which requires actual measurements. Named
+series/legend, point labels, numeric/category axes, automatic ranges, negatives,
+category truncation, canvas/axis/theme config and Unicode/accessibility are in
+the fixed corpus. The original lexer reserves Horizontal, so that title is
+quoted in the horizontal case. Local headless Edge ran outside the restricted
+sandbox after its named-pipe startup failed inside it; all probe processes ended.
+
+## Execution schedule - 2026-10-26 (baseline facts superseded by active checkpoint)
+
+This records the original planning baseline; implementation progress is above.
 The implementation baseline is local `0095233e` (verified runtime `157f54fb`).
 The working tree was clean before this documentation update. Read this plan as
 the current scheduling entry; earlier checkpoints retain their verification

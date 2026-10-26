@@ -10,6 +10,10 @@ using namespace folia::mermaid;
 suite mermaid_measurement = [] {
     "mermaid_class_source_to_measured_svg"_test = [] {
         const std::vector<std::pair<std::string,std::u16string>> cases={
+            {"svg-label-members",u"%%{init: {\"htmlLabels\": false}}%%\nclassDiagram\nclass Document {\n+title String\n+save() bool\n}\nDocument --> Store : saves"},
+            {"svg-label-classifiers",u"%%{init: {\"htmlLabels\": false}}%%\nclassDiagram\nclass Repository~T~ {\n<<service>>\n-items List~T~\n+count int$\n#find(id) T*\n~reset()$\n}"},
+            {"class-font-style",u"classDiagram\nclass Document {\n+title String\n+save() bool\n}\nstyle Document fill:#ECECFF,font-size:20px,font-family:Courier New,font-weight:bold,font-style:italic\nDocument --> Store : saves"},
+            {"svg-font-style",u"%%{init: {\"htmlLabels\": false, \"fontSize\":20}}%%\nclassDiagram\nclass Document {\n+title String\n+save() bool\n}\nstyle Document fill:#ECECFF,font-size:24px,font-family:Courier New,font-weight:bold,font-style:italic\nDocument --> Store : saves"},
             {"lollipop",u"classDiagram\nclass Service {\n+save() bool\n}\nService --() Storage\nInput ()-- Service"},
             {"lollipop-repeated",u"classDiagram\ndirection LR\nEditor --() Storage : saves\nViewer --() Storage : reads"},
             {"class-direct-style",u"classDiagram\nclass Document {\n+title String\n+save() bool\n}\nDocument --> Store : saves\nstyle Document fill:#ffeecc,stroke:#aa5500,color:#552200,stroke-width:2px"},
@@ -67,6 +71,11 @@ suite mermaid_measurement = [] {
 
     "mermaid_sequence_measured_source_to_svg"_test=[] {
         const std::vector<std::pair<std::string,std::u16string>> cases={
+            {"alignment-left",u"%%{init: {\"sequence\":{\"messageAlign\":\"left\"}}}%%\nsequenceDiagram\nA->>B: Save\nB-->>A: Done\nA->>A: Check"},
+            {"alignment-right",u"%%{init: {\"sequence\":{\"messageAlign\":\"right\"}}}%%\nsequenceDiagram\nA->>B: Save\nB-->>A: Done\nA->>A: Check"},
+            {"category-weights",u"%%{init: {\"sequence\":{\"actorFontWeight\":700,\"messageFontWeight\":600,\"noteFontWeight\":300}}}%%\nsequenceDiagram\nparticipant A as Editor\nA->>B: Read document\nNote over A,B: Validate changes\nB-->>A: Done"},
+            {"literal-labels",u"sequenceDiagram\nparticipant A as <b>Editor</b>\nA->>B: <b>Read</b> document\nNote over B: <i>Validate</i> changes\nB-->>A: Done"},
+            {"root-weight",u"%%{init: {\"fontWeight\":500,\"sequence\":{\"actorFontWeight\":700,\"messageFontWeight\":600,\"noteFontWeight\":300}}}%%\nsequenceDiagram\nA->>B: Read document\nNote over A,B: Validate changes"},
             {"participant-lifecycle",u"sequenceDiagram\nparticipant U as User\ncreate participant W as Worker\nU->>W: Start\nW->>W: Work\ndestroy W\nW-->>U: Done"},
             {"lifecycle-late",u"sequenceDiagram\nautonumber\nparticipant L as Log\nparticipant U as User\nU->>L: Open\ncreate actor W as Worker\nU->>W: Start\nW-->>U: Ready\ndestroy W\nU-xW: Stop"},
             {"lifecycle-no-footer",u"%%{init: {\"sequence\": {\"mirrorActors\": false}}}%%\nsequenceDiagram\nparticipant A\ncreate participant B\nA->>+B: Start\nB-->>-A: Ready\ndestroy B\nA-xB: Stop"},
@@ -130,8 +139,6 @@ suite mermaid_measurement = [] {
                     output<<svg->svg;expect(output.good());
                 }
             }
-            expect(!render_mermaid(u"sequenceDiagram\nA->>B: <b>Go</b>",*session));
-
         }
     };
     "mermaid_flowchart_measured_source_to_svg"_test=[] {

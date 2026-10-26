@@ -127,11 +127,21 @@ std::expected<NativeDiagram,std::string> prepare_native_diagram(
     try {
         const auto& effective=prepared->effective_config;
         const auto& theme=member(effective,u"themeVariables");
+        if(prepared->type==u"radar") {
+            auto input=prepare_radar(source,session);
+            if(!input) return std::unexpected(input.error());
+            metadata(input->document,*prepared);
+            return NativeDiagram{std::move(*prepared),std::move(*input)};
+        }
+        if(prepared->type==u"quadrantChart") {
+            auto input=prepare_quadrant(source,session);
+            if(!input) return std::unexpected(input.error());
+            metadata(input->document,*prepared);
+            return NativeDiagram{std::move(*prepared),std::move(*input)};
+        }
         if(prepared->type==u"classDiagram" || prepared->type==u"class") {
             if(text(member(effective,u"layout"))!=u"dagre" || text(member(effective,u"look"))!=u"classic")
                 return std::unexpected("Native Class SVG currently requires explicit Dagre layout and classic look; ELK is not yet ported");
-            if(auto html=effective.find(u"htmlLabels");html&&!boolean(*html))
-                return std::unexpected("Class SVG currently uses the measured HTML label spacing adapter");
             auto doc=prepare_class(source,session,ClassLimits{.frontend=limits});
             if(!doc) return std::unexpected(doc.error());
             metadata(*doc,*prepared);
@@ -156,6 +166,7 @@ std::expected<NativeDiagram,std::string> prepare_native_diagram(
                 }
             }
             ClassSvgConfig c;
+            if(auto html=effective.find(u"htmlLabels");html&&html->kind!=ConfigKind::null) c.html_labels=boolean(*html);
             if(auto value=state.find(u"titleTopMargin")) c.title_top_margin=number(*value);
             if(auto value=cfg.find(u"padding")) c.padding=c.note_padding=c.group_padding=number(*value);
             const auto& margins=member(member(effective,u"flowchart"),u"subGraphTitleMargin");
@@ -181,9 +192,8 @@ std::expected<NativeDiagram,std::string> prepare_native_diagram(
             const auto& config=member(effective,u"sequence");
             if(text(member(effective,u"look"))!=u"classic")
                 return std::unexpected("Native Sequence SVG currently requires classic look");
-            if(text(member(config,u"messageAlign"))!=u"center")
-                return std::unexpected("Sequence alternate message alignment requires the next SVG adapter");
             SequenceSvgConfig c;
+            c.message_align=text(member(config,u"messageAlign"));
             c.mirror_actors=boolean(member(config,u"mirrorActors"));
             c.hide_unused=boolean(member(config,u"hideUnusedParticipants"));
             c.show_numbers=boolean(member(config,u"showSequenceNumbers"));
@@ -207,9 +217,15 @@ std::expected<NativeDiagram,std::string> prepare_native_diagram(
                 const auto value=number(*weight);
                 if(value<100||value>900||std::floor(value)!=value) return std::unexpected("Invalid Sequence font weight");
                 t.font_weight=static_cast<unsigned>(value);
-            } else if(number(member(config,u"actorFontWeight"))!=400 || number(member(config,u"messageFontWeight"))!=400 ||
-                number(member(config,u"noteFontWeight"))!=400)
-                return std::unexpected("Separate Sequence label weights require the next SVG adapter");
+                t.actor_font_weight=t.message_font_weight=t.note_font_weight=t.font_weight;
+            } else {
+                for(auto [key,target]:{std::pair{u"actorFontWeight",&t.actor_font_weight},
+                    {u"messageFontWeight",&t.message_font_weight},{u"noteFontWeight",&t.note_font_weight}}) {
+                    const auto value=number(member(config,key));
+                    if(value<100||value>900||std::floor(value)!=value) return std::unexpected("Invalid Sequence font weight");
+                    *target=static_cast<unsigned>(value);
+                }
+            }
             for(auto [key,target]:{std::pair{u"actorBkg",&t.actor_fill},{u"actorBorder",&t.actor_border},
                 {u"actorTextColor",&t.actor_text},{u"actorLineColor",&t.actor_line},
                 {u"signalColor",&t.signal},{u"signalTextColor",&t.signal_text},
@@ -322,7 +338,19 @@ std::expected<NativeDiagram,std::string> prepare_native_diagram(
 
 std::expected<DiagramSvg,std::string> render_native_diagram(const NativeDiagram& input,const PieMeasurements& widths,const FlowchartMeasurements& flowchart_measurements,const SequenceMeasurements& sequence_measurements,const ClassMeasurements& class_measurements) {
     return std::visit([&](const auto& content)->std::expected<DiagramSvg,std::string> {
-        if constexpr(std::is_same_v<std::decay_t<decltype(content)>,ClassRenderInput>) {
+        if constexpr(std::is_same_v<std::decay_t<decltype(content)>,RadarRenderInput>) {
+            auto result=render_radar_svg(content);
+            if(!result) return std::unexpected(result.error());
+            try { decode_svg_text(result->svg); }
+            catch(const std::runtime_error& e) { return std::unexpected(e.what()); }
+            return DiagramSvg{std::move(result->svg),result->width,result->height};
+        } else if constexpr(std::is_same_v<std::decay_t<decltype(content)>,QuadrantRenderInput>) {
+            auto result=render_quadrant_svg(content);
+            if(!result) return std::unexpected(result.error());
+            try { decode_svg_text(result->svg); }
+            catch(const std::runtime_error& e) { return std::unexpected(e.what()); }
+            return DiagramSvg{std::move(result->svg),result->width,result->height};
+        } else if constexpr(std::is_same_v<std::decay_t<decltype(content)>,ClassRenderInput>) {
             auto result=render_class_svg(content,class_measurements);
             if(!result) return std::unexpected(result.error());
             return DiagramSvg{std::move(result->svg),result->width,result->height};

@@ -1,5 +1,24 @@
 # Third-party notices
 
+## Eclipse Layout Kernel / elkjs 0.9.3
+
+`src/elk_cycle.cpp`, `src/elk_layering.cpp`, `src/elk_long_edges.cpp` and their
+module interfaces port the original ELK DepthFirstCycleBreaker, flat
+NetworkSimplexLayerer and LongEdgeSplitter. `src/elk_order.{ixx,cpp}` ports the
+flat east/west PortListSorter, BarycenterHeuristic, port-rank distributors and
+LayerSweepCrossingMinimizer controller from the same worker.
+These files are licensed under
+EPL-2.0, not the Mermaid MIT license. The full license is in `ELK-LICENSE`.
+Original source: https://github.com/kieler/elkjs, package `elkjs` 0.9.3,
+`lib/elk-worker.js`. Exact package/source hashes are recorded under `elkCycle`
+in `docs/mermaid-cpp/source-lock.json`. This algorithm slice is not yet a
+complete ELK layout engine or the public Class/State render path.
+
+Quadrant parsing, fixed-canvas geometry and SVG output follow the pinned
+Mermaid quadrant-chart sources under the MIT license reproduced in `LICENSE`.
+Radar parsing, polar geometry and its closed Catmull-Rom curves follow the
+pinned Mermaid Radar sources under the same license; source hashes are locked.
+
 Flowchart display-line adaptation follows Mermaid 12.2.0's labelHelper,
 createText, createLabel, nonMarkdownToHTML and decodeEntities. Their original
 source hashes are recorded in docs/mermaid-cpp/source-lock.json; the Mermaid

@@ -607,6 +607,114 @@
     {
       "path": "packages/mermaid/src/rendering-util/rendering-elements/shapes/note.ts",
       "sha256": "f358bb583f624930c1118e91a6cf07db949c1ad6ac722f9d0ae4207118c1d552"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/quadrant-chart/quadrantBuilder.ts",
+      "sha256": "62f2e191dbe3521848c38595b23644288728f912ab8b344a1ea77eafe712fbcb"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/quadrant-chart/quadrantDb.ts",
+      "sha256": "cee47dc6e16fc27f5371575cbf7e3c3ec13db53cb2b9108748b8eab8b828c207"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/quadrant-chart/quadrantRenderer.ts",
+      "sha256": "ec3355a031c5b66c3df218ad44432581866cc1cbe2b502f01019dfbafc7f0639"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/quadrant-chart/utils.ts",
+      "sha256": "96280a48ff9a6e932abdb786903d8384a5e96579f021bc9ae8e0f0c0fe29d950"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/quadrant-chart/parser/quadrant.jison",
+      "sha256": "b4cf7e71d667e51c2082ef8e6b1c897d2d3124933026bef0ab72c959a8f46b6a"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/radar/renderer.ts",
+      "sha256": "b8b6a6b1df23f57e0ef01277bec8148091eb9b0cf9b6ce8863f13b8cd2c904c2"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/radar/db.ts",
+      "sha256": "33dfa58db934d067b19e04bcc5555dff0dd5bb00c70c10a14759daafbfc1f57a"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/radar/parser.ts",
+      "sha256": "85d050ccaad3a8556dffcd5ae5a11cf6f0adcd5b343569587de9e1b43cb38449"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/radar/styles.ts",
+      "sha256": "5320ca60c99f5fa8b3babb6848db10485a6116e0559d1249172e91b4ec4f7c9f"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/radar/types.ts",
+      "sha256": "e1e7f0a84159c8dbf2b63e086a6c4395c098d8a30c636d532529831610880cfb"
+    },
+    {
+      "path": "packages/parser/src/language/radar/radar.langium",
+      "sha256": "acd5171f3413f29242e8250c5a9c9d67e247a6b87acfbe7543bfc333bbdf3ac5"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/xychartDb.ts",
+      "sha256": "12d17c3ee9c7b8fdc21438d4c9e41d94fc217437415fcb420a2f8ba6de065b76"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/xychartRenderer.ts",
+      "sha256": "ef3950e7e6efe016ec211fa4ff8793e28fd77972f870b24921322e144a0cf3f1"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/parser/xychart.jison",
+      "sha256": "cc1f2f0f8a320bf64c974c132516b7393876188d70bd0fd22c93587e504862f1"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/index.ts",
+      "sha256": "807a8dc356ccf1d04e72b58e5fbd0076b87e0225ea1b14bb10ff548c13c4a128"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/interfaces.ts",
+      "sha256": "f0fe8953e195c803c8ac563c5e4230d10ed47665eb40d76c59de7e283e1fb2b3"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/orchestrator.ts",
+      "sha256": "a8f9a742ff155925ab4f4df719af888c4ee88c7f1669cceffb1ec340e547d93d"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/textDimensionCalculator.ts",
+      "sha256": "5c71e95021f3d50f0bc5fc7224e6bac7a1bc581715d47daee33dbc997a55b0c8"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/components/chartTitle.ts",
+      "sha256": "4aa15e3f9c40adb709f177d6bb851f2a2d3e385d1c6e6b5a0abec993d87b36dd"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/components/legend.ts",
+      "sha256": "1fed6382c5c43925f63d9a77f588ed8ae1127a92f633ab2e08deb007bad1bf9f"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/components/axis/index.ts",
+      "sha256": "083b116c688359a6831003f7823bee673d97b76fd576f455d60c67db100b42cc"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/components/axis/baseAxis.ts",
+      "sha256": "3aedafd8ce9de8af7092c6d909730f90acf9a8f5c85cd11a09904dd339a117d7"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/components/axis/bandAxis.ts",
+      "sha256": "9f2296bc497ba67eb095a05181985bfc2ba8c5a7190a2d38931c2a2ba6868b55"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/components/axis/linearAxis.ts",
+      "sha256": "28c067d9de8636c7a8d844cde8ca9b31d7340958465f260e8bcfd96553e3c4c1"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/components/plot/index.ts",
+      "sha256": "3fc4263e819b5418512c86a7921588fc1dfef403bb015e290aad25bc724b24e5"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/components/plot/barPlot.ts",
+      "sha256": "17569f3371c3629c92e498351f041921699a6f32562a7805da280503853b0526"
+    },
+    {
+      "path": "packages/mermaid/src/diagrams/xychart/chartBuilder/components/plot/linePlot.ts",
+      "sha256": "dcf2b16e353d492683ffe6eca8aad2e8fe6cc84ad5c5df91b63690725a06f832"
     }
   ],
   "packages": [
@@ -1310,5 +1418,26 @@
     "version": "16.4.2",
     "file": "lib/marked.esm.js",
     "sha256": "6540aa2544be84b3abdd9424fa287120e9ed7c7600512dd92c097493121a5951"
+  },
+  "elkCycle": {
+    "license": "EPL-2.0",
+    "repository": "https://github.com/kieler/elkjs",
+    "package": "elkjs",
+    "files": [
+      {
+        "path": "package.json",
+        "sha256": "fb9bb80b980c72022fb4540b38aa0545242b4eb67b82250aeae2f0beb67eea25"
+      },
+      {
+        "path": "lib/elk-worker.js",
+        "sha256": "90ab078ad34ff826ca0ece1ee338ae98071a6b3e6cfbb00ce2eb671b32eacd88"
+      },
+      {
+        "path": "LICENSE.md",
+        "sha256": "89591d4578fb1ebd91501312a3d25f021bd865a2e436641c1cf7b1bc7e3c1617"
+      }
+    ],
+    "version": "0.9.3",
+    "boundary": "DepthFirstCycleBreaker, flat NetworkSimplexLayerer, LongEdgeSplitter and flat east/west PortListSorter/BarycenterHeuristic/LayerSweepCrossingMinimizer"
   }
 }

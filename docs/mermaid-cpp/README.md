@@ -34,6 +34,40 @@ Cytoscape, date calculations) needs its own source and behavior verification.
 
 ## Current state
 
+The public native entry now contains Packet, Pie, Flowchart, Sequence, Class,
+Quadrant and Radar. Entry coverage does not imply that every family default or the
+WinUI dependency switch is finished. The unconfigured global layout is ELK;
+both Flowchart and Class still require explicit source/session Dagre selection.
+The original ELK depth-first feedback-edge selector and flat network-simplex
+layer assignment are ported separately, but
+the complete layered pipeline is not yet connected.
+Long-edge splitting retains an explicit layered graph. The flat east/west
+crossing-order phase now ports PortListSorter, both barycenter port-rank
+strategies and the seeded layer-sweep controller, retaining the best node and
+port order across alternating sweeps. It accepts adjacent-layer edges with one
+edge per port, including long-edge dummies and fixed port positions. Shared-port
+hyperedges, in-layer edges and north/south or compound constraints still need
+their original processors and are rejected by this internal boundary. Placement,
+routing and public default ELK rendering remain outstanding.
+
+Quadrant retains its original configured canvas, linear point scales, axis
+positions, title/accessibility metadata, quadrant labels and per-point/class
+styles. Its original layout uses SVG text anchors and font sizes rather than
+glyph-width measurements. Actual SVG text placement is compared in a browser.
+
+Radar supports named/aliased axes, positional or axis-referenced curves, circle
+and polygon grids, configured scales/margins, legends and accessible titles.
+It retains the original polar coordinates, clipping and closed Catmull-Rom
+curves. This family also uses SVG text anchors rather than glyph-width layout.
+
+`FoliaNativeMermaid.dll` provides a UTF-8 host ABI with owned SVG/error buffers
+and dimensions. Each request initializes default/dark theme and classic look;
+source configuration keeps the shared frontend's precedence, and family layout
+defaults are not replaced. The caller frees outputs through the same DLL.
+The isolated WinUI integration candidate passes native output to the existing
+usvg normalizer and retains the editor's queue, cache and completion lifecycle.
+It does not constitute the production dependency switch or product acceptance.
+
 `folia.mermaid.class_diagram::prepare_class` connects shared preparation to owned
 Class declarations, labels, generic types, annotations, ordered attributes and
 methods. Member display details retain visibility, parameters, return types and
@@ -47,10 +81,12 @@ are supported through style/classDef/cssClass/inline assignments, retaining
 original statement order. Lollipop relationships retain independently allocated interface ids, labels
 and owning classes, including repeated names. Their labels use real measurements and transparent rectangle layout anchors;
 SVG output retains the original circle markers and endpoint shortening.
-Styled typography remains separate work. Unsupported statements return errors.
+Node font family/size/weight/style retain the original post-layout HTML paint
+behavior, including possible overflow of the pre-style bounds. Unsupported
+statements return errors.
 
 The Class SVG adapter supports explicit `layout: dagre` with classic appearance
-and HTML label spacing, using real DirectWrite measurements for class,
+and HTML or SVG label spacing, using real DirectWrite measurements for class,
 annotation, attribute, method and relationship text. It preserves compartments,
 static/abstract member typography, inheritance/aggregation/composition/dependency
 markers, multiplicity and the unified renderer's Dagre geometry. The original
@@ -74,6 +110,11 @@ member classifiers. Relationship labels wrap at the original 200px default using
 native line-break opportunities and preserve style runs across lines. Notes use the same measured emphasis runs, preserve left-aligned explicit lines,
 and retain the original nowrap behavior.
 
+With `htmlLabels: false`, Class uses the original SVG font bounds, row spacing
+and classifier placement. Node font overrides are ignored in this mode, as in
+the pinned renderer; HTML mode resolves and measures final styled paint fonts
+separately from the geometry established before styles are applied.
+
 `folia.mermaid.sequence::prepare_sequence` connects shared preparation to owned
 Sequence actors and ordered messages. The parser/DB boundary covers actor
 and participant declarations, aliases, implicit participants, common solid/
@@ -90,7 +131,7 @@ links are not implemented and return explicit errors.
 The measured Sequence SVG adapter connects `render_mermaid` to classic
 rectangular participants and human actor figures, mirrored footers, lifelines, ordinary and self
 messages, solid/dotted/open/cross/async/bidirectional arrows, actor spacing and default/dark
-paints and centered messages.
+paints and center/left/right message alignment, including reverse/self calls.
 It retains the original actor-margin and message-height algorithms, including
 rounded real text measurements and optional right-angle self calls. DirectWrite
 provides widths and font ascent/descent; the native generic sans-serif mapping
@@ -126,8 +167,9 @@ participants enter at the receiving message; destroyed senders/receivers stop
 their lifelines and place mirrored footers at the destroying message. Message
 endpoints, labels, activation offsets and subsequent spacing follow that layout.
 Duplicate creation and unrelated creating/destroying messages return errors.
-Rich labels and further Sequence
-configuration remain subsequent SVG steps.
+Actor, message and note font weights are measured separately; root fontWeight
+retains precedence over category values. Non-break markup remains literal text,
+matching the original text-node painter, while br tags split display lines.
 Parser support alone does not imply SVG support. Folia's application dependency
 remains unchanged.
 The original Sequence grammar credits Knut Sveidqvist (2014-2015, MIT) and
@@ -260,8 +302,8 @@ subgraphs and the shared frontend source budget. Error offsets refer to prepared
 UTF-16 text. The representative oracle compares the original parser/DB's layout
 nodes and edges, metadata, styles and configuration with the native result.
 
-`folia.platform.mermaid_renderer::render_mermaid` is an opt-in Packet/Pie/Flowchart
-source-to-SVG entry. It composes the shared frontend, family configuration,
+`folia.platform.mermaid_renderer::render_mermaid` is an opt-in source-to-SVG
+entry for the seven families described above. It composes the shared frontend, family configuration,
 default/dark theme values, parsing, layout, font selection, real DirectWrite
 measurement and SVG output. `folia.mermaid.render_entry` exposes the owned
 intermediate data and the platform-independent renderer for other hosts.
