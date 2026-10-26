@@ -15,29 +15,26 @@ Fork-only scheduling commits1293b97d/92efef54 are excluded from contribution.
 
 | Queue / stage | Status | Actual owner / handle | Candidate / verification | Next ready work / dependencies |
 | --- | --- | --- | --- | --- |
-| M1-L default ELK | running | /root/elk_layout | Labels/end-labels/full flat/compound ports through067f070e passed standalone Release native in40286416833. Cross-group preprocessing3f69105c and boundary layers2232678f await native. | Boundary local layout/compound restoration committed b659b35f; hierarchy order a546fcf2. Multi-graph sweep candidate elk_order.* + elk_long_edges.ixx and hierarchy-sweep test/oracle frozen, original5cases pass. Owner proceeds compound geometry composition. Default family adapter remains root work, not connected. |
-| M1-F / M2-A Mindmap | running | /root/flowchart_closeout | Flowchart delivered. Mindmap parser41c3c95d, measured shapes438a4799, CoSE tree3455e82d committed; original5 layouts/4shape SVGs pass, native pending. | Mindmap SVG/public seam candidate in mindmap_svg.* and ignored mindmap-platform.patch. Integrated ed1f572e with original CoSE SVG clipping and measured-label seam. New native/SVG gate40288695568 pending. Owner now Architecture/fCoSE; explicit ELK still pending. |
-| M2-T data/time / M2-C Block | running | /root/xy_native | Journey5c1fa0d5, Timelinece942965, Ganttae41d09d, Git graphf342f839 committed. Gantt16 SVG and all native suites through45d8306c pass standalone Release. | Timeline vertical renderer/Journey HTML advance-box semantics/Git graph compile error fixed ad600aa8; gate40288695568 pending. Block public entry16526863 gate running; original8/2 and16SVG pass. Kanban candidate not frozen; owner now actual Sankey host alpha fix before Kanban/C4. |
+| M1-L default ELK | running | /root/elk_layout | RIGHT compound native passed in40290724381; same-direction four-way a35784f6 in c3 gate. NS preprocessing6e4a7e4c and unified Forster/order f0427bf8 original fixed cases pass, native pending40292810934. | Owner NS placement/routing then mixed directions; root public adapter corpus7a5d9b36 (6 cases/12 SVG) captured, adapter not connected. |
+| M1-F / M2-A Mindmap | accepted bounded default CoSE | /root | 2e367287 dual measurement gate: matching c3 Release same-box4 layout/routes/viewports and real DirectWrite4 local shapes/paint/connectivity/enclosure ALL PASS. Original5 CoSE native previously passed. | Explicit ELK awaits shared adapter. No further CoSE polishing without new regression. |
+| M2-T data/time / M2-C Block/Kanban/C4 | running | /root/xy_native | Matching a546 Release Journey12/Timeline12/Gantt16/Git16 SVG ALL PASS. Block default textColor fixc3 native passed; SVG grid label y -33.199 vs -36 fails. Kanban missing theme darkMode fixed e979d2cf, awaiting gate. | Owner fixes actual Block label offset before resuming C4 parser/SVG candidate. C4 original8success/2error and16SVG captured; candidate unvalidated/uncommitted. |
 | M2-R State -> ER -> Requirement | ready | unassigned | none | Shared layout owner takes these when free; do not block other queues. |
-| M2-Z / Architecture | running | /root/flowchart_closeout | Parser/DB0bf85675; constraints candidate architecture_constraints.* frozen, original6cases pass | Default randomize:false fCoSE2.x incremental implementation then ZenUML. |
-| M3 WinUI candidate | building / host partial | /root | candidate e0540747 merges ten-family a11217c9; run40285910373 SUCCESS, artifact winui-e0540747-app downloaded | UI tools recovered. Actual XY preview/save/dark-light/maximize and A4 PDF observed. Sankey labels hidden by gradient stroke alpha issue, A/B confirmed and owner fixing output. Production switch remains gated. |
+| M2-Z / Architecture | running | /root/flowchart_closeout | Parser0bf85675/constraints9d524a1b committed. Prior fCoSE intermediate snapshots were EMPTY because hook targeted unused src classes. Correct actual bundle hook08f47034 now records2 passes and10 movement snapshots each, original6graphs pass; native pending. | Owner fCoSE spring/compound layout then renderer/ZenUML. New fcose_layout files NOT yet frozen. Do not treat ef8/e99 intermediate checks as accepted. Mindmap evidence is independent and unaffected. |
+| M3 WinUI candidate | host partial | /root | e0540747 build40285910373 SUCCESS. XY preview/save/theme/maximize/PDF observed. Sankey alpha fix7c904ab9 matching c3 native18SVG PASS; actual host serialization reprojection labels visible. | New compiled WinUI host check remains pending; production switch gated. |
 | M4 production switch / M5 acceptance | blocked on requirements | unassigned | Production remains Rust | Requires native/default families and actual host acceptance. |
 
-Current main ef8cab5b. Gate40288695568 at a546fcf2: standalone Debug/Release
-and integrated Debug all native suites passed, SVG fails Mindmap shapes view
-width376.147 vs407.580; integrated Release still building. Matching core exe
-under build/mermaid-cpp/mindmap-core-release, text evidence mindmap-stage-release.
-Root ran matching Release Timeline12/Journey12/Gantt16/Git graph16 SVG checks
-locally: ALL PASS. Mindmap owner repairing test font mismatch and investigating
-measured shape/CoSE differences, no tolerance widening.
-Block16526863 + hierarchy sweep/Architecture constraints9d524a1b now in gate
-40289762673 on codex/mermaid-cpp-block-gate. RIGHT compound and fCoSE initial
-constraints ef8cab5b committed but not yet pushed/gated.
-Earlier40286767095 all native suites passed (includes CoSE/compound graph),
-then old Timeline viewport failed.40287261982 Git graph error-string compile
-failure fixed ad600aa8. Journey old-artifact reprojection12case pass is NOT
-new native acceptance. Both fixes retain original fixed corpus/tolerances.
-Architecture parser0bf85675 and hierarchy-order a546fcf2 now committed.
+Current main functional HEAD f0427bf8. New Windows gate40292810934 on
+codex/mermaid-cpp-north-south-gate includes Kanban fallback, real fCoSE snapshots,
+NS preprocess/order. Previous gate40291187786 at c3d98c03 standalone D/R failed
+only Kanban configuration in core and platform; integrated jobs still running
+at last observation. Matching artifacts build/mermaid-cpp/current-stage-release.
+Root independently ran original SVG comparisons: Mindmap dual4+4 PASS, Sankey18
+PASS, Block FAIL label vertical box as recorded above. Do not widen tolerance.
+Earlier gates40288695568/40289762673/40290724381 are superseded for failed paths;
+RIGHT compound native passed standalone D/R in40290724381. Public upstream
+still ddb3c05a; later stages not yet delivered until corresponding gate succeeds.
+Fork-only commits1293b97d/92efef54/2da5eb9d and subsequent HANDOFF updates must
+be excluded from contribution. No merge authorized.
 
 Root owns render_entry, platform/ABI, CMake/workflow, source-lock and integration.
 All three agents above remain active; no local compiler. New candidate sources
@@ -54,9 +51,10 @@ opened via Explorer UI; current app status Ready, no theme fallback.
 Other test windows17763220 (same exe wrong cwd),36242516 (old app Settings)
 remain open; explorer5506084. No personal documents touched. Host dark theme XY and maximize verified; Follow Windows restored. PDF
 host-data-check.pdf 73419 bytes, one A4 page visually inspected; reveals Sankey
-labels absent. Current app opened ignored sankey-host-diagnosis/compare-alpha.md:
-original normalized hides labels, equivalent gradient stop-alpha shows labels.
-Data owner fixes Sankey SVG output only; real native and usvg retained glyphs.
+labels absent. Current app opened ignored sankey-host-diagnosis/candidate-alpha.md:
+raw and normalized candidate both show labels. This host proof reprojects the
+serialization fix; it is not a newly compiled WinUI binary. Source fix7c904ab9
+now also passes matching native18 SVG comparisons. Real native/usvg retain glyphs.
 No complete M3 or full editing acceptance claim.
 
 Next root actions: finish integrating bounded frozen candidates, fix actual new
