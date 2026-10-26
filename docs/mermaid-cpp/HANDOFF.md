@@ -4,52 +4,64 @@
 
 ### Current execution and work table
 
-Authorized implementation resumed from `6004ffc4`; planning edits are preserved
-in fork-only `1293b97d`. Root checkout `D:/Folia`, fork/mermaid-development.
-Ten-family delivery candidate a11217c9 is in Windows run 40284749183;
-standalone Release is fully green (118 Flowchart/24 XY/18 Sankey/16 Treemap,
-other existing families/text checks); other configurations still running.
-Contribution checkout entry-contribution is ddb3c05a, exact functional tree
-match to a11217c9; not pushed. Remote PR #1 remains011e0656 open/unmerged.
-Previous 73722185 core failure was metadata Ready? YAML flow scalar; fixed
-in a11217c9 without changing original fixture. Observer-only fix822f922a
-retains existing tolerance and measures painted text, not stale group boxes.
-XY strict original-measured max delta0.00000763; native text gate max1px.
-Artifacts: flat-pipeline-release, treemap-closeout-debug/release under build/mermaid-cpp.
-Next candidate fabe24ad includes Journey5c1fa0d5, Timelinece942965,
-Mindmap parser41c3c95d, ELK labels2df3b0fe/end labels5f622ef0/full flatd7dfd4b3.
-Journey run40284833657 stopped compile for missing number import in test;
-fabe24ad fixes Journey/Timeline fixture imports and replaces same-branch
-run40285513644. New run ID must be retrieved. These packages are not in PR batch.
+Root: D:/Folia, fork/mermaid-development. Mermaid implementation remains authorized.
+Ten-family batch a11217c9 passed ALL four Windows configurations in run40284749183.
+Contribution ddb3c05a2d365703bc479cfdc5e4e47b0cfa344c has the same functional tree;
+pushed and PR #1 title/body/head verified updated, OPEN and UNMERGED on 2026-10-26.
+No AGENTS.md diff vs508423f2, no HANDOFF change vs prior011e0656 in contribution.
+Delivered XY/Sankey/Treemap, Flowchart metadata/labels/fonts/nowrap, flat ELK phases.
+Do not reopen those accepted checks without related changes/actual regressions.
+Fork-only scheduling commits1293b97d/92efef54 are excluded from contribution.
+
+| Queue / stage | Status | Actual owner / handle | Candidate / verification | Next ready work / dependencies |
+| --- | --- | --- | --- | --- |
+| M1-L default ELK | running | /root/elk_layout | Labels/end-labels/full flat/compound ports through067f070e passed standalone Release native in40286416833. Cross-group preprocessing3f69105c and boundary layers2232678f await native. | Boundary local layout/compound restoration committed b659b35f; hierarchy order a546fcf2. Multi-graph sweep candidate elk_order.* + elk_long_edges.ixx and hierarchy-sweep test/oracle frozen, original5cases pass. Owner proceeds compound geometry composition. Default family adapter remains root work, not connected. |
+| M1-F / M2-A Mindmap | running | /root/flowchart_closeout | Flowchart delivered. Mindmap parser41c3c95d, measured shapes438a4799, CoSE tree3455e82d committed; original5 layouts/4shape SVGs pass, native pending. | Mindmap SVG/public seam candidate in mindmap_svg.* and ignored mindmap-platform.patch. Integrated ed1f572e with original CoSE SVG clipping and measured-label seam. New native/SVG gate40288695568 pending. Owner now Architecture/fCoSE; explicit ELK still pending. |
+| M2-T data/time / M2-C Block | running | /root/xy_native | Journey5c1fa0d5, Timelinece942965, Ganttae41d09d, Git graphf342f839 committed. Gantt16 SVG and all native suites through45d8306c pass standalone Release. | Timeline vertical renderer/Journey HTML advance-box semantics/Git graph compile error fixed ad600aa8; gate40288695568 pending. Block public entry16526863 gate running; original8/2 and16SVG pass. Kanban candidate not frozen; owner now actual Sankey host alpha fix before Kanban/C4. |
+| M2-R State -> ER -> Requirement | ready | unassigned | none | Shared layout owner takes these when free; do not block other queues. |
+| M2-Z / Architecture | running | /root/flowchart_closeout | Parser/DB0bf85675; constraints candidate architecture_constraints.* frozen, original6cases pass | Default randomize:false fCoSE2.x incremental implementation then ZenUML. |
+| M3 WinUI candidate | building / host partial | /root | candidate e0540747 merges ten-family a11217c9; run40285910373 SUCCESS, artifact winui-e0540747-app downloaded | UI tools recovered. Actual XY preview/save/dark-light/maximize and A4 PDF observed. Sankey labels hidden by gradient stroke alpha issue, A/B confirmed and owner fixing output. Production switch remains gated. |
+| M4 production switch / M5 acceptance | blocked on requirements | unassigned | Production remains Rust | Requires native/default families and actual host acceptance. |
+
+Current main ef8cab5b. Gate40288695568 at a546fcf2: standalone Debug/Release
+and integrated Debug all native suites passed, SVG fails Mindmap shapes view
+width376.147 vs407.580; integrated Release still building. Matching core exe
+under build/mermaid-cpp/mindmap-core-release, text evidence mindmap-stage-release.
+Root ran matching Release Timeline12/Journey12/Gantt16/Git graph16 SVG checks
+locally: ALL PASS. Mindmap owner repairing test font mismatch and investigating
+measured shape/CoSE differences, no tolerance widening.
+Block16526863 + hierarchy sweep/Architecture constraints9d524a1b now in gate
+40289762673 on codex/mermaid-cpp-block-gate. RIGHT compound and fCoSE initial
+constraints ef8cab5b committed but not yet pushed/gated.
+Earlier40286767095 all native suites passed (includes CoSE/compound graph),
+then old Timeline viewport failed.40287261982 Git graph error-string compile
+failure fixed ad600aa8. Journey old-artifact reprojection12case pass is NOT
+new native acceptance. Both fixes retain original fixed corpus/tolerances.
+Architecture parser0bf85675 and hierarchy-order a546fcf2 now committed.
+
 Root owns render_entry, platform/ABI, CMake/workflow, source-lock and integration.
+All three agents above remain active; no local compiler. New candidate sources
+are shared main-tree edits; coordinate before touching owner files. Independent
+native stages are candidates until their matching gate passes. Keep source hashes
+consistent with the byte-preserving oracle contract; worker normalized source
+hashes must be checked against original content before recording local raw bytes.
 
-| Queue / stage | Status | Actual owner / handle | Checkout / baseline | Candidate / verification | Next ready work / dependencies |
-| --- | --- | --- | --- | --- | --- |
-| M1-L default ELK | running | /root/elk_layout / active | main / fabe24ad | Full labelled flat chain d7dfd4b3 committed; 8 original full layout cases pass, native pending | Now elk_compound_ports.* original EXTERNAL_PORT dummy geometry, then cross-group segments/labels/compound; root default adapter pending. |
-| M1-F Flowchart closeout | running | /root/flowchart_closeout / active | main / fabe24ad | SVG labels, Markdown groups and group font semantics through c8a8dd9d; latest native gate pending | Flowchart batch in final gate; owner now Mindmap measured shapes + native CoSE tree radial/spring layout. Parser41c3c95d committed. |
-| M2-D data / M2-T Journey | running | /root/xy_native / active | main / fabe24ad | Journey/Timeline committed in next candidate; native gate pending | Owner now Gantt original date/task/axis path; fixed corpus and dayjs/D3 source dependencies. |
-| M2-R State -> ER -> Requirement | ready | unassigned / none | main | none | Shared layout owner takes these when free; M1-L dependency does not block other M2. |
-| M2-T remaining / M2-C structural families | ready | unassigned / none | main | none | Gantt assigned to xy_native; next Git graph or Block/Kanban/C4; do not wait for all ELK. |
-| M2-A / M2-Z complex families | ready | /root/flowchart_closeout (after actual gate fix) | main | none | Reuse elk-layout-boundary.md source inventory: Mindmap cose-bilkent, Architecture fCoSE, ZenUML 3.49.2 MIT archive/map already verified. Mindmap preparation started; pinned Cytoscape3.34.0 oracle, preserve default CoSE selection. |
-| M3 WinUI candidate | verifying | /root / active | winui / 45cfaa07 | Release app run 40273119399 | Preserving-history merge synchronized verified seven-family runtime. Actual Pie/Sequence preview, save and one-page PDF passed on seven-family artifact. Editing/theme/resize acceptance still incomplete; latest runtime not synced. |
-| M4 production switch | blocked | unassigned / none | none | none | Requires M1/M2 native+default and M3 host gates. Production remains Rust. |
-| M5 product acceptance | blocked | unassigned / none | none | none | Requires M4; no speculative matrix. |
+Current host window5310942 (cua binding foliaHost), e0540747 app, synthetic
+host-data-check.md saved under ignored winui-e0540747-app; XY/Sankey seen.
+Launch with cwd inherited from Codex breaks theme assets. Resolved test launch
+using ignored Folia-host-check.lnk with WorkingDirectory=artifact directory,
+opened via Explorer UI; current app status Ready, no theme fallback.
+Other test windows17763220 (same exe wrong cwd),36242516 (old app Settings)
+remain open; explorer5506084. No personal documents touched. Host dark theme XY and maximize verified; Follow Windows restored. PDF
+host-data-check.pdf 73419 bytes, one A4 page visually inspected; reveals Sankey
+labels absent. Current app opened ignored sankey-host-diagnosis/compare-alpha.md:
+original normalized hides labels, equivalent gradient stop-alpha shows labels.
+Data owner fixes Sankey SVG output only; real native and usvg retained glyphs.
+No complete M3 or full editing acceptance claim.
 
-Live handles: three agents above, remote ten-family40284749183 and next candidate on codex/mermaid-cpp-timeline-flat-layout; no local compiler.
-Real app window 36242516 (cua binding folia) is open on Settings/Theme.
-Artifact: build/mermaid-cpp/winui-45cfaa07-app. Synthetic host-check.md/pdf and
-host-check-page1.png are local ignored evidence. Launch inherited Codex cwd,
-so theme assets lookup fails in WindowsApps; resolve launch context before
-claiming theme gate. Earlier winui-candidate-app is b011ff85, not this candidate.
-Contribution checkout entry-contribution prepared throughddb3c05a (runtimea11217c9 equivalent); not pushed.
-Cherry-pick only validated functional commits, excluding 1293b97d and this file.
-Treemap has 8 successes/2 errors/16 original SVGs and focused native469 asserts passed.
-UI tool twice aborted before dispatch on recovery; theme/resize gate incomplete.
-Journey/Timeline/ELK label packages run separately from ten-family delivery;
-do not delay the accepted PR batch on later candidates. Public PR body draft
-is build/mermaid-cpp/pr1-data-family-body.md; replace FINAL_GATE only after success.
-Exit fixed family and affected checks, then ready queues.
-Default ELK and production Rust replacement remain incomplete.
+Next root actions: finish integrating bounded frozen candidates, fix actual new
+CI failures through their owners, update each validated public batch via clean
+entry-contribution, keep PR #1 open/unmerged, and synchronize current table in place.
 
 ### Previous accepted implementation evidence (historical)
 
