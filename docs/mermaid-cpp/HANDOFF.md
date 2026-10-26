@@ -2,56 +2,56 @@
 
 ## Active implementation checkpoint - 2026-10-26
 
-### Current execution - 2026-10-26 authorized implementation
+### Current execution and work table
 
-Baseline main `6004ffc4`; incoming AGENTS.md/HANDOFF planning edits are preserved.
-Initial dispatch is live: `/root/elk_layout` owns elk-specific sources/tests/oracles;
-`/root/flowchart_closeout` owns flowchart-specific sources/tests/oracles;
-`/root/xy_native` owns XY sources/tests/oracles. Shared render_entry, platform,
-ABI, CMake/workflow, source-lock, public docs and integration belong to `/root`.
-Workers must deliver bounded original-algorithm packages with fixed corpus evidence;
-no native/default/host gate is accepted merely from a parser or internal phase.
-Root advances M3 candidate synchronization and original-source boundary confirmation.
-Local MSVC/CMake and the advertised computer-use skill are absent (rechecked);
-use the existing remote Windows gate, and do not claim real GUI acceptance.
-PR #1 currently verified open/unmerged at `011e0656`; update only validated packages.
-Build/process handles: none. Agent handles above are live for this conversation.
+Authorized implementation resumed from `6004ffc4`; planning edits are preserved
+in fork-only `1293b97d`. Root checkout `D:/Folia`, fork/mermaid-development.
+Ten-family delivery candidate a11217c9 is in Windows run 40284749183;
+standalone Release is fully green (118 Flowchart/24 XY/18 Sankey/16 Treemap,
+other existing families/text checks); other configurations still running.
+Contribution checkout entry-contribution is ddb3c05a, exact functional tree
+match to a11217c9; not pushed. Remote PR #1 remains011e0656 open/unmerged.
+Previous 73722185 core failure was metadata Ready? YAML flow scalar; fixed
+in a11217c9 without changing original fixture. Observer-only fix822f922a
+retains existing tolerance and measures painted text, not stale group boxes.
+XY strict original-measured max delta0.00000763; native text gate max1px.
+Artifacts: flat-pipeline-release, treemap-closeout-debug/release under build/mermaid-cpp.
+Next candidate fabe24ad includes Journey5c1fa0d5, Timelinece942965,
+Mindmap parser41c3c95d, ELK labels2df3b0fe/end labels5f622ef0/full flatd7dfd4b3.
+Journey run40284833657 stopped compile for missing number import in test;
+fabe24ad fixes Journey/Timeline fixture imports and replaces same-branch
+run40285513644. New run ID must be retrieved. These packages are not in PR batch.
+Root owns render_entry, platform/ABI, CMake/workflow, source-lock and integration.
 
-### 当前调度状态（后续实施轮次从这里启动）
-
-本次细化计划核对的主线为 fork/mermaid-development，HEAD 6004ffc4；
-规划修改前工作树干净。当前仅 AGENTS.md 与本文件有规划改动，没有启动实现、
-构建或候选应用。下方实施证据保留；有效任务卡在本文件的 Effective execution
-schedule 一节。历史 next 只解释单包上下文，不能替代本表的全局并行调度。
-
-主线已有 Packet、Pie、Flowchart、Sequence、Class、Quadrant、Radar 七族原生入口，
-另十六族未完成原生输出；XY 已有 oracle，不算第八族。Class/Sequence 上批收尾、
-Quadrant/Radar 和已记录 ELK 内部阶段保持 accepted。Flowchart/Class 默认 ELK 仍未通，
-七族入口不等于七族所有默认路径通过。WinUI 候选已构建但真实运行门未过，生产仍为 Rust。
-
-表中 main 指 D:/Folia（基线 6004ffc4）；winui 指
-D:/Folia/build/mermaid-cpp/winui-candidate（记录基线 b011ff85）。
-已有贡献工作树为 D:/Folia/build/mermaid-cpp/entry-contribution，当前本地 011e0656。
-以下 owner/handle 是实施任务登记，当前均未派发；本轮只读规划审阅不占用其所有权。
-实施者派工后必须将实值填回本表，不能保留 unassigned 却宣称正在并行。
-
-| 包 / 阶段 | 状态 | owner / agent handle | checkout / 基线 | 候选或已验证版本 | 证据、阻塞与下一动作 |
+| Queue / stage | Status | Actual owner / handle | Checkout / baseline | Candidate / verification | Next ready work / dependencies |
 | --- | --- | --- | --- | --- | --- |
-| M1-L 默认 ELK | running | /root/elk_layout / active | main / 6004ffc4 | 内部 ordering 05303f77 accepted；完整 renderer 无 | 已记录 run 40247796526；继续消费者需要的预处理、placement、routing、compound 与默认入口，不能重开已接受 order corpus。 |
-| M1-F Flowchart 收口 | running | /root/flowchart_closeout / active | main / 6004ffc4 | 既有 classic/Dagre 子集已接受 | 对 README 既有缺口作一次有限需求定界后完成必需功能；独立于 ELK 的部分立即推进。 |
-| M2-D XY → Sankey → Treemap | running | /root/xy_native / active | main / 6004ffc4 | XY oracle 492a09a1；native 无 | 复用固定 12 成功/3 错误/24 SVG corpus；首派完整 native XY，无需等待 ELK。 |
-| M2-R State → ER → Requirement | ready（可先做家族工作） | unassigned / none | main / 6004ffc4 | 无原生族交付 | 所需默认 ELK 门依赖 M1-L；优先由布局 owner 释放后接手，不能把 parser 单独标为族完成。 |
-| M2-T / M2-C 时间、结构队列 | ready | unassigned / none | main / 6004ffc4 | 无原生族交付 | 空闲 worker 按任务卡领取完整家族；不依赖全局 ELK 完成。 |
-| M2-A / M2-Z 独立复杂依赖 | ready（先固定必要来源边界） | unassigned / none | main / 6004ffc4 | 无原生族交付 | 主 agent 早期核实 Mindmap/Architecture/ZenUML 的所需来源；M1-F 释放后优先实作，不留到所有简单族之后。 |
-| M3 WinUI 候选 | candidate；host 未过 | /root / active | winui / b011ff85 | 旧五族候选已构建 | 已记录 run 40214720270、产物 winui-candidate-app；同步已验证 runtime，再验证对应产物的真实编辑/主题/尺寸/PDF。 |
-| M4 正式切换 | blocked | unassigned / none | 尚未启动 | 无 | 等 M1、M2 全部所需门和 M3 host 门通过；可先只读准备清理清单。 |
-| M5 最终产品验收 | blocked | unassigned / none | 尚未启动 | 无 | 等 M4 最终源码/产物固定；不新增预防性测试工程。 |
+| M1-L default ELK | running | /root/elk_layout / active | main / fabe24ad | Full labelled flat chain d7dfd4b3 committed; 8 original full layout cases pass, native pending | Now elk_compound_ports.* original EXTERNAL_PORT dummy geometry, then cross-group segments/labels/compound; root default adapter pending. |
+| M1-F Flowchart closeout | running | /root/flowchart_closeout / active | main / fabe24ad | SVG labels, Markdown groups and group font semantics through c8a8dd9d; latest native gate pending | Flowchart batch in final gate; owner now Mindmap measured shapes + native CoSE tree radial/spring layout. Parser41c3c95d committed. |
+| M2-D data / M2-T Journey | running | /root/xy_native / active | main / fabe24ad | Journey/Timeline committed in next candidate; native gate pending | Owner now Gantt original date/task/axis path; fixed corpus and dayjs/D3 source dependencies. |
+| M2-R State -> ER -> Requirement | ready | unassigned / none | main | none | Shared layout owner takes these when free; M1-L dependency does not block other M2. |
+| M2-T remaining / M2-C structural families | ready | unassigned / none | main | none | Gantt assigned to xy_native; next Git graph or Block/Kanban/C4; do not wait for all ELK. |
+| M2-A / M2-Z complex families | ready | /root/flowchart_closeout (after actual gate fix) | main | none | Reuse elk-layout-boundary.md source inventory: Mindmap cose-bilkent, Architecture fCoSE, ZenUML 3.49.2 MIT archive/map already verified. Mindmap preparation started; pinned Cytoscape3.34.0 oracle, preserve default CoSE selection. |
+| M3 WinUI candidate | verifying | /root / active | winui / 45cfaa07 | Release app run 40273119399 | Preserving-history merge synchronized verified seven-family runtime. Actual Pie/Sequence preview, save and one-page PDF passed on seven-family artifact. Editing/theme/resize acceptance still incomplete; latest runtime not synced. |
+| M4 production switch | blocked | unassigned / none | none | none | Requires M1/M2 native+default and M3 host gates. Production remains Rust. |
+| M5 product acceptance | blocked | unassigned / none | none | none | Requires M4; no speculative matrix. |
 
-首次实施派工：子 agent A = M1-L，B = M1-F，C = M2-D；主 agent 推进 M3、
-共享文件集成与复杂来源的有限确认。不是只做上一段留下的 XY 或 ELK 单一任务。
-若其中一包已被后续执行者完成/占用，核实后按任务卡补位，不重复开包。
+Live handles: three agents above, remote ten-family40284749183 and next candidate on codex/mermaid-cpp-timeline-flat-layout; no local compiler.
+Real app window 36242516 (cua binding folia) is open on Settings/Theme.
+Artifact: build/mermaid-cpp/winui-45cfaa07-app. Synthetic host-check.md/pdf and
+host-check-page1.png are local ignored evidence. Launch inherited Codex cwd,
+so theme assets lookup fails in WindowsApps; resolve launch context before
+claiming theme gate. Earlier winui-candidate-app is b011ff85, not this candidate.
+Contribution checkout entry-contribution prepared throughddb3c05a (runtimea11217c9 equivalent); not pushed.
+Cherry-pick only validated functional commits, excluding 1293b97d and this file.
+Treemap has 8 successes/2 errors/16 original SVGs and focused native469 asserts passed.
+UI tool twice aborted before dispatch on recovery; theme/resize gate incomplete.
+Journey/Timeline/ELK label packages run separately from ten-family delivery;
+do not delay the accepted PR batch on later candidates. Public PR body draft
+is build/mermaid-cpp/pr1-data-family-body.md; replace FINAL_GATE only after success.
+Exit fixed family and affected checks, then ready queues.
+Default ELK and production Rust replacement remain incomplete.
 
-### 已接受实现证据与当前候选
+### Previous accepted implementation evidence (historical)
 
 Runtime package `05303f77` implements the original ELK flat crossing order:
 PortListSorter, both barycenter port-rank strategies, BarycenterHeuristic and
