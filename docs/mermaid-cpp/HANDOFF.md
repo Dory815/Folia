@@ -2,6 +2,57 @@
 
 ## Active implementation checkpoint - 2026-10-26
 
+### Current execution - 2026-10-26 authorized implementation
+
+Baseline main `6004ffc4`; incoming AGENTS.md/HANDOFF planning edits are preserved.
+Initial dispatch is live: `/root/elk_layout` owns elk-specific sources/tests/oracles;
+`/root/flowchart_closeout` owns flowchart-specific sources/tests/oracles;
+`/root/xy_native` owns XY sources/tests/oracles. Shared render_entry, platform,
+ABI, CMake/workflow, source-lock, public docs and integration belong to `/root`.
+Workers must deliver bounded original-algorithm packages with fixed corpus evidence;
+no native/default/host gate is accepted merely from a parser or internal phase.
+Root advances M3 candidate synchronization and original-source boundary confirmation.
+Local MSVC/CMake and the advertised computer-use skill are absent (rechecked);
+use the existing remote Windows gate, and do not claim real GUI acceptance.
+PR #1 currently verified open/unmerged at `011e0656`; update only validated packages.
+Build/process handles: none. Agent handles above are live for this conversation.
+
+### 当前调度状态（后续实施轮次从这里启动）
+
+本次细化计划核对的主线为 fork/mermaid-development，HEAD 6004ffc4；
+规划修改前工作树干净。当前仅 AGENTS.md 与本文件有规划改动，没有启动实现、
+构建或候选应用。下方实施证据保留；有效任务卡在本文件的 Effective execution
+schedule 一节。历史 next 只解释单包上下文，不能替代本表的全局并行调度。
+
+主线已有 Packet、Pie、Flowchart、Sequence、Class、Quadrant、Radar 七族原生入口，
+另十六族未完成原生输出；XY 已有 oracle，不算第八族。Class/Sequence 上批收尾、
+Quadrant/Radar 和已记录 ELK 内部阶段保持 accepted。Flowchart/Class 默认 ELK 仍未通，
+七族入口不等于七族所有默认路径通过。WinUI 候选已构建但真实运行门未过，生产仍为 Rust。
+
+表中 main 指 D:/Folia（基线 6004ffc4）；winui 指
+D:/Folia/build/mermaid-cpp/winui-candidate（记录基线 b011ff85）。
+已有贡献工作树为 D:/Folia/build/mermaid-cpp/entry-contribution，当前本地 011e0656。
+以下 owner/handle 是实施任务登记，当前均未派发；本轮只读规划审阅不占用其所有权。
+实施者派工后必须将实值填回本表，不能保留 unassigned 却宣称正在并行。
+
+| 包 / 阶段 | 状态 | owner / agent handle | checkout / 基线 | 候选或已验证版本 | 证据、阻塞与下一动作 |
+| --- | --- | --- | --- | --- | --- |
+| M1-L 默认 ELK | running | /root/elk_layout / active | main / 6004ffc4 | 内部 ordering 05303f77 accepted；完整 renderer 无 | 已记录 run 40247796526；继续消费者需要的预处理、placement、routing、compound 与默认入口，不能重开已接受 order corpus。 |
+| M1-F Flowchart 收口 | running | /root/flowchart_closeout / active | main / 6004ffc4 | 既有 classic/Dagre 子集已接受 | 对 README 既有缺口作一次有限需求定界后完成必需功能；独立于 ELK 的部分立即推进。 |
+| M2-D XY → Sankey → Treemap | running | /root/xy_native / active | main / 6004ffc4 | XY oracle 492a09a1；native 无 | 复用固定 12 成功/3 错误/24 SVG corpus；首派完整 native XY，无需等待 ELK。 |
+| M2-R State → ER → Requirement | ready（可先做家族工作） | unassigned / none | main / 6004ffc4 | 无原生族交付 | 所需默认 ELK 门依赖 M1-L；优先由布局 owner 释放后接手，不能把 parser 单独标为族完成。 |
+| M2-T / M2-C 时间、结构队列 | ready | unassigned / none | main / 6004ffc4 | 无原生族交付 | 空闲 worker 按任务卡领取完整家族；不依赖全局 ELK 完成。 |
+| M2-A / M2-Z 独立复杂依赖 | ready（先固定必要来源边界） | unassigned / none | main / 6004ffc4 | 无原生族交付 | 主 agent 早期核实 Mindmap/Architecture/ZenUML 的所需来源；M1-F 释放后优先实作，不留到所有简单族之后。 |
+| M3 WinUI 候选 | candidate；host 未过 | /root / active | winui / b011ff85 | 旧五族候选已构建 | 已记录 run 40214720270、产物 winui-candidate-app；同步已验证 runtime，再验证对应产物的真实编辑/主题/尺寸/PDF。 |
+| M4 正式切换 | blocked | unassigned / none | 尚未启动 | 无 | 等 M1、M2 全部所需门和 M3 host 门通过；可先只读准备清理清单。 |
+| M5 最终产品验收 | blocked | unassigned / none | 尚未启动 | 无 | 等 M4 最终源码/产物固定；不新增预防性测试工程。 |
+
+首次实施派工：子 agent A = M1-L，B = M1-F，C = M2-D；主 agent 推进 M3、
+共享文件集成与复杂来源的有限确认。不是只做上一段留下的 XY 或 ELK 单一任务。
+若其中一包已被后续执行者完成/占用，核实后按任务卡补位，不重复开包。
+
+### 已接受实现证据与当前候选
+
 Runtime package `05303f77` implements the original ELK flat crossing order:
 PortListSorter, both barycenter port-rank strategies, BarycenterHeuristic and
 the repeated layer-sweep controller for adjacent-layer east/west ports with one
@@ -19,9 +70,10 @@ No default ELK renderer or application replacement is claimed.
 Next data package has begun: `492a09a1` captures the finite original XY corpus
 described below. Its 12 successful parser/DB cases, three syntax errors and
 24 browser SVGs pass locally. This is preparation, not native XY implementation.
-Next concrete action is XY parser/DB plus original linear/band scales and
-measured axis/title/legend layout, then SVG/public-entry integration against
-that corpus. The shared-layout queue proceeds to node placement and remaining
+The next action within the data queue is XY parser/DB plus original linear/band
+scales and measured axis/title/legend layout, then SVG/public-entry integration
+against that corpus. This is one parallel package, not the whole session's task.
+The shared-layout queue proceeds to node placement and remaining
 crossing preprocessing; do not reopen accepted order cases without a related
 change or actual failure. Seven native families remain available; sixteen are
 still missing, and M3/production-switch limits remain as recorded below.
@@ -124,155 +176,206 @@ the fixed corpus. The original lexer reserves Horizontal, so that title is
 quoted in the horizontal case. Local headless Edge ran outside the restricted
 sandbox after its named-pipe startup failed inside it; all probe processes ended.
 
-## Execution schedule - 2026-10-26 (baseline facts superseded by active checkpoint)
+## Effective execution schedule - 2026-10-26, mandatory stage task cards
 
-This records the original planning baseline; implementation progress is above.
-The implementation baseline is local `0095233e` (verified runtime `157f54fb`).
-The working tree was clean before this documentation update. Read this plan as
-the current scheduling entry; earlier checkpoints retain their verification
-evidence, but their individual "next" instructions are historical.
+本节是后续实施轮次的有效调度规则，替代早期五族起点及首次派工表。
+仍只有 M1—M5 五个阶段；下面的工作包和角色用于分工，不新增全局验收阶段。
+2026-10-26 本次请求仅细化规划，不授权在本次规划轮次启动实现、构建、发布或依赖切换；
+此限制不适用于后续已获授权的实施轮次。
 
-### Verified position and remaining work
+### 每次新对话必须执行的启动与调度程序
 
-- The native public entry contains five families, not five fully finished
-  replacements: Packet, Pie, Flowchart, Sequence and Class. The remaining 18
-  families have no native render path. Detection/configuration support is not
-  family parsing/rendering support. Keep the existing 23-family scope.
-- Packet/Pie and the completed frontend, configuration, default/dark themes,
-  measurement and Dagre boundaries are accepted foundations. Reopen only the
-  specific boundary affected by a new requirement, change or reproduced failure.
-- Flowchart has measured classic/Dagre shapes, groups, loops and common styled
-  labels. Sequence has its principal message, region, grouping and lifecycle
-  chain. Class has substantial measured Dagre rendering, but its default ELK
-  path still fails. Class SVG-label spacing and typography, and the required
-  remaining Flowchart/Sequence display/configuration features need finite
-  closeout packages; do not promote every upstream option into a requirement.
-- Existing comparisons explicitly initialize supported themes/looks/layouts.
-  They do not establish unconfigured host behavior. Freeze Folia's actual
-  source + light/dark initialization contract and source-config precedence;
-  do not silently force Dagre to conceal an unimplemented required ELK path.
-  Conversely, upstream redux-color/neo defaults do not automatically create
-  a requirement for all upstream themes/looks in Folia.
-- WinUI still loads `folia_mermaid_render` from `folia_svg_normalizer.dll`,
-  where Rust Mermaid renders and usvg normalizes the result. The C++ API is
-  opt-in. Root integrated CI builds libraries/tests, not the MSBuild WinUI shell.
-  No real application replacement or WinUI/GPU/DPI acceptance is established.
-- The recorded verification run `40208084657` was checked live: all four
-  Windows standalone/integrated Debug/Release jobs succeeded. PR
-  https://github.com/water2004/Folia/pull/1 was checked live: open/unmerged,
-  contribution head `17fffb072d0b84eaa6f31e6d726430829e484f81`.
-  No new build, oracle run or CI dispatch was needed for this planning review.
+1. 阅读 AGENTS.md 的 Mermaid 规则、本文件顶部当前工作表及本节任务卡。
+   核对当前分支、HEAD、未提交改动、工作树和记录中的活跃 agent/构建句柄。
+   已验证事实与实际代码优先于历史 next 文本；只核实发生变化的边界。
+2. 先核实已有 worker。活跃者继续使用；旧名字或旧 handle 不能假定仍可用。
+   无法核实的记录标为 stale，检查候选与未提交改动；不覆盖或删除旧成果。
+   无法排除旧写入者时保留原目录，使用隔离候选或推进其他无冲突任务。
+3. 根据当前状态计算 ready 队列。在首次实现修改前，实际调用子 agent 工具
+   派工：有两个独立就绪任务时至少派两个，有三个可用实施槽时默认派三个。
+   不能仅在回复或文档中写 A/B/C。主 agent 同时负责集成和宿主工作。
+4. 当前首轮默认派发：A = M1-L 所需 ELK；B = M1-F Flowchart 收口；
+   C = M2-D 的完整 XY；主 agent = M3 候选/运行门及共享集成。
+   已完成 Class/Sequence 收尾、Quadrant/Radar、ELK 已接受内部阶段不重新派发。
+   若恢复时其中某项已接受或有人运行，立即按该队列的下一就绪任务补位。
+5. 同时最多使用实际可用槽位。各阶段的角色表不是要求五阶段各开三人；
+   M1/M2/M3 共用一套 worker 池。仅有两个槽时优先 ELK 与 XY，
+   主 agent 推进有限 Flowchart 定界及 M3；槽位释放后补派 Flowchart。
+   某共享边界未就绪只阻塞实际依赖它的消费者，不阻塞其他图族。
+6. 少开槽须在当前工作表写明工具/资源/所有权/串行依赖的具体原因。
+   若工具确实不可用则记录限制后继续；不得为凑人数创造泛化审计或测试任务。
+   不因新对话而重新请求已经授权的常规派工与实现权限。
+7. 每收到交付，核对退出条件、集成、保存可审阅提交并更新证据。
+   worker 空闲即派下一 ready 包；不等整组结束，不围着一个 blocker 反复审阅。
+   在需要的既有验证前可积累一包内部小提交，不为每个属性重启完整交付周期。
 
-Current status uses separate native/default/host gates, not a completion percentage:
+主 agent 默认独占本文件、共享 render_entry.*、平台 mermaid_renderer/host 入口、
+native ABI、CMake/MSBuild/workflow、source-lock 与许可证汇总的最终集成。
+worker 编辑其任务登记的家族/算法文件、测试和 oracle；共享接线改动以候选补丁
+交回主 agent。确需转交共享文件时，先登记唯一 owner 并确认前任停止写入。
+同一规则适用于候选工作树；不能靠不同 agent 名字掩盖同文件并发写入。
 
-| Families | Native source-to-SVG | Required/default-path closeout | WinUI C++ acceptance |
-| --- | --- | --- | --- |
-| Packet, Pie | Accepted within recorded boundaries | Reuse baseline; verify host initialization when connected | Pending |
-| Flowchart | Accepted classic/Dagre subset | Finite required syntax/display/configuration list; required layout selection | Pending |
-| Sequence | Accepted principal functional chain | Finite required rich-label/configuration list | Pending |
-| Class | Accepted explicit Dagre subset | Default ELK; SVG-label mode and required styled typography/configuration | Pending |
-| State, ER, Requirement, Quadrant, Radar, XY, Sankey, Treemap, Journey, Timeline, Gantt, Git graph, Block, Kanban, C4, Mindmap, Architecture, ZenUML | No native family render path | Required family behavior and default paths pending | Pending |
+### 派工与交接格式（必须填实值）
 
-Evidence anchors: `third_party/mermaid-cpp/src/render_entry.{ixx,cpp}`,
-`src/platform/text/mermaid_renderer.ixx`,
-`src/app-winui/media/MermaidRenderer.cpp`,
-`src/app-winui/third_party/usvg-normalizer/{Cargo.toml,src/lib.rs}`,
-`build_app.ps1`, `src/app-winui/Folia.vcxproj`, and
-`.github/workflows/mermaid-cpp.yml`. Some older README entry summaries still
-name only Packet/Pie/Flowchart; use the current implementation/matrix above.
+派工模板：
+- 包 ID、阶段与消费者：交付什么项目能力，为谁使用。
+- 当前基线：checkout 路径、HEAD、已接受能力、直接复用的固定 corpus。
+- 功能清单与不做项：限定本包；先前既有要求不能因没有现成样例就删除。
+- 文件所有权：允许编辑的路径；共享接线交付给谁；不得改动的模块。
+- 依赖与接口：已就绪输入、尚缺输入、可独立继续的部分。
+- 退出条件与必要验证：原始行为、native/default/host 哪一门，以及受影响检查。
+- 交付：候选路径/提交、改动文件、已跑/未跑验证与证据、实际阻塞、下一包。
 
-### Milestones: start M1, M2 and M3 in parallel; then M4 and M5
+返回模板：
+- completed candidate / partial / blocked；不能用 parser 完成代替图族完成。
+- 精确基线与候选 HEAD/未提交文件；公共入口接线是否已经集成。
+- 通过的输入/检查与对应证据；尚缺验证及真实失败。
+- 使用中的 agent/build/process 句柄；没有时明确写 none。
+- 未解决项的范围与影响；不得把未经运行的结论写为 verified。
 
-| Milestone | Deliverable and permitted scope | Exit condition / next action |
+状态只用 ready / running / candidate / verifying / accepted / blocked / stale。
+accepted 必须绑定本包退出条件与确切验证版本；算法 accepted 不等于默认渲染 accepted。
+每个阶段分别记录 native、default、host 门。blocked 必须说明解锁动作，
+stale 是未知状态而非失败/成功。当前表中的 owner/句柄属于本轮，不能沿用旧会话假名。
+在任务交接、阶段通过或上下文压缩前原位更新顶部表及实际运行句柄、候选路径、
+未提交文件、未完成检查和每条队列的下一项；不得新增 checkpoint 将当前表或有效任务卡
+下沉为历史。历史实现记录仅保留证据，不再指定调度。
+
+### M1 任务卡：默认布局与既有图族功能收口
+
+入口：复用七族实现、已接受 Class/Sequence 收尾、现有 UTF-8/light-dark host 契约，
+以及已通过的 ELK cycle、flat layering、long edges、有限 flat crossing ordering。
+主 agent 先固定 Flowchart/Class 默认消费者输入与有限 Flowchart 必需缺口清单。
+host 现有每请求 session、default/dark 与 classic 初始化保持既定语义；
+不能通过强制 Dagre、改用户源文本或新增回退来绕开所需默认 ELK。
+
+| 包/子 agent 角色 | 具体交付与允许编辑范围 | 依赖、退出和自动下一项 |
 | --- | --- | --- |
-| M1: Existing families and required default paths | Freeze the host initialization contract; implement the required native ELK algorithm/adapter boundary; close the finite required Flowchart/Sequence/Class feature lists. Keep accepted Packet/Pie behavior. | All five families meet their recorded Folia requirements through the public entry, including required default configuration without editing user source to select a workaround. Close each independent package as soon as it passes; proceed to M2 packages without waiting for unrelated polish. |
-| M2: Remaining 18 families | Deliver the six family groups below. Each family owner takes parsing, configuration, real measurement, original layout, SVG and public-entry integration together. | Each family passes its agreed native functional gate independently. All 23 retained families and their required configuration/default paths are accounted for before M4. |
-| M3: Early WinUI integration candidate | In an isolated integration checkout, connect one C++ backend through the existing queue/cache/completion mechanisms and complete CMake/MSBuild/deployment wiring. Resolve the SVG normalization boundary. Start with currently supported representative inputs. | A real WinUI candidate builds/runs and demonstrates editing/preview, theme changes, dimensions and PDF through C++. Unsupported families remain explicit errors in this candidate. This is integration evidence, not a production switch; continue adding family coverage through the same interface. |
-| M4: Formal dependency switch | After M1/M2/M3 pass, promote the single C++ application path and remove Mermaid-specific Rust crate usage, exports, tests and packaging references; update the affected lockfile/notices/build documentation. | Actual application artifacts use C++ for every required Mermaid family. Preserve ordinary SVG usvg normalization and unrelated Rust/Math code. No JS runtime, Rust fallback or permanent old/new switch. Then perform M5. |
-| M5: Product acceptance and bounded repair | Validate the final artifact on representative real editor/PDF paths and the user's normal display scaling; repair reproduced common-use failures caused by this migration. | All declared functional/application gates and affected existing checks pass; record exact evidence and residual nonblocking limits. Deliver reviewed small commits and update the existing PR under the established workflow; leave merging under user control. No speculative hardening phase is required. |
+| M1-L：共享布局 owner | 在 third_party/mermaid-cpp/src/elk_*、对应 tests/fixtures/tools 内完成消费者需要的 crossing 预处理、placement、routing、compound/port 处理，给出 Flowchart/Class 接线补丁。保留原算法，不移植 ELK 全产品。 | 内部阶段可分小提交，默认布局包以公共入口的所需默认 ELK 可用退出。已接受 order 等只因相关变化或失败重开。通过后转 State → ER → Requirement。 |
+| M1-F：Flowchart owner | 在 flowchart* 家族实现、对应测试/oracle 中一次覆盖已确定的必要语法、标签和配置缺口。现有候选清单是组标题字体/富文本、非 HTML 标签模式、所需 Markdown/config、shape metadata、edge ids/interpolation；先按已有需求证据定界，不自动全纳入。 | 不依赖 ELK 的家族能力先验收；布局接线交主 agent。通过后优先接尚未有人负责的 Mindmap/Architecture 或 ZenUML，不能回头寻找已关闭 Class/Sequence 的新小样式任务。 |
+| 消费者集成（主 agent；容量释放后可委派） | 接上实际测量、图数据与布局输出，处理接入暴露的真实 Class/Flowchart 回归，维护中央入口与主题/config 优先级。 | 只检查本次连接所影响的消费者，不能开新一轮全前端、所有字体/配置审计。 |
 
-M1 is composed of independent packages, not a reason to keep all agents in Class:
+M1 主 agent 还须：登记所需 ELK processors 与消费者的对应关系、集成 worker 输出、
+统一保存验证版本；只读来源确认完成后尽早安排独立复杂算法，不让未知依赖积压。
+Class SVG-label/font 与 Sequence alignment/category-weight/literal-markup 已验收，
+它们不是 M1 新工作包；其他已记录的既有要求仍须在清单中被明确处置，不能静默删掉。
 
-- **Shared layout/default package:** implement only the required ELK call path
-  and options from the pinned original source, retaining family semantics.
-  Identify consumers such as Class and State before fixing the shared boundary;
-  do not attempt the entire ELK product/API or substitute Dagre.
-- **Existing-family closeout packages:** group Class SVG-label spacing,
-  required font styles and configuration together. Group the required remaining
-  Flowchart syntax/label/configuration features together; likewise Sequence
-  rich labels/alignment/font configuration. At package start, classify the
-  documented gaps as required, known nonblocking, or outside the Folia contract,
-  with a brief reason. Lack of a current sample alone cannot remove a prior
-  requirement. Do not add an unlimited list of upstream features at acceptance.
-- The four already captured Class SVG-label observations in
-  `build/mermaid-cpp/class-svg-label-next/original.json` are reusable inputs to
-  the Class package, not the next global milestone. Existing completed shapes,
-  notes, namespaces, paints, wrapping and interfaces stay accepted.
+必要验证：固定代表性消费者经公共入口在 light/dark 下得到原算法布局与有限 SVG，
+尺寸/文字/连线符合既有比较口径；所需默认调用不需要人为指定 Dagre，
+原有显式 Dagre 输入不回归。运行本包代表成功、必要常见错误和受影响既有检查。
+退出：M1-L、M1-F 和默认消费者门均有证据；若仅算法包通过，M1 仍为进行中。
+下一阶段：各包独立移交 M2 ready 队列；M2/M3 从一开始就可并行，不等待 M1 全完。
 
-M2 work groups cover all 18 missing families (3 + 5 + 4 + 3 + 2 + 1):
+### M2 任务卡：剩余十六图族逐族完成
 
-| Work group | Families | Shared services / dependencies to retain |
+入口：23 图族范围保留；现有七族不重做。原计划十八族中 Quadrant/Radar 已接受。
+每个族 owner 负责 parser/DB → 必需配置 → 所需测量 → 原始布局 → SVG → 公共入口，
+中央接线由主 agent 集成。原算法只用 text anchor、无需测量的地方保留原语义；
+需要文字尺寸的布局不得用字数估算。只交 oracle/parser 记为 partial，不能关闭族任务。
+
+家族 owner 可以编辑 third_party/mermaid-cpp/src/<family>*、对应
+tests/mermaid_cpp、fixtures、tools/mermaid-cpp/<family>-* 与 comparator。
+确需共享新算法时，先把对应文件列入任务的唯一 owner 清单；不得扩展 Math、
+普通 SVG 重构、浏览器宿主回调或通用插件系统。
+
+下表是起始族级任务与调度顺序。列出的典型能力用于冻结该族的有限范围，
+不构成上游全部语法/配置承诺；旧项目要求不得因表中未逐条列出而消失。
+
+| 队列 / 子 agent 任务 | 族级交付重点 | 依赖与下一派单 |
 | --- | --- | --- |
-| Relational diagrams | State, ER, Requirement | Unified graph, measured labels, markers and the required Dagre/ELK routes; do not assume all defaults are Dagre. |
-| Data diagrams | Quadrant, Radar, XY, Sankey, Treemap | Theme/text/SVG services; preserve XY scale/axis behavior, d3-sankey and d3-hierarchy algorithms separately. |
-| Time and narrative diagrams | Journey, Timeline, Gantt, Git graph | Reuse measurement/drawing services; retain each family's placement, and Gantt's required date/scheduling behavior. |
-| Structures and containers | Block, Kanban, C4 | Reuse measured boxes and drawing services without replacing the families' own arrangements with a generic graph layout. |
-| Mindmap and architecture | Mindmap, Architecture | Account for Mindmap's cose-bilkent and Architecture's Cytoscape/fCoSE routes; shared infrastructure does not make these the same algorithm. |
-| External integration | ZenUML | The official package wraps @zenuml/core. Establish the original source, license/provenance and required native boundary early; it is not an already available intrinsic parser. |
+| M2-R：State、ER、Requirement | State 的状态/转换/复合结构及所需伪状态；ER 的实体属性/key/基数关系；Requirement 的需求/元素字段及关系。均包含所需默认布局和公共 SVG 入口。 | 复用所需 Dagre/ELK 与测量服务；M1-L owner 释放后 State → ER → Requirement。尚缺 compound 仅阻塞其实际消费者，不阻塞整个 M2。 |
+| M2-D：XY、Sankey、Treemap | XY 直接使用已有 12 成功/3 错误/24 SVG corpus，实现 bar/line、linear/band scales、横纵轴、title/axis/legend 实测与既定配置。Sankey 保留流量、节点/连线/标签及 d3-sankey；Treemap 保留权重层级矩形和 d3-hierarchy。 | 立即派 native XY；无需再造同一 oracle。通过即 Sankey → Treemap，完全不等待 ELK。保留 XY 已记录的数据标签字号策略，不能把它改成通用文字测量回退。 |
+| M2-T：Journey、Timeline、Gantt、Git graph | 各族任务/章节/事件/轨道及文字布局；Gantt 所需日期、时长、依赖和排程；Git graph 所需分支、提交、合并及方向。一次交付各族整条输出链。 | 下一空闲 worker 依次领取；Gantt 日期算法受阻时可先推进 Git graph。不得抽象为通用日历或项目管理引擎。 |
+| M2-C：Block、Kanban、C4 | Block 列/跨度/嵌套/连接与原网格；Kanban 列卡及必要元数据；C4 保留项目已有的类型清单、边界与关系布局，不能只实现 Context 就声称整个族完成。 | 独立 worker 按 Block → Kanban → C4；保留各族专有布局，无需等待 ELK，不统一改用 Dagre。 |
+| M2-A：Mindmap、Architecture | 层级/形状/标签及 cose-bilkent；services/groups/junctions、端点/边/所需图形及 Cytoscape/fCoSE 约束布局。 | M1-F 释放后优先领取；先冻结来源和实际算法边界，再实现。只提取确需共享的部分，两算法不能互相代替。 |
+| M2-Z：ZenUML | 从官方 @zenuml/core 集成确定所需源语法、来源与许可，完成 native parser/layout/SVG/entry；保留已有图族要求。 | 主 agent 在早期完成有限来源确认，随后分配空闲 owner。真实来源问题记阻塞，不静默删族、不引入 JS runtime，不拖到其他族全部结束才调查。 |
 
-These groups are scheduling queues, not six giant commits or barriers. A finished
-family is integrated and accepted immediately; its siblings need not be finished.
-Investigate source availability and required boundaries for ELK, Mindmap,
-Architecture and ZenUML at the outset, then start their implementation as slots
-open. Do not postpone every independent difficult dependency until the last
-simple family, and do not turn this bounded discovery into an all-dependency audit.
+M2 并发角色：至少一个完整家族 owner；有空槽时增加一个独立家族/算法 owner，
+另一槽可继续 M1。最终只剩 M2 时，默认三名 worker 领取不同 ready 队列。
+已经运行的家族不另派第二名 owner；必要 oracle/比较工作可在文件分离后委派，
+但不能让所有 worker 只做调查而没有人负责完整渲染交付。
 
-### Agent ownership and immediate dispatch
+主 agent：按各族固定需求登记 native/default 两门；决定共享接口小变更、集成入口、
+运行受影响的原有检查并保存小提交。发现共用阻塞时维护实际消费者依赖，不增设全局等待。
+每族退出：约定输入能经 public entry 输出 SVG/尺寸/错误，所需默认路径及两主题可用，
+原始行为对照和受影响检查通过。可先接入显式配置子集，但必须保留 default 未通过状态。
+M2 总退出：全部 23 族的所需 native/default 门通过；实际 WinUI 门由 M3/M5记录。
+下一任务：同队列下一族或全局最高优先级 ready 包；无需等待整组齐备才交付已完成族。
 
-Use one coordinator plus up to three implementation agents. This review's
-read-only agents have finished; no implementation agent/build was started.
+### M3 任务卡：更新现有 WinUI 候选并完成真实运行门
 
-| Owner | First assignment | Subsequent dispatch |
+入口：已有候选 build/mermaid-cpp/winui-candidate，记录版本 b011ff85，
+旧五族 Release MSBuild 已成功；主线现有七族。复用现成 ABI、队列、缓存、
+完成回调及 usvg 接线，不重新从零设计宿主。先定向核对候选与已验证主线差异。
+
+| 子 agent 角色 | 允许范围与独立交付 | 依赖/退出 |
 | --- | --- | --- |
-| Coordinator / application owner | Freeze input encoding, light/dark/session defaults, SVG + dimensions/error output, normalization ownership and request lifetime. Own M3 and integration of central files. Record concrete source/provenance blockers for the independent algorithms early. | Integrate accepted family commits, manage M4/M5, maintain this single checkpoint and status matrix. |
-| Agent A | Required native ELK/default layout package, starting from Class and checking State's consumer contract. | Required relational families or the next independent algorithm package. |
-| Agent B | Finite Class display/configuration closeout, then the required Flowchart/Sequence closeout packages. | Start an outstanding complex family package early; take time/container work when dependencies and slots permit. |
-| Agent C | A complete data family through public-entry SVG, then the rest of that independent group as appropriate. | Take other ready family groups; do not wait for Class/ELK if the family does not depend on them. |
+| M3-B：候选/构建 owner | 在登记的候选 checkout 更新已验证 runtime，处理确实受影响的 MermaidRenderer、build_app、vcxproj 和候选 CI wiring；不动主线生产依赖。 | 更新后构建对应版本，给出源码 HEAD、产物路径/校验与构建证据。旧五族构建不能证明新版本。 |
+| M3-V：宿主验证 owner | 在 ignored evidence 路径准备有限样例、检查产物依赖、核实当前可用 UI 操作方法；只读候选源码，不与 M3-B 抢写。 | 准备可与构建并行；实际运行必须使用最终指定产物。窗口只有一个操作者。 |
+| 主 agent | 选择已验证提交、集成跨队列入口变化、协调 UI 操作与最终证据；其他槽忙于 M1/M2 时可承担 M3-B/V 工作。 | 需要两项独立候选任务且有槽时派两人；不得为了填满 M3 而中断正在有效推进的 M1/M2。 |
 
-This is the next implementation dispatch, replacing "do only Class SVG-label
-spacing, then choose another small detail." Agents work on disjoint family or
-algorithm files. The coordinator owns final changes to shared render dispatch,
-platform measurement entry, build/workflow wiring, source-lock/notices and this
-handoff; workers supply required integration changes for review rather than
-concurrently editing those central files. Share new primitives only when a
-concrete family needs them; no generic plugin framework is part of the plan.
+必要验证：实际启动候选；代表性已支持图族显示、编辑后刷新、亮暗切换、
+尺寸布局、PDF、常见无效源码修正后恢复。当前 Flowchart/Class 显式 Dagre
+样例只证明其子集；不能据此勾选默认 ELK 门。保持无 Rust Mermaid fallback。
+状态分开记录：旧版本 built、新版本 built、real host accepted。
 
-### Exit and persistence rules
+先核实当前窗口工具/技能可用性；历史技能文件缺失不是永久阻塞。
+若当前确实不能操作窗口，登记确切产物和有限操作清单，请用户协助运行门；
+这是运行验收依赖，不是再次申请已获授权的实现权限。等待时继续其他 ready 队列。
+不擅自安装系统依赖、不扩成字体/显示器/DPI 组合测试。
+退出：对应候选已构建且上述宿主路径有真实证据。只编译成功仍不通过 M3。
+下一步：继续同步随后接受的必要 runtime；M1/M2/M3 全部通过后才进入 M4。
 
-- A functional package can contain several small, reviewable commits. Parser,
-  layout and styling commits are internal progress, not separate milestones
-  requiring a fresh global plan/PR narrative. A family package exits only after
-  source-to-SVG integration; large shared algorithms may have their own bounded
-  package and consumer gate.
-- Before implementation, record this package's required features, representative
-  successful inputs, necessary common errors, affected regression checks and
-  next package here. Keep the list fixed unless new project evidence changes it.
-- Validate against the pinned official behavior for that scope, native tests and
-  actual measured SVG. Retain required existing CI checks; do not add a new broad
-  matrix, rerun passed stages just for handoff, or widen geometric tolerances to
-  conceal failures. Share one final verified package head where appropriate,
-  rather than making each visual property an independent full delivery cycle.
-- Mark native entry, required default paths and actual WinUI acceptance
-  separately. Existing library CI is not a substitute for MSBuild/application
-  evidence. The currently missing local MSVC/CMake toolchain is an execution
-  constraint: use available Windows build infrastructure and record any real
-  device-validation blocker explicitly instead of claiming it was tested.
-- Stop expanding a package when its exit conditions pass, save its reviewable
-  commits and advance. Fix actual blocking regressions; record known low-frequency
-  nonblocking issues briefly for later. No invented completion percentage or
-  test-count milestone, no removal of required families, no unrelated refactor.
-- Keep the existing contribution/merge controls. This planning pass only changes
-  this document; it does not commit, push, modify PR metadata or start implementation.
+### M4 任务卡：正式切换并清理 Mermaid 专属旧依赖
+
+入口：M1 默认/所需功能、M2 全 23 族 native/default、M3 真实宿主门均有证据。
+清理边界可提前只读准备；不能在门未通过时宣布正式替换或删除生产所需依赖。
+
+| 子 agent 角色 | 独占交付范围 | 验收点 |
+| --- | --- | --- |
+| M4-R：Rust Mermaid 清理 owner | usvg-normalizer 下 Cargo.toml/lock、lib.rs、对应头文件与专属测试；只删除 mermaid-rs-renderer 和 Mermaid 专属导出/引用。 | 普通 SVG/usvg 接口保留，声明与实现一致，不顺带移除其他 Rust 能力。 |
+| M4-D：资料/依赖 owner | 受影响的许可证生成输入、notices、公共构建说明；只读核查部署清单并向主 agent 报告工程修改建议。 | 文档和许可证对应最终依赖，无内部派工、fork 指南或聊天措辞混入上游材料。 |
+| 主 agent：切换/集成 owner | 将已接受候选提升到正式单一 C++ 路径，修改中央 ABI/host、CMake/MSBuild、应用及打包接线。 | ABI 稳定；无运行时新旧选择开关、JS runtime 或 Rust Mermaid fallback。 |
+
+M4-R 与 M4-D 的准备可并行；资料最终生成须等待实际依赖改动落定，
+主 agent 在统一版本上构建，不能并发改同一 lock/工程文件。
+必要验证：最终实际产物走 C++ ABI；复用约定的 23 族输入经该边界通过，
+普通 SVG 规范化仍可用；源码、锁与打包无旧 Mermaid 调用。执行受影响既有检查
+及实际 MSBuild，不建立第二套同义测试矩阵。必要发行资料保持原工作流。
+退出：正式源码、依赖与应用产物一致。目标是移除 Rust Mermaid，不是移除所有 Rust。
+下一步：锁定候选/产物版本进入 M5；不得自动合并上游 PR。
+
+### M5 任务卡：最终应用验收、有限修复和交付
+
+入口：M4 最终源码/产物版本和通过检查明确。复用已接受族与算法证据，
+只重验最终产物及切换影响的实际路径；开始前固定有限验收清单。
+
+| 子 agent 角色 | 负责范围 | 验收点 |
+| --- | --- | --- |
+| M5-U：编辑器运行 owner | 唯一 UI 操作者，在用户正常显示缩放下打开代表性图文、编辑/恢复、预览、切换主题并检查布局；产物放 ignored 目录。 | 记录实际运行版本、输入、动作与结果，不将控制台 SVG 代替窗口验收。 |
+| M5-P：PDF/产物审阅 owner | 准备预期结果；接收 M5-U 导出文件后检查尺寸、文字、裁切和主题，并只读核对版本及最终交付范围。 | 导出前可做准备与产物核查；导出后独立检查。不得同时操作同一应用窗口。 |
+| 修复 owner（有真实失败才派） | 交给对应家族/宿主 owner，限定造成问题的文件；主 agent 继续持有共享集成文件。 | 修复复现缺陷并运行必要受影响检查，不借问题重开全部已通过阶段。 |
+
+主 agent 判定发现是否阻塞当前项目功能。必须修复已复现的功能失败；
+低频非阻塞问题简短记录，项目范围外问题不扩成重构任务。
+必要验证：所有已声明 native/default/host 门、最终编辑器/PDF 路径通过；
+相关修复后的必要检查通过。未变化的字体/算法/图族不重复做宽泛验证。
+退出：无当前功能阻塞，证据对应最终产物，剩余非阻塞限制清楚。
+完成后保存可审阅提交，按既定贡献流程更新已有 PR，保留用户合并控制。
+只有实际回归或新的明确项目需求才再开后续包，不主动启动无界加固。
+
+### 停止与恢复检查表
+
+交接前必须把顶部当前表更新到真实状态，并记录：
+- 当前分支/HEAD、未提交文件；每个 worker 的 task ID/实时状态和文件所有权。
+- 每个候选 checkout、候选或已验证 HEAD、固定输入位置、通过/未跑/失败的验证。
+- 活跃构建/浏览器/应用句柄及谁负责后续处理；不得仍在运行却写 all stopped。
+- 每条队列的下一 ready 包、具体阻塞与解锁动作；不只写一句“继续 XY”。
+- 该轮使用的并发槽数及不足原因；已完成的能力保持关闭。
+
+恢复只继承这些事实；重新核实运行句柄并按当前 ready 队列调度。
+2026-10-26 本次计划细化仅更新 AGENTS.md 与此执行资料，未创建实现候选、
+运行测试/构建或提交推送；此限制不适用于后续已获授权的实施轮次。
 
 ## Historical implementation checkpoint - 2026-10-25, Class paints and lollipop interfaces verified
 
