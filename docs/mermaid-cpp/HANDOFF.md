@@ -2,6 +2,41 @@
 
 ## Active implementation checkpoint - 2026-10-26
 
+Runtime package `05303f77` implements the original ELK flat crossing order:
+PortListSorter, both barycenter port-rank strategies, BarycenterHeuristic and
+the repeated layer-sweep controller for adjacent-layer east/west ports with one
+edge per port. It preserves seeded ordering, long-edge dummies and fixed port
+positions. Shared-port hyperedges, in-layer edges and north/south/compound
+constraints require their original processors and are explicitly rejected.
+The fixed ten-case worker corpus checks exact node/port orders and crossing
+counts, including different seeds; native tests also check repeatability and
+rejection without mutation. All four standalone/integrated Debug/Release jobs
+passed in https://github.com/zhao0349/Folia/actions/runs/40247796526, including
+FoliaTests, FoliaWindowsEditorTests, all three Mermaid suites and the existing
+browser/text comparisons. This package has met its exit condition.
+No default ELK renderer or application replacement is claimed.
+
+Next data package has begun: `492a09a1` captures the finite original XY corpus
+described below. Its 12 successful parser/DB cases, three syntax errors and
+24 browser SVGs pass locally. This is preparation, not native XY implementation.
+Next concrete action is XY parser/DB plus original linear/band scales and
+measured axis/title/legend layout, then SVG/public-entry integration against
+that corpus. The shared-layout queue proceeds to node placement and remaining
+crossing preprocessing; do not reopen accepted order cases without a related
+change or actual failure. Seven native families remain available; sixteen are
+still missing, and M3/production-switch limits remain as recorded below.
+
+Contribution equivalents `de57c8c3` and `011e0656` were delivered from
+`build/mermaid-cpp/entry-contribution`; runtime/tests/public docs match and
+AGENTS.md has no diff against base `508423f2`. PR
+https://github.com/water2004/Folia/pull/1 title/body and remote head
+`011e0656d0fcf13511aa9d583f23b06cc0692b83` were verified updated, open and
+unmerged. Delivery-triggered reruns are separate from the completed runtime
+gate. No local build/browser process or agent is running. XY evidence lives
+in `build/mermaid-cpp/xy-browser/original.json`.
+
+### Previous seven-family delivery checkpoint (historical)
+
 Authorized execution continues under the schedule below. The incoming plan is
 preserved in fd37c879. Class/Sequence closeout, Quadrant/Radar public entries,
 UTF-8 host ABI and the first three ELK phases are committed in small packages.
@@ -70,12 +105,24 @@ title/axis/legend bounds, linear ticks and band scales; it cannot reuse the
 Quadrant/Radar no-measurement layout. Use the existing native measurement seam.
 Deliver bar/line plots, numeric/category axes, titles/accessibility, existing
 orientation/canvas/axis/theme configuration and public source-to-SVG entry.
-First capture a finite representative source/browser corpus, then port the
-original scale/layout dependencies and compare native output. Exit on that
+The finite corpus is now captured by `tools/mermaid-cpp/xy-{cases,oracle,
+browser-probe}.mjs`: 12 parser/DB successes, three common syntax failures and
+24 default/dark browser SVG observations in `build/mermaid-cpp/xy-browser`.
+Pinned source hashes and release sourcemap/source equivalence were checked.
+The native family is still unimplemented; these observations are prerequisites,
+not native acceptance. Next port the original scale/layout dependencies and
+connect the measurement seam, then compare native output. Exit on that
 functional corpus and affected checks; next data family is Sankey. Do not
 implement DOM callbacks or expand into a general charting API. Renderer data
-labels use an upstream-specific fit policy; inspect and classify that option
-before selecting the corpus rather than adding an invented width fallback.
+labels use an upstream-specific fit policy: retain its explicit 0.7-per-character
+font-size reduction formula for showDataLabel/showDataLabelOutsideBar as option
+behavior (both orientations are in the corpus). Do not reuse it as a text-width
+fallback for title/axis/legend layout, which requires actual measurements. Named
+series/legend, point labels, numeric/category axes, automatic ranges, negatives,
+category truncation, canvas/axis/theme config and Unicode/accessibility are in
+the fixed corpus. The original lexer reserves Horizontal, so that title is
+quoted in the horizontal case. Local headless Edge ran outside the restricted
+sandbox after its named-pipe startup failed inside it; all probe processes ended.
 
 ## Execution schedule - 2026-10-26 (baseline facts superseded by active checkpoint)
 
