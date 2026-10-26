@@ -15,15 +15,25 @@ Fork-only scheduling commits1293b97d/92efef54 are excluded from contribution.
 
 | Queue / stage | Status | Actual owner / handle | Candidate / verification | Next ready work / dependencies |
 | --- | --- | --- | --- | --- |
-| M1-L default ELK | running | /root/elk_layout | RIGHT compound native passed in40290724381; same-direction four-way a35784f6 in c3 gate. NS preprocessing6e4a7e4c and unified Forster/order f0427bf8 original fixed cases pass, native pending40292810934. | Owner NS placement/routing then mixed directions; root public adapter corpus7a5d9b36 (6 cases/12 SVG) captured, adapter not connected. |
+| M1-L default ELK | running | /root/elk_layout | RIGHT compound native passed in40290724381; same-direction four-way a35784f6 in c3 gate. NS preprocessing6e4a7e4c and unified Forster/order f0427bf8 original fixed cases pass, native pending40292810934. | NS placement66a74b75 committed. Actual ELK import forces root direction on INCLUDE_CHILDREN, so arbitrary mixed direction is NOT a default-adapter dependency. Group options/inheritance4829f114 and oracle correction6ea3b6dc: original invalid elk.spacing.baseValue corrected to spacing.baseValue. Matching5bb Release with newfixture128asserts PASS. Owner now flowchart_elk.* scene adapter; actual default NODES_AND_EDGES model-order processor missing, implementing for fixed6cases; root paint/entry/platform. Fixed6cases/12SVG7a5d9b36 only; no default rendering claim. |
 | M1-F / M2-A Mindmap | accepted bounded default CoSE | /root | 2e367287 dual measurement gate: matching c3 Release same-box4 layout/routes/viewports and real DirectWrite4 local shapes/paint/connectivity/enclosure ALL PASS. Original5 CoSE native previously passed. | Explicit ELK awaits shared adapter. No further CoSE polishing without new regression. |
-| M2-T data/time / M2-C Block/Kanban/C4 | running | /root/xy_native | Matching a546 Release Journey12/Timeline12/Gantt16/Git16 SVG ALL PASS. Block default textColor fixc3 native passed; SVG grid label y -33.199 vs -36 fails. Kanban missing theme darkMode fixed e979d2cf, awaiting gate. | Owner fixes actual Block label offset before resuming C4 parser/SVG candidate. C4 original8success/2error and16SVG captured; candidate unvalidated/uncommitted. |
-| M2-R State -> ER -> Requirement | ready | unassigned | none | Shared layout owner takes these when free; do not block other queues. |
-| M2-Z / Architecture | running | /root/flowchart_closeout | Parser0bf85675/constraints9d524a1b committed. Prior fCoSE intermediate snapshots were EMPTY because hook targeted unused src classes. Correct actual bundle hook08f47034 now records2 passes and10 movement snapshots each, original6graphs pass; native pending. | Owner fCoSE spring/compound layout then renderer/ZenUML. New fcose_layout files NOT yet frozen. Do not treat ef8/e99 intermediate checks as accepted. Mindmap evidence is independent and unaffected. |
+| M2-T data/time / M2-C Block/Kanban/C4 | running | /root/xy_native | Matching a546 Release Journey12/Timeline12/Gantt16/Git16 SVG ALL PASS. Block default textColor fixc3 native passed; SVG grid label y -33.199 vs -36 fails. Kanban missing theme darkMode fixed e979d2cf, awaiting gate. | Block615e50d0 actual text-node Range and original alpha override: matching5bb Release16 SVG PASS, no reprojection limit remains. C4 public5bb0d1b5 gate40294192393 standalone native core/platform pass except obsolete options fixture. Matching c4-stage-release: Block16 PASS; Kanban wrapped label width158.3125 vs162.765625 FAIL; C4 context label y270.2048 vs271.9462 FAIL. Owner pauses State to fix Kanban then C4 without widening tolerances. |
+| M2-R State -> ER -> Requirement | candidate paused for actual data-family failures | /root/xy_native | State fixed8success/2error and16originalSVG; new state files and ignored state-platform.patch not yet frozen/compiled | First classic Dagre package basic/aliases/labels/LR/composite/nested/style/config. Notes/concurrency/neo remain later requirements, not removed. Shared patch only. |
+| M2-Z / Architecture | running | /root/flowchart_closeout | Parser0bf85675/constraints9d524a1b committed. Prior fCoSE intermediate snapshots were EMPTY because hook targeted unused src classes. Correct actual bundle hook08f47034 now records2 passes and10 movement snapshots each, original6graphs pass; native pending. | fCoSE compound/two-pass61b7d08a actual native standalone D/R passed (other NS failure remains). Owner Architecture browser measurements/SVG: original12SVG captured, separate cy Helvetica label bounds from SVG theme-font measurement; no constant per-case shift. Then ZenUML. |
 | M3 WinUI candidate | host partial | /root | e0540747 build40285910373 SUCCESS. XY preview/save/theme/maximize/PDF observed. Sankey alpha fix7c904ab9 matching c3 native18SVG PASS; actual host serialization reprojection labels visible. | New compiled WinUI host check remains pending; production switch gated. |
 | M4 production switch / M5 acceptance | blocked on requirements | unassigned | Production remains Rust | Requires native/default families and actual host acceptance. |
 
-Current main functional HEAD f0427bf8. New Windows gate40292810934 on
+Current main functional HEAD 6ea3b6dc. Contribution staging HEAD2058bf4c
+contains9d99742c plus effective spacing oracle correction6ea, excludes C4 and
+fork guides. NOT pushed to PR yet; validation branch reviewed-family-gate
+run40295107778 active. Previous source-equivalent base3fe41864 matched9d99742c.
+Closeout gate40293971316 at9d99742c includes Block alpha/text observation and
+NS Forster iterator fix. C4 gate40294192393 at5bb0d1b5 now running.
+Earlier f0427bf8 gate40292810934 standalone D/R failed only NS Forster fixed-north
+7asserts, fixed9d99742c. Real fCoSE constraints/movement passed; compound/two-pass
+61b7d08a native also passed standalone D/R in40293398588, whose only failures
+were the same old NS assertions. No empty snapshot acceptance remains.
+ New Windows gate40292810934 on
 codex/mermaid-cpp-north-south-gate includes Kanban fallback, real fCoSE snapshots,
 NS preprocess/order. Previous gate40291187786 at c3d98c03 standalone D/R failed
 only Kanban configuration in core and platform; integrated jobs still running
@@ -56,6 +66,17 @@ raw and normalized candidate both show labels. This host proof reprojects the
 serialization fix; it is not a newly compiled WinUI binary. Source fix7c904ab9
 now also passes matching native18 SVG comparisons. Real native/usvg retain glyphs.
 No complete M3 or full editing acceptance claim.
+
+Root uncommitted adapter candidates: third_party/mermaid-cpp/src/flowchart_elk_paint.inc
+(rounded path and ordinary node clipping), flowchart_svg.cpp/render_entry.cpp
+now wired to candidate ELK scene; tests/platform/mermaid_elk_flowchart.cpp
+(same6cases) and CMake/workflow wired but NOT committed/compiled. Must wait
+for owner real default model-order/scene before gate; do not publish as available.
+Architecture measurement seam applied to fcose_architecture.* but uncommitted,
+awaiting owner full SVG package; new architecture_measurement/icons/probe/test
+are owned by flowchart_closeout. README has uncommitted phase wording update.
+No local compiler/build process. Agent Architecture/State candidates remain
+uncommitted; preserve ownership. All three agents active.
 
 Next root actions: finish integrating bounded frozen candidates, fix actual new
 CI failures through their owners, update each validated public batch via clean
