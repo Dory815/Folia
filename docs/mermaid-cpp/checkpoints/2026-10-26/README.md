@@ -1,10 +1,10 @@
 # Stopped native Mermaid migration checkpoint — 2026-10-26
 
-The user requested stopping implementation and saving all current work to PR #1.
+The user requested stopping implementation and saving all current work in a new PR targeting the source branch of upstream PR #1.
 This commit preserves source and tests; it does **not** claim full Mermaid SVG acceptance.
 
 The PR branch had 22 newer commits beyond the local starting snapshot. The checkpoint
-keeps that branch history and its active source intact. `canonical.patch` captures all
+keeps that branch history and its active source intact. `canonical.patch.gz` captures all
 1,772 staged local source/test/document changes against the reconstructed local snapshot
 of original contribution `011e0656`. It includes the persistent original SVG regression
 fixtures, numerical source/vendor records, native diagram modules and test tools.
@@ -14,7 +14,7 @@ and test file relative to the stopped canonical tree. These are independent cand
 they must not all be blindly applied in order. Shared entry/platform edits can conflict.
 The manifest records both sides' SHA-256 values and all saved comparison summaries.
 
-To recover, reconstruct the local starting source at `011e0656`, apply `canonical.patch`
+To recover, reconstruct the local starting source at `011e0656`, decompress `canonical.patch.gz` and apply the patch
 with Git's three-way conflict handling, then review the required worker patch. When
 continuing directly on the PR head, merge the checkpoint against its 22 subsequent
 commits instead of replacing the branch tree. Build products, package restores,

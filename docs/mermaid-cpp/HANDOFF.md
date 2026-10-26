@@ -3,7 +3,8 @@
 ## Latest local checkpoint - 2026-10-26, USER STOP / PR branch checkpoint
 
 - User explicitly requested stopping implementation and saving ALL current work
-  to the branch of https://github.com/water2004/Folia/pull/1. This supersedes
+  in a NEW PR targeting zhao0349/Folia:feat/mermaid-cpp-port, the source
+  branch of https://github.com/water2004/Folia/pull/1. This supersedes
   the previous prohibition on GitHub submissions. Do not resume implementation
   after publishing unless the user requests it.
 - All 12 Luna agents were interrupted (or were already completed). Root has no
