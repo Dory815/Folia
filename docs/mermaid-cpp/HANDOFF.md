@@ -1,6 +1,488 @@
 # Mermaid C++ continuity
 
-## Current checkpoint - 2026-10-26, seven native families and host ABI
+## Latest local checkpoint - 2026-10-26, USER STOP / PR branch checkpoint
+
+- User explicitly requested stopping implementation and saving ALL current work
+  to the branch of https://github.com/water2004/Folia/pull/1. This supersedes
+  the previous prohibition on GitHub submissions. Do not resume implementation
+  after publishing unless the user requests it.
+- All 12 Luna agents were interrupted (or were already completed). Root has no
+  active build/test handle. Worker process completion is not an OS-wide audit;
+  preserve their private logs/status files without claiming all processes were
+  inspected. Do not launch further implementation/builds for this checkpoint.
+- PR #1 is open, head zhao0349/Folia:feat/mermaid-cpp-port at
+  ddb3c05a2d365703bc479cfdc5e4e47b0cfa344c when inspected. It has 22 commits
+  beyond the original 011e0656 contribution snapshot; local Git HEAD is a
+  reconstructed snapshot, not that PR history. Preserve all remote commits.
+- Publish a lossless reviewable source checkpoint and all 12 private snapshot
+  deltas. They are work-in-progress, not proof of final integration. Generated
+  binaries, restored package trees and browser profiles remain ignored.
+- Canonical build passed luna12-integration-build-6.log. Most recent complete
+  CTest run luna12-canonical-tests-2.log: core FAILED; platform and persistent
+  native-DLL original-SVG regression PASSED. Subsequent isolated fixes do not
+  retroactively make that canonical run pass. Full-family acceptance is FALSE.
+- Root's new SVG middle-baseline check passes 56 assertions against 18 original
+  Chromium151 observations (three fonts, three sizes, two weights), log
+  svg-baseline-tests-4.log. This checks baseline offsets, not full glyph boxes.
+- Important last worker result, independently read from actual report:
+  luna10/railroad-only-corpus/byte-comparison.json records 212/212 exact SVGs,
+  zero failures, native DLL SHA256
+  d5d708373d65a5cfadf301f2a2dd9460ff052398b88f8d697effca4b9af42693.
+  This is PRIVATE and not yet canonical/root-integrated. Preserve its source,
+  tests, entry/platform changes and comparison summary in the checkpoint.
+- Other delivered private parser tests include Timeline119, Journey321,
+  Treemap241, Mindmap576, Architecture453, GitGraph378+, Requirement10 cases,
+  ER8 cases, Kanban377 and Venn308 assertions. These are bounded worker reports,
+  not full family SVG acceptance. Most renderer families remain unfinished.
+- Existing canonical full-corpus baseline still means 798/8812 exact SVGs and
+  8014 failures plus1386 original errors; no fresh complete canonical comparison
+  after this session's candidates was performed. Do not add private212 to that
+  count without an integrated DLL/global run.
+
+## Historical checkpoint - 2026-10-26, full-family autonomous verification
+
+- User explicitly objected to fragmented parser tasks and workers waiting for
+  root builds. User restated full acceptance: ALL Mermaid.js diagrams, native
+  string-to-SVG only, original file/project responsibilities, C++ RAII, NO JS
+  interpreter/general JS-object model, complete official and complex regressions,
+  original string/SVG pairs, native SVG equality BYTE FOR BYTE. Architecture
+  reference is folia::math; root read its module and native-raii-architecture.
+  Parser success, compiling, approximate SVG or component tests are not family
+  completion. Never reinterpret this as a reduced scope.
+- All 12 existing gpt-6-luna/high workers received larger END-TO-END packages:
+  01 Timeline/Gantt; 02 Journey/C4; 03 Treemap/Block; 04 Venn/Wardley;
+  05 Ishikawa/RoughJS; 06 Mindmap/Architecture; 07 GitGraph/State;
+  08 Requirement/ER; 09 Kanban/Agentflow/Swimlane/Event Modeling;
+  10 four Railroad grammars/Usecase; 11 Flowchart/Class/shared ELK/Dagre;
+  12 Sequence/official external ZenUML. Root owns remaining shared facilities,
+  existing ten accepted family regression, source pinning, integration/global QA.
+- Workers now own private source/platform/test snapshots and independent CMake
+  build directories under build/mermaid-cpp/workers/lunaNN. All 12 snapshots
+  exist. Use tools/mermaid-cpp/worker-build.ps1 -Worker lunaNN -Build
+  -TestPattern '*family*'. Each build uses parallel 1. Workers can modify PRIVATE
+  render_entry/platform integration and verify their OWN native DLL, without
+  waiting for root. They must deliver proven family source plus exact shared
+  integration patches; private snapshots alone are NOT canonical integration.
+  Initialize only once; -Initialize refuses to overwrite existing snapshots.
+- Initial private compiler probe FAILED C1902 due to default /Zi with the local
+  stripped MSVC toolchain. Root fixed worker-build.ps1 to pass
+  CMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded (/Z7) and preserve native stderr
+  under Windows PowerShell 5. Private luna01 configure now PASSES. Root pilot
+  native build is running via exec session 79633; log
+  build/mermaid-cpp/luna12-isolated-pilot-2.log, worker01 build.log.
+  All workers were explicitly told BUILD GATE OPEN; no root ping waits.
+- Canonical module build PASSES after fixing worker compilation failures:
+  luna12-integration-build-5.log. Root added public Ishikawa/Treemap mapping and
+  callbacks as UNACCEPTED candidates. Core test run FAILED with 59 assertions
+  across new parsers/layouts (luna12-core-tests-initial.log); original existing
+  families retained passing component suites. Owners supplied further fixes,
+  but current canonical sources need fresh build/test after those changes.
+- New whole-family strict corpus selects ALL original Ishikawa/Treemap SVGs:
+  build/mermaid-cpp/strict-luna12-new, 170 SVGs, initial comparison 0 exact,
+  140 byte mismatches, 30 native errors. These are FAILURES, not accepted output.
+  Root baseline full corpus remains 798/8812 exact; no new global count yet.
+- Original full corpus is build/mermaid-cpp/all-official (Timeline120/Gantt156,
+  etc), not tests/fixtures/official-svg (persistent accepted regression subset).
+  Worker selections must include ALL original cases by type, never by native
+  success. Original browser only belongs in test oracles. Browser executable:
+  build/local-tools/browsers/chromium_headless_shell-1234/
+  chrome-headless-shell-win64/chrome-headless-shell.exe.
+- Root archive-verified and pinned 93 additional original diagram files in
+  source-lock.json (321 total); source-text oracle check passes862 observations.
+  Additional parser Langium/new library source pins still need inventory.
+- Next: finish private pilot, continue shared native measurement/sanitization;
+  workers independently build/render/compare until their full families pass.
+  Root merges delivered changes, builds canonical modules, runs all three suites
+  and fresh full-corpus raw comparisons. No GitHub mutation or commit performed.
+
+## Historical checkpoint - 2026-10-26, resumed with 12 Luna workers
+
+- User explicitly resumed implementation and requested 12 Luna subagents;
+  root owns review, integration, actual module builds and raw-SVG acceptance.
+  The prior STOP checkpoint below is historical and no longer blocks work.
+- Backend now exposes 13 total slots. All 12 requested gpt-6-luna/high workers
+  successfully started with fork none: luna01_timeline, luna02_journey,
+  luna03_treemap, luna04_venn, luna05_ishikawa, luna06_mindmap,
+  luna07_gitgraph, luna08_requirement, luna09_kanban, luna10_railroad,
+  luna11_flowchart and luna12_sequence. Worker source ownership is disjoint.
+- Workers may edit their family source/test/oracle files only. Root owns shared
+  entry/config/platform/build/locks/docs. No worker may build shared targets or
+  overwrite all-official corpus/comparison. Original-faithful partial stages
+  must remain explicit about unsupported stages; invented approximate layout
+  does not satisfy user acceptance and must not silently enter production.
+- PRE-WORK baseline remains 798/8812 exact SVGs, 8014 failures, 1386 original
+  errors; old passing tests do not verify this session's new worker files.
+  Active edits are not accepted. Root has not started a build/comparison yet.
+- Build environment: dot-source build/local-tools/environment.ps1; use
+  build/mermaid-cpp/local-release (not parent folder) for the existing CMake
+  4.3.5/MSVC module build. Root must wait for worker files to stabilize before
+  building. Next: review interfaces, integrate faithful completed renderers,
+  build and correct errors, run three CTest suites and fresh strict comparisons.
+- No GitHub mutations authorized or performed.
+
+## Historical checkpoint - 2026-10-26, USER REQUESTED STOP BEFORE RESTART
+
+- STOP all implementation/build/test activity until the user resumes after
+  restarting Codex. This checkpoint records a stop, not completed acceptance.
+- User authorized 12 concurrent Luna subagents, with root owning final review
+  and actual C++/raw-byte acceptance. Current backend still exposes only four
+  total slots including root. Started only luna01_timeline, luna02_journey and
+  luna03_treemap (gpt-6-luna, high reasoning, fork none). All three were
+  interrupted at the user's stop request; list_agents confirms interrupted.
+  A fourth spawn, luna04_venn, failed with agent thread limit reached; it never
+  started. No other Luna workers were created. Do not claim 12 workers ran.
+- User-authorized local setting was written and parsed/read back successfully:
+  D:/Programs/CodexDesktop/Providers/OpenAI/config.toml now has [agents] with
+  max_concurrent_threads_per_session = 12. Previous parsed settings are unchanged.
+  The current session retained its old limit. After restart, inspect the actual
+  injected slot limit and verify spawning before claiming the setting is active.
+- Partial unreviewed worker files exist under src/diagrams/timeline (module,
+  parser), src/diagrams/user-journey (module, parser, renderer), and
+  src/diagrams/treemap (module, parser, layout). Worker tools timeline-oracle.mjs
+  and journey-oracle.mjs also exist. Enumerate ignored/new files on resume;
+  interruption may have occurred during a write. No new worker output has been
+  compiled, tested, audited or connected to the public renderer by root.
+  CMake globs new .ixx/.cpp automatically: review these before the next build.
+- Latest verified PRE-WORKER baseline: actual C++ modules/DLL built; all three
+  CTest suites pass in 26.06 seconds. Evidence final-local-build.log and
+  final-local-tests.log in build/mermaid-cpp. Fresh full comparison of the DLL
+  gives 798 raw-byte-equal official SVGs / 8812 successful originals, 8014
+  failures, plus 1386 original/native errors tracked separately. Evidence
+  final-global-native.log and all-official/byte-comparison.json; DLL hash matches
+  docs/mermaid-cpp/acceptance-status.json. Full acceptance remains false.
+  These results predate partial worker files; they do not validate those files.
+- Root has no active build/browser/comparison handles. A targeted OS process
+  inspection via CIM was denied by the environment; do not claim an OS-wide
+  process audit passed. Agent turns themselves are confirmed interrupted.
+- Next action ONLY AFTER USER RESUMES: read this checkpoint; verify new backend
+  limit; review partial worker files; resume/recreate Luna workers with disjoint
+  ownership. Continue the remaining work packages up to the requested 12 workers
+  when actual slots permit. Root owns integration, source pinning, final review,
+  module builds and strict original-SVG comparisons. No GitHub writes authorized.
+
+## Historical checkpoint - 2026-10-26, ten exact renderer corpora
+
+- User acceptance remains ALL diagrams, native C++ RAII string-to-SVG, no JS
+  interpreter/general object model, exact bytes, actual module builds/tests,
+  folia::math architecture reference, and NO GitHub submissions. Full acceptance
+  still FAILS. Do not report the passing component tests as full acceptance.
+- Cynefin is implemented under src/diagrams/cynefin following original parser,
+  DB, boundary and renderer responsibilities. Uses common original lexer rules,
+  owned domain arrays/transitions, last-block replacement and self-loop removal.
+  Mulberry32 uses native uint32 wrapping, not JS objects/number op dispatch.
+  Native badges measure glyphs; renderer preserves original zero-width fallback.
+- ALL64 original Cynefin SVGs pass strict raw equality. Actual C++ module tests
+  pass2515 assertions:59 parser cases(46 valid/13 invalid),312 complete boundary
+  path/PRNG observations with fractional, negative, wrapped and large seeds.
+- complex-render-extended has28 inputs,52 exact SVGs and4 original/native errors.
+  New cases cover confusion overflow, repeated domains, accessibility duplicate
+  SVG nodes, Unicode, literal markup, all arrows and wide fractional typography.
+  cynefin-browser-probe.mjs confirms original getBBox observation does not change
+  its output. It exposed CSS intrinsic-height flooring to1/64px and meet scaling;
+  SvgViewport now accounts for both quantized axes. Native object bounds keep
+  raster font quantization and local float rectangle separate from screen mapping.
+- strict-implemented-v2 selects every original SVG for10 types independently of
+  native results:798 byte matches, zero failures. Persistent original corpus is
+  now1024 observations:850 raw SVGs +174 original errors (includes52 complex SVGs).
+- Actual latest rebuild and full three-suite CTest PASS31.80s:
+  ten-family-regression-build.log / ten-family-regression.log. Full fresh native
+  all-official comparison FINISHED:798 exact SVGs,1386 both-error records,
+  8014 failures. This supersedes old538/8274 report. Evidence is
+  all-official/byte-comparison.json and ten-family-global-native.log. Summary with
+  per-family failures and remaining requirements:acceptance-status.json.
+- No active build/browser/comparison process remains. No GitHub mutation.
+- Ishikawa native parser/DB is now in src/diagrams/ishikawa, with flat owned
+  nodes and the original Jison lexical priority/indentation semantics. Actual
+  module test passes760 assertions for71 original cases(63 valid/8 invalid),
+  ishikawa-parser-build.log / ishikawa-parser-tests.log. Public SVG remains
+  unported and unsupported; HTML labels need the native sanitizer.
+- New rendering-util/rough module ports RoughJS4.6.6 line and rectangle-outline
+  operations with explicit options, owned binary64 geometry and request entropy.
+  It has no JS object/prototype/method/property store. Actual module test passes
+  64514 assertions for1152 complete original shapes, checking every operation
+  bit, exact path text and entropy progression. Evidence rough-stroke-build.log /
+  rough-stroke-tests.log. Curved paths/solid fills/other primitives remain.
+  Published RoughJS archive is SHA512-verified from cache; all1606 installed
+  oracle files are now locked. Its MIT license is preserved in notices.
+- Native hachure-fill0.5.2 scan geometry now passes280 complete original-browser
+  cases/39102 assertions. Rotation uses the browser-pinned native math. Concave
+  polygons, holes, closed/open polygons, crossings, fractional gaps/steps and
+  rotated coordinates are checked bit-for-bit. Initial oracle accidentally reused
+  mutable polygons across cases, allowing original rotate/restore drift to alter
+  later inputs. Per-case structuredClone corrects the oracle's input isolation;
+  no native coordinate rounding/tolerance was added. Evidence hachure-build.log /
+  hachure-tests.log and hachure-oracle.mjs (requires pinned FOLIA_BROWSER).
+- Rough rectangle hatch fill now connects the original outline, randomized
+  scan-step choice, fill strokes and serialization with one owned entropy chain.
+  Actual module test passes16274 assertions for48 complete original browser SVGs,
+  comparing operation bits, raw child-SVG bytes and next entropy. Evidence
+  rough-fill-build.log / rough-fill-tests.log. Neither this primitive gate nor
+  the unconnected Ishikawa parser counts as another complete Mermaid renderer.
+- Next work: continue Ishikawa SVG. Source renderer uses native geometry, per-branch SVG
+  bounds, text wrapping, hierarchical label orders; its Jison grammar lives in
+  diagrams/ishikawa/parser/ishikawa.jison. HandDrawn requires original RoughJS
+  algorithms too. Most family/default ELK/config/app-switch work remains.
+
+### Earlier same-day Sankey details
+
+- Sankey now also passes ALL 54 original SVGs from the full corpus, selected
+  independently of native results. Canonical native parser/layout/renderer owners
+  are under src/diagrams/sankey. Complete d3-sankey0.12.3 relaxation, collisions,
+  stable link ordering and all four alignments are native C++ with owned indices.
+  Its complete BSD notice is preserved; published D3 archive SHA512 is verified.
+- sankey-oracle.mjs runs the real original Jison parser/DB and d3-sankey. Actual
+  module tests pass 79261 assertions:441 observations,426 parse successes,
+  15 syntax errors,400 complete varied/random DAG layouts checked bit-for-bit.
+  Native cycles reject and returned geometry survives original input destruction.
+- complex-render-cases.json adds22 challenging original-browser inputs:
+  40 raw SVG matches and4 original/native errors. Includes Math.round boundary,
+  fractional/wide canvases, long outlined labels, literal ampersands/entities,
+  zero links/all-zero sums, multiline TreeView labels and descriptions/highlights.
+  Fixes retain SVG anchor advance independently of ink bounds, normalize SVG
+  segment breaks, and serialize original NaN attributes with SVG initial positions.
+  No SVG normalization/tolerances/special-cased example outputs were introduced.
+- Persistent DLL host corpus now948 observations:774 raw byte-equal SVGs and174
+  original errors. Actual rebuild and three-suite CTest passes30.32s in
+  sankey-regression-build.log/sankey-regression.log. No process remains active.
+  Original published package verifier now covers1539 files (adds d3-sankey).
+- Nine exact family corpora total734 original SVGs (680 below +54 Sankey).
+  The extra40 complex SVGs bring the persistent byte gate to774. The global
+ 8812-SVG report has not been refreshed after these families. Full scope fails;
+  most diagram families, configurations and external integrations remain.
+- Current work: inspect Cynefin's typed grammar, deterministic boundaries and
+  native renderer. No Cynefin implementation has been written yet.
+
+### Earlier same-day eight-family details
+
+- User scope remains ALL Mermaid 12.2.0 diagrams, native RAII, string-to-SVG,
+  raw byte equality, actual module builds/tests, no JS runtime/object simulator,
+  and no GitHub submissions. Full acceptance is NOT met. No remote mutations.
+- Public `folia.mermaid` exports move-only `folia::mermaid::Renderer` with owned
+  ConfigSession, UTF-8/UTF-16 render overloads and expected<string,error> output.
+  Real host ABI uses it. Actual platform lifecycle test passes 13 assertions.
+- Latest complete native test gate passes all three suites (26.79s), recorded in
+  tree-view-regression.log. Actual modules/DLL/host built. Core includes Error
+  wrapping and pure native LLVM numerical bit checks. The earlier 716-vs-712
+  fixture-count assertion was corrected after verifying all original records.
+- TreeView follows upstream parser/DB/preprocessor/renderer/styles/icons
+  ownership in src/diagrams/treeView. Flat nodes and iterative drawing/destruction
+  support deep trees without recursive stack lifetime. Native platform measures
+  bold directory/italic description text. Built-in icons and original missing-icon
+  glyph follow pinned source; expected SVGs are never used by native rendering.
+- Actual module build passes, tree-view-final-build.log. Native parser and
+  12000-node ownership tests pass 1316 assertions, tree-view-parser-tests.log:
+  89 original parser/preprocessor cases (70 valid /19 invalid). The source grammar
+  rejects indented headers, repeated indentation before names and metadata
+  after nodes; hidden newlines can separate one indentation from a name.
+- strict-tree-view selects ALL 134 original TreeView SVGs from all-official,
+  independent of native outcome:134 raw byte matches, zero failures. All eight
+  implemented exact renderer types total680 raw exact original SVGs:
+  Packet54/Pie146/Quadrant98/Radar48/XY164/Info30/Error6/TreeView134.
+- save-official-corpus.py preserves850 observations (680 SVGs +170 original
+  errors). Host exact-count assertion is850/680. New source lock files were
+  checked against pinned original mermaid.zip before hashing; already-locked
+  detector retains its earlier CRLF bytes/hash unchanged.
+- Full original corpus generation finished:5099 inputs /10198 observations /
+  8812 SVGs /1386 errors. Old global native report finished (not running):538 equal,
+  8274 failures at the pre-Error/Info-fix DLL. It predates TreeView; do not claim
+  a fresh global count from that report. Most families/full configs remain.
+- No browser/native build process remains. Next: continue missing families.
+  No source is submitted to GitHub.
+
+## Historical checkpoint - 2026-10-26, initial full acceptance work
+
+- Continue upstream PR #1 from contribution head 011e0656d0fcf13511aa9d583f23b06cc0692b83.
+  The public SVG entry now also wires XY and Info. Their recorded static
+  official corpora pass raw byte equality; full-family acceptance is unfinished.
+- Latest user acceptance: port ALL Mermaid.js 12.2.0 diagrams, exposing only
+  string-to-SVG through `folia::mermaid`. Follow upstream file/family ownership
+  and architecture, using C++ RAII; no JS interpreter and no general JS-object
+  semantic simulation. Use `folia::math` as the architecture example (the user
+  corrected the earlier namespace wording). Cover official examples and complex
+  edge cases, generate original string/SVG pairs, and require byte-for-byte SVG
+  equality. Geometry tolerances/normalized DOM comparisons do not satisfy this.
+  Finish verification locally and do not submit anything to GitHub. This replaces
+  the earlier retained-23-family scope; inventory every pinned built-in family
+  and official external integration, including newer diagram families.
+- Latest local implementation: `svg_document.ixx/.cpp` owns ordered typed root
+  attributes, common source styles, accessibility and raw serialization. Packet
+  drawing is shared by append_packet_svg and its standalone component API; the
+  public entry now uses the complete API document without reparsing output or
+  changing geometry. Two native ownership/attribute tests pass. Full actual
+  document-regression-tests.log initially failed six stale render-entry assertions;
+  those assertions were updated. Actual complete three-suite ctest passes in
+  native-themes-regression.log (3/3, 18.88s). A later complete run including the
+  persistent byte gate passed in official-regression-tests.log (3/3, 25.69s).
+  Latest numerical/Pie changes need a fresh full run. numeric-regression-tests.log
+  was started while a rebuild still linked files: core could not start due to a
+  locked executable, and two platform Pie assertions expected the removed inline
+  font attribute. Those assertions now check the authoritative CSS. Do not claim
+  that failed run passed. Keep builds and dependent tests sequential.
+  No full-family/byte-exact completion is claimed: custom CSS parsing and other
+  diagram API documents remain unfinished.
+- Strict raw-byte gate now works on the actually built DLL. `official-examples.mjs`
+  now scans 5099 unique inputs across 2763 pinned source/doc/script files; every duplicate
+  input retains all provenance. The scanner explicitly lists remaining dynamic
+  program/config/external-integration coverage gaps, including explicit lists of
+  unparsed scripts and dynamic templates. It renders original SVGs
+  in fresh browser contexts with fixed ID/date/random seed and records raw
+  bytes/hashes; the comparator never normalizes SVG. The renderer is native;
+  JS/browser code is used only by this independent test oracle.
+- Packet: ALL 10 inputs whose original provenance contains `packet` pass raw
+  byte comparison in default/dark: 20 identical SVGs, zero errors/failures.
+  Evidence: `build/mermaid-cpp/strict-packet/{manifest,pairs,byte-comparison}.json*`
+  and svg/native files. This covers that official static corpus, not every Packet
+  configuration or source statement. Initial four-case mismatch at byte 5
+  exposed the missing document; a remaining extra CSS terminator was corrected
+  in the native source owner. No golden-output substitutions were introduced.
+  The unchanged standalone Packet component corpus also passes.
+- Local candidate `folia.mermaid.xy::prepare_xy` ports the pinned XY Jison
+  lexical states, axis/plot statements and DB projection. It retains automatic
+  numeric ranges, statement order, category truncation, missing category values,
+  single-value numeric axes, line point labels, palette cycling and orientation.
+  Prepared configuration/theme trees and metadata are owned and request-local.
+- The fixed parser oracle now has 26 successful observations and seven errors,
+  including full XY configuration/theme data. The original 12 renderable cases
+  remain a separate SVG corpus. Source hashes and tolerances are unchanged.
+  `node tools/mermaid-cpp/xy-oracle.mjs --check` passes locally. A focused GCC
+  C++23 harness runs the actual XY parser/DB and number-formatting bodies against
+  all 33 observations: 33 cases, zero failures. It supplies original prepared
+  source/configuration and does not test the native shared frontend, module
+  imports, production Boost.UT runner, DirectWrite, SVG or application. Windows
+  module/shared-frontend verification now passes: the actual Release module build
+  compiled all production modules and linked the real Boost.UT runner; the two XY
+  tests pass 1081 assertions, including all 33 parser/config/theme observations.
+  This is only the parser boundary, not XY SVG or the full user acceptance.
+  The initial oversized generated harness did not build; the bounded harness
+  with only XY configuration compiles and runs. Evidence is under ignored
+  `build/mermaid-cpp`: check-xy-focused.mjs, xy-focused.cpp, xy-focused.exe and
+  xy-focused-compile.log. These harness files are verification aids, not product code.
+- Explicit native boundaries: HTML/ampersand sanitization and non-finite input
+  numbers/coordinates return errors. Missing category values remain optional;
+  an empty chart retains the original infinite Y range. Resource budgets cover
+  plots, source points, projected missing values and categories.
+- Workspace: `C:/Users/Lenovo/Documents/ChatGPT/mermaid/Folia`. Git transport to
+  github.com failed, so this checkout came from the exact 011e0656 source archive.
+  Its local initial commit is a snapshot, not upstream history. Remote delivery
+  must use the actual upstream parent/tree through the GitHub connector; never
+  push that synthetic local history. Original source is at `.reference/mermaid-js`;
+  locked CRLF bytes were restored and all source hashes pass the oracle.
+- Delivery attempt before the user's latest instruction: GitHub create-tree
+  returned 403 `Resource not accessible by integration`; no remote commit/tree,
+  branch, workflow or PR update was created. Do not repeat remote writes now.
+- Local official build tools are restored under ignored `build/local-tools`:
+  CMake 4.3.5 (the workflow's SHA matches), MSVC 19.44.35229/14.44.35207
+  and Windows SDK NuGet 10.0.26100.3916. MSVC package hashes match the Microsoft
+  manifest; cl.exe Authenticode is valid. The channel's manifest advertised hash
+  did not match its downloaded JSON; keep that acquisition limitation explicit.
+  `. ./build/local-tools/environment.ps1` sets process-local paths; no system
+  tool installation or global environment changes were made. Use embedded /Z7
+  debug information to avoid the sandbox's unavailable PDB service.
+- Actual build: `build/mermaid-cpp/local-release`, logs local-release-configure.log,
+  local-release-build.log and local-release-xy-tests.log. Core/platform/host built.
+  First full ctest failed 74 YAML assertions because an archive-restoration
+  `git -C ... apply` silently skipped the dependency patch in the enclosing repo.
+  Fixed with root `git apply --directory=.reference/yaml-cpp-56e3bb550c91fd7005566f19c079cb7a503223cf`;
+  reverse-check, rebuild, focused frontmatter and the full three-suite ctest pass.
+  Baseline evidence: local-release-tests.log (3/3, 13.78s).
+- The matching Boost.UT submodule source 6f4a7ed0 was restored to third_party/ut;
+  the archive snapshot's local Git baseline lacks the original gitlink, so do not
+  accidentally package that dependency as new source. Patched yaml-cpp is at
+  `.reference/yaml-cpp-56e3bb550c91fd7005566f19c079cb7a503223cf` and CMake uses
+  FETCHCONTENT_SOURCE_DIR_FOLIA_YAML_CPP. Keep all these dependencies pinned.
+- Browser oracle: sandboxed installed Edge cannot start its crashpad IPC.
+  A separate test-only Chrome Headless Shell 151.0.7922.34 is restored under
+  build/local-tools/browsers/chromium_headless_shell-1234/chrome-headless-shell-win64.
+  Set FOLIA_BROWSER to its executable. Playwright extraction needs the ignored
+  `NODE_OPTIONS=--require=<absolute>/build/local-tools/node-path-compat.cjs`
+  for a Windows sandbox async-realpath issue. Twenty-four original XY SVGs now
+  render locally at build/mermaid-cpp/xy-browser/original.json. No JS/browser
+  runtime may enter the production native render path.
+- XY rendering now builds as real C++ modules in diagrams/xychart, split into
+  typed interfaces, axis, chart title, legend, orchestrator and renderer owners.
+  The platform supplies actual DirectWrite SVG bounds; no character estimate
+  substitutes for upstream text measurement. Latest build: xy-renderer-build.log.
+  Strict corpus strict-xy contains the earlier 56 static official inputs in
+  default/dark (112 SVGs): ALL 112 byte-equal, zero errors/failures. The expanded
+  script-literal corpus strict-xy-extended also passes: 160 raw equal SVGs and
+  104 both-error records, 264 observations total. Fixes preserve the
+  source's legend insertion order, numeric font-size strings, D3 tick/line math,
+  final attribute whitespace, 1/64px inline width, 16.16 glyph advances and SVG
+  float edge/ancestor-transform order. Scaled text uses the canonical oracle
+  viewport (1280px, body inset 8px), with scaled raster-font cache precision.
+  Never round away differences or normalize the byte comparator.
+- All eleven official themes now use fixed native named fields and five concrete
+  section types. The old runtime string-keyed theme property store, property(),
+  object() and dynamic key arithmetic have been removed. ThemeSettings retain
+  owned JSON boundary data; unknown overrides are merged only at that boundary.
+  Production has no JS interpreter. The development generator unrolls original
+  color-index loops into native assignments and splits the source themes into
+  eleven translation units, following upstream responsibility. The first
+  single-TU build exceeded MSVC COFF sections; splitting fixed this. Explicit
+  inline declarations are necessary for shared helpers inside named modules.
+  Actual all-theme test: 6584 complete original/source/bundle observations,
+  3163034 assertions; session test: 645 observations, 4944 assertions. Both pass.
+  Logs native-themes-tests.log and native-theme-session-tests.log. Native theme
+  input-color restrictions and the broader architecture audit remain outstanding.
+- Info: native info.ixx/info_parser.cpp/info_renderer.cpp use the original Langium
+  grammar and fixed full-bundle version. Actual module tests: 23 positive/13
+  negative parser inputs, 78 assertions in two tests, all pass. Its two static
+  official inputs in both themes yield four byte-identical SVGs (strict-info).
+  Parsed metadata intentionally has no SVG effect, matching the original Info DB.
+- Oracle package integrity now checks 1529 installed files against the published
+  Mermaid 12.2.0 and @mermaid-js/parser 2.0.1 archives. Archives came from the
+  local npm content cache and their SHA-512 values match the existing pnpm lock;
+  no trust in package.version alone. Evidence oracle-package-integrity.log and
+  docs/mermaid-cpp/oracle-package-lock.json. Registry downloads were denied by
+  the network sandbox; no bypass was used. Archive-order reading avoids quadratic
+  gzip seeks. New verifier imports are used by config-reference and full corpus.
+- Complete original corpus generation finished: all-official-render.log,
+  all-official (5099 inputs x two themes = 10198 observations): 8812 raw original
+  SVGs, 1386 original errors. Every observation is retained. Full native comparison
+  is RUNNING in exec session 45101, all-official-native.log. It loads the current
+  DLL, so wait for completion before relinking that DLL. The full-family gate is
+  expected to fail because most families/default ELK remain unported.
+- Quadrant now appends the shared owned API document from layout_quadrant data;
+  native CSS literal paint serialization follows declaration RGB spelling.
+  strict-quadrant: 96 byte-identical SVGs, 28 both-error records, zero failures.
+- Radar also appends its document and exact scoped family rules. strict-radar:
+  46 byte-identical SVGs, 34 both-error records, zero failures. Info and Radar
+  now reuse the original shared CommonLexer for strings, metadata and hidden
+  YAML; the indented-YAML Radar fixture must leave its title empty, matching the
+  original lexer-hidden YAML rather than inventing frontmatter interpretation.
+- Pie now appends its full owned document/styles using the original shared
+  layout_pie. Actual SVG hinted bounds replace the old outline-width adapter.
+  strict-pie: 134 byte-identical SVGs, four both-error records, zero failures.
+  Centroid one-ULP differences exposed MSVC CRT vs pinned browser math. Native
+  real_math module now compiles the exact pure C++ LLVM libc sin/cos and support
+  headers at 265cc6a83652bac5cb8ceb59741bc288ebe6b312 (browser V8 f479186c...).
+  No V8 runtime/interpreter/object model is included. 177 headers and license are
+  vendored; CMake verifies every SHA-256 and preserves strict floating operations.
+  numeric-source-lock.json pins the Chrome/V8 dependency chain and archive hash.
+  The browser bit oracle covers 12518 sin/cos observations (extreme/random bits,
+  signed zeros, subnormals and quadrant/range boundaries). Actual C++ module test
+  passes all 25038 assertions, numerics-tests.log. LLVM archive download succeeded
+  after individual Googlesource reads hit HTTP 429; all acquisition was read-only
+  into the local workspace, using approved network escalation when necessary.
+- Persistent official byte regression data is under
+  tests/mermaid_cpp/fixtures/official-svg: 492 complete observations, 326 raw SVGs
+  and 166 original errors. The actual C++ DLL host runner compares raw strings,
+  frees output with unique_ptr/ABI deleter and passed 2131 assertions. No expected
+  output comes from native code. save-official-corpus.py copies complete verified
+  original corpora and preserves provenance/hashes. Add the complete Pie corpus
+  after current full comparison/test work; update exact host case/SVG counts.
+  .gitattributes disables conversion of original source/SVG bytes.
+- Next: finish local full tests after Pie, extend the persistent corpus, expose
+  the RAII string-to-SVG facade in folia::mermaid, then continue remaining diagram
+  families and full-configuration fidelity. Flowchart, Sequence and Class have
+  not met byte-exact acceptance; other pinned families remain unported.
+  Original layout, measurement, complete CSS/wrappers, IDs, attribute ordering,
+  escaping and numeric spelling all remain part of strict equality. Fix test
+  context (render ID/seed/time/fonts/browser) before storing original bytes.
+  No remote submissions. Active work: full native comparison session 45101;
+  no browser oracle generation remains active at this checkpoint.
+
+## Historical checkpoint - 2026-10-26, seven native families and host ABI
 
 - Native public entry: Packet, Pie, Flowchart, Sequence, Class, Quadrant and
   Radar. Quadrant and Radar retain their original fixed-canvas/linear and

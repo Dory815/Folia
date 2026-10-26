@@ -1,0 +1,1347 @@
+{
+  "version": 1,
+  "state": "stopped by user; work in progress; not full acceptance",
+  "targetPullRequest": "https://github.com/water2004/Folia/pull/1",
+  "targetRepository": "zhao0349/Folia",
+  "targetBranch": "feat/mermaid-cpp-port",
+  "observedRemoteHead": "ddb3c05a2d365703bc479cfdc5e4e47b0cfa344c",
+  "localSnapshotHead": "1a74a1cc47140582673d6de4ed3621b9afcf8fd0",
+  "originalContributionBase": "011e0656d0fcf13511aa9d583f23b06cc0692b83",
+  "canonicalPatch": {
+    "path": "canonical.patch.gz",
+    "bytes": 45641089,
+    "sha256": "ad430244ce5b7cdc68d3e5d40a99614fe73f1f7b1273f9cf20184c8693549fae",
+    "files": 1772,
+    "uncompressedPath": "canonical.patch",
+    "compressedBytes": 3147578,
+    "compressedSha256": "e73baaf8fbc7202941c8903caf2d067ee506f7a4dc4219e7d4085ea1d63ce13e"
+  },
+  "workers": [
+    {
+      "worker": "luna01",
+      "patch": "luna01.patch",
+      "bytes": 81723,
+      "sha256": "68b78b476730e4b5a12008dc7447a883e50ac0cd7b1f546b25e49e50f5bf9789",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/gantt/gantt.ixx",
+          "canonicalSha256": null,
+          "snapshotSha256": "2d2056b6c35c2876876843d9f7fe1519dcbf027c0b71f754d9407d95f8ee9d11"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/gantt/parser.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "c29a205072598454cd67a6ff93a5909b35e433a05920bc15c44f38135e6d5774"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/gantt/renderer.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "a52fb8ac3206d01e0dbde0eea4faae208988fbb235af99a8bf1fa753fed740c4"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/timeline/renderer.cpp",
+          "canonicalSha256": "6513994aa4ff57d0ac484aa2433368a48d9780900edaf7fad153e44d3637c003",
+          "snapshotSha256": "90b737052f323ac207d603419b34150f02ae31cf9ed5e06d7b50d89a4d3edcf0"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.cpp",
+          "canonicalSha256": "0aa332e8f7751c33272ab0958c528a3e529abc5e9808d3fc9e382186159ddb56",
+          "snapshotSha256": "9364264336735743664242ed22fbf803438c8b6cf1425e357d5768ba04ef5862"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.ixx",
+          "canonicalSha256": "3c30f8c8ccb8a50d86595ce0a3ee917b90e21900575441fb28392cc957fcc3a4",
+          "snapshotSha256": "59de8c44ade46a9e26b0f5f215d4247f0764caa67ca37825d839581ea558ede2"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "b2cac5195e14dc7bd3770a7ee6741e80d74d1661b80f870ba2331ae380f1e136"
+        },
+        {
+          "path": "tests/mermaid_cpp/gantt.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "1d82ff52d803602d9f9f0b48b85990d836b3c2735168009441d6ea7318484cd5"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": []
+    },
+    {
+      "worker": "luna02",
+      "patch": "luna02.patch",
+      "bytes": 68266,
+      "sha256": "9626f917557e5cbaae4ae5f90aff05ea74d99524f1700b530e578e88bd6cd227",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/user-journey/renderer.cpp",
+          "canonicalSha256": "0c61f7cc95edd197f8805b04947796f2a06b8045d5a0be6fe84e6edd3dbfe136",
+          "snapshotSha256": "4b4a25048cde68a0c29c155a7752c309b486d6fe495d06928f9f837996594b37"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/user-journey/user_journey.ixx",
+          "canonicalSha256": "03e63bc91dad3dc6bd7eb9685d10e815f34d60685f88d06b61946c794652e005",
+          "snapshotSha256": "db7d6470037cc7ec248b758e9220758ad703e005acb41ded3398caa81eda277a"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.cpp",
+          "canonicalSha256": "0aa332e8f7751c33272ab0958c528a3e529abc5e9808d3fc9e382186159ddb56",
+          "snapshotSha256": "caebefb07fb07b7dce894c3f85d8ed8fa89792a10bac349a14a3a03ce32154c6"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.ixx",
+          "canonicalSha256": "3c30f8c8ccb8a50d86595ce0a3ee917b90e21900575441fb28392cc957fcc3a4",
+          "snapshotSha256": "be8e9a0fd03e6ab4ea1d5106323a336b03e69842a5646916327ce11774afd193"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/svg_document.cpp",
+          "canonicalSha256": "e5538e677a47b14f1581e0038d4a32b06bb97ac8b20a2545174755516a983736",
+          "snapshotSha256": "80bf5925773b13385b4bc1b7df1a59cafb0c6670ffe2aa971e6ee687b2fa7874"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/svg_document.ixx",
+          "canonicalSha256": "f0b6fadb6f74a0e6af2d32c48a8f63609d41b14f6bec82df0a7422a30ec1b4fe",
+          "snapshotSha256": "819b07b701d66a42c8469f8815b6aa479365838c953f97de75c4b9a8d5da854f"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "8ecc73c04db58c11135742690dfc92ad8e9cdff589c843ea9c01f3302f4d62c3"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/journey.cpp",
+          "canonicalSha256": "d5a5794fcd513b9a8467c70be84bd2bfb5b9fd889892296d920dfb26950e35bd",
+          "snapshotSha256": "4e35df1edc1c2f0ca5bfcf35037ea0b725af287251e1e1a832dde0afacb97564"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": [
+        {
+          "path": "build/mermaid-cpp/workers/luna02/original-corpus/byte-comparison.json",
+          "reportSha256": "e555e0b6455c77dd4dc0b2a90c78ff19871eb10f3410a2fd0c57c5e0870ad11d",
+          "method": "raw byte equality; no normalization",
+          "dllSha256": "c719d53b8f151ff93b9a9d8f5530c7359a55d157ee3fb331dea4f81ae6971d74",
+          "total": 176,
+          "byteEqual": 0,
+          "originalErrors": 0,
+          "failures": 176,
+          "families": {
+            "c4": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 124
+            },
+            "journey": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 52
+            }
+          }
+        }
+      ]
+    },
+    {
+      "worker": "luna03",
+      "patch": "luna03.patch",
+      "bytes": 28409,
+      "sha256": "2caa57a9067e054f3c85f71453ccf1c76777988339caa3585fc17d04766bca86",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "61d0f3b1ab76868f18cb3c8dac2d164415014a57a6230c59ea8ba81d044f7bd4"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        }
+      ],
+      "rawByteReports": [
+        {
+          "path": "build/mermaid-cpp/workers/luna03/corpus/byte-comparison.json",
+          "reportSha256": "665a4680f8bded193713dba134d07bc08f4cf0b197faeb13a34b9a883f388bbb",
+          "method": "raw byte equality; no normalization",
+          "dllSha256": "d93ed7fadd87df53a1aaf72197afe8eba6c4552cdca334fa8ff93a6cdce2f6e4",
+          "total": 358,
+          "byteEqual": 0,
+          "originalErrors": 0,
+          "failures": 358,
+          "families": {
+            "block": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 256
+            },
+            "treemap": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 102
+            }
+          }
+        }
+      ]
+    },
+    {
+      "worker": "luna04",
+      "patch": "luna04.patch",
+      "bytes": 167950,
+      "sha256": "562801c954d228b862ad1b19fed56b7951d50586bfeffa3f682b5ed39d5f7200",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/venn/layout.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "4021b654bcd0a2b61ea20b081b641be7ce01d160fec188afd89d8bacadaaa2d6"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/venn/parser.cpp",
+          "canonicalSha256": "7ee7e2bdb7182226e632f7f91b8697b2e7b69be42ef4019d01ee0b15d578e5ad",
+          "snapshotSha256": "77e6e3015f2eae5de442ade7303d580833e7b0840cb8e7d9839f0c1118d49ef7"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/venn/venn.ixx",
+          "canonicalSha256": "a454136934b05c6f3a391f0aa09f6a76836827a957bab73bb7aa3a5142561f95",
+          "snapshotSha256": "16d0002461b0487b7e31d02f5b1ee16606fadb5ce8094d5d003979d68d55f641"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.cpp",
+          "canonicalSha256": "0aa332e8f7751c33272ab0958c528a3e529abc5e9808d3fc9e382186159ddb56",
+          "snapshotSha256": "0e9156984d27af5aed6db2dd6ff8a3a85787344e2067238f3893efd67a054917"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.ixx",
+          "canonicalSha256": "3c30f8c8ccb8a50d86595ce0a3ee917b90e21900575441fb28392cc957fcc3a4",
+          "snapshotSha256": "4da09c7b516eac4c615be7ebcfae9790e564aee31e042d4aebfba1419436fb25"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "61d0f3b1ab76868f18cb3c8dac2d164415014a57a6230c59ea8ba81d044f7bd4"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        },
+        {
+          "path": "tests/mermaid_cpp/venn.cpp",
+          "canonicalSha256": "95c61edbceb9629a414134084f924f5193722c5c6699476c279f4764bb7fcd01",
+          "snapshotSha256": "3c382cde86a781506469c71fd7ca5ab8c144b7583fc466b53a0aa513742c7d31"
+        },
+        {
+          "path": "tests/mermaid_cpp/venn.tsv",
+          "canonicalSha256": null,
+          "snapshotSha256": "2565a4b8e065ba5372135f42f644b95c1c24e108be35cf32f84b5cc68354b5ef"
+        }
+      ],
+      "rawByteReports": []
+    },
+    {
+      "worker": "luna05",
+      "patch": "luna05.patch",
+      "bytes": 56307,
+      "sha256": "361c799abcb2ca3563d30cec59ca52808e2db061a91d92f66a75f19be8f898d0",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/ishikawa/renderer.cpp",
+          "canonicalSha256": "c933fd58a6039770d0cf4fa8a4a88e6577ffef46db2decf29dbd44d3f9c70b33",
+          "snapshotSha256": "576dc1e8aee8889e662386229f64e7dda445a8bd0689a6560f8e5c0178cfd0df"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.cpp",
+          "canonicalSha256": "0aa332e8f7751c33272ab0958c528a3e529abc5e9808d3fc9e382186159ddb56",
+          "snapshotSha256": "96a96610a60675fd8238a4d3fa8efc9996c9a0610a3ba8e2ac4964549be5915d"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "3c118f89c68846c88e7eb949868bcb3559f2c0397be6c34c209e81b07e334491"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": [
+        {
+          "path": "build/mermaid-cpp/workers/luna05/original/byte-comparison.json",
+          "reportSha256": "2d4e2fca65a6b47919fe3c127a1836e03a5d8f1d36b3e6e4a3662acb8db955c7",
+          "method": "raw byte equality; no normalization",
+          "dllSha256": "0a88b74be8819296a8e6a9da5cb5fd49dc66cde3fd06a6284dd94c07f05d6f1d",
+          "total": 68,
+          "byteEqual": 18,
+          "originalErrors": 0,
+          "failures": 50,
+          "families": {
+            "ishikawa": {
+              "byteEqual": 18,
+              "originalErrors": 0,
+              "failures": 50
+            }
+          }
+        }
+      ]
+    },
+    {
+      "worker": "luna06",
+      "patch": "luna06.patch",
+      "bytes": 65329,
+      "sha256": "e0bf2b1e8e9312d84118b3c8a64e4bd1589b2ba2de36c989c23cffe454640830",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/architecture/architecture.ixx",
+          "canonicalSha256": null,
+          "snapshotSha256": "e88f4bcfff7089fcc3aa374a86102212fe96402fe0154be2a5059817c32afe3e"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/architecture/parser.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "01962b4ef0730c254be8fd677886151ba90faa26226749044fe1e81aec90f5d1"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "61d0f3b1ab76868f18cb3c8dac2d164415014a57a6230c59ea8ba81d044f7bd4"
+        },
+        {
+          "path": "tests/mermaid_cpp/architecture.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "802fe9369774931bcbf052f1224ffd9524deb3e93fabc6dae54ab956bacfac42"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": []
+    },
+    {
+      "worker": "luna07",
+      "patch": "luna07.patch",
+      "bytes": 40069,
+      "sha256": "041de965a27b156b57dcaa98c2cbeaa4bd03286926e9895ad628c69c6d0dc23a",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/state/parser.cpp",
+          "canonicalSha256": "86d7c144d0831e57fef721a9f9bd3a25ba8749f285fdbe71bd1d8d3a0e186fe8",
+          "snapshotSha256": "fd160dfa44aac2513ba323e5cfe9644f69a750b0662ba54c81d0343e7e0e476b"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "61d0f3b1ab76868f18cb3c8dac2d164415014a57a6230c59ea8ba81d044f7bd4"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": []
+    },
+    {
+      "worker": "luna08",
+      "patch": "luna08.patch",
+      "bytes": 81863,
+      "sha256": "9ea21fbc42f2a3cbb0252a75a23ac12eb444e48fb3fd1f3b9e991a4f6eae15eb",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/er/er.ixx",
+          "canonicalSha256": null,
+          "snapshotSha256": "bfff3fa7e38c1786bef6bcba6966e219db9af90abeb1d1471587cf4db2dddf9b"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/er/parser.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "d0cec84e2fd7d00ab8a6f25c6bb7f1beb8bad71a8fc4e86f433c6cd06db96e8c"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "61d0f3b1ab76868f18cb3c8dac2d164415014a57a6230c59ea8ba81d044f7bd4"
+        },
+        {
+          "path": "tests/mermaid_cpp/er.tsv",
+          "canonicalSha256": null,
+          "snapshotSha256": "392673b1bf2edfc6b4731c9df00a459efb11293dfe2510edb9ae8a2b3e1441e5"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.tsv",
+          "canonicalSha256": null,
+          "snapshotSha256": "1834ea0857fd34baba9ff1d71849d4f6fd8ed3c296092d78dfb4c5ca9b90d8f7"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": []
+    },
+    {
+      "worker": "luna09",
+      "patch": "luna09.patch",
+      "bytes": 40749,
+      "sha256": "c9d7c55c97e20fd1b84762ef047ff1838548e994137f99845577d4eec5a72f7c",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.cpp",
+          "canonicalSha256": "0aa332e8f7751c33272ab0958c528a3e529abc5e9808d3fc9e382186159ddb56",
+          "snapshotSha256": "4752c0210b3f6a7aeb7ae2835f80a9b24dddd58be7486d56095d0d1187083643"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.ixx",
+          "canonicalSha256": "3c30f8c8ccb8a50d86595ce0a3ee917b90e21900575441fb28392cc957fcc3a4",
+          "snapshotSha256": "1a612029d15314d47f6f33414948b7215c772f4cf176bf6f86b1a697a81f52a8"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "61d0f3b1ab76868f18cb3c8dac2d164415014a57a6230c59ea8ba81d044f7bd4"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": [
+        {
+          "path": "build/mermaid-cpp/workers/luna09/official-selected/byte-comparison.json",
+          "reportSha256": "dd34f08d58b5c5a25f368cd0d4678623750140d2332e7a34a8a7ab42c7c54396",
+          "method": "raw byte equality; no normalization",
+          "dllSha256": "3aeb3a21a90557878e27b6f9af4444742176a80f53f536a0bcb66b286d8d0746",
+          "total": 818,
+          "byteEqual": 0,
+          "originalErrors": 0,
+          "failures": 818,
+          "families": {
+            "agentflow": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 436
+            },
+            "eventmodeling": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 70
+            },
+            "kanban": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 96
+            },
+            "swimlane": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 216
+            }
+          }
+        }
+      ]
+    },
+    {
+      "worker": "luna10",
+      "patch": "luna10.patch",
+      "bytes": 65896,
+      "sha256": "a61640195aa98ae565ef03a735b2f227f0e7f25e757c20de4c0098b7b3ed8140",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/railroad.ixx",
+          "canonicalSha256": "7acb07078263612d4b5d0101ceeb7bfdce6ef85d14dfb3acb7dbe1ed16b0562e",
+          "snapshotSha256": "ec7fd96ece6e16ecb0ffa664b99565c9e59547c1f0faed787eb1ac30d18088d0"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/renderer.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "b6d5b1423b60196fc15b85b00f34ecdf5faf31ed64f5b2af163de0474e1c9d2f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.cpp",
+          "canonicalSha256": "0aa332e8f7751c33272ab0958c528a3e529abc5e9808d3fc9e382186159ddb56",
+          "snapshotSha256": "2e076061fbf0fe69d280b7b776a4a080a81377568e7d5591bc510b82a6cb3a02"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.ixx",
+          "canonicalSha256": "3c30f8c8ccb8a50d86595ce0a3ee917b90e21900575441fb28392cc957fcc3a4",
+          "snapshotSha256": "61a695fe5e23e75a6232ca29c45997ab4e58fb32e830c1a91dffc0d3d1593425"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/svg_document.cpp",
+          "canonicalSha256": "e5538e677a47b14f1581e0038d4a32b06bb97ac8b20a2545174755516a983736",
+          "snapshotSha256": "f5dcc522317a8012d30b9cf9d54c0000c4669a9c438a7691aa407e70aaeea63f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/svg_document.ixx",
+          "canonicalSha256": "f0b6fadb6f74a0e6af2d32c48a8f63609d41b14f6bec82df0a7422a30ec1b4fe",
+          "snapshotSha256": "9d7239e871d618a08e9c340154f4e8b580770e7bb78e1a77b77303613598c9b4"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "9cca7fcb0aae461bd280005ffbe199a67917c7d82b9f6a06d910efd4d226d346"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": [
+        {
+          "path": "build/mermaid-cpp/workers/luna10/railroad-corpus/byte-comparison.json",
+          "reportSha256": "7c421ecb5f7c56adf7583098dcc93b45593e4f7afa47408c03b2a7dbd2be43ec",
+          "method": "raw byte equality; no normalization",
+          "dllSha256": "7341727a3c87bcaacc544a7e3f86783043c14b34f59e1510036125d13069d6a5",
+          "total": 486,
+          "byteEqual": 0,
+          "originalErrors": 0,
+          "failures": 486,
+          "families": {
+            "railroadAbnf": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 34
+            },
+            "railroadEbnf": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 54
+            },
+            "railroad": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 86
+            },
+            "railroadPeg": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 38
+            },
+            "usecase": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 274
+            }
+          }
+        },
+        {
+          "path": "build/mermaid-cpp/workers/luna10/railroad-only-corpus/byte-comparison.json",
+          "reportSha256": "e835f0833379b6b156e2ea60898c2db9c375a76948f1f0b5ba8247e95d277c29",
+          "method": "raw byte equality; no normalization",
+          "dllSha256": "d5d708373d65a5cfadf301f2a2dd9460ff052398b88f8d697effca4b9af42693",
+          "total": 212,
+          "byteEqual": 212,
+          "originalErrors": 0,
+          "failures": 0,
+          "families": {
+            "railroadAbnf": {
+              "byteEqual": 34,
+              "originalErrors": 0,
+              "failures": 0
+            },
+            "railroadEbnf": {
+              "byteEqual": 54,
+              "originalErrors": 0,
+              "failures": 0
+            },
+            "railroad": {
+              "byteEqual": 86,
+              "originalErrors": 0,
+              "failures": 0
+            },
+            "railroadPeg": {
+              "byteEqual": 38,
+              "originalErrors": 0,
+              "failures": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "worker": "luna11",
+      "patch": "luna11.patch",
+      "bytes": 55840,
+      "sha256": "082dd17ffc3846db080e6bad0e9b2e2dbd8f3da300e2e57607914e45650d51fe",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/elk_layout.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "7ef154417e98b0e3a2555734d76336b0c031fe89c644b2d698d97ae99f7a48b4"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/elk_layout.ixx",
+          "canonicalSha256": null,
+          "snapshotSha256": "19f022692133a3c821a9ec841171d88bff4a4fca77b1afe3502f3ebed5b745bb"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "61d0f3b1ab76868f18cb3c8dac2d164415014a57a6230c59ea8ba81d044f7bd4"
+        },
+        {
+          "path": "tests/mermaid_cpp/elk_layout.cpp",
+          "canonicalSha256": null,
+          "snapshotSha256": "73fdf417ea552f6240383127edbb69e056d0afe2c5aac1d6909e0805fd75e8b3"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": [
+        {
+          "path": "build/mermaid-cpp/workers/luna11/corpus/byte-comparison.json",
+          "reportSha256": "b3551d9a9f5dacf35608a0790a7b4c37dc7012582a9d36247034d6a2655afa9b",
+          "method": "raw byte equality; no normalization",
+          "dllSha256": "c43c83366684fa0bbdbf5c629b57653e7199c1ba5590874be6a1bd97dde7d14e",
+          "total": 2488,
+          "byteEqual": 0,
+          "originalErrors": 0,
+          "failures": 2488,
+          "families": {
+            "flowchart-v2": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 1838
+            },
+            "classDiagram": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 640
+            },
+            "flowchart-elk": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 10
+            }
+          }
+        }
+      ]
+    },
+    {
+      "worker": "luna12",
+      "patch": "luna12.patch",
+      "bytes": 49677,
+      "sha256": "e924c29cea331d75dd233edd0f28db978d7a4566a3be2c58ab8293aadd067b37",
+      "files": [
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/git/parser.cpp",
+          "canonicalSha256": "2c125958583adacdae2698bf880c459d1033582ba8251fbb5d085e4eece8111a",
+          "snapshotSha256": "feffe7b8a2e94cbca2123620c4a5a093d512832a613d69ba1bc7dc5c0f6765b9"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/kanban.ixx",
+          "canonicalSha256": "c9d0099ea36298d269ab9b5e337d2be2a239a63d06ce1bc7f46cb95117b89049",
+          "snapshotSha256": "d3f23c718e253d5786b0435d8e12538e6efebe428a509b08e76f3ef096bcb615"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/parser.cpp",
+          "canonicalSha256": "ccea482b12158db6e04d19a0f54993e97b530484e0fab07cc5c1de20956b8d10",
+          "snapshotSha256": "da2fc084c2400212fd7cea1a3bb922dd8e2bf6aadbb57f65c8356a6584451dbd"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/kanban/renderer.cpp",
+          "canonicalSha256": "0e27cacf059f31bdcdd06fb193a34b227d1edd012de37dbc141174c5d13da240",
+          "snapshotSha256": "80ff62fd9192c4df1df70c873637eadd8d028717e8a2ac4bffcddd225be2866f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/railroad/parser.cpp",
+          "canonicalSha256": "841c093b24cd7b7094f973f8a94df0419540aeed0ad4c628331e8221da3dc8ef",
+          "snapshotSha256": "25faa3baa353f36cf7f1075e88559864f569b5a863f5330f1240e8629b735fdc"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/requirement/parser.cpp",
+          "canonicalSha256": "e74926d07da6f93b05f470e1df65e8c271d7d32d069d152990112bffaf41aafa",
+          "snapshotSha256": "fccf19597ab01990cc9b7405c9697b44e8d3582a43a8b8626dbc5d8ccb8b4617"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/layout.cpp",
+          "canonicalSha256": "0442b5a804165badc5c9e9742462420fd1866698e377e63c0e1b3da9e165ca2b",
+          "snapshotSha256": "2b0194f4c11e08246001753232819d41252f7bace61a43675ac5344513a1a112"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/diagrams/treemap/parser.cpp",
+          "canonicalSha256": "1a8723a9d07d172be833d54976e7e4ac88c1de563447e5d031f18e07e7c5d684",
+          "snapshotSha256": "98e3ae057d78388ff1fda2668282f137256ce1fa3472ea3d544edddc8a682712"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/render_entry.cpp",
+          "canonicalSha256": "0aa332e8f7751c33272ab0958c528a3e529abc5e9808d3fc9e382186159ddb56",
+          "snapshotSha256": "d85aa782d9d479d9b4cec5b7400c1c506667e8c0e8cd083cbd7005fd6ddcd85e"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/svg_document.cpp",
+          "canonicalSha256": "e5538e677a47b14f1581e0038d4a32b06bb97ac8b20a2545174755516a983736",
+          "snapshotSha256": "d667de55fe9d3103e21cc3e14d60c36ae140879c95561acaf63dc8a548f36a7f"
+        },
+        {
+          "path": "third_party/mermaid-cpp/src/svg_document.ixx",
+          "canonicalSha256": "f0b6fadb6f74a0e6af2d32c48a8f63609d41b14f6bec82df0a7422a30ec1b4fe",
+          "snapshotSha256": "ca46c9c76e4fa42d9b7f476df1c359f0b036dce586e49c785076fdbbe5a50d7c"
+        },
+        {
+          "path": "src/platform/text/mermaid_measurer.ixx",
+          "canonicalSha256": "8123942cdc9c64da84e02cb78a96e1f504b301eb2dc9afd7f1e4ea47311ba433",
+          "snapshotSha256": "07525b4cdf1d95d90625769858ab4c38a45e089ad8298cd7066a4f155166b805"
+        },
+        {
+          "path": "src/platform/text/mermaid_renderer.ixx",
+          "canonicalSha256": "73691d02974efe490f04fc135514984ee5dbd48e78c68a0fcd11a17470f35a16",
+          "snapshotSha256": "61d0f3b1ab76868f18cb3c8dac2d164415014a57a6230c59ea8ba81d044f7bd4"
+        },
+        {
+          "path": "tests/mermaid_cpp/gitgraph.cpp",
+          "canonicalSha256": "4720edf499ff2484675e147df47e37e214841e1d521a21102ddfe1747dabdc9c",
+          "snapshotSha256": "5b54c5e1a207e7f4608f15ad237d2073d1b29186a6de004eb25786eaf6be438a"
+        },
+        {
+          "path": "tests/mermaid_cpp/kanban.cpp",
+          "canonicalSha256": "9c1f16bb9c450d7e67df907aab106bcfa44a31d3713d373db66058daf1831d66",
+          "snapshotSha256": "abac9d914371d55554fd26699ebdbb008132fc728d9b53764bd68fa8faaa4a7b"
+        },
+        {
+          "path": "tests/mermaid_cpp/requirement.cpp",
+          "canonicalSha256": "272230e85865b4e2747c2fe679ff23f22aed33e834f5c2b5728d02f08cc83791",
+          "snapshotSha256": "8928289b4c677bba4a1f183765b783e6e191e15fdf7c56b379deae383917bee3"
+        },
+        {
+          "path": "tests/mermaid_cpp/svg_document.cpp",
+          "canonicalSha256": "83c1ba1c069a0854ad9314016c0b536f31efbd1515f9739faa9548985c8c6694",
+          "snapshotSha256": "30ce682d803fd4a472b8e494a30efc9b8439e1f1e0095409451e4afd7a244afb"
+        },
+        {
+          "path": "tests/mermaid_cpp/treemap.cpp",
+          "canonicalSha256": "df84fcfc70e7d0556eb024c7cbde7d04b9492d17b2aa23558c7549e24758eb17",
+          "snapshotSha256": "090f207a21e5775d3a9d3b2ec8c2f74a448cec951d9b1966b4eb028c2bc97172"
+        }
+      ],
+      "rawByteReports": [
+        {
+          "path": "build/mermaid-cpp/workers/luna12/sequence-corpus/byte-comparison.json",
+          "reportSha256": "75872e9b7ac02cfa1a47baa0a25aec171c6775c58baea420270befe6f0d7e480",
+          "method": "raw byte equality; no normalization",
+          "dllSha256": "410b557208924e58db0dc3a8668fcf9c235fbd577b1c3da6db44b0e7d41b6c5e",
+          "total": 806,
+          "byteEqual": 0,
+          "originalErrors": 0,
+          "failures": 806,
+          "families": {
+            "sequence": {
+              "byteEqual": 0,
+              "originalErrors": 0,
+              "failures": 806
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
